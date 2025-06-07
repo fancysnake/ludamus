@@ -1,0 +1,83 @@
+{% load django_bootstrap5 %}
+{% load bootstrap_icons %}
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %}</title>
+    {% bootstrap_css %}
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ request.scheme }}://{{ root_site.domain }}{% url 'web:index' %}">
+                {% bs_icon 'dice-5' %} {{ root_site.name }}
+            </a>
+            {% if root_site != current_site %}
+                <a class="navbar-brand fw-bold" href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
+                    {% bs_icon 'people' %} {{ current_site.name }}
+                </a>
+            {% endif %}
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+    
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if request.user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light me-2" href="{% url 'web:username' %}">
+                            {% bs_icon 'person-gear' %} Edit Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-light me-2"" href="{% url 'web:logout' %}">
+                            {% bs_icon 'person-gear' %} Logout
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="btn btn-light me-2"" href="{% url 'web:login' %}?next={{ request.build_absolute_uri }}">
+                            {% bs_icon 'box-arrow-in-right' %} Login
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="display-5 fw-bold text-center mb-2">{% block header %}{% endblock %}</h1>
+                <p class="lead text-center text-muted">{% block description %}{% endblock %}</p>
+            </div>
+        </div>
+
+        {% block body %}{% endblock %}
+
+        <footer class="bg-light py-4 mt-5">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-0">&copy; 2025 Radosław Ganczarek. <a href="https://github.com/fancysnake/ludamus">Source code</a> available under BSD-3-Clause license.</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <a href="#" class="text-decoration-none me-3">Privacy Policy</a>
+                        <a href="#" class="text-decoration-none">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+            </footer>
+    </div>
+
+    {% bootstrap_javascript %}
+</body>
+
+</html>
