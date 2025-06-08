@@ -7,7 +7,7 @@ from django.db import migrations
 def update_default_site(apps, schema_editor):
     Site = apps.get_model("sites", "Site")
     try:
-        site = Site.objects.get(id=settings.SITE_ID)
+        site = Site.objects.get(domain=settings.ROOT_DOMAIN)
     except Site.DoesNotExist:
         site = Site()
 

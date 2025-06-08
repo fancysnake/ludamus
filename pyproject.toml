@@ -46,6 +46,7 @@ ruff-check = "ruff check ."
 mypy = "mypy ."
 check = ["black", "ruff", "mypy"]
 dj = "django-admin"
+start = "django-admin runserver zagrajmy.local:8000"
 
 # BLACK
 

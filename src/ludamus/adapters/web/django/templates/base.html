@@ -30,7 +30,7 @@
                 <ul class="navbar-nav ms-auto">
                     {% if request.user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="btn btn-outline-light me-2" href="{% url 'web:username' %}">
+                        <a class="btn btn-outline-light me-2" href="{% url 'web:edit' %}">
                             {% bs_icon 'person-gear' %} Edit Profile
                         </a>
                     </li>

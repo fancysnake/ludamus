@@ -1,122 +1,140 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Never, TypedDict
+from functools import partial
+from secrets import token_urlsafe
+from typing import TYPE_CHECKING, Never, Protocol
 
 from django.contrib.auth.models import AbstractUser
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
-from django.db import models
-from django.db.models import F, JSONField, Q, QuerySet
+from django.db import IntegrityError, models
+from django.db.models import F, Q, QuerySet
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable
+    from collections.abc import Callable, Collection, Iterable
+
+    from django.db.models.expressions import Combinable
+
+MAX_SLUG_RETRIES = 10
+RANDOM_SLUG_BYTES = 7  # 10 characters
+
+
+class ModelWithSlug(Protocol):
+    slug: models.SlugField[str | int | Combinable, str]
+
+
+def save_with_random_slug(instance: ModelWithSlug, save: Callable[[], None]) -> None:
+    if not instance.slug:
+        for __ in range(MAX_SLUG_RETRIES):
+            instance.slug = token_urlsafe(RANDOM_SLUG_BYTES)  # type: ignore [assignment]
+
+            with suppress(IntegrityError):
+                save()
+                return
+
+    save()
+
+
+def save_with_slugified_name(
+    instance: ModelWithSlug, name: str, save: Callable[[], None]
+) -> None:
+    if not instance.slug:
+        base_slug = slugify(name)[:47]
+        for __ in range(MAX_SLUG_RETRIES):
+            instance.slug = f"{base_slug}-{token_urlsafe(1)}"  # type: ignore [assignment]
+
+            with suppress(IntegrityError):
+                save()
+                return
+
+    save()
 
 
 class User(AbstractUser):
-    id = models.UUIDField(primary_key=True)
+    auth0_user_id = models.CharField(max_length=255, db_index=True)
+    slug = models.SlugField(unique=True, db_index=True)
+    birth_date = models.DateField(blank=True, null=True)
 
     class Meta:
-        db_table = "crowd_user"
+        db_table = "user"
 
-
-class Auth0User(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    vendor = models.CharField(max_length=255)
-    external_id = models.CharField(max_length=255)
-
-    class Meta:
-        db_table = "crowd_auth0_user"
-
-    def __str__(self) -> str:
-        return f"{self.vendor}|{self.external_id}"
-
-
-def default_sphere_settings() -> dict[str, list[str] | dict[str, str]]:
-    return {"theme": {}, "forms": []}
+    def save(
+        self,
+        *,
+        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
+        force_update: bool = False,
+        using: str | None = None,
+        update_fields: Iterable[str] | None = None,
+    ) -> None:
+        save_with_random_slug(
+            self,
+            partial(
+                super().save,
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            ),
+        )
 
 
 class Sphere(models.Model):
     """Big group for whole provinces, topics, organizations or big events."""
 
-    is_open = models.BooleanField(default=True, verbose_name=_("is open"))
-    managers = models.ManyToManyField(User, verbose_name=_("managers"))
-    name = models.CharField(max_length=255, verbose_name=_("name"))
-    settings = JSONField(default=default_sphere_settings)
-    site = models.OneToOneField(
-        Site, on_delete=models.PROTECT, related_name="sphere", verbose_name=_("site")
-    )
+    name = models.CharField(max_length=255)
+    site = models.OneToOneField(Site, on_delete=models.PROTECT, related_name="sphere")
+    managers = models.ManyToManyField(User)
 
     class Meta:
-        db_table = "nb_sphere"
-        verbose_name = _("sphere")
-        verbose_name_plural = _("spheres")
+        db_table = "sphere"
 
     def __str__(self) -> str:
         return self.name
 
 
-def default_festival_settings() -> dict[str, list[str] | dict[str, str]]:
-    return {"theme": {}, "forms": []}
-
-
 class FestivalStatus(StrEnum):
     DRAFT = auto()
-    READY = auto()
     PROPOSAL = auto()
     AGENDA = auto()
-    AGENDA_PROPOSAL = auto()
     ONGOING = auto()
     PAST = auto()
 
 
 class Festival(models.Model):
-
-    start_time = models.DateTimeField(
-        blank=True, null=True, verbose_name=_("start time")
-    )
-    end_time = models.DateTimeField(blank=True, null=True, verbose_name=_("end time"))
-    name = models.CharField(max_length=255, verbose_name=_("name"))
-    settings = JSONField(default=default_festival_settings, verbose_name=_("settings"))
-    slug = models.SlugField(verbose_name=_("slug"))
+    # Owner
     sphere = models.ForeignKey(
-        Sphere, on_delete=models.CASCADE, verbose_name=_("sphere")
+        Sphere, on_delete=models.CASCADE, related_name="festivals"
     )
-    start_proposal = models.DateTimeField(
-        blank=True, null=True, verbose_name=_("start proposal")
-    )
-    end_proposal = models.DateTimeField(
-        blank=True, null=True, verbose_name=_("end proposal")
-    )
-    start_publication = models.DateTimeField(
-        blank=True, null=True, verbose_name=_("start publication")
-    )
+    # ID
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    description = models.TextField(default="", blank=True)
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
+    published_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = "ch_festival"
-        verbose_name = _("festival")
-        verbose_name_plural = _("festivals")
+        db_table = "festival"
         constraints = (
             models.UniqueConstraint(
                 fields=("sphere", "slug"), name="festival_has_unique_slug_and_sphere"
             ),
             models.CheckConstraint(
                 check=Q(
-                    start_proposal__isnull=True,
-                    end_proposal__isnull=True,
-                    start_publication__isnull=True,
+                    published_time__isnull=True,
                     start_time__isnull=True,
                     end_time__isnull=True,
                 )
-                | Q(
-                    start_proposal__lte=F("end_proposal"),
-                    start_publication__lte=F("start_time"),
-                    start_time__lt=F("end_time"),
-                ),
+                | Q(published_time__lte=F("start_time"), start_time__lt=F("end_time")),
                 name="festival_date_times",
             ),
         )
@@ -124,20 +142,32 @@ class Festival(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def save(
+        self,
+        *,
+        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
+        force_update: bool = False,
+        using: str | None = None,
+        update_fields: Iterable[str] | None = None,
+    ) -> None:
+        save_with_slugified_name(
+            self,
+            self.name,
+            partial(
+                super().save,
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            ),
+        )
+
     @property
     def status(self) -> FestivalStatus:
-        if (
-            self.start_time
-            and self.end_time
-            and self.start_proposal
-            and self.end_proposal
-            and self.start_publication
-        ):
+        if self.start_time and self.end_time and self.published_time:
             now = timezone.now()
             status_mapping = (
-                (self.start_proposal, FestivalStatus.READY),
-                (self.start_publication, FestivalStatus.PROPOSAL),
-                (self.end_proposal, FestivalStatus.AGENDA_PROPOSAL),
+                (self.published_time, FestivalStatus.PROPOSAL),
                 (self.start_time, FestivalStatus.AGENDA),
                 (self.end_time, FestivalStatus.ONGOING),
             )
@@ -152,19 +182,19 @@ class Festival(models.Model):
 
 
 class Room(models.Model):
+    # Owner
     festival = models.ForeignKey(
-        Festival,
-        on_delete=models.CASCADE,
-        verbose_name=_("festival"),
-        related_name="rooms",
+        Festival, on_delete=models.CASCADE, related_name="rooms"
     )
-    name = models.CharField(max_length=255, verbose_name=_("name"))
-    slug = models.SlugField(verbose_name=_("slug"))
+    # ID
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "ch_room"
-        verbose_name = _("room")
-        verbose_name_plural = _("rooms")
+        db_table = "room"
         constraints = (
             models.UniqueConstraint(
                 fields=("slug", "festival"), name="room_has_unique_slug_and_festival"
@@ -174,21 +204,38 @@ class Room(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
 
+    def save(
+        self,
+        *,
+        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
+        force_update: bool = False,
+        using: str | None = None,
+        update_fields: Iterable[str] | None = None,
+    ) -> None:
+        save_with_slugified_name(
+            self,
+            self.name,
+            partial(
+                super().save,
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            ),
+        )
+
 
 class TimeSlot(models.Model):
-    end_time = models.DateTimeField(verbose_name=_("end time"))
-    start_time = models.DateTimeField(verbose_name=_("start time"))
+    # Owner
     festival = models.ForeignKey(
-        Festival,
-        on_delete=models.CASCADE,
-        verbose_name=_("festival"),
-        related_name="time_slots",
+        Festival, on_delete=models.CASCADE, related_name="time_slots"
     )
+    # Time
+    end_time = models.DateTimeField()
+    start_time = models.DateTimeField()
 
     class Meta:
-        db_table = "ch_time_slot"
-        verbose_name = _("time slot")
-        verbose_name_plural = _("time slots")
+        db_table = "time_slot"
         constraints = (
             models.UniqueConstraint(
                 fields=("festival", "start_time", "end_time"),
@@ -207,22 +254,6 @@ class TimeSlot(models.Model):
         end = localtime(self.end_time).strftime(ts_format)
         return f"{start} - {end} ({self.id})"
 
-    def save(
-        self,
-        *,
-        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
-        force_update: bool = False,
-        using: str | None = None,
-        update_fields: Iterable[str] | None = None,
-    ) -> None:
-        self.full_clean()
-        super().save(
-            force_insert=force_insert,
-            force_update=force_update,
-            using=using,
-            update_fields=update_fields,
-        )
-
     def validate_unique(self, exclude: Collection[str] | None = None) -> None:
         super().validate_unique(exclude)
         festival_slots = TimeSlot.objects.filter(festival=self.festival)
@@ -235,52 +266,30 @@ class TimeSlot(models.Model):
             raise ValidationError(_("Time slots can't overlap!"))
 
 
-class DescribedModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
-    description = models.TextField(
-        default="", blank=True, verbose_name=_("description")
-    )
-    name = models.CharField(max_length=255, verbose_name=_("name"))
-    slug = models.SlugField(verbose_name=_("slug"))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("updated at"))
-
-    objects = models.Manager()
+class TagCategory(models.Model):
+    name = models.CharField(max_length=255)
 
     class Meta:
-        abstract = True
+        db_table = "tag_category"
 
     def __str__(self) -> str:
         return self.name
 
-    def save(
-        self,
-        *,
-        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
-        force_update: bool = False,
-        using: str | None = None,
-        update_fields: Iterable[str] | None = None,
-    ) -> None:
-        if not self.slug:
-            self.slug = self._get_unique_slug()
-        super().save(
-            force_insert=force_insert,
-            force_update=force_update,
-            using=using,
-            update_fields=update_fields,
-        )
 
-    def _get_unique_slug(self, *unique_within: str) -> str:
-        base_slug = str(slugify(self.name))[:48]
-        slug = base_slug
-        i = 1
-        unique_kwargs = {key: getattr(self, key) for key in unique_within}
-        while self.__class__.objects.filter(slug=slug, **unique_kwargs).exists():
-            slug = f"{base_slug}-{i}"
-            i += 1
-        return slug
+class Tag(models.Model):
+    name = models.CharField(max_length=255)
+    category = models.ForeignKey(
+        TagCategory, on_delete=models.CASCADE, related_name="tags"
+    )
+
+    class Meta:
+        db_table = "tag"
+
+    def __str__(self) -> str:
+        return self.name
 
 
-class MeetingStatus(StrEnum):
+class SessionStatus(StrEnum):
     DRAFT = auto()
     PLANNED = auto()
     PUBLISHED = auto()
@@ -288,52 +297,46 @@ class MeetingStatus(StrEnum):
     PAST = auto()
 
 
-class Meeting(DescribedModel):
-    """Meeting model."""
+class Session(models.Model):
+    """Session model."""
 
-    end_time = models.DateTimeField(blank=True, null=True, verbose_name=_("end time"))
+    # Owner
+    sphere = models.ForeignKey(
+        "Sphere", on_delete=models.CASCADE, related_name="sessions"
+    )
     guild = models.ForeignKey(
         "Guild",
         blank=True,
         null=True,
         on_delete=models.CASCADE,
-        verbose_name=_("guild"),
+        related_name="sessions",
     )
-    image = models.ImageField(null=True, blank=True, verbose_name=_("image"))
-    location = models.TextField(blank=True, default="", verbose_name=_("location"))
-    meeting_url = models.URLField(blank=True, verbose_name=_("meeting url"))
-    organizer = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="organized_meetings",
-        verbose_name=_("organizer"),
+    host = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="hosted_sessions"
     )
+    # ID
+    title = models.CharField(max_length=255)
+    slug = models.SlugField()
+    description = models.TextField(default="", blank=True)
+    requirements = models.TextField(blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
+    publication_time = models.DateTimeField(blank=True, null=True)
+    # Participants
+    participants_limit = models.PositiveIntegerField()
     participants: models.ManyToManyField[User, Never] = models.ManyToManyField(
-        User,
-        related_name="participated_meetings",
-        verbose_name=_("participants"),
-        through="MeetingParticipant",
-    )
-    participants_limit = models.IntegerField(
-        blank=True, null=True, default=0, verbose_name=_("participants limit")
-    )
-    publication_time = models.DateTimeField(
-        blank=True, null=True, verbose_name=_("publication time")
-    )
-    sphere = models.ForeignKey(
-        "Sphere", on_delete=models.CASCADE, verbose_name=_("sphere")
-    )
-    start_time = models.DateTimeField(
-        blank=True, null=True, verbose_name=_("start time")
+        User, through="SessionParticipation"
     )
 
     class Meta:
-        db_table = "nb_meeting"
-        verbose_name = _("meeting")
-        verbose_name_plural = _("meetings")
+        db_table = "session"
         constraints = (
             models.UniqueConstraint(
-                fields=["slug", "sphere"], name="meeting_unique_slug_in_sphere"
+                fields=["slug", "sphere"], name="session_unique_slug_in_sphere"
             ),
             models.CheckConstraint(
                 check=(
@@ -348,9 +351,12 @@ class Meeting(DescribedModel):
                         | Q(start_time__lt=F("end_time"))
                     )
                 ),
-                name="meeting_date_times",
+                name="session_date_times",
             ),
         )
+
+    def __str__(self) -> str:
+        return self.title
 
     def save(
         self,
@@ -360,27 +366,30 @@ class Meeting(DescribedModel):
         using: str | None = None,
         update_fields: Iterable[str] | None = None,
     ) -> None:
-        if not self.slug:
-            self.slug = self._get_unique_slug("sphere")
-        super().save(
-            force_insert=force_insert,
-            force_update=force_update,
-            using=using,
-            update_fields=update_fields,
+        save_with_slugified_name(
+            self,
+            self.title,
+            partial(
+                super().save,
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            ),
         )
 
     @property
-    def status(self) -> MeetingStatus:
+    def status(self) -> SessionStatus:
         now = timezone.now()
         if not self.start_time or not self.end_time or not self.publication_time:
-            return MeetingStatus.DRAFT
+            return SessionStatus.DRAFT
         if now < self.publication_time:
-            return MeetingStatus.PLANNED
+            return SessionStatus.PLANNED
         if now < self.start_time:
-            return MeetingStatus.PUBLISHED
+            return SessionStatus.PUBLISHED
         if now < self.end_time:
-            return MeetingStatus.ONGOING
-        return MeetingStatus.PAST
+            return SessionStatus.ONGOING
+        return SessionStatus.PAST
 
 
 class AgendaItemStatus(StrEnum):
@@ -390,51 +399,43 @@ class AgendaItemStatus(StrEnum):
 
 
 class AgendaItem(models.Model):
-    meeting = models.OneToOneField(
-        Meeting,
-        on_delete=models.CASCADE,
-        verbose_name=_("meeting"),
-        related_name="agenda_item",
-    )
-    meeting_confirmed = models.BooleanField(
-        default=False, verbose_name=_("meeting confirmed")
-    )
     room = models.ForeignKey(
-        Room,
-        on_delete=models.CASCADE,
-        verbose_name=_("room"),
-        related_name="agenda_item",
+        Room, on_delete=models.CASCADE, related_name="agenda_items"
     )
+    session = models.OneToOneField(
+        Session, on_delete=models.CASCADE, related_name="agenda_item"
+    )
+    session_confirmed = models.BooleanField(default=False)
 
     class Meta:
-        db_table = "ch_agenda_item"
-        verbose_name = _("agenda item")
-        verbose_name_plural = _("agenda items")
+        db_table = "agenda_item"
 
     def __str__(self) -> str:
-        return (
-            f"{self.meeting.name} by {self.meeting.proposal.speaker_name} "
-            f"({self.status})"
-        )
+        return f"{self.session.title} by {self.session.host.username} ({self.status})"
 
     @property
     def status(self) -> AgendaItemStatus:
-        if self.meeting_confirmed:
+        if self.session_confirmed:
             return AgendaItemStatus.CONFIRMED
         return AgendaItemStatus.UNCONFIRMED
 
 
 class WaitList(models.Model):
+    # Owner
     festival = models.ForeignKey(
-        Festival, on_delete=models.CASCADE, verbose_name=_("festival")
+        Festival, on_delete=models.CASCADE, related_name="wait_lists"
     )
-    name = models.CharField(max_length=255, verbose_name=_("name"))
-    slug = models.SlugField(verbose_name=_("slug"))
+    # ID
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    # Time
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
+    # Settings
+    tag_categories = models.ManyToManyField(TagCategory)
 
     class Meta:
-        db_table = "ch_wait_list"
-        verbose_name = _("waitlist")
-        verbose_name_plural = _("waitlists")
+        db_table = "wait_list"
         constraints = (
             models.UniqueConstraint(
                 fields=("slug", "festival"),
@@ -445,102 +446,113 @@ class WaitList(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
 
+    def save(
+        self,
+        *,
+        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
+        force_update: bool = False,
+        using: str | None = None,
+        update_fields: Iterable[str] | None = None,
+    ) -> None:
+        save_with_slugified_name(
+            self,
+            self.name,
+            partial(
+                super().save,
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            ),
+        )
 
-class EmptyDict(TypedDict):
-    pass
 
-
-def default_json_field() -> EmptyDict:
-    return {}
+class ProposalStatus(StrEnum):
+    CREATED = auto()
+    ACCEPTED = auto()
+    REJECTED = auto()
 
 
 class Proposal(models.Model):
-    CREATED = "CREATED"
-    ACCEPTED = "ACCEPTED"
-    REJECTED = "REJECTED"
-    STATUS_CHOICES = (
-        (CREATED, _("Created")),
-        (ACCEPTED, _("Accepted")),
-        (REJECTED, _("Rejected")),
+    # Owner
+    waitlist = models.ForeignKey(
+        WaitList, on_delete=models.CASCADE, related_name="proposals"
     )
-
-    name = models.CharField(max_length=255, verbose_name=_("name"))
-    description = models.TextField(
-        default="", blank=True, verbose_name=_("description")
+    host = models.ForeignKey(
+        User, on_delete=models.CASCADE, blank=True, null=True, related_name="proposals"
     )
-    duration_minutes = models.PositiveIntegerField(verbose_name=_("duration minutes"))
-    city = models.CharField(
-        max_length=255, default="", blank=True, verbose_name=_("city")
-    )
-    club = models.CharField(
-        max_length=255, default="", blank=True, verbose_name=_("club")
-    )
-    status = models.CharField(
-        max_length=15, choices=STATUS_CHOICES, default=CREATED, verbose_name=_("status")
-    )
-    meeting = models.OneToOneField(
-        Meeting,
+    # ID
+    title = models.CharField(max_length=255)
+    description = models.TextField(default="", blank=True)
+    requirements = models.TextField(blank=True)
+    needs = models.TextField(default="", blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
+    # Preferences
+    participants_limit = models.PositiveIntegerField()
+    time_slots = models.ManyToManyField(TimeSlot)
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    # Assignment
+    session = models.OneToOneField(
+        Session,
         on_delete=models.CASCADE,
         blank=True,
         null=True,
-        verbose_name=_("meeting"),
         related_name="proposal",
     )
-    needs = models.TextField(default="", blank=True, verbose_name=_("needs"))
-    other_contact = JSONField(
-        blank=True, default=default_json_field, verbose_name=_("other contact")
-    )
-    other_data = JSONField(
-        blank=True, default=default_json_field, verbose_name=_("other data")
-    )
-    phone = models.CharField(
-        max_length=255, default="", blank=True, verbose_name=_("phone")
-    )
-    time_slots = models.ManyToManyField(TimeSlot, verbose_name=_("time slots"))
-    waitlist = models.ForeignKey(
-        WaitList, on_delete=models.CASCADE, verbose_name=_("waitlist")
-    )
-    speaker_user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="proposals",
-        blank=True,
-        null=True,
-        verbose_name=_("speaker user"),
-    )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
-    speaker_name = models.CharField(max_length=255, verbose_name=_("speaker name"))
-    topic = models.CharField(
-        max_length=255, default="", blank=True, verbose_name=_("topic")
-    )
 
     class Meta:
-        db_table = "ch_proposal"
-        verbose_name = _("proposal")
-        verbose_name_plural = _("proposals")
+        db_table = "proposal"
 
     def __str__(self) -> str:
-        return self.name
+        return self.title
 
 
-class Guild(DescribedModel):
+class Guild(models.Model):
     """Small group of users for a small club or team."""
 
-    is_public = models.BooleanField(default=True, verbose_name=_("is public"))
+    # ID
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    description = models.TextField(default="", blank=True)
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+    # Settings
+    is_public = models.BooleanField(default=True)
+    # Members
     members: models.ManyToManyField[User, Never] = models.ManyToManyField(
-        User, through="GuildMember", verbose_name=_("members")
+        User, through="GuildMember"
     )
 
     class Meta:
-        db_table = "nb_guild"
-        verbose_name = _("guild")
-        verbose_name_plural = _("guilds")
+        db_table = "guild"
         constraints = (
             models.UniqueConstraint(fields=["slug"], name="guild_unique_slug"),
         )
 
     def __str__(self) -> str:
         return self.name
+
+    def save(
+        self,
+        *,
+        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
+        force_update: bool = False,
+        using: str | None = None,
+        update_fields: Iterable[str] | None = None,
+    ) -> None:
+        save_with_slugified_name(
+            self,
+            self.name,
+            partial(
+                super().save,
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            ),
+        )
 
 
 class MembershipType(StrEnum):
@@ -553,19 +565,17 @@ class GuildMember(models.Model):
     """Membership model for guilds."""
 
     guild = models.ForeignKey(
-        "Guild", on_delete=models.CASCADE, verbose_name=_("guild")
+        "Guild", on_delete=models.CASCADE, related_name="guild_members"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="guild_members"
     )
     membership_type = models.CharField(
-        max_length=255,
-        choices=[(i.value, i.name) for i in MembershipType],
-        verbose_name=_("membership type"),
+        max_length=255, choices=[(i.value, i.name) for i in MembershipType]
     )
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("user"))
 
     class Meta:
-        db_table = "nb_guild_member"
-        verbose_name = _("guild member")
-        verbose_name_plural = _("guild members")
+        db_table = "guild_member"
         constraints = (
             models.UniqueConstraint(
                 fields=["guild", "user"], name="guildmember_unique_guild_and_user"
@@ -576,24 +586,31 @@ class GuildMember(models.Model):
         return f"{self.user} ({self.membership_type} in {self.guild})"
 
 
-class MeetingParticipationStatus(StrEnum):
+class SessionParticipationStatus(StrEnum):
     CONFIRMED = auto()
     WAITING = auto()
 
 
-class MeetingParticipant(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
-    meeting = models.ForeignKey(Meeting, models.CASCADE)
+class SessionParticipation(models.Model):
+    # Owner
+    session = models.ForeignKey(
+        Session, models.CASCADE, related_name="session_participations"
+    )
+    user = models.ForeignKey(
+        User, models.CASCADE, related_name="session_participations"
+    )
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+    # Status
     status = models.CharField(
         max_length=15,
-        choices=[(item.value, item.name) for item in MeetingParticipationStatus],
+        choices=[(item.value, item.name) for item in SessionParticipationStatus],
     )
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("updated at"))
-    user = models.ForeignKey(User, models.CASCADE)
 
     class Meta:
-        unique_together = (("meeting", "user"),)
-        db_table = "nb_meeting_participant"
+        unique_together = (("session", "user"),)
+        db_table = "session_participant"
 
     def __str__(self) -> str:
-        return f"{self.user} {self.status} on {self.meeting}"
+        return f"{self.user} {self.status} on {self.session}"

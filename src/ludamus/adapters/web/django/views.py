@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
 from typing import TYPE_CHECKING
 from urllib.parse import quote_plus, urlencode
@@ -11,6 +12,7 @@ from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
@@ -18,13 +20,15 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.views.generic.edit import UpdateView
 
-from ludamus.adapters.db.django.models import Auth0User
 from ludamus.adapters.oauth import oauth
 
 if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import User
 else:
     User = get_user_model()
+
+
+THIS_YEAR = datetime.now(tz=UTC).year
 
 
 def login(request: HttpRequest) -> HttpResponse:
@@ -50,21 +54,16 @@ def callback(request: HttpRequest) -> HttpResponse:
     if not isinstance(token["userinfo"].get("sub"), str) or "|" not in sub:
         raise TypeError
 
-    vendor, external_id = sub.split("|")
-
     if request.user.is_authenticated:
         pass
-    elif auth0_user := Auth0User.objects.filter(
-        vendor=vendor, external_id=external_id
-    ).first():
-        django_login(request, auth0_user.user)
+    elif user := User.objects.filter(auth0_user_id=sub).first():
+        django_login(request, user)
     else:
         user = User.objects.create_user(
-            username=sha256(sub.encode("UTF-8")).hexdigest()
+            username=sha256(sub.encode("UTF-8")).hexdigest(), auth0_user_id=sub
         )
-        Auth0User.objects.create(user=user, vendor=vendor, external_id=external_id)
         django_login(request, user)
-        return redirect(request.build_absolute_uri(reverse("web:username")))
+        return redirect(request.build_absolute_uri(reverse("web:edit")))
 
     next_path = request.GET.get("next")
     return redirect(next_path or request.build_absolute_uri(reverse("web:index")))
@@ -102,13 +101,39 @@ def index(request: HttpRequest) -> HttpResponse:
 
 
 class UsernameForm(forms.ModelForm):  # type: ignore [type-arg]
+    username = forms.CharField(
+        help_text=(
+            "This is your public name that will be visible for everyone in the events "
+            "you organize and participate in."
+        ),
+        max_length=150,
+    )
+    email = forms.EmailField(required=True)
+    birth_date = forms.DateField(
+        widget=forms.SelectDateWidget(
+            years=range(THIS_YEAR, THIS_YEAR - 100, -1),
+            attrs={"class": "form-select w-auto d-inline-block"},
+        )
+    )
+
     class Meta:
         model = User
-        fields = ("username",)
+        fields = ("username", "email", "birth_date")
+
+    def clean_birth_date(self) -> date:
+        validation_error = "You need to be 16 years old to use this website."
+        birth_date = self.cleaned_data["birth_date"]
+
+        if not isinstance(birth_date, date) or birth_date >= datetime.now(
+            tz=UTC
+        ).date() - timedelta(days=16 * 365):
+            raise ValidationError(validation_error)
+
+        return birth_date
 
 
 class UsernameView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
-    template_name = "web_main/username.html"
+    template_name = "web_main/edit.html"
     form_class = UsernameForm
     success_url = "/"
 

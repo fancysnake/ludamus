@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-from ludamus.adapters.db.django.models import Auth0User, User
+from ludamus.adapters.db.django.models import User
 
 admin.site.register(User)
-admin.site.register(Auth0User)
