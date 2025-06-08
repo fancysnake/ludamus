@@ -1,4 +1,6 @@
 import json
+from django.utils.translation import gettext_lazy as _
+
 from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
 from typing import TYPE_CHECKING
@@ -102,18 +104,20 @@ def index(request: HttpRequest) -> HttpResponse:
 
 class UsernameForm(forms.ModelForm):  # type: ignore [type-arg]
     username = forms.CharField(
-        help_text=(
+        help_text=_(
             "This is your public name that will be visible for everyone in the events "
             "you organize and participate in."
         ),
+        label=_("Username"),
         max_length=150,
     )
     email = forms.EmailField(required=True)
     birth_date = forms.DateField(
+        label=_("Birth date"),
         widget=forms.SelectDateWidget(
             years=range(THIS_YEAR, THIS_YEAR - 100, -1),
             attrs={"class": "form-select w-auto d-inline-block"},
-        )
+        ),
     )
 
     class Meta:

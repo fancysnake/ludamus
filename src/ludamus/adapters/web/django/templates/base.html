@@ -1,7 +1,10 @@
+{% load i18n %}
 {% load django_bootstrap5 %}
 {% load bootstrap_icons %}
 
-<html lang="en">
+{% get_current_language as LANGUAGE_CODE %}
+
+<html lang="{{ LANGUAGE_CODE }}">
 
 <head>
     <meta charset="utf-8" />
@@ -31,18 +34,18 @@
                     {% if request.user.is_authenticated %}
                     <li class="nav-item">
                         <a class="btn btn-outline-light me-2" href="{% url 'web:edit' %}">
-                            {% bs_icon 'person-gear' %} Edit Profile
+                            {% bs_icon 'person-gear' %} {% translate "Edit Profile" %}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="btn btn-light me-2"" href="{% url 'web:logout' %}">
-                            {% bs_icon 'person-gear' %} Logout
+                            {% bs_icon 'person-gear' %} {% translate "Logout" %}
                         </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
                         <a class="btn btn-light me-2"" href="{% url 'web:login' %}?next={{ request.build_absolute_uri }}">
-                            {% bs_icon 'box-arrow-in-right' %} Login
+                            {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
                         </a>
                     </li>
                     {% endif %}
@@ -68,9 +71,11 @@
                     <div class="col-md-6">
                         <p class="mb-0">&copy; 2025 Radosław Ganczarek. <a href="https://github.com/fancysnake/ludamus">Source code</a> available under BSD-3-Clause license.</p>
                     </div>
+                    
                     <div class="col-md-6 text-md-end">
-                        <a href="#" class="text-decoration-none me-3">Privacy Policy</a>
-                        <a href="#" class="text-decoration-none">Terms of Service</a>
+                        <a href="mailto:radoslaw@ganczarek.in" class="text-decoration-none me-3">{% translate "Contact me" %}</a>
+                        <a href="#" class="text-decoration-none me-3">{% translate "Privacy Policy" %}</a>
+                        <a href="#" class="text-decoration-none">{% translate "Terms of Service" %}</a>
                     </div>
                 </div>
             </div>

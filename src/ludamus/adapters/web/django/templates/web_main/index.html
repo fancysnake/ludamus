@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 
+{% load i18n %}
+
 {% block title %}Ludamus{% endblock %}
 
-{% block header %}Welcome {{ request.user.username }}{% endblock %}
+{% block header %}{% translate "Welcome" %} {{ request.user.username }}{% endblock %}
 
 {% block description %}{% endblock %}
 
