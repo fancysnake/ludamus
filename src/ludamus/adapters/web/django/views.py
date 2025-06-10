@@ -1,6 +1,4 @@
 import json
-from django.utils.translation import gettext_lazy as _
-
 from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
 from typing import TYPE_CHECKING
@@ -20,6 +18,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.views.generic.edit import UpdateView
 
 from ludamus.adapters.oauth import oauth

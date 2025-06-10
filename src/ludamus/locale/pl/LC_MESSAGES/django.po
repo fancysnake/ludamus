@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-08 14:56+0200\n"
+"POT-Creation-Date: 2025-06-08 18:10+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,39 +20,100 @@ msgstr ""
 "(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
 "n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
-#: src/ludamus/adapters/db/django/models.py:266
+#: src/ludamus/adapters/db/django/models.py:63
+msgid "email address"
+msgstr "adres email"
+
+#: src/ludamus/adapters/db/django/models.py:67
+msgid "user"
+msgstr "użytkownik"
+
+#: src/ludamus/adapters/db/django/models.py:68
+msgid "users"
+msgstr "użytkownicy"
+
+#: src/ludamus/adapters/db/django/models.py:258
 msgid "Time slots can't overlap!"
 msgstr ""
 
-#: src/ludamus/adapters/web/django/templates/base.html:37
+#: src/ludamus/adapters/web/django/templates/base.html:40
 msgid "Edit Profile"
 msgstr "Edycja danych"
 
-#: src/ludamus/adapters/web/django/templates/base.html:42
+#: src/ludamus/adapters/web/django/templates/base.html:44
 msgid "Logout"
 msgstr "Wyloguj"
 
-#: src/ludamus/adapters/web/django/templates/base.html:48
+#: src/ludamus/adapters/web/django/templates/base.html:47
 msgid "Login"
 msgstr "Zaloguj"
 
-#: src/ludamus/adapters/web/django/templates/base.html:76
+#: src/ludamus/adapters/web/django/templates/base.html:77
 msgid "Contact me"
 msgstr "Kontakt"
 
-#: src/ludamus/adapters/web/django/templates/base.html:77
+#: src/ludamus/adapters/web/django/templates/base.html:78
 msgid "Privacy Policy"
 msgstr "Polityka prywatności"
 
-#: src/ludamus/adapters/web/django/templates/base.html:78
+#: src/ludamus/adapters/web/django/templates/base.html:79
 msgid "Terms of Service"
 msgstr "Regulamin"
 
 #: src/ludamus/adapters/web/django/templates/web_main/index.html:7
-msgid "Welcome"
-msgstr "Witaj"
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:9
+msgid "Upcoming events"
+msgstr "Nadchodzące wydarzenia"
 
-#: src/ludamus/adapters/web/django/views.py:108
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:17
+msgid "Event Name"
+msgstr "Nazwa"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:18
+msgid "Description"
+msgstr "Opis"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:19
+msgid "Start Time"
+msgstr "Początek"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:20
+msgid "End Time"
+msgstr "Koniec"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:21
+msgid "Status"
+msgstr "Status"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:22
+msgid "Action"
+msgstr "Akcja"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:49
+msgid "LIVE"
+msgstr "W TRAKCIE"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:52
+msgid "PAST"
+msgstr "MINIONE"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:54
+msgid "UPCOMING"
+msgstr "NADCHODZĄCE"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:61
+msgid "Enroll"
+msgstr "Zapisz się"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:66
+msgid "View"
+msgstr "Zobacz"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:70
+msgid "Propose Program"
+msgstr "Zgłoś program"
+
+#: src/ludamus/adapters/web/django/views.py:107
 msgid ""
 "This is your public name that will be visible for everyone in the events you "
 "organize and participate in."
@@ -60,10 +121,10 @@ msgstr ""
 "To nazwa jest widoczna dla wszystkich użytkowników oraz w twoich "
 "wydarzeniach."
 
-#: src/ludamus/adapters/web/django/views.py:111
+#: src/ludamus/adapters/web/django/views.py:110
 msgid "Username"
 msgstr "Nazwa użytkownika"
 
-#: src/ludamus/adapters/web/django/views.py:116
+#: src/ludamus/adapters/web/django/views.py:115
 msgid "Birth date"
 msgstr "Data urodzenia"

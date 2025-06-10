@@ -27,10 +27,11 @@ black = "^25.1.0"
 ruff = "^0.11.13"
 mypy = "^1.16.0"
 poethepoet = "^0.34.0"
-
-# POE
 django-stubs = "^5.2.0"
 types-authlib = "^1.5.0.20250516"
+djlint = "^1.36.4"
+
+# POE
 
 [tool.poe]
 envfile = ".env"
@@ -44,7 +45,8 @@ black = "black ."
 ruff = "ruff check --fix ."
 ruff-check = "ruff check ."
 mypy = "mypy ."
-check = ["black", "ruff", "mypy"]
+djlint = "djlint ."
+check = ["black", "djlint", "ruff", "mypy"]
 dj = "django-admin"
 start = "django-admin runserver zagrajmy.local:8000"
 

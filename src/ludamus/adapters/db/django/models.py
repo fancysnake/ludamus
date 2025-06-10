@@ -60,9 +60,12 @@ class User(AbstractUser):
     auth0_user_id = models.CharField(max_length=255, db_index=True)
     slug = models.SlugField(unique=True, db_index=True)
     birth_date = models.DateField(blank=True, null=True)
+    email = models.EmailField(_("email address"), blank=True, unique=True)
 
     class Meta:
         db_table = "user"
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
 
     def save(
         self,
@@ -98,14 +101,6 @@ class Sphere(models.Model):
         return self.name
 
 
-class FestivalStatus(StrEnum):
-    DRAFT = auto()
-    PROPOSAL = auto()
-    AGENDA = auto()
-    ONGOING = auto()
-    PAST = auto()
-
-
 class Festival(models.Model):
     # Owner
     sphere = models.ForeignKey(
@@ -115,12 +110,17 @@ class Festival(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(default="", blank=True)
-    # Time
-    creation_time = models.DateTimeField(auto_now_add=True)
-    modification_time = models.DateTimeField(auto_now=True)
-    start_time = models.DateTimeField(blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
-    published_time = models.DateTimeField(blank=True, null=True)
+    # Time - start and end
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    # Publication time
+    publication_time = models.DateTimeField(blank=True, null=True)
+    # Proposal times
+    proposal_start_time = models.DateTimeField(blank=True, null=True)
+    proposal_end_time = models.DateTimeField(blank=True, null=True)
+    # Enrollment times
+    enrollment_start_time = models.DateTimeField(blank=True, null=True)
+    enrollment_end_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = "festival"
@@ -130,11 +130,13 @@ class Festival(models.Model):
             ),
             models.CheckConstraint(
                 check=Q(
-                    published_time__isnull=True,
+                    publication_time__isnull=True,
                     start_time__isnull=True,
                     end_time__isnull=True,
                 )
-                | Q(published_time__lte=F("start_time"), start_time__lt=F("end_time")),
+                | Q(
+                    publication_time__lte=F("start_time"), start_time__lt=F("end_time")
+                ),
                 name="festival_date_times",
             ),
         )
@@ -163,19 +165,28 @@ class Festival(models.Model):
         )
 
     @property
-    def status(self) -> FestivalStatus:
-        if self.start_time and self.end_time and self.published_time:
-            now = timezone.now()
-            status_mapping = (
-                (self.published_time, FestivalStatus.PROPOSAL),
-                (self.start_time, FestivalStatus.AGENDA),
-                (self.end_time, FestivalStatus.ONGOING),
-            )
-            for key, value in status_mapping:
-                if now < key:
-                    return value
-            return FestivalStatus.PAST
-        return FestivalStatus.DRAFT
+    def is_enrollment_active(self) -> bool:
+        return (
+            self.enrollment_start_time is not None
+            and self.enrollment_end_time is not None
+            and (self.enrollment_start_time < timezone.now() < self.enrollment_end_time)
+        )
+
+    @property
+    def is_proposal_active(self) -> bool:
+        return (
+            self.proposal_start_time is not None
+            and self.proposal_end_time is not None
+            and (self.proposal_start_time < timezone.now() < self.proposal_end_time)
+        )
+
+    @property
+    def is_live(self) -> bool:
+        return self.start_time < timezone.now() < self.end_time
+
+    @property
+    def is_ended(self) -> bool:
+        return self.end_time < timezone.now()
 
     def agenda_items(self) -> QuerySet[AgendaItem]:
         return AgendaItem.objects.filter(room__festival=self)
