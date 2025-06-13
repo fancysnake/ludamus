@@ -1,7 +1,7 @@
 import json
 from datetime import UTC, date, datetime, timedelta
-from hashlib import sha256
-from typing import TYPE_CHECKING
+from secrets import token_urlsafe
+from typing import TYPE_CHECKING, Any, Protocol
 from urllib.parse import quote_plus, urlencode
 
 from django import forms
@@ -19,7 +19,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from ludamus.adapters.oauth import oauth
 
@@ -29,7 +29,11 @@ else:
     User = get_user_model()
 
 
-THIS_YEAR = datetime.now(tz=UTC).year
+TODAY = datetime.now(tz=UTC).date()
+
+
+class UserReuqest(Protocol):
+    user: User
 
 
 def login(request: HttpRequest) -> HttpResponse:
@@ -52,17 +56,16 @@ def callback(request: HttpRequest) -> HttpResponse:
         raise TypeError
 
     sub = token["userinfo"].get("sub")
+    username = f'auth0|{sub.encode("UTF-8")}'
     if not isinstance(token["userinfo"].get("sub"), str) or "|" not in sub:
         raise TypeError
 
     if request.user.is_authenticated:
         pass
-    elif user := User.objects.filter(auth0_user_id=sub).first():
+    elif user := User.objects.filter(username=username).first():
         django_login(request, user)
     else:
-        user = User.objects.create_user(
-            username=sha256(sub.encode("UTF-8")).hexdigest(), auth0_user_id=sub
-        )
+        user = User.objects.create_user(username=username)
         django_login(request, user)
         return redirect(request.build_absolute_uri(reverse("web:edit")))
 
@@ -101,27 +104,37 @@ def index(request: HttpRequest) -> HttpResponse:
     )
 
 
-class UsernameForm(forms.ModelForm):  # type: ignore [type-arg]
-    username = forms.CharField(
-        help_text=_(
-            "This is your public name that will be visible for everyone in the events "
-            "you organize and participate in."
-        ),
-        label=_("Username"),
-        max_length=150,
-    )
-    email = forms.EmailField(required=True)
+class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
+    name = forms.CharField(label=_("Name"), required=True)
     birth_date = forms.DateField(
         label=_("Birth date"),
-        widget=forms.SelectDateWidget(
-            years=range(THIS_YEAR, THIS_YEAR - 100, -1),
-            attrs={"class": "form-select w-auto d-inline-block"},
+        widget=forms.DateInput(
+            attrs={
+                "type": "date",
+                "class": "form-control",
+                "max": TODAY,
+                "min": TODAY - timedelta(days=100 * 365.25),
+            },
+            format="%Y-%m-%d",
         ),
     )
 
     class Meta:
         model = User
-        fields = ("username", "email", "birth_date")
+        fields = ("name", "birth_date", "user_type")
+
+    def clean_name(self) -> str:
+        data: str = self.cleaned_data["name"]
+        if not data:
+            raise ValidationError(_("Please provide name."))
+
+        return data
+
+
+class UserForm(BaseUserForm):
+    user_type = forms.CharField(
+        initial=User.UserType.ACTIVE, widget=forms.HiddenInput()
+    )
 
     def clean_birth_date(self) -> date:
         validation_error = "You need to be 16 years old to use this website."
@@ -134,11 +147,22 @@ class UsernameForm(forms.ModelForm):  # type: ignore [type-arg]
 
         return birth_date
 
+    class Meta:
+        model = User
+        fields = ("name", "email", "birth_date", "user_type")
 
-class UsernameView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
+
+class ConnectedUserForm(BaseUserForm):
+    user_type = forms.CharField(
+        initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()  # type: ignore [misc]
+    )
+
+
+class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     template_name = "web_main/edit.html"
-    form_class = UsernameForm
+    form_class = UserForm
     success_url = "/"
+    request: UserReuqest  # type: ignore [assignment]
 
     def get_object(
         self, queryset: QuerySet[User] | None = None  # noqa: ARG002
@@ -146,3 +170,47 @@ class UsernameView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
         if not isinstance(self.request.user, User):
             raise TypeError
         return self.request.user
+
+
+class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
+    template_name = "web_main/connected.html"
+    form_class = ConnectedUserForm
+    success_url = "/profile/connected"
+    request: UserReuqest  # type: ignore [assignment]
+    object: User
+
+    def get_context_data(  # type: ignore [explicit-any]
+        self, **kwargs: Any  # noqa: ANN401
+    ) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        connected_users = [
+            {"user": connected, "form": ConnectedUserForm(instance=connected)}
+            for connected in self.request.user.connected.all()
+        ]
+        context["connected_users"] = connected_users
+        return context
+
+    def get_queryset(self) -> QuerySet[User]:
+        return User.objects.filter(
+            user_type=User.UserType.CONNECTED, manager=self.request.user
+        )
+
+    def form_valid(self, form: forms.Form) -> HttpResponse:
+        result = super().form_valid(form)
+        self.object.manager = self.request.user
+        self.object.username = f"connected|{token_urlsafe(50)}"
+        self.object.password = token_urlsafe(50)
+        self.object.save()
+        return result
+
+
+class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
+    template_name = "web_main/connected.html"
+    form_class = ConnectedUserForm
+    success_url = "/profile/connected"
+    model = User
+
+
+class DeleteConnectedView(LoginRequiredMixin, DeleteView):  # type: ignore [type-arg]
+    model = User
+    success_url = "/profile/connected"

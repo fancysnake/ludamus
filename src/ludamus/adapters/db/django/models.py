@@ -1,16 +1,20 @@
 from __future__ import annotations
 
+import math
 from contextlib import suppress
+from datetime import UTC, datetime
 from enum import StrEnum, auto
 from functools import partial
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Never, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Never, Protocol
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.db import IntegrityError, models
 from django.db.models import F, Q, QuerySet
+from django.db.models.functions import Lower
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime
@@ -29,43 +33,101 @@ class ModelWithSlug(Protocol):
     slug: models.SlugField[str | int | Combinable, str]
 
 
-def save_with_random_slug(instance: ModelWithSlug, save: Callable[[], None]) -> None:
-    if not instance.slug:
-        for __ in range(MAX_SLUG_RETRIES):
-            instance.slug = token_urlsafe(RANDOM_SLUG_BYTES)  # type: ignore [assignment]
-
-            with suppress(IntegrityError):
-                save()
-                return
-
-    save()
-
-
 def save_with_slugified_name(
-    instance: ModelWithSlug, name: str, save: Callable[[], None]
+    *, instance: ModelWithSlug, name: str, save: Callable[[], None]
 ) -> None:
-    if not instance.slug:
-        base_slug = slugify(name)[:47]
-        for __ in range(MAX_SLUG_RETRIES):
-            instance.slug = f"{base_slug}-{token_urlsafe(1)}"  # type: ignore [assignment]
+    base_slug = slugify(name)[:47]
+    instance.slug = base_slug  # type: ignore [assignment]
+    for __ in range(MAX_SLUG_RETRIES):
+        with suppress(IntegrityError):
+            save()
+            return
 
-            with suppress(IntegrityError):
-                save()
-                return
+        instance.slug = f"{base_slug}-{token_urlsafe(1)}"  # type: ignore [assignment]
 
     save()
 
 
-class User(AbstractUser):
-    auth0_user_id = models.CharField(max_length=255, db_index=True)
-    slug = models.SlugField(unique=True, db_index=True)
+class User(AbstractBaseUser, PermissionsMixin):
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS: ClassVar = ["email"]
+
+    class UserType(models.TextChoices):
+        ACTIVE = "active", _("Active")
+        CONNECTED = "connected", _("Connected")
+
     birth_date = models.DateField(blank=True, null=True)
-    email = models.EmailField(_("email address"), blank=True, unique=True)
+    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
+    email = models.EmailField(_("email address"), blank=True)
+    is_active = models.BooleanField(
+        _("active"),
+        default=True,
+        help_text=_(
+            "Designates whether this user should be treated as active. "
+            "Unselect this instead of deleting accounts."
+        ),
+    )
+    is_staff = models.BooleanField(
+        _("staff status"),
+        default=False,
+        help_text=_("Designates whether the user can log into this admin site."),
+    )
+    manager = models.ForeignKey(
+        "User",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="connected",
+    )
+    name = models.CharField(_("Name"), max_length=255, blank=True)
+    slug = models.SlugField(unique=True, db_index=True)
+    user_type = models.CharField(
+        max_length=255, choices=UserType, default=UserType.ACTIVE
+    )
+    username = models.CharField(
+        _("username"),
+        max_length=150,
+        unique=True,
+        help_text=_(
+            "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+        ),
+        error_messages={"unique": _("A user with that username already exists.")},
+    )
+
+    objects = UserManager()
+
+    def clean(self) -> None:
+        super().clean()
+        self.email = self.__class__.objects.normalize_email(self.email)
+
+    def get_full_name(self) -> str:
+        return self.name
+
+    def get_short_name(self) -> str:
+        return self.name.split(" ")[0]
+
+    def email_user(  # type: ignore [explicit-any]
+        self,
+        subject: str,
+        message: str,
+        from_email: str | None = None,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> None:
+        send_mail(subject, message, from_email, [self.email], **kwargs)
 
     class Meta:
         db_table = "user"
         verbose_name = _("user")
         verbose_name_plural = _("users")
+
+        constraints = (
+            models.UniqueConstraint(
+                Lower("email").desc(),
+                name="constraint_unique_email_lower_no_null",
+                condition=~Q(email=""),
+            ),
+        )
 
     def save(
         self,
@@ -75,9 +137,10 @@ class User(AbstractUser):
         using: str | None = None,
         update_fields: Iterable[str] | None = None,
     ) -> None:
-        save_with_random_slug(
-            self,
-            partial(
+        save_with_slugified_name(
+            instance=self,
+            name=self.name,
+            save=partial(
                 super().save,
                 force_insert=force_insert,
                 force_update=force_update,
@@ -85,6 +148,15 @@ class User(AbstractUser):
                 update_fields=update_fields,
             ),
         )
+
+    @property
+    def age(self) -> int:
+        if self.birth_date:
+            return math.floor(
+                (datetime.now(tz=UTC).date() - self.birth_date).days / 365.25
+            )
+
+        return 0
 
 
 class Sphere(models.Model):
@@ -153,9 +225,9 @@ class Festival(models.Model):
         update_fields: Iterable[str] | None = None,
     ) -> None:
         save_with_slugified_name(
-            self,
-            self.name,
-            partial(
+            instance=self,
+            name=self.name,
+            save=partial(
                 super().save,
                 force_insert=force_insert,
                 force_update=force_update,
@@ -169,7 +241,11 @@ class Festival(models.Model):
         return (
             self.enrollment_start_time is not None
             and self.enrollment_end_time is not None
-            and (self.enrollment_start_time < timezone.now() < self.enrollment_end_time)
+            and (
+                self.enrollment_start_time
+                < datetime.now(tz=UTC)
+                < self.enrollment_end_time
+            )
         )
 
     @property
@@ -177,16 +253,18 @@ class Festival(models.Model):
         return (
             self.proposal_start_time is not None
             and self.proposal_end_time is not None
-            and (self.proposal_start_time < timezone.now() < self.proposal_end_time)
+            and (
+                self.proposal_start_time < datetime.now(tz=UTC) < self.proposal_end_time
+            )
         )
 
     @property
     def is_live(self) -> bool:
-        return self.start_time < timezone.now() < self.end_time
+        return self.start_time < datetime.now(tz=UTC) < self.end_time
 
     @property
     def is_ended(self) -> bool:
-        return self.end_time < timezone.now()
+        return self.end_time < datetime.now(tz=UTC)
 
     def agenda_items(self) -> QuerySet[AgendaItem]:
         return AgendaItem.objects.filter(room__festival=self)
@@ -224,9 +302,9 @@ class Room(models.Model):
         update_fields: Iterable[str] | None = None,
     ) -> None:
         save_with_slugified_name(
-            self,
-            self.name,
-            partial(
+            instance=self,
+            name=self.name,
+            save=partial(
                 super().save,
                 force_insert=force_insert,
                 force_update=force_update,
@@ -378,9 +456,9 @@ class Session(models.Model):
         update_fields: Iterable[str] | None = None,
     ) -> None:
         save_with_slugified_name(
-            self,
-            self.title,
-            partial(
+            instance=self,
+            name=self.title,
+            save=partial(
                 super().save,
                 force_insert=force_insert,
                 force_update=force_update,
@@ -391,7 +469,7 @@ class Session(models.Model):
 
     @property
     def status(self) -> SessionStatus:
-        now = timezone.now()
+        now = datetime.now(tz=UTC)
         if not self.start_time or not self.end_time or not self.publication_time:
             return SessionStatus.DRAFT
         if now < self.publication_time:
@@ -422,7 +500,7 @@ class AgendaItem(models.Model):
         db_table = "agenda_item"
 
     def __str__(self) -> str:
-        return f"{self.session.title} by {self.session.host.username} ({self.status})"
+        return f"{self.session.title} by {self.session.host.name} ({self.status})"
 
     @property
     def status(self) -> AgendaItemStatus:
@@ -466,9 +544,9 @@ class WaitList(models.Model):
         update_fields: Iterable[str] | None = None,
     ) -> None:
         save_with_slugified_name(
-            self,
-            self.name,
-            partial(
+            instance=self,
+            name=self.name,
+            save=partial(
                 super().save,
                 force_insert=force_insert,
                 force_update=force_update,
@@ -554,9 +632,9 @@ class Guild(models.Model):
         update_fields: Iterable[str] | None = None,
     ) -> None:
         save_with_slugified_name(
-            self,
-            self.name,
-            partial(
+            instance=self,
+            name=self.name,
+            save=partial(
                 super().save,
                 force_insert=force_insert,
                 force_update=force_update,

@@ -1,10 +1,38 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load django_bootstrap5 %}
-{% block title %}Set username{% endblock %}
+{% load bootstrap_icons %}
+{% block title %}
+    {% translate "Edit profile" %}
+{% endblock %}
 {% block body %}
-    <form action="{% url 'web:edit' %}" method="post">
-        {% csrf_token %}
-        {% bootstrap_form form layout="horizontal" %}
-        {% bootstrap_button button_type="submit" content="OK" %}
-    </form>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'web:edit' %}">
+                                {% bs_icon 'person' %}
+                                {% translate "Personal Information" %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'web:connected' %}">
+                                {% bs_icon 'people' %}
+                                {% translate "Connected users" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'web:edit' %}" method="post">
+                        {% csrf_token %}
+                        {% bootstrap_form form layout="horizontal"  horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-3" %}
+                        {% bootstrap_button button_type="submit" content="OK" %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

@@ -42,11 +42,13 @@ DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
 
 [tool.poe.tasks]
 black = "black ."
-ruff = "ruff check --fix ."
-ruff-check = "ruff check ."
+ruff = "ruff check ."
+ruff-fix = "ruff check --fix  ."
 mypy = "mypy ."
 djlint = "djlint ."
-check = ["black", "djlint", "ruff", "mypy"]
+djlint-format = "djlint --reformat ."
+format = ["black", "djlint-format", "ruff-fix"]
+lint = ["djlint", "ruff", "mypy"]
 dj = "django-admin"
 start = "django-admin runserver zagrajmy.local:8000"
 

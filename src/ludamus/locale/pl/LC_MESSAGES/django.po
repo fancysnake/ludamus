@@ -3,12 +3,11 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-08 18:10+0200\n"
+"POT-Creation-Date: 2025-06-13 21:40+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,72 +19,181 @@ msgstr ""
 "(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
 "n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
+#: src/ludamus/adapters/db/django/models.py:56
+msgid "Active"
+msgstr "Aktywny"
+
+#: src/ludamus/adapters/db/django/models.py:57
+msgid "Connected"
+msgstr "Powiązany"
+
+#: src/ludamus/adapters/db/django/models.py:61
+msgid "date joined"
+msgstr "data dołączenia"
+
 #: src/ludamus/adapters/db/django/models.py:63
 msgid "email address"
 msgstr "adres email"
 
-#: src/ludamus/adapters/db/django/models.py:67
+#: src/ludamus/adapters/db/django/models.py:65
+msgid "active"
+msgstr "aktywny"
+
+#: src/ludamus/adapters/db/django/models.py:68
+msgid ""
+"Designates whether this user should be treated as active. Unselect this "
+"instead of deleting accounts."
+msgstr ""
+"Określa czy użytkownika należy uważać za aktywnego. Odznacz zamiast usuwać "
+"konto."
+
+#: src/ludamus/adapters/db/django/models.py:73
+msgid "staff status"
+msgstr "w zespole"
+
+#: src/ludamus/adapters/db/django/models.py:75
+msgid "Designates whether the user can log into this admin site."
+msgstr "Określa czy użytkownik może zalogować się do panelu administracyjnego."
+
+#: src/ludamus/adapters/db/django/models.py:84
+msgid "Name"
+msgstr "Nazwa użytkownika"
+
+#: src/ludamus/adapters/db/django/models.py:90
+msgid "username"
+msgstr "Nazwa użytkownika"
+
+#: src/ludamus/adapters/db/django/models.py:94
+msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+msgstr "Wymagana. 150 lub mniej znaków. Jedynie litery, cyfry i @/./+/-/_."
+
+#: src/ludamus/adapters/db/django/models.py:96
+msgid "A user with that username already exists."
+msgstr "Użytkownik o tej nazwie już istnieje."
+
+#: src/ludamus/adapters/db/django/models.py:122
 msgid "user"
 msgstr "użytkownik"
 
-#: src/ludamus/adapters/db/django/models.py:68
+#: src/ludamus/adapters/db/django/models.py:123
 msgid "users"
 msgstr "użytkownicy"
 
-#: src/ludamus/adapters/db/django/models.py:258
+#: src/ludamus/adapters/db/django/models.py:351
 msgid "Time slots can't overlap!"
 msgstr ""
 
-#: src/ludamus/adapters/web/django/templates/base.html:40
+#: src/ludamus/adapters/web/django/templates/base.html:35
 msgid "Edit Profile"
 msgstr "Edycja danych"
 
-#: src/ludamus/adapters/web/django/templates/base.html:44
+#: src/ludamus/adapters/web/django/templates/base.html:39
 msgid "Logout"
 msgstr "Wyloguj"
 
-#: src/ludamus/adapters/web/django/templates/base.html:47
+#: src/ludamus/adapters/web/django/templates/base.html:42
 msgid "Login"
 msgstr "Zaloguj"
 
-#: src/ludamus/adapters/web/django/templates/base.html:77
+#: src/ludamus/adapters/web/django/templates/base.html:72
 msgid "Contact me"
 msgstr "Kontakt"
 
-#: src/ludamus/adapters/web/django/templates/base.html:78
+#: src/ludamus/adapters/web/django/templates/base.html:73
 msgid "Privacy Policy"
 msgstr "Polityka prywatności"
 
-#: src/ludamus/adapters/web/django/templates/base.html:79
+#: src/ludamus/adapters/web/django/templates/base.html:74
 msgid "Terms of Service"
 msgstr "Regulamin"
 
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:7
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:9
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:6
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:23
+#: src/ludamus/adapters/web/django/templates/web_main/edit.html:23
+msgid "Connected users"
+msgstr "Powiązane osoby"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:17
+#: src/ludamus/adapters/web/django/templates/web_main/edit.html:17
+msgid "Personal Information"
+msgstr "Dane osobiste"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:34
+msgid ""
+"Connected people are family members or friends that you can enroll in "
+"events. They won't have their own login accounts - you'll handle all their "
+"event registrations for them"
+msgstr ""
+"Powiązane osoby to członkowie rodziny lub przyjaciele, których możesz "
+"zapisywać na wydarzenia. Nie będą mieli własnych kont logowania - wszystkie "
+"ich rejestracje na wydarzenia obsługujesz ty."
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:42
+msgid "Add connected user"
+msgstr "Dodaj powiązaną osobę"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:53
+msgid "Your connected users"
+msgstr "Powiązane osoby"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:65
+msgid "Age: "
+msgstr "Wiek: "
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:78
+msgid "Edit"
+msgstr "Edycja"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:82
+msgid "Are you sure you want to delete this item?"
+msgstr "Czy na pewno chcesz usunąć?"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:84
+msgid "Delete"
+msgstr "Usuń"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:102
+msgid "Cancel"
+msgstr "Anuluj"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:113
+msgid "No connected users yet"
+msgstr "Brak powiązanych użytkowników"
+
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:114
+msgid "Add your first item using the form above."
+msgstr "Dodaj pierwszy wpis używając powyższego formularza"
+
+#: src/ludamus/adapters/web/django/templates/web_main/edit.html:6
+msgid "Edit profile"
+msgstr "Edycja profilu"
+
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:5
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:8
 msgid "Upcoming events"
 msgstr "Nadchodzące wydarzenia"
 
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:17
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:16
 msgid "Event Name"
 msgstr "Nazwa"
 
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:18
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:17
 msgid "Description"
 msgstr "Opis"
 
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:19
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:18
 msgid "Start Time"
 msgstr "Początek"
 
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:20
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:19
 msgid "End Time"
 msgstr "Koniec"
 
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:21
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:20
 msgid "Status"
 msgstr "Status"
 
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:22
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:21
 msgid "Action"
 msgstr "Akcja"
 
@@ -105,26 +213,19 @@ msgstr "NADCHODZĄCE"
 msgid "Enroll"
 msgstr "Zapisz się"
 
+#: src/ludamus/adapters/web/django/templates/web_main/index.html:64
+msgid "Propose Program"
+msgstr "Zgłoś program"
+
 #: src/ludamus/adapters/web/django/templates/web_main/index.html:66
 msgid "View"
 msgstr "Zobacz"
 
-#: src/ludamus/adapters/web/django/templates/web_main/index.html:70
-msgid "Propose Program"
-msgstr "Zgłoś program"
-
-#: src/ludamus/adapters/web/django/views.py:107
-msgid ""
-"This is your public name that will be visible for everyone in the events you "
-"organize and participate in."
-msgstr ""
-"To nazwa jest widoczna dla wszystkich użytkowników oraz w twoich "
-"wydarzeniach."
-
-#: src/ludamus/adapters/web/django/views.py:110
-msgid "Username"
-msgstr "Nazwa użytkownika"
-
-#: src/ludamus/adapters/web/django/views.py:115
+#: src/ludamus/adapters/web/django/views.py:104
 msgid "Birth date"
 msgstr "Data urodzenia"
+
+#: src/ludamus/adapters/web/django/views.py:140
+#: src/ludamus/adapters/web/django/views.py:158
+msgid "Please provide name."
+msgstr "Podaj imię."

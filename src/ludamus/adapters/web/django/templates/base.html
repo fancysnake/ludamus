@@ -7,7 +7,8 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="Event webapp">
-        <meta name="keywords" content="events, conferences, workshops, seminars, meetups, registration, enrollment, sessions, networking, professional development, tech events, design workshops, free events">
+        <meta name="keywords"
+              content="events, conferences, workshops, seminars, meetups, registration, enrollment, sessions, networking, professional development, tech events, design workshops, free events">
         <title>
             {% block title %}{% endblock %}
         </title>
@@ -16,10 +17,10 @@
     <body>
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                    <a class="navbar-brand fw-bold"
-                       href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
-                        {% bs_icon 'people' %} {{ current_site.name }}
-                    </a>
+                <a class="navbar-brand fw-bold"
+                   href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
+                    {% bs_icon 'people' %} {{ current_site.name }}
+                </a>
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"

@@ -1,80 +1,75 @@
-
 {% extends "base.html" %}
-
 {% load i18n %}
 {% load bootstrap_icons %}
-
-{% block title %}{% translate "Upcoming events" %}{% endblock %} 
-
-{% block header %}{% translate "Upcoming events" %}{% endblock %} 
-
+{% block title %}
+    {% translate "Upcoming events" %}
+{% endblock %}
+{% block header %}
+    {% translate "Upcoming events" %}
+{% endblock %}
 {% block body %}
-<div id="events">
-    <div class="table-responsive">
-        <table class="table table-hover table-striped">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col">{% translate "Event Name" %}</th>
-                    <th scope="col">{% translate "Description" %}</th>
-                    <th scope="col">{% translate "Start Time" %}</th>
-                    <th scope="col">{% translate "End Time" %}</th>
-                    <th scope="col">{% translate "Status" %}</th>
-                    <th scope="col">{% translate "Action" %}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for festival in current_site.sphere.festivals.all %}
-                <tr>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <strong>{{festival.name}}</strong>
-                        </div>
-                    </td>
-                    <td>{{festival.description}}</td>
-                    <td>
-                        <div class="text-nowrap">
-                            {% bs_icon 'calendar3' %} {{festival.start_time|date}}<br>
-                            <small class="text-muted">{% bs_icon 'clock' %} {{festival.start_time|date:"G:i"}}</small>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="text-nowrap">
-                            {% bs_icon 'calendar3' %} {{festival.end_time|date}}<br>
-                            <small class="text-muted">{% bs_icon 'clock' %} {{festival.end_time|date:"G:i"}}</small>
-                        </div>
-                    </td>
-                    <td>
-                        {% if festival.is_live %}
-                        <span class="badge bg-secondary">{% translate "LIVE" %}</span>
-                        {% else %}
-                        {% if festival.is_ended %}
-                        <span class="badge bg-dark">{% translate "PAST" %}</span>
-                        {% else %}
-                        <span class="badge bg-info">{% translate "UPCOMING" %}</span>
-                        {% endif %}
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="d-grid gap-1">
-                        {% if festival.is_enrollment_active %}
-                        <a href='/' class="btn btn-success btn-sm">
-                            {% bs_icon 'person-plus' %} {% translate "Enroll" %}
-                        </a>
-                        {% endif %}
-                        {% if festival.is_proposal_active %}
-                        <a href='/' class="btn btn-warning btn-sm text-nowrap">
-                            {% bs_icon 'lightbulb' %} {% translate "Propose Program" %}
-                        </a>
-                        {% endif %}
-                        <a href='/' class="btn btn-outline-secondary btn-sm">
-                            {% bs_icon 'eye' %} {% translate "View" %}
-                        </a>
-                    </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div id="events">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">{% translate "Event Name" %}</th>
+                        <th scope="col">{% translate "Description" %}</th>
+                        <th scope="col">{% translate "Start Time" %}</th>
+                        <th scope="col">{% translate "End Time" %}</th>
+                        <th scope="col">{% translate "Status" %}</th>
+                        <th scope="col">{% translate "Action" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for festival in current_site.sphere.festivals.all %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <strong>{{ festival.name }}</strong>
+                                </div>
+                            </td>
+                            <td>{{ festival.description }}</td>
+                            <td>
+                                <div class="text-nowrap">
+                                    {% bs_icon 'calendar3' %} {{ festival.start_time|date }}
+                                    <br>
+                                    <small class="text-muted">{% bs_icon 'clock' %} {{ festival.start_time|date:"G:i" }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-nowrap">
+                                    {% bs_icon 'calendar3' %} {{ festival.end_time|date }}
+                                    <br>
+                                    <small class="text-muted">{% bs_icon 'clock' %} {{ festival.end_time|date:"G:i" }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if festival.is_live %}
+                                    <span class="badge bg-secondary">{% translate "LIVE" %}</span>
+                                {% else %}
+                                    {% if festival.is_ended %}
+                                        <span class="badge bg-dark">{% translate "PAST" %}</span>
+                                    {% else %}
+                                        <span class="badge bg-info">{% translate "UPCOMING" %}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-grid gap-1">
+                                    {% if festival.is_enrollment_active %}
+                                        <a href='/' class="btn btn-success btn-sm">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
+                                    {% endif %}
+                                    {% if festival.is_proposal_active %}
+                                        <a href='/' class="btn btn-warning btn-sm text-nowrap">{% bs_icon 'lightbulb' %} {% translate "Propose Program" %}</a>
+                                    {% endif %}
+                                    <a href='/' class="btn btn-outline-secondary btn-sm">{% bs_icon 'eye' %} {% translate "View" %}</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 {% endblock %}

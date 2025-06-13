@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load django_bootstrap5 %}
+{% load bootstrap_icons %}
+{% block title %}
+    {% translate "Connected users" %}
+{% endblock %}
+{% block body %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'web:edit' %}">
+                                {% bs_icon 'person' %}
+                                {% translate "Personal Information" %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'web:connected' %}">
+                                {% bs_icon 'people' %}
+                                {% translate "Connected users" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info border-0 mb-4" role="alert">
+                        <div class="d-flex">
+                            <i class="bi bi-info-circle-fill me-3 mt-1 text-info"></i>
+                            <div>
+                                <p class="mb-0">
+                                    {% translate "Connected people are family members or friends that you can enroll in events. They won't have their own login accounts - you'll handle all their event registrations for them" %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-light rounded p-3 mb-4">
+                        <h6 class="mb-3">
+                            {% bs_icon 'plus-circle' %}
+                            {% translate "Add connected user" %}
+                        </h6>
+                        <form action="{% url 'web:connected' %}" method="post">
+                            {% csrf_token %}
+                            {% bootstrap_form form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-3" %}
+                            {% bootstrap_button button_type="submit" content="OK" %}
+                        </form>
+                    </div>
+                    <div class="border-top pt-4">
+                        <h6 class="mb-3">
+                            {% bs_icon 'collection' %}
+                            {% translate "Your connected users" %} (<span id="itemCount">{{ connected_users|length }}</span>)
+                        </h6>
+                        <div id="itemsList">
+                            {% for connected in connected_users %}
+                                <div class="card mb-3 item-card" data-item-id="{{ forloop.counter }}">
+                                    <div class="card-body">
+                                        <div class="item-display" id="display-{{ forloop.counter }}">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-8">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <h6 class="mb-0 me-3">{{ connected.user.name }}</h6>
+                                                    </div>
+                                                    <p class="text-muted mb-0 small">{% translate "Age: " %}{{ connected.user.age }}</p>
+                                                </div>
+                                                <div class="col-md-4 text-md-end">
+                                                    <form method="post"
+                                                          action="{% url 'web:connected-delete' slug=connected.user.slug %}">
+                                                        {% csrf_token %}
+                                                        <div class="btn-group" role="group">
+                                                            <button type="button"
+                                                                    class="btn btn-outline-primary btn-sm"
+                                                                    data-bs-toggle="collapse"
+                                                                    data-bs-target="#edit-{{ forloop.counter }}"
+                                                                    onclick="this.closest('.item-display').style.display='none'">
+                                                                {% bs_icon 'pencil' %}
+                                                                {% translate "Edit" %}
+                                                            </button>
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-danger btn-sm delete-btn"
+                                                                    onclick="return confirm('{% translate "Are you sure you want to delete this item?" %}')">
+                                                                {% bs_icon 'trash' %}
+                                                                {% translate "Delete" %}
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="item-edit collapse" id="edit-{{ forloop.counter }}">
+                                            <form action="{% url 'web:connected-details' slug=connected.user.slug %}"
+                                                  method="post">
+                                                {% csrf_token %}
+                                                {% bootstrap_form connected.form layout="horizontal"  horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-3" %}
+                                                {% bootstrap_button button_type="submit" content="OK" %}
+                                                <button type="button"
+                                                        class="btn btn-secondary"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#edit-{{ forloop.counter }}"
+                                                        onclick="document.getElementById('display-{{ forloop.counter }}').style.display='block'">
+                                                    {% bs_icon 'x-lg' %}
+                                                    {% translate "Cancel" %}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div id="emptyState">
+                                <div class="text-center py-5">
+                                    {% bs_icon 'people' %}
+                                    <h5 class="text-muted">{% translate "No connected users yet" %}</h5>
+                                    <p class="text-muted">{% translate "Add your first item using the form above." %}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
