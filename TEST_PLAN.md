@@ -370,35 +370,35 @@ This test plan covers all user stories for the Ludamus event management system, 
 ### 8.1 Concurrent User Scenarios
 
 #### Happy Path Stories
-- **US-166**: As a user, my enrollments succeed even when others are enrolling simultaneously
-- **US-167**: As a user, I see accurate capacity counts even during high traffic
-- **US-168**: As a user, the last person to enroll in final spot gets the spot
+- **US-189**: As a user, my enrollments succeed even when others are enrolling simultaneously
+- **US-190**: As a user, I see accurate capacity counts even during high traffic
+- **US-191**: As a user, the last person to enroll in final spot gets the spot
 
 #### Edge Cases & Error Scenarios
-- **US-169**: As a user enrolling when spot gets taken by someone else, I get clear failure message
-- **US-170**: As a user, system prevents double-enrollment even with concurrent requests
-- **US-171**: As a user during system high load, I get appropriate feedback about delays
+- **US-192**: As a user enrolling when spot gets taken by someone else, I get clear failure message
+- **US-193**: As a user, system prevents double-enrollment even with concurrent requests
+- **US-194**: As a user during system high load, I get appropriate feedback about delays
 
 #### User Stubbornness Scenarios
-- **US-172**: User repeatedly submits same enrollment rapidly → System deduplicates properly
-- **US-173**: User opens multiple browser tabs and tries to enroll from all → Consistent behavior
+- **US-195**: User repeatedly submits same enrollment rapidly → System deduplicates properly
+- **US-196**: User opens multiple browser tabs and tries to enroll from all → Consistent behavior
 
 ### 8.2 Data Validation Edge Cases
 
 #### Happy Path Stories
-- **US-174**: As a user, all my valid data gets saved correctly
-- **US-175**: As a user, I can recover from validation errors without losing other data
-- **US-176**: As a user, system handles special characters in names/descriptions
+- **US-197**: As a user, all my valid data gets saved correctly
+- **US-198**: As a user, I can recover from validation errors without losing other data
+- **US-199**: As a user, system handles special characters in names/descriptions
 
 #### Edge Cases & Error Scenarios
-- **US-177**: As a user entering data at exact validation boundaries, system handles correctly
-- **US-178**: As a user with very long names/descriptions, system truncates or validates gracefully
-- **US-179**: As a user entering unusual but valid birth dates, system accepts correctly
+- **US-200**: As a user entering data at exact validation boundaries, system handles correctly
+- **US-201**: As a user with very long names/descriptions, system truncates or validates gracefully
+- **US-202**: As a user entering unusual but valid birth dates, system accepts correctly
 
 #### User Stubbornness Scenarios
-- **US-180**: User keeps entering invalid data formats → Consistent validation messaging
-- **US-181**: User tries to inject malicious content in text fields → Proper sanitization
-- **US-182**: User attempts to manipulate form data through browser tools → Server-side validation prevents
+- **US-203**: User keeps entering invalid data formats → Consistent validation messaging
+- **US-204**: User tries to inject malicious content in text fields → Proper sanitization
+- **US-205**: User attempts to manipulate form data through browser tools → Server-side validation prevents
 
 ---
 

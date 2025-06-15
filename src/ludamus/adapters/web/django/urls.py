@@ -15,26 +15,6 @@ urlpatterns = [
         name="enroll-select",
     ),
     path(
-        "chronology/session/<int:session_id>/enroll",
-        views.EnrollSessionView.as_view(),
-        name="enroll-session",
-    ),
-    path(
-        "chronology/session/<int:session_id>/cancel",
-        views.CancelEnrollmentView.as_view(),
-        name="cancel-enrollment",
-    ),
-    path(
-        "chronology/session/<int:session_id>/waiting-list",
-        views.EnrollWaitingListView.as_view(),
-        name="enroll-waiting-list",
-    ),
-    path(
-        "chronology/session/<int:session_id>/cancel-waiting-list",
-        views.CancelWaitingListView.as_view(),
-        name="cancel-waiting-list",
-    ),
-    path(
         "chronology/event/<str:event_slug>/propose",
         views.ProposeSessionView.as_view(),
         name="propose-session",
