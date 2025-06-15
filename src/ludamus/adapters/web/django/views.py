@@ -1,11 +1,12 @@
 import json
 from datetime import UTC, date, datetime, timedelta
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote_plus, urlencode
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
@@ -22,7 +23,6 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from ludamus.adapters.oauth import oauth
-from django.contrib import messages
 
 if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import User
@@ -31,9 +31,10 @@ else:
 
 
 TODAY = datetime.now(tz=UTC).date()
+SEPARATOR = "|"
 
 
-class UserReuqest(Protocol):
+class UserRequest(HttpRequest):
     user: User
 
 
@@ -58,7 +59,7 @@ def callback(request: HttpRequest) -> HttpResponse:
 
     sub = token["userinfo"].get("sub")
     username = f'auth0|{sub.encode("UTF-8")}'
-    if not isinstance(token["userinfo"].get("sub"), str) or "|" not in sub:
+    if not isinstance(token["userinfo"].get("sub"), str) or SEPARATOR not in sub:
         raise TypeError
 
     if request.user.is_authenticated:
@@ -69,12 +70,7 @@ def callback(request: HttpRequest) -> HttpResponse:
     else:
         user = User.objects.create_user(username=username)
         django_login(request, user)
-        messages.success(
-            request,
-            _("Welcome to {site}! Please complete your profile.").format(
-                site=Site.objects.get(domain=settings.ROOT_DOMAIN).name
-            ),
-        )
+        messages.success(request, _("Welcome! Please complete your profile."))
         return redirect(request.build_absolute_uri(reverse("web:edit")))
 
     next_path = request.GET.get("next")
@@ -132,13 +128,6 @@ class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
         model = User
         fields = ("name", "birth_date", "user_type")
 
-    def clean_name(self) -> str:
-        data: str = self.cleaned_data["name"]
-        if not data:
-            raise ValidationError(_("Please provide name."))
-
-        return data
-
 
 class UserForm(BaseUserForm):
     user_type = forms.CharField(
@@ -171,7 +160,7 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
     template_name = "web_main/edit.html"
     form_class = UserForm
     success_url = "/"
-    request: UserReuqest  # type: ignore [assignment]
+    request: UserRequest
 
     def get_object(
         self, queryset: QuerySet[User] | None = None  # noqa: ARG002
@@ -180,11 +169,11 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
             raise TypeError
         return self.request.user
 
-    def form_valid(self, form: Any) -> HttpResponse:
+    def form_valid(self, form: forms.Form) -> HttpResponse:
         messages.success(self.request, _("Profile updated successfully!"))
         return super().form_valid(form)
 
-    def form_invalid(self, form: Any) -> HttpResponse:
+    def form_invalid(self, form: forms.Form) -> HttpResponse:
         messages.warning(self.request, _("Please correct the errors below."))
         return super().form_invalid(form)
 
@@ -193,7 +182,7 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
     template_name = "web_main/connected.html"
     form_class = ConnectedUserForm
     success_url = "/profile/connected"
-    request: UserReuqest  # type: ignore [assignment]
+    request: UserRequest
     object: User
 
     def get_context_data(  # type: ignore [explicit-any]
@@ -221,7 +210,7 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
         messages.success(self.request, _("Connected user added successfully!"))
         return result
 
-    def form_invalid(self, form: Any) -> HttpResponse:
+    def form_invalid(self, form: forms.Form) -> HttpResponse:
         messages.warning(self.request, _("Please correct the errors below."))
         return super().form_invalid(form)
 
@@ -232,11 +221,11 @@ class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-a
     success_url = "/profile/connected"
     model = User
 
-    def form_valid(self, form: Any) -> HttpResponse:
+    def form_valid(self, form: forms.Form) -> HttpResponse:
         messages.success(self.request, _("Connected user updated successfully!"))
         return super().form_valid(form)
 
-    def form_invalid(self, form: Any) -> HttpResponse:
+    def form_invalid(self, form: forms.Form) -> HttpResponse:
         messages.warning(self.request, _("Please correct the errors below."))
         return super().form_invalid(form)
 
@@ -245,6 +234,6 @@ class DeleteConnectedView(LoginRequiredMixin, DeleteView):  # type: ignore [type
     model = User
     success_url = "/profile/connected"
 
-    def form_valid(self, form: Any) -> HttpResponse:
+    def form_valid(self, form: forms.Form) -> HttpResponse:
         messages.success(self.request, _("Connected user deleted successfully."))
         return super().form_valid(form)
