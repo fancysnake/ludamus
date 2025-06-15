@@ -2,28 +2,28 @@ from django.contrib import admin
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
-    Festival,
+    Event,
     Guild,
     Proposal,
-    Room,
+    ProposalCategory,
     Session,
+    Space,
     Sphere,
     Tag,
     TagCategory,
     TimeSlot,
     User,
-    WaitList,
 )
 
 admin.site.register(AgendaItem)
-admin.site.register(Festival)
+admin.site.register(Event)
 admin.site.register(Guild)
 admin.site.register(Proposal)
-admin.site.register(Room)
+admin.site.register(Space)
 admin.site.register(Session)
 admin.site.register(Sphere)
 admin.site.register(Tag)
 admin.site.register(TagCategory)
 admin.site.register(TimeSlot)
 admin.site.register(User)
-admin.site.register(WaitList)
+admin.site.register(ProposalCategory)

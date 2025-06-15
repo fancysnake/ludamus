@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load django_bootstrap5 %}
+{% load bootstrap_icons %}
+
+{% block title %}{% translate "Accept Proposal" %} - {{ proposal.title }}{% endblock %}
+
+{% block header %}{% translate "Accept Proposal" %}{% endblock %}
+
+{% block description %}{% translate "Select space and time slot for" %} {{ proposal.title }}{% endblock %}
+
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Proposal Details Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        {% bs_icon 'lightbulb' %} {{ proposal.title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>{% translate "Host" %}</h6>
+                            <p>{{ proposal.host.get_full_name }}</p>
+                            
+                            <h6>{% translate "Participants Limit" %}</h6>
+                            <p>{{ proposal.participants_limit }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>{% translate "Submitted" %}</h6>
+                            <p>{{ proposal.creation_time|date:"M j, Y G:i" }}</p>
+                            
+                            {% if proposal.tags.exists %}
+                                <h6>{% translate "Tags" %}</h6>
+                                <p>
+                                    {% for tag in proposal.tags.all %}
+                                        <span class="badge bg-light text-dark me-1">
+                                            {% if tag.category.icon %}{% bs_icon tag.category.icon %}{% endif %}
+                                            {{ tag.name }}
+                                        </span>
+                                    {% endfor %}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if proposal.description %}
+                        <h6>{% translate "Description" %}</h6>
+                        <p>{{ proposal.description }}</p>
+                    {% endif %}
+                    
+                    {% if proposal.requirements %}
+                        <h6>{% translate "Requirements" %}</h6>
+                        <p>{{ proposal.requirements }}</p>
+                    {% endif %}
+                    
+                    {% if proposal.needs %}
+                        <h6>{% translate "Special Needs" %}</h6>
+                        <p>{{ proposal.needs }}</p>
+                    {% endif %}
+
+                    {% if proposal.time_slots.exists %}
+                        <h6>{% translate "Preferred Time Slots" %}</h6>
+                        <div class="small">
+                            {% for slot in proposal.time_slots.all %}
+                                <span class="badge bg-secondary me-1">
+                                    {{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Assignment Form Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        {% bs_icon 'calendar-check' %} {% translate "Assign to Schedule" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'web:accept-proposal' proposal_id=proposal.id %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="space_id" class="form-label">
+                                {% bs_icon 'geo-alt' %} {% translate "Space" %} <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="space_id" name="space_id" required>
+                                <option value="">{% translate "Select a space..." %}</option>
+                                {% for space in spaces %}
+                                    <option value="{{ space.id }}">{{ space.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="time_slot_id" class="form-label">
+                                {% bs_icon 'clock' %} {% translate "Time Slot" %} <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="time_slot_id" name="time_slot_id" required>
+                                <option value="">{% translate "Select a time slot..." %}</option>
+                                {% for slot in time_slots %}
+                                    <option value="{{ slot.id }}"
+                                        {% if slot in proposal.time_slots.all %}class="fw-bold text-primary"{% endif %}>
+                                        {{ slot.start_time|date:"l, M j - G:i" }} - {{ slot.end_time|date:"G:i" }}
+                                        {% if slot in proposal.time_slots.all %}({% translate "Preferred" %}){% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">{% translate "Preferred time slots are highlighted in bold." %}</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-success w-100">
+                                    {% bs_icon 'check-lg' %} {% translate "Accept and Add to Agenda" %}
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{% url 'web:event' slug=event.slug %}" class="btn btn-outline-secondary w-100">
+                                    {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

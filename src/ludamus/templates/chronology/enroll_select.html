@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load django_bootstrap5 %}
+{% load bootstrap_icons %}
+
+{% block title %}{% translate "Enroll in Session" %} - {{ session.title }}{% endblock %}
+
+{% block header %}{% translate "Enroll in Session" %}{% endblock %}
+
+{% block description %}{% translate "Select who to enroll in" %} {{ session.title }}{% endblock %}
+
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Session Details Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        {% bs_icon 'calendar-event' %} {{ session.title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>{% translate "Host" %}</h6>
+                            <p>{{ session.host.get_full_name }}</p>
+                            
+                            <h6>{% translate "Participants" %}</h6>
+                            <p>{{ session.enrolled_count }}/{{ session.participants_limit }}{% if session.waiting_count > 0 %} (+{{ session.waiting_count }} {% translate "waiting" %}){% endif %}</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if session.start_time and session.end_time %}
+                                <h6>{% translate "Time" %}</h6>
+                                <p>
+                                    {{ session.start_time|date:"l, F j, Y" }}<br>
+                                    <small class="text-muted">{{ session.start_time|date:"G:i" }} - {{ session.end_time|date:"G:i" }}</small>
+                                </p>
+                            {% endif %}
+                            
+                            {% if session.agenda_item.space %}
+                                <h6>{% translate "Space" %}</h6>
+                                <p>{{ session.agenda_item.space.name }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if session.description %}
+                        <h6>{% translate "Description" %}</h6>
+                        <p>{{ session.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Enrollment Form Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        {% bs_icon 'person-plus' %} {% translate "Enrollment Options" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- User Enrollment Options -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                {% bs_icon 'people' %} {% translate "Select enrollment options for each user" %}
+                            </label>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>{% translate "User" %}</th>
+                                            <th>{% translate "Current Status" %}</th>
+                                            <th>{% translate "Enroll" %}</th>
+                                            <th>{% translate "Join Waiting List" %}</th>
+                                            <th>{% translate "Cancel" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Yourself -->
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% bs_icon 'person-circle' %}
+                                                    <span class="ms-2">{% translate "Myself" %} ({{ user.get_full_name }})</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if session.user_enrolled %}
+                                                    <span class="badge bg-success">{% translate "Already Enrolled" %}</span>
+                                                {% elif session.user_waiting %}
+                                                    <span class="badge bg-warning text-dark">{% translate "On Waiting List" %}</span>
+                                                {% elif session.has_time_conflict %}
+                                                    <span class="badge bg-danger">{% translate "Time Conflict" %}</span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-dark">{% translate "Available" %}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if not session.user_enrolled and not session.user_waiting %}
+                                                    {% if not session.has_time_conflict %}
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="user_self" id="self_enroll" value="enroll">
+                                                            <label class="form-check-label" for="self_enroll">
+                                                                {% bs_icon 'check-circle' %}
+                                                            </label>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">{% translate "Time conflict" %}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if not session.user_enrolled and not session.user_waiting %}
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="user_self" id="self_waitlist" value="waitlist">
+                                                        <label class="form-check-label" for="self_waitlist">
+                                                            {% bs_icon 'clock' %}
+                                                        </label>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if session.user_enrolled or session.user_waiting %}
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="user_self" id="self_cancel" value="cancel">
+                                                        <label class="form-check-label" for="self_cancel">
+                                                            {% bs_icon 'x-circle' %}
+                                                        </label>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Connected users -->
+                                        {% for connected_user in connected_users %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        {% bs_icon 'person-heart' %}
+                                                        <span class="ms-2">{{ connected_user.get_full_name }}</span>
+                                                        {% if connected_user.birth_date %}
+                                                            <small class="text-muted ms-2">({% translate "Age" %}: {{ connected_user.birth_date|timesince|slice:":2" }})</small>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {% if connected_user.is_enrolled_in_session %}
+                                                        <span class="badge bg-success">{% translate "Already Enrolled" %}</span>
+                                                    {% elif connected_user.is_waiting_in_session %}
+                                                        <span class="badge bg-warning text-dark">{% translate "On Waiting List" %}</span>
+                                                    {% elif connected_user.has_time_conflicts %}
+                                                        <span class="badge bg-danger">{% translate "Time Conflict" %}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-light text-dark">{% translate "Available" %}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if not connected_user.is_enrolled_in_session and not connected_user.is_waiting_in_session %}
+                                                        {% if not connected_user.has_time_conflicts %}
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio" name="user_{{ connected_user.id }}" id="user_{{ connected_user.id }}_enroll" value="enroll">
+                                                                <label class="form-check-label" for="user_{{ connected_user.id }}_enroll">
+                                                                    {% bs_icon 'check-circle' %}
+                                                                </label>
+                                                            </div>
+                                                        {% else %}
+                                                            <span class="text-muted">{% translate "Time conflict" %}</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if not connected_user.is_enrolled_in_session and not connected_user.is_waiting_in_session %}
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="user_{{ connected_user.id }}" id="user_{{ connected_user.id }}_waitlist" value="waitlist">
+                                                            <label class="form-check-label" for="user_{{ connected_user.id }}_waitlist">
+                                                                {% bs_icon 'clock' %}
+                                                            </label>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if connected_user.is_enrolled_in_session or connected_user.is_waiting_in_session %}
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="user_{{ connected_user.id }}" id="user_{{ connected_user.id }}_cancel" value="cancel">
+                                                            <label class="form-check-label" for="user_{{ connected_user.id }}_cancel">
+                                                                {% bs_icon 'x-circle' %}
+                                                            </label>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        
+                                        {% if not connected_users %}
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">
+                                                    {% translate "No connected users available. You can add connected users in your" %} 
+                                                    <a href="{% url 'web:connected' %}">{% translate "profile settings" %}</a>.
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="alert alert-info mt-3">
+                                <small>
+                                    {% bs_icon 'info-circle' %}
+                                    <strong>{% translate "Session capacity" %}:</strong> {{ session.enrolled_count }}/{{ session.participants_limit }} {% translate "enrolled" %}
+                                    {% if session.waiting_count > 0 %}
+                                        (+{{ session.waiting_count }} {% translate "waiting" %})
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-success w-100">
+                                    {% bs_icon 'person-plus' %} {% translate "Enroll Selected Users" %}
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{% url 'web:event' slug=event.slug %}" class="btn btn-outline-secondary w-100">
+                                    {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

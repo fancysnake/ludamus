@@ -102,7 +102,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self) -> str:
-        return self.name
+        return self.name or "Andrzej"
 
     def get_short_name(self) -> str:
         return self.name.split(" ")[0]
@@ -173,11 +173,9 @@ class Sphere(models.Model):
         return self.name
 
 
-class Festival(models.Model):
+class Event(models.Model):
     # Owner
-    sphere = models.ForeignKey(
-        Sphere, on_delete=models.CASCADE, related_name="festivals"
-    )
+    sphere = models.ForeignKey(Sphere, on_delete=models.CASCADE, related_name="events")
     # ID
     name = models.CharField(max_length=255)
     slug = models.SlugField()
@@ -195,10 +193,10 @@ class Festival(models.Model):
     enrollment_end_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = "festival"
+        db_table = "event"
         constraints = (
             models.UniqueConstraint(
-                fields=("sphere", "slug"), name="festival_has_unique_slug_and_sphere"
+                fields=("sphere", "slug"), name="event_has_unique_slug_and_sphere"
             ),
             models.CheckConstraint(
                 check=Q(
@@ -209,7 +207,7 @@ class Festival(models.Model):
                 | Q(
                     publication_time__lte=F("start_time"), start_time__lt=F("end_time")
                 ),
-                name="festival_date_times",
+                name="event_date_times",
             ),
         )
 
@@ -267,14 +265,12 @@ class Festival(models.Model):
         return self.end_time < datetime.now(tz=UTC)
 
     def agenda_items(self) -> QuerySet[AgendaItem]:
-        return AgendaItem.objects.filter(room__festival=self)
+        return AgendaItem.objects.filter(space__event=self)
 
 
-class Room(models.Model):
+class Space(models.Model):
     # Owner
-    festival = models.ForeignKey(
-        Festival, on_delete=models.CASCADE, related_name="rooms"
-    )
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="spaces")
     # ID
     name = models.CharField(max_length=255)
     slug = models.SlugField()
@@ -283,10 +279,10 @@ class Room(models.Model):
     modification_time = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "room"
+        db_table = "space"
         constraints = (
             models.UniqueConstraint(
-                fields=("slug", "festival"), name="room_has_unique_slug_and_festival"
+                fields=("slug", "event"), name="space_has_unique_slug_and_event"
             ),
         )
 
@@ -316,8 +312,8 @@ class Room(models.Model):
 
 class TimeSlot(models.Model):
     # Owner
-    festival = models.ForeignKey(
-        Festival, on_delete=models.CASCADE, related_name="time_slots"
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="time_slots"
     )
     # Time
     end_time = models.DateTimeField()
@@ -327,8 +323,8 @@ class TimeSlot(models.Model):
         db_table = "time_slot"
         constraints = (
             models.UniqueConstraint(
-                fields=("festival", "start_time", "end_time"),
-                name="timeslot_has_unique_times_for_festival",
+                fields=("event", "start_time", "end_time"),
+                name="timeslot_has_unique_times_for_event",
             ),
             models.CheckConstraint(
                 check=Q(start_time__lt=F("end_time")), name="timeslot_date_times"
@@ -345,8 +341,8 @@ class TimeSlot(models.Model):
 
     def validate_unique(self, exclude: Collection[str] | None = None) -> None:
         super().validate_unique(exclude)
-        festival_slots = TimeSlot.objects.filter(festival=self.festival)
-        conflicted = festival_slots.filter(
+        event_slots = TimeSlot.objects.filter(event=self.event)
+        conflicted = event_slots.filter(
             Q(start_time__gt=self.start_time, start_time__lt=self.end_time)
             | Q(end_time__gt=self.start_time, end_time__lt=self.end_time)
             | Q(start_time__lte=self.start_time, end_time__gte=self.end_time)
@@ -356,7 +352,19 @@ class TimeSlot(models.Model):
 
 
 class TagCategory(models.Model):
+    class InputType(models.TextChoices):
+        SELECT = "select", _("Select from list")
+        TYPE = "type", _("Type comma-separated")
+
     name = models.CharField(max_length=255)
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Bootstrap icon name (e.g., 'tag', 'star', 'heart')",
+    )
+    input_type = models.CharField(
+        max_length=10, choices=InputType.choices, default=InputType.SELECT
+    )
 
     class Meta:
         db_table = "tag_category"
@@ -370,9 +378,15 @@ class Tag(models.Model):
     category = models.ForeignKey(
         TagCategory, on_delete=models.CASCADE, related_name="tags"
     )
+    confirmed = models.BooleanField(default=False)
 
     class Meta:
         db_table = "tag"
+        constraints: ClassVar = [
+            models.UniqueConstraint(
+                fields=["name", "category"], name="unique_tag_name_per_category"
+            )
+        ]
 
     def __str__(self) -> str:
         return self.name
@@ -488,8 +502,8 @@ class AgendaItemStatus(StrEnum):
 
 
 class AgendaItem(models.Model):
-    room = models.ForeignKey(
-        Room, on_delete=models.CASCADE, related_name="agenda_items"
+    space = models.ForeignKey(
+        Space, on_delete=models.CASCADE, related_name="agenda_items"
     )
     session = models.OneToOneField(
         Session, on_delete=models.CASCADE, related_name="agenda_item"
@@ -509,10 +523,10 @@ class AgendaItem(models.Model):
         return AgendaItemStatus.UNCONFIRMED
 
 
-class WaitList(models.Model):
+class ProposalCategory(models.Model):
     # Owner
-    festival = models.ForeignKey(
-        Festival, on_delete=models.CASCADE, related_name="wait_lists"
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="proposal_categories"
     )
     # ID
     name = models.CharField(max_length=255)
@@ -522,13 +536,15 @@ class WaitList(models.Model):
     end_time = models.DateTimeField(blank=True, null=True)
     # Settings
     tag_categories = models.ManyToManyField(TagCategory)
+    max_participants_limit = models.PositiveIntegerField(default=100)
+    min_participants_limit = models.PositiveIntegerField(default=1)
 
     class Meta:
-        db_table = "wait_list"
+        db_table = "proposal_category"
         constraints = (
             models.UniqueConstraint(
-                fields=("slug", "festival"),
-                name="waitlist_has_unique_slug_and_festival",
+                fields=("slug", "event"),
+                name="proposal_category_has_unique_slug_and_event",
             ),
         )
 
@@ -564,8 +580,8 @@ class ProposalStatus(StrEnum):
 
 class Proposal(models.Model):
     # Owner
-    waitlist = models.ForeignKey(
-        WaitList, on_delete=models.CASCADE, related_name="proposals"
+    proposal_category = models.ForeignKey(
+        ProposalCategory, on_delete=models.CASCADE, related_name="proposals"
     )
     host = models.ForeignKey(
         User, on_delete=models.CASCADE, blank=True, null=True, related_name="proposals"
