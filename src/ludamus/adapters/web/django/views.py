@@ -22,6 +22,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from ludamus.adapters.oauth import oauth
+from django.contrib import messages
 
 if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import User
@@ -64,9 +65,16 @@ def callback(request: HttpRequest) -> HttpResponse:
         pass
     elif user := User.objects.filter(username=username).first():
         django_login(request, user)
+        messages.success(request, _("Welcome back!"))
     else:
         user = User.objects.create_user(username=username)
         django_login(request, user)
+        messages.success(
+            request,
+            _("Welcome to {site}! Please complete your profile.").format(
+                site=Site.objects.get(domain=settings.ROOT_DOMAIN).name
+            ),
+        )
         return redirect(request.build_absolute_uri(reverse("web:edit")))
 
     next_path = request.GET.get("next")
@@ -78,6 +86,7 @@ def logout(request: HttpRequest) -> HttpResponse:
     root_domain = Site.objects.get(domain=settings.ROOT_DOMAIN).domain
     last = get_current_site(request).domain
     return_to = f'{request.scheme}://{root_domain}{reverse("web:redirect")}?last={last}'
+    messages.success(request, _("You have been successfully logged out."))
 
     return redirect(
         f"https://{settings.AUTH0_DOMAIN}/v2/logout?"
@@ -171,6 +180,14 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
             raise TypeError
         return self.request.user
 
+    def form_valid(self, form: Any) -> HttpResponse:
+        messages.success(self.request, _("Profile updated successfully!"))
+        return super().form_valid(form)
+
+    def form_invalid(self, form: Any) -> HttpResponse:
+        messages.warning(self.request, _("Please correct the errors below."))
+        return super().form_invalid(form)
+
 
 class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
     template_name = "web_main/connected.html"
@@ -201,7 +218,12 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
         self.object.username = f"connected|{token_urlsafe(50)}"
         self.object.password = token_urlsafe(50)
         self.object.save()
+        messages.success(self.request, _("Connected user added successfully!"))
         return result
+
+    def form_invalid(self, form: Any) -> HttpResponse:
+        messages.warning(self.request, _("Please correct the errors below."))
+        return super().form_invalid(form)
 
 
 class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
@@ -210,7 +232,19 @@ class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-a
     success_url = "/profile/connected"
     model = User
 
+    def form_valid(self, form: Any) -> HttpResponse:
+        messages.success(self.request, _("Connected user updated successfully!"))
+        return super().form_valid(form)
+
+    def form_invalid(self, form: Any) -> HttpResponse:
+        messages.warning(self.request, _("Please correct the errors below."))
+        return super().form_invalid(form)
+
 
 class DeleteConnectedView(LoginRequiredMixin, DeleteView):  # type: ignore [type-arg]
     model = User
     success_url = "/profile/connected"
+
+    def form_valid(self, form: Any) -> HttpResponse:
+        messages.success(self.request, _("Connected user deleted successfully."))
+        return super().form_valid(form)

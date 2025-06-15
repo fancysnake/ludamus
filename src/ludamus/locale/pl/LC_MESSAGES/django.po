@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-13 21:40+0200\n"
+"POT-Creation-Date: 2025-06-15 09:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,11 +19,11 @@ msgstr ""
 "(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
 "n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
-#: src/ludamus/adapters/db/django/models.py:56
+#: src/ludamus/adapters/db/django/models.py:57
 msgid "Active"
 msgstr "Aktywny"
 
-#: src/ludamus/adapters/db/django/models.py:57
+#: src/ludamus/adapters/db/django/models.py:58
 msgid "Connected"
 msgstr "Powiązany"
 
@@ -31,15 +31,15 @@ msgstr "Powiązany"
 msgid "date joined"
 msgstr "data dołączenia"
 
-#: src/ludamus/adapters/db/django/models.py:63
+#: src/ludamus/adapters/db/django/models.py:62
 msgid "email address"
 msgstr "adres email"
 
-#: src/ludamus/adapters/db/django/models.py:65
+#: src/ludamus/adapters/db/django/models.py:64
 msgid "active"
 msgstr "aktywny"
 
-#: src/ludamus/adapters/db/django/models.py:68
+#: src/ludamus/adapters/db/django/models.py:67
 msgid ""
 "Designates whether this user should be treated as active. Unselect this "
 "instead of deleting accounts."
@@ -47,63 +47,63 @@ msgstr ""
 "Określa czy użytkownika należy uważać za aktywnego. Odznacz zamiast usuwać "
 "konto."
 
-#: src/ludamus/adapters/db/django/models.py:73
+#: src/ludamus/adapters/db/django/models.py:72
 msgid "staff status"
 msgstr "w zespole"
 
-#: src/ludamus/adapters/db/django/models.py:75
+#: src/ludamus/adapters/db/django/models.py:74
 msgid "Designates whether the user can log into this admin site."
 msgstr "Określa czy użytkownik może zalogować się do panelu administracyjnego."
 
-#: src/ludamus/adapters/db/django/models.py:84
-msgid "Name"
+#: src/ludamus/adapters/db/django/models.py:83
+msgid "User name"
 msgstr "Nazwa użytkownika"
 
-#: src/ludamus/adapters/db/django/models.py:90
+#: src/ludamus/adapters/db/django/models.py:89
 msgid "username"
 msgstr "Nazwa użytkownika"
 
-#: src/ludamus/adapters/db/django/models.py:94
+#: src/ludamus/adapters/db/django/models.py:93
 msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr "Wymagana. 150 lub mniej znaków. Jedynie litery, cyfry i @/./+/-/_."
 
-#: src/ludamus/adapters/db/django/models.py:96
+#: src/ludamus/adapters/db/django/models.py:95
 msgid "A user with that username already exists."
 msgstr "Użytkownik o tej nazwie już istnieje."
 
-#: src/ludamus/adapters/db/django/models.py:122
+#: src/ludamus/adapters/db/django/models.py:121
 msgid "user"
 msgstr "użytkownik"
 
-#: src/ludamus/adapters/db/django/models.py:123
+#: src/ludamus/adapters/db/django/models.py:122
 msgid "users"
 msgstr "użytkownicy"
 
-#: src/ludamus/adapters/db/django/models.py:351
+#: src/ludamus/adapters/db/django/models.py:355
 msgid "Time slots can't overlap!"
 msgstr ""
 
-#: src/ludamus/adapters/web/django/templates/base.html:35
+#: src/ludamus/adapters/web/django/templates/base.html:43
 msgid "Edit Profile"
 msgstr "Edycja danych"
 
-#: src/ludamus/adapters/web/django/templates/base.html:39
+#: src/ludamus/adapters/web/django/templates/base.html:47
 msgid "Logout"
 msgstr "Wyloguj"
 
-#: src/ludamus/adapters/web/django/templates/base.html:42
+#: src/ludamus/adapters/web/django/templates/base.html:50
 msgid "Login"
 msgstr "Zaloguj"
 
-#: src/ludamus/adapters/web/django/templates/base.html:72
+#: src/ludamus/adapters/web/django/templates/base.html:101
 msgid "Contact me"
 msgstr "Kontakt"
 
-#: src/ludamus/adapters/web/django/templates/base.html:73
+#: src/ludamus/adapters/web/django/templates/base.html:102
 msgid "Privacy Policy"
 msgstr "Polityka prywatności"
 
-#: src/ludamus/adapters/web/django/templates/base.html:74
+#: src/ludamus/adapters/web/django/templates/base.html:103
 msgid "Terms of Service"
 msgstr "Regulamin"
 
@@ -152,15 +152,15 @@ msgstr "Czy na pewno chcesz usunąć?"
 msgid "Delete"
 msgstr "Usuń"
 
-#: src/ludamus/adapters/web/django/templates/web_main/connected.html:102
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:103
 msgid "Cancel"
 msgstr "Anuluj"
 
-#: src/ludamus/adapters/web/django/templates/web_main/connected.html:113
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:114
 msgid "No connected users yet"
 msgstr "Brak powiązanych użytkowników"
 
-#: src/ludamus/adapters/web/django/templates/web_main/connected.html:114
+#: src/ludamus/adapters/web/django/templates/web_main/connected.html:115
 msgid "Add your first item using the form above."
 msgstr "Dodaj pierwszy wpis używając powyższego formularza"
 
@@ -221,11 +221,49 @@ msgstr "Zgłoś program"
 msgid "View"
 msgstr "Zobacz"
 
-#: src/ludamus/adapters/web/django/views.py:104
+#: src/ludamus/adapters/web/django/views.py:68
+msgid "Welcome back!"
+msgstr "Witaj ponownie!"
+
+#: src/ludamus/adapters/web/django/views.py:74
+#, python-brace-format
+msgid "Welcome to {site}! Please complete your profile."
+msgstr "Witaj w {site}! Uzupełnij swój profil."
+
+#: src/ludamus/adapters/web/django/views.py:89
+msgid "You have been successfully logged out."
+msgstr "Zostałeś pomyślnie wylogowany."
+
+#: src/ludamus/adapters/web/django/views.py:117
+msgid "Name"
+msgstr "Nazwa użytkownika"
+
+#: src/ludamus/adapters/web/django/views.py:119
 msgid "Birth date"
 msgstr "Data urodzenia"
 
-#: src/ludamus/adapters/web/django/views.py:140
-#: src/ludamus/adapters/web/django/views.py:158
+#: src/ludamus/adapters/web/django/views.py:138
 msgid "Please provide name."
 msgstr "Podaj imię."
+
+#: src/ludamus/adapters/web/django/views.py:184
+msgid "Profile updated successfully!"
+msgstr "Profil został zaktualizowany!"
+
+#: src/ludamus/adapters/web/django/views.py:188
+#: src/ludamus/adapters/web/django/views.py:225
+#: src/ludamus/adapters/web/django/views.py:240
+msgid "Please correct the errors below."
+msgstr "Proszę poprawić błędy poniżej."
+
+#: src/ludamus/adapters/web/django/views.py:221
+msgid "Connected user added successfully!"
+msgstr "Powiązana osoba została dodana!"
+
+#: src/ludamus/adapters/web/django/views.py:236
+msgid "Connected user updated successfully!"
+msgstr "Powiązana osoba została zaktualizowana!"
+
+#: src/ludamus/adapters/web/django/views.py:249
+msgid "Connected user deleted successfully."
+msgstr "Powiązana osoba została usunięta."

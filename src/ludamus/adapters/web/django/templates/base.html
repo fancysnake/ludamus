@@ -28,7 +28,15 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
+                    <ul class="navbar-nav ms-auto align-items-center">
+                        {% if request.user.is_authenticated and request.user.name %}
+                            <li class="nav-item">
+                                <span class="navbar-text text-light me-3">
+                                    {% bs_icon 'person-circle' %} 
+                                    {{ request.user.name }}
+                                </span>
+                            </li>
+                        {% endif %}
                         {% if request.user.is_authenticated %}
                             <li class="nav-item">
                                 <a class="btn btn-outline-light me-2" href="{% url 'web:edit' %}">
@@ -47,6 +55,27 @@
             </div>
         </div>
     </nav>
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {% if message.tags == 'error' %}
+                    {% bs_icon 'exclamation-triangle-fill' %}
+                {% elif message.tags == 'warning' %}
+                    {% bs_icon 'exclamation-triangle' %}
+                {% elif message.tags == 'success' %}
+                    {% bs_icon 'check-circle-fill' %}
+                {% elif message.tags == 'info' %}
+                    {% bs_icon 'info-circle-fill' %}
+                {% else %}
+                    {% bs_icon 'chat-dots' %}
+                {% endif %}
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
     <div class="container mt-4 main-content content-section">
         <!-- Page Header -->
         <div class="row mb-4">
