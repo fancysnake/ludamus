@@ -129,7 +129,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             ),
         )
 
-    def save(
+    def save(  # pylint: disable=arguments-differ
         self,
         *,
         force_insert: bool | tuple[models.base.ModelBase, ...] = False,
@@ -216,7 +216,7 @@ class Festival(models.Model):
     def __str__(self) -> str:
         return self.name
 
-    def save(
+    def save(  # pylint: disable=arguments-differ
         self,
         *,
         force_insert: bool | tuple[models.base.ModelBase, ...] = False,
@@ -293,7 +293,7 @@ class Room(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
 
-    def save(
+    def save(  # pylint: disable=arguments-differ
         self,
         *,
         force_insert: bool | tuple[models.base.ModelBase, ...] = False,
@@ -447,7 +447,7 @@ class Session(models.Model):
     def __str__(self) -> str:
         return self.title
 
-    def save(
+    def save(  # pylint: disable=arguments-differ
         self,
         *,
         force_insert: bool | tuple[models.base.ModelBase, ...] = False,
@@ -535,7 +535,7 @@ class WaitList(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
 
-    def save(
+    def save(  # pylint: disable=arguments-differ
         self,
         *,
         force_insert: bool | tuple[models.base.ModelBase, ...] = False,
@@ -623,7 +623,7 @@ class Guild(models.Model):
     def __str__(self) -> str:
         return self.name
 
-    def save(
+    def save(  # pylint: disable=arguments-differ
         self,
         *,
         force_insert: bool | tuple[models.base.ModelBase, ...] = False,
