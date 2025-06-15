@@ -22,33 +22,33 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for festival in current_site.sphere.festivals.all %}
+                    {% for event in current_site.sphere.events.all %}
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <strong>{{ festival.name }}</strong>
+                                    <strong>{{ event.name }}</strong>
                                 </div>
                             </td>
-                            <td>{{ festival.description }}</td>
+                            <td>{{ event.description }}</td>
                             <td>
                                 <div class="text-nowrap">
-                                    {% bs_icon 'calendar3' %} {{ festival.start_time|date }}
+                                    {% bs_icon 'calendar3' %} {{ event.start_time|date }}
                                     <br>
-                                    <small class="text-muted">{% bs_icon 'clock' %} {{ festival.start_time|date:"G:i" }}</small>
+                                    <small class="text-muted">{% bs_icon 'clock' %} {{ event.start_time|date:"G:i" }}</small>
                                 </div>
                             </td>
                             <td>
                                 <div class="text-nowrap">
-                                    {% bs_icon 'calendar3' %} {{ festival.end_time|date }}
+                                    {% bs_icon 'calendar3' %} {{ event.end_time|date }}
                                     <br>
-                                    <small class="text-muted">{% bs_icon 'clock' %} {{ festival.end_time|date:"G:i" }}</small>
+                                    <small class="text-muted">{% bs_icon 'clock' %} {{ event.end_time|date:"G:i" }}</small>
                                 </div>
                             </td>
                             <td>
-                                {% if festival.is_live %}
+                                {% if event.is_live %}
                                     <span class="badge bg-secondary">{% translate "LIVE" %}</span>
                                 {% else %}
-                                    {% if festival.is_ended %}
+                                    {% if event.is_ended %}
                                         <span class="badge bg-dark">{% translate "PAST" %}</span>
                                     {% else %}
                                         <span class="badge bg-info">{% translate "UPCOMING" %}</span>
@@ -56,15 +56,9 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="d-grid gap-1">
-                                    {% if festival.is_enrollment_active %}
-                                        <a href='/' class="btn btn-success btn-sm">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
-                                    {% endif %}
-                                    {% if festival.is_proposal_active %}
-                                        <a href='/' class="btn btn-warning btn-sm text-nowrap">{% bs_icon 'lightbulb' %} {% translate "Propose Program" %}</a>
-                                    {% endif %}
-                                    <a href='/' class="btn btn-outline-secondary btn-sm">{% bs_icon 'eye' %} {% translate "View" %}</a>
-                                </div>
+                                <a href="{% url 'web:event' slug=event.slug %}" class="btn btn-primary">
+                                    {% bs_icon 'calendar-event' %} {% translate "View Event" %}
+                                </a>
                             </td>
                         </tr>
                     {% endfor %}

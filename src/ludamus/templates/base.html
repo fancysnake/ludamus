@@ -58,25 +58,37 @@
     {% if messages %}
         <div class="container mt-3">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
-                     role="alert">
-                    {% if message.tags == 'error' %}
+                {% if message.tags == 'error' %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         {% bs_icon 'exclamation-triangle-fill' %}
-                    {% elif message.tags == 'warning' %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% elif message.tags == 'warning' %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
                         {% bs_icon 'exclamation-triangle' %}
-                    {% elif message.tags == 'success' %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% elif message.tags == 'success' %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {% bs_icon 'check-circle-fill' %}
-                    {% elif message.tags == 'info' %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% elif message.tags == 'info' %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
                         {% bs_icon 'info-circle-fill' %}
-                    {% else %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary alert-dismissible fade show" role="alert">
                         {% bs_icon 'chat-dots' %}
-                    {% endif %}
-                    {{ message }}
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="alert"
-                            aria-label="Close"></button>
-                </div>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
             {% endfor %}
         </div>
     {% endif %}
