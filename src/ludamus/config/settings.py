@@ -53,6 +53,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "ludamus.adapters.web.django.middlewares.SphereMiddleware",
 ]
 
 ROOT_URLCONF = "ludamus.config.urls"
@@ -68,7 +69,9 @@ TEMPLATES = [
                 "ludamus.adapters.web.django.context_processors.sites",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-            ]
+            ],
+            "debug": DEBUG,
+            "string_if_invalid": "ERROR: Missing variable %s",
         },
     }
 ]

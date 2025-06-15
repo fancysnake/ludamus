@@ -62,31 +62,47 @@
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         {% bs_icon 'exclamation-triangle-fill' %}
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                                aria-label="Close"></button>
                     </div>
                 {% elif message.tags == 'warning' %}
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
                         {% bs_icon 'exclamation-triangle' %}
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                                aria-label="Close"></button>
                     </div>
                 {% elif message.tags == 'success' %}
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {% bs_icon 'check-circle-fill' %}
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                                aria-label="Close"></button>
                     </div>
                 {% elif message.tags == 'info' %}
                     <div class="alert alert-info alert-dismissible fade show" role="alert">
                         {% bs_icon 'info-circle-fill' %}
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                                aria-label="Close"></button>
                     </div>
                 {% else %}
-                    <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+                    <div class="alert alert-secondary alert-dismissible fade show"
+                         role="alert">
                         {% bs_icon 'chat-dots' %}
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                                aria-label="Close"></button>
                     </div>
                 {% endif %}
             {% endfor %}

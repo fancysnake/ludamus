@@ -494,6 +494,30 @@ class Session(models.Model):
             return SessionStatus.ONGOING
         return SessionStatus.PAST
 
+    @property
+    def enrolled_count(self) -> int:
+        return self.session_participations.filter(
+            status=SessionParticipationStatus.CONFIRMED
+        ).count()
+
+    @property
+    def waiting_count(self) -> int:
+        return self.session_participations.filter(
+            status=SessionParticipationStatus.WAITING
+        ).count()
+
+    def overlaps_with(self, other_session: Session) -> bool:
+        return bool(
+            other_session.start_time
+            and other_session.end_time
+            and self.start_time
+            and self.end_time
+            and (
+                (other_session.start_time <= self.start_time < other_session.end_time)
+                or (other_session.start_time < self.end_time <= other_session.end_time)
+            )
+        )
+
 
 class AgendaItemStatus(StrEnum):
     UNASSIGNED = auto()
@@ -583,9 +607,7 @@ class Proposal(models.Model):
     proposal_category = models.ForeignKey(
         ProposalCategory, on_delete=models.CASCADE, related_name="proposals"
     )
-    host = models.ForeignKey(
-        User, on_delete=models.CASCADE, blank=True, null=True, related_name="proposals"
-    )
+    host = models.ForeignKey(User, on_delete=models.CASCADE, related_name="proposals")
     # ID
     title = models.CharField(max_length=255)
     description = models.TextField(default="", blank=True)
