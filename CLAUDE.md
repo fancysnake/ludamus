@@ -133,6 +133,30 @@ Comprehensive TEST_PLAN.md with 215+ user stories covering:
 
 Note: Automated tests not yet implemented (tests/ directory empty).
 
+## Design System
+
+### Cold Steel Theme
+The site uses the "Cold Steel" theme - a fantasy-inspired color scheme appropriate for tabletop RPG enthusiasts. The name reflects the steel-blue primary color that evokes medieval weaponry and armor.
+
+**Color Palette:**
+- **Primary (Steel Blue)**: `#4682B4` - Used for primary buttons, links, and main branding
+- **Accent Gold**: `#d4a574` - Used for hover states, accents, and important highlights
+- **Forest Green**: `#5a8b6f` - Used for success states, confirmations, and positive actions
+- **Rich Burgundy**: `#8b4a5c` - Used for danger/error states (replacing standard red)
+- **Cadet Blue**: `#5F9EA0` - Used for info elements (complements the steel blue)
+- **Parchment Background**: `#fdfcfa` - Light background with subtle color gradients
+
+**Theme Features:**
+- Subtle gradient borders and backgrounds
+- Animated elements (pulsing live indicators)
+- Hover effects without vertical movement
+- Semi-transparent overlays for depth
+- CSS variables for easy theme customization
+
+**Theme Location:**
+- Main theme file: `/src/ludamus/static/css/themes/cold-steel.css`
+- Easily extensible for sphere-specific themes in the future
+
 ## Principles
 
 - Clean Architecture
