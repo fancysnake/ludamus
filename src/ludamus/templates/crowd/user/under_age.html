@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load django_bootstrap5 %}
+{% load bootstrap_icons %}
+{% block title %}
+    {% translate "Age Restriction" %} - {{ block.super }}
+{% endblock %}
+{% block body %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <span class="text-warning">{% bs_icon 'exclamation-triangle' size='4em' %}</span>
+                        </div>
+                        <h2 class="mb-4">{% translate "Age Restriction" %}</h2>
+                        <p class="lead mb-4">
+                            {% translate "We're sorry, but you must be at least 16 years old to create an account on our platform." %}
+                        </p>
+                        <p class="mb-4">
+                            {% translate "This restriction is in place to ensure the safety and appropriate experience for all our users." %}
+                        </p>
+                        <div class="alert alert-info" role="alert">
+                            <p class="mb-0">
+                                {% translate "If you'd like to participate in our events, please ask a parent or guardian to create an account and register you as a connected user. They will be able to sign you up for sessions on your behalf." %}
+                            </p>
+                        </div>
+                        <div class="mt-5">
+                            <a href="{% url 'web:index' %}" class="btn btn-primary">{% bs_icon 'house' %} {% translate "Return to Home" %}</a>
+                            <a href="mailto:{{ SUPPORT_EMAIL }}?subject={% translate 'Age Restriction Issue' %}"
+                               class="btn btn-outline-secondary ms-2">
+                                {% bs_icon 'envelope' %} {% translate "It's a mistake" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

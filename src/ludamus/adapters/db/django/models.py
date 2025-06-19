@@ -12,7 +12,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserM
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, transaction
 from django.db.models import F, Q, QuerySet
 from django.db.models.functions import Lower
 from django.utils import timezone
@@ -40,7 +40,8 @@ def save_with_slugified_name(
     instance.slug = base_slug  # type: ignore [assignment]
     for __ in range(MAX_SLUG_RETRIES):
         with suppress(IntegrityError):
-            save()
+            with transaction.atomic():
+                save()
             return
 
         instance.slug = f"{base_slug}-{token_urlsafe(1)}"  # type: ignore [assignment]
@@ -153,6 +154,10 @@ class User(AbstractBaseUser, PermissionsMixin):
             )
 
         return 0
+
+    @property
+    def is_incomplete(self) -> bool:
+        return not self.name and not self.birth_date and not self.email
 
 
 class Sphere(models.Model):

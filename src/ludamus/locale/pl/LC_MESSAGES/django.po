@@ -621,11 +621,11 @@ msgstr "Nieprawidłowy typ strony!"
 
 #: src/ludamus/adapters/web/django/views.py:141
 msgid "Welcome!"
-msgstr "Witaj ponownie!"
+msgstr "Witaj!"
 
 #: src/ludamus/adapters/web/django/views.py:143
 msgid " Please complete your profile."
-msgstr "Witaj! Uzupełnij swój profil."
+msgstr "Uzupełnij swój profil."
 
 #: src/ludamus/adapters/web/django/views.py:152
 msgid "You have been successfully logged out."
@@ -1469,6 +1469,35 @@ msgstr "Brak dostępnych wydarzeń"
 #: src/ludamus/templates/index.html:70
 msgid "There are currently no events scheduled. Please check back later!"
 msgstr "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź ponownie później!"
+
+#: src/ludamus/templates/crowd/user/under_age.html:6
+#: src/ludamus/templates/crowd/user/under_age.html:18
+msgid "Age Restriction"
+msgstr "Ograniczenie wiekowe"
+
+#: src/ludamus/templates/crowd/user/under_age.html:21
+msgid "We're sorry, but you must be at least 16 years old to create an account on our platform."
+msgstr "Przykro nam, ale musisz mieć co najmniej 16 lat, aby utworzyć konto na naszej platformie."
+
+#: src/ludamus/templates/crowd/user/under_age.html:25
+msgid "This restriction is in place to ensure the safety and appropriate experience for all our users."
+msgstr "To ograniczenie zostało wprowadzone, aby zapewnić bezpieczeństwo i odpowiednie doświadczenie dla wszystkich naszych użytkowników."
+
+#: src/ludamus/templates/crowd/user/under_age.html:30
+msgid "If you'd like to participate in our events, please ask a parent or guardian to create an account and register you as a connected user. They will be able to sign you up for sessions on your behalf."
+msgstr "Jeśli chcesz uczestniczyć w naszych wydarzeniach, poproś rodzica lub opiekuna o utworzenie konta i zarejestrowanie Cię jako użytkownika powiązanego. Będą mogli zapisać Cię na sesje w Twoim imieniu."
+
+#: src/ludamus/templates/crowd/user/under_age.html:35
+msgid "Return to Home"
+msgstr "Wróć do strony głównej"
+
+#: src/ludamus/templates/crowd/user/under_age.html:38
+msgid "Age Restriction Issue"
+msgstr "Problem z ograniczeniem wiekowym"
+
+#: src/ludamus/templates/crowd/user/under_age.html:39
+msgid "It's a mistake"
+msgstr "To pomyłka"
 
 #~ msgid "Please log in with your account to continue."
 #~ msgstr "Zaloguj się na swoje konto, aby kontynuować."

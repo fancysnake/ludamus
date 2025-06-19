@@ -9,3 +9,7 @@ def sites(request: HttpRequest) -> dict[str, Site | RequestSite]:
     root_site = Site.objects.get(domain=settings.ROOT_DOMAIN)
     current_site = get_current_site(request)
     return {"root_site": root_site, "current_site": current_site}
+
+
+def support(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
+    return {"SUPPORT_EMAIL": settings.SUPPORT_EMAIL}

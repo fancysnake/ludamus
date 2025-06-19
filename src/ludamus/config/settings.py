@@ -68,6 +68,7 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.request",
                 "ludamus.adapters.web.django.context_processors.sites",
+                "ludamus.adapters.web.django.context_processors.support",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
@@ -143,3 +144,7 @@ ROOT_DOMAIN = os.getenv("ROOT_DOMAIN")
 AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
 AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
 AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
+
+# Support
+
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support@zagrajmy.net")
