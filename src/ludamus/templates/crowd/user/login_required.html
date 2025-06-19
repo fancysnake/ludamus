@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load django_bootstrap5 %}
+{% load bootstrap_icons %}
+{% block title %}
+    {% translate "Login Required" %}
+{% endblock %}
+{% block body %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5 text-center mt-5 pt-5">
+                <div class="mb-5">
+                    <span class="text-primary">{% bs_icon 'shield-lock' size='5em' %}</span>
+                </div>
+                <h1 class="display-5 mb-4">{% translate "Login Required" %}</h1>
+                <p class="lead text-muted mb-5">{% translate "You need to be logged in to access this page." %}</p>
+                <div class="d-grid gap-2 col-8 mx-auto mb-5">
+                    <a href="{% url 'web:auth0_login' %}{% if next %}?next={{ next }}{% endif %}"
+                       class="btn btn-primary btn-lg py-3">
+                        {% bs_icon 'box-arrow-in-right' %} {% translate "Log In" %}
+                    </a>
+                </div>
+                <p>
+                    <a href="{% url 'web:index' %}" class="text-muted text-decoration-none">
+                        {% bs_icon 'arrow-left' %} {% translate "Back to Home" %}
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
