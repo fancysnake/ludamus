@@ -257,7 +257,7 @@ msgstr "Zagubiony w R'lyeh"
 
 #: src/ludamus/adapters/web/django/error_views.py:97
 msgid "In his house at R'lyeh, dead pages wait dreaming"
-msgstr "W jego domu w R'lyeh, martwe strony czekają śniąc"
+msgstr "W swoim domu w R'lyeh, martwe strony czekają śniąc"
 
 #: src/ludamus/adapters/web/django/error_views.py:98
 msgid "Ph'nglui mglw'nafh 404 R'lyeh wgah'nagl fhtagn."
