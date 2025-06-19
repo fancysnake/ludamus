@@ -781,7 +781,7 @@ msgstr "Zgłoszenie '{}' zostało zaakceptowane i dodane do programu."
 #: src/ludamus/templates/404_dynamic.html:5
 #: src/ludamus/templates/404_dynamic.html:8
 msgid "Page Not Found"
-msgstr "Zgłoszenie nie zostało znalezione."
+msgstr "Strona nie została znaleziona."
 
 #: src/ludamus/templates/404_dynamic.html:28
 msgid "Go to Home"
