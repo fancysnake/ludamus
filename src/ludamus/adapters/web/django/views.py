@@ -77,10 +77,29 @@ class UserRequest(HttpRequest):
 
 
 def login(request: HttpRequest) -> HttpResponse:
+    """Display login required page instead of immediate redirect to Auth0.
+
+    Returns:
+        TemplateResponse: The login required page.
+    """
+    next_url = request.GET.get("next", "")
+    context = {"next": next_url}
+    return TemplateResponse(request, "crowd/user/login_required.html", context)
+
+
+def auth0_login(request: HttpRequest) -> HttpResponse:
+    """Redirect to Auth0 for authentication.
+
+    Returns:
+        HttpResponse: Redirect to Auth0 authorization endpoint.
+
+    Raises:
+        RedirectError: If the request is not from the root domain.
+    """
     root_domain = Site.objects.get(domain=settings.ROOT_DOMAIN).domain
     next_path = request.GET.get("next")
     if request.get_host() != root_domain:
-        url = f'{request.scheme}://{root_domain}{reverse("web:login")}?next={next_path}'
+        url = f'{request.scheme}://{root_domain}{reverse("web:auth0_login")}?next={next_path}'
         raise RedirectError(url)
 
     return oauth.auth0.authorize_redirect(  # type: ignore [no-any-return]

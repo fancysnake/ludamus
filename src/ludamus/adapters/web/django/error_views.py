@@ -1,10 +1,13 @@
-import random
+import secrets
+
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils.translation import gettext as _
 
 
-def custom_404(request, exception):
-    """Custom 404 error handler with random D&D/gaming themed messages."""
+def custom_404(
+    request: HttpRequest, exception: Exception | None  # noqa: ARG001
+) -> HttpResponse:
     messages = [
         # D&D/Fantasy themed
         {
@@ -115,7 +118,7 @@ def custom_404(request, exception):
         },
     ]
 
-    selected = random.choice(messages)
+    selected = messages[secrets.randbelow(len(messages))]
     context = {
         "error_code": 404,
         "title": selected["title"],
@@ -127,8 +130,7 @@ def custom_404(request, exception):
     return render(request, "404_dynamic.html", context, status=404)
 
 
-def custom_500(request):
-    """Custom 500 error handler with random D&D/gaming themed messages."""
+def custom_500(request: HttpRequest) -> HttpResponse:
     messages = [
         # D&D/Fantasy themed
         {
@@ -146,7 +148,8 @@ def custom_500(request):
         {
             "title": _("Dark Magic Detected!"),
             "message": _(
-                "Our system was corrupted by dark magic, we are casting dispel magic now"
+                "Our system was corrupted by dark magic, "
+                "we are casting dispel magic now"
             ),
             "subtitle": _("Please wait while our wizards restore order."),
             "icon": "magic",
@@ -233,7 +236,7 @@ def custom_500(request):
         },
     ]
 
-    selected = random.choice(messages)
+    selected = messages[secrets.randbelow(len(messages))]
     context = {
         "error_code": 500,
         "title": selected["title"],

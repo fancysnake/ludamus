@@ -25,5 +25,9 @@ urlpatterns = [
 ]
 
 # Custom error handlers
-handler404 = 'ludamus.adapters.web.django.error_views.custom_404'
-handler500 = 'ludamus.adapters.web.django.error_views.custom_500'
+handler404 = (  # pylint: disable=invalid-name
+    "ludamus.adapters.web.django.error_views.custom_404"
+)
+handler500 = (  # pylint: disable=invalid-name
+    "ludamus.adapters.web.django.error_views.custom_500"
+)

@@ -477,6 +477,8 @@ disable=consider-using-assignment-expr,
         too-many-positional-arguments, # REMOVE
         too-many-statements, # REMOVE
         unsubscriptable-object,
+        # Handled by ruff
+        unused-argument
 
 
 # Enable the message, report, category or checker with the given id(s). You can

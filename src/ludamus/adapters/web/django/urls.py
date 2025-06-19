@@ -47,6 +47,7 @@ urlpatterns = [
     ),
     path("crowd/user/edit", views.EditProfileView.as_view(), name="edit"),
     path("crowd/user/login", views.login, name="login"),
+    path("crowd/user/login/auth0", views.auth0_login, name="auth0_login"),
     path("crowd/user/login/callback", views.CallbackView.as_view(), name="callback"),
     path("crowd/user/logout", views.logout, name="logout"),
     path("redirect", views.redirect_view, name="redirect"),

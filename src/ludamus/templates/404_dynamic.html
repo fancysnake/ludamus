@@ -1,15 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load bootstrap_icons %}
-
 {% block title %}
     {% translate "Page Not Found" %} - 404
 {% endblock %}
-
 {% block header %}
     {% translate "Page Not Found" %}
 {% endblock %}
-
 {% block body %}
     <div class="container">
         <div class="row justify-content-center">
@@ -28,12 +25,10 @@
                         </p>
                     </div>
                     <div class="error-actions">
-                        <a href="{% url 'web:index' %}" class="btn btn-primary">
-                            {% bs_icon 'house' %} {% translate "Go to Home" %}
-                        </a>
-                        <a href="javascript:history.back()" class="btn btn-secondary">
+                        <a href="{% url 'web:index' %}" class="btn btn-primary">{% bs_icon 'house' %} {% translate "Go to Home" %}</a>
+                        <button onclick="history.back()" class="btn btn-secondary">
                             {% bs_icon 'arrow-left' %} {% translate "Go Back" %}
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>

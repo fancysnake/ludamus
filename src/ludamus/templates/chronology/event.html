@@ -227,7 +227,7 @@
                                                                         </button>
                                                                     {% endif %}
                                                                 {% elif event.is_enrollment_active %}
-                                                                    <a href="{% url 'web:login' %}?next={{ request.build_absolute_uri }}"
+                                                                    <a href="{% url 'web:auth0_login' %}?next={{ request.build_absolute_uri }}"
                                                                        class="btn btn-outline-success btn-sm">
                                                                         {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
                                                                     </a>

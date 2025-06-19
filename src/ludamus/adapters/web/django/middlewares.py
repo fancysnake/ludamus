@@ -1,14 +1,14 @@
 from typing import Protocol
-from django.utils.translation import gettext as _
 
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpRequest, HttpResponseBase, HttpResponseRedirect
+from django.urls import reverse
+from django.utils.translation import gettext as _
 
 from ludamus.adapters.web.django.exceptions import RedirectError
-from django.contrib.sites.models import Site
-from django.conf import settings
-from django.urls import reverse
 
 
 class _GetResponseCallable(Protocol):
