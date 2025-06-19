@@ -108,11 +108,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.name.split(" ")[0]
 
     def email_user(  # type: ignore [explicit-any]
-        self,
-        subject: str,
-        message: str,
-        from_email: str | None = None,
-        **kwargs: Any,  # noqa: ANN401
+        self, subject: str, message: str, from_email: str | None = None, **kwargs: Any
     ) -> None:
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
@@ -517,6 +513,10 @@ class Session(models.Model):
                 or (other_session.start_time < self.end_time <= other_session.end_time)
             )
         )
+
+    @property
+    def is_planned(self) -> bool:
+        return bool(self.start_time and self.end_time)
 
 
 class AgendaItemStatus(StrEnum):

@@ -54,6 +54,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "ludamus.adapters.web.django.middlewares.SphereMiddleware",
+    "ludamus.adapters.web.django.middlewares.RedirectErrorMiddleware",
 ]
 
 ROOT_URLCONF = "ludamus.config.urls"

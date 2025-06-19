@@ -10,17 +10,17 @@ authors = [
 license = { text = "BSD-3-Clause license" }
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "authlib (>=1.6.0,<2.0.0)",
-    "django (>=5.2.2,<6.0.0)",
-    "django-bootstrap5 (>=25.1,<26.0)",
-    "django-bootstrap-icons (>=0.9.0,<0.10.0)",
-]
-
+dynamic = ['dependencies']
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+authlib = "~1.6.0"
+django = "~5.2.2"
+django-bootstrap5 = "~25.1.0"
+django-bootstrap-icons = "~0.9.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
@@ -28,7 +28,7 @@ django-stubs = "^5.2.0"
 djlint = "^1.36.4"
 mypy = "^1.16.0"
 poethepoet = "^0.35.0"
-ruff = "^0.11.13"
+ruff = "^0.12.0"
 types-authlib = "^1.5.0.20250516"
 
 # POE
@@ -51,6 +51,12 @@ djlint-format = "djlint . --reformat --format-css --format-js"
 check = ["black", "ruff-fix", "djlint-format", "djlint", "mypy", "pylint"]
 dj = "django-admin"
 start = "django-admin runserver zagrajmy.local:8000"
+update = [
+    { cmd = "pip install -U pip" },
+    { cmd = "pip install -U poetry" },
+    { cmd = "poetry update" },
+    { cmd = "poetry show -o" },
+]
 
 # BLACK
 
@@ -70,7 +76,12 @@ preview = true
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["COM", "CPY", "D"]
+ignore = [
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
+    "COM",
+    "CPY",
+    "D",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "*/migrations/**.py" = ["ANN", "ARG001", "E501", "RUF012"]

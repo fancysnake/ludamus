@@ -61,6 +61,16 @@
                                 </a>
                             </td>
                         </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <p class="fs-1 mb-3">{% bs_icon 'calendar-x' size='3em' %}</p>
+                                    <p class="fs-5 mb-2">{% translate "No events available" %}</p>
+                                    <p>{% translate "There are currently no events scheduled. Please check back later!" %}</p>
+                                </div>
+                            </td>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
