@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, TypedDict
@@ -19,7 +19,7 @@ from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.exceptions import BadRequest, ValidationError
+from django.core.exceptions import BadRequest
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse
@@ -56,6 +56,7 @@ else:
 
 
 TODAY = datetime.now(tz=UTC).date()
+MINIMUM_ALLOWED_USER_AGE = 16
 
 
 class WrongSiteTypeError(TypeError):
@@ -113,16 +114,40 @@ def auth0_login(request: HttpRequest) -> HttpResponse:
 class CallbackView(RedirectView):
 
     def get_redirect_url(  # type: ignore [explicit-any]
-        self, *args: Any, redirect_to: str | None = None, **kwargs: Any
+        self, *args: Any, **kwargs: Any
     ) -> str | None:
         if super_url := super().get_redirect_url(*args, **kwargs):
             return super_url
 
-        if not self.request.user.is_authenticated and self._login_or_signup():
-            if redirect_to:
-                parsed = urlparse(redirect_to)
-                return f'{parsed.scheme}://{parsed.netloc}{reverse("web:edit")}'
-            return self.request.build_absolute_uri(reverse("web:edit"))
+        redirect_to = self.request.GET.get("redirect_to", "")
+
+        # Handle login/signup
+        if not self.request.user.is_authenticated:
+            username = self._get_username()
+            user, created = User.objects.get_or_create(username=username)
+
+            # Check if user is inactive due to being under 16
+            if (
+                not user.is_active
+                and user.birth_date
+                and user.age < MINIMUM_ALLOWED_USER_AGE
+            ):
+                # Redirect to under-age page without logging them in
+                return auth0_logout_url(
+                    self.request, redirect_to=reverse("web:under_age")
+                )
+
+            # Log the user in
+            django_login(self.request, user)
+            messages.success(self.request, _("Welcome!"))
+
+            # Check if profile needs completion
+            if created or user.is_incomplete:
+                messages.success(self.request, _(" Please complete your profile."))
+                if redirect_to:
+                    parsed = urlparse(redirect_to)
+                    return f'{parsed.scheme}://{parsed.netloc}{reverse("web:edit")}'
+                return self.request.build_absolute_uri(reverse("web:edit"))
 
         return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
 
@@ -134,38 +159,45 @@ class CallbackView(RedirectView):
         except (KeyError, TypeError) as err:
             raise BadRequest from err
 
-    def _login_or_signup(self) -> bool:
-        username = self._get_username()
-        user, created = User.objects.get_or_create(username=username)
-        django_login(self.request, user)
-        messages.success(self.request, _("Welcome!"))
-        if created:
-            messages.success(self.request, _(" Please complete your profile."))
-        return created
-
 
 def logout(request: HttpRequest) -> HttpResponse:
     django_logout(request)
-    root_domain = Site.objects.get(domain=settings.ROOT_DOMAIN).domain
-    last = get_site_from_request(request).domain
-    return_to = f'{request.scheme}://{root_domain}{reverse("web:redirect")}?last={last}'
+
+    last_domain = get_site_from_request(request).domain
     messages.success(request, _("You have been successfully logged out."))
 
-    return redirect(
-        f"https://{settings.AUTH0_DOMAIN}/v2/logout?"
-        + urlencode(
-            {"returnTo": return_to, "client_id": settings.AUTH0_CLIENT_ID},
-            quote_via=quote_plus,
-        )
+    return redirect(auth0_logout_url(request, last_domain=last_domain))
+
+
+def auth0_logout_url(
+    request: HttpRequest,
+    *,
+    last_domain: str | None = None,
+    redirect_to: str | None = None,
+) -> str:
+    root_domain = Site.objects.get(domain=settings.ROOT_DOMAIN).domain
+    last_domain = last_domain or root_domain
+    redirect_to = redirect_to or reverse("web:index")
+    return f"https://{settings.AUTH0_DOMAIN}/v2/logout?" + urlencode(
+        {
+            "returnTo": (
+                f'{request.scheme}://{root_domain}{reverse("web:redirect")}?last_domain={last_domain}&redirect_to={redirect_to}'
+            ),
+            "client_id": settings.AUTH0_CLIENT_ID,
+        },
+        quote_via=quote_plus,
     )
 
 
 def redirect_view(request: HttpRequest) -> HttpResponse:
+    prefix = ""
     redirect_url = reverse("web:index")
-    if last := request.GET.get("last"):
-        redirect_url = f"{request.scheme}://{last}{redirect_url}"
+    if last_domain := request.GET.get("last_domain"):
+        prefix = f"{request.scheme}://{last_domain}"
+    if redirect_to := request.GET.get("redirect_to"):
+        redirect_url = redirect_to
 
-    return redirect(redirect_url)
+    return redirect(prefix + redirect_url)
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -174,6 +206,10 @@ def index(request: HttpRequest) -> HttpResponse:
         "index.html",
         context={"pretty": json.dumps(request.session.get("user"), indent=4)},
     )
+
+
+def under_age(request: HttpRequest) -> HttpResponse:
+    return TemplateResponse(request, "crowd/user/under_age.html")
 
 
 class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
@@ -201,17 +237,6 @@ class UserForm(BaseUserForm):
         initial=User.UserType.ACTIVE, widget=forms.HiddenInput()
     )
 
-    def clean_birth_date(self) -> date:
-        validation_error = "You need to be 16 years old to use this website."
-        birth_date = self.cleaned_data["birth_date"]
-
-        if not isinstance(birth_date, date) or birth_date >= datetime.now(
-            tz=UTC
-        ).date() - timedelta(days=16 * 365):
-            raise ValidationError(validation_error)
-
-        return birth_date
-
     class Meta:
         model = User
         fields = ("name", "email", "birth_date", "user_type")
@@ -236,7 +261,19 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
             raise TypeError
         return self.request.user
 
-    def form_valid(self, form: forms.Form) -> HttpResponse:
+    def form_valid(self, form: UserForm) -> HttpResponse:
+        user = form.save(commit=False)
+
+        # Check if user is under 16
+        if user.birth_date and user.age < MINIMUM_ALLOWED_USER_AGE:
+            user.is_active = False
+            user.save()
+            django_logout(self.request)
+            return redirect(
+                auth0_logout_url(self.request, redirect_to=reverse("web:under_age"))
+            )
+
+        user.save()
         messages.success(self.request, _("Profile updated successfully!"))
         return super().form_valid(form)
 
