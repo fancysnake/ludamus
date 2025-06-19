@@ -19,7 +19,7 @@
             <div class="container">
                 <a class="navbar-brand fw-bold"
                    href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
-                    {% bs_icon 'people' %} {{ current_site.name }}
+                    {% bs_icon 'people' %} {{ current_site.sphere.name }}
                 </a>
                 <button class="navbar-toggler"
                         type="button"

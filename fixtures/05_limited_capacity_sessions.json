@@ -1,0 +1,194 @@
+[
+  {
+    "model": "django.session",
+    "pk": 7,
+    "fields": {
+      "sphere": 1,
+      "guild": null,
+      "host": 101,
+      "title": "Almost Full Session",
+      "slug": "almost-full-session",
+      "description": "This session is almost at capacity",
+      "requirements": "",
+      "participants_limit": 4,
+      "start_time": "2025-07-16T10:00:00Z",
+      "end_time": "2025-07-16T12:00:00Z",
+      "publication_time": "2025-06-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "django.session",
+    "pk": 8,
+    "fields": {
+      "sphere": 1,
+      "guild": null,
+      "host": 100,
+      "title": "Full Session",
+      "slug": "full-session",
+      "description": "This session is at full capacity",
+      "requirements": "",
+      "participants_limit": 2,
+      "start_time": "2025-07-15T10:00:00Z",
+      "end_time": "2025-07-15T12:00:00Z",
+      "publication_time": "2025-06-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "django.session",
+    "pk": 9,
+    "fields": {
+      "sphere": 1,
+      "guild": null,
+      "host": 100,
+      "title": "Large Capacity Session",
+      "slug": "large-capacity-session",
+      "description": "This session has lots of space",
+      "requirements": "",
+      "participants_limit": 20,
+      "start_time": "2025-07-17T10:00:00Z",
+      "end_time": "2025-07-17T12:00:00Z",
+      "publication_time": "2025-06-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "django.agendaitem",
+    "pk": 6,
+    "fields": {
+      "space": 2,
+      "session": 7,
+      "session_confirmed": true
+    }
+  },
+  {
+    "model": "django.agendaitem",
+    "pk": 7,
+    "fields": {
+      "space": 1,
+      "session": 8,
+      "session_confirmed": true
+    }
+  },
+  {
+    "model": "django.agendaitem",
+    "pk": 8,
+    "fields": {
+      "space": 1,
+      "session": 9,
+      "session_confirmed": true
+    }
+  },
+  {
+    "model": "django.user",
+    "pk": 103,
+    "fields": {
+      "username": "participant1",
+      "email": "p1@test.com",
+      "name": "Participant One",
+      "birth_date": "1995-03-15",
+      "slug": "participant1",
+      "user_type": "active",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "date_joined": "2024-01-01T00:00:00Z",
+      "password": "pbkdf2_sha256$720000$test$test"
+    }
+  },
+  {
+    "model": "django.user",
+    "pk": 104,
+    "fields": {
+      "username": "participant2",
+      "email": "p2@test.com",
+      "name": "Participant Two",
+      "birth_date": "1998-07-20",
+      "slug": "participant2",
+      "user_type": "active",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "date_joined": "2024-01-01T00:00:00Z",
+      "password": "pbkdf2_sha256$720000$test$test"
+    }
+  },
+  {
+    "model": "django.user",
+    "pk": 105,
+    "fields": {
+      "username": "waitlist_user",
+      "email": "waitlist@test.com",
+      "name": "Waitlist User",
+      "birth_date": "2000-01-01",
+      "slug": "waitlist-user",
+      "user_type": "active",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "date_joined": "2024-01-01T00:00:00Z",
+      "password": "pbkdf2_sha256$720000$test$test"
+    }
+  },
+  {
+    "model": "django.sessionparticipation",
+    "pk": 1,
+    "fields": {
+      "session": 7,
+      "user": 103,
+      "status": "confirmed"
+    }
+  },
+  {
+    "model": "django.sessionparticipation",
+    "pk": 2,
+    "fields": {
+      "session": 7,
+      "user": 104,
+      "status": "confirmed"
+    }
+  },
+  {
+    "model": "django.sessionparticipation",
+    "pk": 3,
+    "fields": {
+      "session": 7,
+      "user": 105,
+      "status": "confirmed"
+    }
+  },
+  {
+    "model": "django.sessionparticipation",
+    "pk": 4,
+    "fields": {
+      "session": 8,
+      "user": 103,
+      "status": "confirmed"
+    }
+  },
+  {
+    "model": "django.sessionparticipation",
+    "pk": 5,
+    "fields": {
+      "session": 8,
+      "user": 104,
+      "status": "confirmed"
+    }
+  },
+  {
+    "model": "django.sessionparticipation",
+    "pk": 6,
+    "fields": {
+      "session": 8,
+      "user": 105,
+      "status": "waiting"
+    }
+  },
+  {
+    "model": "django.sessionparticipation",
+    "pk": 7,
+    "fields": {
+      "session": 4,
+      "user": 103,
+      "status": "confirmed"
+    }
+  }
+]

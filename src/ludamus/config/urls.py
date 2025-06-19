@@ -23,3 +23,7 @@ urlpatterns = [
     path("", include("ludamus.adapters.web.django.urls", namespace="web")),
     path("admin/", admin.site.urls),
 ]
+
+# Custom error handlers
+handler404 = 'ludamus.adapters.web.django.error_views.custom_404'
+handler500 = 'ludamus.adapters.web.django.error_views.custom_500'

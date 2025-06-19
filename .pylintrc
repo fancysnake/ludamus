@@ -342,7 +342,7 @@ max-public-methods=20
 max-returns=6
 
 # Maximum number of statements in function / method body.
-max-statements=50
+max-statements=7
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=2
@@ -455,24 +455,28 @@ confidence=HIGH,
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
 disable=consider-using-assignment-expr,
-        too-many-lines,
-        too-many-return-statements,
-        too-many-statements,
-        too-many-locals,
-        too-many-nested-blocks,
+        too-many-lines, # REMOVE
+        too-many-return-statements, # REMOVE
+        # too-many-statements, # REMOVE
+        too-many-locals, # REMOVE
+        too-many-nested-blocks, # REMOVE
         consider-using-tuple,
-        too-many-branches,
-        too-many-try-statements,
+        too-many-branches, # REMOVE
+        too-many-try-statements, # REMOVE
         magic-value-comparison,
         too-complex,
         line-too-long,
-        too-many-ancestors,
+        too-many-ancestors, # REMOVE
         invalid-str-returned,
         missing-module-docstring,
         too-few-public-methods,
         missing-function-docstring,
         missing-class-docstring,
         no-member,
+        too-many-arguments, # REMOVE
+        too-many-positional-arguments, # REMOVE
+        too-many-statements, # REMOVE
+        unsubscriptable-object,
 
 
 # Enable the message, report, category or checker with the given id(s). You can

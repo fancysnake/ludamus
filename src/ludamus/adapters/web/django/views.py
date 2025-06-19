@@ -1,10 +1,12 @@
 import json
 from collections import defaultdict
+from collections.abc import Generator
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
@@ -17,7 +19,7 @@ from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.exceptions import ValidationError
+from django.core.exceptions import BadRequest, ValidationError
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse
@@ -25,7 +27,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
+from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
@@ -44,6 +46,9 @@ from ludamus.adapters.db.django.models import (
 )
 from ludamus.adapters.oauth import oauth
 
+from .exceptions import RedirectError
+from .forms import EnrollmentForm, ProposalAcceptanceForm, SessionProposalForm
+
 if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import User
 else:
@@ -51,7 +56,6 @@ else:
 
 
 TODAY = datetime.now(tz=UTC).date()
-SEPARATOR = "|"
 
 
 class WrongSiteTypeError(TypeError):
@@ -76,42 +80,49 @@ def login(request: HttpRequest) -> HttpResponse:
     root_domain = Site.objects.get(domain=settings.ROOT_DOMAIN).domain
     next_path = request.GET.get("next")
     if request.get_host() != root_domain:
-        return redirect(
-            f'{request.scheme}://{root_domain}{reverse("web:login")}?next={next_path}'
-        )
+        url = f'{request.scheme}://{root_domain}{reverse("web:login")}?next={next_path}'
+        raise RedirectError(url)
 
     return oauth.auth0.authorize_redirect(  # type: ignore [no-any-return]
         request,
-        request.build_absolute_uri(reverse("web:callback") + f"?next={next_path}"),
+        request.build_absolute_uri(
+            reverse("web:callback") + f"?redirect_to={next_path}"
+        ),
     )
 
 
-def callback(request: HttpRequest) -> HttpResponse:
-    token = oauth.auth0.authorize_access_token(request)
-    if not isinstance(token.get("userinfo"), dict):
-        raise TypeError
+class CallbackView(RedirectView):
 
-    sub = token["userinfo"].get("sub")
-    username = f'auth0|{sub.encode("UTF-8")}'
-    if not isinstance(token["userinfo"].get("sub"), str) or SEPARATOR not in sub:
-        raise TypeError
+    def get_redirect_url(  # type: ignore [explicit-any]
+        self, *args: Any, redirect_to: str | None = None, **kwargs: Any
+    ) -> str | None:
+        if super_url := super().get_redirect_url(*args, **kwargs):
+            return super_url
 
-    next_url = request.GET.get("next")
-    if request.user.is_authenticated:
-        pass
-    elif user := User.objects.filter(username=username).first():
-        django_login(request, user)
-        messages.success(request, _("Welcome back!"))
-    else:
-        user = User.objects.create_user(username=username)
-        django_login(request, user)
-        messages.success(request, _("Welcome! Please complete your profile."))
-        if next_url:
-            parsed = urlparse(next_url)
-            return redirect(f'{parsed.scheme}://{parsed.netloc}{reverse("web:edit")}')
-        return redirect(request.build_absolute_uri(reverse("web:edit")))
+        if not self.request.user.is_authenticated and self._login_or_signup():
+            if redirect_to:
+                parsed = urlparse(redirect_to)
+                return f'{parsed.scheme}://{parsed.netloc}{reverse("web:edit")}'
+            return self.request.build_absolute_uri(reverse("web:edit"))
 
-    return redirect(next_url or request.build_absolute_uri(reverse("web:index")))
+        return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
+
+    def _get_username(self) -> str:
+        token = oauth.auth0.authorize_access_token(self.request)
+
+        try:
+            return f'auth0|{token["userinfo"]["sub"].encode("UTF-8")}'
+        except (KeyError, TypeError) as err:
+            raise BadRequest from err
+
+    def _login_or_signup(self) -> bool:
+        username = self._get_username()
+        user, created = User.objects.get_or_create(username=username)
+        django_login(self.request, user)
+        messages.success(self.request, _("Welcome!"))
+        if created:
+            messages.success(self.request, _(" Please complete your profile."))
+        return created
 
 
 def logout(request: HttpRequest) -> HttpResponse:
@@ -189,7 +200,7 @@ class UserForm(BaseUserForm):
 
 class ConnectedUserForm(BaseUserForm):
     user_type = forms.CharField(
-        initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()  # type: ignore [misc]
+        initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()
     )
 
 
@@ -223,7 +234,7 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
     object: User
 
     def get_context_data(  # type: ignore [explicit-any]
-        self, **kwargs: Any  # noqa: ANN401
+        self, **kwargs: Any
     ) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         connected_users = [
@@ -292,6 +303,12 @@ class SessionData:
     user_waiting: bool = False
 
 
+class TimeSlotData(TypedDict):
+    time_slot: TimeSlot
+    sessions: list[SessionData]
+    session_count: int
+
+
 class EventView(DetailView):  # type: ignore [type-arg]
     template_name = "chronology/event.html"
     model = Event
@@ -305,8 +322,8 @@ class EventView(DetailView):  # type: ignore [type-arg]
             .prefetch_related("spaces__agenda_items__session")
         )
 
-    def get_context_data(  # type: ignore [explicit-any]  # noqa: C901
-        self, **kwargs: Any  # noqa: ANN401
+    def get_context_data(  # type: ignore [explicit-any]
+        self, **kwargs: Any
     ) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
@@ -316,67 +333,18 @@ class EventView(DetailView):  # type: ignore [type-arg]
                 agenda_item__space__event=self.object,
                 publication_time__lte=datetime.now(tz=UTC),
             )
+            .exclude(start_time=None)
             .select_related("host", "agenda_item__space")
             .prefetch_related("tags", "session_participations__user")
             .order_by("start_time")
         )
-        sessions = {
-            session.id: SessionData(session=session) for session in event_sessions
-        }
 
-        # Add user participation info for each session
-        if self.request.user.is_authenticated:
-            for user in [self.request.user, *self.request.user.connected.all()]:
-                user_participations = (
-                    SessionParticipation.objects.filter(session__in=event_sessions)
-                    .filter(Q(user=user))
-                    .select_related("session")
-                )
-
-                status_by_session: dict[int, str] = {}
-                for participation in user_participations:
-                    status_by_session[participation.session.id] = participation.status
-
-                for session in event_sessions:
-                    match status_by_session.get(session.id):
-                        case SessionParticipationStatus.CONFIRMED:
-                            sessions[session.id].has_any_enrollments = True
-                            sessions[session.id].user_enrolled = True
-                        case SessionParticipationStatus.WAITING:
-                            sessions[session.id].has_any_enrollments = True
-                            sessions[session.id].user_waiting = True
-
-        # Group sessions by time slots
-        time_slots = TimeSlot.objects.filter(event=self.object).order_by("start_time")
-        sessions_by_slot: dict[TimeSlot, list[SessionData]] = defaultdict(list)
-
-        for session in event_sessions:
-            # Find matching time slot for this session
-            for slot in time_slots:
-                if (
-                    session.start_time
-                    and session.end_time
-                    and slot.start_time <= session.start_time <= slot.end_time
-                ):
-                    sessions_by_slot[slot].append(sessions[session.id])
-                    break
-
-        # Convert to list of (time_slot, sessions) tuples for template
-        time_slot_data = [
-            {
-                "time_slot": slot,
-                "sessions": sessions_by_slot[slot],
-                "session_count": len(sessions_by_slot[slot]),
-            }
-            for slot in time_slots
-        ]
-
-        context["time_slot_data"] = time_slot_data
-        context["sessions"] = event_sessions  # Keep for backward compatibility
+        time_slot_data = self._get_time_slot_data(event_sessions)
+        context.update({"time_slot_data": time_slot_data, "sessions": event_sessions})
 
         # Add proposals for superusers
         if self.request.user.is_superuser:
-            proposals = (
+            context["proposals"] = (
                 Proposal.objects.filter(
                     proposal_category__event=self.object,
                     session__isnull=True,  # Only unaccepted proposals
@@ -385,9 +353,68 @@ class EventView(DetailView):  # type: ignore [type-arg]
                 .prefetch_related("tags", "time_slots")
                 .order_by("-creation_time")
             )
-            context["proposals"] = proposals
 
         return context
+
+    def _set_user_participations(
+        self, sessions: dict[int, SessionData], event_sessions: QuerySet[Session]
+    ) -> None:
+        participations = SessionParticipation.objects.filter(session__in=event_sessions)
+        # Add user participation info for each session
+        for user in [self.request.user, *self.request.user.connected.all()]:
+            for session in event_sessions:
+                statuses = {
+                    p.status
+                    for p in participations
+                    if p.user == user and p.session == session
+                }
+
+                sessions[session.id].has_any_enrollments = bool(statuses)
+                sessions[session.id].user_enrolled = (
+                    SessionParticipationStatus.CONFIRMED in statuses
+                )
+                sessions[session.id].user_waiting = (
+                    SessionParticipationStatus.WAITING in statuses
+                )
+
+    def _get_time_slot_data(
+        self, event_sessions: QuerySet[Session]
+    ) -> list[TimeSlotData]:
+        sessions_datas = self._get_session_datas(event_sessions)
+
+        time_slots = TimeSlot.objects.filter(event=self.object).order_by("start_time")
+
+        # Group sessions by time slots
+        sessions_by_slot: dict[TimeSlot, list[SessionData]] = defaultdict(list)
+        for session in event_sessions:
+            # Find matching time slot for this session
+            for slot in time_slots:
+                if (
+                    session.start_time
+                    and slot.start_time <= session.start_time <= slot.end_time
+                ):
+                    sessions_by_slot[slot].append(sessions_datas[session.id])
+                    break
+
+        # Convert to list of (time_slot, sessions) tuples for template
+        return [
+            TimeSlotData(
+                time_slot=slot,
+                sessions=sessions_by_slot[slot],
+                session_count=len(sessions_by_slot[slot]),
+            )
+            for slot in time_slots
+        ]
+
+    def _get_session_datas(
+        self, event_sessions: QuerySet[Session]
+    ) -> dict[int, SessionData]:
+        sessions_datas = {es.id: SessionData(session=es) for es in event_sessions}
+
+        if self.request.user.is_authenticated:
+            self._set_user_participations(sessions_datas, event_sessions)
+
+        return sessions_datas
 
 
 class EnrollmentChoice(StrEnum):
@@ -403,122 +430,287 @@ class EnrollmentRequest:
     name: str = _("yourself")
 
 
+@dataclass
+class Enrollments:
+    cancelled_users: list[str]
+    skipped_users: list[str]
+    users_by_status: dict[SessionParticipationStatus, list[str]]
+
+    def __init__(self) -> None:
+        self.cancelled_users = []
+        self.skipped_users = []
+        self.users_by_status = defaultdict(list)
+        super().__init__()
+
+
+def _get_session_or_redirect(request: UserRequest, session_id: int) -> Session:
+    try:
+        return Session.objects.get(sphere=request.sphere, id=session_id)
+    except Session.DoesNotExist:
+        raise RedirectError(
+            reverse("web:index"), error=_("Session not found.")
+        ) from None
+
+
+_status_by_choice = {
+    "enroll": SessionParticipationStatus.CONFIRMED,
+    "waitlist": SessionParticipationStatus.WAITING,
+}
+
+
 class EnrollSelectView(LoginRequiredMixin, View):
     request: UserRequest
 
     def get(self, request: UserRequest, session_id: int) -> HttpResponse:
-        try:
-            session = Session.objects.get(sphere=request.sphere, id=session_id)
-        except Session.DoesNotExist:
-            messages.error(self.request, _("Session not found."))
-            return redirect("web:index")
-
-        event = session.agenda_item.space.event
-
-        # Check if user has birth date set
-        if not request.user.birth_date:
-            messages.error(
-                request,
-                _("Please complete your profile with birth date before enrolling."),
-            )
-            return redirect("web:edit")
-
-        # Check if enrollment is active for the event
-        if not event.is_enrollment_active:
-            messages.error(
-                request, _("Enrollment is not currently active for this event.")
-            )
-            return redirect("web:event", slug=event.slug)
-
-        user_datas: list[SessionUserParticipationData] = []
-
-        # Add enrollment status and time conflict info for each connected user
-        for user in [self.request.user, *request.user.connected.all()]:
-            data = SessionUserParticipationData(user=user)
-            user_datas.append(data)
-            user_participation = SessionParticipation.objects.filter(
-                session=session, user=user
-            ).first()
-
-            data.user_enrolled = (
-                user_participation.status == SessionParticipationStatus.CONFIRMED
-                if user_participation
-                else False
-            )
-            data.user_waiting = (
-                user_participation.status == SessionParticipationStatus.WAITING
-                if user_participation
-                else False
-            )
-
-            # Check for time conflicts
-            if session.start_time and session.end_time and not user_participation:
-                for other_session in Session.objects.filter(
-                    agenda_item__space__event=event,
-                    session_participations__user=user,
-                    session_participations__status=SessionParticipationStatus.CONFIRMED,
-                ).exclude(id=session.id):
-                    if session.overlaps_with(other_session):
-                        data.has_time_conflict = True
+        session = _get_session_or_redirect(request, session_id)
 
         context = {
             "session": session,
-            "event": event,
+            "event": session.agenda_item.space.event,
             "connected_users": self.request.user.connected.all(),
-            "user_datas": user_datas,
+            "user_datas": self._get_user_participation_datas(session),
+            "form": EnrollmentForm(
+                session=session,
+                users=[self.request.user, *request.user.connected.all()],
+            ),
         }
 
         return TemplateResponse(request, "chronology/enroll_select.html", context)
 
-    def post(  # noqa: PLR0914, PLR0915, PLR0912, C901
-        self, request: UserRequest, session_id: int
-    ) -> HttpResponse:
-        try:
-            session = Session.objects.get(sphere=request.sphere, id=session_id)
-        except Session.DoesNotExist:
-            messages.error(self.request, _("Session not found."))
-            return redirect("web:index")
-
-        event = session.agenda_item.space.event
-
+    def _validate_request(self, session: Session) -> None:
         # Check if user has birth date set
-        if not request.user.birth_date:
-            messages.error(
-                request,
-                _("Please complete your profile with birth date before enrolling."),
+        if not self.request.user.birth_date:
+            raise RedirectError(
+                reverse("web:edit"),
+                error=_(
+                    "Please complete your profile with birth date before enrolling."
+                ),
             )
-            return redirect("web:edit")
 
         # Check if enrollment is active for the event
-        if not event.is_enrollment_active:
-            messages.error(
-                request, _("Enrollment is not currently active for this event.")
+        if not session.agenda_item.space.event.is_enrollment_active:
+            raise RedirectError(
+                reverse(
+                    "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
+                ),
+                error=_("Enrollment is not currently active for this event."),
             )
-            return redirect("web:event", slug=event.slug)
 
-        # Collect enrollment requests from form
+    def _get_user_participation_datas(
+        self, session: Session
+    ) -> list[SessionUserParticipationData]:
+        user_datas: list[SessionUserParticipationData] = []
+
+        # Add enrollment status and time conflict info for each connected user
+        for user in [self.request.user, *self.request.user.connected.all()]:
+            user_participations = SessionParticipation.objects.filter(
+                user=user,
+                session__agenda_item__space__event=session.agenda_item.space.event,
+            )
+            data = SessionUserParticipationData(
+                user=user,
+                user_enrolled=user_participations.filter(
+                    status=SessionParticipationStatus.CONFIRMED
+                ).exists(),
+                user_waiting=user_participations.filter(
+                    status=SessionParticipationStatus.WAITING
+                ).exists(),
+                has_time_conflict=any(
+                    s
+                    for s in user_participations.exclude(
+                        session=session, status=SessionParticipationStatus.CONFIRMED
+                    )
+                    if session.overlaps_with(s.session)
+                ),
+            )
+            user_datas.append(data)
+
+        return user_datas
+
+    def post(self, request: UserRequest, session_id: int) -> HttpResponse:
+        session = _get_session_or_redirect(request, session_id)
+
+        self._validate_request(session)
+
+        # Initialize form with POST data
+        form = EnrollmentForm(
+            data=request.POST,
+            session=session,
+            users=[self.request.user, *request.user.connected.all()],
+        )
+
+        if not form.is_valid():
+            # Re-render with form errors
+            return TemplateResponse(
+                request,
+                "chronology/enroll_select.html",
+                {
+                    "session": session,
+                    "event": session.agenda_item.space.event,
+                    "connected_users": self.request.user.connected.all(),
+                    "user_datas": self._get_user_participation_datas(session),
+                    "form": form,
+                },
+            )
+
+        self._manage_enrollments(form, session)
+
+        return redirect("web:event", slug=session.agenda_item.space.event.slug)
+
+    def _get_enrollment_requests(self, form: EnrollmentForm) -> list[EnrollmentRequest]:
         enrollment_requests = []
-
-        # Check for users selections
-        for connected_user in [self.request.user, *request.user.connected.all()]:
-            if (
-                choice := request.POST.get(f"user_{connected_user.id}")
-            ) and choice in EnrollmentChoice:
-                enrollment_requests.extend(
-                    [
-                        EnrollmentRequest(
-                            user=connected_user,
-                            choice=EnrollmentChoice(choice),
-                            name=connected_user.get_full_name(),
-                        )
-                    ]
+        for connected_user in [self.request.user, *self.request.user.connected.all()]:
+            user_field = f"user_{connected_user.id}"
+            if form.cleaned_data.get(user_field):
+                choice = form.cleaned_data[user_field]
+                enrollment_requests.append(
+                    EnrollmentRequest(
+                        user=connected_user,
+                        choice=EnrollmentChoice(choice),
+                        name=connected_user.get_full_name(),
+                    )
                 )
+        return enrollment_requests
 
-        if not enrollment_requests:
-            messages.warning(request, _("Please select at least one user to enroll."))
-            return redirect("web:enroll-select", session_id=session_id)
+    def _process_enrollments(
+        self, enrollment_requests: list[EnrollmentRequest], session: Session
+    ) -> Enrollments:
+        enrollments = Enrollments()
+        participations = SessionParticipation.objects.filter(session=session).order_by(
+            "creation_time"
+        )
 
-        # Validate capacity for confirmed enrollments
+        for req in enrollment_requests:
+            # Handle cancellation
+            if req.choice == "cancel":
+                self._handle_cancellation(participations, req, enrollments, session)
+                continue
+
+            self._check_and_create_enrollment(req, session, enrollments)
+        return enrollments
+
+    def _handle_cancellation(
+        self,
+        participations: QuerySet[SessionParticipation],
+        req: EnrollmentRequest,
+        enrollments: Enrollments,
+        session: Session,
+    ) -> None:
+        if existing_participation := next(
+            p for p in participations if p.user == req.user
+        ):
+            existing_participation.delete()
+            enrollments.cancelled_users.append(req.name)
+
+            # If this was a confirmed enrollment, promote from waiting list
+            self._promote_from_waitlist(
+                existing_participation, participations, req, session, enrollments
+            )
+        else:
+            enrollments.skipped_users.append(f"{req.name} ({_('not enrolled')!s})")
+
+    @staticmethod
+    def _promote_from_waitlist(
+        existing_participation: SessionParticipation,
+        participations: QuerySet[SessionParticipation],
+        req: EnrollmentRequest,
+        session: Session,
+        enrollments: Enrollments,
+    ) -> None:
+        if (
+            existing_participation.status == SessionParticipationStatus.CONFIRMED
+            and session.is_planned
+        ):
+            for participation in participations:
+                if (
+                    participation.user != req.user
+                    and participation.status == SessionParticipationStatus.WAITING
+                ) and not (
+                    Session.objects.filter(
+                        agenda_item__space__event=session.agenda_item.space.event,
+                        session_participations__user=participation.user,
+                        session_participations__status=SessionParticipationStatus.CONFIRMED,
+                    )
+                    .filter(
+                        Q(
+                            start_time__gte=session.start_time,
+                            start_time__lt=session.end_time,
+                        )
+                        | Q(
+                            end_time__gt=session.start_time,
+                            end_time__lte=session.end_time,
+                        )
+                    )
+                    .exclude(id=session.id)
+                    .exists()
+                ):
+                    participation.status = SessionParticipationStatus.CONFIRMED
+                    participation.save()
+                    enrollments.users_by_status[
+                        SessionParticipationStatus.CONFIRMED
+                    ].append(
+                        f"{participation.user.get_full_name()} "
+                        f"({_("promoted from waiting list")})"
+                    )
+                    break
+
+    @staticmethod
+    def _check_and_create_enrollment(
+        req: EnrollmentRequest, session: Session, enrollments: Enrollments
+    ) -> None:
+        # Check if user is already enrolled
+        if SessionParticipation.objects.filter(session=session, user=req.user).exists():
+            enrollments.skipped_users.append(f"{req.name} ({_('already enrolled')!s})")
+        # Check for time conflicts for confirmed enrollment
+        elif req.choice == "enroll" and (
+            Session.objects.filter(
+                agenda_item__space__event=session.agenda_item.space.event,
+                session_participations__user=req.user,
+                session_participations__status=SessionParticipationStatus.CONFIRMED,
+            )
+            .filter(
+                Q(start_time__gte=session.start_time, start_time__lt=session.end_time)
+                | Q(end_time__gt=session.start_time, end_time__lte=session.end_time)
+            )
+            .exclude(id=session.id)
+            .exists()
+        ):
+            enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
+            return
+
+        # Create enrollment
+        SessionParticipation.objects.create(
+            session=session, user=req.user, status=_status_by_choice[req.choice]
+        )
+        enrollments.users_by_status[_status_by_choice[req.choice]].append(req.name)
+
+    def _send_message(self, enrollments: Enrollments) -> None:
+        any_users = False
+        for users, message in [
+            (
+                enrollments.users_by_status[SessionParticipationStatus.CONFIRMED],
+                _("Enrolled: {}"),
+            ),
+            (
+                enrollments.users_by_status[SessionParticipationStatus.WAITING],
+                _("Added to waiting list: {}"),
+            ),
+            (enrollments.cancelled_users, _("Cancelled: {}")),
+            (
+                enrollments.skipped_users,
+                _("Skipped (already enrolled or conflicts): {}"),
+            ),
+        ]:
+            if users:
+                any_users = True
+                messages.success(self.request, message.format(", ".join(users)))
+
+        if not any_users:
+            messages.warning(self.request, _("No enrollments were processed."))
+
+    def _is_capacity_invalid(
+        self, enrollment_requests: list[EnrollmentRequest], session: Session
+    ) -> bool:
         confirmed_requests = [
             req for req in enrollment_requests if req.choice == "enroll"
         ]
@@ -529,7 +721,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         if len(confirmed_requests) > available_spots:
             messages.error(
-                request,
+                self.request,
                 str(
                     _(
                         "Not enough spots available. {} spots requested, {} available. "
@@ -537,418 +729,335 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     )
                 ).format(len(confirmed_requests), available_spots),
             )
-            return redirect("web:enroll-select", session_id=session_id)
+            return True
 
-        # Process enrollments
-        enrolled_users = []
-        waitlisted_users = []
-        cancelled_users = []
-        skipped_users = []
+        return False
 
-        for req in enrollment_requests:  # noqa: PLR1702
-            # Handle cancellation
-            if req.choice == "cancel":
-                existing_participation = SessionParticipation.objects.filter(
-                    session=session, user=req.user
-                ).first()
-
-                if existing_participation:
-                    was_confirmed = (
-                        existing_participation.status
-                        == SessionParticipationStatus.CONFIRMED
-                    )
-                    existing_participation.delete()
-                    cancelled_users.append(req.name)
-
-                    # If this was a confirmed enrollment, promote from waiting list
-                    if was_confirmed:
-                        oldest_waiting = (
-                            SessionParticipation.objects.filter(
-                                session=session,
-                                status=SessionParticipationStatus.WAITING,
-                            )
-                            .order_by("creation_time")
-                            .first()
-                        )
-
-                        if oldest_waiting:
-                            # Check for time conflicts before promoting
-                            if session.start_time and session.end_time:
-                                conflicting_sessions = Session.objects.filter(
-                                    session_participations__user=oldest_waiting.user,
-                                    session_participations__status=SessionParticipationStatus.CONFIRMED,
-                                    start_time__lt=session.end_time,
-                                    end_time__gt=session.start_time,
-                                ).exclude(id=session.id)
-
-                                if not conflicting_sessions.exists():
-                                    oldest_waiting.status = (
-                                        SessionParticipationStatus.CONFIRMED
-                                    )
-                                    oldest_waiting.save()
-                                    promoted_msg = _("promoted from waiting list")
-                                    req.name = oldest_waiting.user.get_full_name()
-                                    enrolled_users.append(
-                                        f"{req.name} ({promoted_msg!s})"
-                                    )
-                            else:
-                                oldest_waiting.status = (
-                                    SessionParticipationStatus.CONFIRMED
-                                )
-                                oldest_waiting.save()
-                                promoted_msg = _("promoted from waiting list")
-                                req.name = oldest_waiting.user.get_full_name()
-                                enrolled_users.append(f"{req.name} ({promoted_msg!s})")
-                else:
-                    skipped_users.append(f"{req.name} ({_('not enrolled')!s})")
-                continue
-
-            # Check if user is already enrolled
-            existing_participation = SessionParticipation.objects.filter(
-                session=session, user=req.user
-            ).first()
-
-            if existing_participation:
-                skipped_users.append(f"{req.name} ({_('already enrolled')!s})")
-                continue
-
-            # Check for time conflicts for confirmed enrollment
-            if req.choice == "enroll" and session.start_time and session.end_time:
-                conflicting_sessions = Session.objects.filter(
-                    session_participations__user=req.user,
-                    session_participations__status=SessionParticipationStatus.CONFIRMED,
-                    start_time__lt=session.end_time,
-                    end_time__gt=session.start_time,
-                ).exclude(id=session.id)
-
-                if conflicting_sessions.exists():
-                    skipped_users.append(f"{req.name} ({_('time conflict')!s})")
-                    continue
-
-            # Create enrollment
-            status = (
-                SessionParticipationStatus.CONFIRMED
-                if req.choice == "enroll"
-                else SessionParticipationStatus.WAITING
-            )
-
-            SessionParticipation.objects.create(
-                session=session, user=req.user, status=status
-            )
-
-            if status == SessionParticipationStatus.CONFIRMED:
-                enrolled_users.append(req.name)
-            else:
-                waitlisted_users.append(req.name)
-
-        # Create success message
-        message_parts = []
-        if enrolled_users:
-            message_parts.append(_("Enrolled: {}").format(", ".join(enrolled_users)))
-        if waitlisted_users:
-            message_parts.append(
-                _("Added to waiting list: {}").format(", ".join(waitlisted_users))
-            )
-        if cancelled_users:
-            message_parts.append(_("Cancelled: {}").format(", ".join(cancelled_users)))
-        if skipped_users:
-            message_parts.append(
-                _("Skipped (already enrolled or conflicts): {}").format(
-                    ", ".join(skipped_users)
+    def _manage_enrollments(self, form: EnrollmentForm, session: Session) -> None:
+        # Collect enrollment requests from form
+        if enrollment_requests := self._get_enrollment_requests(form):
+            # Validate capacity for confirmed enrollments
+            if self._is_capacity_invalid(enrollment_requests, session):
+                raise RedirectError(
+                    reverse("web:enroll-select", kwargs={"session_id": session.id})
                 )
-            )
 
-        if message_parts:
-            messages.success(request, " | ".join(message_parts))
+            # Process enrollments and create success message
+            self._send_message(self._process_enrollments(enrollment_requests, session))
         else:
-            messages.warning(request, _("No enrollments were processed."))
-
-        return redirect("web:event", slug=event.slug)
+            raise RedirectError(
+                reverse("web:enroll-select", kwargs={"session_id": session.id}),
+                warning=_("Please select at least one user to enroll."),
+            )
 
 
 class ProposeSessionView(LoginRequiredMixin, View):
+    request: UserRequest
+
     def get(
         self, request: UserRequest, event_slug: str, time_slot_id: int | None = None
     ) -> HttpResponse:
-        try:
-            event = Event.objects.get(sphere=request.sphere, slug=event_slug)
-        except Event.DoesNotExist:
-            messages.error(self.request, _("Event not found."))
-            return redirect("web:index")
+        event = self._validate_event(event_slug)
 
         # Check if user has birth date set
         if not request.user.birth_date:
-            messages.error(
-                request,
-                _(
-                    "Please complete your profile with birth date "
-                    "before submitting proposals."
-                ),
-            )
-            return redirect("web:edit")
-
-        if not event.is_proposal_active:
-            messages.error(
-                request,
-                _("Proposal submission is not currently active for this event."),
-            )
-            return redirect("web:event", slug=event_slug)
-
-        try:
-            proposal_category = ProposalCategory.objects.get(event=event)
-        except ProposalCategory.DoesNotExist:
-            messages.error(
-                request,
-                _(
-                    "No proposal category configured for this event. "
-                    "Please contact the organizers."
-                ),
-            )
-            return redirect("web:event", slug=event_slug)
-
-        # Get tag categories associated with the proposal category
-        tag_categories = proposal_category.tag_categories.all()
-
-        # Get confirmed tags for select-type categories
-        confirmed_tags = {}
-        for category in tag_categories:
-            if category.input_type == category.InputType.SELECT:
-                confirmed_tags[str(category.id)] = list(
-                    category.tags.filter(confirmed=True).values("id", "name")
-                )
-
-        time_slot = None
-        if time_slot_id:
-            try:
-                time_slot = TimeSlot.objects.get(id=time_slot_id, event=event)
-            except TimeSlot.DoesNotExist:
-                messages.error(self.request, _("Time slot not found."))
-                return redirect("web:event", slug=event_slug)
-
-        context = {
-            "event": event,
-            "time_slot": time_slot,
-            "tag_categories": tag_categories,
-            "confirmed_tags": confirmed_tags,
-            "min_participants_limit": proposal_category.min_participants_limit,
-            "max_participants_limit": proposal_category.max_participants_limit,
-        }
-
-        return TemplateResponse(request, "chronology/propose_session.html", context)
-
-    def post(  # noqa: PLR0912, PLR0911, C901
-        self, request: UserRequest, event_slug: str, time_slot_id: int | None = None
-    ) -> HttpResponse:
-        try:
-            event = Event.objects.get(sphere=request.sphere, slug=event_slug)
-        except Event.DoesNotExist:
-            messages.error(self.request, _("Event not found."))
-            return redirect("web:index")
-
-        # Check if user has birth date set
-        if not request.user.birth_date:
-            messages.error(
-                request,
-                _(
+            raise RedirectError(
+                reverse("web:edit"),
+                error=_(
                     "Please complete your profile with birth date before "
                     "submitting proposals."
                 ),
             )
-            return redirect("web:edit")
+
+        proposal_category = self._get_proposal_category(event)
+        tag_categories = proposal_category.tag_categories.all()
+        time_slot = self._get_time_slot(time_slot_id, event)
+
+        return TemplateResponse(
+            request,
+            "chronology/propose_session.html",
+            {
+                "event": event,
+                "time_slot": time_slot,
+                "tag_categories": tag_categories,
+                "confirmed_tags": {
+                    str(category.id): (
+                        category.tags.filter(confirmed=True).values("id", "name")
+                    )
+                    for category in tag_categories
+                    if category.input_type == category.InputType.SELECT
+                },
+                "min_participants_limit": proposal_category.min_participants_limit,
+                "max_participants_limit": proposal_category.max_participants_limit,
+                "form": SessionProposalForm(
+                    proposal_category=proposal_category,
+                    time_slot=time_slot,
+                    initial={
+                        "participants_limit": proposal_category.min_participants_limit
+                    },
+                ),
+            },
+        )
+
+    def post(
+        self, request: UserRequest, event_slug: str, time_slot_id: int | None = None
+    ) -> HttpResponse:
+        event = self._validate_event(event_slug)
+
+        # Check if user has birth date set
+        if not request.user.birth_date:
+            raise RedirectError(
+                reverse("web:edit"),
+                error=_(
+                    "Please complete your profile with birth date before "
+                    "submitting proposals."
+                ),
+            )
+
+        proposal_category = self._get_proposal_category(event)
+
+        time_slot = self._get_time_slot(time_slot_id, event)
+
+        return self._handle_form(proposal_category, time_slot, event)
+
+    def _handle_form(
+        self,
+        proposal_category: ProposalCategory,
+        time_slot: TimeSlot | None,
+        event: Event,
+    ) -> HttpResponse:
+        # Initialize form with POST data
+        form = SessionProposalForm(
+            data=self.request.POST,
+            proposal_category=proposal_category,
+            time_slot=time_slot,
+        )
+
+        if not form.is_valid():
+            # Re-render with form errors
+            tag_categories = proposal_category.tag_categories.all()
+
+            return TemplateResponse(
+                self.request,
+                "chronology/propose_session.html",
+                {
+                    "event": event,
+                    "time_slot": time_slot,
+                    "tag_categories": tag_categories,
+                    "confirmed_tags": {
+                        str(category.id): list(
+                            category.tags.filter(confirmed=True).values("id", "name")
+                        )
+                        for category in tag_categories
+                        if category.input_type == category.InputType.SELECT
+                    },
+                    "min_participants_limit": proposal_category.min_participants_limit,
+                    "max_participants_limit": proposal_category.max_participants_limit,
+                    "form": form,
+                },
+            )
+
+        # Create the proposal using form data
+        proposal = Proposal.objects.create(
+            proposal_category=proposal_category,
+            host=self.request.user,
+            title=form.cleaned_data["title"],
+            description=form.cleaned_data["description"],
+            requirements=form.cleaned_data["requirements"],
+            needs=form.cleaned_data["needs"],
+            participants_limit=form.cleaned_data["participants_limit"],
+        )
+
+        if time_slot:
+            proposal.time_slots.add(time_slot)
+
+        for tag in self._get_tags(form.get_tag_data(), proposal_category):
+            proposal.tags.add(tag)
+
+        messages.success(
+            self.request,
+            _("Session proposal '{}' submitted successfully!").format(
+                form.cleaned_data["title"]
+            ),
+        )
+        return redirect("web:event", slug=event.slug)
+
+    @staticmethod
+    def _get_tags(
+        tag_data: dict[int, dict[str, list[str] | list[int]]],
+        proposal_category: ProposalCategory,
+    ) -> Generator[Tag]:
+        for category_id, tags_info in tag_data.items():
+            for tag_id in tags_info.get("selected_tags", []):
+                with suppress(Tag.DoesNotExist), suppress(Tag.DoesNotExist):
+                    tag = Tag.objects.get(id=tag_id)
+                    yield tag
+
+            for tag_name in tags_info.get("typed_tags", []):
+                category = proposal_category.tag_categories.get(id=category_id)
+                tag, _created = Tag.objects.get_or_create(
+                    name=tag_name, category=category, defaults={"confirmed": False}
+                )
+                yield tag
+
+    def _validate_event(self, event_slug: str) -> Event:
+        try:
+            event = Event.objects.get(sphere=self.request.sphere, slug=event_slug)
+        except Event.DoesNotExist:
+            raise RedirectError(
+                reverse("web:index"), error=_("Event not found.")
+            ) from None
 
         if not event.is_proposal_active:
-            messages.error(
-                request,
-                _("Proposal submission is not currently active for this event."),
-            )
-            return redirect("web:event", slug=event_slug)
-
-        # Get form data
-        title = request.POST.get("title", "").strip()
-        description = request.POST.get("description", "").strip()
-        requirements = request.POST.get("requirements", "").strip()
-        needs = request.POST.get("needs", "").strip()
-        participants_limit = int(request.POST.get("participants_limit", "10"))
-
-        if not title:
-            messages.error(self.request, _("Session title is required."))
-            return redirect(
-                "web:propose-session", event_slug=event_slug, time_slot_id=time_slot_id
+            raise RedirectError(
+                reverse("web:event", kwargs={"slug": event_slug}),
+                error=_("Proposal submission is not currently active for this event."),
             )
 
+        return event
+
+    @staticmethod
+    def _get_time_slot(time_slot_id: int | None, event: Event) -> TimeSlot | None:
+        if time_slot_id:
+            try:
+                return TimeSlot.objects.get(id=time_slot_id, event=event)
+            except TimeSlot.DoesNotExist:
+                raise RedirectError(
+                    reverse("web:event", kwargs={"slug": event.slug}),
+                    error=_("Time slot not found."),
+                ) from None
+
+        return None
+
+    @staticmethod
+    def _get_proposal_category(event: Event) -> ProposalCategory:
         try:
-            proposal_category = ProposalCategory.objects.get(event=event)
+            return ProposalCategory.objects.get(event=event)
         except ProposalCategory.DoesNotExist:
-            messages.error(
-                request,
-                _(
+            raise RedirectError(
+                reverse("web:event", kwargs={"slug": event.slug}),
+                error=_(
                     "No proposal category configured for this event. "
                     "Please contact the organizers."
                 ),
-            )
-            return redirect("web:event", slug=event_slug)
+            ) from None
 
-        # Validate participants limit against proposal category settings
-        if (
-            participants_limit < proposal_category.min_participants_limit
-            or participants_limit > proposal_category.max_participants_limit
-        ):
-            messages.error(
-                request,
-                _("Participants limit must be between {} and {}.").format(
-                    proposal_category.min_participants_limit,
-                    proposal_category.max_participants_limit,
-                ),
-            )
-            return redirect(
-                "web:propose-session", event_slug=event_slug, time_slot_id=time_slot_id
-            )
 
-        # Create the proposal
-        proposal = Proposal.objects.create(
-            proposal_category=proposal_category,
-            host=request.user,
-            title=title,
-            description=description,
-            requirements=requirements,
-            needs=needs,
-            participants_limit=participants_limit,
+def _get_proposal(request: UserRequest, proposal_id: int) -> Proposal:
+    try:
+        proposal = Proposal.objects.get(
+            proposal_category__event__sphere=request.sphere, id=proposal_id
+        )
+    except Proposal.DoesNotExist:
+        raise RedirectError(
+            reverse("web:index"), error=_("Proposal not found.")
+        ) from None
+
+    # Check if proposal is already accepted
+    if proposal.session:
+        raise RedirectError(
+            reverse(
+                "web:event", kwargs={"slug": proposal.proposal_category.event.slug}
+            ),
+            warning=_("This proposal has already been accepted."),
         )
 
-        # Process tags
-        for category in proposal_category.tag_categories.all():
-            if category.input_type == category.InputType.SELECT:
-                # Handle multiple select input
-                category_key = f"tags_{category.id}"
-                selected_tag_ids = request.POST.getlist(category_key)
-                for tag_id in selected_tag_ids:
-                    try:
-                        tag = Tag.objects.get(id=tag_id, category=category)
-                        proposal.tags.add(tag)
-                    except (Tag.DoesNotExist, ValueError):
-                        pass
-            elif category.input_type == category.InputType.TYPE:
-                # Handle comma-separated text input
-                category_key = f"tags_{category.id}"
-                tag_text = request.POST.get(category_key, "").strip()
-                if tag_text:
-                    tag_names = [
-                        name.strip() for name in tag_text.split(",") if name.strip()
-                    ]
-                    for tag_name in tag_names:
-                        tag, _created = Tag.objects.get_or_create(
-                            name=tag_name,
-                            category=category,
-                            defaults={"confirmed": False},
-                        )
-                        proposal.tags.add(tag)
-
-        # Add time slot preference if specified
-        if time_slot_id:
-            try:
-                time_slot = TimeSlot.objects.get(id=time_slot_id, event=event)
-                proposal.time_slots.add(time_slot)
-            except TimeSlot.DoesNotExist:
-                pass
-
-        messages.success(
-            request, _("Session proposal '{}' submitted successfully!").format(title)
-        )
-        return redirect("web:event", slug=event_slug)
+    return proposal
 
 
 class AcceptProposalPageView(LoginRequiredMixin, View):
 
     @staff_member_required
     def get(self, request: UserRequest, proposal_id: int) -> HttpResponse:
-        try:
-            proposal = Proposal.objects.get(
-                proposal_category__event__sphere=request.sphere, id=proposal_id
-            )
-        except Proposal.DoesNotExist:
-            messages.error(self.request, _("Proposal not found."))
-            return redirect("web:index")
-
-        proposal = Proposal.objects.get(id=proposal_id)
+        proposal = _get_proposal(request, proposal_id)
         event = proposal.proposal_category.event
 
-        # Check if proposal is already accepted
-        if proposal.session:
-            messages.warning(request, _("This proposal has already been accepted."))
-            return redirect("web:event", slug=event.slug)
-
         # Get available spaces and time slots for the event
-        spaces = Space.objects.filter(event=event)
-        time_slots = TimeSlot.objects.filter(event=event)
+        spaces = self._get_spaces(event)
+        time_slots = self._get_time_slots(event)
 
-        # Check if there are any spaces or time slots
-        if not spaces.exists():
-            messages.error(
-                request,
-                _("No spaces configured for this event. Please create spaces first."),
-            )
-            return redirect("web:event", slug=event.slug)
-
-        if not time_slots.exists():
-            messages.error(
-                request,
-                _(
-                    "No time slots configured for this event. "
-                    "Please create time slots first."
-                ),
-            )
-            return redirect("web:event", slug=event.slug)
+        # Create the form
+        form = ProposalAcceptanceForm(event=event)
 
         context = {
             "proposal": proposal,
             "event": event,
             "spaces": spaces,
             "time_slots": time_slots,
+            "form": form,
         }
 
         return TemplateResponse(request, "chronology/accept_proposal.html", context)
+
+    @staticmethod
+    def _get_spaces(event: Event) -> QuerySet[Space]:
+        spaces = Space.objects.filter(event=event)
+        if not spaces.exists():
+            raise RedirectError(
+                reverse("web:event", kwargs={"slug": event.slug}),
+                error=_(
+                    "No spaces configured for this event. Please create spaces first."
+                ),
+            )
+
+        return spaces
+
+    @staticmethod
+    def _get_time_slots(event: Event) -> QuerySet[TimeSlot]:
+        time_slots = TimeSlot.objects.filter(event=event)
+
+        if not time_slots.exists():
+            raise RedirectError(
+                reverse("web:event", kwargs={"slug": event.slug}),
+                error=_(
+                    "No time slots configured for this event. "
+                    "Please create time slots first."
+                ),
+            )
+
+        return time_slots
 
 
 class AcceptProposalView(LoginRequiredMixin, View):
     @staff_member_required
     def post(self, request: UserRequest, proposal_id: int) -> HttpResponse:
-        try:
-            proposal = Proposal.objects.get(
-                proposal_category__event__sphere=request.sphere, id=proposal_id
-            )
-        except Proposal.DoesNotExist:
-            messages.error(self.request, _("Proposal not found."))
-            return redirect("web:index")
-
+        proposal = _get_proposal(request, proposal_id)
         event = proposal.proposal_category.event
 
-        # Check if proposal is already accepted
-        if proposal.session:
-            messages.warning(request, _("This proposal has already been accepted."))
-            return redirect("web:event", slug=event.slug)
+        # Initialize form with POST data
+        form = ProposalAcceptanceForm(data=request.POST, event=event)
 
-        # Get form data
-        space_id = request.POST.get("space_id")
-        time_slot_id = request.POST.get("time_slot_id")
+        if not form.is_valid():
+            # Re-render with form errors
+            return TemplateResponse(
+                request,
+                "chronology/accept_proposal.html",
+                {
+                    "proposal": proposal,
+                    "event": event,
+                    "spaces": Space.objects.filter(event=event),
+                    "time_slots": TimeSlot.objects.filter(event=event),
+                    "form": form,
+                },
+            )
 
-        if not space_id:
-            messages.error(self.request, _("Please select a space."))
-            return redirect("web:accept-proposal-page", proposal_id=proposal_id)
+        self._create_session(form, proposal)
 
-        if not time_slot_id:
-            messages.error(self.request, _("Please select a time slot."))
-            return redirect("web:accept-proposal-page", proposal_id=proposal_id)
+        messages.success(
+            self.request,
+            _("Proposal '{}' has been accepted and added to the agenda.").format(
+                proposal.title
+            ),
+        )
+        return redirect("web:event", slug=event.slug)
 
-        try:
-            space = Space.objects.get(id=space_id, event=event)
-            time_slot = TimeSlot.objects.get(id=time_slot_id, event=event)
-        except (Space.DoesNotExist, TimeSlot.DoesNotExist):
-            messages.error(self.request, _("Selected space or time slot is invalid."))
-            return redirect("web:accept-proposal-page", proposal_id=proposal_id)
+    @staticmethod
+    def _create_session(form: ProposalAcceptanceForm, proposal: Proposal) -> None:
+        time_slot = form.cleaned_data["time_slot"]
 
         # Create a session from the proposal
         session = Session.objects.create(
-            sphere=event.sphere,
+            sphere=proposal.proposal_category.event.sphere,
             host=proposal.host,
             title=proposal.title,
             description=proposal.description,
@@ -962,16 +1071,10 @@ class AcceptProposalView(LoginRequiredMixin, View):
         # Copy tags from proposal to session
         session.tags.set(proposal.tags.all())
 
-        AgendaItem.objects.create(space=space, session=session, session_confirmed=True)
+        AgendaItem.objects.create(
+            space=form.cleaned_data["space"], session=session, session_confirmed=True
+        )
 
         # Link proposal to session
         proposal.session = session
         proposal.save()
-
-        messages.success(
-            request,
-            _("Proposal '{}' has been accepted and added to the agenda.").format(
-                proposal.title
-            ),
-        )
-        return redirect("web:event", slug=event.slug)

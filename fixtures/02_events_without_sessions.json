@@ -1,0 +1,87 @@
+[
+  {
+    "model": "django.event",
+    "pk": 1,
+    "fields": {
+      "sphere": 1,
+      "name": "Past Event",
+      "slug": "past-event",
+      "description": "This event has already ended",
+      "start_time": "2024-01-01T10:00:00Z",
+      "end_time": "2024-01-03T18:00:00Z",
+      "publication_time": "2023-12-01T00:00:00Z",
+      "proposal_start_time": null,
+      "proposal_end_time": null,
+      "enrollment_start_time": null,
+      "enrollment_end_time": null
+    }
+  },
+  {
+    "model": "django.event",
+    "pk": 2,
+    "fields": {
+      "sphere": 1,
+      "name": "Live Event", 
+      "slug": "live-event",
+      "description": "This event is currently ongoing",
+      "start_time": "2025-06-18T10:00:00Z",
+      "end_time": "2025-06-22T18:00:00Z",
+      "publication_time": "2025-05-01T00:00:00Z",
+      "proposal_start_time": null,
+      "proposal_end_time": null,
+      "enrollment_start_time": null,
+      "enrollment_end_time": null
+    }
+  },
+  {
+    "model": "django.event",
+    "pk": 3,
+    "fields": {
+      "sphere": 1,
+      "name": "Future Event",
+      "slug": "future-event", 
+      "description": "This event will happen in the future",
+      "start_time": "2025-08-01T10:00:00Z",
+      "end_time": "2025-08-03T18:00:00Z",
+      "publication_time": "2025-06-01T00:00:00Z",
+      "proposal_start_time": null,
+      "proposal_end_time": null,
+      "enrollment_start_time": null,
+      "enrollment_end_time": null
+    }
+  },
+  {
+    "model": "django.event",
+    "pk": 4,
+    "fields": {
+      "sphere": 1,
+      "name": "Event with Open Enrollment",
+      "slug": "event-open-enrollment",
+      "description": "This event has open enrollment period",
+      "start_time": "2025-07-15T10:00:00Z",
+      "end_time": "2025-07-17T18:00:00Z",
+      "publication_time": "2025-06-01T00:00:00Z",
+      "proposal_start_time": null,
+      "proposal_end_time": null,
+      "enrollment_start_time": "2025-06-10T00:00:00Z",
+      "enrollment_end_time": "2025-07-10T23:59:59Z"
+    }
+  },
+  {
+    "model": "django.event",
+    "pk": 5,
+    "fields": {
+      "sphere": 1,
+      "name": "Event with Closed Enrollment",
+      "slug": "event-closed-enrollment",
+      "description": "This event's enrollment period has ended",
+      "start_time": "2025-09-01T10:00:00Z",
+      "end_time": "2025-09-03T18:00:00Z",
+      "publication_time": "2025-06-01T00:00:00Z",
+      "proposal_start_time": null,
+      "proposal_end_time": null,
+      "enrollment_start_time": "2025-01-01T00:00:00Z",
+      "enrollment_end_time": "2025-01-31T23:59:59Z"
+    }
+  }
+]
