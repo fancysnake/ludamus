@@ -69,7 +69,7 @@ def custom_404(
             "title": _("Memory Address Not Found"),
             "message": _("The data you seek has been purged from the mainframe"),
             "subtitle": _("Corporate black ICE detected. Disconnecting..."),
-            "icon": "memory",
+            "icon": "hdd",
         },
         {
             "title": _("Glitch in the Matrix"),
@@ -90,7 +90,7 @@ def custom_404(
                 "You've stumbled upon knowledge that was never meant to exist"
             ),
             "subtitle": _("Your sanity takes 1d10 damage."),
-            "icon": "book-dead",
+            "icon": "book",
         },
         {
             "title": _("Lost in R'lyeh"),
@@ -152,7 +152,7 @@ def custom_500(request: HttpRequest) -> HttpResponse:
                 "we are casting dispel magic now"
             ),
             "subtitle": _("Please wait while our wizards restore order."),
-            "icon": "magic",
+            "icon": "stars",
         },
         {
             "title": _("Cursed Code!"),
@@ -220,7 +220,7 @@ def custom_500(request: HttpRequest) -> HttpResponse:
             "title": _("Reality Breach Detected"),
             "message": _("Non-Euclidean errors are cascading through the system"),
             "subtitle": _("The angles are all wrong. Physics.dll has failed."),
-            "icon": "exclamation-triangle",
+            "icon": "exclamation-triangle-fill",
         },
         {
             "title": _("Whispers in the Code"),
