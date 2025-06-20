@@ -14,7 +14,11 @@
             {% block title %}{% endblock %}
         </title>
         {% bootstrap_css %}
+        {% if request.session.theme %}
+        <link rel="stylesheet" href="{% static 'css/themes/'|add:request.session.theme|add:'.css' %}">
+        {% else %}
         <link rel="stylesheet" href="{% static 'css/themes/cold-steel.css' %}">
+        {% endif %}
     </head>
     <body>
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -125,13 +129,26 @@
         {% block body %}{% endblock %}
         <footer class="bg-light py-4 mt-5">
             <div class="container">
-                <div class="row">
-                    <div class="col-md-6">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
                         <p class="mb-0">
                             © 2025 Radosław Ganczarek. <a href="https://github.com/fancysnake/ludamus">Source code</a> available under BSD-3-Clause license.
                         </p>
                     </div>
-                    <div class="col-md-6 text-md-end">
+                    <div class="col-md-4 text-center">
+                        <form method="post" action="{% url 'web:theme-select' %}" class="d-inline-flex align-items-center">
+                            {% csrf_token %}
+                            <label for="theme-select" class="me-2 mb-0">{% translate "Theme:" %}</label>
+                            <select name="theme" id="theme-select" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                                <option value="cold-steel" {% if request.session.theme == "cold-steel" or not request.session.theme %}selected{% endif %}>{% translate "Cold Steel (Default)" %}</option>
+                                <option value="cyberpunk" {% if request.session.theme == "cyberpunk" %}selected{% endif %}>{% translate "Cyberpunk" %}</option>
+                                <option value="green-forest" {% if request.session.theme == "green-forest" %}selected{% endif %}>{% translate "Green Forest" %}</option>
+                                <option value="dragons-lair" {% if request.session.theme == "dragons-lair" %}selected{% endif %}>{% translate "Dragon's Lair" %}</option>
+                                <option value="outer-space" {% if request.session.theme == "outer-space" %}selected{% endif %}>{% translate "Outer Space" %}</option>
+                            </select>
+                        </form>
+                    </div>
+                    <div class="col-md-4 text-md-end">
                         <a href="mailto:{{ SUPPORT_EMAIL }}" class="text-decoration-none me-3">{% translate "Contact me" %}</a>
                         <a href="#" class="text-decoration-none me-3">{% translate "Privacy Policy" %}</a>
                         <a href="#" class="text-decoration-none">{% translate "Terms of Service" %}</a>

@@ -398,5 +398,20 @@ class ProposalAcceptanceForm(forms.Form):
             raise ValidationError(
                 _("There is already a session scheduled at this space and time.")
             )
-
         return cleaned_data
+
+
+class ThemeSelectionForm(forms.Form):
+    THEME_CHOICES: ClassVar = [
+        ("cold-steel", _("Cold Steel (Default)")),
+        ("cyberpunk", _("Cyberpunk")),
+        ("green-forest", _("Green Forest")),
+        ("dragons-lair", _("Dragon's Lair")),
+        ("outer-space", _("Outer Space")),
+    ]
+    
+    theme = forms.ChoiceField(
+        choices=THEME_CHOICES,
+        label=_("Theme"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )

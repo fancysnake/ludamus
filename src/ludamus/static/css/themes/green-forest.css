@@ -1,0 +1,706 @@
+/* Green Forest Theme for Ludamus - Natural Light Style */
+
+/* Theme colors */
+:root {
+    /* Primary colors - Forest Green */
+    --forest-primary: #2E7D32;
+    --forest-primary-dark: #1B5E20;
+    --forest-primary-darker: #0D4F1D;
+    
+    /* Accent colors */
+    --forest-leaf: #81C784;
+    --forest-leaf-light: #A5D6A7;
+    --forest-leaf-dark: #66BB6A;
+    
+    --forest-wood: #795548;
+    --forest-wood-light: #A1887F;
+    --forest-wood-dark: #5D4037;
+    
+    /* Status colors */
+    --forest-success: #43A047;
+    --forest-success-light: #66BB6A;
+    --forest-success-dark: #2E7D32;
+    
+    --forest-danger: #E53935;
+    --forest-danger-light: #EF5350;
+    --forest-danger-dark: #C62828;
+    
+    --forest-warning: #FFB300;
+    --forest-info: #039BE5;
+    --forest-info-dark: #0277BD;
+    
+    /* Background */
+    --forest-bg-light: #F1F8E9;
+    --forest-bg-lighter: #F9FBE7;
+    --forest-bg-white: #FFFFFF;
+}
+
+/* Light natural background for the entire page */
+body {
+    background-color: var(--forest-bg-light);
+    min-height: 100vh;
+    background-image:
+        radial-gradient(circle at 20% 80%, rgba(129, 199, 132, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(121, 85, 72, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(46, 125, 50, 0.02) 0%, transparent 50%);
+}
+
+/* Main content container with subtle styling */
+main .container,
+.content .container,
+body>.container:not(.navbar .container) {
+    background-color: var(--forest-bg-white);
+    padding: 2rem;
+    box-shadow: 0 0.25rem 1rem rgba(46, 125, 50, 0.1);
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(129, 199, 132, 0.2);
+}
+
+/* Ensure navbar container has no background */
+.navbar .container {
+    background-color: transparent !important;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* Bootstrap overrides for Forest theme */
+:root {
+    --bs-primary: var(--forest-primary);
+    --bs-primary-rgb: 46, 125, 50;
+    --bs-primary-bg-subtle: #E8F5E9;
+    --bs-primary-border-subtle: #C8E6C9;
+    --bs-link-color: var(--forest-primary);
+    --bs-link-hover-color: var(--forest-primary-dark);
+}
+
+/* Primary button styles - forest green */
+.btn-primary {
+    background-color: var(--forest-primary);
+    border-color: var(--forest-primary);
+    color: white;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--forest-primary-dark);
+    border-color: var(--forest-primary-dark);
+    color: white;
+    box-shadow: 0 0.25rem 0.5rem rgba(46, 125, 50, 0.3);
+}
+
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--forest-primary-darker);
+    border-color: var(--forest-primary-darker);
+    box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.5);
+    color: white;
+}
+
+/* Outline primary button */
+.btn-outline-primary {
+    color: var(--forest-primary);
+    border-color: var(--forest-primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--forest-primary);
+    border-color: var(--forest-primary);
+    color: white;
+}
+
+/* Text primary */
+.text-primary {
+    color: var(--forest-primary) !important;
+}
+
+/* Background primary */
+.bg-primary {
+    background-color: var(--forest-primary) !important;
+}
+
+/* Navbar with forest gradient */
+.navbar.bg-primary {
+    background: linear-gradient(135deg, var(--forest-primary) 0%, var(--forest-primary-dark) 100%) !important;
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.15);
+}
+
+/* Navbar text should be light on dark background */
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: var(--forest-leaf-light);
+}
+
+.navbar-dark .navbar-brand {
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.navbar-dark .navbar-brand:hover {
+    color: var(--forest-leaf-light);
+}
+
+/* Border primary */
+.border-primary {
+    border-color: var(--forest-primary) !important;
+}
+
+/* Alert primary */
+.alert-primary {
+    background-color: rgba(46, 125, 50, 0.08);
+    border-color: rgba(46, 125, 50, 0.3);
+    color: #1B5E20;
+    border-left: 4px solid var(--forest-primary);
+}
+
+/* Badge primary */
+.badge.bg-primary {
+    background-color: var(--forest-primary) !important;
+    color: white !important;
+}
+
+/* Tables with natural styling */
+.table {
+    --bs-table-bg: #ffffff;
+    --bs-table-striped-bg: #F5F5F5;
+    --bs-table-hover-bg: #E8F5E9;
+    background-color: white;
+}
+
+/* Table with leaf-themed shadow */
+.table-responsive {
+    box-shadow: 0 0.125rem 0.25rem rgba(46, 125, 50, 0.1);
+    border-radius: 0.375rem;
+    border: 1px solid rgba(129, 199, 132, 0.2);
+}
+
+/* Natural table headers */
+.table thead th {
+    background: linear-gradient(to bottom, rgba(129, 199, 132, 0.1), rgba(121, 85, 72, 0.05));
+    color: var(--forest-primary-dark);
+    border-bottom: 2px solid rgba(46, 125, 50, 0.3);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+/* Table hover with green tint */
+.table tbody tr:hover {
+    background-color: rgba(129, 199, 132, 0.1);
+}
+
+/* Make sure text is dark and readable */
+.table td,
+.table th {
+    color: #212529;
+}
+
+/* Form controls focus with leaf green */
+.form-control:focus {
+    border-color: var(--forest-leaf);
+    box-shadow: 0 0 0 0.25rem rgba(129, 199, 132, 0.25);
+}
+
+.form-select:focus {
+    border-color: var(--forest-leaf);
+    box-shadow: 0 0 0 0.25rem rgba(129, 199, 132, 0.25);
+}
+
+/* Form control backgrounds */
+.form-control,
+.form-select {
+    background-color: rgba(241, 248, 233, 0.5);
+    border-color: rgba(129, 199, 132, 0.3);
+}
+
+.form-control:hover:not(:focus),
+.form-select:hover:not(:focus) {
+    border-color: rgba(129, 199, 132, 0.5);
+}
+
+/* Pagination */
+.page-link {
+    color: var(--forest-primary);
+    border-color: rgba(46, 125, 50, 0.2);
+}
+
+.page-link:hover {
+    color: var(--forest-primary-dark);
+    background-color: rgba(129, 199, 132, 0.1);
+    border-color: rgba(129, 199, 132, 0.3);
+}
+
+.page-item.active .page-link {
+    background-color: var(--forest-primary);
+    border-color: var(--forest-primary);
+    color: white;
+}
+
+/* Progress bars */
+.progress {
+    background-color: rgba(129, 199, 132, 0.2);
+    border: 1px solid rgba(129, 199, 132, 0.3);
+}
+
+.progress-bar {
+    background: linear-gradient(to right, var(--forest-leaf-dark), var(--forest-primary), var(--forest-primary-dark));
+}
+
+/* Switches and checkboxes */
+.form-check-input:checked {
+    background-color: var(--forest-primary);
+    border-color: var(--forest-primary);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.25);
+}
+
+.form-check-input {
+    border-color: rgba(129, 199, 132, 0.5);
+}
+
+/* Links */
+a {
+    color: var(--forest-primary);
+}
+
+a:hover {
+    color: var(--forest-primary-dark);
+}
+
+/* Natural-themed cards */
+.card {
+    background-color: white;
+    box-shadow: 0 0.25rem 0.5rem rgba(46, 125, 50, 0.1);
+    border: 1px solid rgba(129, 199, 132, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--forest-leaf-dark) 0%, var(--forest-primary) 50%, var(--forest-wood) 100%);
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(46, 125, 50, 0.15);
+}
+
+/* Status badges */
+.badge {
+    font-weight: 500;
+}
+
+/* Success elements */
+.badge.bg-success {
+    background-color: var(--forest-success) !important;
+    color: white !important;
+}
+
+.btn-success {
+    background-color: var(--forest-success);
+    border-color: var(--forest-success);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background-color: var(--forest-success-dark);
+    border-color: var(--forest-success-dark);
+    color: white;
+}
+
+.alert-success {
+    background-color: rgba(67, 160, 71, 0.08);
+    border-color: rgba(67, 160, 71, 0.3);
+    color: #1B5E20;
+    border-left: 4px solid var(--forest-success);
+}
+
+.text-success {
+    color: var(--forest-success) !important;
+}
+
+/* Warning elements with autumn gold */
+.badge.bg-warning {
+    background-color: var(--forest-warning) !important;
+    color: #212529 !important;
+}
+
+.btn-warning {
+    background-color: var(--forest-warning);
+    border-color: var(--forest-warning);
+    color: #212529;
+    transition: all 0.3s ease;
+}
+
+.btn-warning:hover {
+    background-color: #FF8F00;
+    border-color: #FF8F00;
+    color: #212529;
+}
+
+.alert-warning {
+    background-color: rgba(255, 179, 0, 0.1);
+    border-color: rgba(255, 179, 0, 0.4);
+    color: #E65100;
+    border-left: 4px solid var(--forest-warning);
+}
+
+.text-warning {
+    color: #F57C00 !important;
+}
+
+/* Danger/Error elements */
+.badge.bg-danger {
+    background-color: var(--forest-danger) !important;
+    color: white !important;
+}
+
+.btn-danger {
+    background-color: var(--forest-danger);
+    border-color: var(--forest-danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: var(--forest-danger-dark);
+    border-color: var(--forest-danger-dark);
+    color: white;
+}
+
+.alert-danger {
+    background-color: rgba(229, 57, 53, 0.08);
+    border-color: rgba(229, 57, 53, 0.3);
+    color: #B71C1C;
+    border-left: 4px solid var(--forest-danger);
+}
+
+.text-danger {
+    color: var(--forest-danger) !important;
+}
+
+/* Info elements with sky blue */
+.badge.bg-info {
+    background-color: var(--forest-info) !important;
+    color: white !important;
+}
+
+.btn-info {
+    background-color: var(--forest-info);
+    border-color: var(--forest-info);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-info:hover {
+    background-color: var(--forest-info-dark);
+    border-color: var(--forest-info-dark);
+    color: white;
+}
+
+.alert-info {
+    background-color: rgba(3, 155, 229, 0.08);
+    border-color: rgba(3, 155, 229, 0.3);
+    color: #01579B;
+    border-left: 4px solid var(--forest-info);
+}
+
+.text-info {
+    color: var(--forest-info) !important;
+}
+
+/* Footer styling */
+footer {
+    background: linear-gradient(to bottom, rgba(129, 199, 132, 0.05), rgba(121, 85, 72, 0.03));
+    border-top: 2px solid rgba(46, 125, 50, 0.2);
+    margin-top: 3rem;
+    padding-top: 2rem;
+}
+
+/* Footer links */
+footer a {
+    color: var(--forest-primary);
+}
+
+footer a:hover {
+    color: var(--forest-leaf-dark);
+    text-decoration: underline;
+}
+
+/* Natural accent borders */
+.table tr.enrolled {
+    border-left: 3px solid var(--forest-success);
+}
+
+.card.enrolled {
+    border-left: 4px solid var(--forest-success);
+}
+
+.table tr.featured {
+    border-left: 3px solid var(--forest-warning);
+}
+
+.card.featured {
+    border-left: 4px solid var(--forest-warning);
+}
+
+/* Event status indicators */
+.event-status-live {
+    color: var(--forest-success);
+    font-weight: 600;
+}
+
+.event-status-upcoming {
+    color: var(--forest-warning);
+}
+
+/* Active nav item with green underline */
+.navbar-nav .nav-link.active {
+    border-bottom: 2px solid var(--forest-leaf);
+    padding-bottom: 6px;
+}
+
+/* Session capacity indicators */
+.capacity-available {
+    color: var(--forest-success);
+    font-weight: 500;
+}
+
+.capacity-limited {
+    color: var(--forest-warning);
+    font-weight: 500;
+}
+
+.capacity-full {
+    color: var(--forest-danger);
+    font-weight: 500;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    background-color: rgba(129, 199, 132, 0.08);
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(129, 199, 132, 0.2);
+}
+
+.breadcrumb-item.active {
+    color: var(--forest-primary);
+}
+
+.breadcrumb-item+.breadcrumb-item::before {
+    color: var(--forest-wood);
+}
+
+/* Dropdown hover with leaf tint */
+.dropdown-item:hover {
+    background-color: rgba(129, 199, 132, 0.1);
+    color: var(--forest-primary);
+}
+
+/* List group */
+.list-group-item.active {
+    background-color: var(--forest-primary);
+    border-color: var(--forest-primary);
+}
+
+.list-group-item:hover {
+    background-color: rgba(129, 199, 132, 0.05);
+}
+
+.list-group-item {
+    border-color: rgba(129, 199, 132, 0.2);
+}
+
+/* Blockquote with wood border */
+blockquote {
+    border-left: 4px solid var(--forest-wood);
+    padding-left: 1rem;
+    background-color: rgba(121, 85, 72, 0.05);
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+blockquote cite {
+    color: var(--forest-wood-dark);
+}
+
+/* Specific event status badges */
+.badge.event-live {
+    background-color: var(--forest-success) !important;
+    color: white !important;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.badge.event-live::before {
+    content: "";
+    position: absolute;
+    left: 0.5rem;
+    width: 8px;
+    height: 8px;
+    background-color: #81C784;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.badge.event-upcoming {
+    background-color: var(--forest-warning) !important;
+    color: #212529 !important;
+}
+
+.badge.event-past {
+    background-color: #757575 !important;
+    color: white !important;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Add smooth transitions */
+.btn,
+.form-control,
+.nav-link,
+.dropdown-item,
+.list-group-item,
+.table tbody tr,
+a {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Nature-themed section headers */
+h1, h2, h3 {
+    color: var(--forest-primary-dark);
+    font-weight: 600;
+}
+
+h2 {
+    position: relative;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+h2::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--forest-leaf) 0%, transparent 100%);
+}
+
+/* Custom HR with natural gradient */
+hr {
+    border: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--forest-leaf), var(--forest-primary), var(--forest-wood), var(--forest-primary), var(--forest-leaf));
+    opacity: 0.3;
+    margin: 2rem 0;
+}
+
+/* Secondary button with wood theme */
+.btn-secondary {
+    background-color: var(--forest-wood);
+    border-color: var(--forest-wood);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: var(--forest-wood-dark);
+    border-color: var(--forest-wood-dark);
+    color: white;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar-thumb {
+    background-color: var(--forest-leaf);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--forest-leaf-dark);
+}
+
+/* Focus outline with primary color */
+*:focus {
+    outline-color: var(--forest-primary);
+}
+
+/* Custom radio and checkbox colors */
+.form-check-input:checked {
+    background-color: var(--forest-primary);
+    border-color: var(--forest-primary);
+}
+
+/* Highlight important information */
+.highlight-green {
+    background-color: rgba(129, 199, 132, 0.15);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.highlight-wood {
+    background-color: rgba(121, 85, 72, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Tag colors */
+.tag-green {
+    background-color: rgba(129, 199, 132, 0.1);
+    color: var(--forest-primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    border: 1px solid rgba(129, 199, 132, 0.3);
+}
+
+.tag-wood {
+    background-color: rgba(121, 85, 72, 0.1);
+    color: var(--forest-wood-dark);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    border: 1px solid rgba(121, 85, 72, 0.3);
+}
+
+/* Form validation states */
+.form-control.is-valid {
+    border-color: var(--forest-success);
+}
+
+.form-control.is-valid:focus {
+    border-color: var(--forest-success);
+    box-shadow: 0 0 0 0.25rem rgba(67, 160, 71, 0.25);
+}
+
+.valid-feedback {
+    color: var(--forest-success);
+}
+
