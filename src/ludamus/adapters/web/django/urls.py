@@ -52,4 +52,5 @@ urlpatterns = [
     path("crowd/user/logout", views.logout, name="logout"),
     path("crowd/user/under-age", views.under_age, name="under_age"),
     path("redirect", views.redirect_view, name="redirect"),
+    path("theme/select", views.ThemeSelectionView.as_view(), name="theme-select"),
 ]
