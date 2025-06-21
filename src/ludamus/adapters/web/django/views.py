@@ -1,4 +1,5 @@
 import json
+
 from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
@@ -204,7 +205,12 @@ def index(request: HttpRequest) -> HttpResponse:
     return TemplateResponse(
         request,
         "index.html",
-        context={"pretty": json.dumps(request.session.get("user"), indent=4)},
+        context={
+            "pretty": json.dumps(request.session.get("user"), indent=4),
+            "events": (
+                Event.objects.filter(sphere__site=get_site_from_request(request)).all()
+            ),
+        },
     )
 
 
@@ -1139,13 +1145,13 @@ class AcceptProposalView(LoginRequiredMixin, View):
 class ThemeSelectionView(View):
     def post(self, request: UserRequest) -> HttpResponse:
         from .forms import ThemeSelectionForm
-        
+
         form = ThemeSelectionForm(request.POST)
         if form.is_valid():
             theme = form.cleaned_data["theme"]
             request.session["theme"] = theme
             # Redirect back to the referring page
             return redirect(request.META.get("HTTP_REFERER", "/"))
-        
+
         # If form is invalid, redirect back anyway
         return redirect(request.META.get("HTTP_REFERER", "/"))

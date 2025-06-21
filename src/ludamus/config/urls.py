@@ -18,6 +18,8 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
+from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     path("", include("ludamus.adapters.web.django.urls", namespace="web")),
@@ -31,3 +33,6 @@ handler404 = (  # pylint: disable=invalid-name
 handler500 = (  # pylint: disable=invalid-name
     "ludamus.adapters.web.django.error_views.custom_500"
 )
+
+if settings.DEBUG:
+    urlpatterns += debug_toolbar_urls()
