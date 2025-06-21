@@ -57,6 +57,10 @@ MIDDLEWARE = [
     "ludamus.adapters.web.django.middlewares.RedirectErrorMiddleware",
 ]
 
+if DEBUG:
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+
 ROOT_URLCONF = "ludamus.config.urls"
 
 TEMPLATES = [
@@ -150,3 +154,9 @@ AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
 # Support
 
 SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support@zagrajmy.net")
+
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]

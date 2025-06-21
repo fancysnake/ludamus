@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-19 15:53+0200\n"
+"POT-Creation-Date: 2025-06-21 08:23+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,27 +19,27 @@ msgstr ""
 "(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
 "n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
-#: src/ludamus/adapters/db/django/models.py:57
+#: src/ludamus/adapters/db/django/models.py:58
 msgid "Active"
 msgstr "Aktywny"
 
-#: src/ludamus/adapters/db/django/models.py:58
+#: src/ludamus/adapters/db/django/models.py:59
 msgid "Connected"
 msgstr "Powiązany"
 
-#: src/ludamus/adapters/db/django/models.py:61
+#: src/ludamus/adapters/db/django/models.py:62
 msgid "date joined"
 msgstr "data dołączenia"
 
-#: src/ludamus/adapters/db/django/models.py:62
+#: src/ludamus/adapters/db/django/models.py:63
 msgid "email address"
 msgstr "adres email"
 
-#: src/ludamus/adapters/db/django/models.py:64
+#: src/ludamus/adapters/db/django/models.py:65
 msgid "active"
 msgstr "aktywny"
 
-#: src/ludamus/adapters/db/django/models.py:67
+#: src/ludamus/adapters/db/django/models.py:68
 msgid ""
 "Designates whether this user should be treated as active. Unselect this "
 "instead of deleting accounts."
@@ -47,48 +47,48 @@ msgstr ""
 "Określa czy użytkownika należy uważać za aktywnego. Odznacz zamiast usuwać "
 "konto."
 
-#: src/ludamus/adapters/db/django/models.py:72
+#: src/ludamus/adapters/db/django/models.py:73
 msgid "staff status"
 msgstr "w zespole"
 
-#: src/ludamus/adapters/db/django/models.py:74
+#: src/ludamus/adapters/db/django/models.py:75
 msgid "Designates whether the user can log into this admin site."
 msgstr "Określa czy użytkownik może zalogować się do panelu administracyjnego."
 
-#: src/ludamus/adapters/db/django/models.py:83
-#: src/ludamus/adapters/web/django/views.py:180
+#: src/ludamus/adapters/db/django/models.py:84
+#: src/ludamus/adapters/web/django/views.py:222
 msgid "User name"
 msgstr "Nazwa użytkownika"
 
-#: src/ludamus/adapters/db/django/models.py:89
+#: src/ludamus/adapters/db/django/models.py:90
 msgid "username"
 msgstr "Nazwa użytkownika"
 
-#: src/ludamus/adapters/db/django/models.py:93
+#: src/ludamus/adapters/db/django/models.py:94
 msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr "Wymagana. 150 lub mniej znaków. Jedynie litery, cyfry i @/./+/-/_."
 
-#: src/ludamus/adapters/db/django/models.py:95
+#: src/ludamus/adapters/db/django/models.py:96
 msgid "A user with that username already exists."
 msgstr "Użytkownik o tej nazwie już istnieje."
 
-#: src/ludamus/adapters/db/django/models.py:117
+#: src/ludamus/adapters/db/django/models.py:118
 msgid "user"
 msgstr "użytkownik"
 
-#: src/ludamus/adapters/db/django/models.py:118
+#: src/ludamus/adapters/db/django/models.py:119
 msgid "users"
 msgstr "użytkownicy"
 
-#: src/ludamus/adapters/db/django/models.py:347
+#: src/ludamus/adapters/db/django/models.py:352
 msgid "Time slots can't overlap!"
 msgstr "Bloki czasowe nie mogą się nakładać!"
 
-#: src/ludamus/adapters/db/django/models.py:352
+#: src/ludamus/adapters/db/django/models.py:357
 msgid "Select from list"
 msgstr "Wybierz z listy"
 
-#: src/ludamus/adapters/db/django/models.py:353
+#: src/ludamus/adapters/db/django/models.py:358
 msgid "Type comma-separated"
 msgstr "Wpisz oddzielone przecinkami"
 
@@ -611,105 +611,134 @@ msgstr "Wybierz blok czasowy."
 msgid "There is already a session scheduled at this space and time."
 msgstr "Ten użytkownik jest już zapisany na ten punkt programu."
 
+#: src/ludamus/adapters/web/django/forms.py:406
+#: src/ludamus/templates/base.html:143
+msgid "Cold Steel (Default)"
+msgstr "Zimna Stal (Domyślny)"
+
+#: src/ludamus/adapters/web/django/forms.py:407
+#: src/ludamus/templates/base.html:144
+msgid "Cyberpunk"
+msgstr "Cyberpunk"
+
+#: src/ludamus/adapters/web/django/forms.py:408
+#: src/ludamus/templates/base.html:145
+msgid "Green Forest"
+msgstr "Zielony Las"
+
+#: src/ludamus/adapters/web/django/forms.py:409
+#: src/ludamus/templates/base.html:146
+msgid "Dragon's Lair"
+msgstr "Smocza Jama"
+
+#: src/ludamus/adapters/web/django/forms.py:410
+#: src/ludamus/templates/base.html:147
+msgid "Outer Space"
+msgstr "Kosmos"
+
+#: src/ludamus/adapters/web/django/forms.py:415
+msgid "Theme"
+msgstr "Motyw"
+
 #: src/ludamus/adapters/web/django/middlewares.py:28
 msgid "Sphere not found"
 msgstr "Sfera nie została znaleziona."
 
-#: src/ludamus/adapters/web/django/views.py:63
+#: src/ludamus/adapters/web/django/views.py:65
 msgid "Wrong type of site!"
 msgstr "Nieprawidłowy typ strony!"
 
-#: src/ludamus/adapters/web/django/views.py:141
+#: src/ludamus/adapters/web/django/views.py:143
 msgid "Welcome!"
 msgstr "Witaj!"
 
-#: src/ludamus/adapters/web/django/views.py:143
+#: src/ludamus/adapters/web/django/views.py:147
 msgid " Please complete your profile."
 msgstr "Uzupełnij swój profil."
 
-#: src/ludamus/adapters/web/django/views.py:152
+#: src/ludamus/adapters/web/django/views.py:168
 msgid "You have been successfully logged out."
 msgstr "Zostałeś pomyślnie wylogowany."
 
-#: src/ludamus/adapters/web/django/views.py:182
+#: src/ludamus/adapters/web/django/views.py:224
 msgid "Birth date"
 msgstr "Data urodzenia"
 
-#: src/ludamus/adapters/web/django/views.py:240
+#: src/ludamus/adapters/web/django/views.py:283
 msgid "Profile updated successfully!"
 msgstr "Profil został zaktualizowany!"
 
-#: src/ludamus/adapters/web/django/views.py:244
-#: src/ludamus/adapters/web/django/views.py:281
-#: src/ludamus/adapters/web/django/views.py:296
+#: src/ludamus/adapters/web/django/views.py:287
+#: src/ludamus/adapters/web/django/views.py:324
+#: src/ludamus/adapters/web/django/views.py:339
 msgid "Please correct the errors below."
 msgstr "Proszę poprawić błędy poniżej."
 
-#: src/ludamus/adapters/web/django/views.py:277
+#: src/ludamus/adapters/web/django/views.py:320
 msgid "Connected user added successfully!"
 msgstr "Powiązana osoba została dodana!"
 
-#: src/ludamus/adapters/web/django/views.py:292
+#: src/ludamus/adapters/web/django/views.py:335
 msgid "Connected user updated successfully!"
 msgstr "Powiązana osoba została zaktualizowana!"
 
-#: src/ludamus/adapters/web/django/views.py:305
+#: src/ludamus/adapters/web/django/views.py:348
 msgid "Connected user deleted successfully."
 msgstr "Powiązana osoba została usunięta."
 
-#: src/ludamus/adapters/web/django/views.py:449
+#: src/ludamus/adapters/web/django/views.py:492
 msgid "yourself"
 msgstr "siebie"
 
-#: src/ludamus/adapters/web/django/views.py:470
+#: src/ludamus/adapters/web/django/views.py:513
 msgid "Session not found."
 msgstr "Punkt programu nie został znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:505
+#: src/ludamus/adapters/web/django/views.py:548
 msgid "Please complete your profile with birth date before enrolling."
 msgstr "Uzupełnij swój profil z datą urodzenia przed zapisywaniem się."
 
-#: src/ludamus/adapters/web/django/views.py:515
+#: src/ludamus/adapters/web/django/views.py:558
 msgid "Enrollment is not currently active for this event."
 msgstr "Zapisy na ten festiwal nie są obecnie aktywne."
 
-#: src/ludamus/adapters/web/django/views.py:629
+#: src/ludamus/adapters/web/django/views.py:672
 msgid "not enrolled"
 msgstr "nie zapisany"
 
-#: src/ludamus/adapters/web/django/views.py:672
+#: src/ludamus/adapters/web/django/views.py:715
 msgid "promoted from waiting list"
 msgstr "przeniesiony z listy oczekujących"
 
-#: src/ludamus/adapters/web/django/views.py:682
+#: src/ludamus/adapters/web/django/views.py:725
 msgid "already enrolled"
 msgstr "już zapisany"
 
-#: src/ludamus/adapters/web/django/views.py:697
+#: src/ludamus/adapters/web/django/views.py:740
 msgid "time conflict"
 msgstr "konflikt czasowy"
 
-#: src/ludamus/adapters/web/django/views.py:711
+#: src/ludamus/adapters/web/django/views.py:754
 msgid "Enrolled: {}"
 msgstr "Zapisani: {}"
 
-#: src/ludamus/adapters/web/django/views.py:715
+#: src/ludamus/adapters/web/django/views.py:758
 msgid "Added to waiting list: {}"
 msgstr "Dodani do listy oczekujących: {}"
 
-#: src/ludamus/adapters/web/django/views.py:717
+#: src/ludamus/adapters/web/django/views.py:760
 msgid "Cancelled: {}"
 msgstr "Anulowani: {}"
 
-#: src/ludamus/adapters/web/django/views.py:720
+#: src/ludamus/adapters/web/django/views.py:763
 msgid "Skipped (already enrolled or conflicts): {}"
 msgstr "Pominięci (już zapisani lub konflikty): {}"
 
-#: src/ludamus/adapters/web/django/views.py:728
+#: src/ludamus/adapters/web/django/views.py:771
 msgid "No enrollments were processed."
 msgstr "Żadne zapisy nie zostały przetworzone."
 
-#: src/ludamus/adapters/web/django/views.py:746
+#: src/ludamus/adapters/web/django/views.py:789
 msgid ""
 "Not enough spots available. {} spots requested, {} available. Please use "
 "waiting list for some users."
@@ -717,35 +746,35 @@ msgstr ""
 "Za mało dostępnych miejsc. {} miejsc żądanych, {} dostępnych. Użyj listy "
 "oczekujących dla niektórych użytkowników."
 
-#: src/ludamus/adapters/web/django/views.py:769
+#: src/ludamus/adapters/web/django/views.py:812
 msgid "Please select at least one user to enroll."
 msgstr "Wybierz przynajmniej jednego użytkownika do zapisu."
 
-#: src/ludamus/adapters/web/django/views.py:786
-#: src/ludamus/adapters/web/django/views.py:831
+#: src/ludamus/adapters/web/django/views.py:829
+#: src/ludamus/adapters/web/django/views.py:874
 msgid ""
 "Please complete your profile with birth date before submitting proposals."
 msgstr "Uzupełnij swój profil z datą urodzenia przed składaniem zgłoszeń."
 
-#: src/ludamus/adapters/web/django/views.py:898
+#: src/ludamus/adapters/web/django/views.py:941
 msgid "Session proposal '{}' submitted successfully!"
 msgstr "Zgłoszenie punktu programu '{}' zostało pomyślnie przesłane!"
 
-#: src/ludamus/adapters/web/django/views.py:927
+#: src/ludamus/adapters/web/django/views.py:970
 msgid "Event not found."
 msgstr "Festiwal nie został znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:933
+#: src/ludamus/adapters/web/django/views.py:976
 msgid "Proposal submission is not currently active for this event."
 msgstr ""
 "Składanie zgłoszeń punktów programu nie jest obecnie aktywne dla tego "
 "festiwalu."
 
-#: src/ludamus/adapters/web/django/views.py:946
+#: src/ludamus/adapters/web/django/views.py:989
 msgid "Time slot not found."
 msgstr "Blok czasowy nie został znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:959
+#: src/ludamus/adapters/web/django/views.py:1002
 msgid ""
 "No proposal category configured for this event. Please contact the "
 "organizers."
@@ -753,28 +782,28 @@ msgstr ""
 "Brak skonfigurowanej kategorii zgłoszeń dla tego festiwalu. Skontaktuj się z "
 "organizatorami."
 
-#: src/ludamus/adapters/web/django/views.py:972
+#: src/ludamus/adapters/web/django/views.py:1015
 msgid "Proposal not found."
 msgstr "Zgłoszenie nie zostało znalezione."
 
-#: src/ludamus/adapters/web/django/views.py:981
+#: src/ludamus/adapters/web/django/views.py:1024
 msgid "This proposal has already been accepted."
 msgstr "To zgłoszenie zostało już zaakceptowane."
 
-#: src/ludamus/adapters/web/django/views.py:1018
+#: src/ludamus/adapters/web/django/views.py:1061
 msgid "No spaces configured for this event. Please create spaces first."
 msgstr ""
 "Brak skonfigurowanych przestrzeni dla tego festiwalu. Utwórz najpierw "
 "przestrzenie."
 
-#: src/ludamus/adapters/web/django/views.py:1032
+#: src/ludamus/adapters/web/django/views.py:1075
 msgid ""
 "No time slots configured for this event. Please create time slots first."
 msgstr ""
 "Brak skonfigurowanych bloków czasowych dla tego festiwalu. Utwórz najpierw "
 "bloki czasowe."
 
-#: src/ludamus/adapters/web/django/views.py:1067
+#: src/ludamus/adapters/web/django/views.py:1110
 msgid "Proposal '{}' has been accepted and added to the agenda."
 msgstr "Zgłoszenie '{}' zostało zaakceptowane i dodane do programu."
 
@@ -791,28 +820,32 @@ msgstr "Przejdź do strony głównej"
 msgid "Go Back"
 msgstr "Wróć"
 
-#: src/ludamus/templates/base.html:43
+#: src/ludamus/templates/base.html:49
 msgid "Edit Profile"
 msgstr "Edycja danych"
 
-#: src/ludamus/templates/base.html:47
+#: src/ludamus/templates/base.html:53
 msgid "Logout"
 msgstr "Wyloguj"
 
-#: src/ludamus/templates/base.html:50
+#: src/ludamus/templates/base.html:56
 #: src/ludamus/templates/chronology/event.html:232
 msgid "Login"
 msgstr "Zaloguj"
 
-#: src/ludamus/templates/base.html:133
+#: src/ludamus/templates/base.html:141
+msgid "Theme:"
+msgstr "Motyw:"
+
+#: src/ludamus/templates/base.html:152
 msgid "Contact me"
 msgstr "Kontakt"
 
-#: src/ludamus/templates/base.html:134
+#: src/ludamus/templates/base.html:153
 msgid "Privacy Policy"
 msgstr "Polityka prywatności"
 
-#: src/ludamus/templates/base.html:135
+#: src/ludamus/templates/base.html:154
 msgid "Terms of Service"
 msgstr "Regulamin"
 
@@ -1026,7 +1059,7 @@ msgid "Status"
 msgstr "Status"
 
 #: src/ludamus/templates/chronology/event.html:43
-#: src/ludamus/templates/index.html:49
+#: src/ludamus/templates/index.html:47
 msgid "LIVE"
 msgstr "W TRAKCIE"
 
@@ -1035,7 +1068,7 @@ msgid "COMPLETED"
 msgstr "ZAKOŃCZONE"
 
 #: src/ludamus/templates/chronology/event.html:47
-#: src/ludamus/templates/index.html:54
+#: src/ludamus/templates/index.html:52
 msgid "UPCOMING"
 msgstr "NADCHODZĄCE"
 
@@ -1446,6 +1479,49 @@ msgstr "Zaloguj się"
 msgid "Back to Home"
 msgstr "Powrót do strony głównej"
 
+#: src/ludamus/templates/crowd/user/under_age.html:6
+#: src/ludamus/templates/crowd/user/under_age.html:17
+msgid "Age Restriction"
+msgstr "Ograniczenie wiekowe"
+
+#: src/ludamus/templates/crowd/user/under_age.html:19
+msgid ""
+"We're sorry, but you must be at least 16 years old to create an account on "
+"our platform."
+msgstr ""
+"Przykro nam, ale musisz mieć co najmniej 16 lat, aby utworzyć konto na "
+"naszej platformie."
+
+#: src/ludamus/templates/crowd/user/under_age.html:22
+msgid ""
+"This restriction is in place to ensure the safety and appropriate experience "
+"for all our users."
+msgstr ""
+"To ograniczenie zostało wprowadzone, aby zapewnić bezpieczeństwo i "
+"odpowiednie doświadczenie dla wszystkich naszych użytkowników."
+
+#: src/ludamus/templates/crowd/user/under_age.html:26
+msgid ""
+"If you'd like to participate in our events, please ask a parent or guardian "
+"to create an account and register you as a connected user. They will be able "
+"to sign you up for sessions on your behalf."
+msgstr ""
+"Jeśli chcesz uczestniczyć w naszych wydarzeniach, poproś rodzica lub "
+"opiekuna o utworzenie konta i zarejestrowanie Cię jako użytkownika "
+"powiązanego. Będą mogli zapisać Cię na sesje w Twoim imieniu."
+
+#: src/ludamus/templates/crowd/user/under_age.html:30
+msgid "Return to Home"
+msgstr "Wróć do strony głównej"
+
+#: src/ludamus/templates/crowd/user/under_age.html:31
+msgid "Age Restriction Issue"
+msgstr "Problem z ograniczeniem wiekowym"
+
+#: src/ludamus/templates/crowd/user/under_age.html:33
+msgid "It's a mistake"
+msgstr "To pomyłka"
+
 #: src/ludamus/templates/index.html:5 src/ludamus/templates/index.html:8
 msgid "Upcoming events"
 msgstr "Nadchodzące wydarzenia"
@@ -1454,50 +1530,18 @@ msgstr "Nadchodzące wydarzenia"
 msgid "Event Name"
 msgstr "Nazwa"
 
-#: src/ludamus/templates/index.html:52
+#: src/ludamus/templates/index.html:50
 msgid "PAST"
 msgstr "MINIONE"
 
-#: src/ludamus/templates/index.html:60
+#: src/ludamus/templates/index.html:58
 msgid "View Event"
 msgstr "Zobacz wydarzenie"
 
-#: src/ludamus/templates/index.html:69
+#: src/ludamus/templates/index.html:67
 msgid "No events available"
 msgstr "Brak dostępnych wydarzeń"
 
-#: src/ludamus/templates/index.html:70
+#: src/ludamus/templates/index.html:68
 msgid "There are currently no events scheduled. Please check back later!"
 msgstr "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź ponownie później!"
-
-#: src/ludamus/templates/crowd/user/under_age.html:6
-#: src/ludamus/templates/crowd/user/under_age.html:18
-msgid "Age Restriction"
-msgstr "Ograniczenie wiekowe"
-
-#: src/ludamus/templates/crowd/user/under_age.html:21
-msgid "We're sorry, but you must be at least 16 years old to create an account on our platform."
-msgstr "Przykro nam, ale musisz mieć co najmniej 16 lat, aby utworzyć konto na naszej platformie."
-
-#: src/ludamus/templates/crowd/user/under_age.html:25
-msgid "This restriction is in place to ensure the safety and appropriate experience for all our users."
-msgstr "To ograniczenie zostało wprowadzone, aby zapewnić bezpieczeństwo i odpowiednie doświadczenie dla wszystkich naszych użytkowników."
-
-#: src/ludamus/templates/crowd/user/under_age.html:30
-msgid "If you'd like to participate in our events, please ask a parent or guardian to create an account and register you as a connected user. They will be able to sign you up for sessions on your behalf."
-msgstr "Jeśli chcesz uczestniczyć w naszych wydarzeniach, poproś rodzica lub opiekuna o utworzenie konta i zarejestrowanie Cię jako użytkownika powiązanego. Będą mogli zapisać Cię na sesje w Twoim imieniu."
-
-#: src/ludamus/templates/crowd/user/under_age.html:35
-msgid "Return to Home"
-msgstr "Wróć do strony głównej"
-
-#: src/ludamus/templates/crowd/user/under_age.html:38
-msgid "Age Restriction Issue"
-msgstr "Problem z ograniczeniem wiekowym"
-
-#: src/ludamus/templates/crowd/user/under_age.html:39
-msgid "It's a mistake"
-msgstr "To pomyłka"
-
-#~ msgid "Please log in with your account to continue."
-#~ msgstr "Zaloguj się na swoje konto, aby kontynuować."
