@@ -200,7 +200,7 @@ class Event(models.Model):
                 fields=("sphere", "slug"), name="event_has_unique_slug_and_sphere"
             ),
             models.CheckConstraint(
-                check=Q(
+                condition=Q(
                     publication_time__isnull=True,
                     start_time__isnull=True,
                     end_time__isnull=True,
@@ -328,7 +328,7 @@ class TimeSlot(models.Model):
                 name="timeslot_has_unique_times_for_event",
             ),
             models.CheckConstraint(
-                check=Q(start_time__lt=F("end_time")), name="timeslot_date_times"
+                condition=Q(start_time__lt=F("end_time")), name="timeslot_date_times"
             ),
         )
 
@@ -393,14 +393,6 @@ class Tag(models.Model):
         return self.name
 
 
-class SessionStatus(StrEnum):
-    DRAFT = auto()
-    PLANNED = auto()
-    PUBLISHED = auto()
-    ONGOING = auto()
-    PAST = auto()
-
-
 class Session(models.Model):
     """Session model."""
 
@@ -427,9 +419,6 @@ class Session(models.Model):
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
-    start_time = models.DateTimeField(blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
-    publication_time = models.DateTimeField(blank=True, null=True)
     # Participants
     participants_limit = models.PositiveIntegerField()
     participants: models.ManyToManyField[User, Never] = models.ManyToManyField(
@@ -441,21 +430,6 @@ class Session(models.Model):
         constraints = (
             models.UniqueConstraint(
                 fields=["slug", "sphere"], name="session_unique_slug_in_sphere"
-            ),
-            models.CheckConstraint(
-                check=(
-                    (
-                        Q(publication_time__isnull=True)
-                        | Q(start_time__isnull=True)
-                        | Q(publication_time__lte=F("start_time"))
-                    )
-                    & (
-                        Q(start_time__isnull=True)
-                        | Q(end_time__isnull=True)
-                        | Q(start_time__lt=F("end_time"))
-                    )
-                ),
-                name="session_date_times",
             ),
         )
 
@@ -483,19 +457,6 @@ class Session(models.Model):
         )
 
     @property
-    def status(self) -> SessionStatus:
-        now = datetime.now(tz=UTC)
-        if not self.start_time or not self.end_time or not self.publication_time:
-            return SessionStatus.DRAFT
-        if now < self.publication_time:
-            return SessionStatus.PLANNED
-        if now < self.start_time:
-            return SessionStatus.PUBLISHED
-        if now < self.end_time:
-            return SessionStatus.ONGOING
-        return SessionStatus.PAST
-
-    @property
     def enrolled_count(self) -> int:
         return self.session_participations.filter(
             status=SessionParticipationStatus.CONFIRMED
@@ -506,22 +467,6 @@ class Session(models.Model):
         return self.session_participations.filter(
             status=SessionParticipationStatus.WAITING
         ).count()
-
-    def overlaps_with(self, other_session: Session) -> bool:
-        return bool(
-            other_session.start_time
-            and other_session.end_time
-            and self.start_time
-            and self.end_time
-            and (
-                (other_session.start_time <= self.start_time < other_session.end_time)
-                or (other_session.start_time < self.end_time <= other_session.end_time)
-            )
-        )
-
-    @property
-    def is_planned(self) -> bool:
-        return bool(self.start_time and self.end_time)
 
 
 class AgendaItemStatus(StrEnum):
@@ -538,9 +483,21 @@ class AgendaItem(models.Model):
         Session, on_delete=models.CASCADE, related_name="agenda_item"
     )
     session_confirmed = models.BooleanField(default=False)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
 
     class Meta:
         db_table = "agenda_item"
+        constraints = (
+            models.CheckConstraint(
+                condition=(
+                    Q(start_time__isnull=True)
+                    | Q(end_time__isnull=True)
+                    | Q(start_time__lt=F("end_time"))
+                ),
+                name="agenda_item_date_times",
+            ),
+        )
 
     def __str__(self) -> str:
         return f"{self.session.title} by {self.session.host.name} ({self.status})"
@@ -550,6 +507,18 @@ class AgendaItem(models.Model):
         if self.session_confirmed:
             return AgendaItemStatus.CONFIRMED
         return AgendaItemStatus.UNCONFIRMED
+
+    def overlaps_with(self, other_item: AgendaItem) -> bool:
+        return bool(
+            other_item.start_time
+            and other_item.end_time
+            and self.start_time
+            and self.end_time
+            and (
+                (other_item.start_time <= self.start_time < other_item.end_time)
+                or (other_item.start_time < self.end_time <= other_item.end_time)
+            )
+        )
 
 
 class ProposalCategory(models.Model):

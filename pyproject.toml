@@ -24,17 +24,23 @@ django-bootstrap-icons = "~0.9.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
+django-debug-toolbar = "^5.2.0"
 django-stubs = "^5.2.0"
 djlint = "^1.36.4"
+faker = "^37.4.0"
 mypy = "^1.16.0"
 poethepoet = "^0.35.0"
+pylint = "^3.3.7"
+pytest = "^8.4.1"
+pytest-cov = "^6.2.1"
+pytest-django = "^4.11.1"
 ruff = "^0.12.0"
 types-authlib = "^1.5.0.20250516"
 
 # POE
-pylint = "^3.3.7"
-faker = "^37.4.0"
-django-debug-toolbar = "^5.2.0"
+factory-boy = "^3.3.3"
+freezegun = "^1.5.2"
+
 [tool.poe]
 envfile = ".env"
 
@@ -59,6 +65,10 @@ update = [
     { cmd = "poetry update" },
     { cmd = "poetry show -o" },
 ]
+
+[tool.poe.tasks.inttest]
+cmd = "pytest"
+envfile = ".env.test"
 
 # BLACK
 
@@ -103,7 +113,7 @@ disallow_subclassing_any = true
 disallow_untyped_calls = true
 disallow_untyped_decorators = true
 disallow_untyped_defs = true
-exclude = ["migrations/.*.py"]
+exclude = ["migrations/.*.py", "tests/*.py"]
 python_version = "3.13"
 plugins = ["mypy_django_plugin.main"]
 warn_incomplete_stub = true
@@ -116,3 +126,26 @@ warn_unused_ignores = true
 
 [tool.django-stubs]
 django_settings_module = "ludamus.config.settings"
+
+# COVERAGE
+
+[tool.coverage.run]
+branch = true
+source = ["src", "tests"]
+omit = [
+    "src/ludamus/config/*",
+    "src/ludamus/deploy/*"
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "# pragma: no cover"
+]
+
+# PYTEST
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "ludamus.config.settings"

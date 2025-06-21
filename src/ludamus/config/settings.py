@@ -49,11 +49,11 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "ludamus.adapters.web.django.middlewares.SphereMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "ludamus.adapters.web.django.middlewares.SphereMiddleware",
     "ludamus.adapters.web.django.middlewares.RedirectErrorMiddleware",
 ]
 
@@ -88,12 +88,19 @@ WSGI_APPLICATION = "ludamus.deploy.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "dev.sqlite3",
+TESTING = os.getenv("TESTING", "")
+
+if TESTING:
+    DATABASES = {
+        "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "dev.sqlite3",
+        }
+    }
 
 
 # Password validation
