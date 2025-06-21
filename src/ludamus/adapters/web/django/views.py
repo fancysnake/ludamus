@@ -1,5 +1,3 @@
-import json
-
 from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
@@ -20,13 +18,13 @@ from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.exceptions import BadRequest
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
+from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
@@ -46,6 +44,10 @@ from ludamus.adapters.db.django.models import (
     TimeSlot,
 )
 from ludamus.adapters.oauth import oauth
+from ludamus.adapters.web.django.entities import (
+    SessionData,
+    SessionUserParticipationData,
+)
 
 from .exceptions import RedirectError
 from .forms import EnrollmentForm, ProposalAcceptanceForm, SessionProposalForm
@@ -117,10 +119,8 @@ class CallbackView(RedirectView):
     def get_redirect_url(  # type: ignore [explicit-any]
         self, *args: Any, **kwargs: Any
     ) -> str | None:
-        if super_url := super().get_redirect_url(*args, **kwargs):
-            return super_url
-
-        redirect_to = self.request.GET.get("redirect_to", "")
+        redirect_to = super().get_redirect_url(*args, **kwargs)
+        redirect_to = self.request.GET.get("redirect_to") or redirect_to or ""
 
         # Handle login/signup
         if not self.request.user.is_authenticated:
@@ -128,14 +128,10 @@ class CallbackView(RedirectView):
             user, created = User.objects.get_or_create(username=username)
 
             # Check if user is inactive due to being under 16
-            if (
-                not user.is_active
-                and user.birth_date
-                and user.age < MINIMUM_ALLOWED_USER_AGE
-            ):
+            if user.birth_date and user.age < MINIMUM_ALLOWED_USER_AGE:
                 # Redirect to under-age page without logging them in
-                return auth0_logout_url(
-                    self.request, redirect_to=reverse("web:under_age")
+                return _auth0_logout_url(
+                    self.request, redirect_to=reverse("web:under-age")
                 )
 
             # Log the user in
@@ -157,8 +153,10 @@ class CallbackView(RedirectView):
 
         try:
             return f'auth0|{token["userinfo"]["sub"].encode("UTF-8")}'
-        except (KeyError, TypeError) as err:
-            raise BadRequest from err
+        except (KeyError, TypeError):
+            raise RedirectError(
+                reverse("web:index"), error=_("Authentication failed")
+            ) from None
 
 
 def logout(request: HttpRequest) -> HttpResponse:
@@ -167,10 +165,10 @@ def logout(request: HttpRequest) -> HttpResponse:
     last_domain = get_site_from_request(request).domain
     messages.success(request, _("You have been successfully logged out."))
 
-    return redirect(auth0_logout_url(request, last_domain=last_domain))
+    return redirect(_auth0_logout_url(request, last_domain=last_domain))
 
 
-def auth0_logout_url(
+def _auth0_logout_url(
     request: HttpRequest,
     *,
     last_domain: str | None = None,
@@ -206,10 +204,9 @@ def index(request: HttpRequest) -> HttpResponse:
         request,
         "index.html",
         context={
-            "pretty": json.dumps(request.session.get("user"), indent=4),
-            "events": (
+            "events": list(
                 Event.objects.filter(sphere__site=get_site_from_request(request)).all()
-            ),
+            )
         },
     )
 
@@ -257,14 +254,12 @@ class ConnectedUserForm(BaseUserForm):
 class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     template_name = "crowd/user/edit.html"
     form_class = UserForm
-    success_url = "/"
+    success_url = reverse_lazy("web:index")
     request: UserRequest
 
     def get_object(
         self, queryset: QuerySet[User] | None = None  # noqa: ARG002
     ) -> User:
-        if not isinstance(self.request.user, User):
-            raise TypeError
         return self.request.user
 
     def form_valid(self, form: UserForm) -> HttpResponse:
@@ -276,7 +271,7 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
             user.save()
             django_logout(self.request)
             return redirect(
-                auth0_logout_url(self.request, redirect_to=reverse("web:under_age"))
+                _auth0_logout_url(self.request, redirect_to=reverse("web:under-age"))
             )
 
         user.save()
@@ -305,11 +300,6 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
         ]
         context["connected_users"] = connected_users
         return context
-
-    def get_queryset(self) -> QuerySet[User]:
-        return User.objects.filter(
-            user_type=User.UserType.CONNECTED, manager=self.request.user
-        )
 
     def form_valid(self, form: forms.Form) -> HttpResponse:
         result = super().form_valid(form)
@@ -349,26 +339,9 @@ class DeleteConnectedView(LoginRequiredMixin, DeleteView):  # type: ignore [type
         return super().form_valid(form)
 
 
-@dataclass
-class SessionUserParticipationData:
-    user: User
-    user_enrolled: bool = False
-    user_waiting: bool = False
-    has_time_conflict: bool = False
-
-
-@dataclass
-class SessionData:
-    session: Session
-    has_any_enrollments: bool = False
-    user_enrolled: bool = False
-    user_waiting: bool = False
-
-
-class TimeSlotData(TypedDict):
+class HourData(TypedDict):
     time_slot: TimeSlot
     sessions: list[SessionData]
-    session_count: int
 
 
 class EventView(DetailView):  # type: ignore [type-arg]
@@ -391,22 +364,18 @@ class EventView(DetailView):  # type: ignore [type-arg]
 
         # Get all sessions for this event that are published
         event_sessions = (
-            Session.objects.filter(
-                agenda_item__space__event=self.object,
-                publication_time__lte=datetime.now(tz=UTC),
-            )
-            .exclude(start_time=None)
+            Session.objects.filter(agenda_item__space__event=self.object)
             .select_related("host", "agenda_item__space")
             .prefetch_related("tags", "session_participations__user")
-            .order_by("start_time")
+            .order_by("agenda_item__start_time")
         )
 
-        time_slot_data = self._get_time_slot_data(event_sessions)
-        context.update({"time_slot_data": time_slot_data, "sessions": event_sessions})
+        hour_data = dict(self._get_hour_data(event_sessions))
+        context.update({"hour_data": hour_data, "sessions": list(event_sessions)})
 
         # Add proposals for superusers
         if self.request.user.is_superuser:
-            context["proposals"] = (
+            context["proposals"] = list(
                 Proposal.objects.filter(
                     proposal_category__event=self.object,
                     session__isnull=True,  # Only unaccepted proposals
@@ -431,42 +400,26 @@ class EventView(DetailView):  # type: ignore [type-arg]
                     if p.user == user and p.session == session
                 }
 
-                sessions[session.id].has_any_enrollments = bool(statuses)
-                sessions[session.id].user_enrolled = (
+                sessions[session.id].has_any_enrollments |= bool(statuses)
+                sessions[session.id].user_enrolled |= (
                     SessionParticipationStatus.CONFIRMED in statuses
                 )
-                sessions[session.id].user_waiting = (
+                sessions[session.id].user_waiting |= (
                     SessionParticipationStatus.WAITING in statuses
                 )
 
-    def _get_time_slot_data(
+    def _get_hour_data(
         self, event_sessions: QuerySet[Session]
-    ) -> list[TimeSlotData]:
+    ) -> dict[datetime, list[SessionData]]:
         sessions_datas = self._get_session_datas(event_sessions)
 
-        time_slots = TimeSlot.objects.filter(event=self.object).order_by("start_time")
-
-        # Group sessions by time slots
-        sessions_by_slot: dict[TimeSlot, list[SessionData]] = defaultdict(list)
+        sessions_by_hour: dict[datetime, list[SessionData]] = defaultdict(list)
         for session in event_sessions:
-            # Find matching time slot for this session
-            for slot in time_slots:
-                if (
-                    session.start_time
-                    and slot.start_time <= session.start_time <= slot.end_time
-                ):
-                    sessions_by_slot[slot].append(sessions_datas[session.id])
-                    break
-
-        # Convert to list of (time_slot, sessions) tuples for template
-        return [
-            TimeSlotData(
-                time_slot=slot,
-                sessions=sessions_by_slot[slot],
-                session_count=len(sessions_by_slot[slot]),
+            sessions_by_hour[session.agenda_item.start_time].append(
+                sessions_datas[session.id]
             )
-            for slot in time_slots
-        ]
+
+        return sessions_by_hour
 
     def _get_session_datas(
         self, event_sessions: QuerySet[Session]
@@ -529,7 +482,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         context = {
             "session": session,
             "event": session.agenda_item.space.event,
-            "connected_users": self.request.user.connected.all(),
+            "connected_users": list(self.request.user.connected.all()),
             "user_datas": self._get_user_participation_datas(session),
             "form": EnrollmentForm(
                 session=session,
@@ -582,7 +535,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     for s in user_participations.exclude(
                         session=session, status=SessionParticipationStatus.CONFIRMED
                     )
-                    if session.overlaps_with(s.session)
+                    if session.agenda_item.overlaps_with(s.session.agenda_item)
                 ),
             )
             user_datas.append(data)
@@ -602,6 +555,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         )
 
         if not form.is_valid():
+            messages.warning(self.request, _("Please correct the errors below."))
             # Re-render with form errors
             return TemplateResponse(
                 request,
@@ -609,7 +563,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 {
                     "session": session,
                     "event": session.agenda_item.space.event,
-                    "connected_users": self.request.user.connected.all(),
+                    "connected_users": list(self.request.user.connected.all()),
                     "user_datas": self._get_user_participation_datas(session),
                     "form": form,
                 },
@@ -679,10 +633,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         session: Session,
         enrollments: Enrollments,
     ) -> None:
-        if (
-            existing_participation.status == SessionParticipationStatus.CONFIRMED
-            and session.is_planned
-        ):
+        if existing_participation.status == SessionParticipationStatus.CONFIRMED:
             for participation in participations:
                 if (
                     participation.user != req.user
@@ -695,12 +646,12 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     )
                     .filter(
                         Q(
-                            start_time__gte=session.start_time,
-                            start_time__lt=session.end_time,
+                            agenda_item__start_time__gte=session.agenda_item.start_time,
+                            agenda_item__start_time__lt=session.agenda_item.end_time,
                         )
                         | Q(
-                            end_time__gt=session.start_time,
-                            end_time__lte=session.end_time,
+                            agenda_item__end_time__gt=session.agenda_item.start_time,
+                            agenda_item__end_time__lte=session.agenda_item.end_time,
                         )
                     )
                     .exclude(id=session.id)
@@ -731,8 +682,14 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 session_participations__status=SessionParticipationStatus.CONFIRMED,
             )
             .filter(
-                Q(start_time__gte=session.start_time, start_time__lt=session.end_time)
-                | Q(end_time__gt=session.start_time, end_time__lte=session.end_time)
+                Q(
+                    agenda_item__start_time__gte=session.agenda_item.start_time,
+                    agenda_item__start_time__lt=session.agenda_item.end_time,
+                )
+                | Q(
+                    agenda_item__end_time__gt=session.agenda_item.start_time,
+                    agenda_item__end_time__lte=session.agenda_item.end_time,
+                )
             )
             .exclude(id=session.id)
             .exists()
@@ -816,9 +773,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 class ProposeSessionView(LoginRequiredMixin, View):
     request: UserRequest
 
-    def get(
-        self, request: UserRequest, event_slug: str, time_slot_id: int | None = None
-    ) -> HttpResponse:
+    def get(self, request: UserRequest, event_slug: str) -> HttpResponse:
         event = self._validate_event(event_slug)
 
         # Check if user has birth date set
@@ -833,15 +788,13 @@ class ProposeSessionView(LoginRequiredMixin, View):
 
         proposal_category = self._get_proposal_category(event)
         tag_categories = proposal_category.tag_categories.all()
-        time_slot = self._get_time_slot(time_slot_id, event)
 
         return TemplateResponse(
             request,
             "chronology/propose_session.html",
             {
                 "event": event,
-                "time_slot": time_slot,
-                "tag_categories": tag_categories,
+                "tag_categories": list(tag_categories),
                 "confirmed_tags": {
                     str(category.id): (
                         category.tags.filter(confirmed=True).values("id", "name")
@@ -853,7 +806,6 @@ class ProposeSessionView(LoginRequiredMixin, View):
                 "max_participants_limit": proposal_category.max_participants_limit,
                 "form": SessionProposalForm(
                     proposal_category=proposal_category,
-                    time_slot=time_slot,
                     initial={
                         "participants_limit": proposal_category.min_participants_limit
                     },
@@ -861,9 +813,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
             },
         )
 
-    def post(
-        self, request: UserRequest, event_slug: str, time_slot_id: int | None = None
-    ) -> HttpResponse:
+    def post(self, request: UserRequest, event_slug: str) -> HttpResponse:
         event = self._validate_event(event_slug)
 
         # Check if user has birth date set
@@ -878,21 +828,14 @@ class ProposeSessionView(LoginRequiredMixin, View):
 
         proposal_category = self._get_proposal_category(event)
 
-        time_slot = self._get_time_slot(time_slot_id, event)
-
-        return self._handle_form(proposal_category, time_slot, event)
+        return self._handle_form(proposal_category, event)
 
     def _handle_form(
-        self,
-        proposal_category: ProposalCategory,
-        time_slot: TimeSlot | None,
-        event: Event,
+        self, proposal_category: ProposalCategory, event: Event
     ) -> HttpResponse:
         # Initialize form with POST data
         form = SessionProposalForm(
-            data=self.request.POST,
-            proposal_category=proposal_category,
-            time_slot=time_slot,
+            data=self.request.POST, proposal_category=proposal_category
         )
 
         if not form.is_valid():
@@ -904,8 +847,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
                 "chronology/propose_session.html",
                 {
                     "event": event,
-                    "time_slot": time_slot,
-                    "tag_categories": tag_categories,
+                    "tag_categories": list(tag_categories),
                     "confirmed_tags": {
                         str(category.id): list(
                             category.tags.filter(confirmed=True).values("id", "name")
@@ -929,9 +871,6 @@ class ProposeSessionView(LoginRequiredMixin, View):
             needs=form.cleaned_data["needs"],
             participants_limit=form.cleaned_data["participants_limit"],
         )
-
-        if time_slot:
-            proposal.time_slots.add(time_slot)
 
         for tag in self._get_tags(form.get_tag_data(), proposal_category):
             proposal.tags.add(tag)
@@ -979,19 +918,6 @@ class ProposeSessionView(LoginRequiredMixin, View):
         return event
 
     @staticmethod
-    def _get_time_slot(time_slot_id: int | None, event: Event) -> TimeSlot | None:
-        if time_slot_id:
-            try:
-                return TimeSlot.objects.get(id=time_slot_id, event=event)
-            except TimeSlot.DoesNotExist:
-                raise RedirectError(
-                    reverse("web:event", kwargs={"slug": event.slug}),
-                    error=_("Time slot not found."),
-                ) from None
-
-        return None
-
-    @staticmethod
     def _get_proposal_category(event: Event) -> ProposalCategory:
         try:
             return ProposalCategory.objects.get(event=event)
@@ -1027,9 +953,8 @@ def _get_proposal(request: UserRequest, proposal_id: int) -> Proposal:
     return proposal
 
 
+@method_decorator(staff_member_required, name="dispatch")
 class AcceptProposalPageView(LoginRequiredMixin, View):
-
-    @staff_member_required
     def get(self, request: UserRequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
         event = proposal.proposal_category.event
@@ -1052,7 +977,7 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
         return TemplateResponse(request, "chronology/accept_proposal.html", context)
 
     @staticmethod
-    def _get_spaces(event: Event) -> QuerySet[Space]:
+    def _get_spaces(event: Event) -> list[Space]:
         spaces = Space.objects.filter(event=event)
         if not spaces.exists():
             raise RedirectError(
@@ -1062,10 +987,10 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
                 ),
             )
 
-        return spaces
+        return list(spaces)
 
     @staticmethod
-    def _get_time_slots(event: Event) -> QuerySet[TimeSlot]:
+    def _get_time_slots(event: Event) -> list[TimeSlot]:
         time_slots = TimeSlot.objects.filter(event=event)
 
         if not time_slots.exists():
@@ -1077,11 +1002,11 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
                 ),
             )
 
-        return time_slots
+        return list(time_slots)
 
 
+@method_decorator(staff_member_required, name="dispatch")
 class AcceptProposalView(LoginRequiredMixin, View):
-    @staff_member_required
     def post(self, request: UserRequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
         event = proposal.proposal_category.event
@@ -1097,8 +1022,8 @@ class AcceptProposalView(LoginRequiredMixin, View):
                 {
                     "proposal": proposal,
                     "event": event,
-                    "spaces": Space.objects.filter(event=event),
-                    "time_slots": TimeSlot.objects.filter(event=event),
+                    "spaces": list(Space.objects.filter(event=event)),
+                    "time_slots": list(TimeSlot.objects.filter(event=event)),
                     "form": form,
                 },
             )
@@ -1125,16 +1050,17 @@ class AcceptProposalView(LoginRequiredMixin, View):
             description=proposal.description,
             requirements=proposal.requirements,
             participants_limit=proposal.participants_limit,
-            start_time=time_slot.start_time,
-            end_time=time_slot.end_time,
-            publication_time=datetime.now(tz=UTC),
         )
 
         # Copy tags from proposal to session
         session.tags.set(proposal.tags.all())
 
         AgendaItem.objects.create(
-            space=form.cleaned_data["space"], session=session, session_confirmed=True
+            space=form.cleaned_data["space"],
+            session=session,
+            session_confirmed=True,
+            start_time=time_slot.start_time,
+            end_time=time_slot.end_time,
         )
 
         # Link proposal to session

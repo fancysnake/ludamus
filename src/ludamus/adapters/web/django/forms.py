@@ -4,17 +4,20 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.forms.utils import ErrorList
 from django.utils.translation import gettext as _
 
 from ludamus.adapters.db.django.models import (
     Proposal,
     Session,
+    SessionParticipation,
     SessionParticipationStatus,
     Space,
     TagCategory,
     TimeSlot,
 )
+from tests.integration.conftest import agenda_item
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, MutableMapping
@@ -48,8 +51,6 @@ class EnrollmentForm(forms.Form):
         renderer: BaseRenderer | None = None,
         session: Session | None = None,
         users: Iterable[User] | None = None,
-        user_participations: dict[int, SessionParticipation] | None = None,
-        user_conflicts: dict[int, bool] | None = None,
     ) -> None:
         super().__init__(
             data=data,
@@ -68,17 +69,32 @@ class EnrollmentForm(forms.Form):
         if not session or not users:
             return
 
-        user_participations = user_participations or {}
-        user_conflicts = user_conflicts or {}
-
         # Add a field for each user
         for user in users:
+            current_participation = SessionParticipation.objects.filter(
+                session=session, user=user
+            ).first()
+            has_conflict = (
+                Session.objects.filter(
+                    agenda_item__space__event=session.agenda_item.space.event,
+                    session_participations__user=user,
+                    session_participations__status=SessionParticipationStatus.CONFIRMED,
+                )
+                .filter(
+                    Q(
+                        agenda_item__start_time__gte=session.agenda_item.start_time,
+                        agenda_item__start_time__lt=session.agenda_item.end_time,
+                    )
+                    | Q(
+                        agenda_item__end_time__gt=session.agenda_item.start_time,
+                        agenda_item__end_time__lte=session.agenda_item.end_time,
+                    )
+                )
+                .exclude(id=session.id)
+                .exists()
+            )
             field_name = f"user_{user.id}"
             choices = [("", _("No change"))]
-
-            # Get current participation status
-            current_participation = user_participations.get(user.id)
-            has_conflict = user_conflicts.get(user.id, False)
 
             # Determine available choices based on current status
             if current_participation:
@@ -191,7 +207,6 @@ class SessionProposalForm(forms.ModelForm):  # type: ignore [type-arg]
         renderer: BaseRenderer | None = None,
         proposal_category: ProposalCategory | None = None,
         event: Event | None = None,
-        time_slot: TimeSlot | None = None,
     ) -> None:
         super().__init__(
             data=data,
@@ -252,21 +267,6 @@ class SessionProposalForm(forms.ModelForm):  # type: ignore [type-arg]
                         ),
                         help_text=_("Enter multiple tags separated by commas"),
                     )
-
-        # Add time slot preference field if event has time slots
-        if event:
-            time_slots = TimeSlot.objects.filter(event=event).order_by("start_time")
-            if time_slots.exists():
-                choices = [(0, _("No preference"))]
-                choices.extend([(slot.id, str(slot)) for slot in time_slots])
-
-                self.fields["preferred_time_slot"] = forms.ChoiceField(
-                    choices=choices,
-                    required=False,
-                    label=_("Preferred time slot"),
-                    widget=forms.Select(attrs={"class": "form-select"}),
-                    initial=time_slot.id if time_slot else "",
-                )
 
     def clean_title(self) -> str:
         title: str | None = self.cleaned_data.get("title")
@@ -392,8 +392,8 @@ class ProposalAcceptanceForm(forms.Form):
     def clean(self) -> dict[str, Any] | None:  # type: ignore [explicit-any]
         if (cleaned_data := super().clean()) and Session.objects.filter(
             agenda_item__space=cleaned_data["space"],
-            start_time=cleaned_data["time_slot"].start_time,
-            end_time=cleaned_data["time_slot"].end_time,
+            agenda_item__start_time=cleaned_data["time_slot"].start_time,
+            agenda_item__end_time=cleaned_data["time_slot"].end_time,
         ).exists():
             raise ValidationError(
                 _("There is already a session scheduled at this space and time.")
@@ -409,7 +409,7 @@ class ThemeSelectionForm(forms.Form):
         ("dragons-lair", _("Dragon's Lair")),
         ("outer-space", _("Outer Space")),
     ]
-    
+
     theme = forms.ChoiceField(
         choices=THEME_CHOICES,
         label=_("Theme"),

@@ -74,7 +74,7 @@
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    {% if time_slot_data %}
+                    {% if hour_data %}
                         <!-- Filter Controls -->
                         <div class="row mb-3">
                             <div class="col-md-4">
@@ -107,26 +107,26 @@
                                         id="clearFilters">{% bs_icon 'x-circle' %} {% translate 'Clear' %}</button>
                             </div>
                         </div>
-                        {% for slot_data in time_slot_data %}
+                        {% for hour, sessions in hour_data.items %}
                             <div class="mb-4">
                                 <!-- Time Slot Header -->
                                 <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
                                     <div>
                                         <h6 class="mb-1">
                                             {% bs_icon 'clock' %}
-                                            {{ slot_data.time_slot.start_time|date:"l, F j" }} - {{ slot_data.time_slot.start_time|date:"G:i" }} to {{ slot_data.time_slot.end_time|date:"G:i" }}
+                                            {{ hour|date:"l, F j" }} - {{ hour|time:"H:i" }}
                                         </h6>
-                                        <small class="text-muted">{{ slot_data.session_count }} session{{ slot_data.session_count|pluralize }}</small>
+                                        <small class="text-muted">{{ sessions|length }} session{{ sessions|length|pluralize }}</small>
                                     </div>
                                     {% if event.is_proposal_active %}
-                                        <a href="{% url 'web:propose-session-slot' event_slug=event.slug time_slot_id=slot_data.time_slot.id %}"
+                                        <a href="{% url 'web:propose-session' event_slug=event.slug %}"
                                            class="btn btn-outline-warning btn-sm">
                                             {% bs_icon 'plus-circle' %} {% translate "Propose for this slot" %}
                                         </a>
                                     {% endif %}
                                 </div>
                                 <!-- Sessions in this time slot -->
-                                {% if slot_data.sessions %}
+                                {% if sessions %}
                                     <div class="table-responsive">
                                         <table class="table table-hover table-sm">
                                             <thead class="table-light">
@@ -139,7 +139,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {% for data in slot_data.sessions %}
+                                                {% for data in sessions %}
                                                     <tr class="session-row"
                                                         data-title="{{ data.session.title|lower }}"
                                                         data-host="{{ data.session.host.get_full_name|lower }}"
@@ -244,7 +244,7 @@
                                         <small class="text-muted">
                                             {% translate "No sessions scheduled for this time slot" %}
                                             {% if event.is_proposal_active %}
-                                                - <a href="{% url 'web:propose-session-slot' event_slug=event.slug time_slot_id=slot_data.time_slot.id %}">{% translate "be the first to propose!" %}</a>
+                                                - <a href="{% url 'web:propose-session' event_slug=event.slug %}">{% translate "be the first to propose!" %}</a>
                                             {% endif %}
                                         </small>
                                     </div>
@@ -528,13 +528,11 @@
                                         (+{{ session.waiting_count }} {% translate "waiting" %})
                                     {% endif %}
                                 </div>
-                                {% if session.start_time and session.end_time %}
-                                    <div class="col-sm-6">
-                                        <small class="text-muted">{% translate "Time" %}:</small>
-                                        <br>
-                                        {{ session.start_time|date:"M j, G:i" }} - {{ session.end_time|date:"G:i" }}
-                                    </div>
-                                {% endif %}
+                                <div class="col-sm-6">
+                                    <small class="text-muted">{% translate "Time" %}:</small>
+                                    <br>
+                                    {{ session.agenda_item.start_time|date:"M j, G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}
+                                </div>
                             </div>
                         </div>
                     </div>

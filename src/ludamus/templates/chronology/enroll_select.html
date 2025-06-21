@@ -33,14 +33,12 @@
                             </p>
                         </div>
                         <div class="col-md-6">
-                            {% if session.start_time and session.end_time %}
-                                <h6>{% translate "Time" %}</h6>
-                                <p>
-                                    {{ session.start_time|date:"l, F j, Y" }}
-                                    <br>
-                                    <small class="text-muted">{{ session.start_time|date:"G:i" }} - {{ session.end_time|date:"G:i" }}</small>
-                                </p>
-                            {% endif %}
+                            <h6>{% translate "Time" %}</h6>
+                            <p>
+                                {{ session.agenda_item.start_time|date:"l, F j, Y" }}
+                                <br>
+                                <small class="text-muted">{{ session.agenda_item.start_time|date:"G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}</small>
+                            </p>
                             {% if session.agenda_item.space %}
                                 <h6>{% translate "Space" %}</h6>
                                 <p>{{ session.agenda_item.space.name }}</p>
