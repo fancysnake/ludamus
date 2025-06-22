@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
@@ -7,7 +8,6 @@ from enum import StrEnum, auto
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, TypedDict
 from urllib.parse import quote_plus, urlencode, urlparse
-import json
 
 from django import forms
 from django.conf import settings
@@ -20,7 +20,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
-from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
@@ -52,7 +51,12 @@ from ludamus.adapters.web.django.entities import (
 )
 
 from .exceptions import RedirectError
-from .forms import EnrollmentForm, ProposalAcceptanceForm, SessionProposalForm
+from .forms import (
+    EnrollmentForm,
+    ProposalAcceptanceForm,
+    SessionProposalForm,
+    ThemeSelectionForm,
+)
 
 if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import User
@@ -62,6 +66,7 @@ else:
 
 TODAY = datetime.now(tz=UTC).date()
 MINIMUM_ALLOWED_USER_AGE = 16
+CACHE_TIMEOUT = 600  # 10 minutes
 
 
 class WrongSiteTypeError(TypeError):
@@ -118,7 +123,7 @@ def auth0_login(request: HttpRequest) -> HttpResponse:
         "csrf_token": request.META.get("CSRF_COOKIE", ""),
     }
     cache_key = f"oauth_state:{state_token}"
-    cache.set(cache_key, json.dumps(state_data), timeout=600)  # 10 minutes
+    cache.set(cache_key, json.dumps(state_data), timeout=CACHE_TIMEOUT)
 
     return oauth.auth0.authorize_redirect(  # type: ignore [no-any-return]
         request, request.build_absolute_uri(reverse("web:callback")), state=state_token
@@ -166,7 +171,7 @@ class CallbackView(RedirectView):
                 )
                 return self.request.build_absolute_uri(reverse("web:index"))
 
-        except (json.JSONDecodeError, KeyError, ValueError):
+        except (KeyError, ValueError):
             messages.error(self.request, _("Invalid authentication state"))
             return self.request.build_absolute_uri(reverse("web:index"))
 
@@ -686,25 +691,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 if (
                     participation.user != req.user
                     and participation.status == SessionParticipationStatus.WAITING
-                ) and not (
-                    Session.objects.filter(
-                        agenda_item__space__event=session.agenda_item.space.event,
-                        session_participations__user=participation.user,
-                        session_participations__status=SessionParticipationStatus.CONFIRMED,
-                    )
-                    .filter(
-                        Q(
-                            agenda_item__start_time__gte=session.agenda_item.start_time,
-                            agenda_item__start_time__lt=session.agenda_item.end_time,
-                        )
-                        | Q(
-                            agenda_item__end_time__gt=session.agenda_item.start_time,
-                            agenda_item__end_time__lte=session.agenda_item.end_time,
-                        )
-                    )
-                    .exclude(id=session.id)
-                    .exists()
-                ):
+                ) and not Session.objects.has_conflicts(session, participation.user):
                     participation.status = SessionParticipationStatus.CONFIRMED
                     participation.save()
                     enrollments.users_by_status[
@@ -723,24 +710,8 @@ class EnrollSelectView(LoginRequiredMixin, View):
         if SessionParticipation.objects.filter(session=session, user=req.user).exists():
             enrollments.skipped_users.append(f"{req.name} ({_('already enrolled')!s})")
         # Check for time conflicts for confirmed enrollment
-        elif req.choice == "enroll" and (
-            Session.objects.filter(
-                agenda_item__space__event=session.agenda_item.space.event,
-                session_participations__user=req.user,
-                session_participations__status=SessionParticipationStatus.CONFIRMED,
-            )
-            .filter(
-                Q(
-                    agenda_item__start_time__gte=session.agenda_item.start_time,
-                    agenda_item__start_time__lt=session.agenda_item.end_time,
-                )
-                | Q(
-                    agenda_item__end_time__gt=session.agenda_item.start_time,
-                    agenda_item__end_time__lte=session.agenda_item.end_time,
-                )
-            )
-            .exclude(id=session.id)
-            .exists()
+        elif req.choice == "enroll" and Session.objects.has_conflicts(
+            session, req.user
         ):
             enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
             return
@@ -1117,9 +1088,8 @@ class AcceptProposalView(LoginRequiredMixin, View):
 
 
 class ThemeSelectionView(View):
-    def post(self, request: UserRequest) -> HttpResponse:
-        from .forms import ThemeSelectionForm
-
+    @staticmethod
+    def post(request: UserRequest) -> HttpResponse:
         form = ThemeSelectionForm(request.POST)
         if form.is_valid():
             theme = form.cleaned_data["theme"]

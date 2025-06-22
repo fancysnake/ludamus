@@ -33,13 +33,17 @@
                             <td>
                                 <div class="text-nowrap">
                                     <div>{% bs_icon 'calendar3' %} {{ event.start_time|date }}</div>
-                                    <div class="mt-1"><small class="text-muted">{% bs_icon 'clock' %} {{ event.start_time|date:"G:i" }}</small></div>
+                                    <div class="mt-1">
+                                        <small class="text-muted">{% bs_icon 'clock' %} {{ event.start_time|date:"G:i" }}</small>
+                                    </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="text-nowrap">
                                     <div>{% bs_icon 'calendar3' %} {{ event.end_time|date }}</div>
-                                    <div class="mt-1"><small class="text-muted">{% bs_icon 'clock' %} {{ event.end_time|date:"G:i" }}</small></div>
+                                    <div class="mt-1">
+                                        <small class="text-muted">{% bs_icon 'clock' %} {{ event.end_time|date:"G:i" }}</small>
+                                    </div>
                                 </div>
                             </td>
                             <td>

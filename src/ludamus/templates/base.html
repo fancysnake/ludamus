@@ -15,9 +15,10 @@
         </title>
         {% bootstrap_css %}
         {% if request.session.theme %}
-        <link rel="stylesheet" href="{% static 'css/themes/'|add:request.session.theme|add:'.css' %}">
+            <link rel="stylesheet"
+                  href="{% static 'css/themes/'|add:request.session.theme|add:'.css' %}">
         {% else %}
-        <link rel="stylesheet" href="{% static 'css/themes/cold-steel.css' %}">
+            <link rel="stylesheet" href="{% static 'css/themes/cold-steel.css' %}">
         {% endif %}
     </head>
     <body>
@@ -136,15 +137,35 @@
                         </p>
                     </div>
                     <div class="col-md-4 text-center">
-                        <form method="post" action="{% url 'web:theme-select' %}" class="d-inline-flex align-items-center">
+                        <form method="post"
+                              action="{% url 'web:theme-select' %}"
+                              class="d-inline-flex align-items-center">
                             {% csrf_token %}
                             <label for="theme-select" class="me-2 mb-0">{% translate "Theme:" %}</label>
-                            <select name="theme" id="theme-select" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
-                                <option value="cold-steel" {% if request.session.theme == "cold-steel" or not request.session.theme %}selected{% endif %}>{% translate "Cold Steel (Default)" %}</option>
-                                <option value="cyberpunk" {% if request.session.theme == "cyberpunk" %}selected{% endif %}>{% translate "Cyberpunk" %}</option>
-                                <option value="green-forest" {% if request.session.theme == "green-forest" %}selected{% endif %}>{% translate "Green Forest" %}</option>
-                                <option value="dragons-lair" {% if request.session.theme == "dragons-lair" %}selected{% endif %}>{% translate "Dragon's Lair" %}</option>
-                                <option value="outer-space" {% if request.session.theme == "outer-space" %}selected{% endif %}>{% translate "Outer Space" %}</option>
+                            <select name="theme"
+                                    id="theme-select"
+                                    class="form-select form-select-sm theme-select-form"
+                                    onchange="this.form.submit()">
+                                <option value="cold-steel"
+                                        {% if request.session.theme == "cold-steel" or not request.session.theme %}selected{% endif %}>
+                                    {% translate "Cold Steel (Default)" %}
+                                </option>
+                                <option value="cyberpunk"
+                                        {% if request.session.theme == "cyberpunk" %}selected{% endif %}>
+                                    {% translate "Cyberpunk" %}
+                                </option>
+                                <option value="green-forest"
+                                        {% if request.session.theme == "green-forest" %}selected{% endif %}>
+                                    {% translate "Green Forest" %}
+                                </option>
+                                <option value="dragons-lair"
+                                        {% if request.session.theme == "dragons-lair" %}selected{% endif %}>
+                                    {% translate "Dragon's Lair" %}
+                                </option>
+                                <option value="outer-space"
+                                        {% if request.session.theme == "outer-space" %}selected{% endif %}>
+                                    {% translate "Outer Space" %}
+                                </option>
                             </select>
                         </form>
                     </div>

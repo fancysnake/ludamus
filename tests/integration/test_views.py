@@ -1,7 +1,7 @@
+import json
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
-from django.contrib.messages.storage.base import Message
-import json
+from secrets import token_urlsafe
 from unittest.mock import ANY, patch
 from urllib.parse import urlencode
 
@@ -9,6 +9,7 @@ import pytest
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
+from django.contrib.messages.storage.base import Message
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.urls import reverse
@@ -26,6 +27,7 @@ from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
 )
+from ludamus.adapters.web.django.views import CACHE_TIMEOUT
 from tests.integration.conftest import SessionFactory
 
 User = get_user_model()
@@ -48,7 +50,7 @@ class TestLoginView:
         assert response.status_code == HTTPStatus.OK
         assert "crowd/user/login_required.html" in [t.name for t in response.templates]
         assert "next" in response.context
-        assert response.context["next"] == ""
+        assert not response.context["next"]
 
     def test_ok_with_next_url(self, client):
         next_url = "/chronology/event/test-event"
@@ -67,7 +69,7 @@ class TestAuth0LoginView:
     def test_ok_redirect(self, cache_mock, oauth_mock, client):
         oauth_mock.auth0.authorize_redirect.return_value = HttpResponse()
 
-        response = client.get(self.URL)
+        client.get(self.URL)
 
         # Verify state token was generated and stored
         oauth_mock.auth0.authorize_redirect.assert_called_once()
@@ -83,7 +85,7 @@ class TestAuth0LoginView:
         state_data = json.loads(cache_mock.set.call_args[0][1])
         assert state_data["redirect_to"] is None
         assert "created_at" in state_data
-        assert cache_mock.set.call_args[1]["timeout"] == 600
+        assert cache_mock.set.call_args[1]["timeout"] == CACHE_TIMEOUT
 
     def test_error_non_root_domain(self, client, non_root_sphere):
         response = client.get(self.URL, HTTP_HOST=non_root_sphere.site.domain)
@@ -96,10 +98,8 @@ class TestAuth0LoginView:
 class TestCallbackView:
     URL = reverse("web:callback")
 
-    def _setup_valid_state(self, redirect_to=None):
-        """Helper to set up a valid state token in cache."""
-        from secrets import token_urlsafe
-
+    @staticmethod
+    def _setup_valid_state(redirect_to=None):
         state_token = token_urlsafe(32)
         state_data = {
             "redirect_to": redirect_to,
@@ -111,24 +111,23 @@ class TestCallbackView:
 
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
     def test_ok(self, authorize_access_token_mock, client, faker):
-        authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
+        sub = faker.uuid4()
+        authorize_access_token_mock.return_value = {"userinfo": {"sub": sub}}
         state_token = self._setup_valid_state()
 
         response = client.get(self.URL, {"state": state_token})
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "http://testserver/crowd/user/edit"
-        assert (
-            User.objects.get().username
-            == f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"].encode('utf-8')}'
-        )
+        assert User.objects.get().username == f"auth0|{sub.encode('utf-8')}"
         _assert_message_sent(response, messages.SUCCESS, number=2)
         # Verify state was deleted from cache
         assert cache.get(f"oauth_state:{state_token}") is None
 
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
     def test_ok_redirect_to(self, authorize_access_token_mock, client, faker):
-        authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
+        sub = faker.uuid4()
+        authorize_access_token_mock.return_value = {"userinfo": {"sub": sub}}
         redirect_to = "https://www.domain.example.com/a/b/c"
         state_token = self._setup_valid_state(redirect_to)
 
@@ -136,10 +135,7 @@ class TestCallbackView:
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "https://www.domain.example.com/crowd/user/edit"
-        assert (
-            User.objects.get().username
-            == f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"].encode('utf-8')}'
-        )
+        assert User.objects.get().username == f"auth0|{sub.encode('utf-8')}"
         _assert_message_sent(response, messages.SUCCESS, number=2)
 
     def test_ok_already_authenticated(self, authenticated_client):
@@ -158,13 +154,11 @@ class TestCallbackView:
         assert response.url == redirect_to
 
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
-    def test_ok_complete_user(
-        self, authorize_access_token_mock, client, faker, settings
-    ):
+    def test_ok_complete_user(self, authorize_access_token_mock, client, faker):
         authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
         User.objects.create(
             username=f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"].encode('utf-8')}',
-            birth_date=datetime(2000, 12, 12),
+            birth_date=datetime(2000, 12, 12, tzinfo=UTC),
             name=faker.name(),
             email=faker.email(),
         )
@@ -228,7 +222,6 @@ class TestCallbackView:
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
     def test_error_expired_state(self, authorize_access_token_mock, client, faker):
         """Test callback with expired state token."""
-        from secrets import token_urlsafe
 
         authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
 
@@ -256,7 +249,7 @@ class TestCallbackView:
         # Create an existing complete user to avoid "complete profile" messages
         User.objects.create(
             username=f'auth0|{sub_id.encode("utf-8")}',
-            birth_date=datetime(2000, 12, 12),
+            birth_date=datetime(2000, 12, 12, tzinfo=UTC),
             name=faker.name(),
             email=faker.email(),
         )
@@ -595,7 +588,7 @@ class TestEnrollSelectView:
             ],
         }
 
-    def test_get_error_404(self, authenticated_client, sphere):
+    def test_get_error_404(self, authenticated_client):
         response = authenticated_client.get(self._get_url(17))
 
         assert response.status_code == HTTPStatus.FOUND
@@ -648,8 +641,9 @@ class TestEnrollSelectView:
         }
         _assert_message_sent(response, messages.WARNING)
 
+    @pytest.mark.usefixtures("event")
     def test_post_error_please_select_at_least_one(
-        self, agenda_item, authenticated_client, event
+        self, agenda_item, authenticated_client
     ):
         response = authenticated_client.post(self._get_url(agenda_item.session.pk))
 
@@ -783,14 +777,9 @@ class TestEnrollSelectView:
         }
         _assert_message_sent(response, messages.WARNING)
 
+    @pytest.mark.usefixtures("event")
     def test_post_invalid_capacity(
-        self,
-        active_user,
-        agenda_item,
-        authenticated_client,
-        event,
-        session,
-        connected_user,
+        self, active_user, agenda_item, authenticated_client, session, connected_user
     ):
         session.participants_limit = 1
         session.save()
@@ -818,7 +807,8 @@ class TestProposeSessionView:
     def _get_url(self, slug: str) -> str:
         return reverse(self.URL_NAME, kwargs={"event_slug": slug})
 
-    def test_get_ok(self, authenticated_client, event, faker, proposal_category):
+    @pytest.mark.usefixtures("proposal_category")
+    def test_get_ok(self, authenticated_client, event, faker):
         event.proposal_start_time = faker.date_time_between("-10d", "-1d")
         event.proposal_end_time = faker.date_time_between("+1d", "+10d")
         event.save()
@@ -849,9 +839,8 @@ class TestProposeSessionView:
         assert response.url == reverse("web:edit")
         _assert_message_sent(response, messages.ERROR, number=1)
 
-    def test_post_form_invalid(
-        self, authenticated_client, event, faker, proposal_category
-    ):
+    @pytest.mark.usefixtures("proposal_category")
+    def test_post_form_invalid(self, authenticated_client, event, faker):
         event.proposal_start_time = faker.date_time_between("-10d", "-1d")
         event.proposal_end_time = faker.date_time_between("+1d", "+10d")
         event.save()
@@ -941,7 +930,7 @@ class TestProposeSessionView:
         assert Tag.objects.get(name="Ravenloft", category=type_tag)
 
     @pytest.mark.parametrize("method", ("get", "post"))
-    def test_event_not_found(self, authenticated_client, method, sphere):
+    def test_event_not_found(self, authenticated_client, method):
         response = getattr(authenticated_client, method)(self._get_url("unknown"))
 
         assert response.status_code == HTTPStatus.FOUND
@@ -980,7 +969,7 @@ class TestAcceptProposalPageView:
     def _get_url(self, proposal_id: int) -> str:
         return reverse(self.URL_NAME, kwargs={"proposal_id": proposal_id})
 
-    def test_get_error_proposal_not_found(self, sphere, staff_client):
+    def test_get_error_proposal_not_found(self, staff_client):
         response = staff_client.get(self._get_url(17))
 
         assert response.status_code == HTTPStatus.FOUND
@@ -1015,7 +1004,8 @@ class TestAcceptProposalPageView:
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
         _assert_message_sent(response, messages.ERROR, number=1)
 
-    def test_get_erro_no_time_slot(self, event, proposal, space, staff_client):
+    @pytest.mark.usefixtures("space")
+    def test_get_erro_no_time_slot(self, event, proposal, staff_client):
         response = staff_client.get(self._get_url(proposal.id))
 
         assert response.status_code == HTTPStatus.FOUND
@@ -1030,7 +1020,7 @@ class TestAcceptProposalView:
     def _get_url(self, proposal_id: int) -> str:
         return reverse(self.URL_NAME, kwargs={"proposal_id": proposal_id})
 
-    def test_post_error_proposal_not_found(self, sphere, staff_client):
+    def test_post_error_proposal_not_found(self, staff_client):
         response = staff_client.post(self._get_url(17))
 
         assert response.status_code == HTTPStatus.FOUND
@@ -1076,7 +1066,7 @@ class TestAcceptProposalView:
         assert session.participants_limit == proposal.participants_limit
         assert session.agenda_item.space == space
         assert session.agenda_item.session == session
-        assert session.agenda_item.session_confirmed == True
+        assert session.agenda_item.session_confirmed
         assert session.agenda_item.start_time == time_slot.start_time
         assert session.agenda_item.end_time == time_slot.end_time
         assert session.proposal == proposal
