@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 MAX_SLUG_RETRIES = 10
 RANDOM_SLUG_BYTES = 7  # 10 characters
+DEFAULT_NAME = "Andrzej"
 
 
 class ModelWithSlug(Protocol):
@@ -103,7 +104,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self) -> str:
-        return self.name or "Andrzej"
+        return self.name or DEFAULT_NAME
 
     def get_short_name(self) -> str:
         return self.name.split(" ")[0]
