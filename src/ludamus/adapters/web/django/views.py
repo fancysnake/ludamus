@@ -7,6 +7,7 @@ from enum import StrEnum, auto
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, TypedDict
 from urllib.parse import quote_plus, urlencode, urlparse
+import json
 
 from django import forms
 from django.conf import settings
@@ -18,6 +19,7 @@ from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse
@@ -106,11 +108,20 @@ def auth0_login(request: HttpRequest) -> HttpResponse:
         url = f'{request.scheme}://{root_domain}{reverse("web:auth0_login")}?next={next_path}'
         raise RedirectError(url)
 
+    # Generate a secure state token
+    state_token = token_urlsafe(32)
+
+    # Store state data in cache with 10 minute timeout
+    state_data = {
+        "redirect_to": next_path,
+        "created_at": datetime.now(UTC).isoformat(),
+        "csrf_token": request.META.get("CSRF_COOKIE", ""),
+    }
+    cache_key = f"oauth_state:{state_token}"
+    cache.set(cache_key, json.dumps(state_data), timeout=600)  # 10 minutes
+
     return oauth.auth0.authorize_redirect(  # type: ignore [no-any-return]
-        request,
-        request.build_absolute_uri(
-            reverse("web:callback") + f"?redirect_to={next_path}"
-        ),
+        request, request.build_absolute_uri(reverse("web:callback")), state=state_token
     )
 
 
@@ -120,7 +131,44 @@ class CallbackView(RedirectView):
         self, *args: Any, **kwargs: Any
     ) -> str | None:
         redirect_to = super().get_redirect_url(*args, **kwargs)
-        redirect_to = self.request.GET.get("redirect_to") or redirect_to or ""
+
+        # Validate state parameter
+        state_token = self.request.GET.get("state")
+        if not state_token:
+            messages.error(
+                self.request,
+                _("Invalid authentication request: missing state parameter"),
+            )
+            return self.request.build_absolute_uri(reverse("web:index"))
+
+        # Retrieve and validate state data
+        cache_key = f"oauth_state:{state_token}"
+        state_data_json = cache.get(cache_key)
+
+        if not state_data_json:
+            messages.error(
+                self.request, _("Authentication session expired. Please try again.")
+            )
+            return self.request.build_absolute_uri(reverse("web:index"))
+
+        # Delete state from cache immediately to prevent replay attacks
+        cache.delete(cache_key)
+
+        try:
+            state_data = json.loads(state_data_json)
+            redirect_to = state_data.get("redirect_to") or redirect_to or ""
+
+            # Validate state timestamp
+            created_at = datetime.fromisoformat(state_data["created_at"])
+            if datetime.now(UTC) - created_at > timedelta(minutes=10):
+                messages.error(
+                    self.request, _("Authentication session expired. Please try again.")
+                )
+                return self.request.build_absolute_uri(reverse("web:index"))
+
+        except (json.JSONDecodeError, KeyError, ValueError):
+            messages.error(self.request, _("Invalid authentication state"))
+            return self.request.build_absolute_uri(reverse("web:index"))
 
         # Handle login/signup
         if not self.request.user.is_authenticated:

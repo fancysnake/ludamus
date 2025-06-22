@@ -17,7 +17,6 @@ from ludamus.adapters.db.django.models import (
     TagCategory,
     TimeSlot,
 )
-from tests.integration.conftest import agenda_item
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, MutableMapping
