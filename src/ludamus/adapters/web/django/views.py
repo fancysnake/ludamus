@@ -242,14 +242,35 @@ def _auth0_logout_url(
 
 
 def redirect_view(request: HttpRequest) -> HttpResponse:
-    prefix = ""
     redirect_url = reverse("web:index")
-    if last_domain := request.GET.get("last_domain"):
-        prefix = f"{request.scheme}://{last_domain}"
-    if redirect_to := request.GET.get("redirect_to"):
-        redirect_url = redirect_to
 
-    return redirect(prefix + redirect_url)
+    # Get the redirect_to parameter
+    if redirect_to := request.GET.get("redirect_to"):
+        # Only allow relative URLs (starting with /)
+        if redirect_to.startswith("/") and not redirect_to.startswith("//"):
+            redirect_url = redirect_to
+        else:
+            messages.warning(request, _("Invalid redirect URL."))
+
+    # Handle last_domain parameter for multi-site redirects
+    if last_domain := request.GET.get("last_domain"):
+        # Validate that the domain belongs to a known site
+        allowed_domains = list(Site.objects.values_list("domain", flat=True))
+
+        # Also allow subdomains of ROOT_DOMAIN if configured
+        if hasattr(settings, "ROOT_DOMAIN") and (
+            last_domain.endswith(f".{settings.ROOT_DOMAIN}")
+            or last_domain == settings.ROOT_DOMAIN
+        ):
+            return redirect(f"{request.scheme}://{last_domain}{redirect_url}")
+
+        # Check against explicitly allowed domains
+        if last_domain in allowed_domains:
+            return redirect(f"{request.scheme}://{last_domain}{redirect_url}")
+
+        messages.warning(request, _("Invalid domain for redirect."))
+
+    return redirect(redirect_url)
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -358,7 +379,6 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
         result = super().form_valid(form)
         self.object.manager = self.request.user
         self.object.username = f"connected|{token_urlsafe(50)}"
-        self.object.password = token_urlsafe(50)
         self.object.save()
         messages.success(self.request, _("Connected user added successfully!"))
         return result
@@ -373,6 +393,12 @@ class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-a
     form_class = ConnectedUserForm
     success_url = reverse_lazy("web:connected")
     model = User
+    request: UserRequest
+
+    def get_queryset(self) -> QuerySet[User]:
+        return User.objects.filter(
+            manager=self.request.user, user_type=User.UserType.CONNECTED
+        )
 
     def form_valid(self, form: forms.Form) -> HttpResponse:
         messages.success(self.request, _("Connected user updated successfully!"))
@@ -386,6 +412,12 @@ class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-a
 class DeleteConnectedView(LoginRequiredMixin, DeleteView):  # type: ignore [type-arg]
     model = User
     success_url = reverse_lazy("web:connected")
+    request: UserRequest
+
+    def get_queryset(self) -> QuerySet[User]:
+        return User.objects.filter(
+            manager=self.request.user, user_type=User.UserType.CONNECTED
+        )
 
     def form_valid(self, form: forms.Form) -> HttpResponse:
         messages.success(self.request, _("Connected user deleted successfully."))
@@ -571,6 +603,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         # Add enrollment status and time conflict info for each connected user
         for user in [self.request.user, *self.request.user.connected.all()]:
+            # Include all users in display but mark inactive ones
             user_participations = SessionParticipation.objects.filter(
                 user=user,
                 session__agenda_item__space__event=session.agenda_item.space.event,
@@ -629,6 +662,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
     def _get_enrollment_requests(self, form: EnrollmentForm) -> list[EnrollmentRequest]:
         enrollment_requests = []
         for connected_user in [self.request.user, *self.request.user.connected.all()]:
+            # Skip inactive users
+            if not connected_user.is_active:
+                continue
             user_field = f"user_{connected_user.id}"
             if form.cleaned_data.get(user_field):
                 choice = form.cleaned_data[user_field]
@@ -706,13 +742,16 @@ class EnrollSelectView(LoginRequiredMixin, View):
     def _check_and_create_enrollment(
         req: EnrollmentRequest, session: Session, enrollments: Enrollments
     ) -> None:
+        # Check if user is the session host
+        if req.user == session.host:
+            enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
+            return
         # Check if user is already enrolled
         if SessionParticipation.objects.filter(session=session, user=req.user).exists():
             enrollments.skipped_users.append(f"{req.name} ({_('already enrolled')!s})")
+            return
         # Check for time conflicts for confirmed enrollment
-        elif req.choice == "enroll" and Session.objects.has_conflicts(
-            session, req.user
-        ):
+        if req.choice == "enroll" and Session.objects.has_conflicts(session, req.user):
             enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
             return
 
