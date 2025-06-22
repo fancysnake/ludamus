@@ -233,14 +233,14 @@ if IS_PRODUCTION:
     # Session Security
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Strict"
+    SESSION_COOKIE_SAMESITE = "Lax"  # Changed from Strict to allow OAuth callbacks
     SESSION_COOKIE_AGE = 3600  # 1 hour
     SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
     # CSRF Security
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
-    CSRF_COOKIE_SAMESITE = "Strict"
+    CSRF_COOKIE_SAMESITE = "Lax"  # Changed from Strict to allow OAuth callbacks
 
     # Additional Security Settings
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
