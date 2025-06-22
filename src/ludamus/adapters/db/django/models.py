@@ -394,6 +394,30 @@ class Tag(models.Model):
         return self.name
 
 
+class SessionManager(models.Manager["Session"]):
+    def has_conflicts(self, session: Session, user: User) -> bool:
+        return (
+            self.get_queryset()
+            .filter(
+                agenda_item__space__event=session.agenda_item.space.event,
+                session_participations__user=user,
+                session_participations__status=SessionParticipationStatus.CONFIRMED,
+            )
+            .filter(
+                Q(
+                    agenda_item__start_time__gte=session.agenda_item.start_time,
+                    agenda_item__start_time__lt=session.agenda_item.end_time,
+                )
+                | Q(
+                    agenda_item__end_time__gt=session.agenda_item.start_time,
+                    agenda_item__end_time__lte=session.agenda_item.end_time,
+                )
+            )
+            .exclude(id=session.id)
+            .exists()
+        )
+
+
 class Session(models.Model):
     """Session model."""
 
@@ -425,6 +449,8 @@ class Session(models.Model):
     participants: models.ManyToManyField[User, Never] = models.ManyToManyField(
         User, through="SessionParticipation"
     )
+
+    objects = SessionManager()
 
     class Meta:
         db_table = "session"

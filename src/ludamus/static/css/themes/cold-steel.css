@@ -871,3 +871,8 @@ hr {
     border-color: var(--cold-steel-gold);
 }
 
+/* Theme selector form */
+.theme-select-form {
+    width: auto;
+}
+

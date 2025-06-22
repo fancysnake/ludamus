@@ -1,9 +1,10 @@
+# pylint: disable=redefined-outer-name
+
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
-from django.test import Client
 from factory import Faker, LazyAttribute, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 
@@ -41,7 +42,7 @@ class UserFactory(DjangoModelFactory):
     is_superuser = False
 
     @post_generation
-    def password(self, create, extracted, **kwargs):
+    def password(self, create, extracted):
         if create and extracted:
             self.set_password(extracted)
 
@@ -71,7 +72,7 @@ class EventFactory(DjangoModelFactory):
     slug = Faker("slug")
     description = Faker("text")
     sphere = SubFactory(SphereFactory)
-    start_time = LazyAttribute(lambda o: datetime.now(UTC) + timedelta(days=7))
+    start_time = LazyAttribute(lambda __: datetime.now(UTC) + timedelta(days=7))
     end_time = LazyAttribute(lambda o: o.start_time + timedelta(hours=8))
     enrollment_start_time = LazyAttribute(lambda o: o.start_time - timedelta(days=5))
     enrollment_end_time = LazyAttribute(lambda o: o.start_time - timedelta(days=1))
@@ -129,7 +130,7 @@ class SessionFactory(DjangoModelFactory):
     sphere = SubFactory(SphereFactory)
 
     @post_generation
-    def tags(self, create, extracted, **kwargs):
+    def tags(self, create, extracted):
         if not create:
             return
         if extracted:
@@ -175,33 +176,24 @@ class AgendaItemFactory(DjangoModelFactory):
 
     session = SubFactory(SessionFactory)
     space = SubFactory(SpaceFactory)
-    start_time = LazyAttribute(lambda o: datetime.now(UTC) + timedelta(days=7))
+    start_time = LazyAttribute(lambda __: datetime.now(UTC) + timedelta(days=7))
     end_time = LazyAttribute(lambda o: o.start_time + timedelta(hours=2))
 
 
 @pytest.fixture
-def client():
-    """Django test client."""
-    return Client()
-
-
-@pytest.fixture
 def authenticated_client(client, active_user):
-    """Client with authenticated user."""
     client.force_login(active_user)
     return client
 
 
 @pytest.fixture
 def staff_client(client, staff_user):
-    """Client with staff user."""
     client.force_login(staff_user)
     return client
 
 
 @pytest.fixture
-def active_user(db):
-    """Active user fixture."""
+def active_user():
     return UserFactory(
         username="testuser",
         email="testuser@example.com",
@@ -211,8 +203,7 @@ def active_user(db):
 
 
 @pytest.fixture
-def connected_user(db, active_user):
-    """Connected user fixture."""
+def connected_user(active_user):
     return UserFactory(
         username="connecteduser",
         email="connected@example.com",
@@ -223,20 +214,12 @@ def connected_user(db, active_user):
 
 
 @pytest.fixture
-def staff_user(db):
-    """Staff user fixture."""
+def staff_user():
     return UserFactory(username="staffuser", is_staff=True)
 
 
 @pytest.fixture
-def sphere(db, settings):
-    """Sphere fixture."""
-    site = Site.objects.get(domain=settings.ROOT_DOMAIN)
-    return SphereFactory(site=site, name=site.name)
-
-
-@pytest.fixture
-def non_root_sphere(db, settings, faker):
+def non_root_sphere(settings, faker):
     name = faker.word()
     site = Site.objects.create(
         domain=f"{name}.{settings.ROOT_DOMAIN}", name=name.title()
@@ -245,8 +228,7 @@ def non_root_sphere(db, settings, faker):
 
 
 @pytest.fixture
-def event(db, sphere):
-    """Event fixture with enrollment period open."""
+def event(sphere):
     now = datetime.now(UTC)
     return EventFactory(
         sphere=sphere,
@@ -260,14 +242,12 @@ def event(db, sphere):
 
 
 @pytest.fixture
-def space(db, event):
-    """Space fixture."""
+def space(event):
     return SpaceFactory(event=event)
 
 
 @pytest.fixture
-def time_slot(db, event):
-    """Time slot fixture."""
+def time_slot(event):
     return TimeSlotFactory(
         event=event,
         start_time=event.start_time,
@@ -276,31 +256,28 @@ def time_slot(db, event):
 
 
 @pytest.fixture
-def session(db, event, active_user, time_slot, sphere):
-    """Session fixture."""
+def session(active_user, sphere):
     return SessionFactory(host=active_user, sphere=sphere, participants_limit=10)
 
 
 @pytest.fixture
-def proposal_category(db, event):
-    """Proposal category fixture."""
+def proposal_category(event):
     return ProposalCategoryFactory(event=event)
 
 
 @pytest.fixture
-def proposal(db, proposal_category, active_user):
-    """Proposal fixture."""
+def proposal(proposal_category, active_user):
     return ProposalFactory(proposal_category=proposal_category, host=active_user)
 
 
 @pytest.fixture
-def agenda_item(db, session, space):
-    """Agenda item fixture."""
+def agenda_item(session, space):
     return AgendaItemFactory(session=session, space=space)
 
 
 @pytest.fixture(autouse=True)
-def _setup_site(settings, transactional_db):
-    Site.objects.update_or_create(
+def sphere(settings, transactional_db):  # noqa: ARG001
+    site, __ = Site.objects.update_or_create(
         domain=settings.ROOT_DOMAIN, defaults={"name": settings.ROOT_DOMAIN}
     )
+    return SphereFactory(site=site, name=site.name)

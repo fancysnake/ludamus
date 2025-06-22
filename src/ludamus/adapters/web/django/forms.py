@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from django import forms
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.forms.utils import ErrorList
 from django.utils.translation import gettext as _
 
@@ -24,12 +23,7 @@ if TYPE_CHECKING:
     from django.forms.renderers import BaseRenderer
     from django.forms.utils import _DataT, _FilesT
 
-    from ludamus.adapters.db.django.models import (
-        Event,
-        ProposalCategory,
-        SessionParticipation,
-        User,
-    )
+    from ludamus.adapters.db.django.models import Event, ProposalCategory, User
 
 
 class EnrollmentForm(forms.Form):
@@ -73,25 +67,7 @@ class EnrollmentForm(forms.Form):
             current_participation = SessionParticipation.objects.filter(
                 session=session, user=user
             ).first()
-            has_conflict = (
-                Session.objects.filter(
-                    agenda_item__space__event=session.agenda_item.space.event,
-                    session_participations__user=user,
-                    session_participations__status=SessionParticipationStatus.CONFIRMED,
-                )
-                .filter(
-                    Q(
-                        agenda_item__start_time__gte=session.agenda_item.start_time,
-                        agenda_item__start_time__lt=session.agenda_item.end_time,
-                    )
-                    | Q(
-                        agenda_item__end_time__gt=session.agenda_item.start_time,
-                        agenda_item__end_time__lte=session.agenda_item.end_time,
-                    )
-                )
-                .exclude(id=session.id)
-                .exists()
-            )
+            has_conflict = Session.objects.has_conflicts(session, user)
             field_name = f"user_{user.id}"
             choices = [("", _("No change"))]
 
@@ -205,7 +181,6 @@ class SessionProposalForm(forms.ModelForm):  # type: ignore [type-arg]
         use_required_attribute: bool | None = None,
         renderer: BaseRenderer | None = None,
         proposal_category: ProposalCategory | None = None,
-        event: Event | None = None,
     ) -> None:
         super().__init__(
             data=data,

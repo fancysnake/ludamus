@@ -89,17 +89,16 @@ WSGI_APPLICATION = "ludamus.deploy.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 TESTING = os.getenv("TESTING", "")
-if TESTING:
-    DATABASES = {
-        "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
-    }
-else:
-    DATABASES = {
+DATABASES = (
+    {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
+    if TESTING
+    else {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "dev.sqlite3",
+            "NAME": str(BASE_DIR / "dev.sqlite3"),
         }
     }
+)
 
 
 # Password validation
