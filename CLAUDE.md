@@ -108,8 +108,8 @@ Required environment variables:
 - `AUTH0_CLIENT_ID` - Auth0 client ID
 - `AUTH0_CLIENT_SECRET` - Auth0 client secret
 - `SECRET_KEY` - Django secret key
-- `ROOT_DOMAIN` - Root domain for multi-site support (e.g., zagrajmy.local)
-- `SUPPORT_EMAIL` - Support email address (default: support@zagrajmy.net)
+- `ROOT_DOMAIN` - Root domain for multi-site support (e.g., ludamus.local)
+- `SUPPORT_EMAIL` - Support email address (default: support@ludamus.net)
 
 ## Database Schema Highlights
 

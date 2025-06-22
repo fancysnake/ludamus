@@ -121,7 +121,7 @@
                                     {% if event.is_proposal_active %}
                                         <a href="{% url 'web:propose-session' event_slug=event.slug %}"
                                            class="btn btn-outline-warning btn-sm">
-                                            {% bs_icon 'plus-circle' %} {% translate "Propose for this slot" %}
+                                            {% bs_icon 'plus-circle' %} {% translate "Propose Session" %}
                                         </a>
                                     {% endif %}
                                 </div>
@@ -445,109 +445,112 @@
         {% endfor %}
     {% endif %}
     <!-- Status Modals -->
-    {% for session in sessions %}
-        <div class="modal fade"
-             id="statusModal{{ session.id }}"
-             tabindex="-1"
-             aria-labelledby="statusModalLabel{{ session.id }}"
-             aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="statusModalLabel{{ session.id }}">
-                            {% bs_icon 'info-circle' %} {% translate "Enrollment Status" %} - {{ session.title }}
-                        </h5>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Your enrollment status -->
-                        <div class="mb-3">
-                            <h6>{% translate "Your Status" %}</h6>
-                            {% with user_participation=session.session_participations.all|dictsort:"creation_time" %}
-                                {% for participation in user_participation %}
-                                    {% if participation.user == request.user %}
-                                        <div class="d-flex align-items-center">
-                                            {% if participation.status == 'confirmed' %}
-                                                <span class="badge bg-success me-2">{% translate "Enrolled" %}</span>
-                                            {% else %}
-                                                <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
-                                            {% endif %}
-                                            <span>{{ request.user.get_full_name }}</span>
-                                            <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
-                                        </div>
-                                    {% endif %}
-                                {% empty %}
-                                    <div class="text-muted">
-                                        <em>{% translate "Not enrolled" %}</em>
-                                    </div>
-                                {% endfor %}
-                            {% endwith %}
+    {% for hour, sessions_in_hour in hour_data.items %}
+        {% for data in sessions_in_hour %}
+            <div class="modal fade"
+                 id="statusModal{{ data.session.id }}"
+                 tabindex="-1"
+                 data-bs-backdrop="true"
+                 aria-labelledby="statusModalLabel{{ data.session.id }}"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="statusModalLabel{{ data.session.id }}">
+                                {% bs_icon 'info-circle' %} {% translate "Enrollment Status" %} - {{ data.session.title }}
+                            </h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                         </div>
-                        <!-- Connected users enrollment status -->
-                        {% if request.user.connected.exists %}
+                        <div class="modal-body">
+                            <!-- Your enrollment status -->
                             <div class="mb-3">
-                                <h6>{% translate "Connected Users Status" %}</h6>
-                                {% for connected_user in request.user.connected.all %}
-                                    <div class="d-flex align-items-center mb-2">
-                                        {% with connected_participation=session.session_participations.all|dictsort:"creation_time" %}
-                                            {% for participation in connected_participation %}
-                                                {% if participation.user == connected_user %}
-                                                    {% if participation.status == 'confirmed' %}
-                                                        <span class="badge bg-success me-2">{% translate "Enrolled" %}</span>
-                                                    {% else %}
-                                                        <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
-                                                    {% endif %}
-                                                    <span>{{ connected_user.get_full_name }}</span>
-                                                    <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
+                                <h6>{% translate "Your Status" %}</h6>
+                                {% with user_participation=data.session.session_participations.all|dictsort:"creation_time" %}
+                                    {% for participation in user_participation %}
+                                        {% if participation.user == request.user %}
+                                            <div class="d-flex align-items-center">
+                                                {% if participation.status == 'confirmed' %}
+                                                    <span class="badge bg-success me-2">{% translate "Enrolled" %}</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
                                                 {% endif %}
-                                            {% empty %}
-                                                <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
-                                                <span>{{ connected_user.get_full_name }}</span>
-                                            {% endfor %}
-                                            {% if not connected_participation %}
-                                                <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
-                                                <span>{{ connected_user.get_full_name }}</span>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </div>
-                                {% endfor %}
+                                                <span>{{ request.user.get_full_name }}</span>
+                                                <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
+                                            </div>
+                                        {% endif %}
+                                    {% empty %}
+                                        <div class="text-muted">
+                                            <em>{% translate "Not enrolled" %}</em>
+                                        </div>
+                                    {% endfor %}
+                                {% endwith %}
                             </div>
-                        {% endif %}
-                        <!-- Session Information -->
-                        <div class="border-top pt-3">
-                            <h6>{% translate "Session Information" %}</h6>
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <small class="text-muted">{% translate "Participants" %}:</small>
-                                    <br>
-                                    {{ session.enrolled_count }}/{{ session.participants_limit }}
-                                    {% if session.waiting_count > 0 %}
-                                        (+{{ session.waiting_count }} {% translate "waiting" %})
-                                    {% endif %}
+                            <!-- Connected users enrollment status -->
+                            {% if request.user.connected.exists %}
+                                <div class="mb-3">
+                                    <h6>{% translate "Connected Users Status" %}</h6>
+                                    {% for connected_user in request.user.connected.all %}
+                                        <div class="d-flex align-items-center mb-2">
+                                            {% with connected_participation=data.session.session_participations.all|dictsort:"creation_time" %}
+                                                {% for participation in connected_participation %}
+                                                    {% if participation.user == connected_user %}
+                                                        {% if participation.status == 'confirmed' %}
+                                                            <span class="badge bg-success me-2">{% translate "Enrolled" %}</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
+                                                        {% endif %}
+                                                        <span>{{ connected_user.get_full_name }}</span>
+                                                        <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
+                                                    {% endif %}
+                                                {% empty %}
+                                                    <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
+                                                    <span>{{ connected_user.get_full_name }}</span>
+                                                {% endfor %}
+                                                {% if not connected_participation %}
+                                                    <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
+                                                    <span>{{ connected_user.get_full_name }}</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                    {% endfor %}
                                 </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">{% translate "Time" %}:</small>
-                                    <br>
-                                    {{ session.agenda_item.start_time|date:"M j, G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}
+                            {% endif %}
+                            <!-- Session Information -->
+                            <div class="border-top pt-3">
+                                <h6>{% translate "Session Information" %}</h6>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <small class="text-muted">{% translate "Participants" %}:</small>
+                                        <br>
+                                        {{ data.session.enrolled_count }}/{{ data.session.participants_limit }}
+                                        {% if data.session.waiting_count > 0 %}
+                                            (+{{ data.session.waiting_count }} {% translate "waiting" %})
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <small class="text-muted">{% translate "Time" %}:</small>
+                                        <br>
+                                        {{ data.session.agenda_item.start_time|date:"M j, G:i" }} - {{ data.session.agenda_item.end_time|date:"G:i" }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                        {% if event.is_enrollment_active and not user_enrolled and not user_waiting %}
-                            {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
-                                <a href="{% url 'web:enroll-select' session_id=session.id %}"
-                                   class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
+                            {% if event.is_enrollment_active and not user_enrolled and not user_waiting %}
+                                {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                    <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                       class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        {% endfor %}
     {% endfor %}
     <!-- Participant Modals -->
     {% for session in sessions %}
@@ -794,4 +797,11 @@
             clearFilters.addEventListener('click', clearAllFilters);
         });
     </script>
+    <style>
+        /* Ensure backdrop shows for status modals */
+        .modal-backdrop.show {
+            display: block !important;
+            opacity: 0.5 !important;
+        }
+    </style>
 {% endblock %}

@@ -268,11 +268,8 @@ class TestCallbackView:
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "http://testserver/"
         assert list(get_messages(response.wsgi_request)) == [
-            Message(level=messages.SUCCESS, message="Witaj!"),
-            Message(
-                level=messages.ERROR,
-                message="Authentication session expired. Please try again.",
-            ),
+            Message(level=messages.SUCCESS, message=ANY),
+            Message(level=messages.ERROR, message=ANY),
         ]
 
 

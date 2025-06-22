@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 MAX_SLUG_RETRIES = 10
 RANDOM_SLUG_BYTES = 7  # 10 characters
 DEFAULT_NAME = "Andrzej"
+MAX_CONNECTED_USERS = 6  # Maximum number of connected users per manager
 
 
 class ModelWithSlug(Protocol):

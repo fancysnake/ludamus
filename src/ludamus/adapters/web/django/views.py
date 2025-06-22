@@ -32,6 +32,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from ludamus.adapters.db.django.models import (
+    MAX_CONNECTED_USERS,
     AgendaItem,
     Event,
     Proposal,
@@ -367,15 +368,28 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
     def get_context_data(  # type: ignore [explicit-any]
         self, **kwargs: Any
     ) -> dict[str, Any]:
+
         context = super().get_context_data(**kwargs)
         connected_users = [
             {"user": connected, "form": ConnectedUserForm(instance=connected)}
             for connected in self.request.user.connected.all()
         ]
         context["connected_users"] = connected_users
+        context["max_connected_users"] = MAX_CONNECTED_USERS
         return context
 
     def form_valid(self, form: forms.Form) -> HttpResponse:
+        # Check if user has reached the maximum number of connected users
+
+        connected_count = self.request.user.connected.count()
+        if connected_count >= MAX_CONNECTED_USERS:
+            messages.error(
+                self.request,
+                _("You can only have up to %(max)s connected users.")
+                % {"max": MAX_CONNECTED_USERS},
+            )
+            return self.form_invalid(form)
+
         result = super().form_valid(form)
         self.object.manager = self.request.user
         self.object.username = f"connected|{token_urlsafe(50)}"
@@ -1071,7 +1085,6 @@ class AcceptProposalView(LoginRequiredMixin, View):
 
         # Initialize form with POST data
         form = ProposalAcceptanceForm(data=request.POST, event=event)
-
         if not form.is_valid():
             # Re-render with form errors
             return TemplateResponse(

@@ -38,6 +38,18 @@ body {
         radial-gradient(circle at 80% 20%, rgba(212, 165, 116, 0.03) 0%, transparent 50%);
 }
 
+/* Modal backdrop styling - show properly positioned backdrop for status modals */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #000;
+    opacity: 0.5;
+    z-index: 1040;
+}
+
 /* Main content container with subtle styling */
 main .container,
 .content .container,
@@ -48,8 +60,8 @@ body>.container:not(.navbar .container) {
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
     border-radius: 0.5rem;
-    backdrop-filter: blur(10px);
 }
+
 
 /* Ensure navbar container has no background */
 .navbar .container {

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ flatpage.title }}{% endblock %}
+{% block header %}{{ flatpage.title }}{% endblock %}
+{% block description %}{% endblock %}
+{% block body %}
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="prose">{{ flatpage.content|safe|linebreaks }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'web:index' %}" class="btn btn-outline-primary">{% translate "Back to Home" %}</a>
+        </div>
+    </div>
+{% endblock %}
