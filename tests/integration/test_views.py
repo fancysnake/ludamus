@@ -1,5 +1,7 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
+from django.contrib.messages.storage.base import Message
+import json
 from unittest.mock import ANY, patch
 from urllib.parse import urlencode
 
@@ -7,6 +9,7 @@ import pytest
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.urls import reverse
 
@@ -60,14 +63,27 @@ class TestAuth0LoginView:
     URL = reverse("web:auth0_login")
 
     @patch("ludamus.adapters.web.django.views.oauth")
-    def test_ok_redirect(self, oauth_mock, client):
+    @patch("ludamus.adapters.web.django.views.cache")
+    def test_ok_redirect(self, cache_mock, oauth_mock, client):
         oauth_mock.auth0.authorize_redirect.return_value = HttpResponse()
 
-        client.get(self.URL)
+        response = client.get(self.URL)
 
-        oauth_mock.auth0.authorize_redirect.assert_called_once_with(
-            ANY, "http://testserver/crowd/user/login/callback?redirect_to=None"
-        )
+        # Verify state token was generated and stored
+        oauth_mock.auth0.authorize_redirect.assert_called_once()
+        call_args = oauth_mock.auth0.authorize_redirect.call_args
+        assert call_args[0][1] == "http://testserver/crowd/user/login/callback"
+        assert "state" in call_args[1]
+        state_token = call_args[1]["state"]
+
+        # Verify cache was called to store state
+        cache_mock.set.assert_called_once()
+        cache_key = cache_mock.set.call_args[0][0]
+        assert cache_key == f"oauth_state:{state_token}"
+        state_data = json.loads(cache_mock.set.call_args[0][1])
+        assert state_data["redirect_to"] is None
+        assert "created_at" in state_data
+        assert cache_mock.set.call_args[1]["timeout"] == 600
 
     def test_error_non_root_domain(self, client, non_root_sphere):
         response = client.get(self.URL, HTTP_HOST=non_root_sphere.site.domain)
@@ -80,10 +96,25 @@ class TestAuth0LoginView:
 class TestCallbackView:
     URL = reverse("web:callback")
 
+    def _setup_valid_state(self, redirect_to=None):
+        """Helper to set up a valid state token in cache."""
+        from secrets import token_urlsafe
+
+        state_token = token_urlsafe(32)
+        state_data = {
+            "redirect_to": redirect_to,
+            "created_at": datetime.now(UTC).isoformat(),
+            "csrf_token": "test_csrf_token",
+        }
+        cache.set(f"oauth_state:{state_token}", json.dumps(state_data), timeout=600)
+        return state_token
+
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
     def test_ok(self, authorize_access_token_mock, client, faker):
         authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
-        response = client.get(self.URL)
+        state_token = self._setup_valid_state()
+
+        response = client.get(self.URL, {"state": state_token})
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "http://testserver/crowd/user/edit"
@@ -92,12 +123,16 @@ class TestCallbackView:
             == f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"].encode('utf-8')}'
         )
         _assert_message_sent(response, messages.SUCCESS, number=2)
+        # Verify state was deleted from cache
+        assert cache.get(f"oauth_state:{state_token}") is None
 
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
     def test_ok_redirect_to(self, authorize_access_token_mock, client, faker):
         authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
         redirect_to = "https://www.domain.example.com/a/b/c"
-        response = client.get(self.URL, data={"redirect_to": redirect_to})
+        state_token = self._setup_valid_state(redirect_to)
+
+        response = client.get(self.URL, data={"state": state_token})
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "https://www.domain.example.com/crowd/user/edit"
@@ -108,14 +143,16 @@ class TestCallbackView:
         _assert_message_sent(response, messages.SUCCESS, number=2)
 
     def test_ok_already_authenticated(self, authenticated_client):
-        response = authenticated_client.get(self.URL)
+        state_token = self._setup_valid_state()
+        response = authenticated_client.get(self.URL, {"state": state_token})
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "http://testserver/"
 
     def test_ok_already_authenticated_redirect_to(self, authenticated_client, faker):
         redirect_to = faker.url()
-        response = authenticated_client.get(self.URL, data={"redirect_to": redirect_to})
+        state_token = self._setup_valid_state(redirect_to)
+        response = authenticated_client.get(self.URL, data={"state": state_token})
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == redirect_to
@@ -131,8 +168,9 @@ class TestCallbackView:
             name=faker.name(),
             email=faker.email(),
         )
+        state_token = self._setup_valid_state()
 
-        response = client.get(self.URL)
+        response = client.get(self.URL, {"state": state_token})
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "http://testserver/"
@@ -147,8 +185,9 @@ class TestCallbackView:
             username=f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"].encode('utf-8')}',
             birth_date=datetime.now(tz=UTC),
         )
+        state_token = self._setup_valid_state()
 
-        response = client.get(self.URL)
+        response = client.get(self.URL, {"state": state_token})
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "https://auth0.example.com/v2/logout?" + urlencode(
@@ -163,11 +202,85 @@ class TestCallbackView:
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
     def test_error_bad_token(self, authorize_access_token_mock, client):
         authorize_access_token_mock.return_value = {}
-        response = client.get(self.URL)
+        state_token = self._setup_valid_state()
+        response = client.get(self.URL, {"state": state_token})
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "/"
         _assert_message_sent(response, messages.ERROR)
+
+    def test_error_missing_state(self, client):
+        """Test callback without state parameter."""
+        response = client.get(self.URL)
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "http://testserver/"
+        _assert_message_sent(response, messages.ERROR)
+
+    def test_error_invalid_state(self, client):
+        """Test callback with invalid state token."""
+        response = client.get(self.URL, {"state": "invalid_state_token"})
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "http://testserver/"
+        _assert_message_sent(response, messages.ERROR)
+
+    @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
+    def test_error_expired_state(self, authorize_access_token_mock, client, faker):
+        """Test callback with expired state token."""
+        from secrets import token_urlsafe
+
+        authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
+
+        # Create an expired state
+        state_token = token_urlsafe(32)
+        state_data = {
+            "redirect_to": None,
+            "created_at": (datetime.now(UTC) - timedelta(minutes=15)).isoformat(),
+            "csrf_token": "test_csrf_token",
+        }
+        cache.set(f"oauth_state:{state_token}", json.dumps(state_data), timeout=600)
+
+        response = client.get(self.URL, {"state": state_token})
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "http://testserver/"
+        _assert_message_sent(response, messages.ERROR)
+
+    @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
+    def test_error_replay_attack(self, authorize_access_token_mock, client, faker):
+        """Test that state token cannot be reused."""
+        sub_id = faker.uuid4()
+        authorize_access_token_mock.return_value = {"userinfo": {"sub": sub_id}}
+
+        # Create an existing complete user to avoid "complete profile" messages
+        User.objects.create(
+            username=f'auth0|{sub_id.encode("utf-8")}',
+            birth_date=datetime(2000, 12, 12),
+            name=faker.name(),
+            email=faker.email(),
+        )
+
+        state_token = self._setup_valid_state()
+
+        # First request should succeed
+        response = client.get(self.URL, {"state": state_token})
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "http://testserver/"
+        # Clear messages from first request
+        list(get_messages(response.wsgi_request))
+
+        # Second request with same state should fail
+        response = client.get(self.URL, {"state": state_token})
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "http://testserver/"
+        assert list(get_messages(response.wsgi_request)) == [
+            Message(level=messages.SUCCESS, message="Witaj!"),
+            Message(
+                level=messages.ERROR,
+                message="Authentication session expired. Please try again.",
+            ),
+        ]
 
 
 @pytest.mark.django_db(transaction=True)

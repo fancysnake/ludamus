@@ -68,7 +68,7 @@ update = [
 
 [tool.poe.tasks.inttest]
 cmd = "pytest"
-envfile = ".env.test"
+envfile = ".testenv"
 
 # BLACK
 
@@ -132,18 +132,12 @@ django_settings_module = "ludamus.config.settings"
 [tool.coverage.run]
 branch = true
 source = ["src", "tests"]
-omit = [
-    "src/ludamus/config/*",
-    "src/ludamus/deploy/*"
-]
+omit = ["src/ludamus/config/*", "src/ludamus/deploy/*"]
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-exclude_also = [
-    "if TYPE_CHECKING:",
-    "# pragma: no cover"
-]
+exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
 
 # PYTEST
 
