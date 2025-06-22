@@ -24,26 +24,22 @@ Environment Variables:
         - DB_PASSWORD: PostgreSQL password
         - DB_HOST: PostgreSQL host (default: localhost)
         - DB_PORT: PostgreSQL port (default: 5432)
-        - DB_SSLMODE: PostgreSQL SSL mode (default: require)
 
     Optional:
         - SESSION_COOKIE_DOMAIN: Session cookie domain
-        - SUPPORT_EMAIL: Support email address (default: support@zagrajmy.net)
+        - SUPPORT_EMAIL: Support email address
         - STATIC_ROOT: Static files root directory
         - MEDIA_ROOT: Media files root directory
-        - REDIS_URL: Redis URL for caching
-        - EMAIL_HOST: SMTP host
-        - EMAIL_PORT: SMTP port (default: 587)
-        - EMAIL_USE_TLS: Use TLS for email (default: True)
-        - EMAIL_HOST_USER: SMTP username
-        - EMAIL_HOST_PASSWORD: SMTP password
-        - DEFAULT_FROM_EMAIL: Default from email
-        - SERVER_EMAIL: Server email for error messages
 """
 
 import os
 from pathlib import Path
 from typing import Any
+
+import environ
+
+env = environ.Env(DEBUG=(bool,), USE_POSTGRES=(bool, False))
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -58,7 +54,7 @@ IS_PRODUCTION = ENV == "production"
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = not IS_PRODUCTION
+DEBUG = env("DEBUG")
 
 # Parse comma-separated allowed hosts for production
 ALLOWED_HOSTS: list[str] = []
@@ -79,6 +75,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django.contrib.flatpages",
     # Third Party
     "django_bootstrap5",
     "django_bootstrap_icons",
@@ -97,6 +94,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "ludamus.adapters.web.django.middlewares.RedirectErrorMiddleware",
+    "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
 ]
 
 if DEBUG:
@@ -200,7 +198,7 @@ AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
 
 # Support
 
-SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support@zagrajmy.net")
+SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 
 INTERNAL_IPS = [
     # ...
@@ -256,7 +254,7 @@ else:
     CSRF_COOKIE_SAMESITE = "Lax"
 
 # Production Database Settings
-if IS_PRODUCTION:
+if env("USE_POSTGRES"):
     DATABASES = {
         "default": {
             "ATOMIC_REQUESTS": True,
@@ -268,10 +266,7 @@ if IS_PRODUCTION:
             "PORT": os.getenv("DB_PORT", "5432"),
             "CONN_MAX_AGE": 600,
             "CONN_HEALTH_CHECKS": True,
-            "OPTIONS": {
-                "connect_timeout": 10,
-                "sslmode": os.getenv("DB_SSLMODE", "require"),
-            },
+            "OPTIONS": {"connect_timeout": 10},
         }
     }
 
@@ -286,16 +281,6 @@ if IS_PRODUCTION:
     # Media files
     MEDIA_ROOT = os.getenv("MEDIA_ROOT", str(BASE_DIR / "media"))
     MEDIA_URL = "/media/"
-
-    # Email backend for production
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.getenv("EMAIL_HOST", "")
-    EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-    EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
-    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-    DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", SUPPORT_EMAIL)
-    SERVER_EMAIL = os.getenv("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 else:
     # Development email backend
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

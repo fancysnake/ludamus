@@ -77,19 +77,19 @@
                           action="{% url 'web:accept-proposal' proposal_id=proposal.id %}">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="space_id" class="form-label">
+                            <label for="space" class="form-label">
                                 {% bs_icon 'geo-alt' %} {% translate "Space" %} <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select" id="space_id" name="space_id" required>
+                            <select class="form-select" id="space" name="space" required>
                                 <option value="">{% translate "Select a space..." %}</option>
                                 {% for space in spaces %}<option value="{{ space.id }}">{{ space.name }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label for="time_slot_id" class="form-label">
+                            <label for="time_slot" class="form-label">
                                 {% bs_icon 'clock' %} {% translate "Time Slot" %} <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select" id="time_slot_id" name="time_slot_id" required>
+                            <select class="form-select" id="time_slot" name="time_slot" required>
                                 <option value="">{% translate "Select a time slot..." %}</option>
                                 {% for slot in time_slots %}
                                     <option value="{{ slot.id }}"

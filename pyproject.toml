@@ -9,7 +9,7 @@ authors = [
 ]
 license = { text = "BSD-3-Clause license" }
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13.0,<3.14"
 dynamic = ['dependencies']
 
 [build-system]
@@ -21,6 +21,9 @@ authlib = "~1.6.0"
 django = "~5.2.2"
 django-bootstrap5 = "~25.1.0"
 django-bootstrap-icons = "~0.9.0"
+gunicorn = "^23.0.0"
+django-environ = "^0.12.0"
+psycopg = "^3.2.9"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
@@ -36,13 +39,13 @@ pytest-cov = "^6.2.1"
 pytest-django = "^4.11.1"
 ruff = "^0.12.0"
 types-authlib = "^1.5.0.20250516"
-
-# POE
 factory-boy = "^3.3.3"
 freezegun = "^1.5.2"
 
+# POE
+
 [tool.poe]
-envfile = ".env"
+envfile = ".env.dev"
 
 [tool.poe.env]
 PYTHONPATH = "src"
@@ -58,7 +61,7 @@ djlint = "djlint . --lint"
 djlint-format = "djlint . --reformat --format-css --format-js"
 check = ["black", "ruff-fix", "djlint-format", "djlint", "mypy", "pylint"]
 dj = "django-admin"
-start = "django-admin runserver zagrajmy.local:8000"
+start = "django-admin runserver ludamus.local:8000"
 update = [
     { cmd = "pip install -U pip" },
     { cmd = "pip install -U poetry" },
@@ -139,6 +142,10 @@ django_settings_module = "ludamus.config.settings"
 
 [[tool.mypy.overrides]]
 module = ["debug_toolbar.toolbar"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["environ"]
 ignore_missing_imports = true
 
 # COVERAGE

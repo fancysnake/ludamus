@@ -1,0 +1,42 @@
+# Ignore everything by default
+*
+
+# Allow specific files and directories needed for the build
+!src/
+!pyproject.toml
+!poetry.lock
+
+# But still ignore these even if they're in allowed directories
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.Python
+**/*.so
+**/pip-log.txt
+**/pip-delete-this-directory.txt
+**/.tox/
+**/nosetests.xml
+**/.coverage
+**/.coverage.*
+**/*.cover
+**/*.log
+**/.git
+**/.mypy_cache
+**/.pytest_cache
+**/.hypothesis
+**/*.egg-info
+**/*.sqlite3
+**/.env
+**/.env.*
+**/venv/
+**/ENV/
+**/.venv/
+**/.idea/
+**/.vscode/
+**/node_modules/
+**/.DS_Store
+**/*.swp
+**/*.swo
+**/staticfiles/
+**/media/

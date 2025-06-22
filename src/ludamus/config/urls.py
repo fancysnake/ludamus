@@ -16,7 +16,6 @@ Including another URLconf
 
 """
 
-from debug_toolbar.toolbar import debug_toolbar_urls
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
@@ -24,6 +23,7 @@ from django.urls import include, path
 urlpatterns = [
     path("", include("ludamus.adapters.web.django.urls", namespace="web")),
     path("admin/", admin.site.urls),
+    path("page/", include("django.contrib.flatpages.urls")),
 ]
 
 # Custom error handlers
@@ -35,4 +35,6 @@ handler500 = (  # pylint: disable=invalid-name
 )
 
 if settings.DEBUG:
+    from debug_toolbar.toolbar import debug_toolbar_urls
+
     urlpatterns += debug_toolbar_urls()
