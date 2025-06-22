@@ -38,7 +38,7 @@ from typing import Any
 
 import environ
 
-env = environ.Env(DEBUG=(bool,), USE_POSTGRES=(bool, False))
+env = environ.Env(DEBUG=(bool, False), USE_POSTGRES=(bool, False))
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -198,7 +198,7 @@ AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
 
 # Support
 
-SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support@example.com")
 
 INTERNAL_IPS = [
     # ...

@@ -65,6 +65,10 @@ COPY src ./src
 RUN mkdir -p staticfiles media logs \
     && chown -R appuser:appuser /app
 
+# Accept build args and set as env vars for the build
+ARG SECRET_KEY
+ENV ENV=production
+
 # Switch to non-root user
 USER appuser
 
