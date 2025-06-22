@@ -87,6 +87,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "ludamus.adapters.web.django.middlewares.SphereMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -160,6 +161,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = "pl"
+
+LANGUAGES = [
+    ("pl", "Polski"),
+    ("en", "English"),
+]
 
 TIME_ZONE = "Europe/Warsaw"
 

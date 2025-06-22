@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     'build-essential=12.9' \
     'libpq-dev=15.13-0+deb12u1' \
     'curl=7.88.1-10+deb12u12' \
+    'gettext=0.21-12' \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
@@ -73,6 +74,9 @@ ENV ENV=production
 USER appuser
 
 WORKDIR /app/src
+
+# Compile translation messages
+RUN django-admin compilemessages
 
 # Collect static files (requires SECRET_KEY to be set)
 RUN django-admin collectstatic --noinput
