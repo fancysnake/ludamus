@@ -651,17 +651,17 @@ class TestEnrollSelectView:
         assert response.url == self._get_url(agenda_item.session.pk)
         _assert_message_sent(response, messages.WARNING)
 
-    def test_post_ok(self, active_user, agenda_item, authenticated_client, event):
-        response = authenticated_client.post(
+    def test_post_ok(self, staff_user, agenda_item, staff_client, event):
+        response = staff_client.post(
             self._get_url(agenda_item.session.pk),
-            data={f"user_{active_user.id}": "enroll"},
+            data={f"user_{staff_user.id}": "enroll"},
         )
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
         _assert_message_sent(response, messages.SUCCESS)
         SessionParticipation.objects.get(
-            user=active_user,
+            user=staff_user,
             session=agenda_item.session,
             status=SessionParticipationStatus.CONFIRMED,
         )
