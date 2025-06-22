@@ -68,6 +68,7 @@ RUN mkdir -p staticfiles media logs \
 
 # Accept build args and set as env vars for the build
 ARG SECRET_KEY
+ARG STATIC_ROOT
 ENV ENV=production
 
 # Switch to non-root user
