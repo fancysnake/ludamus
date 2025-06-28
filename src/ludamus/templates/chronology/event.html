@@ -198,6 +198,12 @@
                                                         </td>
                                                         <td>
                                                             <div class="btn-group btn-group-sm" role="group">
+                                                                <button type="button"
+                                                                        class="btn btn-outline-primary btn-sm"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#sessionDetailModal{{ data.session.id }}">
+                                                                    {% bs_icon 'eye' %} {% translate "Details" %}
+                                                                </button>
                                                                 {% if event.is_enrollment_active and request.user.is_authenticated %}
                                                                     {% if data.user_enrolled or data.user_waiting %}
                                                                         <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
@@ -672,6 +678,136 @@
                 </div>
             </div>
         </div>
+    {% endfor %}
+    <!-- Session Detail Modals -->
+    {% for hour, sessions_in_hour in hour_data.items %}
+        {% for data in sessions_in_hour %}
+            <div class="modal fade"
+                 id="sessionDetailModal{{ data.session.id }}"
+                 tabindex="-1"
+                 aria-labelledby="sessionDetailModalLabel{{ data.session.id }}"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="sessionDetailModalLabel{{ data.session.id }}">{{ data.session.title }}</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6>{% bs_icon 'person-circle' %} {% translate "Host" %}</h6>
+                                    <p class="ms-4">{{ data.session.host.get_full_name|default:data.session.host.name }}</p>
+                                    <h6>{% bs_icon 'clock' %} {% translate "Time" %}</h6>
+                                    <p class="ms-4">
+                                        {{ data.session.agenda_item.start_time|date:"l, F j, Y" }}
+                                        <br>
+                                        {{ data.session.agenda_item.start_time|time:"G:i" }} - {{ data.session.agenda_item.end_time|time:"G:i" }}
+                                    </p>
+                                    <h6>{% bs_icon 'geo-alt' %} {% translate "Location" %}</h6>
+                                    <p class="ms-4">
+                                        {% if data.session.agenda_item.space %}
+                                            {{ data.session.agenda_item.space.name }}
+                                        {% else %}
+                                            <span class="text-muted">{% translate "To be announced" %}</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>{% bs_icon 'people' %} {% translate "Participants" %}</h6>
+                                    <p class="ms-4">
+                                        <span class="badge bg-primary">{{ data.session.enrolled_count }}/{{ data.session.participants_limit }}</span>
+                                        {% if data.session.waiting_count > 0 %}
+                                            <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
+                                        {% endif %}
+                                        {% if data.session.enrolled_count >= data.session.participants_limit %}
+                                            <span class="badge bg-danger ms-1">{% translate "Full" %}</span>
+                                        {% endif %}
+                                    </p>
+                                    {% if data.session.tags.exists %}
+                                        <h6>{% bs_icon 'tags' %} {% translate "Tags" %}</h6>
+                                        <div class="ms-4">
+                                            {% for tag in data.session.tags.all %}
+                                                <span class="badge bg-secondary me-1 mb-1">
+                                                    {% if tag.category.icon %}
+                                                        {% bs_icon tag.category.icon %}
+                                                    {% endif %}
+                                                    {{ tag.name }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if data.session.description %}
+                                <div class="border-top pt-3">
+                                    <h6>{% bs_icon 'card-text' %} {% translate "Description" %}</h6>
+                                    <p class="ms-4">{{ data.session.description|linebreaks }}</p>
+                                </div>
+                            {% endif %}
+                            {% if data.session.requirements %}
+                                <div class="border-top pt-3">
+                                    <h6>{% bs_icon 'check-square' %} {% translate "Requirements" %}</h6>
+                                    <p class="ms-4">{{ data.session.requirements|linebreaks }}</p>
+                                </div>
+                            {% endif %}
+                            <!-- Enrollment Status for Authenticated Users -->
+                            {% if request.user.is_authenticated %}
+                                <div class="border-top pt-3">
+                                    <h6>{% bs_icon 'person-check' %} {% translate "Your Enrollment Status" %}</h6>
+                                    <div class="ms-4">
+                                        {% if data.user_enrolled %}
+                                            <div class="alert alert-success d-inline-flex align-items-center"
+                                                 role="alert">
+                                                {% bs_icon 'check-circle-fill' %} <span class="ms-2">{% translate "You are enrolled in this session" %}</span>
+                                            </div>
+                                        {% elif data.user_waiting %}
+                                            <div class="alert alert-warning d-inline-flex align-items-center"
+                                                 role="alert">
+                                                {% bs_icon 'clock-fill' %} <span class="ms-2">{% translate "You are on the waiting list" %}</span>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-info d-inline-flex align-items-center"
+                                                 role="alert">
+                                                {% bs_icon 'info-circle-fill' %} <span class="ms-2">{% translate "You are not enrolled in this session" %}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
+                            {% if event.is_enrollment_active %}
+                                {% if request.user.is_authenticated %}
+                                    {% if data.user_enrolled or data.user_waiting %}
+                                        <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                           class="btn btn-warning">
+                                            {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
+                                        </a>
+                                    {% else %}
+                                        {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                            <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                               class="btn btn-success">
+                                                {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'web:auth0_login' %}?next={{ request.build_absolute_uri }}"
+                                       class="btn btn-primary">
+                                        {% bs_icon 'box-arrow-in-right' %} {% translate "Login to Enroll" %}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
     {% endfor %}
     <!-- Back to Events List -->
     <div class="row mt-4">
