@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-22 20:48+0200\n"
+"POT-Creation-Date: 2025-06-28 13:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -502,9 +502,9 @@ msgstr "Zapisz się (jeśli są miejsca)"
 
 #: src/ludamus/adapters/web/django/forms.py:95
 #: src/ludamus/templates/chronology/enroll_select.html:71
-#: src/ludamus/templates/chronology/event.html:211
 #: src/ludamus/templates/chronology/event.html:217
-#: src/ludamus/templates/chronology/event.html:546
+#: src/ludamus/templates/chronology/event.html:223
+#: src/ludamus/templates/chronology/event.html:552
 msgid "Enroll"
 msgstr "Zapisz się"
 
@@ -855,7 +855,7 @@ msgid "Logout"
 msgstr "Wyloguj"
 
 #: src/ludamus/templates/base.html:57
-#: src/ludamus/templates/chronology/event.html:232
+#: src/ludamus/templates/chronology/event.html:238
 msgid "Login"
 msgstr "Zaloguj"
 
@@ -877,7 +877,7 @@ msgstr "Regulamin"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:6
 #: src/ludamus/templates/chronology/accept_proposal.html:9
-#: src/ludamus/templates/chronology/event.html:440
+#: src/ludamus/templates/chronology/event.html:446
 msgid "Accept Proposal"
 msgstr "Zaakceptuj zgłoszenie"
 
@@ -888,52 +888,56 @@ msgstr "Wybierz przestrzeń i blok czasowy dla"
 #: src/ludamus/templates/chronology/accept_proposal.html:25
 #: src/ludamus/templates/chronology/enroll_select.html:25
 #: src/ludamus/templates/chronology/event.html:135
-#: src/ludamus/templates/chronology/event.html:292
-#: src/ludamus/templates/chronology/event.html:397
+#: src/ludamus/templates/chronology/event.html:298
+#: src/ludamus/templates/chronology/event.html:403
+#: src/ludamus/templates/chronology/event.html:702
 msgid "Host"
 msgstr "Prowadzący"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:27
-#: src/ludamus/templates/chronology/event.html:399
-#: src/ludamus/templates/chronology/event.html:580
+#: src/ludamus/templates/chronology/event.html:405
+#: src/ludamus/templates/chronology/event.html:586
 #: src/ludamus/templates/chronology/propose_session.html:138
 msgid "Participants Limit"
 msgstr "Limit uczestników"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:31
-#: src/ludamus/templates/chronology/event.html:293
-#: src/ludamus/templates/chronology/event.html:416
+#: src/ludamus/templates/chronology/event.html:299
+#: src/ludamus/templates/chronology/event.html:422
 msgid "Submitted"
 msgstr "Przesłane"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:34
-#: src/ludamus/templates/chronology/event.html:402
+#: src/ludamus/templates/chronology/event.html:408
+#: src/ludamus/templates/chronology/event.html:731
 #: src/ludamus/templates/chronology/propose_session.html:100
 msgid "Tags"
 msgstr "Tagi"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:49
 #: src/ludamus/templates/chronology/enroll_select.html:49
-#: src/ludamus/templates/chronology/event.html:425
+#: src/ludamus/templates/chronology/event.html:431
+#: src/ludamus/templates/chronology/event.html:747
 #: src/ludamus/templates/chronology/propose_session.html:71
 #: src/ludamus/templates/index.html:17
 msgid "Description"
 msgstr "Opis"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:53
-#: src/ludamus/templates/chronology/event.html:429
+#: src/ludamus/templates/chronology/event.html:435
+#: src/ludamus/templates/chronology/event.html:753
 #: src/ludamus/templates/chronology/propose_session.html:80
 msgid "Requirements"
 msgstr "Wymagania"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:57
-#: src/ludamus/templates/chronology/event.html:433
+#: src/ludamus/templates/chronology/event.html:439
 #: src/ludamus/templates/chronology/propose_session.html:89
 msgid "Special Needs"
 msgstr "Specjalne potrzeby"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:61
-#: src/ludamus/templates/chronology/event.html:419
+#: src/ludamus/templates/chronology/event.html:425
 msgid "Preferred Time Slots"
 msgstr "Preferowane bloki czasowe"
 
@@ -974,22 +978,25 @@ msgstr "Wybierz kogo zapisać na"
 
 #: src/ludamus/templates/chronology/enroll_select.html:27
 #: src/ludamus/templates/chronology/event.html:137
-#: src/ludamus/templates/chronology/event.html:295
-#: src/ludamus/templates/chronology/event.html:526
-#: src/ludamus/templates/chronology/event.html:566
+#: src/ludamus/templates/chronology/event.html:301
+#: src/ludamus/templates/chronology/event.html:532
+#: src/ludamus/templates/chronology/event.html:572
+#: src/ludamus/templates/chronology/event.html:720
 msgid "Participants"
 msgstr "Uczestnicy"
 
 #: src/ludamus/templates/chronology/enroll_select.html:31
 #: src/ludamus/templates/chronology/enroll_select.html:168
 #: src/ludamus/templates/chronology/event.html:192
-#: src/ludamus/templates/chronology/event.html:530
-#: src/ludamus/templates/chronology/event.html:584
+#: src/ludamus/templates/chronology/event.html:536
+#: src/ludamus/templates/chronology/event.html:590
+#: src/ludamus/templates/chronology/event.html:724
 msgid "waiting"
 msgstr "oczekuje"
 
 #: src/ludamus/templates/chronology/enroll_select.html:36
-#: src/ludamus/templates/chronology/event.html:534
+#: src/ludamus/templates/chronology/event.html:540
+#: src/ludamus/templates/chronology/event.html:704
 msgid "Time"
 msgstr "Czas"
 
@@ -1080,7 +1087,7 @@ msgid "End Time"
 msgstr "Koniec"
 
 #: src/ludamus/templates/chronology/event.html:41
-#: src/ludamus/templates/chronology/event.html:226
+#: src/ludamus/templates/chronology/event.html:232
 #: src/ludamus/templates/index.html:20
 msgid "Status"
 msgstr "Status"
@@ -1132,6 +1139,7 @@ msgstr "Dostępne miejsca"
 
 #: src/ludamus/templates/chronology/event.html:93
 #: src/ludamus/templates/chronology/event.html:196
+#: src/ludamus/templates/chronology/event.html:727
 msgid "Full"
 msgstr "Pełne"
 
@@ -1152,12 +1160,12 @@ msgid "Clear"
 msgstr "Wyczyść"
 
 #: src/ludamus/templates/chronology/event.html:134
-#: src/ludamus/templates/chronology/event.html:576
+#: src/ludamus/templates/chronology/event.html:582
 msgid "Session"
 msgstr "Punkt programu"
 
 #: src/ludamus/templates/chronology/event.html:138
-#: src/ludamus/templates/chronology/event.html:296
+#: src/ludamus/templates/chronology/event.html:302
 #: src/ludamus/templates/index.html:21
 msgid "Action"
 msgstr "Akcja"
@@ -1167,135 +1175,176 @@ msgid "TBA"
 msgstr "Do ustalenia"
 
 #: src/ludamus/templates/chronology/event.html:205
+msgid "Details"
+msgstr "Szczegóły"
+
+#: src/ludamus/templates/chronology/event.html:211
 msgid "Manage"
 msgstr "Zarządzaj"
 
-#: src/ludamus/templates/chronology/event.html:216
+#: src/ludamus/templates/chronology/event.html:222
 msgid "Only connected users can enroll"
 msgstr "Tylko powiązani użytkownicy mogą się zapisać"
 
-#: src/ludamus/templates/chronology/event.html:245
+#: src/ludamus/templates/chronology/event.html:251
 msgid "No sessions scheduled for this time slot"
 msgstr "Brak punktów programu zaplanowanych w tym bloku czasowym"
 
-#: src/ludamus/templates/chronology/event.html:247
+#: src/ludamus/templates/chronology/event.html:253
 msgid "be the first to propose!"
 msgstr "bądź pierwszy i zgłoś!"
 
-#: src/ludamus/templates/chronology/event.html:257
+#: src/ludamus/templates/chronology/event.html:263
 msgid "No sessions or time slots available yet"
 msgstr "Brak dostępnych punktów programu lub bloków czasowych"
 
-#: src/ludamus/templates/chronology/event.html:260
+#: src/ludamus/templates/chronology/event.html:266
 msgid "Be the first to propose a session!"
 msgstr "Bądź pierwszą osobą, która zgłosi punkt programu!"
 
-#: src/ludamus/templates/chronology/event.html:262
+#: src/ludamus/templates/chronology/event.html:268
 msgid "Sessions will be announced soon."
 msgstr "Punkty programu zostaną wkrótce ogłoszone."
 
-#: src/ludamus/templates/chronology/event.html:280
+#: src/ludamus/templates/chronology/event.html:286
 msgid "Pending Proposals"
 msgstr "Oczekujące zgłoszenia"
 
-#: src/ludamus/templates/chronology/event.html:282
+#: src/ludamus/templates/chronology/event.html:288
 msgid "Superuser Only"
 msgstr "Tylko dla administratorów"
 
-#: src/ludamus/templates/chronology/event.html:291
+#: src/ludamus/templates/chronology/event.html:297
 msgid "Proposal"
 msgstr "Zgłoszenie"
 
-#: src/ludamus/templates/chronology/event.html:294
+#: src/ludamus/templates/chronology/event.html:300
 msgid "Preferred Times"
 msgstr "Preferowane czasy"
 
-#: src/ludamus/templates/chronology/event.html:343
+#: src/ludamus/templates/chronology/event.html:349
 msgid "Flexible"
 msgstr "Elastyczny"
 
-#: src/ludamus/templates/chronology/event.html:353
+#: src/ludamus/templates/chronology/event.html:359
 msgid "Accept"
 msgstr "Zaakceptuj"
 
-#: src/ludamus/templates/chronology/event.html:359
+#: src/ludamus/templates/chronology/event.html:365
 msgid "Review"
 msgstr "Podejrzyj"
 
-#: src/ludamus/templates/chronology/event.html:371
+#: src/ludamus/templates/chronology/event.html:377
 msgid "No pending proposals"
 msgstr "Brak oczekujących zgłoszeń"
 
-#: src/ludamus/templates/chronology/event.html:372
+#: src/ludamus/templates/chronology/event.html:378
 msgid "All proposals have been reviewed."
 msgstr "Wszystkie zgłoszenia zostały sprawdzone."
 
-#: src/ludamus/templates/chronology/event.html:438
-#: src/ludamus/templates/chronology/event.html:542
-#: src/ludamus/templates/chronology/event.html:670
+#: src/ludamus/templates/chronology/event.html:444
+#: src/ludamus/templates/chronology/event.html:548
+#: src/ludamus/templates/chronology/event.html:676
+#: src/ludamus/templates/chronology/event.html:783
 msgid "Close"
 msgstr "Zamknij"
 
-#: src/ludamus/templates/chronology/event.html:460
+#: src/ludamus/templates/chronology/event.html:466
 msgid "Enrollment Status"
 msgstr "Status zapisu"
 
-#: src/ludamus/templates/chronology/event.html:470
+#: src/ludamus/templates/chronology/event.html:476
 msgid "Your Status"
 msgstr "Twój status"
 
-#: src/ludamus/templates/chronology/event.html:476
-#: src/ludamus/templates/chronology/event.html:501
-#: src/ludamus/templates/chronology/event.html:598
+#: src/ludamus/templates/chronology/event.html:482
+#: src/ludamus/templates/chronology/event.html:507
+#: src/ludamus/templates/chronology/event.html:604
 msgid "Enrolled"
 msgstr "Zapisany"
 
-#: src/ludamus/templates/chronology/event.html:478
-#: src/ludamus/templates/chronology/event.html:503
-#: src/ludamus/templates/chronology/event.html:624
+#: src/ludamus/templates/chronology/event.html:484
+#: src/ludamus/templates/chronology/event.html:509
+#: src/ludamus/templates/chronology/event.html:630
 msgid "Waiting List"
 msgstr "Lista oczekujących"
 
-#: src/ludamus/templates/chronology/event.html:486
-#: src/ludamus/templates/chronology/event.html:509
-#: src/ludamus/templates/chronology/event.html:513
+#: src/ludamus/templates/chronology/event.html:492
+#: src/ludamus/templates/chronology/event.html:515
+#: src/ludamus/templates/chronology/event.html:519
 msgid "Not enrolled"
 msgstr "Nie zapisany"
 
-#: src/ludamus/templates/chronology/event.html:494
+#: src/ludamus/templates/chronology/event.html:500
 msgid "Connected Users Status"
 msgstr "Status powiązanych użytkowników"
 
-#: src/ludamus/templates/chronology/event.html:523
+#: src/ludamus/templates/chronology/event.html:529
 msgid "Session Information"
 msgstr "Informacje o punkcie programu"
 
-#: src/ludamus/templates/chronology/event.html:592
+#: src/ludamus/templates/chronology/event.html:598
 msgid "Enrolled Participants"
 msgstr "Zapisani uczestnicy"
 
-#: src/ludamus/templates/chronology/event.html:597
-#: src/ludamus/templates/chronology/event.html:631
+#: src/ludamus/templates/chronology/event.html:603
+#: src/ludamus/templates/chronology/event.html:637
 msgid "Name"
 msgstr "Imię"
 
-#: src/ludamus/templates/chronology/event.html:630
+#: src/ludamus/templates/chronology/event.html:636
 msgid "Position"
 msgstr "Pozycja"
 
-#: src/ludamus/templates/chronology/event.html:632
+#: src/ludamus/templates/chronology/event.html:638
 msgid "Added"
 msgstr "Dodano"
 
-#: src/ludamus/templates/chronology/event.html:659
+#: src/ludamus/templates/chronology/event.html:665
 msgid "No one on the waiting list."
 msgstr "Nikt nie czeka na liście oczekujących."
 
-#: src/ludamus/templates/chronology/event.html:665
+#: src/ludamus/templates/chronology/event.html:671
 msgid "No participants enrolled yet."
 msgstr "Brak zapisanych uczestników."
 
-#: src/ludamus/templates/chronology/event.html:680
+#: src/ludamus/templates/chronology/event.html:710
+msgid "Location"
+msgstr "Miejsce"
+
+#: src/ludamus/templates/chronology/event.html:715
+msgid "To be announced"
+msgstr "Do ogłoszenia"
+
+#: src/ludamus/templates/chronology/event.html:760
+msgid "Your Enrollment Status"
+msgstr "Twój status zapisu"
+
+#: src/ludamus/templates/chronology/event.html:765
+msgid "You are enrolled in this session"
+msgstr "Jesteś zapisany na ten punkt programu"
+
+#: src/ludamus/templates/chronology/event.html:770
+msgid "You are on the waiting list"
+msgstr "Jesteś na liście oczekujących"
+
+#: src/ludamus/templates/chronology/event.html:775
+msgid "You are not enrolled in this session"
+msgstr "Nie jesteś zapisany na ten punkt programu"
+
+#: src/ludamus/templates/chronology/event.html:789
+msgid "Manage Enrollment"
+msgstr "Zarządzaj zapisem"
+
+#: src/ludamus/templates/chronology/event.html:795
+msgid "Enroll Now"
+msgstr "Zapisz się teraz"
+
+#: src/ludamus/templates/chronology/event.html:802
+msgid "Login to Enroll"
+msgstr "Zaloguj się aby się zapisać"
+
+#: src/ludamus/templates/chronology/event.html:816
 msgid "Back to Events"
 msgstr "Powrót do wydarzeń"
 
@@ -1473,8 +1522,7 @@ msgid ""
 "You have reached the maximum limit of %(max_connected_users)s connected "
 "users."
 msgstr ""
-"Osiągnąłeś maksymalny limit %(max_connected_users)s powiązanych "
-"użytkowników."
+"Osiągnąłeś maksymalny limit %(max_connected_users)s powiązanych użytkowników."
 
 #: src/ludamus/templates/crowd/user/connected.html:65
 msgid "Your connected users"
