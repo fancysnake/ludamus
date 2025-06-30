@@ -6,25 +6,25 @@
     --cold-steel-primary: #4682B4;
     --cold-steel-primary-dark: #3A6FA0;
     --cold-steel-primary-darker: #2E5A87;
-    
+
     /* Accent colors */
     --cold-steel-gold: #d4a574;
     --cold-steel-gold-light: #e8c9a8;
     --cold-steel-gold-dark: #b88854;
-    
+
     /* Status colors */
     --cold-steel-success: #5a8b6f;
     --cold-steel-success-light: #7ba590;
     --cold-steel-success-dark: #466957;
-    
+
     --cold-steel-danger: #8b4a5c;
     --cold-steel-danger-light: #a66575;
     --cold-steel-danger-dark: #6d3a48;
-    
+
     --cold-steel-warning: #d4a574;
     --cold-steel-info: #5F9EA0;  /* CadetBlue - complements SteelBlue */
     --cold-steel-info-dark: #4F8A8B;
-    
+
     /* Background */
     --cold-steel-bg-parchment: #fdfcfa;
 }
@@ -887,4 +887,3 @@ hr {
 .theme-select-form {
     width: auto;
 }
-

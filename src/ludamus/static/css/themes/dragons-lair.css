@@ -6,29 +6,29 @@
     --dragon-primary: #D32F2F;
     --dragon-primary-dark: #B71C1C;
     --dragon-primary-darker: #8B0000;
-    
+
     /* Accent colors */
     --dragon-gold: #FFD700;
     --dragon-gold-light: #FFEB3B;
     --dragon-gold-dark: #FFC107;
-    
+
     --dragon-orange: #FF6F00;
     --dragon-orange-light: #FFA726;
     --dragon-orange-dark: #E65100;
-    
+
     /* Status colors */
     --dragon-success: #388E3C;
     --dragon-success-light: #4CAF50;
     --dragon-success-dark: #1B5E20;
-    
+
     --dragon-danger: #D32F2F;
     --dragon-danger-light: #F44336;
     --dragon-danger-dark: #B71C1C;
-    
+
     --dragon-warning: #F57C00;
     --dragon-info: #1976D2;
     --dragon-info-dark: #0D47A1;
-    
+
     /* Background */
     --dragon-bg-light: #FFF3E0;
     --dragon-bg-lighter: #FFF8E1;
@@ -719,4 +719,3 @@ hr {
     border-left-color: var(--dragon-gold);
     background-color: rgba(255, 243, 224, 0.5);
 }
-

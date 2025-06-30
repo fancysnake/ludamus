@@ -8,21 +8,21 @@
     {% else %}
         {% translate "Propose Session" %}
     {% endif %}
-{% endblock %}
+{% endblock title %}
 {% block header %}
     {% if time_slot %}
         {% translate "Propose Session for Time Slot" %}
     {% else %}
         {% translate "Propose Session" %}
     {% endif %}
-{% endblock %}
+{% endblock header %}
 {% block description %}
     {% if time_slot %}
         {% translate "Submit a session proposal for" %} {{ event.name }} - {{ time_slot.start_time|date:"l, F j" }} {{ time_slot.start_time|date:"G:i" }} to {{ time_slot.end_time|date:"G:i" }}
     {% else %}
         {% translate "Submit a session proposal for" %} {{ event.name }}
     {% endif %}
-{% endblock %}
+{% endblock description %}
 {% block body %}
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -63,7 +63,7 @@
                                    id="title"
                                    name="title"
                                    required
-                                   placeholder="{% translate 'Enter a compelling title for your session' %}"
+                                   placeholder="{% translate "Enter a compelling title for your session" %}"
                                    maxlength="255">
                             <div class="form-text">{% translate "Choose a clear and engaging title that describes your session." %}</div>
                         </div>
@@ -124,7 +124,7 @@
                                                    class="form-control"
                                                    id="tags_{{ category.id }}"
                                                    name="tags_{{ category.id }}"
-                                                   placeholder="{% translate 'Enter comma-separated tags...' %}">
+                                                   placeholder="{% translate "Enter comma-separated tags..." %}">
                                             <div class="form-text">
                                                 {% translate "Enter tag names separated by commas. New tags will be reviewed by organizers." %}
                                             </div>
@@ -186,4 +186,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}

@@ -16,6 +16,9 @@ dynamic = ['dependencies']
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.poetry]
+package-mode = false
+
 [tool.poetry.dependencies]
 authlib = "~1.6.0"
 django = "~5.2.2"
@@ -43,6 +46,8 @@ factory-boy = "^3.3.3"
 freezegun = "^1.5.2"
 
 # POE
+codespell = "^2.4.1"
+deptry = "^0.23.0"
 
 [tool.poe]
 envfile = ".env.dev"
@@ -52,20 +57,35 @@ PYTHONPATH = "src"
 DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
 
 [tool.poe.tasks]
+# Tools
 black = "black ."
+codespell = "codespell src tests"
+deptry = "deptry ."
+djlint = "djlint . --profile=django"
+djlint-format = "djlint . --reformat --format-css --format-js --profile=django"
+mypy = "mypy ."
+pylint = "pylint ."
 ruff = "ruff check ."
 ruff-fix = "ruff check --fix  ."
-pylint = "pylint ."
-mypy = "mypy ."
-djlint = "djlint . --lint"
-djlint-format = "djlint . --reformat --format-css --format-js"
-check = ["black", "ruff-fix", "djlint-format", "djlint", "mypy", "pylint"]
+# Django
 dj = "django-admin"
 start = "django-admin runserver ludamus.local:8000"
+# Series
+check = [
+    "black",
+    "codespell",
+    "djlint-format",
+    "djlint",
+    "mypy",
+    "pylint",
+    "ruff-fix",
+]
 update = [
+    { cmd = "pre-commit autoupdate" },
     { cmd = "pip install -U pip" },
     { cmd = "pip install -U poetry" },
     { cmd = "poetry update" },
+    "deptry",
     { cmd = "poetry show -o" },
 ]
 
@@ -81,35 +101,31 @@ preview = true
 skip-magic-trailing-comma = true
 target-version = ['py313']
 
-# RUFF
+# CODESPELL
 
-[tool.ruff]
-fix = false
-line-length = 88
-output-format = 'concise'
-preview = true
+[tool.codespell]
+skip = '*.po,*.lock'
 
-[tool.ruff.lint]
-select = ["ALL"]
-ignore = [
-    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
-    "COM",
-    "CPY",
-    "D",
-    "PLR0911",
-]
+# COVERAGE
 
-[tool.ruff.lint.per-file-ignores]
-"*/migrations/**.py" = ["ANN", "ARG001", "E501", "RUF012"]
-"tests/**.py" = [
-    "ANN",     # flake8-annotations
-    "PLR0913", # too-many-arguments
-    "PLR0917", # too-many-positional-arguments
-    "S101",    # assert
-]
+[tool.coverage.run]
+branch = true
+source = ["src", "tests"]
+omit = ["src/ludamus/config/*", "src/ludamus/deploy/*"]
 
-[tool.ruff.lint.flake8-pytest-style]
-parametrize-values-type = "tuple"
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
+
+# DEPTRY
+
+[tool.deptry]
+known_first_party = ["ludamus"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["django-bootstrap5", "django-bootstrap-icons", "gunicorn", "psycopg"]
+DEP004 = ["debug_toolbar"]
 
 # MYPY
 
@@ -148,19 +164,37 @@ ignore_missing_imports = true
 module = ["environ"]
 ignore_missing_imports = true
 
-# COVERAGE
-
-[tool.coverage.run]
-branch = true
-source = ["src", "tests"]
-omit = ["src/ludamus/config/*", "src/ludamus/deploy/*"]
-
-[tool.coverage.report]
-show_missing = true
-skip_covered = true
-exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
-
 # PYTEST
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
+
+# RUFF
+
+[tool.ruff]
+fix = false
+line-length = 88
+output-format = 'concise'
+preview = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
+    "COM",
+    "CPY",
+    "D",
+    "PLR0911",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/**.py" = ["ANN", "ARG001", "E501", "RUF012"]
+"tests/**.py" = [
+    "ANN",     # flake8-annotations
+    "PLR0913", # too-many-arguments
+    "PLR0917", # too-many-positional-arguments
+    "S101",    # assert
+]
+
+[tool.ruff.lint.flake8-pytest-style]
+parametrize-values-type = "tuple"

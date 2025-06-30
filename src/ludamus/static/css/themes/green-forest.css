@@ -6,29 +6,29 @@
     --forest-primary: #2E7D32;
     --forest-primary-dark: #1B5E20;
     --forest-primary-darker: #0D4F1D;
-    
+
     /* Accent colors */
     --forest-leaf: #81C784;
     --forest-leaf-light: #A5D6A7;
     --forest-leaf-dark: #66BB6A;
-    
+
     --forest-wood: #795548;
     --forest-wood-light: #A1887F;
     --forest-wood-dark: #5D4037;
-    
+
     /* Status colors */
     --forest-success: #43A047;
     --forest-success-light: #66BB6A;
     --forest-success-dark: #2E7D32;
-    
+
     --forest-danger: #E53935;
     --forest-danger-light: #EF5350;
     --forest-danger-dark: #C62828;
-    
+
     --forest-warning: #FFB300;
     --forest-info: #039BE5;
     --forest-info-dark: #0277BD;
-    
+
     /* Background */
     --forest-bg-light: #F1F8E9;
     --forest-bg-lighter: #F9FBE7;
@@ -703,4 +703,3 @@ hr {
 .valid-feedback {
     color: var(--forest-success);
 }
-

@@ -2,9 +2,15 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 {% load bootstrap_icons %}
-{% block title %}{{ event.name }}{% endblock %}
-{% block header %}{{ event.name }}{% endblock %}
-{% block description %}{{ event.description }}{% endblock %}
+{% block title %}
+    {{ event.name }}
+{% endblock title %}
+{% block header %}
+    {{ event.name }}
+{% endblock header %}
+{% block description %}
+    {{ event.description }}
+{% endblock description %}
 {% block body %}
     <!-- Event Information Card -->
     <div class="row mb-4">
@@ -83,28 +89,28 @@
                                     <input type="text"
                                            class="form-control"
                                            id="sessionFilter"
-                                           placeholder="{% translate 'Filter sessions by title or host...' %}">
+                                           placeholder="{% translate "Filter sessions by title or host..." %}">
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <select class="form-select form-select-sm" id="statusFilter">
-                                    <option value="">{% translate 'All statuses' %}</option>
-                                    <option value="available">{% translate 'Available spots' %}</option>
-                                    <option value="full">{% translate 'Full' %}</option>
-                                    <option value="my-enrolled">{% translate 'I am enrolled' %}</option>
-                                    <option value="my-waiting">{% translate 'I am waiting' %}</option>
+                                    <option value="">{% translate "All statuses" %}</option>
+                                    <option value="available">{% translate "Available spots" %}</option>
+                                    <option value="full">{% translate "Full" %}</option>
+                                    <option value="my-enrolled">{% translate "I am enrolled" %}</option>
+                                    <option value="my-waiting">{% translate "I am waiting" %}</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <select class="form-select form-select-sm" id="tagFilter">
-                                    <option value="">{% translate 'All tags' %}</option>
+                                    <option value="">{% translate "All tags" %}</option>
                                     <!-- Tag options grouped by category will be populated by JavaScript -->
                                 </select>
                             </div>
                             <div class="col-md-2">
                                 <button type="button"
                                         class="btn btn-outline-secondary btn-sm w-100"
-                                        id="clearFilters">{% bs_icon 'x-circle' %} {% translate 'Clear' %}</button>
+                                        id="clearFilters">{% bs_icon 'x-circle' %} {% translate "Clear" %}</button>
                             </div>
                         </div>
                         {% for hour, sessions in hour_data.items %}
@@ -219,7 +225,7 @@
                                                                         {% else %}
                                                                             <button class="btn btn-outline-secondary btn-sm"
                                                                                     disabled
-                                                                                    title="{% translate 'Only connected users can enroll' %}">
+                                                                                    title="{% translate "Only connected users can enroll" %}">
                                                                                 {% bs_icon 'person-plus' %} {% translate "Enroll" %}
                                                                             </button>
                                                                         {% endif %}
@@ -940,4 +946,4 @@
             opacity: 0.5 !important;
         }
     </style>
-{% endblock %}
+{% endblock body %}

@@ -6,33 +6,33 @@
     --space-primary: #7B1FA2;
     --space-primary-dark: #6A1B9A;
     --space-primary-darker: #4A148C;
-    
+
     /* Accent colors */
     --space-nebula: #E91E63;
     --space-nebula-light: #F06292;
     --space-nebula-dark: #C2185B;
-    
+
     --space-void: #311B92;
     --space-void-light: #512DA8;
     --space-void-dark: #1A237E;
-    
+
     --space-alien: #00E676;
     --space-alien-light: #69F0AE;
     --space-alien-dark: #00C853;
-    
+
     /* Status colors */
     --space-success: #00E676;
     --space-success-light: #69F0AE;
     --space-success-dark: #00C853;
-    
+
     --space-danger: #FF1744;
     --space-danger-light: #FF5252;
     --space-danger-dark: #D50000;
-    
+
     --space-warning: #FFAB00;
     --space-info: #00E5FF;
     --space-info-dark: #00B8D4;
-    
+
     /* Background */
     --space-bg-dark: #0a0a0f;
     --space-bg-darker: #000005;
@@ -61,7 +61,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: 
+    background-image:
         radial-gradient(2px 2px at 20% 30%, white, transparent),
         radial-gradient(2px 2px at 60% 70%, white, transparent),
         radial-gradient(1px 1px at 50% 50%, white, transparent),
@@ -855,4 +855,3 @@ dl dt, dl dd {
 .popover-body {
     color: var(--space-text);
 }
-

@@ -575,7 +575,7 @@ class TestEnrollSelectView:
             "event": agenda_item.space.event,
             "form": ANY,
             "session": agenda_item.session,
-            "user_datas": [
+            "user_data": [
                 SessionUserParticipationData(
                     user=active_user,
                     user_enrolled=False,
@@ -627,7 +627,7 @@ class TestEnrollSelectView:
             "event": agenda_item.space.event,
             "form": ANY,
             "session": agenda_item.session,
-            "user_datas": [
+            "user_data": [
                 SessionUserParticipationData(
                     user=active_user,
                     user_enrolled=False,
@@ -763,7 +763,7 @@ class TestEnrollSelectView:
             "event": agenda_item.space.event,
             "form": ANY,
             "session": agenda_item.session,
-            "user_datas": [
+            "user_data": [
                 SessionUserParticipationData(
                     user=active_user,
                     user_enrolled=True,
@@ -1002,7 +1002,7 @@ class TestAcceptProposalPageView:
         _assert_message_sent(response, messages.ERROR, number=1)
 
     @pytest.mark.usefixtures("space")
-    def test_get_erro_no_time_slot(self, event, proposal, staff_client):
+    def test_get_error_no_time_slot(self, event, proposal, staff_client):
         response = staff_client.get(self._get_url(proposal.id))
 
         assert response.status_code == HTTPStatus.FOUND

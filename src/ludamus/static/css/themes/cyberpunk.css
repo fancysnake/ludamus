@@ -6,29 +6,29 @@
     --cyberpunk-primary: #00D9FF;
     --cyberpunk-primary-dark: #00A8CC;
     --cyberpunk-primary-darker: #007A99;
-    
+
     /* Accent colors */
     --cyberpunk-yellow: #FFFF00;
     --cyberpunk-yellow-light: #FFFF66;
     --cyberpunk-yellow-dark: #CCCC00;
-    
+
     --cyberpunk-pink: #FF0080;
     --cyberpunk-pink-light: #FF4DA6;
     --cyberpunk-pink-dark: #CC0066;
-    
+
     /* Status colors */
     --cyberpunk-success: #00FF88;
     --cyberpunk-success-light: #4DFFAA;
     --cyberpunk-success-dark: #00CC6A;
-    
+
     --cyberpunk-danger: #FF0040;
     --cyberpunk-danger-light: #FF4D73;
     --cyberpunk-danger-dark: #CC0033;
-    
+
     --cyberpunk-warning: #FFFF00;
     --cyberpunk-info: #00D9FF;
     --cyberpunk-info-dark: #00A8CC;
-    
+
     /* Background */
     --cyberpunk-bg-dark: #0a0a0a;
     --cyberpunk-bg-darker: #000000;
@@ -799,4 +799,3 @@ blockquote {
 blockquote cite {
     color: var(--cyberpunk-yellow);
 }
-
