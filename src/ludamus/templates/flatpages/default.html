@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block title %}{{ flatpage.title }}{% endblock %}
-{% block header %}{{ flatpage.title }}{% endblock %}
-{% block description %}{% endblock %}
+{% block title %}
+    {{ flatpage.title }}
+{% endblock title %}
+{% block header %}
+    {{ flatpage.title }}
+{% endblock header %}
+{% block description %}
+{% endblock description %}
 {% block body %}
     <div class="row">
         <div class="col-12 col-lg-8 mx-auto">
@@ -18,4 +23,4 @@
             <a href="{% url 'web:index' %}" class="btn btn-outline-primary">{% translate "Back to Home" %}</a>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}

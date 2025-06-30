@@ -4,7 +4,7 @@
 {% load bootstrap_icons %}
 {% block title %}
     {% translate "Connected users" %}
-{% endblock %}
+{% endblock title %}
 {% block body %}
     <div class="col-12">
         <div class="card shadow-sm">
@@ -104,7 +104,7 @@
                                         <form action="{% url 'web:connected-details' slug=connected.user.slug %}"
                                               method="post">
                                             {% csrf_token %}
-                                            {% bootstrap_form connected.form layout="horizontal"  horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-3" %}
+                                            {% bootstrap_form connected.form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-3" %}
                                             {% bootstrap_button button_type="submit" content="OK" %}
                                             <button type="button"
                                                     class="btn btn-secondary"
@@ -132,4 +132,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}

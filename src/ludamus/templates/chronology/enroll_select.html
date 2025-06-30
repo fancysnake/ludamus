@@ -4,13 +4,13 @@
 {% load bootstrap_icons %}
 {% block title %}
     {% translate "Enroll in Session" %} - {{ session.title }}
-{% endblock %}
+{% endblock title %}
 {% block header %}
     {% translate "Enroll in Session" %}
-{% endblock %}
+{% endblock header %}
 {% block description %}
     {% translate "Select who to enroll in" %} {{ session.title }}
-{% endblock %}
+{% endblock description %}
 {% block body %}
     <div class="row justify-content-center">
         <div class="col-lg-10">
@@ -74,7 +74,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for user_data in user_datas %}
+                                        {% for user_data in user_data %}
                                             <tr>
                                                 <td>
                                                     <div class="d-flex align-items-center">
@@ -149,7 +149,7 @@
                                                 </td>
                                             </tr>
                                         {% endfor %}
-                                        {% if user_datas|length == 1 %}
+                                        {% if user_data|length == 1 %}
                                             <tr>
                                                 <td colspan="5" class="text-center text-muted">
                                                     {% translate "No connected users available. You can add connected users in your" %}
@@ -188,4 +188,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}

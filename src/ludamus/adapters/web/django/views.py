@@ -510,25 +510,25 @@ class EventView(DetailView):  # type: ignore [type-arg]
     def _get_hour_data(
         self, event_sessions: QuerySet[Session]
     ) -> dict[datetime, list[SessionData]]:
-        sessions_datas = self._get_session_datas(event_sessions)
+        sessions_data = self._get_session_data(event_sessions)
 
         sessions_by_hour: dict[datetime, list[SessionData]] = defaultdict(list)
         for session in event_sessions:
             sessions_by_hour[session.agenda_item.start_time].append(
-                sessions_datas[session.id]
+                sessions_data[session.id]
             )
 
         return sessions_by_hour
 
-    def _get_session_datas(
+    def _get_session_data(
         self, event_sessions: QuerySet[Session]
     ) -> dict[int, SessionData]:
-        sessions_datas = {es.id: SessionData(session=es) for es in event_sessions}
+        sessions_data = {es.id: SessionData(session=es) for es in event_sessions}
 
         if self.request.user.is_authenticated:
-            self._set_user_participations(sessions_datas, event_sessions)
+            self._set_user_participations(sessions_data, event_sessions)
 
-        return sessions_datas
+        return sessions_data
 
 
 class EnrollmentChoice(StrEnum):
@@ -582,7 +582,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             "session": session,
             "event": session.agenda_item.space.event,
             "connected_users": list(self.request.user.connected.all()),
-            "user_datas": self._get_user_participation_datas(session),
+            "user_data": self._get_user_participation_data(session),
             "form": EnrollmentForm(
                 session=session,
                 users=[self.request.user, *request.user.connected.all()],
@@ -610,10 +610,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 error=_("Enrollment is not currently active for this event."),
             )
 
-    def _get_user_participation_datas(
+    def _get_user_participation_data(
         self, session: Session
     ) -> list[SessionUserParticipationData]:
-        user_datas: list[SessionUserParticipationData] = []
+        user_data: list[SessionUserParticipationData] = []
 
         # Add enrollment status and time conflict info for each connected user
         for user in [self.request.user, *self.request.user.connected.all()]:
@@ -638,9 +638,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     if session.agenda_item.overlaps_with(s.session.agenda_item)
                 ),
             )
-            user_datas.append(data)
+            user_data.append(data)
 
-        return user_datas
+        return user_data
 
     def post(self, request: UserRequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
@@ -664,7 +664,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     "session": session,
                     "event": session.agenda_item.space.event,
                     "connected_users": list(self.request.user.connected.all()),
-                    "user_datas": self._get_user_participation_datas(session),
+                    "user_data": self._get_user_participation_data(session),
                     "form": form,
                 },
             )

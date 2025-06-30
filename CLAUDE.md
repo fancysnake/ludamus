@@ -1,19 +1,24 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code
+in this repository.
 
 ## Project Overview
 
-Ludamus is a Django-based event management system for organizing gaming sessions (RPG and board games). It features multi-tenant architecture, OAuth authentication via Auth0, and comprehensive enrollment management.
+Ludamus is a Django-based event management system for organizing gaming sessions
+(RPG and board games). It features multi-tenant architecture, OAuth authentication
+via Auth0, and comprehensive enrollment management.
 
 ## Development Commands
 
 ### Running the Development Server
+
 ```bash
 poe dj start
 ```
 
 ### Database Operations
+
 ```bash
 poe dj makemigrations
 poe dj migrate
@@ -21,6 +26,7 @@ poe dj loaddata db.json  # Load sample data
 ```
 
 ### Code Quality Commands
+
 ```bash
 # Format code
 poe format  # or: black src tests
@@ -43,6 +49,7 @@ poe dj compilemessages
 ```
 
 ### Running Tests
+
 ```bash
 # Note: No automated tests implemented yet
 poe dj test
@@ -51,7 +58,9 @@ poe dj test
 ## Architecture Overview
 
 ### Multi-Tenant Structure
+
 The system uses a hierarchical multi-tenant architecture:
+
 - **Spheres**: Top-level organizational units (provinces, topics, organizations)
 - **Sites**: Django sites framework for multi-domain support (subdomain-based spheres)
 - **Events**: Time-bound gatherings within spheres
@@ -59,7 +68,7 @@ The system uses a hierarchical multi-tenant architecture:
 
 ### Key Design Patterns
 
-1. **Adapters Pattern**: 
+1. **Adapters Pattern**:
    - `src/ludamus/adapters/` separates external interfaces
    - `db/django/` - Database models and ORM layer
    - `web/django/` - Views, forms, URLs, middleware
@@ -104,16 +113,18 @@ The system uses a hierarchical multi-tenant architecture:
 ## Environment Configuration
 
 Required environment variables:
+
 - `AUTH0_DOMAIN` - Auth0 domain
 - `AUTH0_CLIENT_ID` - Auth0 client ID
 - `AUTH0_CLIENT_SECRET` - Auth0 client secret
 - `SECRET_KEY` - Django secret key
 - `ROOT_DOMAIN` - Root domain for multi-site support (e.g., ludamus.local)
-- `SUPPORT_EMAIL` - Support email address (default: support@ludamus.net)
+- `SUPPORT_EMAIL` - Support email address (default: [support@ludamus.net](mailto:support@ludamus.net))
 
 ## Database Schema Highlights
 
 Key models to understand:
+
 - `User`: Custom user model with birth_date and user_type
 - `Event`: Main gatherings with enrollment/proposal periods
 - `Session`: Individual activities with capacity limits
@@ -125,6 +136,7 @@ Key models to understand:
 ## Testing Approach
 
 Comprehensive TEST_PLAN.md with 215+ user stories covering:
+
 - Authentication flows
 - Multi-user enrollment scenarios
 - Capacity management edge cases
@@ -136,17 +148,28 @@ Note: Automated tests not yet implemented (tests/ directory empty).
 ## Design System
 
 ### Cold Steel Theme
-The site uses the "Cold Steel" theme - a fantasy-inspired color scheme appropriate for tabletop RPG enthusiasts. The name reflects the steel-blue primary color that evokes medieval weaponry and armor.
+
+The site uses the "Cold Steel" theme - a fantasy-inspired color scheme appropriate
+for tabletop RPG enthusiasts. The name reflects the steel-blue primary color
+that evokes medieval weaponry and armor.
 
 **Color Palette:**
-- **Primary (Steel Blue)**: `#4682B4` - Used for primary buttons, links, and main branding
-- **Accent Gold**: `#d4a574` - Used for hover states, accents, and important highlights
-- **Forest Green**: `#5a8b6f` - Used for success states, confirmations, and positive actions
-- **Rich Burgundy**: `#8b4a5c` - Used for danger/error states (replacing standard red)
-- **Cadet Blue**: `#5F9EA0` - Used for info elements (complements the steel blue)
-- **Parchment Background**: `#fdfcfa` - Light background with subtle color gradients
+
+- **Primary (Steel Blue)**: `#4682B4` - Used for primary buttons, links,
+                                        and main branding
+- **Accent Gold**: `#d4a574` - Used for hover states, accents, and important
+                               highlights
+- **Forest Green**: `#5a8b6f` - Used for success states, confirmations,
+                                and positive actions
+- **Rich Burgundy**: `#8b4a5c` - Used for danger/error states (replacing
+                                 standard red)
+- **Cadet Blue**: `#5F9EA0` - Used for info elements (complements the steel
+                              blue)
+- **Parchment Background**: `#fdfcfa` - Light background with subtle color
+                                        gradients
 
 **Theme Features:**
+
 - Subtle gradient borders and backgrounds
 - Animated elements (pulsing live indicators)
 - Hover effects without vertical movement
@@ -154,6 +177,7 @@ The site uses the "Cold Steel" theme - a fantasy-inspired color scheme appropria
 - CSS variables for easy theme customization
 
 **Theme Location:**
+
 - Main theme file: `/src/ludamus/static/css/themes/cold-steel.css`
 - Easily extensible for sphere-specific themes in the future
 

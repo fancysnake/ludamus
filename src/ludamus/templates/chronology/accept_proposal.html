@@ -4,13 +4,13 @@
 {% load bootstrap_icons %}
 {% block title %}
     {% translate "Accept Proposal" %} - {{ proposal.title }}
-{% endblock %}
+{% endblock title %}
 {% block header %}
     {% translate "Accept Proposal" %}
-{% endblock %}
+{% endblock header %}
 {% block description %}
     {% translate "Select space and time slot for" %} {{ proposal.title }}
-{% endblock %}
+{% endblock description %}
 {% block body %}
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -121,4 +121,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}
