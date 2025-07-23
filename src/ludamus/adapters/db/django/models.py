@@ -606,7 +606,7 @@ class ProposalStatus(StrEnum):
 
 class Proposal(models.Model):
     # Owner
-    proposal_category = models.ForeignKey(
+    category = models.ForeignKey(
         ProposalCategory, on_delete=models.CASCADE, related_name="proposals"
     )
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name="proposals")
