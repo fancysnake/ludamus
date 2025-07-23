@@ -476,7 +476,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
         if self.request.user.is_superuser:
             context["proposals"] = list(
                 Proposal.objects.filter(
-                    proposal_category__event=self.object,
+                    category__event=self.object,
                     session__isnull=True,  # Only unaccepted proposals
                 )
                 .select_related("host", "proposal_category")
@@ -935,7 +935,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
 
         # Create the proposal using form data
         proposal = Proposal.objects.create(
-            proposal_category=proposal_category,
+            category=proposal_category,
             host=self.request.user,
             title=form.cleaned_data["title"],
             description=form.cleaned_data["description"],
@@ -1006,7 +1006,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
 def _get_proposal(request: UserRequest, proposal_id: int) -> Proposal:
     try:
         proposal = Proposal.objects.get(
-            proposal_category__event__sphere=request.sphere, id=proposal_id
+            category__event__sphere=request.sphere, id=proposal_id
         )
     except Proposal.DoesNotExist:
         raise RedirectError(
@@ -1016,9 +1016,7 @@ def _get_proposal(request: UserRequest, proposal_id: int) -> Proposal:
     # Check if proposal is already accepted
     if proposal.session:
         raise RedirectError(
-            reverse(
-                "web:event", kwargs={"slug": proposal.proposal_category.event.slug}
-            ),
+            reverse("web:event", kwargs={"slug": proposal.category.event.slug}),
             warning=_("This proposal has already been accepted."),
         )
 
@@ -1029,7 +1027,7 @@ def _get_proposal(request: UserRequest, proposal_id: int) -> Proposal:
 class AcceptProposalPageView(LoginRequiredMixin, View):
     def get(self, request: UserRequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
-        event = proposal.proposal_category.event
+        event = proposal.category.event
 
         # Get available spaces and time slots for the event
         spaces = self._get_spaces(event)
@@ -1081,7 +1079,7 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
 class AcceptProposalView(LoginRequiredMixin, View):
     def post(self, request: UserRequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
-        event = proposal.proposal_category.event
+        event = proposal.category.event
 
         # Initialize form with POST data
         form = ProposalAcceptanceForm(data=request.POST, event=event)
@@ -1115,7 +1113,7 @@ class AcceptProposalView(LoginRequiredMixin, View):
 
         # Create a session from the proposal
         session = Session.objects.create(
-            sphere=proposal.proposal_category.event.sphere,
+            sphere=proposal.category.event.sphere,
             host=proposal.host,
             title=proposal.title,
             description=proposal.description,
