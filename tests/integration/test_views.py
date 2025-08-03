@@ -738,7 +738,7 @@ class TestEnrollSelectView:
         self, active_user, agenda_item, authenticated_client, event
     ):
         other_session = SessionFactory(
-            host=active_user, sphere=event.sphere, participants_limit=10
+            presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
         )
         AgendaItem.objects.create(
             session=other_session,
@@ -871,7 +871,7 @@ class TestProposeSessionView:
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
         proposal = Proposal.objects.get()
-        assert proposal.proposal_category == proposal_category
+        assert proposal.category == proposal_category
         assert proposal.host == active_user
         assert proposal.title == data["title"]
         assert proposal.description == data["description"]
@@ -910,7 +910,7 @@ class TestProposeSessionView:
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
         proposal = Proposal.objects.get()
-        assert proposal.proposal_category == proposal_category
+        assert proposal.category == proposal_category
         assert proposal.host == active_user
         assert proposal.title == data["title"]
         assert proposal.description == data["description"]
@@ -1055,8 +1055,8 @@ class TestAcceptProposalView:
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
         _assert_message_sent(response, messages.SUCCESS, number=1)
         session = Session.objects.get()
-        assert session.sphere == proposal.proposal_category.event.sphere
-        assert session.host == proposal.host
+        assert session.sphere == proposal.category.event.sphere
+        assert session.presenter_name == proposal.host.name
         assert session.title == proposal.title
         assert session.description == proposal.description
         assert session.requirements == proposal.requirements

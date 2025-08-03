@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import ClassVar
 
 from django.contrib import admin
@@ -25,12 +26,12 @@ class AgendaItemAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    prepopulated_fields: ClassVar[dict[str, tuple[str]]] = {"slug": ("name",)}
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 
 @admin.register(Guild)
 class GuildAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    prepopulated_fields: ClassVar[dict[str, tuple[str]]] = {"slug": ("name",)}
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 
 @admin.register(Proposal)
@@ -40,12 +41,12 @@ class ProposalAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
 @admin.register(Space)
 class SpaceAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    prepopulated_fields: ClassVar[dict[str, tuple[str]]] = {"slug": ("name",)}
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    prepopulated_fields: ClassVar[dict[str, tuple[str]]] = {"slug": ("title",)}
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("title",)}
 
 
 @admin.register(Sphere)
@@ -70,9 +71,9 @@ class TimeSlotAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    prepopulated_fields: ClassVar[dict[str, tuple[str]]] = {"slug": ("name",)}
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 
 @admin.register(ProposalCategory)
 class ProposalCategoryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    prepopulated_fields: ClassVar[dict[str, tuple[str]]] = {"slug": ("name",)}
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
