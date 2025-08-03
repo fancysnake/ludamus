@@ -464,7 +464,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
         # Get all sessions for this event that are published
         event_sessions = (
             Session.objects.filter(agenda_item__space__event=self.object)
-            .select_related("host", "agenda_item__space")
+            .select_related("proposal", "agenda_item__space")
             .prefetch_related("tags", "session_participations__user")
             .order_by("agenda_item__start_time")
         )
@@ -756,8 +756,11 @@ class EnrollSelectView(LoginRequiredMixin, View):
     def _check_and_create_enrollment(
         req: EnrollmentRequest, session: Session, enrollments: Enrollments
     ) -> None:
-        # Check if user is the session host
-        if req.user == session.host:
+        # Check if user is the session presenter
+        if (
+            Proposal.objects.filter(session=session).exists()
+            and req.user == session.proposal.host
+        ):
             enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
             return
         # Check if user is already enrolled
@@ -1114,7 +1117,7 @@ class AcceptProposalView(LoginRequiredMixin, View):
         # Create a session from the proposal
         session = Session.objects.create(
             sphere=proposal.category.event.sphere,
-            host=proposal.host,
+            presenter_name=proposal.host.name,
             title=proposal.title,
             description=proposal.description,
             requirements=proposal.requirements,

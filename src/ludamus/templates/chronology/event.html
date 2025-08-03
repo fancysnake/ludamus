@@ -148,7 +148,7 @@
                                                 {% for data in sessions %}
                                                     <tr class="session-row"
                                                         data-title="{{ data.session.title|lower }}"
-                                                        data-host="{{ data.session.host.get_full_name|lower }}"
+                                                        data-host="{{ data.session.presenter_name }}"
                                                         data-tags="{% for tag in data.session.tags.all %}{{ tag.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}"
                                                         data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name|lower }}{% if not forloop.last %};{% endif %}{% endfor %}"
                                                         data-status="{% if data.session.enrolled_count >= data.session.participants_limit %}full{% else %}available{% endif %}"
@@ -173,7 +173,7 @@
                                                         <td>
                                                             <div class="d-flex align-items-center">
                                                                 {% bs_icon 'person-circle' %}
-                                                                <span class="ms-2">{{ data.session.host.get_full_name|default:data.session.host.get_full_name }}</span>
+                                                                <span class="ms-2">{{ data.session.presenter_name|default:data.session.presenter_name }}</span>
                                                             </div>
                                                         </td>
                                                         <td>
@@ -706,7 +706,7 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <h6>{% bs_icon 'person-circle' %} {% translate "Host" %}</h6>
-                                    <p class="ms-4">{{ data.session.host.get_full_name|default:data.session.host.name }}</p>
+                                    <p class="ms-4">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
                                     <h6>{% bs_icon 'clock' %} {% translate "Time" %}</h6>
                                     <p class="ms-4">
                                         {{ data.session.agenda_item.start_time|date:"l, F j, Y" }}
@@ -883,8 +883,8 @@
                     // Text filter (title or host)
                     if (searchText) {
                         const title = row.dataset.title;
-                        const host = row.dataset.host;
-                        show = show && (title.includes(searchText) || host.includes(searchText));
+                        const presenter_name = row.dataset.presenter_name;
+                        show = show && (title.includes(searchText) || presenter_name.includes(searchText));
                     }
 
                     // Status filter

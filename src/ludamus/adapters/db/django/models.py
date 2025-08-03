@@ -3,14 +3,13 @@ from __future__ import annotations
 import math
 from datetime import UTC, datetime
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Any, ClassVar, Never, Protocol
+from typing import TYPE_CHECKING, ClassVar, Never, Protocol
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
 from django.db import models
-from django.db.models import F, Q, QuerySet
+from django.db.models import F, Q
 from django.db.models.functions import Lower
 from django.utils import timezone
 from django.utils.timezone import localtime
@@ -89,11 +88,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self) -> str:
         return self.name.split(" ")[0]
-
-    def email_user(  # type: ignore [explicit-any]
-        self, subject: str, message: str, from_email: str | None = None, **kwargs: Any
-    ) -> None:
-        send_mail(subject, message, from_email, [self.email], **kwargs)
 
     class Meta:
         db_table = "user"
@@ -206,9 +200,6 @@ class Event(models.Model):
     @property
     def is_ended(self) -> bool:
         return self.end_time < datetime.now(tz=UTC)
-
-    def agenda_items(self) -> QuerySet[AgendaItem]:
-        return AgendaItem.objects.filter(space__event=self)
 
 
 class Space(models.Model):
@@ -353,10 +344,7 @@ class Session(models.Model):
         on_delete=models.CASCADE,
         related_name="sessions",
     )
-    host = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="hosted_sessions"
-    )
-    presenter_name = models.CharField(max_length=255, blank=True)
+    presenter_name = models.CharField(max_length=255)
     # ID
     title = models.CharField(max_length=255)
     slug = models.SlugField()
@@ -429,7 +417,7 @@ class AgendaItem(models.Model):
         )
 
     def __str__(self) -> str:
-        return f"{self.session.title} by {self.session.host.name} ({self.status})"
+        return f"{self.session.title} by {self.session.presenter_name} ({self.status})"
 
     @property
     def status(self) -> AgendaItemStatus:

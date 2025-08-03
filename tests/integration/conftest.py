@@ -125,7 +125,7 @@ class SessionFactory(DjangoModelFactory):
     title = Faker("sentence", nb_words=5)
     slug = Faker("slug")
     description = Faker("text")
-    host = SubFactory(UserFactory)
+    presenter_name = Faker("name")
     participants_limit = Faker("random_int", min=2, max=20)
     sphere = SubFactory(SphereFactory)
 
@@ -167,7 +167,7 @@ class ProposalFactory(DjangoModelFactory):
     description = Faker("text")
     host = SubFactory(UserFactory)
     participants_limit = Faker("random_int", min=2, max=20)
-    proposal_category = SubFactory(ProposalCategoryFactory)
+    category = SubFactory(ProposalCategoryFactory)
 
 
 class AgendaItemFactory(DjangoModelFactory):
@@ -257,7 +257,9 @@ def time_slot(event):
 
 @pytest.fixture
 def session(active_user, sphere):
-    return SessionFactory(host=active_user, sphere=sphere, participants_limit=10)
+    return SessionFactory(
+        presenter_name=active_user.name, sphere=sphere, participants_limit=10
+    )
 
 
 @pytest.fixture
@@ -267,7 +269,7 @@ def proposal_category(event):
 
 @pytest.fixture
 def proposal(proposal_category, active_user):
-    return ProposalFactory(proposal_category=proposal_category, host=active_user)
+    return ProposalFactory(category=proposal_category, host=active_user)
 
 
 @pytest.fixture

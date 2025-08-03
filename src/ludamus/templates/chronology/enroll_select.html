@@ -23,7 +23,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6>{% translate "Host" %}</h6>
-                            <p>{{ session.host.get_full_name }}</p>
+                            <p>{{ session.presenter_name }}</p>
                             <h6>{% translate "Participants" %}</h6>
                             <p>
                                 {{ session.enrolled_count }}/{{ session.participants_limit }}
