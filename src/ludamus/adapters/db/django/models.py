@@ -1,27 +1,23 @@
 from __future__ import annotations
 
 import math
-from contextlib import suppress
 from datetime import UTC, datetime
 from enum import StrEnum, auto
-from functools import partial
-from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, ClassVar, Never, Protocol
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.db import IntegrityError, models, transaction
+from django.db import models
 from django.db.models import F, Q, QuerySet
 from django.db.models.functions import Lower
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Iterable
+    from collections.abc import Collection
 
     from django.db.models.expressions import Combinable
 
@@ -33,22 +29,6 @@ MAX_CONNECTED_USERS = 6  # Maximum number of connected users per manager
 
 class ModelWithSlug(Protocol):
     slug: models.SlugField[str | int | Combinable, str]
-
-
-def save_with_slugified_name(
-    *, instance: ModelWithSlug, name: str, save: Callable[[], None]
-) -> None:
-    base_slug = slugify(name)[:47]
-    instance.slug = base_slug  # type: ignore [assignment]
-    for __ in range(MAX_SLUG_RETRIES):
-        with suppress(IntegrityError):
-            with transaction.atomic():
-                save()
-            return
-
-        instance.slug = f"{base_slug}-{token_urlsafe(1)}"  # type: ignore [assignment]
-
-    save()
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -128,26 +108,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             ),
         )
 
-    def save(  # pylint: disable=arguments-differ
-        self,
-        *,
-        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
-        force_update: bool = False,
-        using: str | None = None,
-        update_fields: Iterable[str] | None = None,
-    ) -> None:
-        save_with_slugified_name(
-            instance=self,
-            name=self.name,
-            save=partial(
-                super().save,
-                force_insert=force_insert,
-                force_update=force_update,
-                using=using,
-                update_fields=update_fields,
-            ),
-        )
-
     @property
     def age(self) -> int:
         if self.birth_date:
@@ -217,26 +177,6 @@ class Event(models.Model):
     def __str__(self) -> str:
         return self.name
 
-    def save(  # pylint: disable=arguments-differ
-        self,
-        *,
-        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
-        force_update: bool = False,
-        using: str | None = None,
-        update_fields: Iterable[str] | None = None,
-    ) -> None:
-        save_with_slugified_name(
-            instance=self,
-            name=self.name,
-            save=partial(
-                super().save,
-                force_insert=force_insert,
-                force_update=force_update,
-                using=using,
-                update_fields=update_fields,
-            ),
-        )
-
     @property
     def is_enrollment_active(self) -> bool:
         return (
@@ -291,26 +231,6 @@ class Space(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
-
-    def save(  # pylint: disable=arguments-differ
-        self,
-        *,
-        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
-        force_update: bool = False,
-        using: str | None = None,
-        update_fields: Iterable[str] | None = None,
-    ) -> None:
-        save_with_slugified_name(
-            instance=self,
-            name=self.name,
-            save=partial(
-                super().save,
-                force_insert=force_insert,
-                force_update=force_update,
-                using=using,
-                update_fields=update_fields,
-            ),
-        )
 
 
 class TimeSlot(models.Model):
@@ -436,6 +356,7 @@ class Session(models.Model):
     host = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="hosted_sessions"
     )
+    presenter_name = models.CharField(max_length=255, blank=True)
     # ID
     title = models.CharField(max_length=255)
     slug = models.SlugField()
@@ -463,26 +384,6 @@ class Session(models.Model):
 
     def __str__(self) -> str:
         return self.title
-
-    def save(  # pylint: disable=arguments-differ
-        self,
-        *,
-        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
-        force_update: bool = False,
-        using: str | None = None,
-        update_fields: Iterable[str] | None = None,
-    ) -> None:
-        save_with_slugified_name(
-            instance=self,
-            name=self.title,
-            save=partial(
-                super().save,
-                force_insert=force_insert,
-                force_update=force_update,
-                using=using,
-                update_fields=update_fields,
-            ),
-        )
 
     @property
     def enrolled_count(self) -> int:
@@ -577,26 +478,6 @@ class ProposalCategory(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
 
-    def save(  # pylint: disable=arguments-differ
-        self,
-        *,
-        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
-        force_update: bool = False,
-        using: str | None = None,
-        update_fields: Iterable[str] | None = None,
-    ) -> None:
-        save_with_slugified_name(
-            instance=self,
-            name=self.name,
-            save=partial(
-                super().save,
-                force_insert=force_insert,
-                force_update=force_update,
-                using=using,
-                update_fields=update_fields,
-            ),
-        )
-
 
 class ProposalStatus(StrEnum):
     CREATED = auto()
@@ -662,26 +543,6 @@ class Guild(models.Model):
 
     def __str__(self) -> str:
         return self.name
-
-    def save(  # pylint: disable=arguments-differ
-        self,
-        *,
-        force_insert: bool | tuple[models.base.ModelBase, ...] = False,
-        force_update: bool = False,
-        using: str | None = None,
-        update_fields: Iterable[str] | None = None,
-    ) -> None:
-        save_with_slugified_name(
-            instance=self,
-            name=self.name,
-            save=partial(
-                super().save,
-                force_insert=force_insert,
-                force_update=force_update,
-                using=using,
-                update_fields=update_fields,
-            ),
-        )
 
 
 class MembershipType(StrEnum):

@@ -479,7 +479,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
                     category__event=self.object,
                     session__isnull=True,  # Only unaccepted proposals
                 )
-                .select_related("host", "proposal_category")
+                .select_related("host", "category")
                 .prefetch_related("tags", "time_slots")
                 .order_by("-creation_time")
             )
