@@ -28,8 +28,6 @@ jobs:
           python-version: 3.13
       - name: Run image
         uses: abatilo/actions-poetry@v3
-        with:
-          poetry-version: 3.13
       - run: poetry install
       - run: poe prcheck
       - run: poe inttest --cov --cov-report=xml
