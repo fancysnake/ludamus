@@ -60,6 +60,7 @@ DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
 [tool.poe.tasks]
 # Tools
 black = "black ."
+black-check = "black --check ."
 codespell = "codespell src tests"
 deptry = "deptry ."
 djlint = "djlint . --profile=django"
@@ -82,6 +83,14 @@ check = [
     "mypy",
     "pylint",
     "ruff-fix",
+]
+prcheck = [
+    "black-check",
+    "codespell",
+    "djlint",
+    "mypy",
+    "pylint",
+    "ruff",
 ]
 update = [
     { cmd = "pre-commit autoupdate" },
