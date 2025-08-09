@@ -1,13 +1,14 @@
 import secrets
+from http import HTTPStatus
 
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.http import HttpRequest
+from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
 
 
 def custom_404(
     request: HttpRequest, exception: Exception | None  # noqa: ARG001
-) -> HttpResponse:
+) -> TemplateResponse:
     messages = [
         # D&D/Fantasy themed
         {
@@ -120,17 +121,19 @@ def custom_404(
 
     selected = messages[secrets.randbelow(len(messages))]
     context = {
-        "error_code": 404,
+        "error_code": HTTPStatus.NOT_FOUND,
         "title": selected["title"],
         "message": selected["message"],
         "subtitle": selected["subtitle"],
         "icon": selected["icon"],
     }
 
-    return render(request, "404_dynamic.html", context, status=404)
+    response = TemplateResponse(request, "404_dynamic.html", context)
+    response.status_code = 404
+    return response
 
 
-def custom_500(request: HttpRequest) -> HttpResponse:
+def custom_500(request: HttpRequest) -> TemplateResponse:
     messages = [
         # D&D/Fantasy themed
         {
@@ -238,11 +241,13 @@ def custom_500(request: HttpRequest) -> HttpResponse:
 
     selected = messages[secrets.randbelow(len(messages))]
     context = {
-        "error_code": 500,
+        "error_code": HTTPStatus.INTERNAL_SERVER_ERROR,
         "title": selected["title"],
         "message": selected["message"],
         "subtitle": selected["subtitle"],
         "icon": selected["icon"],
     }
 
-    return render(request, "500_dynamic.html", context, status=500)
+    response = TemplateResponse(request, "500_dynamic.html", context)
+    response.status_code = 500
+    return response

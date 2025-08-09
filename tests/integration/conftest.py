@@ -1,11 +1,10 @@
-# pylint: disable=redefined-outer-name
-
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
-from factory import Faker, LazyAttribute, SubFactory, post_generation
+from django.utils import translation
+from factory import Faker, LazyAttribute, SubFactory
 from factory.django import DjangoModelFactory
 
 from ludamus.adapters.db.django.models import (
@@ -40,11 +39,6 @@ class UserFactory(DjangoModelFactory):
     is_active = True
     is_staff = False
     is_superuser = False
-
-    @post_generation
-    def password(self, create, extracted):
-        if create and extracted:
-            self.set_password(extracted)
 
 
 class SiteFactory(DjangoModelFactory):
@@ -129,14 +123,6 @@ class SessionFactory(DjangoModelFactory):
     participants_limit = Faker("random_int", min=2, max=20)
     sphere = SubFactory(SphereFactory)
 
-    @post_generation
-    def tags(self, create, extracted):
-        if not create:
-            return
-        if extracted:
-            for tag in extracted:
-                self.tags.add(tag)
-
 
 class SessionParticipationFactory(DjangoModelFactory):
     class Meta:
@@ -192,8 +178,8 @@ def staff_client(client, staff_user):
     return client
 
 
-@pytest.fixture
-def active_user():
+@pytest.fixture(name="active_user")
+def active_user_fixture():
     return UserFactory(
         username="testuser",
         email="testuser@example.com",
@@ -213,8 +199,8 @@ def connected_user(active_user):
     )
 
 
-@pytest.fixture
-def staff_user():
+@pytest.fixture(name="staff_user")
+def staff_user_fixture():
     return UserFactory(username="staffuser", is_staff=True)
 
 
@@ -227,8 +213,8 @@ def non_root_sphere(settings, faker):
     return SphereFactory(site=site, name=site.name)
 
 
-@pytest.fixture
-def event(sphere):
+@pytest.fixture(name="event")
+def event_fixture(sphere):
     now = datetime.now(UTC)
     return EventFactory(
         sphere=sphere,
@@ -241,8 +227,8 @@ def event(sphere):
     )
 
 
-@pytest.fixture
-def space(event):
+@pytest.fixture(name="space")
+def space_fixture(event):
     return SpaceFactory(event=event)
 
 
@@ -255,15 +241,15 @@ def time_slot(event):
     )
 
 
-@pytest.fixture
-def session(active_user, sphere):
+@pytest.fixture(name="session")
+def session_fixture(active_user, sphere):
     return SessionFactory(
         presenter_name=active_user.name, sphere=sphere, participants_limit=10
     )
 
 
-@pytest.fixture
-def proposal_category(event):
+@pytest.fixture(name="proposal_category")
+def proposal_category_fixture(event):
     return ProposalCategoryFactory(event=event)
 
 
@@ -278,7 +264,14 @@ def agenda_item(session, space):
 
 
 @pytest.fixture(autouse=True)
-def sphere(settings, transactional_db):  # noqa: ARG001
+def english_language():
+
+    with translation.override("en"):
+        yield
+
+
+@pytest.fixture(autouse=True, name="sphere")
+def sphere_fixture(settings, transactional_db):  # noqa: ARG001
     site, __ = Site.objects.update_or_create(
         domain=settings.ROOT_DOMAIN, defaults={"name": settings.ROOT_DOMAIN}
     )
