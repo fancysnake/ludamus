@@ -53,10 +53,11 @@ from ludamus.adapters.web.django.entities import (
 
 from .exceptions import RedirectError
 from .forms import (
-    EnrollmentForm,
-    ProposalAcceptanceForm,
-    SessionProposalForm,
     ThemeSelectionForm,
+    create_enrollment_form,
+    create_proposal_acceptance_form,
+    create_session_proposal_form,
+    get_tag_data_from_form,
 )
 
 if TYPE_CHECKING:
@@ -583,10 +584,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
             "event": session.agenda_item.space.event,
             "connected_users": list(self.request.user.connected.all()),
             "user_data": self._get_user_participation_data(session),
-            "form": EnrollmentForm(
+            "form": create_enrollment_form(
                 session=session,
                 users=[self.request.user, *request.user.connected.all()],
-            ),
+            )(),
         }
 
         return TemplateResponse(request, "chronology/enroll_select.html", context)
@@ -648,12 +649,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
         self._validate_request(session)
 
         # Initialize form with POST data
-        form = EnrollmentForm(
-            data=request.POST,
-            session=session,
-            users=[self.request.user, *request.user.connected.all()],
+        form_class = create_enrollment_form(
+            session=session, users=[self.request.user, *request.user.connected.all()]
         )
-
+        form = form_class(data=request.POST)
         if not form.is_valid():
             messages.warning(self.request, _("Please correct the errors below."))
             # Re-render with form errors
@@ -673,7 +672,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         return redirect("web:event", slug=session.agenda_item.space.event.slug)
 
-    def _get_enrollment_requests(self, form: EnrollmentForm) -> list[EnrollmentRequest]:
+    def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
         enrollment_requests = []
         for connected_user in [self.request.user, *self.request.user.connected.all()]:
             # Skip inactive users
@@ -701,32 +700,22 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         for req in enrollment_requests:
             # Handle cancellation
-            if req.choice == "cancel":
-                self._handle_cancellation(participations, req, enrollments, session)
+            if req.choice == "cancel" and (
+                existing_participation := next(
+                    p for p in participations if p.user == req.user
+                )
+            ):
+                existing_participation.delete()
+                enrollments.cancelled_users.append(req.name)
+
+                # If this was a confirmed enrollment, promote from waiting list
+                self._promote_from_waitlist(
+                    existing_participation, participations, req, session, enrollments
+                )
                 continue
 
             self._check_and_create_enrollment(req, session, enrollments)
         return enrollments
-
-    def _handle_cancellation(
-        self,
-        participations: QuerySet[SessionParticipation],
-        req: EnrollmentRequest,
-        enrollments: Enrollments,
-        session: Session,
-    ) -> None:
-        if existing_participation := next(
-            p for p in participations if p.user == req.user
-        ):
-            existing_participation.delete()
-            enrollments.cancelled_users.append(req.name)
-
-            # If this was a confirmed enrollment, promote from waiting list
-            self._promote_from_waitlist(
-                existing_participation, participations, req, session, enrollments
-            )
-        else:
-            enrollments.skipped_users.append(f"{req.name} ({_('not enrolled')!s})")
 
     @staticmethod
     def _promote_from_waitlist(
@@ -827,7 +816,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         return False
 
-    def _manage_enrollments(self, form: EnrollmentForm, session: Session) -> None:
+    def _manage_enrollments(self, form: forms.Form, session: Session) -> None:
         # Collect enrollment requests from form
         if enrollment_requests := self._get_enrollment_requests(form):
             # Validate capacity for confirmed enrollments
@@ -879,11 +868,10 @@ class ProposeSessionView(LoginRequiredMixin, View):
                 },
                 "min_participants_limit": proposal_category.min_participants_limit,
                 "max_participants_limit": proposal_category.max_participants_limit,
-                "form": SessionProposalForm(
-                    proposal_category=proposal_category,
+                "form": create_session_proposal_form(proposal_category)(
                     initial={
                         "participants_limit": proposal_category.min_participants_limit
-                    },
+                    }
                 ),
             },
         )
@@ -909,9 +897,8 @@ class ProposeSessionView(LoginRequiredMixin, View):
         self, proposal_category: ProposalCategory, event: Event
     ) -> HttpResponse:
         # Initialize form with POST data
-        form = SessionProposalForm(
-            data=self.request.POST, proposal_category=proposal_category
-        )
+        form_class = create_session_proposal_form(proposal_category)
+        form = form_class(data=self.request.POST)
 
         if not form.is_valid():
             # Re-render with form errors
@@ -947,7 +934,9 @@ class ProposeSessionView(LoginRequiredMixin, View):
             participants_limit=form.cleaned_data["participants_limit"],
         )
 
-        for tag in self._get_tags(form.get_tag_data(), proposal_category):
+        for tag in self._get_tags(
+            get_tag_data_from_form(form.cleaned_data), proposal_category
+        ):
             proposal.tags.add(tag)
 
         messages.success(
@@ -1037,7 +1026,8 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
         time_slots = self._get_time_slots(event)
 
         # Create the form
-        form = ProposalAcceptanceForm(event=event)
+        form_class = create_proposal_acceptance_form(event)
+        form = form_class()
 
         context = {
             "proposal": proposal,
@@ -1085,7 +1075,8 @@ class AcceptProposalView(LoginRequiredMixin, View):
         event = proposal.category.event
 
         # Initialize form with POST data
-        form = ProposalAcceptanceForm(data=request.POST, event=event)
+        form_class = create_proposal_acceptance_form(event)
+        form = form_class(data=request.POST)
         if not form.is_valid():
             # Re-render with form errors
             return TemplateResponse(
@@ -1111,7 +1102,7 @@ class AcceptProposalView(LoginRequiredMixin, View):
         return redirect("web:event", slug=event.slug)
 
     @staticmethod
-    def _create_session(form: ProposalAcceptanceForm, proposal: Proposal) -> None:
+    def _create_session(form: forms.Form, proposal: Proposal) -> None:
         time_slot = form.cleaned_data["time_slot"]
 
         # Create a session from the proposal

@@ -2,7 +2,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from secrets import token_urlsafe
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, Mock, patch
 from urllib.parse import urlencode
 
 import pytest
@@ -15,6 +15,7 @@ from django.http import HttpResponse
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
+    MAX_CONNECTED_USERS,
     AgendaItem,
     Proposal,
     Session,
@@ -27,8 +28,20 @@ from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
 )
-from ludamus.adapters.web.django.views import CACHE_TIMEOUT
-from tests.integration.conftest import SessionFactory
+from ludamus.adapters.web.django.views import (
+    CACHE_TIMEOUT,
+    CallbackView,
+    Enrollments,
+    EnrollSelectView,
+    WrongSiteTypeError,
+    get_site_from_request,
+)
+from tests.integration.conftest import (
+    AgendaItemFactory,
+    SessionFactory,
+    SpaceFactory,
+    TimeSlotFactory,
+)
 
 User = get_user_model()
 
@@ -272,6 +285,52 @@ class TestCallbackView:
             Message(level=messages.ERROR, message=ANY),
         ]
 
+    @staticmethod
+    def test_invalid_authentication_state_keyerror(rf, sphere):
+
+        request = rf.get("/callback", {"state": "test_token"})
+        request.sphere = sphere
+
+        view = CallbackView()
+        view.request = request
+
+        # Mock cache to return invalid JSON that causes KeyError
+        with patch("ludamus.adapters.web.django.views.cache") as mock_cache:
+            mock_cache.get.return_value = '{"invalid": "data"}'  # Missing required keys
+            mock_cache.delete.return_value = None
+
+            with patch("ludamus.adapters.web.django.views.messages") as mock_messages:
+                result_url = view.get_redirect_url()
+
+                expected_url = request.build_absolute_uri(reverse("web:index"))
+                assert result_url == expected_url
+                mock_messages.error.assert_called_once_with(
+                    request, "Invalid authentication state"
+                )
+
+    @staticmethod
+    def test_invalid_authentication_state_valueerror(rf, sphere):
+
+        request = rf.get("/callback", {"state": "test_token"})
+        request.sphere = sphere
+
+        view = CallbackView()
+        view.request = request
+
+        # Mock cache to return invalid JSON that causes ValueError
+        with patch("ludamus.adapters.web.django.views.cache") as mock_cache:
+            mock_cache.get.return_value = '{"created_at": "invalid_datetime_format"}'
+            mock_cache.delete.return_value = None
+
+            with patch("ludamus.adapters.web.django.views.messages") as mock_messages:
+                result_url = view.get_redirect_url()
+
+                expected_url = request.build_absolute_uri(reverse("web:index"))
+                assert result_url == expected_url
+                mock_messages.error.assert_called_once_with(
+                    request, "Invalid authentication state"
+                )
+
 
 @pytest.mark.django_db(transaction=True)
 class TestLogoutView:
@@ -308,6 +367,49 @@ class TestRedirectView:
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse("web:index")
+
+    def test_invalid_redirect_url_absolute(self, client):
+        response = client.get(
+            self.URL, {"redirect_to": "https://malicious.com/steal-data"}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == reverse("web:index")
+        _assert_message_sent(response, messages.WARNING)
+
+    def test_invalid_redirect_url_protocol_relative(self, client):
+        response = client.get(self.URL, {"redirect_to": "//malicious.com/steal-data"})
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == reverse("web:index")
+        _assert_message_sent(response, messages.WARNING)
+
+    def test_root_domain_redirect(self, client, settings):
+        response = client.get(
+            self.URL, {"last_domain": settings.ROOT_DOMAIN, "redirect_to": "/test-page"}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == f"http://{settings.ROOT_DOMAIN}/test-page"
+
+    def test_subdomain_redirect(self, client, settings):
+        subdomain = f"sub.{settings.ROOT_DOMAIN}"
+        response = client.get(
+            self.URL, {"last_domain": subdomain, "redirect_to": "/test-page"}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == f"http://{subdomain}/test-page"
+
+    def test_invalid_domain_for_redirect(self, client):
+        response = client.get(
+            self.URL, {"last_domain": "malicious.com", "redirect_to": "/test-page"}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        # Still redirects, but without the invalid domain
+        assert response.url == "/test-page"
+        _assert_message_sent(response, messages.WARNING)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -437,6 +539,38 @@ class TestConnectedView:
 
         assert response.status_code == HTTPStatus.OK
         _assert_message_sent(response, messages.WARNING)
+
+    def test_post_error_max_connected_users_exceeded(
+        self, authenticated_client, active_user, faker
+    ):
+        # Create MAX_CONNECTED_USERS connected users
+        for i in range(MAX_CONNECTED_USERS):
+            unique_name = f"connected_{i}_{faker.random_int()}"
+            User.objects.create(
+                username=f"user_{i}_{faker.random_int()}",
+                name=unique_name,
+                slug=f"connected-{i}-{faker.random_int()}",
+                birth_date=faker.date(),
+                user_type=User.UserType.CONNECTED,
+                manager=active_user,
+            )
+
+        # Try to create one more connected user (exceeds limit)
+        data = {
+            "name": faker.name(),
+            "birth_date": faker.date(),
+            "user_type": User.UserType.CONNECTED,
+        }
+        response = authenticated_client.post(self.URL, data=data)
+
+        assert response.status_code == HTTPStatus.OK
+        # Expect 2 messages: ERROR (max users) + WARNING (form invalid)
+        msgs = list(get_messages(response.wsgi_request))
+        assert msgs[0].level == messages.ERROR  # Max connected users error
+        assert msgs[1].level == messages.WARNING  # Form invalid warning
+        # Verify no additional user was created
+        connected_count = User.objects.filter(user_type=User.UserType.CONNECTED).count()
+        assert connected_count == MAX_CONNECTED_USERS
 
 
 @pytest.mark.django_db(transaction=True)
@@ -796,6 +930,188 @@ class TestEnrollSelectView:
         )
         _assert_message_sent(response, messages.ERROR)
 
+    @pytest.mark.usefixtures("event")
+    def test_post_connected_user_inactive(
+        self, agenda_item, authenticated_client, session, connected_user
+    ):
+        connected_user.is_active = False
+        connected_user.save()
+        response = authenticated_client.post(
+            self._get_url(agenda_item.session.pk),
+            data={f"user_{connected_user.id}": "enroll"},
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == reverse(
+            "web:enroll-select", kwargs={"session_id": session.id}
+        )
+        _assert_message_sent(response, messages.WARNING)
+
+    @pytest.mark.django_db
+    def test_post_session_host_skipped(
+        self, authenticated_client, agenda_item, proposal_category, active_user
+    ):
+
+        # Create a proposal and session with active_user as the host
+        proposal = Proposal.objects.create(
+            title="Test Session",
+            description="Test description",
+            category=proposal_category,
+            host=active_user,
+            participants_limit=10,
+        )
+
+        # Link the proposal to the session
+        proposal.session = agenda_item.session
+        proposal.save()
+
+        # Try to enroll the host user (should be skipped)
+        response = authenticated_client.post(
+            self._get_url(agenda_item.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        # Verify user was not enrolled
+        assert not SessionParticipation.objects.filter(
+            user=active_user, session=agenda_item.session
+        ).exists()
+        # Should get a message about being skipped as session host
+        messages_list = list(get_messages(response.wsgi_request))
+        assert any(
+            "session host" in str(msg) or "twórca punktu programu" in str(msg)
+            for msg in messages_list
+        )
+
+    @pytest.mark.django_db
+    def test_post_already_enrolled_skipped(
+        self, authenticated_client, agenda_item, active_user
+    ):
+        # First enroll the user
+        SessionParticipation.objects.create(
+            user=active_user,
+            session=agenda_item.session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        # Try to move to waitlist (should be skipped as already enrolled)
+        response = authenticated_client.post(
+            self._get_url(agenda_item.session.pk),
+            data={f"user_{active_user.id}": "waitlist"},
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        # Verify user is still enrolled (only one participation record)
+        participations = SessionParticipation.objects.filter(
+            user=active_user, session=agenda_item.session
+        )
+        assert participations.count() == 1
+        assert participations.first().status == SessionParticipationStatus.CONFIRMED
+
+        # Should get a message about being skipped as already enrolled
+        messages_list = list(get_messages(response.wsgi_request))
+        assert any(
+            "already enrolled" in str(msg) or "już zapisani" in str(msg)
+            for msg in messages_list
+        )
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_post_time_conflict_skipped(authenticated_client, active_user, event):
+        # Create two overlapping sessions at the same time (different spaces)
+        space1 = SpaceFactory(event=event)
+        space2 = SpaceFactory(event=event)
+        time_slot = TimeSlotFactory(event=event)
+
+        # Create first session and enroll user
+        session1 = SessionFactory(sphere=event.sphere)
+        AgendaItemFactory(
+            session=session1,
+            space=space1,
+            start_time=time_slot.start_time,
+            end_time=time_slot.end_time,
+        )
+        SessionParticipation.objects.create(
+            user=active_user,
+            session=session1,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        # Create second session at the same time (different space)
+        session2 = SessionFactory(sphere=event.sphere)
+        AgendaItemFactory(
+            session=session2,
+            space=space2,
+            start_time=time_slot.start_time,
+            end_time=time_slot.end_time,
+        )
+
+        with patch(
+            "ludamus.adapters.web.django.views.create_enrollment_form"
+        ) as mock_form_factory:
+            mock_form_class = Mock()
+            mock_form_instance = Mock()
+            mock_form_instance.is_valid.return_value = True
+            mock_form_instance.cleaned_data = {f"user_{active_user.id}": "enroll"}
+            mock_form_class.return_value = mock_form_instance
+            mock_form_factory.return_value = mock_form_class
+
+            # Try to enroll user in the conflicting session (should be skipped)
+            response = authenticated_client.post(
+                reverse("web:enroll-select", kwargs={"session_id": session2.id}),
+                data={f"user_{active_user.id}": "enroll"},
+            )
+
+        assert response.status_code == HTTPStatus.FOUND
+        # Verify user was not enrolled in the second session
+        assert not SessionParticipation.objects.filter(
+            user=active_user, session=session2
+        ).exists()
+        # Should get a message about time conflict
+        messages_list = list(get_messages(response.wsgi_request))
+        assert any(
+            "time conflict" in str(msg) or "konflikt czasowy" in str(msg)
+            for msg in messages_list
+        )
+
+    @pytest.mark.django_db
+    def test_post_no_user_selected(self, authenticated_client, agenda_item):
+        # Submit form with empty data (no user selections)
+        response = authenticated_client.post(
+            self._get_url(agenda_item.session.pk), data={}  # No user selections
+        )
+
+        # Should get redirected back to the enrollment form
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == reverse(
+            "web:enroll-select", kwargs={"session_id": agenda_item.session.id}
+        )
+
+        # This test covers the empty form submission scenario
+
+    @staticmethod
+    def test_no_enrollments_processed_line_792(rf):
+        request = rf.post("/test/")
+
+        view = EnrollSelectView()
+        view.request = request
+
+        # Create empty enrollments object
+        empty_enrollments = Enrollments()
+
+        # Mock the messages framework
+        with patch(
+            "ludamus.adapters.web.django.views.messages.warning"
+        ) as mock_warning:
+            # Call _send_message directly with empty enrollments
+            view._send_message(empty_enrollments)  # noqa: SLF001
+
+            # Verify the warning message was called with correct content
+            mock_warning.assert_called_once()
+            args = mock_warning.call_args[0]
+            assert args[0] == request
+            assert "No enrollments were processed" in str(args[1])
+
 
 @pytest.mark.django_db(transaction=True)
 class TestProposeSessionView:
@@ -1067,3 +1383,106 @@ class TestAcceptProposalView:
         assert session.agenda_item.start_time == time_slot.start_time
         assert session.agenda_item.end_time == time_slot.end_time
         assert session.proposal == proposal
+
+
+class TestGetSiteFromRequest:
+
+    @staticmethod
+    def test_valid_site_returns_site(rf, sphere):
+
+        request = rf.get("/")
+
+        with patch(
+            "ludamus.adapters.web.django.views.get_current_site"
+        ) as mock_get_site:
+            mock_get_site.return_value = sphere.site
+
+            result = get_site_from_request(request)
+
+            assert result == sphere.site
+            mock_get_site.assert_called_once_with(request)
+
+    @staticmethod
+    def test_non_site_object_raises_wrong_site_type_error(rf):
+
+        request = rf.get("/")
+
+        with patch(
+            "ludamus.adapters.web.django.views.get_current_site"
+        ) as mock_get_site:
+            # Mock returning something that is not a Site instance
+            mock_get_site.return_value = "not_a_site_instance"
+
+            with pytest.raises(WrongSiteTypeError):
+                get_site_from_request(request)
+
+            mock_get_site.assert_called_once_with(request)
+
+    @staticmethod
+    def test_none_request_passes_to_get_current_site():
+
+        with patch(
+            "ludamus.adapters.web.django.views.get_current_site"
+        ) as mock_get_site:
+            # Mock returning something that is not a Site instance
+            mock_get_site.return_value = {"fake": "site"}
+
+            with pytest.raises(WrongSiteTypeError):
+                get_site_from_request(None)
+
+            mock_get_site.assert_called_once_with(None)
+
+
+class TestThemeSelectionView:
+    URL_NAME = "web:theme-select"
+
+    def _get_url(self) -> str:
+        return reverse(self.URL_NAME)
+
+    @pytest.mark.django_db
+    def test_post_valid_theme(self, client):
+        # Test successful theme selection
+        response = client.post(
+            self._get_url(), data={"theme": "cyberpunk"}, HTTP_REFERER="/test-page"
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "/test-page"
+
+        # Check that theme was set in session
+        assert client.session.get("theme") == "cyberpunk"
+
+    @pytest.mark.django_db
+    def test_post_valid_theme_no_referer(self, client):
+        # Test successful theme selection without HTTP_REFERER
+        response = client.post(self._get_url(), data={"theme": "green-forest"})
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "/"
+
+        # Check that theme was set in session
+        assert client.session.get("theme") == "green-forest"
+
+    @pytest.mark.django_db
+    def test_post_invalid_theme(self, client):
+        # Test invalid theme selection (still redirects)
+        response = client.post(
+            self._get_url(), data={"theme": "invalid-theme"}, HTTP_REFERER="/test-page"
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "/test-page"
+
+        # Theme should not be set in session for invalid data
+        assert "theme" not in client.session
+
+    @pytest.mark.django_db
+    def test_post_empty_data(self, client):
+        # Test form submission with no data (still redirects)
+        response = client.post(self._get_url(), data={}, HTTP_REFERER="/test-page")
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == "/test-page"
+
+        # Theme should not be set in session for empty data
+        assert "theme" not in client.session

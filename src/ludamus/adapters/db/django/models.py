@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from datetime import UTC, datetime
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, ClassVar, Never, Protocol
+from typing import TYPE_CHECKING, ClassVar, Never
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.contrib.sites.models import Site
@@ -18,16 +18,11 @@ from django.utils.translation import gettext_lazy as _
 if TYPE_CHECKING:
     from collections.abc import Collection
 
-    from django.db.models.expressions import Combinable
 
 MAX_SLUG_RETRIES = 10
 RANDOM_SLUG_BYTES = 7  # 10 characters
 DEFAULT_NAME = "Andrzej"
 MAX_CONNECTED_USERS = 6  # Maximum number of connected users per manager
-
-
-class ModelWithSlug(Protocol):
-    slug: models.SlugField[str | int | Combinable, str]
 
 
 class User(AbstractBaseUser, PermissionsMixin):

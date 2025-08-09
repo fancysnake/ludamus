@@ -478,7 +478,8 @@ disable=consider-using-assignment-expr,
         too-many-statements, # REMOVE
         unsubscriptable-object,
         # Handled by ruff
-        unused-argument
+        unused-argument,
+        protected-access
 
 
 # Enable the message, report, category or checker with the given id(s). You can
