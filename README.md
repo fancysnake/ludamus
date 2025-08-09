@@ -7,3 +7,4 @@ Event management website
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
 ![Static Badge](https://img.shields.io/badge/type%20checked-mypy-039dfc)
+[![codecov](https://codecov.io/github/fancysnake/ludamus/graph/badge.svg?token=DB3HZP1OWT)](https://codecov.io/github/fancysnake/ludamus)
