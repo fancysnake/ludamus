@@ -77,27 +77,27 @@ unittest = "pytest tests/unit --cov=tests.unit --cov=ludamus"
 # Series
 check = [
     "black",
-    "codespell",
-    "djlint-format",
-    "djlint",
-    "mypy",
-    "pylint",
     "ruff-fix",
+    "codespell",
+    "mypy",
+    "djlint",
+    "djlint-format",
+    "pylint",
 ]
 prcheck = [
     "black-check",
-    "codespell",
-    "djlint",
-    "mypy",
-    "pylint",
     "ruff",
+    "codespell",
+    "mypy",
+    "djlint",
+    "pylint",
 ]
 update = [
     { cmd = "pre-commit autoupdate" },
     { cmd = "pip install -U pip" },
     { cmd = "pip install -U poetry" },
     { cmd = "poetry update" },
-    "deptry",
+    { cmd = "deptry ." },
     { cmd = "poetry show -o" },
 ]
 
