@@ -20,6 +20,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
+from django.db import transaction
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
@@ -34,6 +35,7 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
     AgendaItem,
+    EnrollmentConfig,
     Event,
     Proposal,
     ProposalCategory,
@@ -592,7 +594,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         return TemplateResponse(request, "chronology/enroll_select.html", context)
 
-    def _validate_request(self, session: Session) -> None:
+    def _validate_request(self, session: Session) -> EnrollmentConfig:
         # Check if user has birth date set
         if not self.request.user.birth_date:
             raise RedirectError(
@@ -603,13 +605,16 @@ class EnrollSelectView(LoginRequiredMixin, View):
             )
 
         # Check if enrollment is active for the event
-        if not session.agenda_item.space.event.is_enrollment_active:
+        enrollment_config = session.agenda_item.space.event.enrollment_config
+        if not enrollment_config or not enrollment_config.is_active:
             raise RedirectError(
                 reverse(
                     "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
                 ),
                 error=_("Enrollment is not currently active for this event."),
             )
+
+        return enrollment_config
 
     def _get_user_participation_data(
         self, session: Session
@@ -646,8 +651,6 @@ class EnrollSelectView(LoginRequiredMixin, View):
     def post(self, request: UserRequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
 
-        self._validate_request(session)
-
         # Initialize form with POST data
         form_class = create_enrollment_form(
             session=session, users=[self.request.user, *request.user.connected.all()]
@@ -668,7 +671,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 },
             )
 
-        self._manage_enrollments(form, session)
+        # Only validate enrollment requirements when form is valid
+        enrollment_config = self._validate_request(session)
+
+        self._manage_enrollments(form, session, enrollment_config)
 
         return redirect("web:event", slug=session.agenda_item.space.event.slug)
 
@@ -691,9 +697,30 @@ class EnrollSelectView(LoginRequiredMixin, View):
         return enrollment_requests
 
     def _process_enrollments(
-        self, enrollment_requests: list[EnrollmentRequest], session: Session
+        self,
+        enrollment_requests: list[EnrollmentRequest],
+        session: Session,
+        enrollment_config: EnrollmentConfig,
     ) -> Enrollments:
         enrollments = Enrollments()
+
+        # Lock the session to prevent race conditions within the transaction
+        session = (
+            Session.objects.select_for_update()
+            .select_related("proposal")
+            .get(id=session.id)
+        )
+
+        # Double-check capacity within the transaction (race condition protection)
+        confirmed_requests = [
+            req for req in enrollment_requests if req.choice == "enroll"
+        ]
+        available_spots = enrollment_config.get_available_slots(session)
+
+        if len(confirmed_requests) > available_spots:
+            # This should rarely happen due to double-checking, but handle gracefully
+            return enrollments  # Return empty enrollments
+
         participations = SessionParticipation.objects.filter(session=session).order_by(
             "creation_time"
         )
@@ -752,20 +779,22 @@ class EnrollSelectView(LoginRequiredMixin, View):
         ):
             enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
             return
-        # Check if user is already enrolled
-        if SessionParticipation.objects.filter(session=session, user=req.user).exists():
-            enrollments.skipped_users.append(f"{req.name} ({_('already enrolled')!s})")
-            return
         # Check for time conflicts for confirmed enrollment
         if req.choice == "enroll" and Session.objects.has_conflicts(session, req.user):
             enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
             return
 
-        # Create enrollment
-        SessionParticipation.objects.create(
-            session=session, user=req.user, status=_status_by_choice[req.choice]
+        # Use get_or_create to prevent duplicate enrollments in race conditions
+        __, created = SessionParticipation.objects.get_or_create(
+            session=session,
+            user=req.user,
+            defaults={"status": _status_by_choice[req.choice]},
         )
-        enrollments.users_by_status[_status_by_choice[req.choice]].append(req.name)
+
+        if created:
+            enrollments.users_by_status[_status_by_choice[req.choice]].append(req.name)
+        else:
+            enrollments.skipped_users.append(f"{req.name} ({_('already enrolled')!s})")
 
     def _send_message(self, enrollments: Enrollments) -> None:
         any_users = False
@@ -792,15 +821,16 @@ class EnrollSelectView(LoginRequiredMixin, View):
             messages.warning(self.request, _("No enrollments were processed."))
 
     def _is_capacity_invalid(
-        self, enrollment_requests: list[EnrollmentRequest], session: Session
+        self,
+        enrollment_requests: list[EnrollmentRequest],
+        session: Session,
+        enrollment_config: EnrollmentConfig,
     ) -> bool:
         confirmed_requests = [
             req for req in enrollment_requests if req.choice == "enroll"
         ]
-        current_confirmed = session.session_participations.filter(
-            status=SessionParticipationStatus.CONFIRMED
-        ).count()
-        available_spots = session.participants_limit - current_confirmed
+
+        available_spots = enrollment_config.get_available_slots(session)
 
         if len(confirmed_requests) > available_spots:
             messages.error(
@@ -816,17 +846,28 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         return False
 
-    def _manage_enrollments(self, form: forms.Form, session: Session) -> None:
+    def _manage_enrollments(
+        self, form: forms.Form, session: Session, enrollment_config: EnrollmentConfig
+    ) -> None:
         # Collect enrollment requests from form
         if enrollment_requests := self._get_enrollment_requests(form):
-            # Validate capacity for confirmed enrollments
-            if self._is_capacity_invalid(enrollment_requests, session):
+            # Validate capacity for confirmed enrollments (outside transaction)
+            if self._is_capacity_invalid(
+                enrollment_requests, session, enrollment_config
+            ):
                 raise RedirectError(
                     reverse("web:enroll-select", kwargs={"session_id": session.id})
                 )
 
-            # Process enrollments and create success message
-            self._send_message(self._process_enrollments(enrollment_requests, session))
+            # Use atomic transaction only for database operations
+            with transaction.atomic():
+                # Process enrollments and create success message
+                enrollments = self._process_enrollments(
+                    enrollment_requests, session, enrollment_config
+                )
+
+            # Send message outside transaction
+            self._send_message(enrollments)
         else:
             raise RedirectError(
                 reverse("web:enroll-select", kwargs={"session_id": session.id}),

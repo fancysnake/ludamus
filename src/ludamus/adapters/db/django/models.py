@@ -140,9 +140,6 @@ class Event(models.Model):
     # Proposal times
     proposal_start_time = models.DateTimeField(blank=True, null=True)
     proposal_end_time = models.DateTimeField(blank=True, null=True)
-    # Enrollment times
-    enrollment_start_time = models.DateTimeField(blank=True, null=True)
-    enrollment_end_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = "event"
@@ -167,18 +164,6 @@ class Event(models.Model):
         return self.name
 
     @property
-    def is_enrollment_active(self) -> bool:
-        return (
-            self.enrollment_start_time is not None
-            and self.enrollment_end_time is not None
-            and (
-                self.enrollment_start_time
-                < datetime.now(tz=UTC)
-                < self.enrollment_end_time
-            )
-        )
-
-    @property
     def is_proposal_active(self) -> bool:
         return (
             self.proposal_start_time is not None
@@ -195,6 +180,54 @@ class Event(models.Model):
     @property
     def is_ended(self) -> bool:
         return self.end_time < datetime.now(tz=UTC)
+
+    @property
+    def enrollment_config(self) -> EnrollmentConfig | None:
+        return self.enrollment_configs.first()
+
+
+class EnrollmentConfig(models.Model):
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="enrollment_configs"
+    )
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    percentage_slots = models.PositiveIntegerField(
+        default=100,
+        help_text="Percentage of total session slots available for enrollment (1-100)",
+    )
+
+    class Meta:
+        db_table = "enrollment_config"
+        constraints = (
+            models.CheckConstraint(
+                condition=Q(start_time__lt=F("end_time")),
+                name="enrollment_config_date_times",
+            ),
+            models.CheckConstraint(
+                condition=Q(percentage_slots__gte=1, percentage_slots__lte=100),
+                name="enrollment_config_percentage_range",
+            ),
+        )
+
+    def __str__(self) -> str:
+        return f"Enrollment config for {self.event.name}"
+
+    @property
+    def is_active(self) -> bool:
+        return self.start_time < datetime.now(tz=UTC) < self.end_time
+
+    def get_available_slots(self, session: Session) -> int:
+        """Calculate available enrollment slots for a session based on percentage.
+
+        Returns:
+            Number of available slots for enrollment.
+        """
+        effective_limit = math.ceil(
+            session.participants_limit * self.percentage_slots / 100
+        )
+        current_enrolled = session.enrolled_count
+        return max(0, effective_limit - current_enrolled)
 
 
 class Space(models.Model):
@@ -379,6 +412,65 @@ class Session(models.Model):
         return self.session_participations.filter(
             status=SessionParticipationStatus.WAITING
         ).count()
+
+    @property
+    def effective_participants_limit(self) -> int:
+        """Get effective participants limit considering enrollment config percentage."""
+        if enrollment_config := self.agenda_item.space.event.enrollment_config:
+            return math.ceil(
+                self.participants_limit * enrollment_config.percentage_slots / 100
+            )
+        return self.participants_limit
+
+    @property
+    def available_spots(self) -> int:
+        """Get number of available enrollment spots."""
+        return max(0, self.effective_participants_limit - self.enrolled_count)
+
+    @property
+    def is_full(self) -> bool:
+        """Check if session is at capacity for enrollment."""
+        return self.enrolled_count >= self.effective_participants_limit
+
+    @property
+    def is_enrollment_limited(self) -> bool:
+        """Check if enrollment is limited by enrollment config percentage."""
+        if enrollment_config := self.agenda_item.space.event.enrollment_config:
+            return enrollment_config.percentage_slots < 100  # noqa: PLR2004
+        return False
+
+    @property
+    def enrollment_status_text(self) -> str:
+        """Get descriptive text for enrollment status."""
+        if not self.is_full:
+            enrolled = self.enrolled_count
+            limit = self.effective_participants_limit
+            return f"{enrolled} of {limit} enrolled"
+
+        # Session is full - determine why
+        if self.is_enrollment_limited:
+            enrolled = self.enrolled_count
+            limit = self.effective_participants_limit
+            return f"Enrollment capacity reached ({enrolled}/{limit})"
+
+        enrolled = self.enrolled_count
+        limit = self.participants_limit
+        return f"Session full ({enrolled}/{limit})"
+
+    @property
+    def full_participant_info(self) -> str:
+        """Get complete participant information display."""
+        base_info = f"{self.enrolled_count}/{self.effective_participants_limit}"
+
+        # Add session limit if different from effective limit
+        if self.effective_participants_limit != self.participants_limit:
+            base_info += f" (session limit: {self.participants_limit})"
+
+        # Add waiting list info
+        if self.waiting_count > 0:
+            base_info += f", {self.waiting_count} waiting"
+
+        return base_info
 
 
 class AgendaItemStatus(StrEnum):
