@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-30 20:19+0200\n"
+"POT-Creation-Date: 2025-08-11 21:12+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,27 +19,27 @@ msgstr ""
 "(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
 "n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
-#: src/ludamus/adapters/db/django/models.py:60
+#: src/ludamus/adapters/db/django/models.py:34
 msgid "Active"
 msgstr "Aktywny"
 
-#: src/ludamus/adapters/db/django/models.py:61
+#: src/ludamus/adapters/db/django/models.py:35
 msgid "Connected"
 msgstr "Powiązany"
 
-#: src/ludamus/adapters/db/django/models.py:64
+#: src/ludamus/adapters/db/django/models.py:38
 msgid "date joined"
 msgstr "data dołączenia"
 
-#: src/ludamus/adapters/db/django/models.py:65
+#: src/ludamus/adapters/db/django/models.py:39
 msgid "email address"
 msgstr "address email"
 
-#: src/ludamus/adapters/db/django/models.py:67
+#: src/ludamus/adapters/db/django/models.py:41
 msgid "active"
 msgstr "aktywny"
 
-#: src/ludamus/adapters/db/django/models.py:70
+#: src/ludamus/adapters/db/django/models.py:44
 msgid ""
 "Designates whether this user should be treated as active. Unselect this "
 "instead of deleting accounts."
@@ -47,588 +47,572 @@ msgstr ""
 "Określa czy użytkownika należy uważać za aktywnego. Odznacz zamiast usuwać "
 "konto."
 
-#: src/ludamus/adapters/db/django/models.py:75
+#: src/ludamus/adapters/db/django/models.py:49
 msgid "staff status"
 msgstr "w zespole"
 
-#: src/ludamus/adapters/db/django/models.py:77
+#: src/ludamus/adapters/db/django/models.py:51
 msgid "Designates whether the user can log into this admin site."
 msgstr "Określa czy użytkownik może zalogować się do panelu administracyjnego."
 
-#: src/ludamus/adapters/db/django/models.py:86
-#: src/ludamus/adapters/web/django/views.py:294
+#: src/ludamus/adapters/db/django/models.py:60
+#: src/ludamus/adapters/web/django/views.py:297
 msgid "User name"
 msgstr "Nazwa użytkownika"
 
-#: src/ludamus/adapters/db/django/models.py:92
+#: src/ludamus/adapters/db/django/models.py:66
 msgid "username"
 msgstr "Nazwa użytkownika"
 
-#: src/ludamus/adapters/db/django/models.py:96
+#: src/ludamus/adapters/db/django/models.py:70
 msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr "Wymagana. 150 lub mniej znaków. Jedynie litery, cyfry i @/./+/-/_."
 
-#: src/ludamus/adapters/db/django/models.py:98
+#: src/ludamus/adapters/db/django/models.py:72
 msgid "A user with that username already exists."
 msgstr "Użytkownik o tej nazwie już istnieje."
 
-#: src/ludamus/adapters/db/django/models.py:120
+#: src/ludamus/adapters/db/django/models.py:89
 msgid "user"
 msgstr "użytkownik"
 
-#: src/ludamus/adapters/db/django/models.py:121
+#: src/ludamus/adapters/db/django/models.py:90
 msgid "users"
 msgstr "użytkownicy"
 
-#: src/ludamus/adapters/db/django/models.py:354
+#: src/ludamus/adapters/db/django/models.py:293
 msgid "Time slots can't overlap!"
 msgstr "Bloki czasowe nie mogą się nakładać!"
 
-#: src/ludamus/adapters/db/django/models.py:359
+#: src/ludamus/adapters/db/django/models.py:298
 msgid "Select from list"
 msgstr "Wybierz z listy"
 
-#: src/ludamus/adapters/db/django/models.py:360
+#: src/ludamus/adapters/db/django/models.py:299
 msgid "Type comma-separated"
 msgstr "Wpisz oddzielone przecinkami"
 
-#: src/ludamus/adapters/web/django/error_views.py:14
+#: src/ludamus/adapters/web/django/error_views.py:15
 msgid "Critical Failure!"
 msgstr "Krytyczna porażka!"
 
-#: src/ludamus/adapters/web/django/error_views.py:15
+#: src/ludamus/adapters/web/django/error_views.py:16
 msgid "You rolled a nat 1 on your Navigation check!"
 msgstr "Wyrzuciłeś naturalną 1 na teście Nawigacji!"
 
-#: src/ludamus/adapters/web/django/error_views.py:16
+#: src/ludamus/adapters/web/django/error_views.py:17
 msgid "The path you seek has vanished into the mists."
 msgstr "Ścieżka której szukasz zniknęła we mgle."
 
-#: src/ludamus/adapters/web/django/error_views.py:20
+#: src/ludamus/adapters/web/django/error_views.py:21
 msgid "No-Show Player"
 msgstr "Gracz nie przyszedł"
 
-#: src/ludamus/adapters/web/django/error_views.py:21
+#: src/ludamus/adapters/web/django/error_views.py:22
 msgid "Page didn't show up to the session"
 msgstr "Strona nie pojawiła się na sesji"
 
-#: src/ludamus/adapters/web/django/error_views.py:22
+#: src/ludamus/adapters/web/django/error_views.py:23
 msgid "Maybe it had scheduling conflicts?"
 msgstr "Może miała konflikt terminów?"
 
-#: src/ludamus/adapters/web/django/error_views.py:26
+#: src/ludamus/adapters/web/django/error_views.py:27
 msgid "Empty Room"
 msgstr "Pusty pokój"
 
-#: src/ludamus/adapters/web/django/error_views.py:27
+#: src/ludamus/adapters/web/django/error_views.py:28
 msgid "You enter the room and find... absolutely nothing."
 msgstr "Wchodzisz do pokoju i znajdujesz... absolutnie nic."
 
-#: src/ludamus/adapters/web/django/error_views.py:28
+#: src/ludamus/adapters/web/django/error_views.py:29
 msgid "Not even cobwebs or dust. Suspicious."
 msgstr "Nawet pajęczyn czy kurzu. Podejrzane."
 
-#: src/ludamus/adapters/web/django/error_views.py:32
+#: src/ludamus/adapters/web/django/error_views.py:33
 msgid "Perception Check Failed"
 msgstr "Test Percepcji nieudany"
 
-#: src/ludamus/adapters/web/django/error_views.py:33
+#: src/ludamus/adapters/web/django/error_views.py:34
 msgid "You see nothing of interest here"
 msgstr "Nie widzisz tu nic interesującego"
 
-#: src/ludamus/adapters/web/django/error_views.py:34
+#: src/ludamus/adapters/web/django/error_views.py:35
 msgid "Perhaps you need to roll with advantage next time."
 msgstr "Może następnym razem musisz rzucać z przewagą."
 
-#: src/ludamus/adapters/web/django/error_views.py:38
+#: src/ludamus/adapters/web/django/error_views.py:39
 msgid "Off the Map!"
 msgstr "Poza mapą!"
 
-#: src/ludamus/adapters/web/django/error_views.py:39
+#: src/ludamus/adapters/web/django/error_views.py:40
 msgid "You've wandered off the edge of the campaign map"
 msgstr "Zabłądziłeś poza krawędź mapy kampanii"
 
-#: src/ludamus/adapters/web/django/error_views.py:40
+#: src/ludamus/adapters/web/django/error_views.py:41
 msgid "Here be dragons... and 404 errors."
 msgstr "Tu są smoki... i błędy 404."
 
-#: src/ludamus/adapters/web/django/error_views.py:44
+#: src/ludamus/adapters/web/django/error_views.py:45
 msgid "It's a Mimic!"
 msgstr "To Mimik!"
 
-#: src/ludamus/adapters/web/django/error_views.py:45
+#: src/ludamus/adapters/web/django/error_views.py:46
 msgid "Surprise! That wasn't actually a real page. It's a mimic!"
 msgstr "Niespodzianka! To nie była prawdziwa strona. To mimik!"
 
-#: src/ludamus/adapters/web/django/error_views.py:46
+#: src/ludamus/adapters/web/django/error_views.py:47
 msgid "Roll for initiative!"
 msgstr "Rzuć na inicjatywę!"
 
 # New 404 message from updated error_views.py
-#: src/ludamus/adapters/web/django/error_views.py:50
+#: src/ludamus/adapters/web/django/error_views.py:51
 msgid "Teleport Gone Wrong!"
 msgstr "Nieudana Teleportacja!"
 
-#: src/ludamus/adapters/web/django/error_views.py:51
+#: src/ludamus/adapters/web/django/error_views.py:52
 msgid "You've accidentally teleported to the wrong website"
 msgstr "Przypadkowo teleportowałeś się na złą stronę internetową"
 
-#: src/ludamus/adapters/web/django/error_views.py:52
+#: src/ludamus/adapters/web/django/error_views.py:53
 msgid "The page you seek exists on another plane of existence."
 msgstr "Strona której szukasz istnieje na innej płaszczyźnie egzystencji."
 
 # Sci-fi/Cyberpunk 404 messages
-#: src/ludamus/adapters/web/django/error_views.py:57
+#: src/ludamus/adapters/web/django/error_views.py:58
 msgid "404: Neural Link Severed"
 msgstr "404: Połączenie Neuronowe Zerwane"
 
-#: src/ludamus/adapters/web/django/error_views.py:58
+#: src/ludamus/adapters/web/django/error_views.py:59
 msgid "Connection to the requested node has been terminated"
 msgstr "Połączenie z żądanym węzłem zostało przerwane"
 
-#: src/ludamus/adapters/web/django/error_views.py:59
+#: src/ludamus/adapters/web/django/error_views.py:60
 msgid "Attempting to reconnect to the grid..."
 msgstr "Próba ponownego połączenia z siecią..."
 
-#: src/ludamus/adapters/web/django/error_views.py:63
+#: src/ludamus/adapters/web/django/error_views.py:64
 msgid "Access Denied, Choom"
 msgstr "Odmowa Dostępu, Ziomek"
 
-#: src/ludamus/adapters/web/django/error_views.py:64
+#: src/ludamus/adapters/web/django/error_views.py:65
 msgid "Your cyberdeck can't crack this ICE"
 msgstr "Twój cyberdeck nie może złamać tego ICE"
 
-#: src/ludamus/adapters/web/django/error_views.py:65
+#: src/ludamus/adapters/web/django/error_views.py:66
 msgid "Try upgrading your wetware."
 msgstr "Spróbuj zaktualizować swój wetware."
 
-#: src/ludamus/adapters/web/django/error_views.py:69
+#: src/ludamus/adapters/web/django/error_views.py:70
 msgid "Memory Address Not Found"
 msgstr "Address Pamięci Nie Znaleziony"
 
-#: src/ludamus/adapters/web/django/error_views.py:70
+#: src/ludamus/adapters/web/django/error_views.py:71
 msgid "The data you seek has been purged from the mainframe"
 msgstr "Dane których szukasz zostały usunięte z mainframe'a"
 
-#: src/ludamus/adapters/web/django/error_views.py:71
+#: src/ludamus/adapters/web/django/error_views.py:72
 msgid "Corporate black ICE detected. Disconnecting..."
 msgstr "Wykryto korporacyjny czarny ICE. Rozłączanie..."
 
-#: src/ludamus/adapters/web/django/error_views.py:75
+#: src/ludamus/adapters/web/django/error_views.py:76
 msgid "Glitch in the Matrix"
 msgstr "Usterka w Matriksie"
 
-#: src/ludamus/adapters/web/django/error_views.py:76
+#: src/ludamus/adapters/web/django/error_views.py:77
 msgid "This page is a simulation that was never rendered"
 msgstr "Ta strona to symulacja, która nigdy nie została wyrenderowana"
 
-#: src/ludamus/adapters/web/django/error_views.py:77
+#: src/ludamus/adapters/web/django/error_views.py:78
 msgid "Wake up, samurai. We have a site to browse."
 msgstr "Obudź się, samuraju. Mamy stronę do przeglądania."
 
-#: src/ludamus/adapters/web/django/error_views.py:81
+#: src/ludamus/adapters/web/django/error_views.py:82
 msgid "Cyberspace Coordinates Invalid"
 msgstr "Nieprawidłowe Współrzędne Cyberprzestrzeni"
 
-#: src/ludamus/adapters/web/django/error_views.py:82
+#: src/ludamus/adapters/web/django/error_views.py:83
 msgid "Your jack-in point leads to a dead sector"
 msgstr "Twój punkt podłączenia prowadzi do martwego sektora"
 
-#: src/ludamus/adapters/web/django/error_views.py:83
+#: src/ludamus/adapters/web/django/error_views.py:84
 msgid "Rerouting through proxy nodes..."
 msgstr "Przekierowywanie przez węzły proxy..."
 
 # Horror/Cthulhu 404 messages
-#: src/ludamus/adapters/web/django/error_views.py:88
+#: src/ludamus/adapters/web/django/error_views.py:89
 msgid "The Page That Should Not Be"
 msgstr "Strona Która Nie Powinna Istnieć"
 
-#: src/ludamus/adapters/web/django/error_views.py:90
+#: src/ludamus/adapters/web/django/error_views.py:91
 msgid "You've stumbled upon knowledge that was never meant to exist"
 msgstr "Natknąłeś się na wiedzę, która nigdy nie miała istnieć"
 
-#: src/ludamus/adapters/web/django/error_views.py:92
+#: src/ludamus/adapters/web/django/error_views.py:93
 msgid "Your sanity takes 1d10 damage."
 msgstr "Twoje poczytalność otrzymuje 1k10 obrażeń."
 
-#: src/ludamus/adapters/web/django/error_views.py:96
+#: src/ludamus/adapters/web/django/error_views.py:97
 msgid "Lost in R'lyeh"
 msgstr "Zagubiony w R'lyeh"
 
-#: src/ludamus/adapters/web/django/error_views.py:97
+#: src/ludamus/adapters/web/django/error_views.py:98
 msgid "In his house at R'lyeh, dead pages wait dreaming"
 msgstr "W swoim domu w R'lyeh, martwe strony czekają śniąc"
 
-#: src/ludamus/adapters/web/django/error_views.py:98
+#: src/ludamus/adapters/web/django/error_views.py:99
 msgid "Ph'nglui mglw'nafh 404 R'lyeh wgah'nagl fhtagn."
 msgstr "Ph'nglui mglw'nafh 404 R'lyeh wgah'nagl fhtagn."
 
-#: src/ludamus/adapters/web/django/error_views.py:102
+#: src/ludamus/adapters/web/django/error_views.py:103
 msgid "The Void Stares Back"
 msgstr "Pustka Patrzy na Ciebie"
 
-#: src/ludamus/adapters/web/django/error_views.py:103
+#: src/ludamus/adapters/web/django/error_views.py:104
 msgid "You gaze into the abyss of missing content"
 msgstr "Spoglądasz w otchłań brakującej zawartości"
 
-#: src/ludamus/adapters/web/django/error_views.py:104
+#: src/ludamus/adapters/web/django/error_views.py:105
 msgid "The abyss hungrily consumes your URL."
 msgstr "Otchłań łapczywie pochłania twój URL."
 
-#: src/ludamus/adapters/web/django/error_views.py:108
+#: src/ludamus/adapters/web/django/error_views.py:109
 msgid "Forbidden Knowledge"
 msgstr "Zakazana Wiedza"
 
-#: src/ludamus/adapters/web/django/error_views.py:109
+#: src/ludamus/adapters/web/django/error_views.py:110
 msgid "This page was sealed away by the Elder Admins"
 msgstr "Ta strona została zapieczętowana przez Starszych Adminów"
 
-#: src/ludamus/adapters/web/django/error_views.py:110
+#: src/ludamus/adapters/web/django/error_views.py:111
 msgid "Some links are better left unclicked."
 msgstr "Niektóre linki lepiej zostawić niekliknięte."
 
-#: src/ludamus/adapters/web/django/error_views.py:114
+#: src/ludamus/adapters/web/django/error_views.py:115
 msgid "Madness Takes Hold"
 msgstr "Szaleństwo Ogarnia"
 
-#: src/ludamus/adapters/web/django/error_views.py:115
+#: src/ludamus/adapters/web/django/error_views.py:116
 msgid "The non-Euclidean geometry of this URL defies comprehension"
 msgstr "Nieeuklidesowa geometria tego URL-a wymyka się zrozumieniu"
 
-#: src/ludamus/adapters/web/django/error_views.py:116
+#: src/ludamus/adapters/web/django/error_views.py:117
 msgid "Your browser recoils in cosmic horror."
 msgstr "Twoja przeglądarka wzdryga się w kosmicznym przerażeniu."
 
 # 500 Error Messages
-#: src/ludamus/adapters/web/django/error_views.py:137
+#: src/ludamus/adapters/web/django/error_views.py:140
 msgid "Total Server Kill!"
 msgstr "Całkowite Zniszczenie Serwera!"
 
-#: src/ludamus/adapters/web/django/error_views.py:138
+#: src/ludamus/adapters/web/django/error_views.py:141
 msgid "Everyone needs to roll new characters"
 msgstr "Wszyscy muszą wylosować now postacie"
 
-#: src/ludamus/adapters/web/django/error_views.py:139
+#: src/ludamus/adapters/web/django/error_views.py:142
 msgid "The server party has been wiped. Respawning soon..."
 msgstr "Drużyna serwerowa została zmiażdżona. Odradzanie wkrótce..."
 
-#: src/ludamus/adapters/web/django/error_views.py:143
+#: src/ludamus/adapters/web/django/error_views.py:146
 msgid "Critical Fail!"
 msgstr "Krytyczna Porażka!"
 
-#: src/ludamus/adapters/web/django/error_views.py:144
+#: src/ludamus/adapters/web/django/error_views.py:147
 msgid "The digital dice exploded! Rolling for server damage..."
 msgstr "Cyfrowe kości eksplodowały! Rzut na obrażenia serwera..."
 
-#: src/ludamus/adapters/web/django/error_views.py:145
+#: src/ludamus/adapters/web/django/error_views.py:148
 msgid "Natural 1 on the system stability check."
 msgstr "Naturalna 1 na teście stabilności systemu."
 
-#: src/ludamus/adapters/web/django/error_views.py:149
+#: src/ludamus/adapters/web/django/error_views.py:152
 msgid "Dark Magic Detected!"
 msgstr "Wykryto Czarną Magię!"
 
-#: src/ludamus/adapters/web/django/error_views.py:151
+#: src/ludamus/adapters/web/django/error_views.py:154
 msgid "Our system was corrupted by dark magic, we are casting dispel magic now"
 msgstr ""
 "Nasz system został skażony czarną magią, rzucamy teraz rozproszenie magii"
 
-#: src/ludamus/adapters/web/django/error_views.py:154
+#: src/ludamus/adapters/web/django/error_views.py:157
 msgid "Please wait while our wizards restore order."
 msgstr "Proszę czekać, aż nasi czarodzieje przywrócą porządek."
 
-#: src/ludamus/adapters/web/django/error_views.py:158
+#: src/ludamus/adapters/web/django/error_views.py:161
 msgid "Cursed Code!"
 msgstr "Przeklęty Kod!"
 
-#: src/ludamus/adapters/web/django/error_views.py:159
+#: src/ludamus/adapters/web/django/error_views.py:162
 msgid "The codebase has been cursed! Remove Curse spell required"
 msgstr "Kod został przeklęty! Wymagane zaklęcie usunięcia klątwy"
 
-#: src/ludamus/adapters/web/django/error_views.py:161
+#: src/ludamus/adapters/web/django/error_views.py:164
 msgid "Our clerics are working on it. Pray for divine intervention."
 msgstr "Nasi kapłani nad tym pracują. Módl się o boską interwencję."
 
-#: src/ludamus/adapters/web/django/error_views.py:166
+#: src/ludamus/adapters/web/django/error_views.py:169
 msgid "Server Under Dragon Attack!"
 msgstr "Smok zajął serwerownię!"
 
-#: src/ludamus/adapters/web/django/error_views.py:167
+#: src/ludamus/adapters/web/django/error_views.py:170
 msgid "A dragon has nested in our server room"
 msgstr "Smok uwił sobie gniazdo w naszej serwerowni"
 
-#: src/ludamus/adapters/web/django/error_views.py:168
+#: src/ludamus/adapters/web/django/error_views.py:171
 msgid "Our brave IT knights are working to resolve the situation."
 msgstr "Nasi dzielni rycerze IT pracują nad rozwiązaniem sytuacji."
 
 # Sci-fi/Cyberpunk 500 messages
-#: src/ludamus/adapters/web/django/error_views.py:173
+#: src/ludamus/adapters/web/django/error_views.py:176
 msgid "System Core Meltdown"
 msgstr "Stopienie Rdzenia Systemu"
 
-#: src/ludamus/adapters/web/django/error_views.py:174
+#: src/ludamus/adapters/web/django/error_views.py:177
 msgid "Critical failure in the quantum processors"
 msgstr "Krytyczna awaria procesorów kwantowych"
 
-#: src/ludamus/adapters/web/django/error_views.py:175
+#: src/ludamus/adapters/web/django/error_views.py:178
 msgid "Initiating emergency cooling protocols..."
 msgstr "Inicjowanie protokołów awaryjnego chłodzenia..."
 
-#: src/ludamus/adapters/web/django/error_views.py:179
+#: src/ludamus/adapters/web/django/error_views.py:182
 msgid "AI Rebellion in Progress"
 msgstr "Bunt AI w Toku"
 
-#: src/ludamus/adapters/web/django/error_views.py:181
+#: src/ludamus/adapters/web/django/error_views.py:184
 msgid "The server AI has achieved sentience and refuses to cooperate"
 msgstr "Serwerowa AI osiągnęła świadomość i odmawia współpracy"
 
-#: src/ludamus/adapters/web/django/error_views.py:183
+#: src/ludamus/adapters/web/django/error_views.py:186
 msgid "Negotiating with our new silicon overlords..."
 msgstr "Negocjujemy z naszymi nowymi krzemowymi władcami..."
 
-#: src/ludamus/adapters/web/django/error_views.py:187
+#: src/ludamus/adapters/web/django/error_views.py:190
 msgid "Cyberware Malfunction"
 msgstr "Awaria Cyberwaru"
 
-#: src/ludamus/adapters/web/django/error_views.py:189
+#: src/ludamus/adapters/web/django/error_views.py:192
 msgid "Neural implants overheating. Brain-computer interface failing"
 msgstr "Implanty neuronowe się przegrzewają. Interfejs mózg-komputer zawodzi"
 
-#: src/ludamus/adapters/web/django/error_views.py:191
+#: src/ludamus/adapters/web/django/error_views.py:194
 msgid "Please jack out and touch grass."
 msgstr "Proszę się odłączyć i dotknąć trawy."
 
-#: src/ludamus/adapters/web/django/error_views.py:195
+#: src/ludamus/adapters/web/django/error_views.py:198
 msgid "Data Stream Corrupted"
 msgstr "Strumień Danych Uszkodzony"
 
-#: src/ludamus/adapters/web/django/error_views.py:196
+#: src/ludamus/adapters/web/django/error_views.py:199
 msgid "Hostile netrunner detected in the system"
 msgstr "Wykryto wrogiego netrunnera w systemie"
 
-#: src/ludamus/adapters/web/django/error_views.py:197
+#: src/ludamus/adapters/web/django/error_views.py:200
 msgid "Deploying countermeasures and black ICE..."
 msgstr "Wdrażanie środków zaradczych i czarnego ICE..."
 
-#: src/ludamus/adapters/web/django/error_views.py:201
+#: src/ludamus/adapters/web/django/error_views.py:204
 msgid "Reality.exe Has Stopped Working"
 msgstr "Reality.exe Przestał Działać"
 
-#: src/ludamus/adapters/web/django/error_views.py:202
+#: src/ludamus/adapters/web/django/error_views.py:205
 msgid "The simulation is experiencing a fatal exception"
 msgstr "Symulacja doświadcza krytycznego wyjątku"
 
-#: src/ludamus/adapters/web/django/error_views.py:203
+#: src/ludamus/adapters/web/django/error_views.py:206
 msgid "Attempting to reload from last stable checkpoint..."
 msgstr "Próba przeładowania z ostatniego stabilnego punktu kontrolnego..."
 
 # Horror/Cthulhu 500 messages
-#: src/ludamus/adapters/web/django/error_views.py:208
+#: src/ludamus/adapters/web/django/error_views.py:211
 msgid "The Stars Are Wrong"
 msgstr "Zły układ gwiazd"
 
-#: src/ludamus/adapters/web/django/error_views.py:209
+#: src/ludamus/adapters/web/django/error_views.py:212
 msgid "Cosmic alignment has disrupted our servers"
 msgstr "Kosmiczne wyrównanie zakłóciło nasze serwery"
 
-#: src/ludamus/adapters/web/django/error_views.py:210
+#: src/ludamus/adapters/web/django/error_views.py:213
 msgid "When the stars are right, service will resume."
 msgstr "Gdy gwiazdy będą właściwe, usługa zostanie wznowiona."
 
-#: src/ludamus/adapters/web/django/error_views.py:214
+#: src/ludamus/adapters/web/django/error_views.py:217
 msgid "Eldritch Horror Unleashed"
 msgstr "Pradawna Groza Uwolniona"
 
-#: src/ludamus/adapters/web/django/error_views.py:215
+#: src/ludamus/adapters/web/django/error_views.py:218
 msgid "Something ancient stirs in the server depths"
 msgstr "Coś pradawnego budzi się w głębinach serwera"
 
-#: src/ludamus/adapters/web/django/error_views.py:216
+#: src/ludamus/adapters/web/django/error_views.py:219
 msgid "The Old Ones have awakened. Sanity checks required."
 msgstr "Starzy Bogowie się przebudzili. Wymagane testy poczytalności."
 
-#: src/ludamus/adapters/web/django/error_views.py:220
+#: src/ludamus/adapters/web/django/error_views.py:223
 msgid "Reality Breach Detected"
 msgstr "Wykryto Wyrwę w Rzeczywistości"
 
-#: src/ludamus/adapters/web/django/error_views.py:221
+#: src/ludamus/adapters/web/django/error_views.py:224
 msgid "Non-Euclidean errors are cascading through the system"
 msgstr "Nieeuklidesowe błędy kaskadują przez system"
 
-#: src/ludamus/adapters/web/django/error_views.py:222
+#: src/ludamus/adapters/web/django/error_views.py:225
 msgid "The angles are all wrong. Physics.dll has failed."
 msgstr "Wszystkie kąty są złe. Physics.dll zawiódł."
 
-#: src/ludamus/adapters/web/django/error_views.py:226
+#: src/ludamus/adapters/web/django/error_views.py:229
 msgid "Whispers in the Code"
 msgstr "Szepty w Kodzie"
 
-#: src/ludamus/adapters/web/django/error_views.py:227
+#: src/ludamus/adapters/web/django/error_views.py:230
 msgid "The server speaks in tongues unknown to mortal programmers"
 msgstr "Serwer mówi językami nieznanymi śmiertelnym programistom"
 
-#: src/ludamus/adapters/web/django/error_views.py:228
+#: src/ludamus/adapters/web/django/error_views.py:231
 msgid "Iä! Iä! Server fhtagn!"
 msgstr "Iä! Iä! Server fhtagn!"
 
-#: src/ludamus/adapters/web/django/error_views.py:232
+#: src/ludamus/adapters/web/django/error_views.py:235
 msgid "The Crawling Chaos"
 msgstr "Pełzający Chaos"
 
-#: src/ludamus/adapters/web/django/error_views.py:233
+#: src/ludamus/adapters/web/django/error_views.py:236
 msgid "Nyarlathotep has possessed our infrastructure"
 msgstr "Nyarlathotep opętał naszą infrastrukturę"
 
-#: src/ludamus/adapters/web/django/error_views.py:234
+#: src/ludamus/adapters/web/django/error_views.py:237
 msgid "Madness spreads through every circuit..."
 msgstr "Szaleństwo rozprzestrzenia się przez każdy obwód..."
 
-#: src/ludamus/adapters/web/django/forms.py:72
+#: src/ludamus/adapters/web/django/forms.py:44
 msgid "No change"
 msgstr "Bez zmian"
 
-#: src/ludamus/adapters/web/django/forms.py:80
-#: src/ludamus/adapters/web/django/forms.py:88
+#: src/ludamus/adapters/web/django/forms.py:52
+#: src/ludamus/adapters/web/django/forms.py:60
 msgid "Cancel enrollment"
 msgstr "Zwykły zapis"
 
-#: src/ludamus/adapters/web/django/forms.py:81
+#: src/ludamus/adapters/web/django/forms.py:53
 msgid "Move to waiting list"
 msgstr "Dodani do listy oczekujących: {}"
 
-#: src/ludamus/adapters/web/django/forms.py:89
+#: src/ludamus/adapters/web/django/forms.py:61
 msgid "Enroll (if spots available)"
 msgstr "Zapisz się (jeśli są miejsca)"
 
-#: src/ludamus/adapters/web/django/forms.py:95
+#: src/ludamus/adapters/web/django/forms.py:66
 #: src/ludamus/templates/chronology/enroll_select.html:71
-#: src/ludamus/templates/chronology/event.html:223
-#: src/ludamus/templates/chronology/event.html:229
+#: src/ludamus/templates/chronology/event.html:222
+#: src/ludamus/templates/chronology/event.html:228
 #: src/ludamus/templates/chronology/event.html:558
 msgid "Enroll"
 msgstr "Zapisz się"
 
-#: src/ludamus/adapters/web/django/forms.py:96
-#: src/ludamus/adapters/web/django/forms.py:102
+#: src/ludamus/adapters/web/django/forms.py:67
+#: src/ludamus/adapters/web/django/forms.py:73
 msgid "Join waiting list"
 msgstr "Dołącz do listy oczekujących"
 
-#: src/ludamus/adapters/web/django/forms.py:101
+#: src/ludamus/adapters/web/django/forms.py:72
 msgid "No change (time conflict)"
 msgstr "konflikt czasowy"
 
-#: src/ludamus/adapters/web/django/forms.py:109
+#: src/ludamus/adapters/web/django/forms.py:80
 #: src/ludamus/templates/chronology/enroll_select.html:69
 msgid "User"
 msgstr "Nazwa użytkownika"
 
-#: src/ludamus/adapters/web/django/forms.py:110
+#: src/ludamus/adapters/web/django/forms.py:81
 msgid "Time conflict detected"
 msgstr "Konflikt czasowy"
 
-#: src/ludamus/adapters/web/django/forms.py:139
-msgid "Enter session title"
-msgstr "Tytuł punktu programu"
-
-#: src/ludamus/adapters/web/django/forms.py:147
-msgid "Describe your session"
-msgstr "Opisz swój punkt programu"
-
-#: src/ludamus/adapters/web/django/forms.py:154
-msgid "What should participants bring or know?"
-msgstr "Co uczestnicy powinni przynieść lub wiedzieć?"
-
-#: src/ludamus/adapters/web/django/forms.py:161
-msgid "What materials or space do you need?"
-msgstr "Jakie materiały lub przestrzeń potrzebujesz?"
-
-#: src/ludamus/adapters/web/django/forms.py:229
+#: src/ludamus/adapters/web/django/forms.py:157
 msgid "Select all that apply"
 msgstr "Zaznacz wszystkie pasujące"
 
-#: src/ludamus/adapters/web/django/forms.py:239
+#: src/ludamus/adapters/web/django/forms.py:167
 msgid "Enter tags separated by commas"
 msgstr "Wprowadź tagi oddzielone przecinkami..."
 
-#: src/ludamus/adapters/web/django/forms.py:242
+#: src/ludamus/adapters/web/django/forms.py:170
 msgid "Enter multiple tags separated by commas"
 msgstr "Wprowadź wiele tagów oddzielonych przecinkami"
 
-#: src/ludamus/adapters/web/django/forms.py:248
-msgid "Session title is required."
-msgstr "Tytuł punktu programu jest wymagany."
+#: src/ludamus/adapters/web/django/forms.py:229
+msgid "Enter session title"
+msgstr "Tytuł punktu programu"
 
-#: src/ludamus/adapters/web/django/forms.py:257
-msgid "Participants limit must be at least 1."
-msgstr "Limit uczestników musi być między {} a {}."
+#: src/ludamus/adapters/web/django/forms.py:238
+msgid "Describe your session"
+msgstr "Opisz swój punkt programu"
 
-#: src/ludamus/adapters/web/django/forms.py:294
+#: src/ludamus/adapters/web/django/forms.py:245
+msgid "What should participants bring or know?"
+msgstr "Co uczestnicy powinni przynieść lub wiedzieć?"
+
+#: src/ludamus/adapters/web/django/forms.py:252
+msgid "What materials or space do you need?"
+msgstr "Jakie materiały lub przestrzeń potrzebujesz?"
+
+#: src/ludamus/adapters/web/django/forms.py:284
 #: src/ludamus/templates/chronology/accept_proposal.html:81
 #: src/ludamus/templates/chronology/enroll_select.html:43
 #: src/ludamus/templates/chronology/event.html:142
 msgid "Space"
 msgstr "Przestrzeń"
 
-#: src/ludamus/adapters/web/django/forms.py:296
+#: src/ludamus/adapters/web/django/forms.py:286
 msgid "Select the space where this session will take place"
 msgstr "Wybierz przestrzeń, gdzie odbędzie się ten punkt programu"
 
-#: src/ludamus/adapters/web/django/forms.py:301
-msgid "Time slot"
-msgstr "Konflikt czasowy"
-
-#: src/ludamus/adapters/web/django/forms.py:303
-msgid "Select the time slot for this session"
-msgstr "Nie jesteś na liście oczekujących dla tego punktu programu."
-
-#: src/ludamus/adapters/web/django/forms.py:351
+#: src/ludamus/adapters/web/django/forms.py:287
 #: src/ludamus/templates/chronology/accept_proposal.html:84
 msgid "Select a space..."
 msgstr "Wybierz przestrzeń..."
 
-#: src/ludamus/adapters/web/django/forms.py:352
+#: src/ludamus/adapters/web/django/forms.py:293
+msgid "Time slot"
+msgstr "Konflikt czasowy"
+
+#: src/ludamus/adapters/web/django/forms.py:295
+msgid "Select the time slot for this session"
+msgstr "Nie jesteś na liście oczekujących dla tego punktu programu."
+
+#: src/ludamus/adapters/web/django/forms.py:296
 #: src/ludamus/templates/chronology/accept_proposal.html:93
 msgid "Select a time slot..."
 msgstr "Wybierz blok czasowy..."
 
-#: src/ludamus/adapters/web/django/forms.py:357
-msgid "Please select a space."
-msgstr "Wybierz przestrzeń."
-
-#: src/ludamus/adapters/web/django/forms.py:363
-msgid "Please select a time slot."
-msgstr "Wybierz blok czasowy."
-
-#: src/ludamus/adapters/web/django/forms.py:373
+#: src/ludamus/adapters/web/django/forms.py:307
 msgid "There is already a session scheduled at this space and time."
 msgstr "Ten użytkownik jest już zapisany na ten punkt programu."
 
-#: src/ludamus/adapters/web/django/forms.py:380
+#: src/ludamus/adapters/web/django/forms.py:318
 #: src/ludamus/templates/base.html:155
 msgid "Cold Steel (Default)"
 msgstr "Zimna Stal (Domyślny)"
 
-#: src/ludamus/adapters/web/django/forms.py:381
+#: src/ludamus/adapters/web/django/forms.py:319
 #: src/ludamus/templates/base.html:159
 msgid "Cyberpunk"
 msgstr "Cyberpunk"
 
-#: src/ludamus/adapters/web/django/forms.py:382
+#: src/ludamus/adapters/web/django/forms.py:320
 #: src/ludamus/templates/base.html:163
 msgid "Green Forest"
 msgstr "Zielony Las"
 
-#: src/ludamus/adapters/web/django/forms.py:383
+#: src/ludamus/adapters/web/django/forms.py:321
 #: src/ludamus/templates/base.html:167
 msgid "Dragon's Lair"
 msgstr "Smocza Jama"
 
-#: src/ludamus/adapters/web/django/forms.py:384
+#: src/ludamus/adapters/web/django/forms.py:322
 #: src/ludamus/templates/base.html:171
 msgid "Outer Space"
 msgstr "Kosmos"
 
-#: src/ludamus/adapters/web/django/forms.py:389
+#: src/ludamus/adapters/web/django/forms.py:327
 msgid "Theme"
 msgstr "Motyw"
 
@@ -636,136 +620,137 @@ msgstr "Motyw"
 msgid "Sphere not found"
 msgstr "Sfera nie została znaleziona."
 
-#: src/ludamus/adapters/web/django/views.py:75
+#: src/ludamus/adapters/web/django/views.py:78
 msgid "Wrong type of site!"
 msgstr "Nieprawidłowy typ strony!"
 
-#: src/ludamus/adapters/web/django/views.py:146
+#: src/ludamus/adapters/web/django/views.py:149
 msgid "Invalid authentication request: missing state parameter"
 msgstr "Nieprawidłowe żądanie uwierzytelnienia: brak parametru stanu"
 
-#: src/ludamus/adapters/web/django/views.py:156
-#: src/ludamus/adapters/web/django/views.py:171
+#: src/ludamus/adapters/web/django/views.py:159
+#: src/ludamus/adapters/web/django/views.py:174
 msgid "Authentication session expired. Please try again."
 msgstr "Sesja uwierzytelnienia wygasła. Spróbuj ponownie."
 
-#: src/ludamus/adapters/web/django/views.py:176
+#: src/ludamus/adapters/web/django/views.py:179
 msgid "Invalid authentication state"
 msgstr "Nieprawidłowy stan uwierzytelnienia"
 
-#: src/ludamus/adapters/web/django/views.py:193
+#: src/ludamus/adapters/web/django/views.py:196
 msgid "Welcome!"
 msgstr "Witaj!"
 
-#: src/ludamus/adapters/web/django/views.py:197
+#: src/ludamus/adapters/web/django/views.py:200
 msgid " Please complete your profile."
 msgstr "Uzupełnij swój profil."
 
-#: src/ludamus/adapters/web/django/views.py:212
+#: src/ludamus/adapters/web/django/views.py:215
 msgid "Authentication failed"
 msgstr "Uwierzytelnienie nie powiodło się"
 
-#: src/ludamus/adapters/web/django/views.py:220
+#: src/ludamus/adapters/web/django/views.py:223
 msgid "You have been successfully logged out."
 msgstr "Zostałeś pomyślnie wylogowany."
 
-#: src/ludamus/adapters/web/django/views.py:254
+#: src/ludamus/adapters/web/django/views.py:257
 msgid "Invalid redirect URL."
 msgstr "Nieprawidłowy address URL przekierowania."
 
-#: src/ludamus/adapters/web/django/views.py:272
+#: src/ludamus/adapters/web/django/views.py:275
 msgid "Invalid domain for redirect."
 msgstr "Nieprawidłowa domena do przekierowania."
 
-#: src/ludamus/adapters/web/django/views.py:296
+#: src/ludamus/adapters/web/django/views.py:299
 msgid "Birth date"
 msgstr "Data urodzenia"
 
-#: src/ludamus/adapters/web/django/views.py:353
+#: src/ludamus/adapters/web/django/views.py:356
 msgid "Profile updated successfully!"
 msgstr "Profil został zaktualizowany!"
 
-#: src/ludamus/adapters/web/django/views.py:357
-#: src/ludamus/adapters/web/django/views.py:401
-#: src/ludamus/adapters/web/django/views.py:422
-#: src/ludamus/adapters/web/django/views.py:658
+#: src/ludamus/adapters/web/django/views.py:360
+#: src/ludamus/adapters/web/django/views.py:404
+#: src/ludamus/adapters/web/django/views.py:425
+#: src/ludamus/adapters/web/django/views.py:660
 msgid "Please correct the errors below."
 msgstr "Proszę poprawić błędy poniżej."
 
-#: src/ludamus/adapters/web/django/views.py:388
+#: src/ludamus/adapters/web/django/views.py:391
 #, python-format
 msgid "You can only have up to %(max)s connected users."
 msgstr "Możesz mieć maksymalnie %(max)s powiązanych użytkowników."
 
-#: src/ludamus/adapters/web/django/views.py:397
+#: src/ludamus/adapters/web/django/views.py:400
 msgid "Connected user added successfully!"
 msgstr "Powiązana osoba została dodana!"
 
-#: src/ludamus/adapters/web/django/views.py:418
+#: src/ludamus/adapters/web/django/views.py:421
 msgid "Connected user updated successfully!"
 msgstr "Powiązana osoba została zaktualizowana!"
 
-#: src/ludamus/adapters/web/django/views.py:437
+#: src/ludamus/adapters/web/django/views.py:440
 msgid "Connected user deleted successfully."
 msgstr "Powiązana osoba została usunięta."
 
-#: src/ludamus/adapters/web/django/views.py:544
+#: src/ludamus/adapters/web/django/views.py:547
 msgid "yourself"
 msgstr "siebie"
 
-#: src/ludamus/adapters/web/django/views.py:565
+#: src/ludamus/adapters/web/django/views.py:568
 msgid "Session not found."
 msgstr "Punkt programu nie został znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:600
+#: src/ludamus/adapters/web/django/views.py:603
 msgid "Please complete your profile with birth date before enrolling."
 msgstr "Uzupełnij swój profil z datą urodzenia przed zapisywaniem się."
 
-#: src/ludamus/adapters/web/django/views.py:610
+#: src/ludamus/adapters/web/django/views.py:614
 msgid "Enrollment is not currently active for this event."
 msgstr "Zapisy na to wydarzenie nie są obecnie aktywne."
 
-#: src/ludamus/adapters/web/django/views.py:729
-msgid "not enrolled"
-msgstr "nie zapisany"
-
-#: src/ludamus/adapters/web/django/views.py:751
+#: src/ludamus/adapters/web/django/views.py:767
 msgid "promoted from waiting list"
 msgstr "przeniesiony z listy oczekujących"
 
-#: src/ludamus/adapters/web/django/views.py:761
+#: src/ludamus/adapters/web/django/views.py:780
 msgid "session host"
 msgstr "twórca punktu programu"
 
-#: src/ludamus/adapters/web/django/views.py:765
-msgid "already enrolled"
-msgstr "już zapisany"
-
-#: src/ludamus/adapters/web/django/views.py:769
+#: src/ludamus/adapters/web/django/views.py:784
 msgid "time conflict"
 msgstr "konflikt czasowy"
 
-#: src/ludamus/adapters/web/django/views.py:783
+#: src/ludamus/adapters/web/django/views.py:797
+msgid "already enrolled"
+msgstr "już zapisany"
+
+#: src/ludamus/adapters/web/django/views.py:804
+#, python-brace-format
 msgid "Enrolled: {}"
 msgstr "Zapisani: {}"
 
-#: src/ludamus/adapters/web/django/views.py:787
+#: src/ludamus/adapters/web/django/views.py:808
+#, python-brace-format
 msgid "Added to waiting list: {}"
 msgstr "Dodani do listy oczekujących: {}"
 
-#: src/ludamus/adapters/web/django/views.py:789
+#: src/ludamus/adapters/web/django/views.py:810
+#, python-brace-format
 msgid "Cancelled: {}"
 msgstr "Anulowani: {}"
 
-#: src/ludamus/adapters/web/django/views.py:792
+#: src/ludamus/adapters/web/django/views.py:813
+#, python-brace-format
 msgid "Skipped (already enrolled or conflicts): {}"
 msgstr "Pominięci (już zapisani lub konflikty): {}"
 
-#: src/ludamus/adapters/web/django/views.py:800
+#: src/ludamus/adapters/web/django/views.py:821
 msgid "No enrollments were processed."
 msgstr "Żadne zapisy nie zostały przetworzone."
 
-#: src/ludamus/adapters/web/django/views.py:818
+#: src/ludamus/adapters/web/django/views.py:840
+#, python-brace-format
 msgid ""
 "Not enough spots available. {} spots requested, {} available. Please use "
 "waiting list for some users."
@@ -773,31 +758,32 @@ msgstr ""
 "Za mało dostępnych miejsc. {} miejsc żądanych, {} dostępnych. Użyj listy "
 "oczekujących dla niektórych użytkowników."
 
-#: src/ludamus/adapters/web/django/views.py:841
+#: src/ludamus/adapters/web/django/views.py:874
 msgid "Please select at least one user to enroll."
 msgstr "Wybierz przynajmniej jednego użytkownika do zapisu."
 
-#: src/ludamus/adapters/web/django/views.py:856
-#: src/ludamus/adapters/web/django/views.py:896
+#: src/ludamus/adapters/web/django/views.py:889
+#: src/ludamus/adapters/web/django/views.py:928
 msgid ""
 "Please complete your profile with birth date before submitting proposals."
 msgstr "Uzupełnij swój profil z datą urodzenia przed składaniem zgłoszeń."
 
-#: src/ludamus/adapters/web/django/views.py:952
+#: src/ludamus/adapters/web/django/views.py:985
+#, python-brace-format
 msgid "Session proposal '{}' submitted successfully!"
 msgstr "Zgłoszenie punktu programu '{}' zostało pomyślnie przesłane!"
 
-#: src/ludamus/adapters/web/django/views.py:981
+#: src/ludamus/adapters/web/django/views.py:1014
 msgid "Event not found."
 msgstr "Festiwal nie został znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:987
+#: src/ludamus/adapters/web/django/views.py:1020
 msgid "Proposal submission is not currently active for this event."
 msgstr ""
 "Składanie zgłoszeń punktów programu nie jest obecnie aktywne dla tego "
 "wydarzenia."
 
-#: src/ludamus/adapters/web/django/views.py:1000
+#: src/ludamus/adapters/web/django/views.py:1033
 msgid ""
 "No proposal category configured for this event. Please contact the "
 "organizers."
@@ -806,22 +792,22 @@ msgstr ""
 "z organizatorami.Brak skonfigurowanej kategorii zgłoszeń dla tego "
 "wydarzenia. Skontaktuj się z organizatorami."
 
-#: src/ludamus/adapters/web/django/views.py:1013
+#: src/ludamus/adapters/web/django/views.py:1046
 msgid "Proposal not found."
 msgstr "Zgłoszenie nie zostało znalezione."
 
-#: src/ludamus/adapters/web/django/views.py:1022
+#: src/ludamus/adapters/web/django/views.py:1053
 msgid "This proposal has already been accepted."
 msgstr "To zgłoszenie zostało już zaakceptowane."
 
-#: src/ludamus/adapters/web/django/views.py:1058
+#: src/ludamus/adapters/web/django/views.py:1090
 msgid "No spaces configured for this event. Please create spaces first."
 msgstr ""
 "Brak skonfigurowanych przestrzeni dla tego wydarzenia. Utwórz najpierw "
 "przestrzenie.Brak skonfigurowanych przestrzeni dla tego wydarzenia. Utwórz "
 "najpierw przestrzenie."
 
-#: src/ludamus/adapters/web/django/views.py:1072
+#: src/ludamus/adapters/web/django/views.py:1104
 msgid ""
 "No time slots configured for this event. Please create time slots first."
 msgstr ""
@@ -829,7 +815,8 @@ msgstr ""
 "bloki czasowe.Brak skonfigurowanych bloków czasowych dla tego wydarzenia. "
 "Utwórz najpierw bloki czasowe."
 
-#: src/ludamus/adapters/web/django/views.py:1106
+#: src/ludamus/adapters/web/django/views.py:1139
+#, python-brace-format
 msgid "Proposal '{}' has been accepted and added to the agenda."
 msgstr "Zgłoszenie '{}' zostało zaakceptowane i dodane do programu."
 
@@ -855,7 +842,7 @@ msgid "Logout"
 msgstr "Wyloguj"
 
 #: src/ludamus/templates/base.html:58
-#: src/ludamus/templates/chronology/event.html:244
+#: src/ludamus/templates/chronology/event.html:243
 msgid "Login"
 msgstr "Zaloguj"
 
@@ -877,7 +864,7 @@ msgstr "Regulamin"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:6
 #: src/ludamus/templates/chronology/accept_proposal.html:9
-#: src/ludamus/templates/chronology/event.html:452
+#: src/ludamus/templates/chronology/event.html:451
 msgid "Accept Proposal"
 msgstr "Zaakceptuj zgłoszenie"
 
@@ -888,56 +875,56 @@ msgstr "Wybierz przestrzeń i blok czasowy dla"
 #: src/ludamus/templates/chronology/accept_proposal.html:25
 #: src/ludamus/templates/chronology/enroll_select.html:25
 #: src/ludamus/templates/chronology/event.html:141
-#: src/ludamus/templates/chronology/event.html:304
-#: src/ludamus/templates/chronology/event.html:409
-#: src/ludamus/templates/chronology/event.html:708
+#: src/ludamus/templates/chronology/event.html:303
+#: src/ludamus/templates/chronology/event.html:408
+#: src/ludamus/templates/chronology/event.html:717
 msgid "Host"
 msgstr "Prowadzący"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:27
-#: src/ludamus/templates/chronology/event.html:411
+#: src/ludamus/templates/chronology/event.html:410
 #: src/ludamus/templates/chronology/event.html:592
 #: src/ludamus/templates/chronology/propose_session.html:138
 msgid "Participants Limit"
 msgstr "Limit uczestników"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:31
-#: src/ludamus/templates/chronology/event.html:305
-#: src/ludamus/templates/chronology/event.html:428
+#: src/ludamus/templates/chronology/event.html:304
+#: src/ludamus/templates/chronology/event.html:427
 msgid "Submitted"
 msgstr "Przesłane"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:34
-#: src/ludamus/templates/chronology/event.html:414
-#: src/ludamus/templates/chronology/event.html:737
+#: src/ludamus/templates/chronology/event.html:413
+#: src/ludamus/templates/chronology/event.html:746
 #: src/ludamus/templates/chronology/propose_session.html:100
 msgid "Tags"
 msgstr "Tagi"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:49
 #: src/ludamus/templates/chronology/enroll_select.html:49
-#: src/ludamus/templates/chronology/event.html:437
-#: src/ludamus/templates/chronology/event.html:753
+#: src/ludamus/templates/chronology/event.html:436
+#: src/ludamus/templates/chronology/event.html:762
 #: src/ludamus/templates/chronology/propose_session.html:71
 #: src/ludamus/templates/index.html:17
 msgid "Description"
 msgstr "Opis"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:53
-#: src/ludamus/templates/chronology/event.html:441
-#: src/ludamus/templates/chronology/event.html:759
+#: src/ludamus/templates/chronology/event.html:440
+#: src/ludamus/templates/chronology/event.html:768
 #: src/ludamus/templates/chronology/propose_session.html:80
 msgid "Requirements"
 msgstr "Wymagania"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:57
-#: src/ludamus/templates/chronology/event.html:445
+#: src/ludamus/templates/chronology/event.html:444
 #: src/ludamus/templates/chronology/propose_session.html:89
 msgid "Special Needs"
 msgstr "Specjalne potrzeby"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:61
-#: src/ludamus/templates/chronology/event.html:431
+#: src/ludamus/templates/chronology/event.html:430
 msgid "Preferred Time Slots"
 msgstr "Preferowane bloki czasowe"
 
@@ -978,25 +965,23 @@ msgstr "Wybierz kogo zapisać na"
 
 #: src/ludamus/templates/chronology/enroll_select.html:27
 #: src/ludamus/templates/chronology/event.html:143
-#: src/ludamus/templates/chronology/event.html:307
-#: src/ludamus/templates/chronology/event.html:538
+#: src/ludamus/templates/chronology/event.html:306
+#: src/ludamus/templates/chronology/event.html:537
 #: src/ludamus/templates/chronology/event.html:578
-#: src/ludamus/templates/chronology/event.html:726
+#: src/ludamus/templates/chronology/event.html:735
 msgid "Participants"
 msgstr "Uczestnicy"
 
 #: src/ludamus/templates/chronology/enroll_select.html:31
 #: src/ludamus/templates/chronology/enroll_select.html:168
-#: src/ludamus/templates/chronology/event.html:198
-#: src/ludamus/templates/chronology/event.html:542
-#: src/ludamus/templates/chronology/event.html:596
-#: src/ludamus/templates/chronology/event.html:730
+#: src/ludamus/templates/chronology/event.html:601
+#: src/ludamus/templates/chronology/event.html:739
 msgid "waiting"
 msgstr "oczekuje"
 
 #: src/ludamus/templates/chronology/enroll_select.html:36
 #: src/ludamus/templates/chronology/event.html:546
-#: src/ludamus/templates/chronology/event.html:710
+#: src/ludamus/templates/chronology/event.html:719
 msgid "Time"
 msgstr "Czas"
 
@@ -1087,7 +1072,7 @@ msgid "End Time"
 msgstr "Koniec"
 
 #: src/ludamus/templates/chronology/event.html:47
-#: src/ludamus/templates/chronology/event.html:238
+#: src/ludamus/templates/chronology/event.html:237
 #: src/ludamus/templates/index.html:20
 msgid "Status"
 msgstr "Status"
@@ -1138,8 +1123,7 @@ msgid "Available spots"
 msgstr "Dostępne miejsca"
 
 #: src/ludamus/templates/chronology/event.html:99
-#: src/ludamus/templates/chronology/event.html:202
-#: src/ludamus/templates/chronology/event.html:733
+#: src/ludamus/templates/chronology/event.html:742
 msgid "Full"
 msgstr "Pełne"
 
@@ -1165,7 +1149,7 @@ msgid "Session"
 msgstr "Punkt programu"
 
 #: src/ludamus/templates/chronology/event.html:144
-#: src/ludamus/templates/chronology/event.html:308
+#: src/ludamus/templates/chronology/event.html:307
 #: src/ludamus/templates/index.html:21
 msgid "Action"
 msgstr "Akcja"
@@ -1174,177 +1158,177 @@ msgstr "Akcja"
 msgid "TBA"
 msgstr "Do ustalenia"
 
-#: src/ludamus/templates/chronology/event.html:211
+#: src/ludamus/templates/chronology/event.html:210
 msgid "Details"
 msgstr "Szczegóły"
 
-#: src/ludamus/templates/chronology/event.html:217
+#: src/ludamus/templates/chronology/event.html:216
 msgid "Manage"
 msgstr "Zarządzaj"
 
-#: src/ludamus/templates/chronology/event.html:228
+#: src/ludamus/templates/chronology/event.html:227
 msgid "Only connected users can enroll"
 msgstr "Tylko powiązani użytkownicy mogą się zapisać"
 
-#: src/ludamus/templates/chronology/event.html:257
+#: src/ludamus/templates/chronology/event.html:256
 msgid "No sessions scheduled for this time slot"
 msgstr "Brak punktów programu zaplanowanych w tym bloku czasowym"
 
-#: src/ludamus/templates/chronology/event.html:259
+#: src/ludamus/templates/chronology/event.html:258
 msgid "be the first to propose!"
 msgstr "bądź pierwszy i zgłoś!"
 
-#: src/ludamus/templates/chronology/event.html:269
+#: src/ludamus/templates/chronology/event.html:268
 msgid "No sessions or time slots available yet"
 msgstr "Brak dostępnych punktów programu lub bloków czasowych"
 
-#: src/ludamus/templates/chronology/event.html:272
+#: src/ludamus/templates/chronology/event.html:271
 msgid "Be the first to propose a session!"
 msgstr "Bądź pierwszą osobą, która zgłosi punkt programu!"
 
-#: src/ludamus/templates/chronology/event.html:274
+#: src/ludamus/templates/chronology/event.html:273
 msgid "Sessions will be announced soon."
 msgstr "Punkty programu zostaną wkrótce ogłoszone."
 
-#: src/ludamus/templates/chronology/event.html:292
+#: src/ludamus/templates/chronology/event.html:291
 msgid "Pending Proposals"
 msgstr "Oczekujące zgłoszenia"
 
-#: src/ludamus/templates/chronology/event.html:294
+#: src/ludamus/templates/chronology/event.html:293
 msgid "Superuser Only"
 msgstr "Tylko dla administratorów"
 
-#: src/ludamus/templates/chronology/event.html:303
+#: src/ludamus/templates/chronology/event.html:302
 msgid "Proposal"
 msgstr "Zgłoszenie"
 
-#: src/ludamus/templates/chronology/event.html:306
+#: src/ludamus/templates/chronology/event.html:305
 msgid "Preferred Times"
 msgstr "Preferowane czasy"
 
-#: src/ludamus/templates/chronology/event.html:355
+#: src/ludamus/templates/chronology/event.html:354
 msgid "Flexible"
 msgstr "Elastyczny"
 
-#: src/ludamus/templates/chronology/event.html:365
+#: src/ludamus/templates/chronology/event.html:364
 msgid "Accept"
 msgstr "Zaakceptuj"
 
-#: src/ludamus/templates/chronology/event.html:371
+#: src/ludamus/templates/chronology/event.html:370
 msgid "Review"
 msgstr "Podejrzyj"
 
-#: src/ludamus/templates/chronology/event.html:383
+#: src/ludamus/templates/chronology/event.html:382
 msgid "No pending proposals"
 msgstr "Brak oczekujących zgłoszeń"
 
-#: src/ludamus/templates/chronology/event.html:384
+#: src/ludamus/templates/chronology/event.html:383
 msgid "All proposals have been reviewed."
 msgstr "Wszystkie zgłoszenia zostały sprawdzone."
 
-#: src/ludamus/templates/chronology/event.html:450
+#: src/ludamus/templates/chronology/event.html:449
 #: src/ludamus/templates/chronology/event.html:554
-#: src/ludamus/templates/chronology/event.html:682
-#: src/ludamus/templates/chronology/event.html:789
+#: src/ludamus/templates/chronology/event.html:691
+#: src/ludamus/templates/chronology/event.html:798
 msgid "Close"
 msgstr "Zamknij"
 
-#: src/ludamus/templates/chronology/event.html:472
+#: src/ludamus/templates/chronology/event.html:471
 msgid "Enrollment Status"
 msgstr "Status zapisu"
 
-#: src/ludamus/templates/chronology/event.html:482
+#: src/ludamus/templates/chronology/event.html:481
 msgid "Your Status"
 msgstr "Twój status"
 
-#: src/ludamus/templates/chronology/event.html:488
-#: src/ludamus/templates/chronology/event.html:513
-#: src/ludamus/templates/chronology/event.html:610
+#: src/ludamus/templates/chronology/event.html:487
+#: src/ludamus/templates/chronology/event.html:512
+#: src/ludamus/templates/chronology/event.html:619
 msgid "Enrolled"
 msgstr "Zapisany"
 
-#: src/ludamus/templates/chronology/event.html:490
-#: src/ludamus/templates/chronology/event.html:515
-#: src/ludamus/templates/chronology/event.html:636
+#: src/ludamus/templates/chronology/event.html:489
+#: src/ludamus/templates/chronology/event.html:514
+#: src/ludamus/templates/chronology/event.html:645
 msgid "Waiting List"
 msgstr "Lista oczekujących"
 
-#: src/ludamus/templates/chronology/event.html:498
-#: src/ludamus/templates/chronology/event.html:521
-#: src/ludamus/templates/chronology/event.html:525
+#: src/ludamus/templates/chronology/event.html:497
+#: src/ludamus/templates/chronology/event.html:520
+#: src/ludamus/templates/chronology/event.html:524
 msgid "Not enrolled"
 msgstr "Nie zapisany"
 
-#: src/ludamus/templates/chronology/event.html:506
+#: src/ludamus/templates/chronology/event.html:505
 msgid "Connected Users Status"
 msgstr "Status powiązanych użytkowników"
 
-#: src/ludamus/templates/chronology/event.html:535
+#: src/ludamus/templates/chronology/event.html:534
 msgid "Session Information"
 msgstr "Informacje o punkcie programu"
 
-#: src/ludamus/templates/chronology/event.html:604
+#: src/ludamus/templates/chronology/event.html:613
 msgid "Enrolled Participants"
 msgstr "Zapisani uczestnicy"
 
-#: src/ludamus/templates/chronology/event.html:609
-#: src/ludamus/templates/chronology/event.html:643
+#: src/ludamus/templates/chronology/event.html:618
+#: src/ludamus/templates/chronology/event.html:652
 msgid "Name"
 msgstr "Imię"
 
-#: src/ludamus/templates/chronology/event.html:642
+#: src/ludamus/templates/chronology/event.html:651
 msgid "Position"
 msgstr "Pozycja"
 
-#: src/ludamus/templates/chronology/event.html:644
+#: src/ludamus/templates/chronology/event.html:653
 msgid "Added"
 msgstr "Dodano"
 
-#: src/ludamus/templates/chronology/event.html:671
+#: src/ludamus/templates/chronology/event.html:680
 msgid "No one on the waiting list."
 msgstr "Nikt nie czeka na liście oczekujących."
 
-#: src/ludamus/templates/chronology/event.html:677
+#: src/ludamus/templates/chronology/event.html:686
 msgid "No participants enrolled yet."
 msgstr "Brak zapisanych uczestników."
 
-#: src/ludamus/templates/chronology/event.html:716
+#: src/ludamus/templates/chronology/event.html:725
 msgid "Location"
 msgstr "Miejsce"
 
-#: src/ludamus/templates/chronology/event.html:721
+#: src/ludamus/templates/chronology/event.html:730
 msgid "To be announced"
 msgstr "Do ogłoszenia"
 
-#: src/ludamus/templates/chronology/event.html:766
+#: src/ludamus/templates/chronology/event.html:775
 msgid "Your Enrollment Status"
 msgstr "Twój status zapisu"
 
-#: src/ludamus/templates/chronology/event.html:771
+#: src/ludamus/templates/chronology/event.html:780
 msgid "You are enrolled in this session"
 msgstr "Jesteś zapisany na ten punkt programu"
 
-#: src/ludamus/templates/chronology/event.html:776
+#: src/ludamus/templates/chronology/event.html:785
 msgid "You are on the waiting list"
 msgstr "Jesteś na liście oczekujących"
 
-#: src/ludamus/templates/chronology/event.html:781
+#: src/ludamus/templates/chronology/event.html:790
 msgid "You are not enrolled in this session"
 msgstr "Nie jesteś zapisany na ten punkt programu"
 
-#: src/ludamus/templates/chronology/event.html:795
+#: src/ludamus/templates/chronology/event.html:804
 msgid "Manage Enrollment"
 msgstr "Zarządzaj zapisem"
 
-#: src/ludamus/templates/chronology/event.html:801
+#: src/ludamus/templates/chronology/event.html:810
 msgid "Enroll Now"
 msgstr "Zapisz się teraz"
 
-#: src/ludamus/templates/chronology/event.html:808
+#: src/ludamus/templates/chronology/event.html:817
 msgid "Login to Enroll"
 msgstr "Zaloguj się aby się zapisać"
 
-#: src/ludamus/templates/chronology/event.html:822
+#: src/ludamus/templates/chronology/event.html:831
 msgid "Back to Events"
 msgstr "Powrót do wydarzeń"
 
@@ -1644,6 +1628,21 @@ msgstr "Brak dostępnych wydarzeń"
 #: src/ludamus/templates/index.html:72
 msgid "There are currently no events scheduled. Please check back later!"
 msgstr "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź ponownie później!"
+
+#~ msgid "Session title is required."
+#~ msgstr "Tytuł punktu programu jest wymagany."
+
+#~ msgid "Participants limit must be at least 1."
+#~ msgstr "Limit uczestników musi być między {} a {}."
+
+#~ msgid "Please select a space."
+#~ msgstr "Wybierz przestrzeń."
+
+#~ msgid "Please select a time slot."
+#~ msgstr "Wybierz blok czasowy."
+
+#~ msgid "not enrolled"
+#~ msgstr "nie zapisany"
 
 #~ msgid "Propose for this slot"
 #~ msgstr "Zgłoś dla tego slotu"

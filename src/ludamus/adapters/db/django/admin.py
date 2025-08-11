@@ -5,6 +5,7 @@ from django.contrib import admin
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    EnrollmentConfig,
     Event,
     Guild,
     Proposal,
@@ -77,3 +78,8 @@ class UserAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 @admin.register(ProposalCategory)
 class ProposalCategoryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
+
+
+@admin.register(EnrollmentConfig)
+class EnrollmentConfigAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    pass
