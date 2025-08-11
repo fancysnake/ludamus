@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 {% load bootstrap_icons %}
+{% load enrollment_tags %}
 {% block title %}
     {{ event.name }}
 {% endblock title %}
@@ -197,7 +198,7 @@
                                                                 {% endif %}
                                                                 {% if data.session.is_full %}
                                                                     <br>
-                                                                    <small class="text-danger mt-1">{{ data.session.enrollment_status_text }}</small>
+                                                                    <small class="text-danger mt-1">{% enrollment_status_text data.session %}</small>
                                                                 {% endif %}
                                                             </button>
                                                         </td>
@@ -539,7 +540,7 @@
                                         {{ data.session.full_participant_info }}
                                         {% if data.session.is_full %}
                                             <br>
-                                            <small class="text-danger">{{ data.session.enrollment_status_text }}</small>
+                                            <small class="text-danger">{% enrollment_status_text data.session %}</small>
                                         {% endif %}
                                     </div>
                                     <div class="col-sm-6">
@@ -602,7 +603,7 @@
                                     {% endif %}
                                     {% if session.is_full %}
                                         <br>
-                                        <small class="text-danger">{{ session.enrollment_status_text }}</small>
+                                        <small class="text-danger">{% enrollment_status_text session %}</small>
                                     {% endif %}
                                 </p>
                             </div>

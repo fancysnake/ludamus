@@ -1655,3 +1655,12 @@ msgstr "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź ponownie później!"
 
 #~ msgid "Time slot not found."
 #~ msgstr "Blok czasowy nie został znaleziony."
+
+msgid "%(enrolled)s of %(limit)s enrolled"
+msgstr "%(enrolled)s z %(limit)s zapisanych"
+
+msgid "Enrollment capacity reached (%(enrolled)s/%(limit)s)"
+msgstr "Osiągnięto limit zapisów (%(enrolled)s/%(limit)s)"
+
+msgid "Session full (%(enrolled)s/%(limit)s)"
+msgstr "Sesja pełna (%(enrolled)s/%(limit)s)"

@@ -30,7 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS: ClassVar = ["email"]
 
-    class UserType(models.TextChoices):
+    class UserType(models.TextChoices):  # pylint: disable=too-many-ancestors
         ACTIVE = "active", _("Active")
         CONNECTED = "connected", _("Connected")
 
@@ -294,7 +294,7 @@ class TimeSlot(models.Model):
 
 
 class TagCategory(models.Model):
-    class InputType(models.TextChoices):
+    class InputType(models.TextChoices):  # pylint: disable=too-many-ancestors
         SELECT = "select", _("Select from list")
         TYPE = "type", _("Type comma-separated")
 
@@ -440,22 +440,28 @@ class Session(models.Model):
         return False
 
     @property
-    def enrollment_status_text(self) -> str:
-        """Get descriptive text for enrollment status."""
+    def enrollment_status_context(self) -> dict[str, str | int]:
+        """Get context data for enrollment status display in templates."""
         if not self.is_full:
-            enrolled = self.enrolled_count
-            limit = self.effective_participants_limit
-            return f"{enrolled} of {limit} enrolled"
+            return {
+                "status_type": "not_full",
+                "enrolled": self.enrolled_count,
+                "limit": self.effective_participants_limit,
+            }
 
         # Session is full - determine why
         if self.is_enrollment_limited:
-            enrolled = self.enrolled_count
-            limit = self.effective_participants_limit
-            return f"Enrollment capacity reached ({enrolled}/{limit})"
+            return {
+                "status_type": "enrollment_limited",
+                "enrolled": self.enrolled_count,
+                "limit": self.effective_participants_limit,
+            }
 
-        enrolled = self.enrolled_count
-        limit = self.participants_limit
-        return f"Session full ({enrolled}/{limit})"
+        return {
+            "status_type": "session_full",
+            "enrolled": self.enrolled_count,
+            "limit": self.participants_limit,
+        }
 
     @property
     def full_participant_info(self) -> str:
