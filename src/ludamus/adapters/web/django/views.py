@@ -52,6 +52,7 @@ from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
 )
+from ludamus.pacts import ProposalCategoryDTO, TagCategoryDTO, TagDTO
 
 from .exceptions import RedirectError
 from .forms import (
@@ -909,7 +910,19 @@ class ProposeSessionView(LoginRequiredMixin, View):
                 },
                 "min_participants_limit": proposal_category.min_participants_limit,
                 "max_participants_limit": proposal_category.max_participants_limit,
-                "form": create_session_proposal_form(proposal_category)(
+                "form": create_session_proposal_form(
+                    proposal_category=ProposalCategoryDTO.model_validate(
+                        proposal_category
+                    ),
+                    tag_categories=[
+                        TagCategoryDTO.model_validate(tc)
+                        for tc in proposal_category.tag_categories.all()
+                    ],
+                    tags={
+                        tc.pk: [TagDTO.model_validate(t) for t in tc.tags.all()]
+                        for tc in proposal_category.tag_categories.all()
+                    },
+                )(
                     initial={
                         "participants_limit": proposal_category.min_participants_limit
                     }
@@ -938,7 +951,17 @@ class ProposeSessionView(LoginRequiredMixin, View):
         self, proposal_category: ProposalCategory, event: Event
     ) -> HttpResponse:
         # Initialize form with POST data
-        form_class = create_session_proposal_form(proposal_category)
+        form_class = create_session_proposal_form(
+            proposal_category=ProposalCategoryDTO.model_validate(proposal_category),
+            tag_categories=[
+                TagCategoryDTO.model_validate(tc)
+                for tc in proposal_category.tag_categories.all()
+            ],
+            tags={
+                tc.pk: [TagDTO.model_validate(t) for t in tc.tags.all()]
+                for tc in proposal_category.tag_categories.all()
+            },
+        )
         form = form_class(data=self.request.POST)
 
         if not form.is_valid():
@@ -1025,7 +1048,9 @@ class ProposeSessionView(LoginRequiredMixin, View):
     @staticmethod
     def _get_proposal_category(event: Event) -> ProposalCategory:
         try:
-            return ProposalCategory.objects.get(event=event)
+            return ProposalCategory.objects.prefetch_related(
+                "tag_categories__tags"
+            ).get(event=event)
         except ProposalCategory.DoesNotExist:
             raise RedirectError(
                 reverse("web:event", kwargs={"slug": event.slug}),

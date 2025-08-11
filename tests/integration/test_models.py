@@ -351,7 +351,7 @@ class TestSession:
 
     @staticmethod
     @pytest.mark.django_db
-    def test_enrollment_status_text_not_full(agenda_item, user):
+    def test_enrollment_status_context_not_full(agenda_item, user):
         session = agenda_item.session
         session.participants_limit = 5
         session.save()
@@ -360,12 +360,15 @@ class TestSession:
             user=user, session=session, status="confirmed"
         )
 
-        expected = "1 of 5 enrolled"
-        assert session.enrollment_status_text == expected
+        context = session.enrollment_status_context
+        expected = {"status_type": "not_full", "enrolled": 1, "limit": 5}
+        assert context == expected
 
     @staticmethod
     @pytest.mark.django_db
-    def test_enrollment_status_text_full_with_enrollment_limitation(agenda_item, user):
+    def test_enrollment_status_context_full_with_enrollment_limitation(
+        agenda_item, user
+    ):
         session = agenda_item.session
         session.participants_limit = 4
         session.save()
@@ -391,12 +394,13 @@ class TestSession:
             user=other_user, session=session, status="confirmed"
         )
 
-        expected = "Enrollment capacity reached (2/2)"
-        assert session.enrollment_status_text == expected
+        context = session.enrollment_status_context
+        expected = {"status_type": "enrollment_limited", "enrolled": 2, "limit": 2}
+        assert context == expected
 
     @staticmethod
     @pytest.mark.django_db
-    def test_enrollment_status_text_full_no_enrollment_limitation(agenda_item, user):
+    def test_enrollment_status_context_full_no_enrollment_limitation(agenda_item, user):
         session = agenda_item.session
         session.participants_limit = 2
         session.save()
@@ -415,8 +419,9 @@ class TestSession:
             user=other_user, session=session, status="confirmed"
         )
 
-        expected = "Session full (2/2)"
-        assert session.enrollment_status_text == expected
+        context = session.enrollment_status_context
+        expected = {"status_type": "session_full", "enrolled": 2, "limit": 2}
+        assert context == expected
 
     @staticmethod
     @pytest.mark.django_db
