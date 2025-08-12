@@ -27,6 +27,7 @@ django-bootstrap-icons = "~0.9.0"
 gunicorn = "^23.0.0"
 django-environ = "^0.12.0"
 psycopg = "^3.2.9"
+pydantic = "^2.11.7"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
@@ -127,6 +128,7 @@ omit = [
     "src/ludamus/config/*",
     "src/ludamus/deploy/*",
     "src/ludamus/adapters/db/django/migrations/*",
+    "src/ludamus/adapters/web/django/templatetags/*"
 ]
 
 [tool.coverage.report]

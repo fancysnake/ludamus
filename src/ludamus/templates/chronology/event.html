@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 {% load bootstrap_icons %}
+{% load enrollment_tags %}
 {% block title %}
     {{ event.name }}
 {% endblock title %}
@@ -52,7 +53,7 @@
                             {% else %}
                                 <span class="badge bg-info fs-6">{% bs_icon 'clock-history' %} {% translate "UPCOMING" %}</span>
                             {% endif %}
-                            {% if event.is_enrollment_active %}
+                            {% if event.enrollment_config and event.enrollment_config.is_active %}
                                 <span class="badge bg-success fs-6 ms-2">{% bs_icon 'person-plus' %} {% translate "Enrollment Open" %}</span>
                             {% endif %}
                             {% if event.is_proposal_active %}
@@ -151,7 +152,7 @@
                                                         data-host="{{ data.session.presenter_name }}"
                                                         data-tags="{% for tag in data.session.tags.all %}{{ tag.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}"
                                                         data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name|lower }}{% if not forloop.last %};{% endif %}{% endfor %}"
-                                                        data-status="{% if data.session.enrolled_count >= data.session.participants_limit %}full{% else %}available{% endif %}"
+                                                        data-status="{% if data.session.is_full %}full{% else %}available{% endif %}"
                                                         data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
                                                         data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}">
                                                         <td>
@@ -185,22 +186,21 @@
                                                         </td>
                                                         <td>
                                                             <button type="button"
-                                                                    class="badge bg-primary text-white border-0"
+                                                                    class="btn btn-sm btn-outline-primary border-0 text-start p-2"
                                                                     data-bs-toggle="modal"
                                                                     data-bs-target="#participantsModal{{ data.session.id }}">
-                                                                {{ data.session.enrolled_count }}/{{ data.session.participants_limit }}
+                                                                <span class="badge bg-success">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
+                                                                {% if data.session.effective_participants_limit != data.session.participants_limit %}
+                                                                    <small class="text-muted ms-1">(session limit: {{ data.session.participants_limit }})</small>
+                                                                {% endif %}
+                                                                {% if data.session.waiting_count > 0 %}
+                                                                    <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} waiting</span>
+                                                                {% endif %}
+                                                                {% if data.session.is_full %}
+                                                                    <br>
+                                                                    <small class="text-danger mt-1">{% enrollment_status_text data.session %}</small>
+                                                                {% endif %}
                                                             </button>
-                                                            {% if data.session.waiting_count > 0 %}
-                                                                <button type="button"
-                                                                        class="badge bg-warning text-dark border-0 ms-1"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#participantsModal{{ data.session.id }}">
-                                                                    +{{ data.session.waiting_count }} {% translate "waiting" %}
-                                                                </button>
-                                                            {% endif %}
-                                                            {% if data.session.enrolled_count >= data.session.participants_limit %}
-                                                                <small class="text-danger d-block">{% translate "Full" %}</small>
-                                                            {% endif %}
                                                         </td>
                                                         <td>
                                                             <div class="btn-group btn-group-sm" role="group">
@@ -210,7 +210,7 @@
                                                                         data-bs-target="#sessionDetailModal{{ data.session.id }}">
                                                                     {% bs_icon 'eye' %} {% translate "Details" %}
                                                                 </button>
-                                                                {% if event.is_enrollment_active and request.user.is_authenticated %}
+                                                                {% if event.enrollment_config and event.enrollment_config.is_active and request.user.is_authenticated %}
                                                                     {% if data.user_enrolled or data.user_waiting %}
                                                                         <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                                                            class="btn btn-warning btn-sm">
@@ -238,7 +238,7 @@
                                                                             {% bs_icon 'info-circle' %} {% translate "Status" %}
                                                                         </button>
                                                                     {% endif %}
-                                                                {% elif event.is_enrollment_active %}
+                                                                {% elif event.enrollment_config and event.enrollment_config.is_active %}
                                                                     <a href="{% url 'web:auth0_login' %}?next={{ request.build_absolute_uri }}"
                                                                        class="btn btn-outline-success btn-sm">
                                                                         {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
@@ -537,9 +537,10 @@
                                     <div class="col-sm-6">
                                         <small class="text-muted">{% translate "Participants" %}:</small>
                                         <br>
-                                        {{ data.session.enrolled_count }}/{{ data.session.participants_limit }}
-                                        {% if data.session.waiting_count > 0 %}
-                                            (+{{ data.session.waiting_count }} {% translate "waiting" %})
+                                        {{ data.session.full_participant_info }}
+                                        {% if data.session.is_full %}
+                                            <br>
+                                            <small class="text-danger">{% enrollment_status_text data.session %}</small>
                                         {% endif %}
                                     </div>
                                     <div class="col-sm-6">
@@ -552,7 +553,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                            {% if event.is_enrollment_active and not user_enrolled and not user_waiting %}
+                            {% if event.enrollment_config and event.enrollment_config.is_active and not user_enrolled and not user_waiting %}
                                 {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
                                     <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                        class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
@@ -591,9 +592,18 @@
                             <div class="col-md-6">
                                 <h6>{% translate "Participants Limit" %}</h6>
                                 <p>
-                                    {{ session.enrolled_count }}/{{ session.participants_limit }}
+                                    <span class="badge bg-success">{{ session.enrolled_count }}/{{ session.effective_participants_limit }}</span>
+                                    {% if session.effective_participants_limit != session.participants_limit %}
+                                        <br>
+                                        <small class="text-muted">(session limit: {{ session.participants_limit }})</small>
+                                    {% endif %}
                                     {% if session.waiting_count > 0 %}
-                                        (+{{ session.waiting_count }} {% translate "waiting" %})
+                                        <br>
+                                        <span class="badge bg-warning text-dark">+{{ session.waiting_count }} {% translate "waiting" %}</span>
+                                    {% endif %}
+                                    {% if session.is_full %}
+                                        <br>
+                                        <small class="text-danger">{% enrollment_status_text session %}</small>
                                     {% endif %}
                                 </p>
                             </div>
@@ -725,11 +735,11 @@
                                 <div class="col-md-6">
                                     <h6>{% bs_icon 'people' %} {% translate "Participants" %}</h6>
                                     <p class="ms-4">
-                                        <span class="badge bg-primary">{{ data.session.enrolled_count }}/{{ data.session.participants_limit }}</span>
+                                        <span class="badge bg-primary">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
                                         {% if data.session.waiting_count > 0 %}
                                             <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
                                         {% endif %}
-                                        {% if data.session.enrolled_count >= data.session.participants_limit %}
+                                        {% if data.session.is_full %}
                                             <span class="badge bg-danger ms-1">{% translate "Full" %}</span>
                                         {% endif %}
                                     </p>
@@ -787,7 +797,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                            {% if event.is_enrollment_active %}
+                            {% if event.enrollment_config and event.enrollment_config.is_active %}
                                 {% if request.user.is_authenticated %}
                                     {% if data.user_enrolled or data.user_waiting %}
                                         <a href="{% url 'web:enroll-select' session_id=data.session.id %}"

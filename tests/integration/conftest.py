@@ -9,6 +9,7 @@ from factory.django import DjangoModelFactory
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    EnrollmentConfig,
     Event,
     Proposal,
     ProposalCategory,
@@ -68,10 +69,18 @@ class EventFactory(DjangoModelFactory):
     sphere = SubFactory(SphereFactory)
     start_time = LazyAttribute(lambda __: datetime.now(UTC) + timedelta(days=7))
     end_time = LazyAttribute(lambda o: o.start_time + timedelta(hours=8))
-    enrollment_start_time = LazyAttribute(lambda o: o.start_time - timedelta(days=5))
-    enrollment_end_time = LazyAttribute(lambda o: o.start_time - timedelta(days=1))
     proposal_start_time = LazyAttribute(lambda o: o.start_time - timedelta(days=10))
     proposal_end_time = LazyAttribute(lambda o: o.start_time - timedelta(days=6))
+
+
+class EnrollmentConfigFactory(DjangoModelFactory):
+    class Meta:
+        model = EnrollmentConfig
+
+    event = SubFactory(EventFactory)
+    start_time = LazyAttribute(lambda o: o.event.start_time - timedelta(days=5))
+    end_time = LazyAttribute(lambda o: o.event.start_time - timedelta(days=1))
+    percentage_slots = 100
 
 
 class SpaceFactory(DjangoModelFactory):
@@ -220,10 +229,19 @@ def event_fixture(sphere):
         sphere=sphere,
         start_time=now + timedelta(days=7),
         end_time=now + timedelta(days=7, hours=8),
-        enrollment_start_time=now - timedelta(days=1),
-        enrollment_end_time=now + timedelta(days=5),
         proposal_start_time=now - timedelta(days=10),
         proposal_end_time=now - timedelta(days=3),
+    )
+
+
+@pytest.fixture(name="enrollment_config")
+def enrollment_config_fixture(event):
+    now = datetime.now(UTC)
+    return EnrollmentConfigFactory(
+        event=event,
+        start_time=now - timedelta(days=1),
+        end_time=now + timedelta(days=5),
+        percentage_slots=100,
     )
 
 

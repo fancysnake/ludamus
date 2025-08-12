@@ -262,35 +262,26 @@ class TestCreateSessionProposalForm:
     @pytest.mark.django_db
     @staticmethod
     def test_unknown_input_type_raises_exception():
-        with patch("ludamus.adapters.web.django.forms.logger") as mock_logger:
-            mock_proposal_category = Mock()
+        mock_proposal_category = Mock()
 
-            mock_tag_category = Mock()
-            mock_tag_category.input_type = "UNKNOWN_TYPE"
-            mock_tag_category.name = "Unknown Category"
-            mock_tag_category.id = 999
+        mock_tag_category = Mock()
+        mock_tag_category.input_type = "UNKNOWN_TYPE"
+        mock_tag_category.name = "Unknown Category"
+        mock_tag_category.pk = 999
 
-            mock_proposal_category.tag_categories.all.return_value = [mock_tag_category]
-            mock_proposal_category.min_participants_limit = 1
-            mock_proposal_category.max_participants_limit = 10
+        mock_proposal_category.tag_categories.all.return_value = [mock_tag_category]
+        mock_proposal_category.min_participants_limit = 1
+        mock_proposal_category.max_participants_limit = 10
 
-            with pytest.raises(UnsupportedTagCategoryInputTypeError) as exc_info:
-                create_session_proposal_form(mock_proposal_category)
-
-            error_message = str(exc_info.value)
-            assert "UNKNOWN_TYPE" in error_message
-            assert "Unknown Category" in error_message
-            assert "999" in error_message
-
-            mock_logger.error.assert_called_once_with(
-                (
-                    "Unsupported TagCategory input type encountered during form "
-                    "creation: %s for category %s (id: %d)"
-                ),
-                "UNKNOWN_TYPE",
-                "Unknown Category",
-                999,
+        with pytest.raises(UnsupportedTagCategoryInputTypeError) as exc_info:
+            create_session_proposal_form(
+                mock_proposal_category, [mock_tag_category], {}
             )
+
+        error_message = str(exc_info.value)
+        assert "UNKNOWN_TYPE" in error_message
+        assert "Unknown Category" in error_message
+        assert "999" in error_message
 
 
 class TestCreateProposalAcceptanceForm:

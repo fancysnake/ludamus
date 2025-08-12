@@ -26,7 +26,7 @@
                             <p>{{ session.presenter_name }}</p>
                             <h6>{% translate "Participants" %}</h6>
                             <p>
-                                {{ session.enrolled_count }}/{{ session.participants_limit }}
+                                {{ session.enrolled_count }}/{{ session.effective_participants_limit }}
                                 {% if session.waiting_count > 0 %}
                                     (+{{ session.waiting_count }} {% translate "waiting" %})
                                 {% endif %}
@@ -163,7 +163,7 @@
                             <div class="alert alert-info mt-3">
                                 <small>
                                     {% bs_icon 'info-circle' %}
-                                    <strong>{% translate "Session capacity" %}:</strong> {{ session.enrolled_count }}/{{ session.participants_limit }} {% translate "enrolled" %}
+                                    <strong>{% translate "Session capacity" %}:</strong> {{ session.enrolled_count }}/{{ session.effective_participants_limit }} {% translate "enrolled" %}
                                     {% if session.waiting_count > 0 %}
                                         (+{{ session.waiting_count }} {% translate "waiting" %})
                                     {% endif %}

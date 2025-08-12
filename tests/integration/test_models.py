@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -8,6 +8,7 @@ from django.utils.timezone import localtime
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    EnrollmentConfig,
     Event,
     Guild,
     GuildMember,
@@ -75,6 +76,19 @@ def guild_fixture(faker):
     return Guild.objects.create(name=faker.word(), slug=faker.slug())
 
 
+@pytest.fixture(name="agenda_item")
+def agenda_item_fixture(faker, space, session):
+    start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
+    end_time = start_time + timedelta(hours=2)
+    return AgendaItem.objects.create(
+        space=space,
+        session=session,
+        session_confirmed=True,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+
 class TestUser:
     @staticmethod
     @pytest.mark.django_db
@@ -121,10 +135,10 @@ class TestTimeSlot:
     @staticmethod
     @pytest.mark.django_db
     def test_str_same_date(faker):
-        start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        end_time = start_time.replace(
-            hour=start_time.hour + 2
-        )  # 2 hours later same day
+        # Ensure start time is early enough so end time stays on same day
+        base_datetime = faker.date_time(tzinfo=ZoneInfo("UTC"))
+        start_time = base_datetime.replace(hour=10, minute=30)  # 10:30 AM
+        end_time = start_time + timedelta(hours=2)  # 12:30 PM same day
 
         timeslot_id = faker.random_int(min=1, max=999)
         timeslot = TimeSlot(id=timeslot_id, start_time=start_time, end_time=end_time)
@@ -160,12 +174,12 @@ class TestTimeSlot:
     def test_validate_unique_no_overlap(faker, event):
 
         start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        end_time = start_time.replace(hour=start_time.hour + 2)
+        end_time = start_time + timedelta(hours=2)
 
         TimeSlot.objects.create(event=event, start_time=start_time, end_time=end_time)
 
-        other_start_time = end_time.replace(hour=end_time.hour + 1)
-        other_end_time = other_start_time.replace(hour=other_start_time.hour + 2)
+        other_start_time = end_time + timedelta(hours=1)
+        other_end_time = other_start_time + timedelta(hours=2)
 
         other_timeslot = TimeSlot(
             event=event, start_time=other_start_time, end_time=other_end_time
@@ -238,7 +252,7 @@ class TestTimeSlot:
     def test_validate_unique_self_check(faker, event):
 
         start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        end_time = start_time.replace(hour=start_time.hour + 2)
+        end_time = start_time + timedelta(hours=2)
 
         timeslot = TimeSlot.objects.create(
             event=event, start_time=start_time, end_time=end_time
@@ -268,7 +282,7 @@ class TestAgendaItem:
     @pytest.mark.django_db
     def test_str_unconfirmed(faker, space, session):
         start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        end_time = start_time.replace(hour=start_time.hour + 2)
+        end_time = start_time + timedelta(hours=2)
 
         agenda_item = AgendaItem.objects.create(
             space=space,
@@ -285,7 +299,7 @@ class TestAgendaItem:
     @pytest.mark.django_db
     def test_str_confirmed(faker, space, session):
         start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        end_time = start_time.replace(hour=start_time.hour + 2)
+        end_time = start_time + timedelta(hours=2)
 
         agenda_item = AgendaItem.objects.create(
             space=space,
@@ -305,6 +319,168 @@ class TestSession:
     def test_str(faker):
         title = faker.sentence()
         assert str(Session(title=title)) == title
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_is_enrollment_limited_with_percentage_less_than_100(agenda_item):
+        EnrollmentConfig.objects.create(
+            event=agenda_item.space.event,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+            percentage_slots=75,
+        )
+
+        assert agenda_item.session.is_enrollment_limited is True
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_is_enrollment_limited_with_percentage_equals_100(agenda_item):
+        EnrollmentConfig.objects.create(
+            event=agenda_item.space.event,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+            percentage_slots=100,
+        )
+
+        assert agenda_item.session.is_enrollment_limited is False
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_is_enrollment_limited_no_enrollment_config(agenda_item):
+        assert agenda_item.session.is_enrollment_limited is False
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_enrollment_status_context_not_full(agenda_item, user):
+        session = agenda_item.session
+        session.participants_limit = 5
+        session.save()
+
+        SessionParticipation.objects.create(
+            user=user, session=session, status="confirmed"
+        )
+
+        context = session.enrollment_status_context
+        expected = {"status_type": "not_full", "enrolled": 1, "limit": 5}
+        assert context == expected
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_enrollment_status_context_full_with_enrollment_limitation(
+        agenda_item, user
+    ):
+        session = agenda_item.session
+        session.participants_limit = 4
+        session.save()
+
+        EnrollmentConfig.objects.create(
+            event=agenda_item.space.event,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+            percentage_slots=50,
+        )
+
+        other_user = User.objects.create(
+            username="other_user",
+            name="Other User",
+            email="other@example.com",
+            slug="other_user",
+        )
+
+        SessionParticipation.objects.create(
+            user=user, session=session, status="confirmed"
+        )
+        SessionParticipation.objects.create(
+            user=other_user, session=session, status="confirmed"
+        )
+
+        context = session.enrollment_status_context
+        expected = {"status_type": "enrollment_limited", "enrolled": 2, "limit": 2}
+        assert context == expected
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_enrollment_status_context_full_no_enrollment_limitation(agenda_item, user):
+        session = agenda_item.session
+        session.participants_limit = 2
+        session.save()
+
+        other_user = User.objects.create(
+            username="other_user",
+            name="Other User",
+            email="other@example.com",
+            slug="other_user",
+        )
+
+        SessionParticipation.objects.create(
+            user=user, session=session, status="confirmed"
+        )
+        SessionParticipation.objects.create(
+            user=other_user, session=session, status="confirmed"
+        )
+
+        context = session.enrollment_status_context
+        expected = {"status_type": "session_full", "enrolled": 2, "limit": 2}
+        assert context == expected
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_full_participant_info_no_enrollment_limitation(agenda_item, user):
+        session = agenda_item.session
+        session.participants_limit = 5
+        session.save()
+
+        SessionParticipation.objects.create(
+            user=user, session=session, status="confirmed"
+        )
+
+        expected = "1/5"
+        assert session.full_participant_info == expected
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_full_participant_info_with_enrollment_limitation(agenda_item, user):
+        session = agenda_item.session
+        session.participants_limit = 10
+        session.save()
+
+        EnrollmentConfig.objects.create(
+            event=agenda_item.space.event,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+            percentage_slots=50,
+        )
+
+        SessionParticipation.objects.create(
+            user=user, session=session, status="confirmed"
+        )
+
+        expected = "1/5 (session limit: 10)"
+        assert session.full_participant_info == expected
+
+    @staticmethod
+    @pytest.mark.django_db
+    def test_full_participant_info_with_waiting_participants(agenda_item, user):
+        session = agenda_item.session
+        session.participants_limit = 5
+        session.save()
+
+        other_user = User.objects.create(
+            username="other_user",
+            name="Other User",
+            email="other@example.com",
+            slug="other_user",
+        )
+
+        SessionParticipation.objects.create(
+            user=user, session=session, status="confirmed"
+        )
+        SessionParticipation.objects.create(
+            user=other_user, session=session, status="waiting"
+        )
+
+        expected = "1/5, 1 waiting"
+        assert session.full_participant_info == expected
 
 
 class TestProposalCategory:
