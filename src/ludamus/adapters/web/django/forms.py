@@ -20,7 +20,8 @@ from ludamus.adapters.db.django.models import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from ludamus.adapters.db.django.models import Event, ProposalCategory, User
+    from ludamus.adapters.db.django.models import Event, User
+    from ludamus.pacts import ProposalCategoryDTO, TagCategoryDTO, TagDTO
 
 
 logger = logging.getLogger(__name__)
@@ -132,23 +133,19 @@ def get_tag_data_from_form(  # type: ignore [explicit-any]
     return tag_data
 
 
-def create_session_proposal_form(
-    proposal_category: ProposalCategory,
-) -> type[forms.ModelForm]:  # type: ignore [type-arg]
+def _get_tags_fields(
+    tag_categories: list[TagCategoryDTO], tags: dict[int, list[TagDTO]]
+) -> dict[str, forms.CharField | forms.MultipleChoiceField]:
     tag_fields: dict[str, forms.CharField | forms.MultipleChoiceField] = {}
 
-    tag_categories = proposal_category.tag_categories.all()
     for category in tag_categories:
-        field_name = f"tags_{category.id}"
-
         match category.input_type:
             case TagCategory.InputType.SELECT:
                 # Create multiple select field for confirmed tags
-                confirmed_tags = category.tags.filter(confirmed=True)
-                choices = [(tag.id, tag.name) for tag in confirmed_tags]
-
-                tag_fields[field_name] = forms.MultipleChoiceField(
-                    choices=choices,
+                tag_fields[f"tags_{category.pk}"] = forms.MultipleChoiceField(
+                    choices=[
+                        (tag.pk, tag.name) for tag in tags[category.pk] if tag.confirmed
+                    ],
                     required=False,
                     label=category.name,
                     widget=forms.CheckboxSelectMultiple(
@@ -158,7 +155,7 @@ def create_session_proposal_form(
                 )
             case TagCategory.InputType.TYPE:
                 # Create text input for comma-separated tags
-                tag_fields[field_name] = forms.CharField(
+                tag_fields[f"tags_{category.pk}"] = forms.CharField(
                     required=False,
                     label=category.name,
                     widget=forms.TextInput(
@@ -170,21 +167,20 @@ def create_session_proposal_form(
                     help_text=_("Enter multiple tags separated by commas"),
                 )
             case _:
-                # Handle unknown input type
                 error_msg = (
                     f"Unsupported input type '{category.input_type}'"
-                    f" for TagCategory '{category.name}' (id: {category.id})"
-                )
-                logger.error(
-                    (
-                        "Unsupported TagCategory input type encountered during form "
-                        "creation: %s for category %s (id: %d)"
-                    ),
-                    category.input_type,
-                    category.name,
-                    category.id,
+                    f" for TagCategory '{category.name}' (id: {category.pk})"
                 )
                 raise UnsupportedTagCategoryInputTypeError(error_msg)
+    return tag_fields
+
+
+def create_session_proposal_form(
+    proposal_category: ProposalCategoryDTO,
+    tag_categories: list[TagCategoryDTO],
+    tags: dict[int, list[TagDTO]],
+) -> type[forms.ModelForm]:  # type: ignore [type-arg]
+    tag_fields = _get_tags_fields(tag_categories, tags)
 
     # Update participants_limit field with category bounds
     participants_limit_field = forms.IntegerField(
