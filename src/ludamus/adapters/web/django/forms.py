@@ -41,47 +41,67 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
             session=session, user=user
         ).first()
         has_conflict = Session.objects.has_conflicts(session, user)
+        meets_age_requirement = session.min_age == 0 or user.age >= session.min_age
         field_name = f"user_{user.id}"
         choices = [("", _("No change"))]
+        help_text = ""
 
+        # Check age requirement first
+        if not meets_age_requirement:
+            choices = [("", _("No change (age restriction)"))]
+            help_text = _("Must be at least %(min_age)s years old") % {
+                "min_age": session.min_age
+            }
         # Determine available choices based on current status
-        match current_participation and current_participation.status:
-            case SessionParticipationStatus.CONFIRMED:
-                # Already enrolled - can cancel or switch to waitlist
-                choices.extend(
-                    [
-                        ("cancel", _("Cancel enrollment")),
-                        ("waitlist", _("Move to waiting list")),
-                    ]
-                )
-            case SessionParticipationStatus.WAITING:
-                # On waiting list - can cancel or try to enroll
-                choices.extend(
-                    [
-                        ("cancel", _("Cancel enrollment")),
-                        ("enroll", _("Enroll (if spots available)")),
-                    ]
-                )
-            case _:
-                if not has_conflict:
-                    choices.append(("enroll", _("Enroll")))
-                choices.append(("waitlist", _("Join waiting list")))
+        elif current_participation and current_participation.status:
+            match current_participation.status:
+                case SessionParticipationStatus.CONFIRMED:
+                    # Already enrolled - can cancel or switch to waitlist
+                    choices.extend(
+                        [
+                            ("cancel", _("Cancel enrollment")),
+                            ("waitlist", _("Move to waiting list")),
+                        ]
+                    )
+                case SessionParticipationStatus.WAITING:
+                    # On waiting list - can cancel or try to enroll
+                    choices.extend(
+                        [
+                            ("cancel", _("Cancel enrollment")),
+                            ("enroll", _("Enroll (if spots available)")),
+                        ]
+                    )
+                case _:
+                    # Unknown status - treat as if no participation exists
+                    # Add default enrollment options
+                    if not has_conflict:
+                        choices.append(("enroll", _("Enroll")))
+                    choices.append(("waitlist", _("Join waiting list")))
+        else:
+            if not has_conflict:
+                choices.append(("enroll", _("Enroll")))
+            choices.append(("waitlist", _("Join waiting list")))
 
-                if has_conflict:
-                    # Add note about time conflict
-                    choices = [
-                        ("", _("No change (time conflict)")),
-                        ("waitlist", _("Join waiting list")),
-                    ]
+            if has_conflict:
+                # Add note about time conflict
+                choices = [
+                    ("", _("No change (time conflict)")),
+                    ("waitlist", _("Join waiting list")),
+                ]
+                help_text = _("Time conflict detected")
 
         # Create the choice field directly
         form_fields[field_name] = forms.ChoiceField(
             choices=choices,
             required=False,
             label=user.get_full_name() or user.name or _("User"),
-            help_text=_("Time conflict detected") if has_conflict else "",
+            help_text=help_text,
             widget=forms.Select(
-                attrs={"class": "form-select", "data-user-id": user.id}
+                attrs={
+                    "class": "form-select",
+                    "data-user-id": user.id,
+                    "disabled": "disabled" if not meets_age_requirement else None,
+                }
             ),
         )
 
@@ -200,6 +220,20 @@ def create_session_proposal_form(
         initial=proposal_category.min_participants_limit if proposal_category else None,
     )
 
+    # PEGI rating field with custom choices
+    pegi_rating_field = forms.ChoiceField(
+        choices=[
+            (3, _("PEGI 3")),
+            (7, _("PEGI 7")),
+            (12, _("PEGI 12")),
+            (16, _("PEGI 16")),
+            (18, _("PEGI 18")),
+        ],
+        initial=3,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        help_text=_("Select the appropriate age rating for this session"),
+    )
+
     def clean_title(self: forms.ModelForm[Proposal]) -> str:
         title: str = self.cleaned_data["title"]
         return title.strip()
@@ -268,6 +302,7 @@ def create_session_proposal_form(
         ),
         "clean_title": clean_title,
         "participants_limit": participants_limit_field,
+        "pegi_rating": pegi_rating_field,
         **tag_fields,
     }
 
