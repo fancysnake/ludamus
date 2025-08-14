@@ -1,10 +1,21 @@
+from datetime import date
 from unittest.mock import Mock, patch
 
 import pytest
+from django.db import connection
 
-from ludamus.adapters.db.django.models import AgendaItem, Proposal, Session, TagCategory
+from ludamus.adapters.db.django.models import (
+    AgendaItem,
+    Proposal,
+    Session,
+    SessionParticipation,
+    SessionParticipationStatus,
+    TagCategory,
+    User,
+)
 from ludamus.adapters.web.django.forms import (
     UnsupportedTagCategoryInputTypeError,
+    create_enrollment_form,
     create_proposal_acceptance_form,
     create_session_proposal_form,
     get_tag_data_from_form,
@@ -284,6 +295,241 @@ class TestCreateSessionProposalForm:
         assert "999" in error_message
 
 
+class TestCreateEnrollmentForm:
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_age_requirement_not_met(agenda_item, active_user, faker):
+
+        session = agenda_item.session
+
+        session.min_age = 16
+        session.save()
+
+        young_user = active_user
+        young_user.birth_date = faker.date_between("-15y", "-14y")
+        young_user.save()
+
+        form_class = create_enrollment_form(session, [young_user])
+        form = form_class()
+
+        field_name = f"user_{young_user.id}"
+        assert field_name in form.fields
+
+        field = form.fields[field_name]
+        assert field.choices == [("", "No change (age restriction)")]
+        assert field.help_text == "Must be at least 16 years old"
+        assert field.widget.attrs.get("disabled") == "disabled"
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_age_requirement_met(agenda_item, active_user, faker):
+
+        session = agenda_item.session
+
+        session.min_age = 16
+        session.save()
+
+        adult_user = active_user
+        adult_user.birth_date = faker.date_between("-20y", "-18y")
+        adult_user.save()
+
+        form_class = create_enrollment_form(session, [adult_user])
+        form = form_class()
+
+        field_name = f"user_{adult_user.id}"
+        assert field_name in form.fields
+
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+        assert "" in choice_values  # No change
+        assert "enroll" in choice_values
+        assert "waitlist" in choice_values
+        assert not field.help_text
+        assert field.widget.attrs.get("disabled") is None
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_no_age_restriction(agenda_item, active_user, faker):
+
+        session = agenda_item.session
+
+        session.min_age = 0
+        session.save()
+
+        young_user = active_user
+        young_user.birth_date = faker.date_between("-15y", "-10y")
+        young_user.save()
+
+        form_class = create_enrollment_form(session, [young_user])
+        form = form_class()
+
+        field_name = f"user_{young_user.id}"
+        assert field_name in form.fields
+
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+        assert "" in choice_values  # No change
+        assert "enroll" in choice_values
+        assert "waitlist" in choice_values
+        assert not field.help_text
+        assert field.widget.attrs.get("disabled") is None
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_multiple_users_with_different_ages(agenda_item, active_user, faker):
+
+        session = agenda_item.session
+
+        session.min_age = 16
+        session.save()
+
+        young_user = active_user
+        young_user.birth_date = faker.date_between("-15y", "-14y")  # Too young
+        young_user.save()
+
+        adult_user = User.objects.create(
+            username="adult_user",
+            slug="adult-user",
+            birth_date=faker.date_between("-20y", "-18y"),  # Old enough
+            manager=active_user.manager if hasattr(active_user, "manager") else None,
+        )
+
+        form_class = create_enrollment_form(session, [young_user, adult_user])
+        form = form_class()
+
+        young_field_name = f"user_{young_user.id}"
+        young_field = form.fields[young_field_name]
+        assert young_field.choices == [("", "No change (age restriction)")]
+        assert young_field.help_text == "Must be at least 16 years old"
+        assert young_field.widget.attrs.get("disabled") == "disabled"
+
+        adult_field_name = f"user_{adult_user.id}"
+        adult_field = form.fields[adult_field_name]
+        choice_values = [choice[0] for choice in adult_field.choices]
+        assert "enroll" in choice_values
+        assert "waitlist" in choice_values
+        assert not adult_field.help_text
+        assert adult_field.widget.attrs.get("disabled") is None
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_user_on_waiting_list(agenda_item, active_user):
+
+        session = agenda_item.session
+
+        SessionParticipation.objects.create(
+            session=session, user=active_user, status=SessionParticipationStatus.WAITING
+        )
+
+        form_class = create_enrollment_form(session, [active_user])
+        form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        assert field_name in form.fields
+
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+        choice_labels = [choice[1] for choice in field.choices]
+
+        assert "" in choice_values  # No change
+        assert "cancel" in choice_values
+        assert "enroll" in choice_values
+
+        assert "Cancel enrollment" in choice_labels
+        assert "Enroll (if spots available)" in choice_labels
+
+        assert not field.help_text
+        assert field.widget.attrs.get("disabled") is None
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_user_with_unknown_participation_status(agenda_item, active_user):
+
+        session = agenda_item.session
+
+        session.min_age = 0
+        session.save()
+
+        active_user.birth_date = date(1990, 1, 1)  # 30+ years old
+        active_user.save()
+
+        participation = SessionParticipation.objects.create(
+            session=session, user=active_user, status=SessionParticipationStatus.WAITING
+        )
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE session_participant SET status = %s WHERE id = %s",
+                ["UNKNOWN_STATUS", participation.id],
+            )
+
+        participation.refresh_from_db()
+
+        form_class = create_enrollment_form(session, [active_user])
+        form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        assert field_name in form.fields
+
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        assert "" in choice_values  # No change
+        assert "enroll" in choice_values  # Should have default enrollment options
+        assert "waitlist" in choice_values
+
+        assert "cancel" not in choice_values
+
+        assert not field.help_text
+        assert field.widget.attrs.get("disabled") is None
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_user_with_unknown_participation_status_and_conflict(
+        agenda_item, active_user
+    ):
+
+        session = agenda_item.session
+
+        session.min_age = 0
+        session.save()
+
+        active_user.birth_date = date(1990, 1, 1)  # 30+ years old
+        active_user.save()
+
+        participation = SessionParticipation.objects.create(
+            session=session, user=active_user, status=SessionParticipationStatus.WAITING
+        )
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE session_participant SET status = %s WHERE id = %s",
+                ["UNKNOWN_STATUS", participation.id],
+            )
+
+        with patch.object(Session.objects, "has_conflicts", return_value=True):
+            form_class = create_enrollment_form(session, [active_user])
+            form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        assert field_name in form.fields
+
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        assert "" in choice_values  # No change
+        assert (
+            "enroll" not in choice_values
+        )  # Should NOT have enroll due to time conflict
+        assert "waitlist" in choice_values  # Should have waitlist option
+
+        assert "cancel" not in choice_values
+
+        assert not field.help_text
+        assert field.widget.attrs.get("disabled") is None
+
+
 class TestCreateProposalAcceptanceForm:
 
     @pytest.mark.django_db
@@ -308,7 +554,6 @@ class TestCreateProposalAcceptanceForm:
             participants_limit=10,
         )
 
-        # Link session to proposal
         session.proposal = proposal
         session.save()
 

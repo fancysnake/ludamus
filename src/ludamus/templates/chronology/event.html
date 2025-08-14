@@ -53,7 +53,7 @@
                             {% else %}
                                 <span class="badge bg-info fs-6">{% bs_icon 'clock-history' %} {% translate "UPCOMING" %}</span>
                             {% endif %}
-                            {% if event.enrollment_config and event.enrollment_config.is_active %}
+                            {% if event.get_active_enrollment_configs %}
                                 <span class="badge bg-success fs-6 ms-2">{% bs_icon 'person-plus' %} {% translate "Enrollment Open" %}</span>
                             {% endif %}
                             {% if event.is_proposal_active %}
@@ -98,6 +98,7 @@
                                     <option value="">{% translate "All statuses" %}</option>
                                     <option value="available">{% translate "Available spots" %}</option>
                                     <option value="full">{% translate "Full" %}</option>
+                                    <option value="unavailable">{% translate "Enrollment unavailable" %}</option>
                                     <option value="my-enrolled">{% translate "I am enrolled" %}</option>
                                     <option value="my-waiting">{% translate "I am waiting" %}</option>
                                 </select>
@@ -147,12 +148,12 @@
                                             </thead>
                                             <tbody>
                                                 {% for data in sessions %}
-                                                    <tr class="session-row"
+                                                    <tr class="session-row{% if not data.session.is_enrollment_available %} text-muted{% endif %}"
                                                         data-title="{{ data.session.title|lower }}"
                                                         data-host="{{ data.session.presenter_name }}"
                                                         data-tags="{% for tag in data.session.tags.all %}{{ tag.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}"
                                                         data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name|lower }}{% if not forloop.last %};{% endif %}{% endfor %}"
-                                                        data-status="{% if data.session.is_full %}full{% else %}available{% endif %}"
+                                                        data-status="{% if not data.session.is_enrollment_available %}unavailable{% elif data.session.is_full %}full{% else %}available{% endif %}"
                                                         data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
                                                         data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}">
                                                         <td>
@@ -210,7 +211,7 @@
                                                                         data-bs-target="#sessionDetailModal{{ data.session.id }}">
                                                                     {% bs_icon 'eye' %} {% translate "Details" %}
                                                                 </button>
-                                                                {% if event.enrollment_config and event.enrollment_config.is_active and request.user.is_authenticated %}
+                                                                {% if data.session.is_enrollment_available and request.user.is_authenticated %}
                                                                     {% if data.user_enrolled or data.user_waiting %}
                                                                         <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                                                            class="btn btn-warning btn-sm">
@@ -238,11 +239,17 @@
                                                                             {% bs_icon 'info-circle' %} {% translate "Status" %}
                                                                         </button>
                                                                     {% endif %}
-                                                                {% elif event.enrollment_config and event.enrollment_config.is_active %}
+                                                                {% elif data.session.is_enrollment_available %}
                                                                     <a href="{% url 'web:auth0_login' %}?next={{ request.build_absolute_uri }}"
                                                                        class="btn btn-outline-success btn-sm">
                                                                         {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
                                                                     </a>
+                                                                {% elif not data.session.is_enrollment_available %}
+                                                                    <button class="btn btn-outline-secondary btn-sm"
+                                                                            disabled
+                                                                            title="{% translate "Enrollment not available for this session" %}">
+                                                                        {% bs_icon 'person-plus' %} {% translate "Enroll" %}
+                                                                    </button>
                                                                 {% endif %}
                                                             </div>
                                                         </td>
@@ -553,7 +560,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                            {% if event.enrollment_config and event.enrollment_config.is_active and not user_enrolled and not user_waiting %}
+                            {% if data.session.is_enrollment_available and not user_enrolled and not user_waiting %}
                                 {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
                                     <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                        class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
@@ -797,7 +804,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                            {% if event.enrollment_config and event.enrollment_config.is_active %}
+                            {% if data.session.is_enrollment_available %}
                                 {% if request.user.is_authenticated %}
                                     {% if data.user_enrolled or data.user_waiting %}
                                         <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
@@ -905,6 +912,9 @@
                                 break;
                             case 'full':
                                 show = show && row.dataset.status === 'full';
+                                break;
+                            case 'unavailable':
+                                show = show && row.dataset.status === 'unavailable';
                                 break;
                             case 'my-enrolled':
                                 show = show && row.dataset.userEnrolled === 'true';

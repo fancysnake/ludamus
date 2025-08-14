@@ -477,6 +477,7 @@ disable=consider-using-assignment-expr,
         too-many-positional-arguments, # REMOVE
         too-many-statements, # REMOVE
         unsubscriptable-object,
+        duplicate-code, # REMOVE
         # Handled by ruff
         unused-argument,
         protected-access
