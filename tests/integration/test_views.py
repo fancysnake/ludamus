@@ -733,6 +733,83 @@ class TestEnrollSelectView:
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
         _assert_message_sent(response, messages.ERROR)
 
+    def test_post_main_user_underage_with_valid_form(
+        self, agenda_item, authenticated_client, active_user, event, faker
+    ):
+        # Set session to require minimum age of 16
+        session = agenda_item.session
+        session.min_age = 16
+        session.save()
+
+        # Make user underage (14 years old)
+        active_user.birth_date = faker.date_between("-15y", "-14y")
+        active_user.save()
+
+        # Create enrollment config
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=datetime.now(UTC) - timedelta(days=1),
+            end_time=datetime.now(UTC) + timedelta(days=1),
+        )
+
+        # Mock the form to be valid with an enrollment request
+        # This simulates bypassing the form's age check to test _validate_request
+        with patch(
+            "ludamus.adapters.web.django.views.create_enrollment_form"
+        ) as mock_form:
+            mock_form_instance = Mock()
+            mock_form_instance.is_valid.return_value = True
+            mock_form_instance.cleaned_data = {f"user_{active_user.id}": "enroll"}
+            mock_form.return_value = Mock(return_value=mock_form_instance)
+
+            # Try to submit - should be blocked by _validate_request
+            response = authenticated_client.post(
+                self._get_url(session.pk), data={f"user_{active_user.id}": "enroll"}
+            )
+
+        # Should redirect to event page with error due to age check in _validate_request
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
+
+        # Check error message about age requirement
+        messages_list = list(get_messages(response.wsgi_request))
+        assert len(messages_list) == 1
+        assert messages_list[0].level == messages.ERROR
+        assert "You must be at least 16 years old" in str(messages_list[0])
+
+    def test_get_user_underage_sees_disabled_form(
+        self, agenda_item, authenticated_client, active_user, event, faker
+    ):
+        # Set session to require minimum age of 16
+        session = agenda_item.session
+        session.min_age = 16
+        session.save()
+
+        # Make user underage (14 years old)
+        active_user.birth_date = faker.date_between("-15y", "-14y")
+        active_user.save()
+
+        # Create enrollment config
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=datetime.now(UTC) - timedelta(days=1),
+            end_time=datetime.now(UTC) + timedelta(days=1),
+        )
+
+        # Access enrollment form via GET - should show form with disabled options
+        response = authenticated_client.get(self._get_url(session.pk))
+
+        # Should show the form (not redirect)
+        assert response.status_code == HTTPStatus.OK
+
+        # Check that the form shows age restriction for the user
+        form = response.context["form"]
+        field_name = f"user_{active_user.id}"
+        assert field_name in form.fields
+        field = form.fields[field_name]
+        assert field.choices == [("", "No change (age restriction)")]
+        assert field.widget.attrs.get("disabled") == "disabled"
+
     def test_post_invalid_form(self, active_user, agenda_item, authenticated_client):
         response = authenticated_client.post(
             self._get_url(agenda_item.session.pk),
@@ -1148,6 +1225,7 @@ class TestProposeSessionView:
             "requirements": faker.text(),
             "needs": faker.text(),
             "participants_limit": 6,
+            "pegi_rating": 3,  # PEGI 3
         }
         response = authenticated_client.post(self._get_url(event.slug), data=data)
 
@@ -1161,6 +1239,7 @@ class TestProposeSessionView:
         assert proposal.requirements == data["requirements"]
         assert proposal.needs == data["needs"]
         assert proposal.participants_limit == data["participants_limit"]
+        assert proposal.min_age == data["pegi_rating"]
 
     def test_post_ok_with_tags(
         self, active_user, authenticated_client, event, faker, proposal_category
@@ -1185,6 +1264,7 @@ class TestProposeSessionView:
             "requirements": faker.text(),
             "needs": faker.text(),
             "participants_limit": 6,
+            "pegi_rating": 3,  # PEGI 3
             f"tags_{type_tag.id}": "D&D, Ravenloft",
             f"tags_{select_tag.id}": [str(tag1.id), str(tag2.id)],
         }
@@ -1200,6 +1280,7 @@ class TestProposeSessionView:
         assert proposal.requirements == data["requirements"]
         assert proposal.needs == data["needs"]
         assert proposal.participants_limit == data["participants_limit"]
+        assert proposal.min_age == data["pegi_rating"]
         assert sorted(proposal.tags.all().values_list("name", flat=True)) == [
             "D&D",
             "Ravenloft",
@@ -1344,6 +1425,7 @@ class TestAcceptProposalView:
         assert session.description == proposal.description
         assert session.requirements == proposal.requirements
         assert session.participants_limit == proposal.participants_limit
+        assert session.min_age == proposal.min_age
         assert session.agenda_item.space == space
         assert session.agenda_item.session == session
         assert session.agenda_item.session_confirmed

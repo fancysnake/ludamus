@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -323,10 +323,13 @@ class TestSession:
     @staticmethod
     @pytest.mark.django_db
     def test_is_enrollment_limited_with_percentage_less_than_100(agenda_item):
+
+        now = datetime.now(tz=UTC)
+
         EnrollmentConfig.objects.create(
             event=agenda_item.space.event,
-            start_time=agenda_item.start_time,
-            end_time=agenda_item.end_time,
+            start_time=now - timedelta(hours=1),  # Active config
+            end_time=now + timedelta(hours=2),
             percentage_slots=75,
         )
 
@@ -369,14 +372,17 @@ class TestSession:
     def test_enrollment_status_context_full_with_enrollment_limitation(
         agenda_item, user
     ):
+
+        now = datetime.now(tz=UTC)
+
         session = agenda_item.session
         session.participants_limit = 4
         session.save()
 
         EnrollmentConfig.objects.create(
             event=agenda_item.space.event,
-            start_time=agenda_item.start_time,
-            end_time=agenda_item.end_time,
+            start_time=now - timedelta(hours=1),  # Active config
+            end_time=now + timedelta(hours=2),
             percentage_slots=50,
         )
 
@@ -440,14 +446,17 @@ class TestSession:
     @staticmethod
     @pytest.mark.django_db
     def test_full_participant_info_with_enrollment_limitation(agenda_item, user):
+
+        now = datetime.now(tz=UTC)
+
         session = agenda_item.session
         session.participants_limit = 10
         session.save()
 
         EnrollmentConfig.objects.create(
             event=agenda_item.space.event,
-            start_time=agenda_item.start_time,
-            end_time=agenda_item.end_time,
+            start_time=now - timedelta(hours=1),  # Active config
+            end_time=now + timedelta(hours=2),
             percentage_slots=50,
         )
 

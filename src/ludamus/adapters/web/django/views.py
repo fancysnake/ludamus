@@ -605,14 +605,38 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 ),
             )
 
-        # Check if enrollment is active for the event
-        enrollment_config = session.agenda_item.space.event.enrollment_config
-        if not enrollment_config or not enrollment_config.is_active:
+        # Check if user meets age requirement
+        if session.min_age > 0 and self.request.user.age < session.min_age:
             raise RedirectError(
                 reverse(
                     "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
                 ),
-                error=_("Enrollment is not currently active for this event."),
+                error=_(
+                    "You must be at least %(min_age)s years old to enroll "
+                    "in this session."
+                )
+                % {"min_age": session.min_age},
+            )
+
+        # Check if enrollment is available for this specific session
+        if not session.is_enrollment_available:
+            raise RedirectError(
+                reverse(
+                    "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
+                ),
+                error=_("Enrollment is not currently available for this session."),
+            )
+
+        # Get the most liberal config for this session
+        enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
+            session
+        )
+        if not enrollment_config:
+            raise RedirectError(
+                reverse(
+                    "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
+                ),
+                error=_("No enrollment configuration is available for this session."),
             )
 
         return enrollment_config
@@ -780,6 +804,12 @@ class EnrollSelectView(LoginRequiredMixin, View):
         ):
             enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
             return
+
+        # Check if user meets age requirement
+        if session.min_age > 0 and req.user.age < session.min_age:
+            enrollments.skipped_users.append(f"{req.name} ({_('age restriction')!s})")
+            return
+
         # Check for time conflicts for confirmed enrollment
         if req.choice == "enroll" and Session.objects.has_conflicts(session, req.user):
             enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
@@ -996,6 +1026,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
             requirements=form.cleaned_data["requirements"],
             needs=form.cleaned_data["needs"],
             participants_limit=form.cleaned_data["participants_limit"],
+            min_age=form.cleaned_data["pegi_rating"],  # PEGI rating maps to min_age
         )
 
         for tag in self._get_tags(
@@ -1179,6 +1210,7 @@ class AcceptProposalView(LoginRequiredMixin, View):
             description=proposal.description,
             requirements=proposal.requirements,
             participants_limit=proposal.participants_limit,
+            min_age=proposal.min_age,  # Copy minimum age requirement
         )
 
         # Copy tags from proposal to session
