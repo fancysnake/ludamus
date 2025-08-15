@@ -27,6 +27,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
@@ -183,7 +184,8 @@ class CallbackView(RedirectView):
         # Handle login/signup
         if not self.request.user.is_authenticated:
             username = self._get_username()
-            user, created = User.objects.get_or_create(username=username)
+            if not (user := User.objects.filter(username=username).first()):
+                user = User.objects.create(username=username, slug=slugify(username))
 
             # Check if user is inactive due to being under 16
             if user.birth_date and user.age < MINIMUM_ALLOWED_USER_AGE:
@@ -197,7 +199,7 @@ class CallbackView(RedirectView):
             messages.success(self.request, _("Welcome!"))
 
             # Check if profile needs completion
-            if created or user.is_incomplete:
+            if user.is_incomplete:
                 messages.success(self.request, _(" Please complete your profile."))
                 if redirect_to:
                     parsed = urlparse(redirect_to)
