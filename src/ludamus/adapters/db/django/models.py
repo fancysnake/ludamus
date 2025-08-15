@@ -185,6 +185,21 @@ class Event(models.Model):
     def enrollment_config(self) -> EnrollmentConfig | None:
         return self.enrollment_configs.first()
 
+    def get_active_enrollment_configs(self) -> list[EnrollmentConfig]:
+        return [config for config in self.enrollment_configs.all() if config.is_active]
+
+    def get_most_liberal_config(self, session: Session) -> EnrollmentConfig | None:
+        eligible_configs = [
+            config
+            for config in self.get_active_enrollment_configs()
+            if config.is_session_eligible(session)
+        ]
+
+        if not eligible_configs:
+            return None
+
+        return max(eligible_configs, key=lambda c: c.percentage_slots)
+
 
 class EnrollmentConfig(models.Model):
     event = models.ForeignKey(
@@ -195,6 +210,12 @@ class EnrollmentConfig(models.Model):
     percentage_slots = models.PositiveIntegerField(
         default=100,
         help_text="Percentage of total session slots available for enrollment (1-100)",
+    )
+    limit_to_end_time = models.BooleanField(
+        default=False,
+        help_text=(
+            "Only allow enrollment for sessions starting before this config's end time"
+        ),
     )
 
     class Meta:
@@ -228,6 +249,20 @@ class EnrollmentConfig(models.Model):
         )
         current_enrolled = session.enrolled_count
         return max(0, effective_limit - current_enrolled)
+
+    def is_session_eligible(self, session: Session) -> bool:
+        """Check if session is eligible for enrollment under this config.
+
+        Returns:
+            True if session can be enrolled in under this config.
+        """
+        if not self.is_active:
+            return False
+
+        if self.limit_to_end_time:
+            return session.agenda_item.start_time < self.end_time
+
+        return True
 
 
 class Space(models.Model):
@@ -384,6 +419,9 @@ class Session(models.Model):
     modification_time = models.DateTimeField(auto_now=True)
     # Participants
     participants_limit = models.PositiveIntegerField()
+    min_age = models.PositiveIntegerField(
+        default=0, help_text="Minimum age requirement (0 = no restriction)"
+    )
     participants: models.ManyToManyField[User, Never] = models.ManyToManyField(
         User, through="SessionParticipation"
     )
@@ -395,6 +433,10 @@ class Session(models.Model):
         constraints = (
             models.UniqueConstraint(
                 fields=["slug", "sphere"], name="session_unique_slug_in_sphere"
+            ),
+            models.CheckConstraint(
+                condition=Q(min_age__gte=0, min_age__lte=18),
+                name="session_min_age_range",
             ),
         )
 
@@ -416,7 +458,9 @@ class Session(models.Model):
     @property
     def effective_participants_limit(self) -> int:
         """Get effective participants limit considering enrollment config percentage."""
-        if enrollment_config := self.agenda_item.space.event.enrollment_config:
+        if enrollment_config := self.agenda_item.space.event.get_most_liberal_config(
+            self
+        ):
             return math.ceil(
                 self.participants_limit * enrollment_config.percentage_slots / 100
             )
@@ -435,9 +479,17 @@ class Session(models.Model):
     @property
     def is_enrollment_limited(self) -> bool:
         """Check if enrollment is limited by enrollment config percentage."""
-        if enrollment_config := self.agenda_item.space.event.enrollment_config:
+        if enrollment_config := self.agenda_item.space.event.get_most_liberal_config(
+            self
+        ):
             return enrollment_config.percentage_slots < 100  # noqa: PLR2004
         return False
+
+    @property
+    def is_enrollment_available(self) -> bool:
+        """Check if enrollment is available for this session under any active config."""
+        active_configs = self.agenda_item.space.event.get_active_enrollment_configs()
+        return any(config.is_session_eligible(self) for config in active_configs)
 
     @property
     def enrollment_status_context(self) -> dict[str, str | int]:
@@ -580,6 +632,9 @@ class Proposal(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     # Preferences
     participants_limit = models.PositiveIntegerField()
+    min_age = models.PositiveIntegerField(
+        default=0, help_text="Minimum age requirement (0 = no restriction)"
+    )
     time_slots = models.ManyToManyField(TimeSlot)
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
