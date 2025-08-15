@@ -84,8 +84,8 @@
                                                         {% else %}
                                                             {% bs_icon 'person-heart' %}
                                                             <span class="ms-2">{{ user_data.user.get_full_name }}</span>
-                                                            {% if user_dat.user.birth_date %}
-                                                                <small class="text-muted ms-2">({% translate "Age" %}: {{ user_data.user.birth_date|timesince|slice:":2" }})</small>
+                                                            {% if user_data.user.birth_date %}
+                                                                <small class="text-muted ms-2">({% translate "Age" %}: {{ user_data.user.age }})</small>
                                                             {% endif %}
                                                         {% endif %}
                                                     </div>

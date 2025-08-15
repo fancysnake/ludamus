@@ -300,15 +300,11 @@ class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
     name = forms.CharField(label=_("User name"), required=True)
     birth_date = forms.DateField(
         label=_("Birth date"),
-        widget=forms.DateInput(
-            attrs={
-                "type": "date",
-                "class": "form-control",
-                "max": TODAY,
-                "min": TODAY - timedelta(days=100 * 365.25),
-            },
-            format="%Y-%m-%d",
+        widget=forms.SelectDateWidget(
+            years=range(TODAY.year - 100, TODAY.year - 5),
+            attrs={"class": "form-select d-inline-block me-2", "style": "width: auto;"},
         ),
+        required=True,
     )
 
     class Meta:
