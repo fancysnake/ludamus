@@ -43,7 +43,7 @@
                         </h6>
                         <form action="{% url 'web:connected' %}" method="post">
                             {% csrf_token %}
-                            {% bootstrap_form form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-3" %}
+                            {% bootstrap_form form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}
                             {% bootstrap_button button_type="submit" content="OK" %}
                         </form>
                     </div>
@@ -104,7 +104,7 @@
                                         <form action="{% url 'web:connected-details' slug=connected.user.slug %}"
                                               method="post">
                                             {% csrf_token %}
-                                            {% bootstrap_form connected.form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-3" %}
+                                            {% bootstrap_form connected.form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}
                                             {% bootstrap_button button_type="submit" content="OK" %}
                                             <button type="button"
                                                     class="btn btn-secondary"
