@@ -5,10 +5,10 @@ FROM python:3.13-slim as base
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    'build-essential=12.9' \
-    'libpq-dev=15.13-0+deb12u1' \
-    'curl=7.88.1-10+deb12u12' \
-    'gettext=0.21-12' \
+    build-essential \
+    libpq-dev \
+    curl \
+    gettext \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
