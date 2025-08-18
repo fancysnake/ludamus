@@ -374,7 +374,7 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
         context = super().get_context_data(**kwargs)
         connected_users = [
             {"user": connected, "form": ConnectedUserForm(instance=connected)}
-            for connected in self.request.user.connected.all()
+            for connected in self.request.user.connected.select_related("manager").all()
         ]
         context["connected_users"] = connected_users
         context["max_connected_users"] = MAX_CONNECTED_USERS
@@ -455,7 +455,12 @@ class EventView(DetailView):  # type: ignore [type-arg]
         return (
             Event.objects.filter(sphere=self.request.sphere)
             .select_related("sphere")
-            .prefetch_related("spaces__agenda_items__session")
+            .prefetch_related(
+                "spaces__agenda_items__session__tags",
+                "spaces__agenda_items__session__session_participations__user",
+                "spaces__agenda_items__session__proposal",
+                "enrollment_configs",
+            )
         )
 
     def get_context_data(  # type: ignore [explicit-any]
@@ -466,8 +471,13 @@ class EventView(DetailView):  # type: ignore [type-arg]
         # Get all sessions for this event that are published
         event_sessions = (
             Session.objects.filter(agenda_item__space__event=self.object)
-            .select_related("proposal", "agenda_item__space")
-            .prefetch_related("tags", "session_participations__user")
+            .select_related("proposal__host", "agenda_item__space", "sphere", "guild")
+            .prefetch_related(
+                "tags",
+                "session_participations__user__manager",
+                "session_participations__user__connected",
+                "agenda_item__space__event__enrollment_configs",
+            )
             .order_by("agenda_item__start_time")
         )
 
@@ -491,15 +501,37 @@ class EventView(DetailView):  # type: ignore [type-arg]
     def _set_user_participations(
         self, sessions: dict[int, SessionData], event_sessions: QuerySet[Session]
     ) -> None:
-        participations = SessionParticipation.objects.filter(session__in=event_sessions)
+        # Get all connected users in a single query
+        connected_users = (
+            list(self.request.user.connected.select_related("manager").all())
+            if self.request.user.is_authenticated
+            else []
+        )
+        all_users = (
+            [self.request.user, *connected_users]
+            if self.request.user.is_authenticated
+            else []
+        )
+
+        # Pre-fetch all participations for relevant users and sessions
+        participations = SessionParticipation.objects.filter(
+            session__in=event_sessions, user__in=all_users
+        ).select_related("user", "session")
+
+        # Create lookup dictionaries for efficient access
+        participation_by_user_session = {}
+        for p in participations:
+            key = (p.user_id, p.session_id)
+            if key not in participation_by_user_session:
+                participation_by_user_session[key] = []
+            participation_by_user_session[key].append(p.status)
+
         # Add user participation info for each session
-        for user in [self.request.user, *self.request.user.connected.all()]:
+        for user in all_users:
             for session in event_sessions:
-                statuses = {
-                    p.status
-                    for p in participations
-                    if p.user == user and p.session == session
-                }
+                statuses = set(
+                    participation_by_user_session.get((user.id, session.id), [])
+                )
 
                 sessions[session.id].has_any_enrollments |= bool(statuses)
                 sessions[session.id].user_enrolled |= (
@@ -580,14 +612,16 @@ class EnrollSelectView(LoginRequiredMixin, View):
     def get(self, request: UserRequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
 
+        connected_users = list(
+            self.request.user.connected.select_related("manager").all()
+        )
         context = {
             "session": session,
             "event": session.agenda_item.space.event,
-            "connected_users": list(self.request.user.connected.all()),
+            "connected_users": connected_users,
             "user_data": self._get_user_participation_data(session),
             "form": create_enrollment_form(
-                session=session,
-                users=[self.request.user, *request.user.connected.all()],
+                session=session, users=[self.request.user, *connected_users]
             )(),
         }
 
@@ -644,27 +678,45 @@ class EnrollSelectView(LoginRequiredMixin, View):
     ) -> list[SessionUserParticipationData]:
         user_data: list[SessionUserParticipationData] = []
 
+        # Get all connected users with proper prefetching
+        connected_users = list(
+            self.request.user.connected.select_related("manager").all()
+        )
+        all_users = [self.request.user, *connected_users]
+
+        # Bulk fetch all participations for the event and users
+        user_participations = SessionParticipation.objects.filter(
+            user__in=all_users,
+            session__agenda_item__space__event=session.agenda_item.space.event,
+        ).select_related("session__agenda_item")
+
+        # Group participations by user for efficient lookup
+        participations_by_user = {}
+        for participation in user_participations:
+            user_id = participation.user_id
+            if user_id not in participations_by_user:
+                participations_by_user[user_id] = []
+            participations_by_user[user_id].append(participation)
+
         # Add enrollment status and time conflict info for each connected user
-        for user in [self.request.user, *self.request.user.connected.all()]:
-            # Include all users in display but mark inactive ones
-            user_participations = SessionParticipation.objects.filter(
-                user=user,
-                session__agenda_item__space__event=session.agenda_item.space.event,
-            )
+        for user in all_users:
+            user_parts = participations_by_user.get(user.id, [])
+
             data = SessionUserParticipationData(
                 user=user,
-                user_enrolled=user_participations.filter(
-                    status=SessionParticipationStatus.CONFIRMED
-                ).exists(),
-                user_waiting=user_participations.filter(
-                    status=SessionParticipationStatus.WAITING
-                ).exists(),
+                user_enrolled=any(
+                    p.status == SessionParticipationStatus.CONFIRMED for p in user_parts
+                ),
+                user_waiting=any(
+                    p.status == SessionParticipationStatus.WAITING for p in user_parts
+                ),
                 has_time_conflict=any(
-                    s
-                    for s in user_participations.exclude(
-                        session=session, status=SessionParticipationStatus.CONFIRMED
+                    session.agenda_item.overlaps_with(p.session.agenda_item)
+                    for p in user_parts
+                    if not (
+                        p.session == session
+                        and p.status == SessionParticipationStatus.CONFIRMED
                     )
-                    if session.agenda_item.overlaps_with(s.session.agenda_item)
                 ),
             )
             user_data.append(data)
@@ -675,8 +727,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
         session = _get_session_or_redirect(request, session_id)
 
         # Initialize form with POST data
+        connected_users = list(request.user.connected.select_related("manager").all())
         form_class = create_enrollment_form(
-            session=session, users=[self.request.user, *request.user.connected.all()]
+            session=session, users=[self.request.user, *connected_users]
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
@@ -688,7 +741,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 {
                     "session": session,
                     "event": session.agenda_item.space.event,
-                    "connected_users": list(self.request.user.connected.all()),
+                    "connected_users": list(
+                        self.request.user.connected.select_related("manager").all()
+                    ),
                     "user_data": self._get_user_participation_data(session),
                     "form": form,
                 },
@@ -703,7 +758,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
     def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
         enrollment_requests = []
-        for connected_user in [self.request.user, *self.request.user.connected.all()]:
+        connected_users = list(
+            self.request.user.connected.select_related("manager").all()
+        )
+        for connected_user in [self.request.user, *connected_users]:
             # Skip inactive users
             if not connected_user.is_active:
                 continue
