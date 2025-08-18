@@ -21,6 +21,7 @@ from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.db import transaction
+from django.db.models import Count, Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
@@ -456,7 +457,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
             Event.objects.filter(sphere=self.request.sphere)
             .select_related("sphere")
             .prefetch_related(
-                "spaces__agenda_items__session__tags",
+                "spaces__agenda_items__session__tags__category",
                 "spaces__agenda_items__session__session_participations__user",
                 "spaces__agenda_items__session__proposal",
                 "enrollment_configs",
@@ -473,10 +474,24 @@ class EventView(DetailView):  # type: ignore [type-arg]
             Session.objects.filter(agenda_item__space__event=self.object)
             .select_related("proposal__host", "agenda_item__space", "sphere", "guild")
             .prefetch_related(
-                "tags",
+                "tags__category",
                 "session_participations__user__manager",
                 "session_participations__user__connected",
                 "agenda_item__space__event__enrollment_configs",
+            )
+            .annotate(
+                enrolled_count_cached=Count(
+                    "session_participations",
+                    filter=Q(
+                        session_participations__status=SessionParticipationStatus.CONFIRMED
+                    ),
+                ),
+                waiting_count_cached=Count(
+                    "session_participations",
+                    filter=Q(
+                        session_participations__status=SessionParticipationStatus.WAITING
+                    ),
+                ),
             )
             .order_by("agenda_item__start_time")
         )

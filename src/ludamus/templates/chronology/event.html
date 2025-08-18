@@ -161,14 +161,28 @@
                                                                 <strong>{{ data.session.title }}</strong>
                                                                 {% if data.session.tags.exists %}
                                                                     <br>
-                                                                    {% for tag in data.session.tags.all %}
-                                                                        <span class="badge bg-light text-dark me-1">
-                                                                            {% if tag.category.icon %}
-                                                                                {% bs_icon tag.category.icon %}
-                                                                            {% endif %}
-                                                                            {{ tag.name }}
-                                                                        </span>
-                                                                    {% endfor %}
+                                                                    <div class="d-flex flex-wrap" style="max-height: 1.5em; overflow: hidden;">
+                                                                        {% for tag in data.session.tags.all %}
+                                                                            <span class="badge bg-light text-dark me-1 mb-1"
+                                                                                  title="{{ tag.name }}"
+                                                                                  style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                                                {% if tag.category.icon %}
+                                                                                    {% bs_icon tag.category.icon %}
+                                                                                {% endif %}
+                                                                                {{ tag.name }}
+                                                                            </span>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    {% if data.session.tags.count > 3 %}
+                                                                        <small class="text-muted">
+                                                                            <a href="#"
+                                                                               data-bs-toggle="modal"
+                                                                               data-bs-target="#sessionDetailModal{{ data.session.id }}"
+                                                                               class="text-decoration-none">
+                                                                                +{{ data.session.tags.count|add:"-3" }} more tags...
+                                                                            </a>
+                                                                        </small>
+                                                                    {% endif %}
                                                                 {% endif %}
                                                             </div>
                                                         </td>
@@ -327,7 +341,7 @@
                                                         {% endif %}
                                                         {% if proposal.tags.exists %}
                                                             <br>
-                                                            {% for tag in proposal.tags.all %}<span class="badge bg-light text-dark me-1">{{ tag.name }}</span>{% endfor %}
+                                                            {% for tag in proposal.tags.all %}<span class="badge bg-light text-dark me-1" title="{{ tag.name }}" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">{{ tag.name }}</span>{% endfor %}
                                                         {% endif %}
                                                         {% if proposal.needs %}
                                                             <br>
@@ -421,7 +435,9 @@
                                         <h6>{% translate "Tags" %}</h6>
                                         <p>
                                             {% for tag in proposal.tags.all %}
-                                                <span class="badge bg-secondary me-1">
+                                                <span class="badge bg-secondary me-1"
+                                                      title="{{ tag.name }}"
+                                                      style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
                                                     {% if tag.category.icon %}
                                                         {% bs_icon tag.category.icon %}
                                                     {% endif %}
@@ -754,7 +770,9 @@
                                         <h6>{% bs_icon 'tags' %} {% translate "Tags" %}</h6>
                                         <div class="ms-4">
                                             {% for tag in data.session.tags.all %}
-                                                <span class="badge bg-secondary me-1 mb-1">
+                                                <span class="badge bg-secondary me-1 mb-1"
+                                                      title="{{ tag.name }}"
+                                                      style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
                                                     {% if tag.category.icon %}
                                                         {% bs_icon tag.category.icon %}
                                                     {% endif %}
