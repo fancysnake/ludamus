@@ -461,6 +461,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
                 "spaces__agenda_items__session__session_participations__user",
                 "spaces__agenda_items__session__proposal",
                 "enrollment_configs",
+                "filterable_tag_categories",
             )
         )
 
@@ -498,6 +499,10 @@ class EventView(DetailView):  # type: ignore [type-arg]
 
         hour_data = dict(self._get_hour_data(event_sessions))
         context.update({"hour_data": hour_data, "sessions": list(event_sessions)})
+
+        # Add filterable tag categories for this event
+        filterable_categories = self.object.filterable_tag_categories.all()
+        context["filterable_tag_categories"] = filterable_categories
 
         # Add proposals for superusers
         if self.request.user.is_superuser:
@@ -573,6 +578,14 @@ class EventView(DetailView):  # type: ignore [type-arg]
         self, event_sessions: QuerySet[Session]
     ) -> dict[int, SessionData]:
         sessions_data = {es.id: SessionData(session=es) for es in event_sessions}
+
+        # Set filterable tags for each session
+        filterable_categories = set(self.object.filterable_tag_categories.all())
+        for session_data in sessions_data.values():
+            session_data.filterable_tags = [
+                tag for tag in session_data.session.tags.all()
+                if tag.category in filterable_categories
+            ]
 
         if self.request.user.is_authenticated:
             self._set_user_participations(sessions_data, event_sessions)

@@ -17,6 +17,11 @@ class SessionData:
     has_any_enrollments: bool = False
     user_enrolled: bool = False
     user_waiting: bool = False
+    filterable_tags: list = None  # Will hold tags from filterable categories
+
+    def __post_init__(self) -> None:
+        if self.filterable_tags is None:
+            self.filterable_tags = []
 
 
 @dataclass

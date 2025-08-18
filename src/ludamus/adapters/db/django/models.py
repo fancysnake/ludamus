@@ -140,6 +140,12 @@ class Event(models.Model):
     # Proposal times
     proposal_start_time = models.DateTimeField(blank=True, null=True)
     proposal_end_time = models.DateTimeField(blank=True, null=True)
+    # Filterable tag categories for session list
+    filterable_tag_categories = models.ManyToManyField(
+        "TagCategory",
+        blank=True,
+        help_text="Tag categories that will appear as filters in the session list"
+    )
 
     class Meta:
         db_table = "event"
