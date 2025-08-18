@@ -326,3 +326,10 @@ LOGGING = {
         },
     },
 }
+
+# Bootstrap Icons Configuration
+# Configure icon cache to avoid repeated CDN downloads
+BS_ICONS_CACHE = os.path.join(BASE_DIR, "static", "icon_cache")
+
+# Ensure the cache directory exists
+os.makedirs(BS_ICONS_CACHE, exist_ok=True)

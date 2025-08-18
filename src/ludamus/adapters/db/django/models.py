@@ -445,12 +445,18 @@ class Session(models.Model):
 
     @property
     def enrolled_count(self) -> int:
+        # Use cached count if available from annotation, otherwise query
+        if hasattr(self, "enrolled_count_cached"):
+            return self.enrolled_count_cached
         return self.session_participations.filter(
             status=SessionParticipationStatus.CONFIRMED
         ).count()
 
     @property
     def waiting_count(self) -> int:
+        # Use cached count if available from annotation, otherwise query
+        if hasattr(self, "waiting_count_cached"):
+            return self.waiting_count_cached
         return self.session_participations.filter(
             status=SessionParticipationStatus.WAITING
         ).count()
