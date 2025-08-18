@@ -104,10 +104,18 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <select class="form-select form-select-sm" id="tagFilter">
-                                    <option value="">{% translate "All tags" %}</option>
-                                    <!-- Tag options grouped by category will be populated by JavaScript -->
-                                </select>
+                                <div id="tagFilters">
+                                    {% for category in filterable_tag_categories %}
+                                        <select class="form-select form-select-sm mb-1 tag-filter" 
+                                                data-category="{{ category.name|slugify }}"
+                                                id="tagFilter_{{ category.name|slugify }}">
+                                            <option value="">All {{ category.name }}</option>
+                                            <!-- Options will be populated by JavaScript from actual session tags -->
+                                        </select>
+                                    {% empty %}
+                                        <small class="text-muted">No tag filters configured</small>
+                                    {% endfor %}
+                                </div>
                             </div>
                             <div class="col-md-2">
                                 <button type="button"
@@ -159,13 +167,13 @@
                                                         <td>
                                                             <div>
                                                                 <strong>{{ data.session.title }}</strong>
-                                                                {% if data.session.tags.exists %}
+                                                                {% if data.filterable_tags %}
                                                                     <br>
                                                                     <div class="d-flex flex-wrap" style="max-height: 1.5em; overflow: hidden;">
-                                                                        {% for tag in data.session.tags.all %}
+                                                                        {% for tag in data.filterable_tags %}
                                                                             <span class="badge bg-light text-dark me-1 mb-1"
                                                                                   title="{{ tag.name }}"
-                                                                                  style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                                                  style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                                                                 {% if tag.category.icon %}
                                                                                     {% bs_icon tag.category.icon %}
                                                                                 {% endif %}
@@ -173,13 +181,13 @@
                                                                             </span>
                                                                         {% endfor %}
                                                                     </div>
-                                                                    {% if data.session.tags.count > 3 %}
+                                                                    {% if data.filterable_tags|length > 3 %}
                                                                         <small class="text-muted">
                                                                             <a href="#"
                                                                                data-bs-toggle="modal"
                                                                                data-bs-target="#sessionDetailModal{{ data.session.id }}"
                                                                                class="text-decoration-none">
-                                                                                +{{ data.session.tags.count|add:"-3" }} more tags...
+                                                                                +{{ data.filterable_tags|length|add:"-3" }} more tags...
                                                                             </a>
                                                                         </small>
                                                                     {% endif %}
@@ -341,7 +349,7 @@
                                                         {% endif %}
                                                         {% if proposal.tags.exists %}
                                                             <br>
-                                                            {% for tag in proposal.tags.all %}<span class="badge bg-light text-dark me-1" title="{{ tag.name }}" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">{{ tag.name }}</span>{% endfor %}
+                                                            {% for tag in proposal.tags.all %}<span class="badge bg-light text-dark me-1" title="{{ tag.name }}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">{{ tag.name }}</span>{% endfor %}
                                                         {% endif %}
                                                         {% if proposal.needs %}
                                                             <br>
@@ -437,7 +445,7 @@
                                             {% for tag in proposal.tags.all %}
                                                 <span class="badge bg-secondary me-1"
                                                       title="{{ tag.name }}"
-                                                      style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
+                                                      style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
                                                     {% if tag.category.icon %}
                                                         {% bs_icon tag.category.icon %}
                                                     {% endif %}
@@ -767,12 +775,13 @@
                                         {% endif %}
                                     </p>
                                     {% if data.session.tags.exists %}
-                                        <h6>{% bs_icon 'tags' %} {% translate "Tags" %}</h6>
+                                        <h6>{% bs_icon 'tags' %} {% translate "Tags" %} ({{ data.session.tags.count }} total)</h6>
                                         <div class="ms-4">
+                                            {% comment %}Show ALL tags in modal, regardless of filterable categories{% endcomment %}
                                             {% for tag in data.session.tags.all %}
                                                 <span class="badge bg-secondary me-1 mb-1"
-                                                      title="{{ tag.name }}"
-                                                      style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
+                                                      title="{{ tag.name }} ({{ tag.category.name }})"
+                                                      style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
                                                     {% if tag.category.icon %}
                                                         {% bs_icon tag.category.icon %}
                                                     {% endif %}
@@ -862,55 +871,57 @@
         document.addEventListener('DOMContentLoaded', function() {
             const sessionFilter = document.getElementById('sessionFilter');
             const statusFilter = document.getElementById('statusFilter');
-            const tagFilter = document.getElementById('tagFilter');
             const clearFilters = document.getElementById('clearFilters');
             const sessionRows = document.querySelectorAll('.session-row');
+            const tagFilters = {};
 
-            // Parse all tags by category
-            const tagCategories = {};
-            sessionRows.forEach(row => {
-                const tagCategoriesData = row.dataset.tagCategories;
-                if (tagCategoriesData) {
-                    const tagPairs = tagCategoriesData.split(';').filter(pair => pair.trim());
-                    tagPairs.forEach(pair => {
-                        const [categorySlug, tagName] = pair.split(':');
-                        if (categorySlug && tagName) {
-                            if (!tagCategories[categorySlug]) {
-                                tagCategories[categorySlug] = new Set();
+            // Get tag filter elements created by Django template
+            const tagFilterElements = document.querySelectorAll('.tag-filter');
+            
+            // Populate options for each filterable category
+            tagFilterElements.forEach(select => {
+                const categorySlug = select.dataset.category;
+                tagFilters[categorySlug] = select;
+                
+                // Parse tags from session data for this category only
+                const categoryTags = new Set();
+                sessionRows.forEach(row => {
+                    const tagCategoriesData = row.dataset.tagCategories;
+                    if (tagCategoriesData) {
+                        const tagPairs = tagCategoriesData.split(';').filter(pair => pair.trim());
+                        tagPairs.forEach(pair => {
+                            const [rowCategorySlug, tagName] = pair.split(':');
+                            if (rowCategorySlug === categorySlug && tagName) {
+                                categoryTags.add(tagName.trim());
                             }
-                            tagCategories[categorySlug].add(tagName.trim());
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
 
-            // Populate tag filter with optgroups
-            Object.keys(tagCategories).sort().forEach(categorySlug => {
-                // Create category name from slug (capitalize and replace dashes with spaces)
-                const categoryName = categorySlug.replace(/-/g, ' ')
-                    .split(' ')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(' ');
-
-                // Create optgroup
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = categoryName;
-
-                // Add tag options to optgroup
-                Array.from(tagCategories[categorySlug]).sort().forEach(tag => {
+                // Add tag options to this category's filter
+                Array.from(categoryTags).sort().forEach(tag => {
                     const option = document.createElement('option');
                     option.value = tag;
                     option.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
-                    optgroup.appendChild(option);
+                    select.appendChild(option);
                 });
 
-                tagFilter.appendChild(optgroup);
+                // Add event listener
+                select.addEventListener('change', filterSessions);
             });
 
             function filterSessions() {
                 const searchText = sessionFilter.value.toLowerCase();
                 const statusValue = statusFilter.value;
-                const tagValue = tagFilter.value.toLowerCase();
+                
+                // Get all active tag filters
+                const activeTagFilters = {};
+                Object.keys(tagFilters).forEach(categorySlug => {
+                    const filterValue = tagFilters[categorySlug].value.toLowerCase();
+                    if (filterValue) {
+                        activeTagFilters[categorySlug] = filterValue;
+                    }
+                });
 
                 sessionRows.forEach(row => {
                     let show = true;
@@ -943,10 +954,20 @@
                         }
                     }
 
-                    // Tag filter
-                    if (tagValue) {
-                        const rowTags = row.dataset.tags.split(',').map(tag => tag.trim());
-                        show = show && rowTags.includes(tagValue);
+                    // Tag filters - check all active category filters
+                    if (Object.keys(activeTagFilters).length > 0) {
+                        const rowTagCategories = row.dataset.tagCategories;
+                        let matchesAllFilters = true;
+                        
+                        Object.keys(activeTagFilters).forEach(categorySlug => {
+                            const requiredTag = activeTagFilters[categorySlug];
+                            const categoryPattern = new RegExp(`${categorySlug}:${requiredTag}`);
+                            if (!categoryPattern.test(rowTagCategories)) {
+                                matchesAllFilters = false;
+                            }
+                        });
+                        
+                        show = show && matchesAllFilters;
                     }
 
                     // Show/hide row
@@ -966,14 +987,15 @@
             function clearAllFilters() {
                 sessionFilter.value = '';
                 statusFilter.value = '';
-                tagFilter.value = '';
+                Object.keys(tagFilters).forEach(categorySlug => {
+                    tagFilters[categorySlug].value = '';
+                });
                 filterSessions();
             }
 
             // Add event listeners
             sessionFilter.addEventListener('input', filterSessions);
             statusFilter.addEventListener('change', filterSessions);
-            tagFilter.addEventListener('change', filterSessions);
             clearFilters.addEventListener('click', clearAllFilters);
         });
     </script>
