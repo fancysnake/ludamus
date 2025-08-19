@@ -141,10 +141,12 @@ class Event(models.Model):
     proposal_start_time = models.DateTimeField(blank=True, null=True)
     proposal_end_time = models.DateTimeField(blank=True, null=True)
     # Filterable tag categories for session list
-    filterable_tag_categories = models.ManyToManyField(
-        "TagCategory",
-        blank=True,
-        help_text="Tag categories that will appear as filters in the session list"
+    filterable_tag_categories: models.ManyToManyField[TagCategory, Never] = (
+        models.ManyToManyField(
+            "TagCategory",
+            blank=True,
+            help_text="Tag categories that will appear as filters in the session list",
+        )
     )
 
     class Meta:
@@ -433,6 +435,9 @@ class Session(models.Model):
     )
 
     objects = SessionManager()
+
+    enrolled_count_cached: int
+    waiting_count_cached: int
 
     class Meta:
         db_table = "session"

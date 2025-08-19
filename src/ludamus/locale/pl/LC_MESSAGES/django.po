@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-19 07:47+0200\n"
+"POT-Creation-Date: 2025-08-19 08:00+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -759,7 +759,9 @@ msgstr "Uzupełnij swój profil z datą urodzenia przed zapisywaniem się."
 #: src/ludamus/adapters/web/django/views.py:675
 #, python-format
 msgid "You must be at least %(min_age)s years old to enroll in this session."
-msgstr "Musisz mieć co najmniej %(min_age)s lat, aby zapisać się na ten punkt programu."
+msgstr ""
+"Musisz mieć co najmniej %(min_age)s lat, aby zapisać się na ten punkt "
+"programu."
 
 #: src/ludamus/adapters/web/django/views.py:687
 msgid "Enrollment is not currently available for this session."
@@ -1199,6 +1201,10 @@ msgstr "Jestem zapisany"
 msgid "I am waiting"
 msgstr "Oczekuję"
 
+#: src/ludamus/templates/chronology/event.html:112
+msgid "All"
+msgstr "Wszystkie"
+
 #: src/ludamus/templates/chronology/event.html:123
 msgid "Clear"
 msgstr "Wyczyść"
@@ -1217,6 +1223,11 @@ msgstr "Akcja"
 #: src/ludamus/templates/chronology/event.html:207
 msgid "TBA"
 msgstr "Do ustalenia"
+
+#: src/ludamus/templates/chronology/event.html:217
+#: src/ludamus/templates/chronology/event.html:629
+msgid "session limit"
+msgstr "limit punktu programu"
 
 #: src/ludamus/templates/chronology/event.html:234
 msgid "Details"

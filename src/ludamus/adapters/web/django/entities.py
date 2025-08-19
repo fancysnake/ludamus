@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from django.contrib.auth import get_user_model
 
-from ludamus.adapters.db.django.models import Session
+from ludamus.adapters.db.django.models import Session, Tag
 
 if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import User
@@ -17,11 +17,7 @@ class SessionData:
     has_any_enrollments: bool = False
     user_enrolled: bool = False
     user_waiting: bool = False
-    filterable_tags: list = None  # Will hold tags from filterable categories
-
-    def __post_init__(self) -> None:
-        if self.filterable_tags is None:
-            self.filterable_tags = []
+    filterable_tags: list[Tag] = field(default_factory=list)
 
 
 @dataclass
