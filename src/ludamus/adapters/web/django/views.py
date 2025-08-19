@@ -539,7 +539,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
         ).select_related("user", "session")
 
         # Create lookup dictionaries for efficient access
-        participation_by_user_session = {}
+        participation_by_user_session: dict[tuple[int, int], list[str]] = {}
         for p in participations:
             key = (p.user_id, p.session_id)
             if key not in participation_by_user_session:
@@ -583,7 +583,8 @@ class EventView(DetailView):  # type: ignore [type-arg]
         filterable_categories = set(self.object.filterable_tag_categories.all())
         for session_data in sessions_data.values():
             session_data.filterable_tags = [
-                tag for tag in session_data.session.tags.all()
+                tag
+                for tag in session_data.session.tags.all()
                 if tag.category in filterable_categories
             ]
 
@@ -719,7 +720,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         ).select_related("session__agenda_item")
 
         # Group participations by user for efficient lookup
-        participations_by_user = {}
+        participations_by_user: dict[int, list[SessionParticipation]] = {}
         for participation in user_participations:
             user_id = participation.user_id
             if user_id not in participations_by_user:

@@ -106,10 +106,10 @@
                             <div class="col-md-3">
                                 <div id="tagFilters">
                                     {% for category in filterable_tag_categories %}
-                                        <select class="form-select form-select-sm mb-1 tag-filter" 
+                                        <select class="form-select form-select-sm mb-1 tag-filter"
                                                 data-category="{{ category.name|slugify }}"
                                                 id="tagFilter_{{ category.name|slugify }}">
-                                            <option value="">All {{ category.name }}</option>
+                                            <option value="">{% translate "All" %} {{ category.name }}</option>
                                             <!-- Options will be populated by JavaScript from actual session tags -->
                                         </select>
                                     {% empty %}
@@ -159,8 +159,8 @@
                                                     <tr class="session-row{% if not data.session.is_enrollment_available %} text-muted{% endif %}"
                                                         data-title="{{ data.session.title|lower }}"
                                                         data-host="{{ data.session.presenter_name }}"
-                                                        data-tags="{% for tag in data.session.tags.all %}{{ tag.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}"
-                                                        data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name|lower }}{% if not forloop.last %};{% endif %}{% endfor %}"
+                                                        data-tags="{% for tag in data.session.tags.all %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                                        data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
                                                         data-status="{% if not data.session.is_enrollment_available %}unavailable{% elif data.session.is_full %}full{% else %}available{% endif %}"
                                                         data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
                                                         data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}">
@@ -169,11 +169,10 @@
                                                                 <strong>{{ data.session.title }}</strong>
                                                                 {% if data.filterable_tags %}
                                                                     <br>
-                                                                    <div class="d-flex flex-wrap" style="max-height: 1.5em; overflow: hidden;">
+                                                                    <div class="d-flex flex-wrap tag-container">
                                                                         {% for tag in data.filterable_tags %}
-                                                                            <span class="badge bg-light text-dark me-1 mb-1"
-                                                                                  title="{{ tag.name }}"
-                                                                                  style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                                            <span class="badge bg-light text-dark me-1 mb-1 filterable-tag"
+                                                                                  title="{{ tag.name }}">
                                                                                 {% if tag.category.icon %}
                                                                                     {% bs_icon tag.category.icon %}
                                                                                 {% endif %}
@@ -214,7 +213,7 @@
                                                                     data-bs-target="#participantsModal{{ data.session.id }}">
                                                                 <span class="badge bg-success">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
                                                                 {% if data.session.effective_participants_limit != data.session.participants_limit %}
-                                                                    <small class="text-muted ms-1">(session limit: {{ data.session.participants_limit }})</small>
+                                                                    <small class="text-muted ms-1">({% translate "session limit" %}: {{ data.session.participants_limit }})</small>
                                                                 {% endif %}
                                                                 {% if data.session.waiting_count > 0 %}
                                                                     <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} waiting</span>
@@ -349,7 +348,10 @@
                                                         {% endif %}
                                                         {% if proposal.tags.exists %}
                                                             <br>
-                                                            {% for tag in proposal.tags.all %}<span class="badge bg-light text-dark me-1" title="{{ tag.name }}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">{{ tag.name }}</span>{% endfor %}
+                                                            {% for tag in proposal.tags.all %}
+                                                                <span class="badge bg-light text-dark me-1 proposal-tag"
+                                                                      title="{{ tag.name }}">{{ tag.name }}</span>
+                                                            {% endfor %}
                                                         {% endif %}
                                                         {% if proposal.needs %}
                                                             <br>
@@ -443,9 +445,7 @@
                                         <h6>{% translate "Tags" %}</h6>
                                         <p>
                                             {% for tag in proposal.tags.all %}
-                                                <span class="badge bg-secondary me-1"
-                                                      title="{{ tag.name }}"
-                                                      style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
+                                                <span class="badge bg-secondary me-1 modal-tag" title="{{ tag.name }}">
                                                     {% if tag.category.icon %}
                                                         {% bs_icon tag.category.icon %}
                                                     {% endif %}
@@ -626,7 +626,7 @@
                                     <span class="badge bg-success">{{ session.enrolled_count }}/{{ session.effective_participants_limit }}</span>
                                     {% if session.effective_participants_limit != session.participants_limit %}
                                         <br>
-                                        <small class="text-muted">(session limit: {{ session.participants_limit }})</small>
+                                        <small class="text-muted">({% translate "session limit" %}: {{ session.participants_limit }})</small>
                                     {% endif %}
                                     {% if session.waiting_count > 0 %}
                                         <br>
@@ -779,9 +779,8 @@
                                         <div class="ms-4">
                                             {% comment %}Show ALL tags in modal, regardless of filterable categories{% endcomment %}
                                             {% for tag in data.session.tags.all %}
-                                                <span class="badge bg-secondary me-1 mb-1"
-                                                      title="{{ tag.name }} ({{ tag.category.name }})"
-                                                      style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">
+                                                <span class="badge bg-secondary me-1 mb-1 session-detail-tag"
+                                                      title="{{ tag.name }} ({{ tag.category.name }})">
                                                     {% if tag.category.icon %}
                                                         {% bs_icon tag.category.icon %}
                                                     {% endif %}
@@ -877,12 +876,12 @@
 
             // Get tag filter elements created by Django template
             const tagFilterElements = document.querySelectorAll('.tag-filter');
-            
+
             // Populate options for each filterable category
             tagFilterElements.forEach(select => {
                 const categorySlug = select.dataset.category;
                 tagFilters[categorySlug] = select;
-                
+
                 // Parse tags from session data for this category only
                 const categoryTags = new Set();
                 sessionRows.forEach(row => {
@@ -902,7 +901,7 @@
                 Array.from(categoryTags).sort().forEach(tag => {
                     const option = document.createElement('option');
                     option.value = tag;
-                    option.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
+                    option.textContent = tag;
                     select.appendChild(option);
                 });
 
@@ -913,11 +912,11 @@
             function filterSessions() {
                 const searchText = sessionFilter.value.toLowerCase();
                 const statusValue = statusFilter.value;
-                
+
                 // Get all active tag filters
                 const activeTagFilters = {};
                 Object.keys(tagFilters).forEach(categorySlug => {
-                    const filterValue = tagFilters[categorySlug].value.toLowerCase();
+                    const filterValue = tagFilters[categorySlug].value;
                     if (filterValue) {
                         activeTagFilters[categorySlug] = filterValue;
                     }
@@ -958,15 +957,15 @@
                     if (Object.keys(activeTagFilters).length > 0) {
                         const rowTagCategories = row.dataset.tagCategories;
                         let matchesAllFilters = true;
-                        
+
                         Object.keys(activeTagFilters).forEach(categorySlug => {
                             const requiredTag = activeTagFilters[categorySlug];
-                            const categoryPattern = new RegExp(`${categorySlug}:${requiredTag}`);
+                            const categoryPattern = new RegExp(`${categorySlug}:${requiredTag}`, 'i');
                             if (!categoryPattern.test(rowTagCategories)) {
                                 matchesAllFilters = false;
                             }
                         });
-                        
+
                         show = show && matchesAllFilters;
                     }
 
@@ -1004,6 +1003,23 @@
         .modal-backdrop.show {
             display: block !important;
             opacity: 0.5 !important;
+        }
+
+        /* Tag styling to replace inline styles */
+        .tag-container {
+            max-height: 1.5em;
+            overflow: hidden;
+        }
+
+        .filterable-tag,
+        .proposal-tag,
+        .modal-tag,
+        .session-detail-tag {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
         }
     </style>
 {% endblock body %}

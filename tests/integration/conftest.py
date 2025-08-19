@@ -3,7 +3,6 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
-from django.utils import translation
 from factory import Faker, LazyAttribute, SubFactory
 from factory.django import DjangoModelFactory
 
@@ -282,10 +281,8 @@ def agenda_item(session, space):
 
 
 @pytest.fixture(autouse=True)
-def english_language():
-
-    with translation.override("en"):
-        yield
+def english_language(settings):
+    settings.LANGUAGE_CODE = "en"
 
 
 @pytest.fixture(autouse=True, name="sphere")
