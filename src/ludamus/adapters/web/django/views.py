@@ -328,6 +328,11 @@ class ConnectedUserForm(BaseUserForm):
         initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()
     )
 
+    def save(self, commit: bool = True) -> User:  # noqa: FBT001, FBT002
+        self.instance.username = f"connected|{token_urlsafe(50)}"
+        self.instance.slug = slugify(self.instance.username)
+        return super().save(commit)  # type: ignore [no-any-return]
+
 
 class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     template_name = "crowd/user/edit.html"
@@ -395,7 +400,6 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
 
         result = super().form_valid(form)
         self.object.manager = self.request.user
-        self.object.username = f"connected|{token_urlsafe(50)}"
         self.object.save()
         messages.success(self.request, _("Connected user added successfully!"))
         return result
