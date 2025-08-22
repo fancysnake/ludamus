@@ -43,6 +43,14 @@
                                 <h6>{% translate "Space" %}</h6>
                                 <p>{{ session.agenda_item.space.name }}</p>
                             {% endif %}
+                            <h6>{% translate "Minimum Age" %}</h6>
+                            <p>
+                                {% if session.min_age > 0 %}
+                                    <span class="badge bg-info text-dark">{{ session.min_age }}+ {% translate "years" %}</span>
+                                {% else %}
+                                    <span class="text-muted">{% translate "All ages welcome" %}</span>
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                     {% if session.description %}
