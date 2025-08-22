@@ -330,7 +330,7 @@ class ConnectedUserForm(BaseUserForm):
 
     def save(self, commit: bool = True) -> User:  # noqa: FBT001, FBT002
         self.instance.username = f"connected|{token_urlsafe(50)}"
-        self.instance.slug = slugify(self.instance.username)
+        self.instance.slug = slugify(self.instance.username[:50])
         return super().save(commit)  # type: ignore [no-any-return]
 
 
