@@ -15,6 +15,7 @@ from ludamus.adapters.db.django.models import (
     Space,
     TagCategory,
     TimeSlot,
+    User,
 )
 
 if TYPE_CHECKING:
@@ -36,6 +37,96 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
     form_fields = {}
     users_list = list(users)
 
+    # Create mapping from field names to user names for error display
+    field_to_user_name = {}
+
+    # Get enrollment config to check waitlist settings
+    enrollment_config = session.agenda_item.space.event.get_most_liberal_config(session)
+
+    def can_join_waitlist(user: User) -> bool:
+        """Check if user can join waitlist based on enrollment config limits and restrictions."""
+        # No enrollment config = no enrollment functionality at all
+        if not enrollment_config:
+            return False
+
+        if enrollment_config.max_waitlist_sessions == 0:
+            return False
+
+        # If restricted to configured users only, check if user has UserEnrollmentConfig
+        if enrollment_config.restrict_to_configured_users:
+            # First check if this is a connected user - they use manager's config
+            if user.user_type == User.UserType.CONNECTED:
+                if hasattr(user, "manager") and user.manager and user.manager.email:
+                    manager_config = (
+                        session.agenda_item.space.event.get_user_enrollment_config(
+                            user.manager.email
+                        )
+                    )
+                    if (
+                        not manager_config
+                    ):  # Don't check available slots here - check at form level
+                        return False
+                else:
+                    return False
+            else:
+                # For regular users, check their own email and config
+                if not user.email:
+                    return False
+
+                user_config = (
+                    session.agenda_item.space.event.get_user_enrollment_config(
+                        user.email
+                    )
+                )
+                if not user_config:
+                    return False
+
+        # Count current waitlist participations for this user
+        current_waitlist_count = SessionParticipation.objects.filter(
+            user=user,
+            status=SessionParticipationStatus.WAITING,
+            session__agenda_item__space__event=session.agenda_item.space.event,
+        ).count()
+
+        return current_waitlist_count < enrollment_config.max_waitlist_sessions
+
+    def can_enroll(user: User) -> bool:
+        """Check if user can enroll based on enrollment config existence and restrictions."""
+        # No enrollment config = no enrollment functionality at all
+        if not enrollment_config:
+            return False
+
+        # If restricted to configured users only, check if user has UserEnrollmentConfig
+        if enrollment_config.restrict_to_configured_users:
+            # First check if this is a connected user - they use manager's config
+            if user.user_type == User.UserType.CONNECTED:
+                if hasattr(user, "manager") and user.manager and user.manager.email:
+                    manager_config = (
+                        session.agenda_item.space.event.get_user_enrollment_config(
+                            user.manager.email
+                        )
+                    )
+                    if (
+                        manager_config
+                    ):  # Don't check available slots here - check at form level
+                        return True
+                return False
+
+            # For regular users, check their own email and config
+            if not user.email:
+                return False
+
+            user_config = session.agenda_item.space.event.get_user_enrollment_config(
+                user.email
+            )
+            if user_config:
+                return True
+
+            return False
+
+        # Otherwise, allow enrollment when config exists
+        return True
+
     for user in users_list:
         current_participation = SessionParticipation.objects.filter(
             session=session, user=user
@@ -46,55 +137,223 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
         choices = [("", _("No change"))]
         help_text = ""
 
-        # Check age requirement first
-        if not meets_age_requirement:
+        # Determine available choices based on current status first
+        if current_participation and current_participation.status:
+            match current_participation.status:
+                case SessionParticipationStatus.CONFIRMED:
+                    # Already enrolled - can always cancel, but other options depend on age
+                    base_choices = [("cancel", _("Cancel enrollment"))]
+                    if meets_age_requirement and can_join_waitlist(user):
+                        base_choices.append(("waitlist", _("Move to waiting list")))
+                    choices.extend(base_choices)
+                    # Set help text if age restriction applies but they can still cancel
+                    if not meets_age_requirement:
+                        help_text = _(
+                            "Must be at least %(min_age)s years old for new enrollment"
+                        ) % {"min_age": session.min_age}
+                case SessionParticipationStatus.WAITING:
+                    # On waiting list - can always cancel, but enrollment depends on age
+                    base_waiting_choices = [("cancel", _("Cancel enrollment"))]
+                    if meets_age_requirement and can_enroll(user):
+                        base_waiting_choices.append(
+                            ("enroll", _("Enroll (if spots available)"))
+                        )
+                    choices.extend(base_waiting_choices)
+                    # Set help text if age restriction applies
+                    if not meets_age_requirement:
+                        help_text = _(
+                            "Must be at least %(min_age)s years old for enrollment"
+                        ) % {"min_age": session.min_age}
+                case _:
+                    # Unknown status - treat as if no participation exists
+                    # Add default enrollment options only if age requirement is met
+                    if meets_age_requirement:
+                        if can_enroll(user) and not has_conflict:
+                            choices.append(("enroll", _("Enroll")))
+                        if can_join_waitlist(user):
+                            choices.append(("waitlist", _("Join waiting list")))
+                    else:
+                        choices = [("", _("No change (age restriction)"))]
+                        help_text = _("Must be at least %(min_age)s years old") % {
+                            "min_age": session.min_age
+                        }
+        # No current participation - check age requirement for new enrollments
+        elif not meets_age_requirement:
             choices = [("", _("No change (age restriction)"))]
             help_text = _("Must be at least %(min_age)s years old") % {
                 "min_age": session.min_age
             }
-        # Determine available choices based on current status
-        elif current_participation and current_participation.status:
-            match current_participation.status:
-                case SessionParticipationStatus.CONFIRMED:
-                    # Already enrolled - can cancel or switch to waitlist
-                    choices.extend(
-                        [
-                            ("cancel", _("Cancel enrollment")),
-                            ("waitlist", _("Move to waiting list")),
-                        ]
-                    )
-                case SessionParticipationStatus.WAITING:
-                    # On waiting list - can cancel or try to enroll
-                    choices.extend(
-                        [
-                            ("cancel", _("Cancel enrollment")),
-                            ("enroll", _("Enroll (if spots available)")),
-                        ]
-                    )
-                case _:
-                    # Unknown status - treat as if no participation exists
-                    # Add default enrollment options
-                    if not has_conflict:
-                        choices.append(("enroll", _("Enroll")))
-                    choices.append(("waitlist", _("Join waiting list")))
         else:
-            if not has_conflict:
+            if can_enroll(user) and not has_conflict:
                 choices.append(("enroll", _("Enroll")))
-            choices.append(("waitlist", _("Join waiting list")))
+            if can_join_waitlist(user):
+                choices.append(("waitlist", _("Join waiting list")))
 
             if has_conflict:
                 # Add note about time conflict
-                choices = [
-                    ("", _("No change (time conflict)")),
-                    ("waitlist", _("Join waiting list")),
-                ]
+                base_conflict_choices = [("", _("No change (time conflict)"))]
+                if can_join_waitlist(user):
+                    base_conflict_choices.append(("waitlist", _("Join waiting list")))
+                choices = base_conflict_choices
                 help_text = _("Time conflict detected")
 
-        # Create the choice field directly
-        form_fields[field_name] = forms.ChoiceField(
+        # If no choices available, provide helpful explanation
+        # But preserve age restriction and time conflict choices
+        if (
+            (len(choices) == 0 or (len(choices) == 1 and choices[0][0] == ""))
+            and meets_age_requirement
+            and not has_conflict
+        ):
+            if enrollment_config and enrollment_config.restrict_to_configured_users:
+                if not user.email:
+                    help_text = _("Email address required for enrollment")
+                    choices = [("", _("No enrollment options (email required)"))]
+                else:
+                    # Check if user has their own config or manager's config
+                    user_config = (
+                        session.agenda_item.space.event.get_user_enrollment_config(
+                            user.email
+                        )
+                    )
+                    has_manager_access = False
+                    if (
+                        not user_config
+                        and hasattr(user, "manager")
+                        and user.manager
+                        and user.manager.email
+                    ):
+                        manager_config = (
+                            session.agenda_item.space.event.get_user_enrollment_config(
+                                user.manager.email
+                            )
+                        )
+                        has_manager_access = bool(
+                            manager_config
+                        )  # Don't check slots here
+
+                    if not user_config and not has_manager_access:
+                        help_text = _("Enrollment access permission required")
+                        choices = [("", _("No enrollment options (access required)"))]
+                    else:
+                        help_text = _("No enrollment options available")
+                        choices = [("", _("No change"))]
+            elif not enrollment_config:
+                # No enrollment config means enrollment is simply not available
+                # Keep the original "No change" choice without additional help text
+                choices = [("", _("No change"))]
+            else:
+                help_text = _("No enrollment options available")
+                choices = [("", _("No change"))]
+
+        # Add to field name mapping
+        field_to_user_name[field_name] = user.get_full_name() or user.name or _("User")
+
+        # Create a custom choice field with better error messages
+        class UserEnrollmentChoiceField(forms.ChoiceField):
+            def __init__(self, user_obj, *args, **kwargs):
+                self.user_obj = user_obj
+                super().__init__(*args, **kwargs)
+
+            def validate(self, value):
+                if value and value not in [choice[0] for choice in self.choices]:
+                    user_name = (
+                        self.user_obj.get_full_name() or self.user_obj.name or _("User")
+                    )
+                    if value == "enroll":
+                        # Check age requirement first
+                        meets_age_requirement = (
+                            session.min_age == 0 or self.user_obj.age >= session.min_age
+                        )
+                        if not meets_age_requirement:
+                            raise ValidationError(
+                                _(
+                                    "%(user)s cannot enroll: must be at least %(min_age)s years old"
+                                )
+                                % {"user": user_name, "min_age": session.min_age}
+                            )
+
+                        if (
+                            enrollment_config
+                            and enrollment_config.restrict_to_configured_users
+                        ):
+                            # Check if this is a connected user
+                            if self.user_obj.user_type == User.UserType.CONNECTED:
+                                # Connected users use their manager's config
+                                if not (
+                                    hasattr(self.user_obj, "manager")
+                                    and self.user_obj.manager
+                                    and self.user_obj.manager.email
+                                ):
+                                    raise ValidationError(
+                                        _(
+                                            "%(user)s cannot enroll: manager information missing"
+                                        )
+                                        % {"user": user_name}
+                                    )
+
+                                manager_config = session.agenda_item.space.event.get_user_enrollment_config(
+                                    self.user_obj.manager.email
+                                )
+                                if not manager_config:
+                                    raise ValidationError(
+                                        _(
+                                            "%(user)s cannot enroll: manager has no enrollment access"
+                                        )
+                                        % {"user": user_name}
+                                    )
+                                # Don't check individual slot availability here - it's checked at form level
+                            else:
+                                # Regular users need their own email and config
+                                if not self.user_obj.email:
+                                    raise ValidationError(
+                                        _(
+                                            "%(user)s cannot enroll: email address required"
+                                        )
+                                        % {"user": user_name}
+                                    )
+
+                                user_config = session.agenda_item.space.event.get_user_enrollment_config(
+                                    self.user_obj.email
+                                )
+                                if not user_config:
+                                    raise ValidationError(
+                                        _(
+                                            "%(user)s cannot enroll: enrollment access permission required"
+                                        )
+                                        % {"user": user_name}
+                                    )
+                        # If no restriction to configured users, check general enrollment availability
+                        elif not can_enroll(self.user_obj):
+                            raise ValidationError(
+                                _("%(user)s cannot enroll: enrollment not available")
+                                % {"user": user_name}
+                            )
+                    elif value == "waitlist":
+                        # Check age requirement for waitlist too
+                        meets_age_requirement = (
+                            session.min_age == 0 or self.user_obj.age >= session.min_age
+                        )
+                        if not meets_age_requirement:
+                            raise ValidationError(
+                                _(
+                                    "%(user)s cannot join waitlist: must be at least %(min_age)s years old"
+                                )
+                                % {"user": user_name, "min_age": session.min_age}
+                            )
+                    else:
+                        raise ValidationError(
+                            _("Invalid choice for %(user)s: %(value)s")
+                            % {"user": user_name, "value": value}
+                        )
+                super().validate(value)
+
+        form_fields[field_name] = UserEnrollmentChoiceField(
+            user_obj=user,
             choices=choices,
             required=False,
-            label=user.get_full_name() or user.name or _("User"),
+            label=user.get_full_name()
+            or user.name
+            or _("User"),  # Use user's name as label
             help_text=help_text,
             widget=forms.Select(
                 attrs={
@@ -105,7 +364,63 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
             ),
         )
 
-    return type("EnrollmentForm", (forms.Form,), form_fields)
+    def clean(self):
+        """Custom validation for enrollment form."""
+        cleaned_data = forms.Form.clean(self)
+
+        # Count enrollment requests
+        enroll_requests = []
+        for field_name, value in cleaned_data.items():
+            if field_name.startswith("user_") and value == "enroll":
+                user_id = int(field_name.split("_")[1])
+                # Find the user from users_list
+                user = next((u for u in users_list if u.id == user_id), None)
+                if user:
+                    enroll_requests.append(user)
+
+        # Check if manager has enough slots for all enrollment requests
+        if (
+            enroll_requests
+            and enrollment_config
+            and enrollment_config.restrict_to_configured_users
+        ):
+            manager_user = None
+            manager_config = None
+
+            # Find the manager (the user who initiated the request)
+            for user in users_list:
+                if (
+                    user.user_type != User.UserType.CONNECTED
+                ):  # This is the main user/manager
+                    manager_user = user
+                    if user.email:
+                        manager_config = (
+                            session.agenda_item.space.event.get_user_enrollment_config(
+                                user.email
+                            )
+                        )
+                    break
+
+            if manager_config:
+                available_slots = manager_config.get_available_slots()
+                if len(enroll_requests) > available_slots:
+                    # Add error to first enrollment field using user's name
+                    for field_name, value in cleaned_data.items():
+                        if field_name.startswith("user_") and value == "enroll":
+                            user_name = field_to_user_name.get(field_name, "User")
+                            self.add_error(
+                                field_name,
+                                f"{user_name}: Not enough enrollment passes available. You requested {len(enroll_requests)} enrollments but only have {available_slots} passes remaining.",
+                            )
+                            break
+                    return cleaned_data
+
+        return cleaned_data
+
+    # Create form class with custom clean method
+    form_class = type("EnrollmentForm", (forms.Form,), form_fields)
+    form_class.clean = clean
+    return form_class
 
 
 def get_tag_data_from_form(  # type: ignore [explicit-any]

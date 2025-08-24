@@ -48,6 +48,7 @@ from ludamus.adapters.db.django.models import (
     Sphere,
     Tag,
     TimeSlot,
+    User,
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
@@ -298,11 +299,17 @@ def under_age(request: HttpRequest) -> HttpResponse:
 
 
 class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
-    name = forms.CharField(label=_("User name"), required=True)
+    name = forms.CharField(
+        label=_("User name"),
+        help_text=_(
+            "Your public display name that others will see. This can be a nickname and does not need to be your legal name."
+        ),
+        required=True,
+    )
     birth_date = forms.DateField(
         label=_("Birth date"),
         widget=forms.SelectDateWidget(
-            years=range(TODAY.year - 100, TODAY.year - 5),
+            years=range(TODAY.year - 5, TODAY.year - 100, -1),  # Newest to oldest
             attrs={"class": "form-select d-inline-block me-2", "style": "width: auto;"},
         ),
         required=True,
@@ -504,6 +511,14 @@ class EventView(DetailView):  # type: ignore [type-arg]
         hour_data = dict(self._get_hour_data(event_sessions))
         context.update({"hour_data": hour_data, "sessions": list(event_sessions)})
 
+        # Add user enrollment config for authenticated users
+        user_enrollment_config = None
+        if self.request.user.is_authenticated and self.request.user.email:
+            user_enrollment_config = self.object.get_user_enrollment_config(
+                self.request.user.email
+            )
+        context["user_enrollment_config"] = user_enrollment_config
+
         # Add filterable tag categories for this event
         filterable_categories = self.object.filterable_tag_categories.all()
         context["filterable_tag_categories"] = filterable_categories
@@ -704,6 +719,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 error=_("No enrollment configuration is available for this session."),
             )
 
+        # Note: User slot limits are now handled in _process_enrollments()
+        # to allow users to join waiting lists when at their slot limit.
+        # No need to block access to enrollment page here.
+
         return enrollment_config
 
     def _get_user_participation_data(
@@ -766,7 +785,44 @@ class EnrollSelectView(LoginRequiredMixin, View):
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
-            messages.warning(self.request, _("Please correct the errors below."))
+            # Add detailed form validation error messages without field name prefixes
+            for field_name, field_errors in form.errors.items():
+                for error in field_errors:
+                    if field_name == "__all__":
+                        # Non-field errors don't need any prefix
+                        messages.error(self.request, error)
+                    else:
+                        # For field errors, just show the error message without field name
+                        messages.error(self.request, error)
+
+            # Check for specific enrollment restrictions and provide helpful messages
+            enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
+                session
+            )
+            if enrollment_config and enrollment_config.restrict_to_configured_users:
+                if not request.user.email:
+                    messages.error(
+                        self.request,
+                        _("Email address is required for enrollment in this session."),
+                    )
+                elif not session.agenda_item.space.event.get_user_enrollment_config(
+                    request.user.email
+                ):
+                    messages.error(
+                        self.request,
+                        _(
+                            "Enrollment access permission is required for this session. Please contact the organizers to obtain access."
+                        ),
+                    )
+                else:
+                    messages.warning(
+                        self.request, _("Please review the enrollment options below.")
+                    )
+            else:
+                messages.warning(
+                    self.request, _("Please review the enrollment options below.")
+                )
+
             # Re-render with form errors
             return TemplateResponse(
                 request,
@@ -835,6 +891,47 @@ class EnrollSelectView(LoginRequiredMixin, View):
             # This should rarely happen due to double-checking, but handle gracefully
             return enrollments  # Return empty enrollments
 
+        if self.request.user.email and confirmed_requests:
+            user_config = session.agenda_item.space.event.get_user_enrollment_config(
+                self.request.user.email
+            )
+            if user_config:
+                cancel_requests = [
+                    req for req in enrollment_requests if req.choice == "cancel"
+                ]
+
+                current_session_enrollments = SessionParticipation.objects.filter(
+                    session=session,
+                    user__in=[req.user for req in cancel_requests],
+                    status=SessionParticipationStatus.CONFIRMED,
+                ).count()
+
+                net_new_enrollments = (
+                    len(confirmed_requests) - current_session_enrollments
+                )
+
+                if (
+                    net_new_enrollments > 0
+                    and user_config.get_available_slots() < net_new_enrollments
+                ):
+                    for req in enrollment_requests:
+                        if req.choice == "enroll":
+                            # Only convert to waitlist if waitlist is enabled
+                            if enrollment_config.max_waitlist_sessions > 0:
+                                # Check if user can join waitlist
+                                current_waitlist_count = SessionParticipation.objects.filter(
+                                    user=req.user,
+                                    status=SessionParticipationStatus.WAITING,
+                                    session__agenda_item__space__event=session.agenda_item.space.event,
+                                ).count()
+
+                                if (
+                                    current_waitlist_count
+                                    < enrollment_config.max_waitlist_sessions
+                                ):
+                                    req.choice = "waitlist"
+                                # If waitlist is full or disabled, the enrollment will be skipped later
+
         participations = SessionParticipation.objects.filter(session=session).order_by(
             "creation_time"
         )
@@ -872,15 +969,31 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     participation.user != req.user
                     and participation.status == SessionParticipationStatus.WAITING
                 ) and not Session.objects.has_conflicts(session, participation.user):
-                    participation.status = SessionParticipationStatus.CONFIRMED
-                    participation.save()
-                    enrollments.users_by_status[
-                        SessionParticipationStatus.CONFIRMED
-                    ].append(
-                        f"{participation.user.get_full_name()} "
-                        f"({_("promoted from waiting list")})"
-                    )
-                    break
+
+                    can_be_promoted = True
+                    if participation.user.email:
+                        manager_user = participation.user
+                        if participation.user.manager:
+                            manager_user = participation.user.manager
+
+                        user_config = (
+                            session.agenda_item.space.event.get_user_enrollment_config(
+                                manager_user.email
+                            )
+                        )
+                        if user_config and not user_config.has_available_slots():
+                            can_be_promoted = False
+
+                    if can_be_promoted:
+                        participation.status = SessionParticipationStatus.CONFIRMED
+                        participation.save()
+                        enrollments.users_by_status[
+                            SessionParticipationStatus.CONFIRMED
+                        ].append(
+                            f"{participation.user.get_full_name()} "
+                            f"({_("promoted from waiting list")})"
+                        )
+                        break
 
     @staticmethod
     def _check_and_create_enrollment(
@@ -899,10 +1012,94 @@ class EnrollSelectView(LoginRequiredMixin, View):
             enrollments.skipped_users.append(f"{req.name} ({_('age restriction')!s})")
             return
 
+        # Check if enrollment is restricted to configured users only
+        enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
+            session
+        )
+        if enrollment_config and enrollment_config.restrict_to_configured_users:
+            # Handle connected users - they use their manager's config
+            if req.user.user_type == User.UserType.CONNECTED:
+                if not (
+                    hasattr(req.user, "manager")
+                    and req.user.manager
+                    and req.user.manager.email
+                ):
+                    enrollments.skipped_users.append(
+                        f"{req.name} ({_('manager information missing')!s})"
+                    )
+                    return
+
+                manager_config = (
+                    session.agenda_item.space.event.get_user_enrollment_config(
+                        req.user.manager.email
+                    )
+                )
+                if not manager_config:
+                    enrollments.skipped_users.append(
+                        f"{req.name} ({_('manager not in enrollment list')!s})"
+                    )
+                    return
+            else:
+                # Handle regular users - they need their own email and config
+                if not req.user.email:
+                    enrollments.skipped_users.append(
+                        f"{req.name} ({_('no email configured')!s})"
+                    )
+                    return
+                user_config = (
+                    session.agenda_item.space.event.get_user_enrollment_config(
+                        req.user.email
+                    )
+                )
+                if not user_config:
+                    enrollments.skipped_users.append(
+                        f"{req.name} ({_('not in enrollment list')!s})"
+                    )
+                    return
+
+        # Check if user has available slots (regardless of restriction setting)
+        if req.choice == "enroll" and req.user.email:
+            manager_user = req.user
+            if req.user.user_type == User.UserType.CONNECTED and req.user.manager:
+                manager_user = req.user.manager
+
+            user_config = session.agenda_item.space.event.get_user_enrollment_config(
+                manager_user.email
+            )
+            if user_config and not user_config.has_available_slots():
+                enrollments.skipped_users.append(
+                    f"{req.name} ({_('no enrollment slots available')!s})"
+                )
+                return
+
         # Check for time conflicts for confirmed enrollment
         if req.choice == "enroll" and Session.objects.has_conflicts(session, req.user):
             enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
             return
+
+        # Check waitlist limits for waitlist enrollment
+        if req.choice == "waitlist":
+            enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
+                session
+            )
+            if enrollment_config and enrollment_config.max_waitlist_sessions == 0:
+                enrollments.skipped_users.append(
+                    f"{req.name} ({_('waitlist disabled')!s})"
+                )
+                return
+            if enrollment_config:
+                # Count current waitlist participations for this user in this event
+                current_waitlist_count = SessionParticipation.objects.filter(
+                    user=req.user,
+                    status=SessionParticipationStatus.WAITING,
+                    session__agenda_item__space__event=session.agenda_item.space.event,
+                ).count()
+
+                if current_waitlist_count >= enrollment_config.max_waitlist_sessions:
+                    enrollments.skipped_users.append(
+                        f"{req.name} ({_('waitlist limit exceeded')!s})"
+                    )
+                    return
 
         # Use get_or_create to prevent duplicate enrollments in race conditions
         __, created = SessionParticipation.objects.get_or_create(

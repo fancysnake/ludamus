@@ -65,6 +65,77 @@
             </div>
         </div>
     </div>
+    <!-- Enrollment Banner -->
+    {% for enrollment_config in event.get_active_enrollment_configs %}
+        {% if enrollment_config.banner_text %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-info" role="alert">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">{% bs_icon 'info-circle-fill' size='1.5em' %}</div>
+                            <div class="flex-grow-1 ms-3">{{ enrollment_config.banner_text|linebreaks }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+    <!-- Enrollment Passes Info (for authenticated users) -->
+    {% if request.user.is_authenticated and event.get_active_enrollment_configs %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-success" role="alert">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">{% bs_icon 'key-fill' size='1.5em' %}</div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="alert-heading mb-2">{% translate "Your Enrollment Access" %}</h6>
+                            {% if user_enrollment_config %}
+                                <p class="mb-1">
+                                    {% with available=user_enrollment_config.get_available_slots total=user_enrollment_config.allowed_slots %}
+                                        {% blocktranslate %}
+                                            You have {{ available }} available out of {{ total }} total enrollment slots.
+                                        {% endblocktranslate %}
+                                    {% endwith %}
+                                </p>
+                                {% if user_enrollment_config.is_combined_access %}
+                                    <small class="text-muted">
+                                        {% if user_enrollment_config.has_individual_access and user_enrollment_config.has_domain_access %}
+                                            {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                                Combined access: Individual enrollment passes + domain access (@{{ domain }}).
+                                            {% endblocktranslate %}
+                                        {% elif user_enrollment_config.has_domain_access %}
+                                            {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                                Domain-based access: Users from @{{ domain }} have enrollment access.
+                                            {% endblocktranslate %}
+                                        {% else %}
+                                            {% translate "You can enroll yourself and your connected users using these slots." %}
+                                        {% endif %}
+                                    </small>
+                                {% elif user_enrollment_config.is_domain_based %}
+                                    <small class="text-muted">
+                                        {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                            Domain-based access: Users from @{{ domain }} have enrollment access.
+                                        {% endblocktranslate %}
+                                    </small>
+                                {% else %}
+                                    <small class="text-muted">{% translate "You can enroll yourself and your connected users using these slots." %}</small>
+                                {% endif %}
+                            {% elif request.user.user_type == 'connected' %}
+                                <p class="mb-1">{% translate "You may be able to enroll using your manager's enrollment passes." %}</p>
+                                <small class="text-muted">{% translate "Contact your manager for enrollment assistance." %}</small>
+                            {% elif request.user.is_authenticated %}
+                                <p class="mb-1">{% translate "You don't have any enrollment passes." %}</p>
+                                <small class="text-muted">{% translate "You can enroll when general enrollment opens." %}</small>
+                            {% else %}
+                                <p class="mb-1">{% translate "Login to check your enrollment options." %}</p>
+                                <small class="text-muted">{% translate "You may have enrollment passes available after logging in." %}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <!-- Sessions by Time Slot -->
     <div class="row">
         <div class="col-12">

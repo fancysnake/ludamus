@@ -26,6 +26,16 @@
                     </ul>
                 </div>
                 <div class="card-body">
+                    {% if user.confirmed_participations_count > 0 %}
+                        <div class="alert alert-info mb-3">
+                            {% bs_icon 'calendar-check' %}
+                            {% blocktranslate count counter=user.confirmed_participations_count %}
+                                You have {{ counter }} confirmed session participation.
+                            {% plural %}
+                                You have {{ counter }} confirmed session participations.
+                            {% endblocktranslate %}
+                        </div>
+                    {% endif %}
                     <form action="{% url 'web:edit' %}" method="post">
                         {% csrf_token %}
                         {% bootstrap_form form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}

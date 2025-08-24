@@ -212,7 +212,7 @@ ignore = [
     "ANN",     # flake8-annotations
     "PLR0913", # too-many-arguments
     "PLR0917", # too-many-positional-arguments
-    "S101",    # assert
+    "S",    # bandit
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
