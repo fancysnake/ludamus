@@ -831,7 +831,13 @@ class TestEnrollSelectView:
                 )
             ],
         }
-        _assert_message_sent(response, messages.WARNING)
+        # Should have both an error message from form validation and a warning message
+        msgs = list(get_messages(response.wsgi_request))
+        assert len(msgs) == 2
+        assert msgs[0].level == messages.ERROR  # Form validation error
+        assert (
+            msgs[1].level == messages.WARNING
+        )  # "Please review the enrollment options below"
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_error_please_select_at_least_one(
@@ -972,7 +978,13 @@ class TestEnrollSelectView:
                 )
             ],
         }
-        _assert_message_sent(response, messages.WARNING)
+        # Should have both an error message from form validation and a warning message
+        msgs = list(get_messages(response.wsgi_request))
+        assert len(msgs) == 2
+        assert msgs[0].level == messages.ERROR  # Form validation error
+        assert (
+            msgs[1].level == messages.WARNING
+        )  # "Please review the enrollment options below"
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_invalid_capacity(

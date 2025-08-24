@@ -324,8 +324,12 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_age_requirement_met(agenda_item, active_user, faker):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
+        event = session.agenda_item.space.event
 
         session.min_age = 16
         session.save()
@@ -333,6 +337,16 @@ class TestCreateEnrollmentForm:
         adult_user = active_user
         adult_user.birth_date = faker.date_between("-20y", "-18y")
         adult_user.save()
+
+        # Create enrollment config to enable enrollment functionality
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=10,  # Enable waitlist
+        )
 
         form_class = create_enrollment_form(session, [adult_user])
         form = form_class()
@@ -351,8 +365,12 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_no_age_restriction(agenda_item, active_user, faker):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
+        event = session.agenda_item.space.event
 
         session.min_age = 0
         session.save()
@@ -360,6 +378,16 @@ class TestCreateEnrollmentForm:
         young_user = active_user
         young_user.birth_date = faker.date_between("-15y", "-10y")
         young_user.save()
+
+        # Create enrollment config to enable enrollment functionality
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=10,  # Enable waitlist
+        )
 
         form_class = create_enrollment_form(session, [young_user])
         form = form_class()
@@ -378,8 +406,12 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_multiple_users_with_different_ages(agenda_item, active_user, faker):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
+        event = session.agenda_item.space.event
 
         session.min_age = 16
         session.save()
@@ -393,6 +425,16 @@ class TestCreateEnrollmentForm:
             slug="adult-user",
             birth_date=faker.date_between("-20y", "-18y"),  # Old enough
             manager=active_user.manager if hasattr(active_user, "manager") else None,
+        )
+
+        # Create enrollment config to enable enrollment functionality
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=10,  # Enable waitlist
         )
 
         form_class = create_enrollment_form(session, [young_user, adult_user])
@@ -415,8 +457,22 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_user_on_waiting_list(agenda_item, active_user):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
+        event = session.agenda_item.space.event
+
+        # Create enrollment config to enable enrollment functionality
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=10,  # Enable waitlist
+        )
 
         SessionParticipation.objects.create(
             session=session, user=active_user, status=SessionParticipationStatus.WAITING
@@ -445,14 +501,28 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_user_with_unknown_participation_status(agenda_item, active_user):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
+        event = session.agenda_item.space.event
 
         session.min_age = 0
         session.save()
 
         active_user.birth_date = date(1990, 1, 1)  # 30+ years old
         active_user.save()
+
+        # Create enrollment config to enable enrollment functionality
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=10,  # Enable waitlist
+        )
 
         participation = SessionParticipation.objects.create(
             session=session, user=active_user, status=SessionParticipationStatus.WAITING
@@ -489,14 +559,28 @@ class TestCreateEnrollmentForm:
     def test_user_with_unknown_participation_status_and_conflict(
         agenda_item, active_user
     ):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
+        event = session.agenda_item.space.event
 
         session.min_age = 0
         session.save()
 
         active_user.birth_date = date(1990, 1, 1)  # 30+ years old
         active_user.save()
+
+        # Create enrollment config to enable enrollment functionality
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=10,  # Enable waitlist
+        )
 
         participation = SessionParticipation.objects.create(
             session=session, user=active_user, status=SessionParticipationStatus.WAITING
@@ -528,6 +612,296 @@ class TestCreateEnrollmentForm:
 
         assert not field.help_text
         assert field.widget.attrs.get("disabled") is None
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_confirmed_user_can_join_waitlist(agenda_item, active_user):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
+
+        session = agenda_item.session
+        event = session.agenda_item.space.event
+
+        # Create enrollment config with waitlist enabled
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=5,  # Enable waitlist
+        )
+
+        # User is already confirmed (enrolled)
+        SessionParticipation.objects.create(
+            session=session,
+            user=active_user,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        form_class = create_enrollment_form(session, [active_user])
+        form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        # Should offer cancel and move to waitlist options
+        assert "cancel" in choice_values
+        assert "waitlist" in choice_values  # This covers lines 88->90
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_confirmed_user_cannot_join_waitlist_when_disabled(
+        agenda_item, active_user
+    ):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
+
+        session = agenda_item.session
+        event = session.agenda_item.space.event
+
+        # Create enrollment config with waitlist DISABLED
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=0,  # Disable waitlist
+        )
+
+        # User is already confirmed (enrolled)
+        SessionParticipation.objects.create(
+            session=session,
+            user=active_user,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        form_class = create_enrollment_form(session, [active_user])
+        form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        # Should only offer cancel, NOT waitlist
+        assert "cancel" in choice_values
+        assert "waitlist" not in choice_values
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_waiting_user_can_enroll_when_enrollment_active(agenda_item, active_user):
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
+
+        session = agenda_item.session
+        event = session.agenda_item.space.event
+
+        # Create enrollment config to enable enrollment
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=5,
+        )
+
+        # User is on waiting list
+        SessionParticipation.objects.create(
+            session=session, user=active_user, status=SessionParticipationStatus.WAITING
+        )
+
+        form_class = create_enrollment_form(session, [active_user])
+        form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        # Should offer cancel and enroll options
+        assert "cancel" in choice_values
+        assert "enroll" in choice_values  # This covers lines 94->96
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_waiting_user_cannot_enroll_when_no_enrollment_config(
+        agenda_item, active_user
+    ):
+        session = agenda_item.session
+
+        # No enrollment config created - enrollment not active
+
+        # User is on waiting list
+        SessionParticipation.objects.create(
+            session=session, user=active_user, status=SessionParticipationStatus.WAITING
+        )
+
+        form_class = create_enrollment_form(session, [active_user])
+        form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        # Should only offer cancel, NOT enroll (no enrollment config)
+        assert "cancel" in choice_values
+        assert "enroll" not in choice_values
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_user_with_time_conflict_and_waitlist_enabled(agenda_item, active_user):
+        from datetime import UTC, datetime, timedelta
+        from unittest.mock import patch
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
+
+        session = agenda_item.session
+        event = session.agenda_item.space.event
+
+        # Create enrollment config with waitlist enabled
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=3,  # Enable waitlist
+        )
+
+        # Mock time conflict
+        with patch.object(Session.objects, "has_conflicts", return_value=True):
+            form_class = create_enrollment_form(session, [active_user])
+            form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        # Should show time conflict message and waitlist option
+        assert "" in choice_values  # "No change (time conflict)"
+        assert "enroll" not in choice_values  # No enroll due to conflict
+        assert "waitlist" in choice_values  # This covers lines 113->114
+        assert field.help_text == "Time conflict detected"  # This covers line 116
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_user_with_time_conflict_and_waitlist_disabled(agenda_item, active_user):
+        from datetime import UTC, datetime, timedelta
+        from unittest.mock import patch
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
+
+        session = agenda_item.session
+        event = session.agenda_item.space.event
+
+        # Create enrollment config with waitlist DISABLED
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=0,  # Disable waitlist
+        )
+
+        # Mock time conflict
+        with patch.object(Session.objects, "has_conflicts", return_value=True):
+            form_class = create_enrollment_form(session, [active_user])
+            form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        # Should only show time conflict message, NO waitlist option
+        assert "" in choice_values  # "No change (time conflict)"
+        assert "enroll" not in choice_values  # No enroll due to conflict
+        assert "waitlist" not in choice_values  # No waitlist due to disabled config
+        assert field.help_text == "Time conflict detected"
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_user_no_enrollment_no_waitlist_no_conflict(agenda_item, active_user):
+        """Test user with no participation, no enrollment config, no waitlist, no conflicts.
+        This covers the case where only 'No change' option is available."""
+
+        session = agenda_item.session
+
+        # No enrollment config created - so can_enroll returns False
+        # No participation exists for user - so goes to else branch (line 104)
+        # No time conflicts - so has_conflict is False
+        # No waitlist available - so can_join_waitlist returns False
+
+        form_class = create_enrollment_form(session, [active_user])
+        form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        # Should only have the default "No change" option
+        # This covers the path where lines 102-103 and 107-108 are skipped
+        # and lines 110-116 are also skipped (no conflict)
+        assert choice_values == [""]  # Only "No change"
+        assert "enroll" not in choice_values  # can_enroll is False
+        assert "waitlist" not in choice_values  # can_join_waitlist is False
+        assert not field.help_text  # No help text set
+
+    @pytest.mark.django_db
+    @staticmethod
+    def test_user_enrollment_active_but_waitlist_full(agenda_item, active_user):
+        """Test user who can enroll but waitlist is at capacity."""
+        from datetime import UTC, datetime, timedelta
+
+        from ludamus.adapters.db.django.models import EnrollmentConfig
+        from tests.integration.conftest import AgendaItemFactory, SessionFactory
+
+        session = agenda_item.session
+        event = session.agenda_item.space.event
+
+        # Create enrollment config with very limited waitlist
+        now = datetime.now(tz=UTC)
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=100,
+            max_waitlist_sessions=1,  # Only 1 waitlist slot
+        )
+
+        # Create another user to fill the waitlist slot
+        other_user = User.objects.create(
+            username="other_user", slug="other-user", birth_date=active_user.birth_date
+        )
+
+        # Fill the waitlist with other user in a different session
+        other_session = SessionFactory()
+        other_agenda_item = AgendaItemFactory(
+            session=other_session, space=agenda_item.space
+        )
+        SessionParticipation.objects.create(
+            session=other_session,
+            user=active_user,  # Active user uses up their 1 waitlist slot
+            status=SessionParticipationStatus.WAITING,
+        )
+
+        # Now test form for this user - they can enroll but not join waitlist
+        form_class = create_enrollment_form(session, [active_user])
+        form = form_class()
+
+        field_name = f"user_{active_user.id}"
+        field = form.fields[field_name]
+        choice_values = [choice[0] for choice in field.choices]
+
+        # Should offer enroll but NOT waitlist (waitlist full)
+        assert "" in choice_values  # "No change"
+        assert "enroll" in choice_values  # can_enroll is True
+        assert "waitlist" not in choice_values  # can_join_waitlist is False (at limit)
 
 
 class TestCreateProposalAcceptanceForm:

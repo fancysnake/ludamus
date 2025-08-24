@@ -5,6 +5,7 @@ from django.contrib import admin
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    DomainEnrollmentConfig,
     EnrollmentConfig,
     Event,
     Guild,
@@ -17,6 +18,7 @@ from ludamus.adapters.db.django.models import (
     TagCategory,
     TimeSlot,
     User,
+    UserEnrollmentConfig,
 )
 
 
@@ -80,6 +82,57 @@ class ProposalCategoryAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 
+class UserEnrollmentConfigInline(admin.TabularInline):  # type: ignore [type-arg]
+    model = UserEnrollmentConfig
+    extra = 0
+    fields = ("user_email", "allowed_slots", "fetched_from_api")
+    readonly_fields = ("fetched_from_api",)
+
+
+class DomainEnrollmentConfigInline(admin.TabularInline):  # type: ignore [type-arg]
+    model = DomainEnrollmentConfig
+    extra = 0
+    fields = ("domain", "allowed_slots_per_user")
+
+
 @admin.register(EnrollmentConfig)
 class EnrollmentConfigAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    pass
+    list_display = (
+        "event",
+        "start_time",
+        "end_time",
+        "percentage_slots",
+        "restrict_to_configured_users",
+    )
+    list_filter = ("restrict_to_configured_users", "event")
+    inlines = [UserEnrollmentConfigInline, DomainEnrollmentConfigInline]
+    fields = (
+        "event",
+        "start_time",
+        "end_time",
+        "percentage_slots",
+        "limit_to_end_time",
+        "restrict_to_configured_users",
+        "max_waitlist_sessions",
+        "banner_text",
+    )
+
+
+@admin.register(UserEnrollmentConfig)
+class UserEnrollmentConfigAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = (
+        "user_email",
+        "enrollment_config",
+        "allowed_slots",
+        "fetched_from_api",
+    )
+    list_filter = ("fetched_from_api", "enrollment_config__event")
+    search_fields = ("user_email",)
+
+
+@admin.register(DomainEnrollmentConfig)
+class DomainEnrollmentConfigAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = ("domain", "enrollment_config", "allowed_slots_per_user")
+    list_filter = ("enrollment_config__event",)
+    search_fields = ("domain",)
+    fields = ("enrollment_config", "domain", "allowed_slots_per_user")
