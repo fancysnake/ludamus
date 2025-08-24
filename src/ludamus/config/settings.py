@@ -30,6 +30,9 @@ Environment Variables:
         - SUPPORT_EMAIL: Support email address
         - STATIC_ROOT: Static files root directory
         - MEDIA_ROOT: Media files root directory
+        - MEMBERSHIP_API_BASE_URL: Base URL for membership API
+        - MEMBERSHIP_API_TOKEN: Authentication token for membership API
+        - MEMBERSHIP_API_TIMEOUT: Request timeout in seconds (default: 30)
 """
 
 import os
@@ -330,3 +333,8 @@ LOGGING = {
 # Bootstrap Icons Configuration
 # Configure icon cache to avoid repeated CDN downloads
 BS_ICONS_CACHE = BASE_DIR / "static" / "icon_cache"
+
+# Membership API Configuration
+MEMBERSHIP_API_BASE_URL = os.getenv("MEMBERSHIP_API_BASE_URL", "")
+MEMBERSHIP_API_TOKEN = os.getenv("MEMBERSHIP_API_TOKEN", "")
+MEMBERSHIP_API_TIMEOUT = int(os.getenv("MEMBERSHIP_API_TIMEOUT", "30"))
