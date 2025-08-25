@@ -17,7 +17,7 @@ from ludamus.adapters.external.membership_api import (
 class TestMembershipApiClient:
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     def test_api_configured_correctly(self):
@@ -26,13 +26,13 @@ class TestMembershipApiClient:
         assert client.base_url == "https://api.example.com/membership"
         assert client.token == "test-token-123"
 
-    @override_settings(MEMBERSHIP_API_URL=None, MEMBERSHIP_API_TOKEN="test-token")
+    @override_settings(MEMBERSHIP_API_BASE_URL=None, MEMBERSHIP_API_TOKEN="test-token")
     def test_api_not_configured_missing_url(self):
         client = MembershipApiClient()
         assert not client.is_configured()
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN=None,
     )
     def test_api_not_configured_missing_token(self):
@@ -40,7 +40,7 @@ class TestMembershipApiClient:
         assert not client.is_configured()
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
@@ -63,7 +63,7 @@ class TestMembershipApiClient:
         )
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
@@ -80,7 +80,7 @@ class TestMembershipApiClient:
         assert result == 0
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
@@ -94,7 +94,7 @@ class TestMembershipApiClient:
         assert result is None
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
@@ -146,14 +146,14 @@ class TestGetOrCreateUserEnrollmentConfig:
             percentage_slots=100,
         )
 
-        with override_settings(MEMBERSHIP_API_URL=None):
+        with override_settings(MEMBERSHIP_API_BASE_URL=None):
             result = get_or_create_user_enrollment_config(
                 enrollment_config, "test@example.com"
             )
             assert result is None
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
@@ -183,7 +183,7 @@ class TestGetOrCreateUserEnrollmentConfig:
         assert result.fetched_from_api is True
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
@@ -216,7 +216,7 @@ class TestGetOrCreateUserEnrollmentConfig:
         assert created_config.fetched_from_api is True
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
@@ -272,7 +272,7 @@ class TestGetOrCreateUserEnrollmentConfig:
             mock_get.assert_not_called()
 
     @override_settings(
-        MEMBERSHIP_API_URL="https://api.example.com/membership",
+        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
