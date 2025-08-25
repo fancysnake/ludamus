@@ -402,15 +402,17 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                     break
 
             if manager_config:
-                available_slots = manager_config.get_available_slots()
-                if len(enroll_requests) > available_slots:
+                # Check if these new enrollments would exceed the limit
+                if not manager_config.can_enroll_users(enroll_requests):
+                    used_slots = manager_config.get_used_slots()
+                    available_slots = manager_config.get_available_slots()
                     # Add error to first enrollment field using user's name
                     for field_name, value in cleaned_data.items():
                         if field_name.startswith("user_") and value == "enroll":
                             user_name = field_to_user_name.get(field_name, "User")
                             self.add_error(
                                 field_name,
-                                f"{user_name}: Not enough enrollment passes available. You requested {len(enroll_requests)} enrollments but only have {available_slots} passes remaining.",
+                                f"{user_name}: Not enough enrollment passes available. You have {used_slots} out of {manager_config.allowed_slots} slots already used. Only {available_slots} slots remaining.",
                             )
                             break
                     return cleaned_data

@@ -120,7 +120,12 @@ class TestUserEnrollmentConfigModel:
 
         assert user_config.get_used_slots() == 2
         assert user_config.get_available_slots() == 0
-        assert user_config.has_available_slots() is False
+        assert (
+            user_config.has_available_slots() is True
+        )  # Has slots allocated, even if all used
+        assert (
+            user_config.can_enroll_users([connected_user2]) is False
+        )  # Cannot enroll more users
 
     def test_event_get_user_enrollment_config(self, event):
         # Create enrollment config with 50% slots
@@ -417,7 +422,8 @@ class TestUserEnrollmentConfigView:
 
         # Verify user is at their limit
         user_config = event.get_user_enrollment_config("test@example.com")
-        assert not user_config.has_available_slots()
+        assert user_config.has_available_slots()  # Has slots allocated
+        assert user_config.get_available_slots() == 0  # But all are used
 
         response = authenticated_client.get(self._get_url(agenda_item.session.pk))
         assert response.status_code == HTTPStatus.OK
@@ -484,7 +490,8 @@ class TestUserEnrollmentConfigView:
 
         # Verify user is at their limit
         user_config = event.get_user_enrollment_config("test@example.com")
-        assert not user_config.has_available_slots()
+        assert user_config.has_available_slots()  # Has slots allocated
+        assert user_config.get_available_slots() == 0  # But all are used
 
         # User should be able to join waiting list even when at slot limit
         response = authenticated_client.post(
@@ -541,7 +548,8 @@ class TestUserEnrollmentConfigView:
 
         # Verify user is at their limit
         user_config = event.get_user_enrollment_config("test@example.com")
-        assert not user_config.has_available_slots()
+        assert user_config.has_available_slots()  # Has slots allocated
+        assert user_config.get_available_slots() == 0  # But all are used
 
         # User should get form validation error when trying to enroll
         response = authenticated_client.post(
@@ -667,7 +675,8 @@ class TestUserEnrollmentConfigView:
         )
 
         # Verify waiting user has no available slots
-        assert not user_config_waiting.has_available_slots()
+        assert user_config_waiting.has_available_slots()  # Has slots allocated
+        assert user_config_waiting.get_available_slots() == 0  # But all are used
 
         # Enroll manager user
         SessionParticipation.objects.create(
@@ -1230,7 +1239,7 @@ class TestUserEnrollmentConfigView:
             "https://api.example.com/membership",
             params={"email": "api-user@example.com"},
             headers={"Authorization": "Token test-token-123"},
-            timeout=10,
+            timeout=30,
         )
 
         # Verify UserEnrollmentConfig was created
