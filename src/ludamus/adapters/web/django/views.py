@@ -875,10 +875,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         enrollments = Enrollments()
 
         # Lock the session to prevent race conditions within the transaction
-        session = (
-            Session.objects.select_for_update()
-            .get(id=session.id)
-        )
+        session = Session.objects.select_for_update().get(id=session.id)
 
         # Double-check capacity within the transaction (race condition protection)
         confirmed_requests = [
@@ -980,7 +977,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
                                 manager_user.email
                             )
                         )
-                        if user_config and not user_config.has_available_slots():
+                        if user_config and not user_config.can_enroll_users(
+                            [participation.user]
+                        ):
                             can_be_promoted = False
 
                     if can_be_promoted:
@@ -1065,7 +1064,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 manager_user.email
             )
-            if user_config and not user_config.has_available_slots():
+            if user_config and not user_config.can_enroll_users([req.user]):
                 enrollments.skipped_users.append(
                     f"{req.name} ({_('no enrollment slots available')!s})"
                 )

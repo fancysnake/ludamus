@@ -59,7 +59,7 @@ class TestMembershipApiClient:
             "https://api.example.com/membership",
             params={"email": "test@example.com"},
             headers={"Authorization": "Token test-token-123"},
-            timeout=10,
+            timeout=30,
         )
 
     @override_settings(

@@ -425,6 +425,12 @@ class UserEnrollmentConfig(models.Model):
         return f"{self.user_email}: {self.allowed_slots} slots"
 
     def get_used_slots(self) -> int:
+        """
+        Get the number of slots used.
+
+        Returns the count of unique users from this user's group who are
+        enrolled in at least one session for this event.
+        """
         try:
             user = User.objects.get(email=self.user_email)
         except User.DoesNotExist:
@@ -433,17 +439,53 @@ class UserEnrollmentConfig(models.Model):
         # Get all users (main user + connected users)
         all_users = [user, *user.connected.all()]
 
-        return SessionParticipation.objects.filter(
-            status=SessionParticipationStatus.CONFIRMED,
-            user__in=all_users,
-            session__agenda_item__space__event=self.enrollment_config.event,
-        ).count()
+        # Count unique users who have at least one confirmed enrollment
+        users_with_enrollments = (
+            SessionParticipation.objects.filter(
+                status=SessionParticipationStatus.CONFIRMED,
+                user__in=all_users,
+                session__agenda_item__space__event=self.enrollment_config.event,
+            )
+            .values_list("user", flat=True)
+            .distinct()
+        )
+
+        return len(users_with_enrollments)
 
     def get_available_slots(self) -> int:
+        """Get the number of available slots."""
         return max(0, self.allowed_slots - self.get_used_slots())
 
     def has_available_slots(self) -> bool:
-        return self.get_available_slots() > 0
+        """Check if user has any enrollment slots allocated."""
+        return self.allowed_slots > 0
+
+    def can_enroll_users(self, users_to_enroll: list) -> bool:
+        """Check if enrolling these users would exceed the slot limit."""
+        try:
+            user = User.objects.get(email=self.user_email)
+        except User.DoesNotExist:
+            return False
+
+        # Get all users (main user + connected users)
+        all_users = [user, *user.connected.all()]
+
+        # Get currently enrolled users
+        currently_enrolled = set(
+            SessionParticipation.objects.filter(
+                status=SessionParticipationStatus.CONFIRMED,
+                user__in=all_users,
+                session__agenda_item__space__event=self.enrollment_config.event,
+            )
+            .values_list("user_id", flat=True)
+            .distinct()
+        )
+
+        # Add new users to enroll
+        users_to_enroll_ids = {u.id for u in users_to_enroll if u in all_users}
+        total_enrolled = currently_enrolled | users_to_enroll_ids
+
+        return len(total_enrolled) <= self.allowed_slots
 
     def is_domain_based(self) -> bool:
         """Check if this is a domain-based virtual configuration."""
