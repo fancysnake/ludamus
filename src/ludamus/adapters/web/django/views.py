@@ -877,7 +877,6 @@ class EnrollSelectView(LoginRequiredMixin, View):
         # Lock the session to prevent race conditions within the transaction
         session = (
             Session.objects.select_for_update()
-            .select_related("proposal")
             .get(id=session.id)
         )
 

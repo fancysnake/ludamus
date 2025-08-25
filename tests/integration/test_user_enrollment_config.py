@@ -1193,7 +1193,7 @@ class TestUserEnrollmentConfigView:
         self, mock_get, active_user, authenticated_client, agenda_item, event, settings
     ):
         # Test end-to-end API integration
-        settings.MEMBERSHIP_API_URL = "https://api.example.com/membership"
+        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/membership"
         settings.MEMBERSHIP_API_TOKEN = "test-token-123"
         memberships = 2
 
@@ -1250,7 +1250,7 @@ class TestUserEnrollmentConfigView:
         self, mock_get, active_user, authenticated_client, agenda_item, event, settings
     ):
         # Test API returns zero membership
-        settings.MEMBERSHIP_API_URL = "https://api.example.com/membership"
+        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/membership"
         settings.MEMBERSHIP_API_TOKEN = "test-token-123"
 
         # Mock API response with zero membership

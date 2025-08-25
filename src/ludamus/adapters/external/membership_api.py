@@ -14,7 +14,7 @@ class MembershipApiClient:
     """Client for external membership API integration."""
 
     def __init__(self):
-        self.base_url = getattr(settings, "MEMBERSHIP_API_URL", None)
+        self.base_url = getattr(settings, "MEMBERSHIP_API_BASE_URL", None)
         self.token = getattr(settings, "MEMBERSHIP_API_TOKEN", None)
         self.timeout = getattr(settings, "MEMBERSHIP_API_TIMEOUT", 10)
 
