@@ -91,9 +91,9 @@
                             <h6 class="alert-heading mb-2">{% translate "Your Enrollment Access" %}</h6>
                             {% if user_enrollment_config %}
                                 <p class="mb-1">
-                                    {% with available=user_enrollment_config.get_available_slots total=user_enrollment_config.allowed_slots %}
+                                    {% with total=user_enrollment_config.allowed_slots %}
                                         {% blocktranslate %}
-                                            You have {{ available }} available out of {{ total }} total enrollment slots.
+                                            You have {{ total }} enrollment slots.
                                         {% endblocktranslate %}
                                     {% endwith %}
                                 </p>
