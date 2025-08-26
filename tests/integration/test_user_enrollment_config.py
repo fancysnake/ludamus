@@ -173,7 +173,7 @@ class TestUserEnrollmentConfigModel:
         )
 
         # Test string representation
-        expected_str = "test.user@example.com: 3 slots"
+        expected_str = "test.user@example.com: 3 user slots"
         assert str(user_config) == expected_str
 
     def test_user_enrollment_config_str_with_different_values(self, event):
@@ -194,7 +194,7 @@ class TestUserEnrollmentConfigModel:
         )
 
         # Test string representation
-        expected_str = "another.user@company.org: 1 slots"
+        expected_str = "another.user@company.org: 1 user slots"
         assert str(user_config) == expected_str
 
     def test_user_enrollment_config_str_with_zero_slots(self, event):
@@ -215,7 +215,7 @@ class TestUserEnrollmentConfigModel:
         )
 
         # Test string representation
-        expected_str = "blocked.user@example.com: 0 slots"
+        expected_str = "blocked.user@example.com: 0 user slots"
         assert str(user_config) == expected_str
 
 

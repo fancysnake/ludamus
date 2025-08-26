@@ -406,7 +406,7 @@ class UserEnrollmentConfig(models.Model):
         help_text="Email address of the user this configuration applies to"
     )
     allowed_slots = models.PositiveIntegerField(
-        help_text="Number of slots this user + their connected users can take"
+        help_text="Maximum number of users (including connected users) that can be enrolled by this account"
     )
     fetched_from_api = models.BooleanField(
         default=False, help_text="Whether this config was fetched from external API"
@@ -422,14 +422,15 @@ class UserEnrollmentConfig(models.Model):
         )
 
     def __str__(self) -> str:
-        return f"{self.user_email}: {self.allowed_slots} slots"
+        return f"{self.user_email}: {self.allowed_slots} user slots"
 
     def get_used_slots(self) -> int:
         """
-        Get the number of slots used.
+        Get the number of user slots currently used.
 
-        Returns the count of unique users from this user's group who are
-        enrolled in at least one session for this event.
+        Returns the count of unique users (main user + connected users) who have
+        at least one enrollment in this event. Each user counts as one slot
+        regardless of how many sessions they're enrolled in.
         """
         try:
             user = User.objects.get(email=self.user_email)
@@ -453,15 +454,19 @@ class UserEnrollmentConfig(models.Model):
         return len(users_with_enrollments)
 
     def get_available_slots(self) -> int:
-        """Get the number of available slots."""
+        """Get the number of remaining user slots that can be enrolled."""
         return max(0, self.allowed_slots - self.get_used_slots())
 
     def has_available_slots(self) -> bool:
-        """Check if user has any enrollment slots allocated."""
+        """Check if user has been allocated any enrollment slots (not if they're available)."""
         return self.allowed_slots > 0
 
     def can_enroll_users(self, users_to_enroll: list) -> bool:
-        """Check if enrolling these users would exceed the slot limit."""
+        """Check if enrolling these users would exceed the user slot limit.
+
+        Each unique user counts as one slot, regardless of how many sessions
+        they enroll in.
+        """
         try:
             user = User.objects.get(email=self.user_email)
         except User.DoesNotExist:
@@ -532,7 +537,7 @@ class DomainEnrollmentConfig(models.Model):
         max_length=255, help_text="Domain name (e.g. 'company.com', 'university.edu')"
     )
     allowed_slots_per_user = models.PositiveIntegerField(
-        help_text="Default number of slots per user from this domain"
+        help_text="Default number of users (including connected users) that can be enrolled by accounts from this domain"
     )
 
     class Meta:
@@ -545,7 +550,7 @@ class DomainEnrollmentConfig(models.Model):
         )
 
     def __str__(self) -> str:
-        return f"@{self.domain}: {self.allowed_slots_per_user} slots per user"
+        return f"@{self.domain}: {self.allowed_slots_per_user} user slots per account"
 
     def clean(self) -> None:
         super().clean()

@@ -719,9 +719,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 error=_("No enrollment configuration is available for this session."),
             )
 
-        # Note: User slot limits are now handled in _process_enrollments()
-        # to allow users to join waiting lists when at their slot limit.
-        # No need to block access to enrollment page here.
+        # Note: User slot limits (max number of unique users that can be enrolled)
+        # are handled in _process_enrollments(). Users can enroll in multiple sessions
+        # without consuming additional slots. No need to block access here.
 
         return enrollment_config
 
@@ -757,10 +757,14 @@ class EnrollSelectView(LoginRequiredMixin, View):
             data = SessionUserParticipationData(
                 user=user,
                 user_enrolled=any(
-                    p.status == SessionParticipationStatus.CONFIRMED for p in user_parts
+                    p.status == SessionParticipationStatus.CONFIRMED
+                    and p.session == session
+                    for p in user_parts
                 ),
                 user_waiting=any(
-                    p.status == SessionParticipationStatus.WAITING for p in user_parts
+                    p.status == SessionParticipationStatus.WAITING
+                    and p.session == session
+                    for p in user_parts
                 ),
                 has_time_conflict=any(
                     session.agenda_item.overlaps_with(p.session.agenda_item)
@@ -1066,7 +1070,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             )
             if user_config and not user_config.can_enroll_users([req.user]):
                 enrollments.skipped_users.append(
-                    f"{req.name} ({_('no enrollment slots available')!s})"
+                    f"{req.name} ({_('no user slots available')!s})"
                 )
                 return
 

@@ -972,7 +972,7 @@ class TestEnrollSelectView:
             "user_data": [
                 SessionUserParticipationData(
                     user=active_user,
-                    user_enrolled=True,
+                    user_enrolled=False,  # User is not enrolled in THIS session
                     user_waiting=False,
                     has_time_conflict=True,
                 )

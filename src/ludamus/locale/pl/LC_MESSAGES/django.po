@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-24 16:09+0200\n"
+"POT-Creation-Date: 2025-08-26 07:43+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -80,109 +80,17 @@ msgstr "użytkownik"
 msgid "users"
 msgstr "użytkownicy"
 
-#: src/ludamus/adapters/db/django/models.py:520
+#: src/ludamus/adapters/db/django/models.py:651
 msgid "Time slots can't overlap!"
 msgstr "Bloki czasowe nie mogą się nakładać!"
 
-#: src/ludamus/adapters/db/django/models.py:525
+#: src/ludamus/adapters/db/django/models.py:656
 msgid "Select from list"
 msgstr "Wybierz z listy"
 
-#: src/ludamus/adapters/db/django/models.py:526
+#: src/ludamus/adapters/db/django/models.py:657
 msgid "Type comma-separated"
 msgstr "Wpisz oddzielone przecinkami"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:41
-#: src/ludamus/adapters/web/django/forms.py:137
-#: src/ludamus/adapters/web/django/forms.py:239
-#: src/ludamus/adapters/web/django/forms.py:243
-#: src/ludamus/adapters/web/django/forms.py:246
-msgid "No change"
-msgstr "Bez zmian"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:44
-#: src/ludamus/adapters/web/django/forms.py:176
-#: src/ludamus/adapters/web/django/forms.py:182
-msgid "No change (age restriction)"
-msgstr "Bez zmian (ograniczenie wiekowe)"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:61
-#: src/ludamus/adapters/web/django/enrollment_choices.py:66
-#: src/ludamus/adapters/web/django/forms.py:145
-#: src/ludamus/adapters/web/django/forms.py:156
-msgid "Cancel enrollment"
-msgstr "Zwykły zapis"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:63
-#: src/ludamus/adapters/web/django/forms.py:147
-msgid "Move to waiting list"
-msgstr "Dodani do listy oczekujących: {}"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:68
-#: src/ludamus/adapters/web/django/forms.py:159
-msgid "Enroll (if spots available)"
-msgstr "Zapisz się (jeśli są miejsca)"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:80
-#: src/ludamus/adapters/web/django/enrollment_choices.py:87
-#: src/ludamus/adapters/web/django/forms.py:174
-#: src/ludamus/adapters/web/django/forms.py:190
-#: src/ludamus/adapters/web/django/forms.py:196
-msgid "Join waiting list"
-msgstr "Dołącz do listy oczekujących"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:82
-#: src/ludamus/adapters/web/django/forms.py:194
-msgid "No change (time conflict)"
-msgstr "konflikt czasowy"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:85
-#: src/ludamus/adapters/web/django/forms.py:172
-#: src/ludamus/adapters/web/django/forms.py:188
-#: src/ludamus/templates/chronology/enroll_select.html:79
-#: src/ludamus/templates/chronology/event.html:340
-#: src/ludamus/templates/chronology/event.html:346
-#: src/ludamus/templates/chronology/event.html:367
-#: src/ludamus/templates/chronology/event.html:685
-msgid "Enroll"
-msgstr "Zapisz się"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:94
-#: src/ludamus/adapters/web/django/forms.py:177
-#: src/ludamus/adapters/web/django/forms.py:183
-#, python-format
-msgid "Must be at least %(min_age)s years old"
-msgstr "Musi mieć co najmniej %(min_age)s lat"
-
-#: src/ludamus/adapters/web/django/enrollment_choices.py:99
-#: src/ludamus/adapters/web/django/forms.py:198
-msgid "Time conflict detected"
-msgstr "Konflikt czasowy"
-
-#: src/ludamus/adapters/web/django/enrollment_processor.py:31
-#: src/ludamus/adapters/web/django/views.py:626
-msgid "yourself"
-msgstr "siebie"
-
-#: src/ludamus/adapters/web/django/enrollment_processor.py:142
-msgid "not enrolled"
-msgstr "nie zapisany"
-
-#: src/ludamus/adapters/web/django/enrollment_processor.py:161
-#: src/ludamus/adapters/web/django/enrollment_processor.py:183
-#: src/ludamus/adapters/web/django/views.py:1099
-msgid "already enrolled"
-msgstr "już zapisany"
-
-#: src/ludamus/adapters/web/django/enrollment_processor.py:170
-#: src/ludamus/adapters/web/django/views.py:1085
-msgid "waitlist limit exceeded"
-msgstr "przekroczono limit listy oczekujących"
-
-#: src/ludamus/adapters/web/django/enrollment_processor.py:237
-#: src/ludamus/adapters/web/django/views.py:994
-msgid "promoted from waiting list"
-msgstr "przeniesiony z listy oczekujących"
 
 #: src/ludamus/adapters/web/django/error_views.py:15
 msgid "Critical Failure!"
@@ -575,15 +483,70 @@ msgstr "Nyarlathotep opętał naszą infrastrukturę"
 msgid "Madness spreads through every circuit..."
 msgstr "Szaleństwo rozprzestrzenia się przez każdy obwód..."
 
+#: src/ludamus/adapters/web/django/forms.py:137
+#: src/ludamus/adapters/web/django/forms.py:239
+#: src/ludamus/adapters/web/django/forms.py:243
+#: src/ludamus/adapters/web/django/forms.py:246
+msgid "No change"
+msgstr "Bez zmian"
+
+#: src/ludamus/adapters/web/django/forms.py:145
+#: src/ludamus/adapters/web/django/forms.py:156
+msgid "Cancel enrollment"
+msgstr "Zwykły zapis"
+
+#: src/ludamus/adapters/web/django/forms.py:147
+msgid "Move to waiting list"
+msgstr "Dodani do listy oczekujących: {}"
+
 #: src/ludamus/adapters/web/django/forms.py:152
 #, python-format
 msgid "Must be at least %(min_age)s years old for new enrollment"
 msgstr "Musi mieć co najmniej %(min_age)s lat do nowego zapisu"
 
+#: src/ludamus/adapters/web/django/forms.py:159
+msgid "Enroll (if spots available)"
+msgstr "Zapisz się (jeśli są miejsca)"
+
 #: src/ludamus/adapters/web/django/forms.py:165
 #, python-format
 msgid "Must be at least %(min_age)s years old for enrollment"
 msgstr "Musi mieć co najmniej %(min_age)s lat do zapisu"
+
+#: src/ludamus/adapters/web/django/forms.py:172
+#: src/ludamus/adapters/web/django/forms.py:188
+#: src/ludamus/templates/chronology/enroll_select.html:79
+#: src/ludamus/templates/chronology/event.html:354
+#: src/ludamus/templates/chronology/event.html:360
+#: src/ludamus/templates/chronology/event.html:381
+#: src/ludamus/templates/chronology/event.html:699
+msgid "Enroll"
+msgstr "Zapisz się"
+
+#: src/ludamus/adapters/web/django/forms.py:174
+#: src/ludamus/adapters/web/django/forms.py:190
+#: src/ludamus/adapters/web/django/forms.py:196
+msgid "Join waiting list"
+msgstr "Dołącz do listy oczekujących"
+
+#: src/ludamus/adapters/web/django/forms.py:176
+#: src/ludamus/adapters/web/django/forms.py:182
+msgid "No change (age restriction)"
+msgstr "Bez zmian (ograniczenie wiekowe)"
+
+#: src/ludamus/adapters/web/django/forms.py:177
+#: src/ludamus/adapters/web/django/forms.py:183
+#, python-format
+msgid "Must be at least %(min_age)s years old"
+msgstr "Musi mieć co najmniej %(min_age)s lat"
+
+#: src/ludamus/adapters/web/django/forms.py:194
+msgid "No change (time conflict)"
+msgstr "konflikt czasowy"
+
+#: src/ludamus/adapters/web/django/forms.py:198
+msgid "Time conflict detected"
+msgstr "Konflikt czasowy"
 
 #: src/ludamus/adapters/web/django/forms.py:209
 msgid "Email address required for enrollment"
@@ -609,7 +572,6 @@ msgstr "Brak dostępnych opcji zapisu"
 #: src/ludamus/adapters/web/django/forms.py:249
 #: src/ludamus/adapters/web/django/forms.py:260
 #: src/ludamus/adapters/web/django/forms.py:356
-#: src/ludamus/adapters/web/django/forms_simplified.py:46
 #: src/ludamus/templates/chronology/enroll_select.html:77
 msgid "User"
 msgstr "Nazwa użytkownika"
@@ -647,124 +609,126 @@ msgstr "%(user)s nie może się zapisać: zapisy niedostępne"
 #: src/ludamus/adapters/web/django/forms.py:339
 #, python-format
 msgid "%(user)s cannot join waitlist: must be at least %(min_age)s years old"
-msgstr "%(user)s nie może dołączyć do listy oczekujących: musi mieć co najmniej %(min_age)s lat"
+msgstr ""
+"%(user)s nie może dołączyć do listy oczekujących: musi mieć co najmniej "
+"%(min_age)s lat"
 
 #: src/ludamus/adapters/web/django/forms.py:345
 #, python-format
 msgid "Invalid choice for %(user)s: %(value)s"
 msgstr "Nieprawidłowy wybór dla %(user)s: %(value)s"
 
-#: src/ludamus/adapters/web/django/forms.py:489
+#: src/ludamus/adapters/web/django/forms.py:491
 msgid "Select all that apply"
 msgstr "Zaznacz wszystkie pasujące"
 
-#: src/ludamus/adapters/web/django/forms.py:499
+#: src/ludamus/adapters/web/django/forms.py:501
 msgid "Enter tags separated by commas"
 msgstr "Wprowadź tagi oddzielone przecinkami..."
 
-#: src/ludamus/adapters/web/django/forms.py:502
+#: src/ludamus/adapters/web/django/forms.py:504
 msgid "Enter multiple tags separated by commas"
 msgstr "Wprowadź wiele tagów oddzielonych przecinkami"
 
-#: src/ludamus/adapters/web/django/forms.py:541
+#: src/ludamus/adapters/web/django/forms.py:543
 msgid "PEGI 3"
 msgstr "PEGI 3"
 
-#: src/ludamus/adapters/web/django/forms.py:542
+#: src/ludamus/adapters/web/django/forms.py:544
 msgid "PEGI 7"
 msgstr "PEGI 7"
 
-#: src/ludamus/adapters/web/django/forms.py:543
+#: src/ludamus/adapters/web/django/forms.py:545
 msgid "PEGI 12"
 msgstr "PEGI 12"
 
-#: src/ludamus/adapters/web/django/forms.py:544
+#: src/ludamus/adapters/web/django/forms.py:546
 msgid "PEGI 16"
 msgstr "PEGI 16"
 
-#: src/ludamus/adapters/web/django/forms.py:545
+#: src/ludamus/adapters/web/django/forms.py:547
 msgid "PEGI 18"
 msgstr "PEGI 18"
 
-#: src/ludamus/adapters/web/django/forms.py:549
+#: src/ludamus/adapters/web/django/forms.py:551
 msgid "Select the appropriate age rating for this session"
 msgstr "Wybierz odpowiednią kategorię wiekową dla tego punktu programu"
 
-#: src/ludamus/adapters/web/django/forms.py:574
+#: src/ludamus/adapters/web/django/forms.py:576
 msgid "Enter session title"
 msgstr "Tytuł punktu programu"
 
-#: src/ludamus/adapters/web/django/forms.py:583
+#: src/ludamus/adapters/web/django/forms.py:585
 msgid "Describe your session"
 msgstr "Opisz swój punkt programu"
 
-#: src/ludamus/adapters/web/django/forms.py:590
+#: src/ludamus/adapters/web/django/forms.py:592
 msgid "What should participants bring or know?"
 msgstr "Co uczestnicy powinni przynieść lub wiedzieć?"
 
-#: src/ludamus/adapters/web/django/forms.py:597
+#: src/ludamus/adapters/web/django/forms.py:599
 msgid "What materials or space do you need?"
 msgstr "Jakie materiały lub przestrzeń potrzebujesz?"
 
-#: src/ludamus/adapters/web/django/forms.py:630
+#: src/ludamus/adapters/web/django/forms.py:632
 #: src/ludamus/templates/chronology/accept_proposal.html:81
 #: src/ludamus/templates/chronology/enroll_select.html:43
-#: src/ludamus/templates/chronology/event.html:234
+#: src/ludamus/templates/chronology/event.html:248
 msgid "Space"
 msgstr "Przestrzeń"
 
-#: src/ludamus/adapters/web/django/forms.py:632
+#: src/ludamus/adapters/web/django/forms.py:634
 msgid "Select the space where this session will take place"
 msgstr "Wybierz przestrzeń, gdzie odbędzie się ten punkt programu"
 
-#: src/ludamus/adapters/web/django/forms.py:633
+#: src/ludamus/adapters/web/django/forms.py:635
 #: src/ludamus/templates/chronology/accept_proposal.html:84
 msgid "Select a space..."
 msgstr "Wybierz przestrzeń..."
 
-#: src/ludamus/adapters/web/django/forms.py:639
+#: src/ludamus/adapters/web/django/forms.py:641
 msgid "Time slot"
 msgstr "Konflikt czasowy"
 
-#: src/ludamus/adapters/web/django/forms.py:641
+#: src/ludamus/adapters/web/django/forms.py:643
 msgid "Select the time slot for this session"
 msgstr "Nie jesteś na liście oczekujących dla tego punktu programu."
 
-#: src/ludamus/adapters/web/django/forms.py:642
+#: src/ludamus/adapters/web/django/forms.py:644
 #: src/ludamus/templates/chronology/accept_proposal.html:93
 msgid "Select a time slot..."
 msgstr "Wybierz blok czasowy..."
 
-#: src/ludamus/adapters/web/django/forms.py:653
+#: src/ludamus/adapters/web/django/forms.py:655
 msgid "There is already a session scheduled at this space and time."
 msgstr "Ten użytkownik jest już zapisany na ten punkt programu."
 
-#: src/ludamus/adapters/web/django/forms.py:664
+#: src/ludamus/adapters/web/django/forms.py:666
 #: src/ludamus/templates/base.html:159
 msgid "Cold Steel (Default)"
 msgstr "Zimna Stal (Domyślny)"
 
-#: src/ludamus/adapters/web/django/forms.py:665
+#: src/ludamus/adapters/web/django/forms.py:667
 #: src/ludamus/templates/base.html:163
 msgid "Cyberpunk"
 msgstr "Cyberpunk"
 
-#: src/ludamus/adapters/web/django/forms.py:666
+#: src/ludamus/adapters/web/django/forms.py:668
 #: src/ludamus/templates/base.html:167
 msgid "Green Forest"
 msgstr "Zielony Las"
 
-#: src/ludamus/adapters/web/django/forms.py:667
+#: src/ludamus/adapters/web/django/forms.py:669
 #: src/ludamus/templates/base.html:171
 msgid "Dragon's Lair"
 msgstr "Smocza Jama"
 
-#: src/ludamus/adapters/web/django/forms.py:668
+#: src/ludamus/adapters/web/django/forms.py:670
 #: src/ludamus/templates/base.html:175
 msgid "Outer Space"
 msgstr "Kosmos"
 
-#: src/ludamus/adapters/web/django/forms.py:673
+#: src/ludamus/adapters/web/django/forms.py:675
 msgid "Theme"
 msgstr "Motyw"
 
@@ -847,7 +811,6 @@ msgstr "Profil został zaktualizowany!"
 #: src/ludamus/adapters/web/django/views.py:372
 #: src/ludamus/adapters/web/django/views.py:415
 #: src/ludamus/adapters/web/django/views.py:436
-#: src/ludamus/adapters/web/django/views_simplified.py:67
 msgid "Please correct the errors below."
 msgstr "Proszę poprawić błędy poniżej."
 
@@ -868,18 +831,19 @@ msgstr "Powiązana osoba została zaktualizowana!"
 msgid "Connected user deleted successfully."
 msgstr "Powiązana osoba została usunięta."
 
+#: src/ludamus/adapters/web/django/views.py:626
+msgid "yourself"
+msgstr "siebie"
+
 #: src/ludamus/adapters/web/django/views.py:647
-#: src/ludamus/adapters/web/django/views_simplified.py:90
 msgid "Session not found."
 msgstr "Punkt programu nie został znaleziony."
 
 #: src/ludamus/adapters/web/django/views.py:684
-#: src/ludamus/adapters/web/django/views_simplified.py:100
 msgid "Please complete your profile with birth date before enrolling."
 msgstr "Uzupełnij swój profil z datą urodzenia przed zapisywaniem się."
 
 #: src/ludamus/adapters/web/django/views.py:695
-#: src/ludamus/adapters/web/django/views_simplified.py:111
 #, python-format
 msgid "You must be at least %(min_age)s years old to enroll in this session."
 msgstr ""
@@ -887,20 +851,18 @@ msgstr ""
 "programu."
 
 #: src/ludamus/adapters/web/django/views.py:707
-#: src/ludamus/adapters/web/django/views_simplified.py:122
 msgid "Enrollment is not currently available for this session."
 msgstr "Zapisy nie są obecnie dostępne dla tego punktu programu."
 
 #: src/ludamus/adapters/web/django/views.py:719
-#: src/ludamus/adapters/web/django/views_simplified.py:134
 msgid "No enrollment configuration is available for this session."
 msgstr "Brak dostępnej konfiguracji zapisów dla tego punktu programu."
 
-#: src/ludamus/adapters/web/django/views.py:806
+#: src/ludamus/adapters/web/django/views.py:808
 msgid "Email address is required for enrollment in this session."
 msgstr "Do zapisu na ten punkt programu wymagany jest adres email."
 
-#: src/ludamus/adapters/web/django/views.py:814
+#: src/ludamus/adapters/web/django/views.py:816
 msgid ""
 "Enrollment access permission is required for this session. Please contact "
 "the organizers to obtain access."
@@ -908,10 +870,14 @@ msgstr ""
 "Do tego punktu programu wymagane są uprawnienia dostępu do zapisu. "
 "Skontaktuj się z organizatorami, aby uzyskać dostęp."
 
-#: src/ludamus/adapters/web/django/views.py:819
-#: src/ludamus/adapters/web/django/views.py:823
+#: src/ludamus/adapters/web/django/views.py:821
+#: src/ludamus/adapters/web/django/views.py:825
 msgid "Please review the enrollment options below."
 msgstr "Proszę przejrzeć opcje zapisu poniżej."
+
+#: src/ludamus/adapters/web/django/views.py:994
+msgid "promoted from waiting list"
+msgstr "przeniesiony z listy oczekujących"
 
 #: src/ludamus/adapters/web/django/views.py:1007
 msgid "session host"
@@ -937,42 +903,51 @@ msgstr "brak skonfigurowanego emaila"
 msgid "not in enrollment list"
 msgstr "nie ma na liście zapisu"
 
-#: src/ludamus/adapters/web/django/views.py:1062
+#: src/ludamus/adapters/web/django/views.py:1071
+msgid "no user slots available"
+msgstr "brak wolnych miejsc dla użytkowników"
+
+#: src/ludamus/adapters/web/django/views.py:1077
 msgid "time conflict"
 msgstr "konflikt czasowy"
 
-#: src/ludamus/adapters/web/django/views.py:1072
+#: src/ludamus/adapters/web/django/views.py:1087
 msgid "waitlist disabled"
 msgstr "lista oczekujących wyłączona"
 
-#: src/ludamus/adapters/web/django/views.py:1106
-#: src/ludamus/adapters/web/django/views_simplified.py:180
+#: src/ludamus/adapters/web/django/views.py:1100
+msgid "waitlist limit exceeded"
+msgstr "przekroczono limit listy oczekujących"
+
+#: src/ludamus/adapters/web/django/views.py:1114
+msgid "already enrolled"
+msgstr "już zapisany"
+
+#: src/ludamus/adapters/web/django/views.py:1121
 #, python-brace-format
 msgid "Enrolled: {}"
 msgstr "Zapisani: {}"
 
-#: src/ludamus/adapters/web/django/views.py:1110
-#: src/ludamus/adapters/web/django/views_simplified.py:186
+#: src/ludamus/adapters/web/django/views.py:1125
 #, python-brace-format
 msgid "Added to waiting list: {}"
 msgstr "Dodani do listy oczekujących: {}"
 
-#: src/ludamus/adapters/web/django/views.py:1112
-#: src/ludamus/adapters/web/django/views_simplified.py:194
+#: src/ludamus/adapters/web/django/views.py:1127
 #, python-brace-format
 msgid "Cancelled: {}"
 msgstr "Anulowani: {}"
 
-#: src/ludamus/adapters/web/django/views.py:1115
+#: src/ludamus/adapters/web/django/views.py:1130
 #, python-brace-format
 msgid "Skipped (already enrolled or conflicts): {}"
 msgstr "Pominięci (już zapisani lub konflikty): {}"
 
-#: src/ludamus/adapters/web/django/views.py:1123
+#: src/ludamus/adapters/web/django/views.py:1138
 msgid "No enrollments were processed."
 msgstr "Żadne zapisy nie zostały przetworzone."
 
-#: src/ludamus/adapters/web/django/views.py:1142
+#: src/ludamus/adapters/web/django/views.py:1157
 #, python-brace-format
 msgid ""
 "Not enough spots available. {} spots requested, {} available. Please use "
@@ -981,33 +956,32 @@ msgstr ""
 "Za mało dostępnych miejsc. {} miejsc żądanych, {} dostępnych. Użyj listy "
 "oczekujących dla niektórych użytkowników."
 
-#: src/ludamus/adapters/web/django/views.py:1176
-#: src/ludamus/adapters/web/django/views_simplified.py:73
+#: src/ludamus/adapters/web/django/views.py:1191
 msgid "Please select at least one user to enroll."
 msgstr "Wybierz przynajmniej jednego użytkownika do zapisu."
 
-#: src/ludamus/adapters/web/django/views.py:1191
-#: src/ludamus/adapters/web/django/views.py:1242
+#: src/ludamus/adapters/web/django/views.py:1206
+#: src/ludamus/adapters/web/django/views.py:1257
 msgid ""
 "Please complete your profile with birth date before submitting proposals."
 msgstr "Uzupełnij swój profil z datą urodzenia przed składaniem zgłoszeń."
 
-#: src/ludamus/adapters/web/django/views.py:1310
+#: src/ludamus/adapters/web/django/views.py:1325
 #, python-brace-format
 msgid "Session proposal '{}' submitted successfully!"
 msgstr "Zgłoszenie punktu programu '{}' zostało pomyślnie przesłane!"
 
-#: src/ludamus/adapters/web/django/views.py:1339
+#: src/ludamus/adapters/web/django/views.py:1354
 msgid "Event not found."
 msgstr "Festiwal nie został znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:1345
+#: src/ludamus/adapters/web/django/views.py:1360
 msgid "Proposal submission is not currently active for this event."
 msgstr ""
 "Składanie zgłoszeń punktów programu nie jest obecnie aktywne dla tego "
 "wydarzenia."
 
-#: src/ludamus/adapters/web/django/views.py:1360
+#: src/ludamus/adapters/web/django/views.py:1375
 msgid ""
 "No proposal category configured for this event. Please contact the "
 "organizers."
@@ -1015,45 +989,31 @@ msgstr ""
 "Brak skonfigurowanej kategorii zgłoszeń dla tego wydarzenia. Skontaktuj się "
 "z organizatorami."
 
-#: src/ludamus/adapters/web/django/views.py:1373
+#: src/ludamus/adapters/web/django/views.py:1388
 msgid "Proposal not found."
 msgstr "Zgłoszenie nie zostało znalezione."
 
-#: src/ludamus/adapters/web/django/views.py:1380
+#: src/ludamus/adapters/web/django/views.py:1395
 msgid "This proposal has already been accepted."
 msgstr "To zgłoszenie zostało już zaakceptowane."
 
-#: src/ludamus/adapters/web/django/views.py:1417
+#: src/ludamus/adapters/web/django/views.py:1432
 msgid "No spaces configured for this event. Please create spaces first."
 msgstr ""
 "Brak skonfigurowanych przestrzeni dla tego wydarzenia. Utwórz najpierw "
 "przestrzenie."
 
-#: src/ludamus/adapters/web/django/views.py:1431
+#: src/ludamus/adapters/web/django/views.py:1446
 msgid ""
 "No time slots configured for this event. Please create time slots first."
 msgstr ""
 "Brak skonfigurowanych bloków czasowych dla tego wydarzenia. Utwórz najpierw "
 "bloki czasowe."
 
-#: src/ludamus/adapters/web/django/views.py:1466
+#: src/ludamus/adapters/web/django/views.py:1481
 #, python-brace-format
 msgid "Proposal '{}' has been accepted and added to the agenda."
 msgstr "Zgłoszenie '{}' zostało zaakceptowane i dodane do programu."
-
-#: src/ludamus/adapters/web/django/views_simplified.py:200
-#, python-brace-format
-msgid "Automatically enrolled: {}"
-msgstr "Automatycznie zapisani: {}"
-
-#: src/ludamus/adapters/web/django/views_simplified.py:207
-#, python-brace-format
-msgid "Skipped: {}"
-msgstr "Pominięci: {}"
-
-#: src/ludamus/adapters/web/django/views_simplified.py:211
-msgid "No enrollment changes were made."
-msgstr "Nie wprowadzono żadnych zmian w zapisach."
 
 #: src/ludamus/templates/404_dynamic.html:5
 #: src/ludamus/templates/404_dynamic.html:8
@@ -1077,7 +1037,7 @@ msgid "Logout"
 msgstr "Wyloguj"
 
 #: src/ludamus/templates/base.html:62
-#: src/ludamus/templates/chronology/event.html:361
+#: src/ludamus/templates/chronology/event.html:375
 msgid "Login"
 msgstr "Zaloguj"
 
@@ -1099,7 +1059,7 @@ msgstr "Regulamin"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:6
 #: src/ludamus/templates/chronology/accept_proposal.html:9
-#: src/ludamus/templates/chronology/event.html:578
+#: src/ludamus/templates/chronology/event.html:592
 msgid "Accept Proposal"
 msgstr "Zaakceptuj zgłoszenie"
 
@@ -1109,57 +1069,57 @@ msgstr "Wybierz przestrzeń i blok czasowy dla"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:25
 #: src/ludamus/templates/chronology/enroll_select.html:25
-#: src/ludamus/templates/chronology/event.html:233
-#: src/ludamus/templates/chronology/event.html:427
-#: src/ludamus/templates/chronology/event.html:535
-#: src/ludamus/templates/chronology/event.html:844
+#: src/ludamus/templates/chronology/event.html:247
+#: src/ludamus/templates/chronology/event.html:441
+#: src/ludamus/templates/chronology/event.html:549
+#: src/ludamus/templates/chronology/event.html:858
 msgid "Host"
 msgstr "Prowadzący"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:27
-#: src/ludamus/templates/chronology/event.html:537
-#: src/ludamus/templates/chronology/event.html:719
+#: src/ludamus/templates/chronology/event.html:551
+#: src/ludamus/templates/chronology/event.html:733
 #: src/ludamus/templates/chronology/propose_session.html:138
 msgid "Participants Limit"
 msgstr "Limit uczestników"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:31
-#: src/ludamus/templates/chronology/event.html:428
-#: src/ludamus/templates/chronology/event.html:554
+#: src/ludamus/templates/chronology/event.html:442
+#: src/ludamus/templates/chronology/event.html:568
 msgid "Submitted"
 msgstr "Przesłane"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:34
-#: src/ludamus/templates/chronology/event.html:540
-#: src/ludamus/templates/chronology/event.html:881
+#: src/ludamus/templates/chronology/event.html:554
+#: src/ludamus/templates/chronology/event.html:895
 #: src/ludamus/templates/chronology/propose_session.html:100
 msgid "Tags"
 msgstr "Tagi"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:49
 #: src/ludamus/templates/chronology/enroll_select.html:57
-#: src/ludamus/templates/chronology/event.html:563
-#: src/ludamus/templates/chronology/event.html:900
+#: src/ludamus/templates/chronology/event.html:577
+#: src/ludamus/templates/chronology/event.html:914
 #: src/ludamus/templates/chronology/propose_session.html:71
 #: src/ludamus/templates/index.html:17
 msgid "Description"
 msgstr "Opis"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:53
-#: src/ludamus/templates/chronology/event.html:567
-#: src/ludamus/templates/chronology/event.html:906
+#: src/ludamus/templates/chronology/event.html:581
+#: src/ludamus/templates/chronology/event.html:920
 #: src/ludamus/templates/chronology/propose_session.html:80
 msgid "Requirements"
 msgstr "Wymagania"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:57
-#: src/ludamus/templates/chronology/event.html:571
+#: src/ludamus/templates/chronology/event.html:585
 #: src/ludamus/templates/chronology/propose_session.html:89
 msgid "Special Needs"
 msgstr "Specjalne potrzeby"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:61
-#: src/ludamus/templates/chronology/event.html:557
+#: src/ludamus/templates/chronology/event.html:571
 msgid "Preferred Time Slots"
 msgstr "Preferowane bloki czasowe"
 
@@ -1199,39 +1159,39 @@ msgid "Select who to enroll in"
 msgstr "Wybierz kogo zapisać na"
 
 #: src/ludamus/templates/chronology/enroll_select.html:27
-#: src/ludamus/templates/chronology/event.html:235
-#: src/ludamus/templates/chronology/event.html:430
-#: src/ludamus/templates/chronology/event.html:664
-#: src/ludamus/templates/chronology/event.html:705
-#: src/ludamus/templates/chronology/event.html:862
+#: src/ludamus/templates/chronology/event.html:249
+#: src/ludamus/templates/chronology/event.html:444
+#: src/ludamus/templates/chronology/event.html:678
+#: src/ludamus/templates/chronology/event.html:719
+#: src/ludamus/templates/chronology/event.html:876
 msgid "Participants"
 msgstr "Uczestnicy"
 
 #: src/ludamus/templates/chronology/enroll_select.html:31
 #: src/ludamus/templates/chronology/enroll_select.html:176
-#: src/ludamus/templates/chronology/event.html:728
-#: src/ludamus/templates/chronology/event.html:866
+#: src/ludamus/templates/chronology/event.html:742
+#: src/ludamus/templates/chronology/event.html:880
 msgid "waiting"
 msgstr "oczekuje"
 
 #: src/ludamus/templates/chronology/enroll_select.html:36
-#: src/ludamus/templates/chronology/event.html:673
-#: src/ludamus/templates/chronology/event.html:846
+#: src/ludamus/templates/chronology/event.html:687
+#: src/ludamus/templates/chronology/event.html:860
 msgid "Time"
 msgstr "Czas"
 
 #: src/ludamus/templates/chronology/enroll_select.html:46
-#: src/ludamus/templates/chronology/event.html:872
+#: src/ludamus/templates/chronology/event.html:886
 msgid "Minimum Age"
 msgstr "Minimalny Wiek"
 
 #: src/ludamus/templates/chronology/enroll_select.html:49
-#: src/ludamus/templates/chronology/event.html:875
+#: src/ludamus/templates/chronology/event.html:889
 msgid "years"
 msgstr "lat"
 
 #: src/ludamus/templates/chronology/enroll_select.html:51
-#: src/ludamus/templates/chronology/event.html:877
+#: src/ludamus/templates/chronology/event.html:891
 msgid "All ages welcome"
 msgstr "Wszystkie grupy wiekowe"
 
@@ -1321,7 +1281,7 @@ msgid "End Time"
 msgstr "Koniec"
 
 #: src/ludamus/templates/chronology/event.html:48
-#: src/ludamus/templates/chronology/event.html:355
+#: src/ludamus/templates/chronology/event.html:369
 #: src/ludamus/templates/index.html:20
 msgid "Status"
 msgstr "Status"
@@ -1356,16 +1316,39 @@ msgstr "Twój Dostęp do Zapisu"
 #, python-format
 msgid ""
 "\n"
-"                                            You have %(available)s available "
-"out of %(total)s total enrollment slots.\n"
+"                                            You have %(total)s enrollment "
+"slots.\n"
 "                                        "
 msgstr ""
 "\n"
-"                                            Masz %(available)s dostępnych z "
-"%(total)s całkowitej liczby miejsc zapisu.\n"
+"                                            Masz %(total)s miejsc zapisu.\n"
 "                                        "
 
-#: src/ludamus/templates/chronology/event.html:102
+#: src/ludamus/templates/chronology/event.html:103
+#, python-format
+msgid ""
+"\n"
+"                                                Combined access: Individual "
+"enrollment passes + domain access (@%(domain)s).\n"
+"                                            "
+msgstr ""
+
+#: src/ludamus/templates/chronology/event.html:107
+#, python-format
+msgid ""
+"\n"
+"                                                Domain-based access: Users "
+"from @%(domain)s have enrollment access.\n"
+"                                            "
+msgstr ""
+
+#: src/ludamus/templates/chronology/event.html:111
+#: src/ludamus/templates/chronology/event.html:121
+msgid "You can enroll yourself and your connected users using these slots."
+msgstr ""
+"Możesz zapisać siebie i swoje powiązane osoby wykorzystując te miejsca."
+
+#: src/ludamus/templates/chronology/event.html:116
 #, python-format
 msgid ""
 "\n"
@@ -1378,294 +1361,285 @@ msgstr ""
 "@%(domain)s mają dostęp do zapisu.\n"
 "                                        "
 
-#: src/ludamus/templates/chronology/event.html:104
-msgid "Combined access: Individual enrollment passes + domain access (@%(domain)s)."
-msgstr "Dostęp łączony: Indywidualne przepustki zapisu + dostęp domenowy (@%(domain)s)."
-
-#: src/ludamus/templates/chronology/event.html:107
-msgid "You can enroll yourself and your connected users using these slots."
-msgstr ""
-"Możesz zapisać siebie i swoje powiązane osoby wykorzystując te miejsca."
-
-#: src/ludamus/templates/chronology/event.html:110
+#: src/ludamus/templates/chronology/event.html:124
 msgid "You may be able to enroll using your manager's enrollment passes."
 msgstr "Możesz móc się zapisać używając przepustek zapisu swojego kierownika."
 
-#: src/ludamus/templates/chronology/event.html:111
+#: src/ludamus/templates/chronology/event.html:125
 msgid "Contact your manager for enrollment assistance."
 msgstr "Skontaktuj się ze swoim kierownikiem w sprawie pomocy przy zapisie."
 
-#: src/ludamus/templates/chronology/event.html:113
+#: src/ludamus/templates/chronology/event.html:127
 msgid "You don't have any enrollment passes."
 msgstr "Nie masz żadnych przepustek zapisu."
 
-#: src/ludamus/templates/chronology/event.html:114
+#: src/ludamus/templates/chronology/event.html:128
 msgid "You can enroll when general enrollment opens."
 msgstr "Możesz się zapisać, gdy rozpoczną się zapisy ogólne."
 
-#: src/ludamus/templates/chronology/event.html:116
+#: src/ludamus/templates/chronology/event.html:130
 msgid "Login to check your enrollment options."
 msgstr "Zaloguj się, aby sprawdzić swoje opcje zapisu."
 
-#: src/ludamus/templates/chronology/event.html:117
+#: src/ludamus/templates/chronology/event.html:131
 msgid "You may have enrollment passes available after logging in."
 msgstr "Po zalogowaniu możesz mieć dostępne przepustki zapisu."
 
-#: src/ludamus/templates/chronology/event.html:132
+#: src/ludamus/templates/chronology/event.html:146
 msgid "Sessions by Time Slot"
 msgstr "Punkty programu według bloków czasowych"
 
-#: src/ludamus/templates/chronology/event.html:137
-#: src/ludamus/templates/chronology/event.html:222
+#: src/ludamus/templates/chronology/event.html:151
+#: src/ludamus/templates/chronology/event.html:236
 #: src/ludamus/templates/chronology/propose_session.html:9
 #: src/ludamus/templates/chronology/propose_session.html:16
 msgid "Propose Session"
 msgstr "Zgłoś punkt programu"
 
-#: src/ludamus/templates/chronology/event.html:150
+#: src/ludamus/templates/chronology/event.html:164
 msgid "Filter sessions by title or host..."
 msgstr "Filtruj punkty programu według tytułu lub prowadzącego..."
 
-#: src/ludamus/templates/chronology/event.html:155
+#: src/ludamus/templates/chronology/event.html:169
 msgid "All statuses"
 msgstr "Wszystkie statusy"
 
-#: src/ludamus/templates/chronology/event.html:156
+#: src/ludamus/templates/chronology/event.html:170
 msgid "Available spots"
 msgstr "Dostępne miejsca"
 
-#: src/ludamus/templates/chronology/event.html:157
-#: src/ludamus/templates/chronology/event.html:869
+#: src/ludamus/templates/chronology/event.html:171
+#: src/ludamus/templates/chronology/event.html:883
 msgid "Full"
 msgstr "Pełne"
 
-#: src/ludamus/templates/chronology/event.html:158
+#: src/ludamus/templates/chronology/event.html:172
 msgid "Enrollment unavailable"
 msgstr "Zapisy niedostępne"
 
-#: src/ludamus/templates/chronology/event.html:159
+#: src/ludamus/templates/chronology/event.html:173
 msgid "I am enrolled"
 msgstr "Jestem zapisany"
 
-#: src/ludamus/templates/chronology/event.html:160
+#: src/ludamus/templates/chronology/event.html:174
 msgid "I am waiting"
 msgstr "Oczekuję"
 
-#: src/ludamus/templates/chronology/event.html:169
+#: src/ludamus/templates/chronology/event.html:183
 msgid "Min age"
 msgstr "Min wiek"
 
-#: src/ludamus/templates/chronology/event.html:177
+#: src/ludamus/templates/chronology/event.html:191
 msgid "Max age"
 msgstr "Max wiek"
 
-#: src/ludamus/templates/chronology/event.html:186
+#: src/ludamus/templates/chronology/event.html:200
 msgid "Clear"
 msgstr "Wyczyść"
 
-#: src/ludamus/templates/chronology/event.html:198
+#: src/ludamus/templates/chronology/event.html:212
 msgid "All"
 msgstr "Wszystkie"
 
-#: src/ludamus/templates/chronology/event.html:232
-#: src/ludamus/templates/chronology/event.html:715
+#: src/ludamus/templates/chronology/event.html:246
+#: src/ludamus/templates/chronology/event.html:729
 msgid "Session"
 msgstr "Punkt programu"
 
-#: src/ludamus/templates/chronology/event.html:236
-#: src/ludamus/templates/chronology/event.html:431
+#: src/ludamus/templates/chronology/event.html:250
+#: src/ludamus/templates/chronology/event.html:445
 #: src/ludamus/templates/index.html:21
 msgid "Action"
 msgstr "Akcja"
 
-#: src/ludamus/templates/chronology/event.html:264
+#: src/ludamus/templates/chronology/event.html:278
 msgid "All ages"
 msgstr "Bez ograniczeń"
 
-#: src/ludamus/templates/chronology/event.html:301
+#: src/ludamus/templates/chronology/event.html:315
 msgid "TBA"
 msgstr "Do ustalenia"
 
-#: src/ludamus/templates/chronology/event.html:311
-#: src/ludamus/templates/chronology/event.html:724
+#: src/ludamus/templates/chronology/event.html:325
+#: src/ludamus/templates/chronology/event.html:738
 msgid "session limit"
 msgstr "limit punktu programu"
 
-#: src/ludamus/templates/chronology/event.html:328
+#: src/ludamus/templates/chronology/event.html:342
 msgid "Details"
 msgstr "Szczegóły"
 
-#: src/ludamus/templates/chronology/event.html:334
+#: src/ludamus/templates/chronology/event.html:348
 msgid "Manage"
 msgstr "Zarządzaj"
 
-#: src/ludamus/templates/chronology/event.html:345
+#: src/ludamus/templates/chronology/event.html:359
 msgid "Only connected users can enroll"
 msgstr "Tylko powiązani użytkownicy mogą się zapisać"
 
-#: src/ludamus/templates/chronology/event.html:366
+#: src/ludamus/templates/chronology/event.html:380
 msgid "Enrollment not available for this session"
 msgstr "Zapisy niedostępne dla tego punktu programu"
 
-#: src/ludamus/templates/chronology/event.html:380
+#: src/ludamus/templates/chronology/event.html:394
 msgid "No sessions scheduled for this time slot"
 msgstr "Brak punktów programu zaplanowanych w tym bloku czasowym"
 
-#: src/ludamus/templates/chronology/event.html:382
+#: src/ludamus/templates/chronology/event.html:396
 msgid "be the first to propose!"
 msgstr "bądź pierwszy i zgłoś!"
 
-#: src/ludamus/templates/chronology/event.html:392
+#: src/ludamus/templates/chronology/event.html:406
 msgid "No sessions or time slots available yet"
 msgstr "Brak dostępnych punktów programu lub bloków czasowych"
 
-#: src/ludamus/templates/chronology/event.html:395
+#: src/ludamus/templates/chronology/event.html:409
 msgid "Be the first to propose a session!"
 msgstr "Bądź pierwszą osobą, która zgłosi punkt programu!"
 
-#: src/ludamus/templates/chronology/event.html:397
+#: src/ludamus/templates/chronology/event.html:411
 msgid "Sessions will be announced soon."
 msgstr "Punkty programu zostaną wkrótce ogłoszone."
 
-#: src/ludamus/templates/chronology/event.html:415
+#: src/ludamus/templates/chronology/event.html:429
 msgid "Pending Proposals"
 msgstr "Oczekujące zgłoszenia"
 
-#: src/ludamus/templates/chronology/event.html:417
+#: src/ludamus/templates/chronology/event.html:431
 msgid "Superuser Only"
 msgstr "Tylko dla administratorów"
 
-#: src/ludamus/templates/chronology/event.html:426
+#: src/ludamus/templates/chronology/event.html:440
 msgid "Proposal"
 msgstr "Zgłoszenie"
 
-#: src/ludamus/templates/chronology/event.html:429
+#: src/ludamus/templates/chronology/event.html:443
 msgid "Preferred Times"
 msgstr "Preferowane czasy"
 
-#: src/ludamus/templates/chronology/event.html:481
+#: src/ludamus/templates/chronology/event.html:495
 msgid "Flexible"
 msgstr "Elastyczny"
 
-#: src/ludamus/templates/chronology/event.html:491
+#: src/ludamus/templates/chronology/event.html:505
 msgid "Accept"
 msgstr "Zaakceptuj"
 
-#: src/ludamus/templates/chronology/event.html:497
+#: src/ludamus/templates/chronology/event.html:511
 msgid "Review"
 msgstr "Podejrzyj"
 
-#: src/ludamus/templates/chronology/event.html:509
+#: src/ludamus/templates/chronology/event.html:523
 msgid "No pending proposals"
 msgstr "Brak oczekujących zgłoszeń"
 
-#: src/ludamus/templates/chronology/event.html:510
+#: src/ludamus/templates/chronology/event.html:524
 msgid "All proposals have been reviewed."
 msgstr "Wszystkie zgłoszenia zostały sprawdzone."
 
-#: src/ludamus/templates/chronology/event.html:576
-#: src/ludamus/templates/chronology/event.html:681
-#: src/ludamus/templates/chronology/event.html:818
-#: src/ludamus/templates/chronology/event.html:936
+#: src/ludamus/templates/chronology/event.html:590
+#: src/ludamus/templates/chronology/event.html:695
+#: src/ludamus/templates/chronology/event.html:832
+#: src/ludamus/templates/chronology/event.html:950
 msgid "Close"
 msgstr "Zamknij"
 
-#: src/ludamus/templates/chronology/event.html:598
+#: src/ludamus/templates/chronology/event.html:612
 msgid "Enrollment Status"
 msgstr "Status zapisu"
 
-#: src/ludamus/templates/chronology/event.html:608
+#: src/ludamus/templates/chronology/event.html:622
 msgid "Your Status"
 msgstr "Twój status"
 
-#: src/ludamus/templates/chronology/event.html:614
-#: src/ludamus/templates/chronology/event.html:639
-#: src/ludamus/templates/chronology/event.html:746
+#: src/ludamus/templates/chronology/event.html:628
+#: src/ludamus/templates/chronology/event.html:653
+#: src/ludamus/templates/chronology/event.html:760
 msgid "Enrolled"
 msgstr "Zapisany"
 
-#: src/ludamus/templates/chronology/event.html:616
-#: src/ludamus/templates/chronology/event.html:641
-#: src/ludamus/templates/chronology/event.html:772
+#: src/ludamus/templates/chronology/event.html:630
+#: src/ludamus/templates/chronology/event.html:655
+#: src/ludamus/templates/chronology/event.html:786
 msgid "Waiting List"
 msgstr "Lista oczekujących"
 
-#: src/ludamus/templates/chronology/event.html:624
-#: src/ludamus/templates/chronology/event.html:647
-#: src/ludamus/templates/chronology/event.html:651
+#: src/ludamus/templates/chronology/event.html:638
+#: src/ludamus/templates/chronology/event.html:661
+#: src/ludamus/templates/chronology/event.html:665
 msgid "Not enrolled"
 msgstr "Nie zapisany"
 
-#: src/ludamus/templates/chronology/event.html:632
+#: src/ludamus/templates/chronology/event.html:646
 msgid "Connected Users Status"
 msgstr "Status powiązanych użytkowników"
 
-#: src/ludamus/templates/chronology/event.html:661
+#: src/ludamus/templates/chronology/event.html:675
 msgid "Session Information"
 msgstr "Informacje o punkcie programu"
 
-#: src/ludamus/templates/chronology/event.html:740
+#: src/ludamus/templates/chronology/event.html:754
 msgid "Enrolled Participants"
 msgstr "Zapisani uczestnicy"
 
-#: src/ludamus/templates/chronology/event.html:745
-#: src/ludamus/templates/chronology/event.html:779
+#: src/ludamus/templates/chronology/event.html:759
+#: src/ludamus/templates/chronology/event.html:793
 msgid "Name"
 msgstr "Imię"
 
-#: src/ludamus/templates/chronology/event.html:778
+#: src/ludamus/templates/chronology/event.html:792
 msgid "Position"
 msgstr "Pozycja"
 
-#: src/ludamus/templates/chronology/event.html:780
+#: src/ludamus/templates/chronology/event.html:794
 msgid "Added"
 msgstr "Dodano"
 
-#: src/ludamus/templates/chronology/event.html:807
+#: src/ludamus/templates/chronology/event.html:821
 msgid "No one on the waiting list."
 msgstr "Nikt nie czeka na liście oczekujących."
 
-#: src/ludamus/templates/chronology/event.html:813
+#: src/ludamus/templates/chronology/event.html:827
 msgid "No participants enrolled yet."
 msgstr "Brak zapisanych uczestników."
 
-#: src/ludamus/templates/chronology/event.html:852
+#: src/ludamus/templates/chronology/event.html:866
 msgid "Location"
 msgstr "Miejsce"
 
-#: src/ludamus/templates/chronology/event.html:857
+#: src/ludamus/templates/chronology/event.html:871
 msgid "To be announced"
 msgstr "Do ogłoszenia"
 
-#: src/ludamus/templates/chronology/event.html:913
+#: src/ludamus/templates/chronology/event.html:927
 msgid "Your Enrollment Status"
 msgstr "Twój status zapisu"
 
-#: src/ludamus/templates/chronology/event.html:918
+#: src/ludamus/templates/chronology/event.html:932
 msgid "You are enrolled in this session"
 msgstr "Jesteś zapisany na ten punkt programu"
 
-#: src/ludamus/templates/chronology/event.html:923
+#: src/ludamus/templates/chronology/event.html:937
 msgid "You are on the waiting list"
 msgstr "Jesteś na liście oczekujących"
 
-#: src/ludamus/templates/chronology/event.html:928
+#: src/ludamus/templates/chronology/event.html:942
 msgid "You are not enrolled in this session"
 msgstr "Nie jesteś zapisany na ten punkt programu"
 
-#: src/ludamus/templates/chronology/event.html:942
+#: src/ludamus/templates/chronology/event.html:956
 msgid "Manage Enrollment"
 msgstr "Zarządzaj zapisem"
 
-#: src/ludamus/templates/chronology/event.html:948
+#: src/ludamus/templates/chronology/event.html:962
 msgid "Enroll Now"
 msgstr "Zapisz się teraz"
 
-#: src/ludamus/templates/chronology/event.html:955
+#: src/ludamus/templates/chronology/event.html:969
 msgid "Login to Enroll"
 msgstr "Zaloguj się aby się zapisać"
 
-#: src/ludamus/templates/chronology/event.html:969
+#: src/ludamus/templates/chronology/event.html:983
 msgid "Back to Events"
 msgstr "Powrót do wydarzeń"
 
@@ -1981,3 +1955,24 @@ msgstr "Brak dostępnych wydarzeń"
 #: src/ludamus/templates/index.html:72
 msgid "There are currently no events scheduled. Please check back later!"
 msgstr "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź ponownie później!"
+
+#~ msgid "not enrolled"
+#~ msgstr "nie zapisany"
+
+#, python-brace-format
+#~ msgid "Automatically enrolled: {}"
+#~ msgstr "Automatycznie zapisani: {}"
+
+#, python-brace-format
+#~ msgid "Skipped: {}"
+#~ msgstr "Pominięci: {}"
+
+#~ msgid "No enrollment changes were made."
+#~ msgstr "Nie wprowadzono żadnych zmian w zapisach."
+
+#~ msgid ""
+#~ "Combined access: Individual enrollment passes + domain access (@%"
+#~ "(domain)s)."
+#~ msgstr ""
+#~ "Dostęp łączony: Indywidualne przepustki zapisu + dostęp domenowy (@%"
+#~ "(domain)s)."

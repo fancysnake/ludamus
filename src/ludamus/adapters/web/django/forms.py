@@ -64,7 +64,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                     )
                     if (
                         not manager_config
-                    ):  # Don't check available slots here - check at form level
+                    ):  # Don't check available user slots here - check at form level
                         return False
                 else:
                     return False
@@ -108,7 +108,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                     )
                     if (
                         manager_config
-                    ):  # Don't check available slots here - check at form level
+                    ):  # Don't check available user slots here - check at form level
                         return True
                 return False
 
@@ -229,7 +229,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                         )
                         has_manager_access = bool(
                             manager_config
-                        )  # Don't check slots here
+                        )  # Don't check user slots here
 
                     if not user_config and not has_manager_access:
                         help_text = _("Enrollment access permission required")
@@ -301,7 +301,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                                         )
                                         % {"user": user_name}
                                     )
-                                # Don't check individual slot availability here - it's checked at form level
+                                # Don't check individual user slot availability here - it's checked at form level
                             else:
                                 # Regular users need their own email and config
                                 if not self.user_obj.email:
@@ -368,7 +368,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
         """Custom validation for enrollment form."""
         cleaned_data = forms.Form.clean(self)
 
-        # Count enrollment requests
+        # Count enrollment requests to check user slot limits
         enroll_requests = []
         for field_name, value in cleaned_data.items():
             if field_name.startswith("user_") and value == "enroll":
@@ -378,7 +378,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                 if user:
                     enroll_requests.append(user)
 
-        # Check if manager has enough slots for all enrollment requests
+        # Check if manager has enough user slots for all users being enrolled
         if (
             enroll_requests
             and enrollment_config
@@ -412,7 +412,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                             user_name = field_to_user_name.get(field_name, "User")
                             self.add_error(
                                 field_name,
-                                f"{user_name}: Not enough enrollment passes available. You have {used_slots} out of {manager_config.allowed_slots} slots already used. Only {available_slots} slots remaining.",
+                                f"{user_name}: Cannot enroll more users. You have already enrolled {used_slots} out of {manager_config.allowed_slots} allowed users. Only {available_slots} user slots remaining.",
                             )
                             break
                     return cleaned_data
