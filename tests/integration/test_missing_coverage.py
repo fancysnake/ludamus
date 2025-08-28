@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from ludamus.adapters.db.django.models import EnrollmentConfig, User
+from ludamus.adapters.db.django.models import EnrollmentConfig
 from ludamus.adapters.web.django.views import (
     EnrollmentRequest,
     Enrollments,
@@ -93,7 +93,7 @@ class TestMissingCoverage:
 
     @staticmethod
     def test_connected_user_age_restriction_in_enrollment(
-        event, agenda_item, active_user, faker
+        event, agenda_item, complete_user_factory, underage_connected_user_factory
     ):
         now = datetime.now(tz=UTC)
         session = agenda_item.session
@@ -108,14 +108,8 @@ class TestMissingCoverage:
             percentage_slots=100,
         )
 
-        # Create underage connected user
-        underage_user = User.objects.create(
-            username="underage",
-            slug="underage",
-            name="Underage User",
-            birth_date=faker.date_between("-15y", "-14y"),  # Under 16
-            manager=active_user,
-        )
+        active_user = complete_user_factory.build()
+        underage_user = underage_connected_user_factory.build(manager_id=active_user.pk)
 
         # Create enrollment request for underage user
         enrollment_req = EnrollmentRequest(
@@ -127,9 +121,12 @@ class TestMissingCoverage:
 
         # Call the static method that handles enrollment creation
         EnrollSelectView._check_and_create_enrollment(  # noqa: SLF001
-            enrollment_req, session, enrollments
+            enrollment_req,
+            session,
+            enrollments,
+            Mock(user=active_user, users=[active_user, underage_user]),
         )
 
         # Should have skipped the underage user
         assert len(enrollments.skipped_users) == 1
-        assert "Underage User (age restriction)" in enrollments.skipped_users[0]
+        assert f"{underage_user.name} (age restriction)" in enrollments.skipped_users[0]

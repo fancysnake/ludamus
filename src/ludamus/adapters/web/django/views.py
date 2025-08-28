@@ -6,13 +6,12 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import Any, TypedDict, cast
 from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -20,15 +19,19 @@ from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
 from django.db.models.query import QuerySet
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView, View
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django.views.generic.detail import (
+    DetailView,
+    SingleObjectMixin,
+    SingleObjectTemplateResponseMixin,
+)
+from django.views.generic.edit import FormMixin, ProcessFormView
 
 from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
@@ -43,14 +46,23 @@ from ludamus.adapters.db.django.models import (
     Space,
     Tag,
     TimeSlot,
-    User,
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
 )
-from ludamus.pacts import ProposalCategoryDTO, RootDAOProtocol, TagCategoryDTO, TagDTO
+from ludamus.links.dao import NotFoundError
+from ludamus.pacts import (
+    ProposalCategoryDTO,
+    RootDAOProtocol,
+    TagCategoryDTO,
+    TagDTO,
+    UserDAOProtocol,
+    UserData,
+    UserDTO,
+    UserType,
+)
 
 from .exceptions import RedirectError
 from .forms import (
@@ -60,12 +72,6 @@ from .forms import (
     create_session_proposal_form,
     get_tag_data_from_form,
 )
-
-if TYPE_CHECKING:
-    from ludamus.adapters.db.django.models import User
-else:
-    User = get_user_model()
-
 
 TODAY = datetime.now(tz=UTC).date()
 MINIMUM_ALLOWED_USER_AGE = 16
@@ -77,16 +83,13 @@ class WrongSiteTypeError(TypeError):
         super().__init__(_("Wrong type of site!"))
 
 
-class UserRequest(HttpRequest):
-    user: User
-
-
 class RootDAORequest(HttpRequest):
     root_dao: RootDAOProtocol
+    user_dao: UserDAOProtocol | None
 
 
 class AuthorizedRootDAORequest(RootDAORequest):
-    user: User
+    user_dao: UserDAOProtocol
 
 
 def login(request: HttpRequest) -> HttpResponse:
@@ -179,10 +182,12 @@ class CallbackView(RedirectView):
             return self.request.build_absolute_uri(reverse("web:index"))
 
         # Handle login/signup
-        if not self.request.user.is_authenticated:
+        if self.request.user_dao is None:
             username = self._get_username()
-            if not (user := User.objects.filter(username=username).first()):
-                user = User.objects.create(username=username, slug=slugify(username))
+            self.request.user_dao = self.request.root_dao.create_user_dao(
+                username=username, slug=slugify(username)
+            )
+            user = self.request.user_dao.user
 
             # Check if user is inactive due to being under 16
             if user.birth_date and user.age < MINIMUM_ALLOWED_USER_AGE:
@@ -191,8 +196,8 @@ class CallbackView(RedirectView):
                     self.request, redirect_to=reverse("web:under-age")
                 )
 
-            # Log the user in
-            django_login(self.request, user)
+            # This is dirty, but couldn't achieve this without rewriting django login
+            django_login(self.request, self.request.user_dao._storage.user)  # type: ignore [attr-defined]
             messages.success(self.request, _("Welcome!"))
 
             # Check if profile needs completion
@@ -283,7 +288,7 @@ def index(request: RootDAORequest) -> HttpResponse:
         "index.html",
         context={
             "events": list(
-                Event.objects.filter(sphere=request.root_dao.current_sphere_orm).all()
+                Event.objects.filter(sphere_id=request.root_dao.current_sphere.pk).all()
             )
         },
     )
@@ -293,7 +298,10 @@ def under_age(request: HttpRequest) -> HttpResponse:
     return TemplateResponse(request, "crowd/user/under_age.html")
 
 
-class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
+UserTypeChoices = [(ut.value, ut.name) for ut in UserType]
+
+
+class BaseUserForm(forms.Form):
     name = forms.CharField(
         label=_("User name"),
         help_text=_(
@@ -309,57 +317,73 @@ class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
         ),
         required=True,
     )
+    user_type = forms.ChoiceField(choices=UserTypeChoices)
 
-    class Meta:
-        model = User
-        fields = ("name", "birth_date", "user_type")
+    def get_user_data(self) -> UserData:
+        if self.cleaned_data is None:
+            raise ValueError("Run this after form is validated")
+
+        return cast("UserData", dict(self.cleaned_data))
 
 
 class UserForm(BaseUserForm):
-    user_type = forms.CharField(
-        initial=User.UserType.ACTIVE, widget=forms.HiddenInput()
+    user_type = forms.ChoiceField(
+        choices=UserTypeChoices, initial=UserType.ACTIVE, widget=forms.HiddenInput()
     )
-
-    class Meta:
-        model = User
-        fields = ("name", "email", "birth_date", "user_type")
+    email = forms.EmailField(required=False)
 
 
 class ConnectedUserForm(BaseUserForm):
-    user_type = forms.CharField(
-        initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()
+    manager_id = forms.IntegerField(min_value=0, widget=forms.HiddenInput())
+    user_type = forms.ChoiceField(
+        choices=UserTypeChoices,
+        initial=UserType.CONNECTED.value,
+        widget=forms.HiddenInput(),
     )
 
-    def save(self, commit: bool = True) -> User:  # noqa: FBT001, FBT002
-        self.instance.username = f"connected|{token_urlsafe(50)}"
-        self.instance.slug = slugify(self.instance.username[:50])
-        return super().save(commit)  # type: ignore [no-any-return]
+    def get_user_data(self) -> UserData:
+        user_data = super().get_user_data()
+
+        if not user_data.get("username"):
+            user_data["username"] = f"connected|{token_urlsafe(30)}"
+
+        if not user_data.get("slug"):
+            user_data["slug"] = slugify(user_data["username"])
+
+        return user_data
 
 
-class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
+class EditProfileView(LoginRequiredMixin, SingleObjectTemplateResponseMixin, FormMixin, SingleObjectMixin, View):  # type: ignore [type-arg]
     template_name = "crowd/user/edit.html"
     form_class = UserForm
     success_url = reverse_lazy("web:index")
     request: AuthorizedRootDAORequest
+    template_name_suffix = "_form"
+    context_object_name = "user"
 
-    def get_object(
-        self, queryset: QuerySet[User] | None = None  # noqa: ARG002
-    ) -> User:
-        return self.request.user
+    def get(self, request: AuthorizedRootDAORequest) -> HttpResponse:
+        self.object = request.user_dao.user
+        return self.render_to_response(self.get_context_data())
+
+    def post(self, request: AuthorizedRootDAORequest) -> HttpResponse:
+        self.object = request.user_dao.user
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
 
     def form_valid(self, form: UserForm) -> HttpResponse:
-        user = form.save(commit=False)
+        self.request.user_dao.update_user(form.get_user_data())
 
+        user = self.request.user_dao.user
         # Check if user is under 16
         if user.birth_date and user.age < MINIMUM_ALLOWED_USER_AGE:
-            user.is_active = False
-            user.save()
+            self.request.user_dao.deactivate_user()
             django_logout(self.request)
             return redirect(
                 _auth0_logout_url(self.request, redirect_to=reverse("web:under-age"))
             )
 
-        user.save()
         messages.success(self.request, _("Profile updated successfully!"))
         return super().form_valid(form)
 
@@ -367,13 +391,19 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
         messages.warning(self.request, _("Please correct the errors below."))
         return super().form_invalid(form)
 
+    def get_initial(self) -> dict[str, Any]:  # type: ignore [explicit-any]
+        initial = super().get_initial()
+        initial.update(self.request.user_dao.user.dict())
+        return initial
 
-class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
+
+class ConnectedView(LoginRequiredMixin, SingleObjectTemplateResponseMixin, FormMixin, SingleObjectMixin, ProcessFormView):  # type: ignore [type-arg]
     template_name = "crowd/user/connected.html"
     form_class = ConnectedUserForm
     success_url = reverse_lazy("web:connected")
-    request: UserRequest
-    object: User
+    request: AuthorizedRootDAORequest
+    object = None
+    template_name_suffix = "_form"
 
     def get_context_data(  # type: ignore [explicit-any]
         self, **kwargs: Any
@@ -381,17 +411,17 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
 
         context = super().get_context_data(**kwargs)
         connected_users = [
-            {"user": connected, "form": ConnectedUserForm(instance=connected)}
-            for connected in self.request.user.connected.select_related("manager").all()
+            {"user": connected, "form": ConnectedUserForm(initial=connected.dict())}
+            for connected in self.request.user_dao.connected_users
         ]
         context["connected_users"] = connected_users
         context["max_connected_users"] = MAX_CONNECTED_USERS
         return context
 
-    def form_valid(self, form: forms.Form) -> HttpResponse:
+    def form_valid(self, form: ConnectedUserForm) -> HttpResponse:
         # Check if user has reached the maximum number of connected users
 
-        connected_count = self.request.user.connected.count()
+        connected_count = len(self.request.user_dao.connected_users)
         if connected_count >= MAX_CONNECTED_USERS:
             messages.error(
                 self.request,
@@ -401,50 +431,88 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
             return self.form_invalid(form)
 
         result = super().form_valid(form)
-        self.object.manager = self.request.user
-        self.object.save()
+        self.request.user_dao.create_connected_user(form.get_user_data())
         messages.success(self.request, _("Connected user added successfully!"))
         return result
 
-    def form_invalid(self, form: forms.Form) -> HttpResponse:
+    def form_invalid(self, form: ConnectedUserForm) -> HttpResponse:
         messages.warning(self.request, _("Please correct the errors below."))
         return super().form_invalid(form)
 
+    def get_initial(self) -> dict[str, Any]:  # type: ignore [explicit-any]
+        initial = super().get_initial()
+        initial["manager_id"] = self.request.user_dao.user.pk
+        return initial
 
-class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
+
+class EditConnectedView(LoginRequiredMixin, SingleObjectTemplateResponseMixin, FormMixin, SingleObjectMixin, View):  # type: ignore [type-arg]
     template_name = "crowd/user/connected.html"
     form_class = ConnectedUserForm
     success_url = reverse_lazy("web:connected")
-    model = User
-    request: UserRequest
+    model = UserDTO
+    template_name_suffix = "_form"
+    request: AuthorizedRootDAORequest
 
-    def get_queryset(self) -> QuerySet[User]:
-        return User.objects.filter(
-            manager=self.request.user, user_type=User.UserType.CONNECTED
-        )
+    def get(self, request: AuthorizedRootDAORequest, pk: int) -> HttpResponse:
+        self.object = request.user_dao.read_connected_user(pk=pk)
+        return self.render_to_response(self.get_context_data())
 
-    def form_valid(self, form: forms.Form) -> HttpResponse:
+    def post(self, request: AuthorizedRootDAORequest, pk: int) -> HttpResponse:
+        self.object = request.user_dao.read_connected_user(pk=pk)
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    def form_valid(self, form: ConnectedUserForm) -> HttpResponse:
         messages.success(self.request, _("Connected user updated successfully!"))
-        return super().form_valid(form)
+        self.request.user_dao.update_connected_user(
+            self.object.pk, form.get_user_data()
+        )
+        return HttpResponseRedirect(self.get_success_url())
 
-    def form_invalid(self, form: forms.Form) -> HttpResponse:
+    def form_invalid(self, form: ConnectedUserForm) -> HttpResponse:
         messages.warning(self.request, _("Please correct the errors below."))
         return super().form_invalid(form)
 
+    def get_initial(self) -> dict[str, Any]:  # type: ignore [explicit-any]
+        initial = super().get_initial()
+        initial.update(self.object.dict())
+        return initial
 
-class DeleteConnectedView(LoginRequiredMixin, DeleteView):  # type: ignore [type-arg]
-    model = User
+    def get_context_data(  # type: ignore [explicit-any]
+        self, **kwargs: Any
+    ) -> dict[str, Any]:
+
+        context = super().get_context_data(**kwargs)
+        connected_users = [
+            {"user": connected, "form": ConnectedUserForm(initial=connected.dict())}
+            for connected in self.request.user_dao.connected_users
+        ]
+        context["connected_users"] = connected_users
+        context["max_connected_users"] = MAX_CONNECTED_USERS
+        return context
+
+
+class DeleteConnectedView(LoginRequiredMixin, SingleObjectTemplateResponseMixin, FormMixin, View):  # type: ignore [type-arg]
+    model = UserDTO
     success_url = reverse_lazy("web:connected")
-    request: UserRequest
+    template_name_suffix = "_confirm_delete"
+    form_class = forms.Form
 
-    def get_queryset(self) -> QuerySet[User]:
-        return User.objects.filter(
-            manager=self.request.user, user_type=User.UserType.CONNECTED
-        )
+    def post(self, request: AuthorizedRootDAORequest, pk: int) -> HttpResponse:
+        form = self.get_form()
+        if form.is_valid():
+            success_url = self.get_success_url()
+            try:
+                request.user_dao.delete_connected_user(pk=pk)
+            except NotFoundError:
+                messages.error(self.request, _("Connected user not found."))
+                return self.form_invalid(form)
 
-    def form_valid(self, form: forms.Form) -> HttpResponse:
-        messages.success(self.request, _("Connected user deleted successfully."))
-        return super().form_valid(form)
+            messages.success(self.request, _("Connected user deleted successfully."))
+            return HttpResponseRedirect(success_url)
+        return self.form_invalid(form)
 
 
 class HourData(TypedDict):
@@ -460,7 +528,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
 
     def get_queryset(self) -> QuerySet[Event]:
         return (
-            Event.objects.filter(sphere=self.request.root_dao.current_sphere_orm)
+            Event.objects.filter(sphere_id=self.request.root_dao.current_sphere.pk)
             .select_related("sphere")
             .prefetch_related(
                 "spaces__agenda_items__session__tags__category",
@@ -508,9 +576,9 @@ class EventView(DetailView):  # type: ignore [type-arg]
 
         # Add user enrollment config for authenticated users
         user_enrollment_config = None
-        if self.request.user.is_authenticated and self.request.user.email:
+        if self.request.user_dao and self.request.user_dao.user.email:
             user_enrollment_config = self.object.get_user_enrollment_config(
-                self.request.user.email
+                self.request.user_dao.user.email
             )
         context["user_enrollment_config"] = user_enrollment_config
 
@@ -562,20 +630,11 @@ class EventView(DetailView):  # type: ignore [type-arg]
         self, sessions: dict[int, SessionData], event_sessions: QuerySet[Session]
     ) -> None:
         # Get all connected users in a single query
-        connected_users = (
-            list(self.request.user.connected.select_related("manager").all())
-            if self.request.user.is_authenticated
-            else []
-        )
-        all_users = (
-            [self.request.user, *connected_users]
-            if self.request.user.is_authenticated
-            else []
-        )
+        all_users = self.request.user_dao.users if self.request.user_dao else []
 
         # Pre-fetch all participations for relevant users and sessions
         participations = SessionParticipation.objects.filter(
-            session__in=event_sessions, user__in=all_users
+            session__in=event_sessions, user_id__in=[u.pk for u in all_users]
         ).select_related("user", "session")
 
         # Create lookup dictionaries for efficient access
@@ -590,7 +649,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
         for user in all_users:
             for session in event_sessions:
                 statuses = set(
-                    participation_by_user_session.get((user.id, session.id), [])
+                    participation_by_user_session.get((user.pk, session.id), [])
                 )
 
                 sessions[session.id].has_any_enrollments |= bool(statuses)
@@ -628,7 +687,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
                 if tag.category in filterable_categories
             ]
 
-        if self.request.user.is_authenticated:
+        if self.request.user_dao:
             self._set_user_participations(sessions_data, event_sessions)
 
         return sessions_data
@@ -643,7 +702,7 @@ class EnrollmentChoice(StrEnum):
 
 @dataclass
 class EnrollmentRequest:
-    user: User
+    user: UserDTO
     choice: EnrollmentChoice
     name: str = _("yourself")
 
@@ -666,7 +725,7 @@ def _get_session_or_redirect(
 ) -> Session:
     try:
         return Session.objects.get(
-            sphere=request.root_dao.current_sphere_orm, id=session_id
+            sphere_id=request.root_dao.current_sphere.pk, id=session_id
         )
     except Session.DoesNotExist:
         raise RedirectError(
@@ -686,16 +745,13 @@ class EnrollSelectView(LoginRequiredMixin, View):
     def get(self, request: AuthorizedRootDAORequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
 
-        connected_users = list(
-            self.request.user.connected.select_related("manager").all()
-        )
         context = {
             "session": session,
             "event": session.agenda_item.space.event,
-            "connected_users": connected_users,
+            "connected_users": self.request.user_dao.connected_users,
             "user_data": self._get_user_participation_data(session),
             "form": create_enrollment_form(
-                session=session, users=[self.request.user, *connected_users]
+                session=session, users=self.request.user_dao.users
             )(),
         }
 
@@ -703,7 +759,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
     def _validate_request(self, session: Session) -> EnrollmentConfig:
         # Check if user has birth date set
-        if not self.request.user.birth_date:
+        if not self.request.user_dao.user.birth_date:
             raise RedirectError(
                 reverse("web:edit"),
                 error=_(
@@ -712,7 +768,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             )
 
         # Check if user meets age requirement
-        if session.min_age > 0 and self.request.user.age < session.min_age:
+        if session.min_age > 0 and self.request.user_dao.user.age < session.min_age:
             raise RedirectError(
                 reverse(
                     "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
@@ -755,16 +811,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
         self, session: Session
     ) -> list[SessionUserParticipationData]:
         user_data: list[SessionUserParticipationData] = []
-
-        # Get all connected users with proper prefetching
-        connected_users = list(
-            self.request.user.connected.select_related("manager").all()
-        )
-        all_users = [self.request.user, *connected_users]
-
         # Bulk fetch all participations for the event and users
         user_participations = SessionParticipation.objects.filter(
-            user__in=all_users,
+            user_id__in=[u.pk for u in self.request.user_dao.users],
             session__agenda_item__space__event=session.agenda_item.space.event,
         ).select_related("session__agenda_item")
 
@@ -777,8 +826,8 @@ class EnrollSelectView(LoginRequiredMixin, View):
             participations_by_user[user_id].append(participation)
 
         # Add enrollment status and time conflict info for each connected user
-        for user in all_users:
-            user_parts = participations_by_user.get(user.id, [])
+        for user in self.request.user_dao.users:
+            user_parts = participations_by_user.get(user.pk, [])
 
             data = SessionUserParticipationData(
                 user=user,
@@ -809,9 +858,8 @@ class EnrollSelectView(LoginRequiredMixin, View):
         session = _get_session_or_redirect(request, session_id)
 
         # Initialize form with POST data
-        connected_users = list(request.user.connected.select_related("manager").all())
         form_class = create_enrollment_form(
-            session=session, users=[self.request.user, *connected_users]
+            session=session, users=request.user_dao.users
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
@@ -830,13 +878,13 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 session
             )
             if enrollment_config and enrollment_config.restrict_to_configured_users:
-                if not request.user.email:
+                if not request.user_dao.user.email:
                     messages.error(
                         self.request,
                         _("Email address is required for enrollment in this session."),
                     )
                 elif not session.agenda_item.space.event.get_user_enrollment_config(
-                    request.user.email
+                    request.user_dao.user.email
                 ):
                     messages.error(
                         self.request,
@@ -860,9 +908,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 {
                     "session": session,
                     "event": session.agenda_item.space.event,
-                    "connected_users": list(
-                        self.request.user.connected.select_related("manager").all()
-                    ),
+                    "connected_users": self.request.user_dao.connected_users,
                     "user_data": self._get_user_participation_data(session),
                     "form": form,
                 },
@@ -877,21 +923,18 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
     def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
         enrollment_requests = []
-        connected_users = list(
-            self.request.user.connected.select_related("manager").all()
-        )
-        for connected_user in [self.request.user, *connected_users]:
+        for connected_user in self.request.user_dao.users:
             # Skip inactive users
             if not connected_user.is_active:
                 continue
-            user_field = f"user_{connected_user.id}"
+            user_field = f"user_{connected_user.pk}"
             if form.cleaned_data.get(user_field):
                 choice = form.cleaned_data[user_field]
                 enrollment_requests.append(
                     EnrollmentRequest(
                         user=connected_user,
                         choice=EnrollmentChoice(choice),
-                        name=connected_user.get_full_name(),
+                        name=connected_user.name,
                     )
                 )
         return enrollment_requests
@@ -901,6 +944,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         enrollment_requests: list[EnrollmentRequest],
         session: Session,
         enrollment_config: EnrollmentConfig,
+        user_dao: UserDAOProtocol,
     ) -> Enrollments:
         enrollments = Enrollments()
 
@@ -919,19 +963,16 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         # Slot checking: X slots = X unique people, each person can enroll in multiple sessions
         # Pre-validate batch enrollments to prevent enrolling too many different people
-        if self.request.user.email and confirmed_requests:
+        if self.request.user_dao.user.email and confirmed_requests:
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
-                self.request.user.email
+                self.request.user_dao.user.email
             )
             if enrollment_config.restrict_to_configured_users and user_config:
                 # Get currently enrolled unique users across ALL sessions in this event
                 currently_enrolled_users = set(
                     SessionParticipation.objects.filter(
                         status=SessionParticipationStatus.CONFIRMED,
-                        user__in=[
-                            self.request.user,
-                            *self.request.user.connected.all(),
-                        ],
+                        user_id__in=[u.pk for u in self.request.user_dao.users],
                         session__agenda_item__space__event=session.agenda_item.space.event,
                     )
                     .values_list("user_id", flat=True)
@@ -939,10 +980,12 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 )
 
                 # Get unique users that would be newly enrolled
-                users_to_enroll = {req.user for req in confirmed_requests}
-                new_users_to_enroll = [
-                    u for u in users_to_enroll if u.id not in currently_enrolled_users
-                ]
+                users_to_enroll = {
+                    req.user.pk: req.user
+                    for req in confirmed_requests
+                    if req.user.pk not in currently_enrolled_users
+                }
+                new_users_to_enroll = list(users_to_enroll.values())
 
                 # Check if adding all new users would exceed the limit
                 if (
@@ -953,11 +996,13 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     allowed_new_users = user_config.allowed_slots - len(
                         currently_enrolled_users
                     )
-                    users_to_block = set(new_users_to_enroll[allowed_new_users:])
+                    users_to_block = {
+                        u.pk for u in new_users_to_enroll[allowed_new_users:]
+                    }
 
                     # Mark the blocked users' requests for skipping
                     for req in enrollment_requests:
-                        if req.choice == "enroll" and req.user in users_to_block:
+                        if req.choice == "enroll" and req.user.pk in users_to_block:
                             req.choice = (
                                 EnrollmentChoice.BLOCK
                             )  # Special marker for blocking
@@ -970,7 +1015,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             # Handle cancellation
             if req.choice == "cancel" and (
                 existing_participation := next(
-                    p for p in participations if p.user == req.user
+                    p for p in participations if p.user.pk == req.user.pk
                 )
             ):
                 existing_participation.delete()
@@ -982,7 +1027,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 )
                 continue
 
-            self._check_and_create_enrollment(req, session, enrollments)
+            self._check_and_create_enrollment(req, session, enrollments, user_dao)
         return enrollments
 
     @staticmethod
@@ -998,7 +1043,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 if (
                     participation.user != req.user
                     and participation.status == SessionParticipationStatus.WAITING
-                ) and not Session.objects.has_conflicts(session, participation.user):
+                ) and not Session.objects.has_conflicts(
+                    session, UserDTO.model_validate(participation.user)
+                ):
 
                     can_be_promoted = True
                     if participation.user.email:
@@ -1012,7 +1059,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
                             )
                         )
                         if user_config and not user_config.can_enroll_users(
-                            [participation.user]
+                            [UserDTO.model_validate(participation.user)]
                         ):
                             can_be_promoted = False
 
@@ -1022,14 +1069,17 @@ class EnrollSelectView(LoginRequiredMixin, View):
                         enrollments.users_by_status[
                             SessionParticipationStatus.CONFIRMED
                         ].append(
-                            f"{participation.user.get_full_name()} "
+                            f"{participation.user.name} "
                             f"({_("promoted from waiting list")})"
                         )
                         break
 
     @staticmethod
     def _check_and_create_enrollment(
-        req: EnrollmentRequest, session: Session, enrollments: Enrollments
+        req: EnrollmentRequest,
+        session: Session,
+        enrollments: Enrollments,
+        user_dao: UserDAOProtocol,
     ) -> None:
         # Handle blocked enrollments (pre-marked due to slot limits)
         if req.choice == "block":
@@ -1041,7 +1091,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         # Check if user is the session presenter
         if (
             Proposal.objects.filter(session=session).exists()
-            and req.user == session.proposal.host
+            and req.user.pk == session.proposal.host.id
         ):
             enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
             return
@@ -1057,7 +1107,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         )
         if enrollment_config and enrollment_config.restrict_to_configured_users:
             # Handle connected users - they use their manager's config
-            if req.user.user_type == User.UserType.CONNECTED:
+            if req.user.user_type == UserType.CONNECTED:
                 if not (
                     hasattr(req.user, "manager")
                     and req.user.manager
@@ -1099,8 +1149,8 @@ class EnrollSelectView(LoginRequiredMixin, View):
         # Check if user has available slots (regardless of restriction setting)
         if req.choice == "enroll" and req.user.email:
             manager_user = req.user
-            if req.user.user_type == User.UserType.CONNECTED and req.user.manager:
-                manager_user = req.user.manager
+            if req.user.user_type == UserType.CONNECTED:
+                manager_user = user_dao.user
 
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 manager_user.email
@@ -1110,7 +1160,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 currently_enrolled_users = set(
                     SessionParticipation.objects.filter(
                         status=SessionParticipationStatus.CONFIRMED,
-                        user__in=[manager_user, *manager_user.connected.all()],
+                        user_id__in=[u.pk for u in user_dao.users],
                         session__agenda_item__space__event=session.agenda_item.space.event,
                     )
                     .values_list("user_id", flat=True)
@@ -1119,7 +1169,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
                 # Allow existing enrolled users to enroll in additional sessions
                 # Only block if this is a NEW user and would exceed the unique people limit
-                if req.user.id not in currently_enrolled_users:
+                if req.user.pk not in currently_enrolled_users:
                     # This is a new user - check if adding them would exceed the slot limit
                     if len(currently_enrolled_users) >= user_config.allowed_slots:
                         enrollments.skipped_users.append(
@@ -1145,7 +1195,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             if enrollment_config:
                 # Count current waitlist participations for this user in this event
                 current_waitlist_count = SessionParticipation.objects.filter(
-                    user=req.user,
+                    user_id=req.user.pk,
                     status=SessionParticipationStatus.WAITING,
                     session__agenda_item__space__event=session.agenda_item.space.event,
                 ).count()
@@ -1159,7 +1209,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         # Use get_or_create to prevent duplicate enrollments in race conditions
         __, created = SessionParticipation.objects.get_or_create(
             session=session,
-            user=req.user,
+            user_id=req.user.pk,
             defaults={"status": _status_by_choice[req.choice]},
         )
 
@@ -1235,7 +1285,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
             with transaction.atomic():
                 # Process enrollments and create success message
                 enrollments = self._process_enrollments(
-                    enrollment_requests, session, enrollment_config
+                    enrollment_requests,
+                    session,
+                    enrollment_config,
+                    self.request.user_dao,
                 )
 
             # Send message outside transaction
@@ -1250,11 +1303,11 @@ class EnrollSelectView(LoginRequiredMixin, View):
 class ProposeSessionView(LoginRequiredMixin, View):
     request: AuthorizedRootDAORequest
 
-    def get(self, request: UserRequest, event_slug: str) -> HttpResponse:
+    def get(self, request: AuthorizedRootDAORequest, event_slug: str) -> HttpResponse:
         event = self._validate_event(event_slug)
 
         # Check if user has birth date set
-        if not request.user.birth_date:
+        if not request.user_dao.user.birth_date:
             raise RedirectError(
                 reverse("web:edit"),
                 error=_(
@@ -1301,11 +1354,11 @@ class ProposeSessionView(LoginRequiredMixin, View):
             },
         )
 
-    def post(self, request: UserRequest, event_slug: str) -> HttpResponse:
+    def post(self, request: AuthorizedRootDAORequest, event_slug: str) -> HttpResponse:
         event = self._validate_event(event_slug)
 
         # Check if user has birth date set
-        if not request.user.birth_date:
+        if not request.user_dao.user.birth_date:
             raise RedirectError(
                 reverse("web:edit"),
                 error=_(
@@ -1361,7 +1414,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
         # Create the proposal using form data
         proposal = Proposal.objects.create(
             category=proposal_category,
-            host=self.request.user,
+            host_id=self.request.user_dao.user.pk,
             title=form.cleaned_data["title"],
             description=form.cleaned_data["description"],
             requirements=form.cleaned_data["requirements"],
@@ -1404,7 +1457,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
     def _validate_event(self, event_slug: str) -> Event:
         try:
             event = Event.objects.get(
-                sphere=self.request.root_dao.current_sphere_orm, slug=event_slug
+                sphere_id=self.request.root_dao.current_sphere.pk, slug=event_slug
             )
         except Event.DoesNotExist:
             raise RedirectError(
@@ -1438,7 +1491,8 @@ class ProposeSessionView(LoginRequiredMixin, View):
 def _get_proposal(request: RootDAORequest, proposal_id: int) -> Proposal:
     try:
         proposal = Proposal.objects.get(
-            category__event__sphere=request.root_dao.current_sphere_orm, id=proposal_id
+            category__event__sphere_id=request.root_dao.current_sphere.pk,
+            id=proposal_id,
         )
     except Proposal.DoesNotExist:
         raise RedirectError(
@@ -1455,22 +1509,22 @@ def _get_proposal(request: RootDAORequest, proposal_id: int) -> Proposal:
     return proposal
 
 
-def _check_proposal_permission(user: User, proposal: Proposal) -> bool:
+def _check_proposal_permission(user: UserDTO, proposal: Proposal) -> bool:
     """Check if user has permission to accept proposals for this event."""
     if user.is_superuser or user.is_staff:
         return True
 
     # Check if user is a sphere manager for this event's sphere
     sphere = proposal.category.event.sphere
-    return sphere.managers.filter(id=user.id).exists()
+    return sphere.managers.filter(id=user.pk).exists()
 
 
 class AcceptProposalPageView(LoginRequiredMixin, View):
-    def get(self, request: RootDAORequest, proposal_id: int) -> HttpResponse:
+    def get(self, request: AuthorizedRootDAORequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
 
         # Check permissions
-        if not _check_proposal_permission(request.user, proposal):
+        if not _check_proposal_permission(request.user_dao.user, proposal):
             raise RedirectError(
                 reverse("web:event", kwargs={"slug": proposal.category.event.slug}),
                 error=_(
@@ -1528,11 +1582,11 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
 
 
 class AcceptProposalView(LoginRequiredMixin, View):
-    def post(self, request: RootDAORequest, proposal_id: int) -> HttpResponse:
+    def post(self, request: AuthorizedRootDAORequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
 
         # Check permissions
-        if not _check_proposal_permission(request.user, proposal):
+        if not _check_proposal_permission(request.user_dao.user, proposal):
             raise RedirectError(
                 reverse("web:event", kwargs={"slug": proposal.category.event.slug}),
                 error=_(
@@ -1602,7 +1656,7 @@ class AcceptProposalView(LoginRequiredMixin, View):
 
 class ThemeSelectionView(View):
     @staticmethod
-    def post(request: UserRequest) -> HttpResponse:
+    def post(request: AuthorizedRootDAORequest) -> HttpResponse:
         form = ThemeSelectionForm(request.POST)
         if form.is_valid():
             theme = form.cleaned_data["theme"]

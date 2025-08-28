@@ -1,9 +1,9 @@
-from datetime import datetime
-from typing import Protocol
+import math
+from datetime import UTC, date, datetime
+from enum import StrEnum
+from typing import Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
-
-from ludamus.adapters.db.django.models import Sphere
 
 
 class ProposalCategoryDTO(BaseModel):  # type: ignore [explicit-any]
@@ -35,18 +35,40 @@ class TagDTO(BaseModel):  # type: ignore [explicit-any]
     pk: int
 
 
+class UserType(StrEnum):
+    ACTIVE = "active"
+    CONNECTED = "connected"
+
+
 class UserDTO(BaseModel):  # type: ignore [explicit-any]
     model_config = ConfigDict(from_attributes=True)
 
-    birth_date: datetime | None
+    birth_date: date | None
     date_joined: datetime
     email: str
     is_active: bool
     is_staff: bool
     name: str
     slug: str
-    user_type: str
+    user_type: UserType
     username: str
+    pk: int
+    is_authenticated: bool
+    is_superuser: bool
+    manager_id: int | None = None
+
+    @property
+    def age(self) -> int:
+        if self.birth_date is not None:
+            return math.floor(
+                (datetime.now(tz=UTC).date() - self.birth_date).days / 365.25
+            )
+
+        return 0
+
+    @property
+    def is_incomplete(self) -> bool:
+        return not self.name and not self.birth_date and not self.email
 
 
 class SiteDTO(BaseModel):  # type: ignore [explicit-any]
@@ -54,12 +76,42 @@ class SiteDTO(BaseModel):  # type: ignore [explicit-any]
 
     domain: str
     name: str
+    pk: int
 
 
 class SphereDTO(BaseModel):  # type: ignore [explicit-any]
     model_config = ConfigDict(from_attributes=True)
 
     name: str
+    pk: int
+
+
+class UserData(TypedDict, total=False):
+    birth_date: date | None
+    email: str | None
+    name: str
+    slug: str
+    user_type: UserType
+    username: str
+
+
+class UserDAOProtocol(Protocol):
+    @property
+    def user(self) -> UserDTO: ...
+
+    @property
+    def users(self) -> list[UserDTO]: ...
+
+    @property
+    def connected_users(self) -> list[UserDTO]: ...
+
+    def update_user(self, user_data: UserData) -> None: ...
+    def deactivate_user(self) -> None: ...
+
+    def create_connected_user(self, user_data: UserData) -> None: ...
+    def read_connected_user(self, pk: int) -> UserDTO: ...
+    def delete_connected_user(self, pk: int) -> None: ...
+    def update_connected_user(self, pk: int, user: UserData) -> None: ...
 
 
 class RootDAOProtocol(Protocol):
@@ -74,10 +126,7 @@ class RootDAOProtocol(Protocol):
 
     @property
     def allowed_domains(self) -> list[str]: ...
-
-    @property
-    def current_sphere_orm(self) -> Sphere:  # TODO: Remove
-        ...
+    def create_user_dao(self, username: str, slug: str) -> UserDAOProtocol: ...
 
 
 class RootDAORequestProtocol(Protocol):

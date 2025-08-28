@@ -78,7 +78,7 @@
                                             </div>
                                             <div class="col-md-4 text-md-end">
                                                 <form method="post"
-                                                      action="{% url 'web:connected-delete' slug=connected.user.slug %}">
+                                                      action="{% url 'web:connected-delete' pk=connected.user.pk %}">
                                                     {% csrf_token %}
                                                     <div class="btn-group" role="group">
                                                         <button type="button"
@@ -101,7 +101,7 @@
                                         </div>
                                     </div>
                                     <div class="item-edit collapse" id="edit-{{ forloop.counter }}">
-                                        <form action="{% url 'web:connected-details' slug=connected.user.slug %}"
+                                        <form action="{% url 'web:connected-details' pk=connected.user.pk %}"
                                               method="post">
                                             {% csrf_token %}
                                             {% bootstrap_form connected.form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}

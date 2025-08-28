@@ -53,6 +53,7 @@ pytest-freezeblaster = "^2.0.4"
 
 # POE
 types-requests = "^2.32.4.20250809"
+polyfactory = "^2.22.2"
 
 [tool.poe]
 envfile = ".env.dev"
@@ -106,7 +107,7 @@ update = [
 ]
 
 [tool.poe.tasks.inttest]
-cmd = "pytest"
+cmd = "pytest --fail-on-template-vars"
 envfile = ".testenv"
 
 # BLACK

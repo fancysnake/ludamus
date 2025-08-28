@@ -301,21 +301,19 @@ class TestCreateEnrollmentForm:
 
     @pytest.mark.django_db
     @staticmethod
-    def test_age_requirement_not_met(agenda_item, active_user, faker):
+    def test_age_requirement_not_met(agenda_item, underage_user_factory):
 
         session = agenda_item.session
 
         session.min_age = 16
         session.save()
 
-        young_user = active_user
-        young_user.birth_date = faker.date_between("-15y", "-14y")
-        young_user.save()
+        young_user = underage_user_factory.build()
 
         form_class = create_enrollment_form(session, [young_user])
         form = form_class()
 
-        field_name = f"user_{young_user.id}"
+        field_name = f"user_{young_user.pk}"
         assert field_name in form.fields
 
         field = form.fields[field_name]
@@ -325,7 +323,7 @@ class TestCreateEnrollmentForm:
 
     @pytest.mark.django_db
     @staticmethod
-    def test_age_requirement_met(agenda_item, active_user, faker):
+    def test_age_requirement_met(agenda_item, complete_user_factory):
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -333,9 +331,7 @@ class TestCreateEnrollmentForm:
         session.min_age = 16
         session.save()
 
-        adult_user = active_user
-        adult_user.birth_date = faker.date_between("-20y", "-18y")
-        adult_user.save()
+        adult_user = complete_user_factory.build()
 
         # Create enrollment config to enable enrollment functionality
         now = datetime.now(tz=UTC)
@@ -350,7 +346,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [adult_user])
         form = form_class()
 
-        field_name = f"user_{adult_user.id}"
+        field_name = f"user_{adult_user.pk}"
         assert field_name in form.fields
 
         field = form.fields[field_name]
@@ -388,7 +384,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [young_user])
         form = form_class()
 
-        field_name = f"user_{young_user.id}"
+        field_name = f"user_{young_user.pk}"
         assert field_name in form.fields
 
         field = form.fields[field_name]
@@ -401,7 +397,9 @@ class TestCreateEnrollmentForm:
 
     @pytest.mark.django_db
     @staticmethod
-    def test_multiple_users_with_different_ages(agenda_item, active_user, faker):
+    def test_multiple_users_with_different_ages(
+        agenda_item, underage_user_factory, complete_user_factory
+    ):
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -409,16 +407,8 @@ class TestCreateEnrollmentForm:
         session.min_age = 16
         session.save()
 
-        young_user = active_user
-        young_user.birth_date = faker.date_between("-15y", "-14y")  # Too young
-        young_user.save()
-
-        adult_user = User.objects.create(
-            username="adult_user",
-            slug="adult-user",
-            birth_date=faker.date_between("-20y", "-18y"),  # Old enough
-            manager=active_user.manager if hasattr(active_user, "manager") else None,
-        )
+        adult_user = complete_user_factory.build()
+        young_user = underage_user_factory.build(manager_id=adult_user.pk)
 
         # Create enrollment config to enable enrollment functionality
         now = datetime.now(tz=UTC)
@@ -433,13 +423,13 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [young_user, adult_user])
         form = form_class()
 
-        young_field_name = f"user_{young_user.id}"
+        young_field_name = f"user_{young_user.pk}"
         young_field = form.fields[young_field_name]
         assert young_field.choices == [("", "No change (age restriction)")]
         assert young_field.help_text == "Must be at least 16 years old"
         assert young_field.widget.attrs.get("disabled") == "disabled"
 
-        adult_field_name = f"user_{adult_user.id}"
+        adult_field_name = f"user_{adult_user.pk}"
         adult_field = form.fields[adult_field_name]
         choice_values = [choice[0] for choice in adult_field.choices]
         assert "enroll" in choice_values
@@ -471,7 +461,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         assert field_name in form.fields
 
         field = form.fields[field_name]
@@ -526,7 +516,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         assert field_name in form.fields
 
         field = form.fields[field_name]
@@ -580,7 +570,7 @@ class TestCreateEnrollmentForm:
             form_class = create_enrollment_form(session, [active_user])
             form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         assert field_name in form.fields
 
         field = form.fields[field_name]
@@ -624,7 +614,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         field = form.fields[field_name]
         choice_values = [choice[0] for choice in field.choices]
 
@@ -661,7 +651,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         field = form.fields[field_name]
         choice_values = [choice[0] for choice in field.choices]
 
@@ -694,7 +684,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         field = form.fields[field_name]
         choice_values = [choice[0] for choice in field.choices]
 
@@ -719,7 +709,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         field = form.fields[field_name]
         choice_values = [choice[0] for choice in field.choices]
 
@@ -749,7 +739,7 @@ class TestCreateEnrollmentForm:
             form_class = create_enrollment_form(session, [active_user])
             form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         field = form.fields[field_name]
         choice_values = [choice[0] for choice in field.choices]
 
@@ -781,7 +771,7 @@ class TestCreateEnrollmentForm:
             form_class = create_enrollment_form(session, [active_user])
             form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         field = form.fields[field_name]
         choice_values = [choice[0] for choice in field.choices]
 
@@ -807,7 +797,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         field = form.fields[field_name]
         choice_values = [choice[0] for choice in field.choices]
 
@@ -857,7 +847,7 @@ class TestCreateEnrollmentForm:
         form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{active_user.id}"
+        field_name = f"user_{active_user.pk}"
         field = form.fields[field_name]
         choice_values = [choice[0] for choice in field.choices]
 

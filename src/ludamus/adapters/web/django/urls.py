@@ -36,12 +36,12 @@ urlpatterns = [
     ),
     path("crowd/user/connected", views.ConnectedView.as_view(), name="connected"),
     path(
-        "crowd/user/connected/<str:slug>",
+        "crowd/user/connected/<int:pk>",
         views.EditConnectedView.as_view(),
         name="connected-details",
     ),
     path(
-        "crowd/user/connected/<str:slug>/delete",
+        "crowd/user/connected/<int:pk>/delete",
         views.DeleteConnectedView.as_view(),
         name="connected-delete",
     ),

@@ -35,6 +35,7 @@ from ludamus.adapters.web.django.views import (
     Enrollments,
     EnrollSelectView,
 )
+from ludamus.pacts import UserDTO, UserType
 from tests.integration.conftest import (
     AgendaItemFactory,
     SessionFactory,
@@ -434,7 +435,7 @@ class TestEditProfileView:
         assert (
             response.context_data["object"]
             == response.context_data["user"]
-            == active_user
+            == UserDTO.model_validate(active_user)
         )
 
     def test_post_ok(self, authenticated_client, active_user, faker):
@@ -442,7 +443,7 @@ class TestEditProfileView:
             "name": faker.name(),
             "email": faker.email(),
             "birth_date": faker.date_between("-100y", "-18y"),
-            "user_type": User.UserType.ACTIVE,
+            "user_type": UserType.ACTIVE,
         }
         response = authenticated_client.post(self.URL, data=data)
 
@@ -461,7 +462,7 @@ class TestEditProfileView:
             "name": faker.name(),
             "email": faker.email(),
             "birth_date": faker.date_between("-15y", "-1y"),
-            "user_type": User.UserType.ACTIVE,
+            "user_type": UserType.ACTIVE,
         }
         response = authenticated_client.post(self.URL, data=data)
 
@@ -502,13 +503,16 @@ class TestConnectedView:
         response = authenticated_client.get(self.URL)
 
         assert response.status_code == HTTPStatus.OK
-        assert response.context_data["connected_users"][0]["user"] == connected_user
+        assert response.context_data["connected_users"][0][
+            "user"
+        ] == UserDTO.model_validate(connected_user)
 
-    def test_post_ok(self, authenticated_client, faker):
+    def test_post_ok(self, active_user, authenticated_client, faker):
         data = {
             "name": faker.name(),
             "birth_date": faker.date(),
-            "user_type": User.UserType.CONNECTED,
+            "user_type": UserType.CONNECTED,
+            "manager_id": active_user.id,
         }
         response = authenticated_client.post(self.URL, data=data)
 
@@ -516,7 +520,7 @@ class TestConnectedView:
         assert response.url == "/crowd/user/connected"
         user = User.objects.get(name=data["name"])
         assert user.birth_date.isoformat() == data["birth_date"]
-        assert user.user_type == User.UserType.CONNECTED
+        assert user.user_type == UserType.CONNECTED
 
     def test_post_error_form_invalid(self, authenticated_client):
         response = authenticated_client.post(self.URL)
@@ -534,14 +538,15 @@ class TestConnectedView:
                 name=unique_name,
                 slug=f"connected-{i}-{faker.random_int()}",
                 birth_date=faker.date(),
-                user_type=User.UserType.CONNECTED,
+                user_type=UserType.CONNECTED,
                 manager=active_user,
             )
 
         data = {
             "name": faker.name(),
             "birth_date": faker.date(),
-            "user_type": User.UserType.CONNECTED,
+            "user_type": UserType.CONNECTED,
+            "manager_id": active_user.id,
         }
         response = authenticated_client.post(self.URL, data=data)
 
@@ -549,7 +554,7 @@ class TestConnectedView:
         msgs = list(get_messages(response.wsgi_request))
         assert msgs[0].level == messages.ERROR  # Max connected users error
         assert msgs[1].level == messages.WARNING  # Form invalid warning
-        connected_count = User.objects.filter(user_type=User.UserType.CONNECTED).count()
+        connected_count = User.objects.filter(user_type=UserType.CONNECTED).count()
         assert connected_count == MAX_CONNECTED_USERS
 
 
@@ -557,17 +562,18 @@ class TestConnectedView:
 class TestEditConnectedView:
     URL_NAME = "web:connected-details"
 
-    def _get_url(self, slug: str) -> str:
-        return reverse(self.URL_NAME, kwargs={"slug": slug})
+    def _get_url(self, pk: int) -> str:
+        return reverse(self.URL_NAME, kwargs={"pk": pk})
 
-    def test_post_ok(self, authenticated_client, connected_user, faker):
+    def test_post_ok(self, active_user, authenticated_client, connected_user, faker):
         data = {
             "name": faker.name(),
             "birth_date": faker.date(),
-            "user_type": User.UserType.CONNECTED,
+            "user_type": UserType.CONNECTED,
+            "manager_id": active_user.id,
         }
         response = authenticated_client.post(
-            self._get_url(connected_user.slug), data=data
+            self._get_url(connected_user.pk), data=data
         )
 
         assert response.status_code == HTTPStatus.FOUND
@@ -579,7 +585,7 @@ class TestEditConnectedView:
         assert user.user_type == data["user_type"]
 
     def test_post_error_form_invalid(self, authenticated_client, connected_user):
-        response = authenticated_client.post(self._get_url(connected_user.slug))
+        response = authenticated_client.post(self._get_url(connected_user.pk))
 
         assert response.status_code == HTTPStatus.OK
         _assert_message_sent(response, messages.WARNING)
@@ -588,11 +594,11 @@ class TestEditConnectedView:
 class TestDeleteConnectedView:
     URL_NAME = "web:connected-delete"
 
-    def _get_url(self, slug: str) -> str:
-        return reverse(self.URL_NAME, kwargs={"slug": slug})
+    def _get_url(self, pk: int) -> str:
+        return reverse(self.URL_NAME, kwargs={"pk": pk})
 
     def test_post_ok(self, authenticated_client, connected_user):
-        response = authenticated_client.post(self._get_url(connected_user.slug))
+        response = authenticated_client.post(self._get_url(connected_user.pk))
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse("web:connected")
@@ -691,7 +697,7 @@ class TestEnrollSelectView:
             "session": agenda_item.session,
             "user_data": [
                 SessionUserParticipationData(
-                    user=active_user,
+                    user=UserDTO.model_validate(active_user),
                     user_enrolled=False,
                     user_waiting=False,
                     has_time_conflict=False,
@@ -822,7 +828,7 @@ class TestEnrollSelectView:
             "session": agenda_item.session,
             "user_data": [
                 SessionUserParticipationData(
-                    user=active_user,
+                    user=UserDTO.model_validate(active_user),
                     user_enrolled=False,
                     user_waiting=False,
                     has_time_conflict=False,
@@ -969,7 +975,7 @@ class TestEnrollSelectView:
             "session": agenda_item.session,
             "user_data": [
                 SessionUserParticipationData(
-                    user=active_user,
+                    user=UserDTO.model_validate(active_user),
                     user_enrolled=False,  # User is not enrolled in THIS session
                     user_waiting=False,
                     has_time_conflict=True,

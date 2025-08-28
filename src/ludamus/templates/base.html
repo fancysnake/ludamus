@@ -30,8 +30,8 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
                 <a class="navbar-brand fw-bold"
-                   href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
-                    {% bs_icon 'people' %} {{ current_sphere.name }}
+                   href="{{ request.scheme }}://{{ request.root_dao.current_site.domain }}{% url 'web:index' %}">
+                    {% bs_icon 'people' %} {{ request.root_dao.current_sphere.name }}
                 </a>
                 <button class="navbar-toggler"
                         type="button"
@@ -41,15 +41,15 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto align-items-center">
-                        {% if request.user.is_authenticated and request.user.name %}
+                        {% if request.user_dao and request.user_dao.user.name %}
                             <li class="nav-item">
                                 <span class="navbar-text text-light me-3">
                                     {% bs_icon 'person-circle' %}
-                                    {{ request.user.name }}
+                                    {{ request.user_dao.user.name }}
                                 </span>
                             </li>
                         {% endif %}
-                        {% if request.user.is_authenticated %}
+                        {% if request.user_dao.user.is_authenticated %}
                             <li class="nav-item">
                                 <a class="btn btn-outline-light me-2" href="{% url 'web:edit' %}">
                                     {% bs_icon 'person-gear' %} {% translate "Edit Profile" %}

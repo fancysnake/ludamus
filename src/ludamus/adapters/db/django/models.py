@@ -15,6 +15,8 @@ from django.utils import timezone
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
+from ludamus.pacts import UserDTO, UserType
+
 if TYPE_CHECKING:
     from collections.abc import Collection
 
@@ -29,10 +31,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS: ClassVar = ["email"]
-
-    class UserType(models.TextChoices):  # pylint: disable=too-many-ancestors
-        ACTIVE = "active", _("Active")
-        CONNECTED = "connected", _("Connected")
 
     birth_date = models.DateField(blank=True, null=True)
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
@@ -60,7 +58,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(_("User name"), max_length=255, blank=True)
     slug = models.SlugField(unique=True, db_index=True)
     user_type = models.CharField(
-        max_length=255, choices=UserType, default=UserType.ACTIVE
+        max_length=255,
+        choices=[(t.value, t.name) for t in UserType],
+        default=UserType.ACTIVE,
     )
     username = models.CharField(
         _("username"),
@@ -96,19 +96,6 @@ class User(AbstractBaseUser, PermissionsMixin):
                 condition=~Q(email=""),
             ),
         )
-
-    @property
-    def age(self) -> int:
-        if self.birth_date:
-            return math.floor(
-                (datetime.now(tz=UTC).date() - self.birth_date).days / 365.25
-            )
-
-        return 0
-
-    @property
-    def is_incomplete(self) -> bool:
-        return not self.name and not self.birth_date and not self.email
 
     @property
     def confirmed_participations_count(self) -> int:
@@ -464,7 +451,7 @@ class UserEnrollmentConfig(models.Model):
         """Check if user has been allocated any enrollment slots (not if they're available)."""
         return self.allowed_slots > 0
 
-    def can_enroll_users(self, users_to_enroll: list[User]) -> bool:
+    def can_enroll_users(self, users_to_enroll: list[UserDTO]) -> bool:
         """Check if enrolling these users would exceed the user slot limit.
 
         Each unique user counts as one slot, regardless of how many sessions
@@ -490,7 +477,7 @@ class UserEnrollmentConfig(models.Model):
         )
 
         # Add new users to enroll
-        users_to_enroll_ids = {u.id for u in users_to_enroll if u in all_users}
+        users_to_enroll_ids = {u.pk for u in users_to_enroll if u in all_users}
         total_enrolled = currently_enrolled | users_to_enroll_ids
 
         return len(total_enrolled) <= self.allowed_slots
@@ -696,12 +683,12 @@ class Tag(models.Model):
 
 
 class SessionManager(models.Manager["Session"]):
-    def has_conflicts(self, session: Session, user: User) -> bool:
+    def has_conflicts(self, session: Session, user: UserDTO) -> bool:
         return (
             self.get_queryset()
             .filter(
                 agenda_item__space__event=session.agenda_item.space.event,
-                session_participations__user=user,
+                session_participations__user_id=user.pk,
                 session_participations__status=SessionParticipationStatus.CONFIRMED,
             )
             .filter(

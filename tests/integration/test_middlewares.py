@@ -26,15 +26,21 @@ class TestSphereMiddleware:
 
     @pytest.mark.django_db
     @staticmethod
-    def test_successful_sphere_lookup(get_response_mock, middleware, rf, sphere):
+    def test_successful_sphere_lookup(
+        get_response_mock, middleware, rf, sphere, authenticated_user_factory
+    ):
         request = rf.get("/")
         request.META["HTTP_HOST"] = sphere.site.domain
+        request.user = authenticated_user_factory.build()
 
         sphere.site.sphere = sphere
 
         middleware(request)
 
-        assert request.root_dao.current_sphere == SphereDTO(name=sphere.name)
+        assert request.root_dao.current_sphere == SphereDTO(
+            name=sphere.name, pk=sphere.id
+        )
+        assert request.user_dao.user == request.user
         get_response_mock.assert_called_once_with(request)
 
     @pytest.mark.django_db

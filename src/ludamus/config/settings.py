@@ -117,7 +117,6 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
-                "ludamus.adapters.web.django.context_processors.sites",
                 "ludamus.adapters.web.django.context_processors.support",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",

@@ -81,7 +81,7 @@
         {% endif %}
     {% endfor %}
     <!-- Enrollment Passes Info (for authenticated users) -->
-    {% if request.user.is_authenticated and event.get_active_enrollment_configs and enrollment_requires_slots %}
+    {% if request.user_dao.user.is_authenticated and event.get_active_enrollment_configs and enrollment_requires_slots %}
         <div class="row mb-4">
             <div class="col-12">
                 <div class="alert alert-success" role="alert">
@@ -120,10 +120,10 @@
                                 {% else %}
                                     <small class="text-muted">{% translate "Each person can be enrolled in multiple sessions." %}</small>
                                 {% endif %}
-                            {% elif request.user.user_type == 'connected' %}
+                            {% elif request.user_dao.user.user_type == 'connected' %}
                                 <p class="mb-1">{% translate "You may be able to enroll using your manager's enrollment passes." %}</p>
                                 <small class="text-muted">{% translate "Contact your manager for enrollment assistance." %}</small>
-                            {% elif request.user.is_authenticated %}
+                            {% elif request.user_dao.user.is_authenticated %}
                                 <p class="mb-1">{% translate "You don't have any enrollment passes." %}</p>
                                 <small class="text-muted">{% translate "You can enroll when general enrollment opens." %}</small>
                             {% else %}
@@ -341,14 +341,14 @@
                                                                         data-bs-target="#sessionDetailModal{{ data.session.id }}">
                                                                     {% bs_icon 'eye' %} {% translate "Details" %}
                                                                 </button>
-                                                                {% if data.session.is_enrollment_available and request.user.is_authenticated %}
+                                                                {% if data.session.is_enrollment_available and request.user_dao.user.is_authenticated %}
                                                                     {% if data.user_enrolled or data.user_waiting %}
                                                                         <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                                                            class="btn btn-warning btn-sm">
                                                                             {% bs_icon 'gear' %} {% translate "Manage" %}
                                                                         </a>
                                                                     {% else %}
-                                                                        {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                                                        {% if request.user_dao.user.user_type == 'connected' or request.user_dao.user.user_type == 'active' %}
                                                                             <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                                                                class="btn btn-success btn-sm">
                                                                                 {% bs_icon 'person-plus' %} {% translate "Enroll" %}
@@ -361,7 +361,7 @@
                                                                             </button>
                                                                         {% endif %}
                                                                     {% endif %}
-                                                                    {% if request.user.is_authenticated and data.has_any_enrollments %}
+                                                                    {% if request.user_dao.user.is_authenticated and data.has_any_enrollments %}
                                                                         <button type="button"
                                                                                 class="btn btn-outline-info btn-sm ms-1"
                                                                                 data-bs-toggle="modal"
@@ -470,7 +470,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         {% bs_icon 'person-circle' %}
-                                                        <span class="ms-2">{{ proposal.host.get_full_name|default:proposal.host.get_full_name }}</span>
+                                                        <span class="ms-2">{{ proposal.host.name|default:proposal.host.name }}</span>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -546,7 +546,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <h6>{% translate "Host" %}</h6>
-                                    <p>{{ proposal.host.get_full_name|default:proposal.host.get_full_name }}</p>
+                                    <p>{{ proposal.host.name|default:proposal.host.name }}</p>
                                     <h6>{% translate "Participants Limit" %}</h6>
                                     <p>{{ proposal.participants_limit }}</p>
                                     {% if proposal.tags.exists %}
@@ -621,14 +621,14 @@
                                 <h6>{% translate "Your Status" %}</h6>
                                 {% with user_participation=data.session.session_participations.all|dictsort:"creation_time" %}
                                     {% for participation in user_participation %}
-                                        {% if participation.user == request.user %}
+                                        {% if participation.user == request.user_dao.user %}
                                             <div class="d-flex align-items-center">
                                                 {% if participation.status == 'confirmed' %}
                                                     <span class="badge bg-success me-2">{% translate "Enrolled" %}</span>
                                                 {% else %}
                                                     <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
                                                 {% endif %}
-                                                <span>{{ request.user.get_full_name }}</span>
+                                                <span>{{ request.user_dao.user.name }}</span>
                                                 <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
                                             </div>
                                         {% endif %}
@@ -640,10 +640,10 @@
                                 {% endwith %}
                             </div>
                             <!-- Connected users enrollment status -->
-                            {% if request.user.connected.exists %}
+                            {% if request.user_dao.connected_users %}
                                 <div class="mb-3">
                                     <h6>{% translate "Connected Users Status" %}</h6>
-                                    {% for connected_user in request.user.connected.all %}
+                                    {% for connected_user in request.user_dao.connected_users %}
                                         <div class="d-flex align-items-center mb-2">
                                             {% with connected_participation=data.session.session_participations.all|dictsort:"creation_time" %}
                                                 {% for participation in connected_participation %}
@@ -653,16 +653,16 @@
                                                         {% else %}
                                                             <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
                                                         {% endif %}
-                                                        <span>{{ connected_user.get_full_name }}</span>
+                                                        <span>{{ connected_user.name }}</span>
                                                         <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
                                                     {% endif %}
                                                 {% empty %}
                                                     <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
-                                                    <span>{{ connected_user.get_full_name }}</span>
+                                                    <span>{{ connected_user.name }}</span>
                                                 {% endfor %}
                                                 {% if not connected_participation %}
                                                     <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
-                                                    <span>{{ connected_user.get_full_name }}</span>
+                                                    <span>{{ connected_user.name }}</span>
                                                 {% endif %}
                                             {% endwith %}
                                         </div>
@@ -693,7 +693,7 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
                             {% if data.session.is_enrollment_available and not user_enrolled and not user_waiting %}
-                                {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                {% if request.user_dao.user.user_type == 'connected' or request.user_dao.user.user_type == 'active' %}
                                     <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                        class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
                                 {% endif %}
@@ -766,7 +766,7 @@
                                                         <td>
                                                             <div class="d-flex align-items-center">
                                                                 {% bs_icon 'person-circle' %}
-                                                                <span class="ms-2">{{ participation.user.get_full_name }}</span>
+                                                                <span class="ms-2">{{ participation.user.name }}</span>
                                                             </div>
                                                         </td>
                                                         <td>
@@ -803,7 +803,7 @@
                                                         <td>
                                                             <div class="d-flex align-items-center">
                                                                 {% bs_icon 'clock' %}
-                                                                <span class="ms-2">{{ participation.user.get_full_name }}</span>
+                                                                <span class="ms-2">{{ participation.user.name }}</span>
                                                             </div>
                                                         </td>
                                                         <td>
@@ -920,7 +920,7 @@
                                 </div>
                             {% endif %}
                             <!-- Enrollment Status for Authenticated Users -->
-                            {% if request.user.is_authenticated %}
+                            {% if request.user_dao.user.is_authenticated %}
                                 <div class="border-top pt-3">
                                     <h6>{% bs_icon 'person-check' %} {% translate "Your Enrollment Status" %}</h6>
                                     <div class="ms-4">
@@ -947,14 +947,14 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
                             {% if data.session.is_enrollment_available %}
-                                {% if request.user.is_authenticated %}
+                                {% if request.user_dao.user.is_authenticated %}
                                     {% if data.user_enrolled or data.user_waiting %}
                                         <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                            class="btn btn-warning">
                                             {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                         </a>
                                     {% else %}
-                                        {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                        {% if request.user_dao.user.user_type == 'connected' or request.user_dao.user.user_type == 'active' %}
                                             <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                                class="btn btn-success">
                                                 {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
