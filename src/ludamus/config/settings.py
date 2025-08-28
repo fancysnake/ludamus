@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     # Third Party
     "django_bootstrap5",
     "django_bootstrap_icons",
+    'django_extensions',
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
     "ludamus.adapters.db.django.apps.DBMainConfig",
