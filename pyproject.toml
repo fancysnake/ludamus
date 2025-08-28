@@ -85,7 +85,7 @@ check = [
     "mypy",
     "djlint",
     "djlint-format",
-    "pylint",
+    # "pylint",
 ]
 prcheck = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint"]
 update = [
@@ -216,6 +216,8 @@ ignore = [
     "PLR1702", # Too many nested blocks
     "EM101",   # Exception must not use a string literal, assign to variable first
     "TRY003",  # Avoid specifying long messages outside the exception class
+    "TD",
+    "FIX",
 ]
 
 [tool.ruff.lint.per-file-ignores]
