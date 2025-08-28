@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-26 07:43+0200\n"
+"POT-Creation-Date: 2025-08-28 20:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -858,11 +858,11 @@ msgstr "Zapisy nie są obecnie dostępne dla tego punktu programu."
 msgid "No enrollment configuration is available for this session."
 msgstr "Brak dostępnej konfiguracji zapisów dla tego punktu programu."
 
-#: src/ludamus/adapters/web/django/views.py:808
+#: src/ludamus/adapters/web/django/views.py:810
 msgid "Email address is required for enrollment in this session."
 msgstr "Do zapisu na ten punkt programu wymagany jest adres email."
 
-#: src/ludamus/adapters/web/django/views.py:816
+#: src/ludamus/adapters/web/django/views.py:818
 msgid ""
 "Enrollment access permission is required for this session. Please contact "
 "the organizers to obtain access."
@@ -870,84 +870,84 @@ msgstr ""
 "Do tego punktu programu wymagane są uprawnienia dostępu do zapisu. "
 "Skontaktuj się z organizatorami, aby uzyskać dostęp."
 
-#: src/ludamus/adapters/web/django/views.py:821
-#: src/ludamus/adapters/web/django/views.py:825
+#: src/ludamus/adapters/web/django/views.py:823
+#: src/ludamus/adapters/web/django/views.py:827
 msgid "Please review the enrollment options below."
 msgstr "Proszę przejrzeć opcje zapisu poniżej."
 
-#: src/ludamus/adapters/web/django/views.py:994
+#: src/ludamus/adapters/web/django/views.py:996
 msgid "promoted from waiting list"
 msgstr "przeniesiony z listy oczekujących"
 
-#: src/ludamus/adapters/web/django/views.py:1007
+#: src/ludamus/adapters/web/django/views.py:1009
 msgid "session host"
 msgstr "twórca punktu programu"
 
-#: src/ludamus/adapters/web/django/views.py:1012
+#: src/ludamus/adapters/web/django/views.py:1014
 msgid "age restriction"
 msgstr "ograniczenie wiekowe"
 
-#: src/ludamus/adapters/web/django/views.py:1028
+#: src/ludamus/adapters/web/django/views.py:1030
 msgid "manager information missing"
 msgstr "brak informacji o kierowniku"
 
-#: src/ludamus/adapters/web/django/views.py:1039
+#: src/ludamus/adapters/web/django/views.py:1041
 msgid "manager not in enrollment list"
 msgstr "kierownik nie jest na liście zapisu"
 
-#: src/ludamus/adapters/web/django/views.py:1046
+#: src/ludamus/adapters/web/django/views.py:1048
 msgid "no email configured"
 msgstr "brak skonfigurowanego emaila"
 
-#: src/ludamus/adapters/web/django/views.py:1056
+#: src/ludamus/adapters/web/django/views.py:1058
 msgid "not in enrollment list"
 msgstr "nie ma na liście zapisu"
 
-#: src/ludamus/adapters/web/django/views.py:1071
+#: src/ludamus/adapters/web/django/views.py:1073
 msgid "no user slots available"
 msgstr "brak wolnych miejsc dla użytkowników"
 
-#: src/ludamus/adapters/web/django/views.py:1077
+#: src/ludamus/adapters/web/django/views.py:1079
 msgid "time conflict"
 msgstr "konflikt czasowy"
 
-#: src/ludamus/adapters/web/django/views.py:1087
+#: src/ludamus/adapters/web/django/views.py:1089
 msgid "waitlist disabled"
 msgstr "lista oczekujących wyłączona"
 
-#: src/ludamus/adapters/web/django/views.py:1100
+#: src/ludamus/adapters/web/django/views.py:1102
 msgid "waitlist limit exceeded"
 msgstr "przekroczono limit listy oczekujących"
 
-#: src/ludamus/adapters/web/django/views.py:1114
+#: src/ludamus/adapters/web/django/views.py:1116
 msgid "already enrolled"
 msgstr "już zapisany"
 
-#: src/ludamus/adapters/web/django/views.py:1121
+#: src/ludamus/adapters/web/django/views.py:1123
 #, python-brace-format
 msgid "Enrolled: {}"
 msgstr "Zapisani: {}"
 
-#: src/ludamus/adapters/web/django/views.py:1125
+#: src/ludamus/adapters/web/django/views.py:1127
 #, python-brace-format
 msgid "Added to waiting list: {}"
 msgstr "Dodani do listy oczekujących: {}"
 
-#: src/ludamus/adapters/web/django/views.py:1127
+#: src/ludamus/adapters/web/django/views.py:1129
 #, python-brace-format
 msgid "Cancelled: {}"
 msgstr "Anulowani: {}"
 
-#: src/ludamus/adapters/web/django/views.py:1130
+#: src/ludamus/adapters/web/django/views.py:1132
 #, python-brace-format
 msgid "Skipped (already enrolled or conflicts): {}"
 msgstr "Pominięci (już zapisani lub konflikty): {}"
 
-#: src/ludamus/adapters/web/django/views.py:1138
+#: src/ludamus/adapters/web/django/views.py:1140
 msgid "No enrollments were processed."
 msgstr "Żadne zapisy nie zostały przetworzone."
 
-#: src/ludamus/adapters/web/django/views.py:1157
+#: src/ludamus/adapters/web/django/views.py:1159
 #, python-brace-format
 msgid ""
 "Not enough spots available. {} spots requested, {} available. Please use "
@@ -956,32 +956,32 @@ msgstr ""
 "Za mało dostępnych miejsc. {} miejsc żądanych, {} dostępnych. Użyj listy "
 "oczekujących dla niektórych użytkowników."
 
-#: src/ludamus/adapters/web/django/views.py:1191
+#: src/ludamus/adapters/web/django/views.py:1193
 msgid "Please select at least one user to enroll."
 msgstr "Wybierz przynajmniej jednego użytkownika do zapisu."
 
-#: src/ludamus/adapters/web/django/views.py:1206
-#: src/ludamus/adapters/web/django/views.py:1257
+#: src/ludamus/adapters/web/django/views.py:1208
+#: src/ludamus/adapters/web/django/views.py:1259
 msgid ""
 "Please complete your profile with birth date before submitting proposals."
 msgstr "Uzupełnij swój profil z datą urodzenia przed składaniem zgłoszeń."
 
-#: src/ludamus/adapters/web/django/views.py:1325
+#: src/ludamus/adapters/web/django/views.py:1327
 #, python-brace-format
 msgid "Session proposal '{}' submitted successfully!"
 msgstr "Zgłoszenie punktu programu '{}' zostało pomyślnie przesłane!"
 
-#: src/ludamus/adapters/web/django/views.py:1354
+#: src/ludamus/adapters/web/django/views.py:1356
 msgid "Event not found."
 msgstr "Festiwal nie został znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:1360
+#: src/ludamus/adapters/web/django/views.py:1362
 msgid "Proposal submission is not currently active for this event."
 msgstr ""
 "Składanie zgłoszeń punktów programu nie jest obecnie aktywne dla tego "
 "wydarzenia."
 
-#: src/ludamus/adapters/web/django/views.py:1375
+#: src/ludamus/adapters/web/django/views.py:1377
 msgid ""
 "No proposal category configured for this event. Please contact the "
 "organizers."
@@ -989,28 +989,28 @@ msgstr ""
 "Brak skonfigurowanej kategorii zgłoszeń dla tego wydarzenia. Skontaktuj się "
 "z organizatorami."
 
-#: src/ludamus/adapters/web/django/views.py:1388
+#: src/ludamus/adapters/web/django/views.py:1390
 msgid "Proposal not found."
 msgstr "Zgłoszenie nie zostało znalezione."
 
-#: src/ludamus/adapters/web/django/views.py:1395
+#: src/ludamus/adapters/web/django/views.py:1397
 msgid "This proposal has already been accepted."
 msgstr "To zgłoszenie zostało już zaakceptowane."
 
-#: src/ludamus/adapters/web/django/views.py:1432
+#: src/ludamus/adapters/web/django/views.py:1434
 msgid "No spaces configured for this event. Please create spaces first."
 msgstr ""
 "Brak skonfigurowanych przestrzeni dla tego wydarzenia. Utwórz najpierw "
 "przestrzenie."
 
-#: src/ludamus/adapters/web/django/views.py:1446
+#: src/ludamus/adapters/web/django/views.py:1448
 msgid ""
 "No time slots configured for this event. Please create time slots first."
 msgstr ""
 "Brak skonfigurowanych bloków czasowych dla tego wydarzenia. Utwórz najpierw "
 "bloki czasowe."
 
-#: src/ludamus/adapters/web/django/views.py:1481
+#: src/ludamus/adapters/web/django/views.py:1483
 #, python-brace-format
 msgid "Proposal '{}' has been accepted and added to the agenda."
 msgstr "Zgłoszenie '{}' zostało zaakceptowane i dodane do programu."
@@ -1316,12 +1316,12 @@ msgstr "Twój Dostęp do Zapisu"
 #, python-format
 msgid ""
 "\n"
-"                                            You have %(total)s enrollment "
-"slots.\n"
+"                                            You can enroll up to %(total)s "
+"people (multiple enrollments allowed per person).\n"
 "                                        "
 msgstr ""
 "\n"
-"                                            Masz %(total)s miejsc zapisu.\n"
+"                                            Możesz zapisać maksymalnie %(total)s osób (każda osoba może być zapisana wielokrotnie).\n"
 "                                        "
 
 #: src/ludamus/templates/chronology/event.html:103
@@ -1344,9 +1344,8 @@ msgstr ""
 
 #: src/ludamus/templates/chronology/event.html:111
 #: src/ludamus/templates/chronology/event.html:121
-msgid "You can enroll yourself and your connected users using these slots."
-msgstr ""
-"Możesz zapisać siebie i swoje powiązane osoby wykorzystując te miejsca."
+msgid "Each person can be enrolled in multiple sessions."
+msgstr "Każda osoba może być zapisana na wiele punktów programu."
 
 #: src/ludamus/templates/chronology/event.html:116
 #, python-format
@@ -1955,6 +1954,10 @@ msgstr "Brak dostępnych wydarzeń"
 #: src/ludamus/templates/index.html:72
 msgid "There are currently no events scheduled. Please check back later!"
 msgstr "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź ponownie później!"
+
+#~ msgid "You can enroll yourself and your connected users using these slots."
+#~ msgstr ""
+#~ "Możesz zapisać siebie i swoje powiązane osoby wykorzystując te miejsca."
 
 #~ msgid "not enrolled"
 #~ msgstr "nie zapisany"

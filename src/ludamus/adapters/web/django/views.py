@@ -891,46 +891,48 @@ class EnrollSelectView(LoginRequiredMixin, View):
             # This should rarely happen due to double-checking, but handle gracefully
             return enrollments  # Return empty enrollments
 
+        # Slot checking: X slots = X unique people, each person can enroll in multiple sessions
+        # Pre-validate batch enrollments to prevent enrolling too many different people
         if self.request.user.email and confirmed_requests:
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 self.request.user.email
             )
             if user_config:
-                cancel_requests = [
-                    req for req in enrollment_requests if req.choice == "cancel"
-                ]
-
-                current_session_enrollments = SessionParticipation.objects.filter(
-                    session=session,
-                    user__in=[req.user for req in cancel_requests],
-                    status=SessionParticipationStatus.CONFIRMED,
-                ).count()
-
-                net_new_enrollments = (
-                    len(confirmed_requests) - current_session_enrollments
+                # Get currently enrolled unique users across ALL sessions in this event
+                currently_enrolled_users = set(
+                    SessionParticipation.objects.filter(
+                        status=SessionParticipationStatus.CONFIRMED,
+                        user__in=[
+                            self.request.user,
+                            *self.request.user.connected.all(),
+                        ],
+                        session__agenda_item__space__event=session.agenda_item.space.event,
+                    )
+                    .values_list("user_id", flat=True)
+                    .distinct()
                 )
 
-                if (
-                    net_new_enrollments > 0
-                    and user_config.get_available_slots() < net_new_enrollments
-                ):
-                    for req in enrollment_requests:
-                        if req.choice == "enroll":
-                            # Only convert to waitlist if waitlist is enabled
-                            if enrollment_config.max_waitlist_sessions > 0:
-                                # Check if user can join waitlist
-                                current_waitlist_count = SessionParticipation.objects.filter(
-                                    user=req.user,
-                                    status=SessionParticipationStatus.WAITING,
-                                    session__agenda_item__space__event=session.agenda_item.space.event,
-                                ).count()
+                # Get unique users that would be newly enrolled
+                users_to_enroll = {req.user for req in confirmed_requests}
+                new_users_to_enroll = [
+                    u for u in users_to_enroll if u.id not in currently_enrolled_users
+                ]
 
-                                if (
-                                    current_waitlist_count
-                                    < enrollment_config.max_waitlist_sessions
-                                ):
-                                    req.choice = "waitlist"
-                                # If waitlist is full or disabled, the enrollment will be skipped later
+                # Check if adding all new users would exceed the limit
+                if (
+                    len(currently_enrolled_users) + len(new_users_to_enroll)
+                    > user_config.allowed_slots
+                ):
+                    # Mark excess users for blocking (keep first users up to the limit)
+                    allowed_new_users = user_config.allowed_slots - len(
+                        currently_enrolled_users
+                    )
+                    users_to_block = set(new_users_to_enroll[allowed_new_users:])
+
+                    # Mark the blocked users' requests for skipping
+                    for req in enrollment_requests:
+                        if req.choice == "enroll" and req.user in users_to_block:
+                            req.choice = "block"  # Special marker for blocking
 
         participations = SessionParticipation.objects.filter(session=session).order_by(
             "creation_time"
@@ -1001,6 +1003,13 @@ class EnrollSelectView(LoginRequiredMixin, View):
     def _check_and_create_enrollment(
         req: EnrollmentRequest, session: Session, enrollments: Enrollments
     ) -> None:
+        # Handle blocked enrollments (pre-marked due to slot limits)
+        if req.choice == "block":
+            enrollments.skipped_users.append(
+                f"{req.name} ({_('no user slots available')!s})"
+            )
+            return
+
         # Check if user is the session presenter
         if (
             Proposal.objects.filter(session=session).exists()
@@ -1068,11 +1077,27 @@ class EnrollSelectView(LoginRequiredMixin, View):
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 manager_user.email
             )
-            if user_config and not user_config.can_enroll_users([req.user]):
-                enrollments.skipped_users.append(
-                    f"{req.name} ({_('no user slots available')!s})"
+            if user_config:
+                # Get currently enrolled unique users across ALL sessions in this event
+                currently_enrolled_users = set(
+                    SessionParticipation.objects.filter(
+                        status=SessionParticipationStatus.CONFIRMED,
+                        user__in=[manager_user, *manager_user.connected.all()],
+                        session__agenda_item__space__event=session.agenda_item.space.event,
+                    )
+                    .values_list("user_id", flat=True)
+                    .distinct()
                 )
-                return
+
+                # Allow existing enrolled users to enroll in additional sessions
+                # Only block if this is a NEW user and would exceed the unique people limit
+                if req.user.id not in currently_enrolled_users:
+                    # This is a new user - check if adding them would exceed the slot limit
+                    if len(currently_enrolled_users) >= user_config.allowed_slots:
+                        enrollments.skipped_users.append(
+                            f"{req.name} ({_('no user slots available')!s})"
+                        )
+                        return
 
         # Check for time conflicts for confirmed enrollment
         if req.choice == "enroll" and Session.objects.has_conflicts(session, req.user):

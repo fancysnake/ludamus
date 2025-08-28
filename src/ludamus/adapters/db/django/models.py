@@ -422,7 +422,7 @@ class UserEnrollmentConfig(models.Model):
         )
 
     def __str__(self) -> str:
-        return f"{self.user_email}: {self.allowed_slots} user slots"
+        return f"{self.user_email}: {self.allowed_slots} people enrollment limit"
 
     def get_used_slots(self) -> int:
         """
@@ -550,7 +550,7 @@ class DomainEnrollmentConfig(models.Model):
         )
 
     def __str__(self) -> str:
-        return f"@{self.domain}: {self.allowed_slots_per_user} user slots per account"
+        return f"@{self.domain}: {self.allowed_slots_per_user} people enrollment limit per account"
 
     def clean(self) -> None:
         super().clean()

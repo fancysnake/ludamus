@@ -3,6 +3,7 @@ from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import pytest
+from django.contrib.messages import get_messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
@@ -173,7 +174,7 @@ class TestUserEnrollmentConfigModel:
         )
 
         # Test string representation
-        expected_str = "test.user@example.com: 3 user slots"
+        expected_str = "test.user@example.com: 3 people enrollment limit"
         assert str(user_config) == expected_str
 
     def test_user_enrollment_config_str_with_different_values(self, event):
@@ -194,7 +195,7 @@ class TestUserEnrollmentConfigModel:
         )
 
         # Test string representation
-        expected_str = "another.user@company.org: 1 user slots"
+        expected_str = "another.user@company.org: 1 people enrollment limit"
         assert str(user_config) == expected_str
 
     def test_user_enrollment_config_str_with_zero_slots(self, event):
@@ -215,7 +216,7 @@ class TestUserEnrollmentConfigModel:
         )
 
         # Test string representation
-        expected_str = "blocked.user@example.com: 0 user slots"
+        expected_str = "blocked.user@example.com: 0 people enrollment limit"
         assert str(user_config) == expected_str
 
 
@@ -341,10 +342,17 @@ class TestUserEnrollmentConfigView:
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
 
-        # Verify no enrollments were processed due to slot limit
+        # Verify first user was enrolled (uses the 1 slot) but second was blocked
+        assert SessionParticipation.objects.filter(
+            session=agenda_item.session,
+            user=active_user,
+            status=SessionParticipationStatus.CONFIRMED,
+        ).exists()
+
+        # Second user should not be enrolled (no slots remaining)
         assert not SessionParticipation.objects.filter(
             session=agenda_item.session,
-            user__in=[active_user, connected_user],
+            user=connected_user,
             status=SessionParticipationStatus.CONFIRMED,
         ).exists()
 
@@ -444,7 +452,7 @@ class TestUserEnrollmentConfigView:
             status=SessionParticipationStatus.CONFIRMED,
         ).exists()
 
-    def test_user_can_join_waiting_list_when_at_slot_limit(
+    def test_user_can_enroll_normally_in_multiple_sessions(
         self, active_user, authenticated_client, agenda_item, event
     ):
         # Set up user with email
@@ -493,12 +501,10 @@ class TestUserEnrollmentConfigView:
         assert user_config.has_available_slots()  # Has slots allocated
         assert user_config.get_available_slots() == 0  # But all are used
 
-        # User should be able to join waiting list even when at slot limit
+        # User should be able to enroll normally in additional sessions
         response = authenticated_client.post(
             self._get_url(agenda_item.session.pk),
-            data={
-                f"user_{active_user.id}": "enroll"
-            },  # This should be converted to waitlist
+            data={f"user_{active_user.id}": "enroll"},  # This should succeed normally
         )
 
         assert response.status_code == HTTPStatus.FOUND, {
@@ -507,11 +513,11 @@ class TestUserEnrollmentConfigView:
         }
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
 
-        # Verify user was added to waiting list (not confirmed enrollment)
+        # Verify user was enrolled normally (same person can enroll in multiple sessions)
         participation = SessionParticipation.objects.get(
             session=agenda_item.session, user=active_user
         )
-        assert participation.status == SessionParticipationStatus.WAITING
+        assert participation.status == SessionParticipationStatus.CONFIRMED
 
     def test_user_cannot_enroll_when_at_slot_limit_and_waitlist_disabled(
         self, active_user, authenticated_client, agenda_item, event
@@ -1304,3 +1310,76 @@ class TestUserEnrollmentConfigView:
         assert not SessionParticipation.objects.filter(
             session=agenda_item.session, user=active_user
         ).exists()
+
+    def test_user_can_enroll_multiple_sessions_with_same_slot(
+        self, active_user, authenticated_client, event, space
+    ):
+        """
+        Regression test: A user with enrollment slots should be able to enroll
+        in multiple sessions without being placed on waitlist.
+        Each unique user counts as one slot, regardless of how many sessions
+        they're enrolled in.
+        """
+        # Set up user with email
+        active_user.email = "test@example.com"
+        active_user.save()
+
+        # Create two sessions at different times (no time conflict)
+        # Make sure they belong to the same sphere as the event
+        session1 = SessionFactory(sphere=event.sphere)
+        agenda_item1 = AgendaItemFactory(session=session1, space=space)
+
+        session2 = SessionFactory(sphere=event.sphere)
+        agenda_item2 = AgendaItemFactory(session=session2, space=space)
+        # Make sure no time conflict
+        agenda_item2.start_time = agenda_item1.end_time + timedelta(hours=1)
+        agenda_item2.end_time = agenda_item2.start_time + timedelta(hours=2)
+        agenda_item2.save()
+
+        # Create enrollment config
+        now = datetime.now(tz=UTC)
+        enrollment_config = EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(days=30),
+            percentage_slots=50,
+            max_waitlist_sessions=3,
+        )
+
+        # Create user enrollment config with 1 slot (for 1 unique person)
+        UserEnrollmentConfig.objects.create(
+            enrollment_config=enrollment_config,
+            user_email="test@example.com",
+            allowed_slots=1,  # Can enroll 1 unique person
+        )
+
+        # Enroll in first session - should succeed
+        response = authenticated_client.post(
+            self._get_url(agenda_item1.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+        assert response.status_code == HTTPStatus.FOUND
+
+        print("mSG", list(get_messages(response.wsgi_request)))
+
+        # Verify enrolled in first session
+        participation1 = SessionParticipation.objects.get(
+            session=session1, user=active_user
+        )
+        assert participation1.status == SessionParticipationStatus.CONFIRMED
+
+        # Enroll in second session - should ALSO succeed (same person, different session)
+        response = authenticated_client.post(
+            self._get_url(agenda_item2.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+        assert response.status_code == HTTPStatus.FOUND
+
+        # Verify enrolled in second session (NOT on waitlist!)
+        participation2 = SessionParticipation.objects.get(
+            session=session2, user=active_user
+        )
+        # THIS WILL FAIL WITH CURRENT BUG - user gets put on waitlist
+        assert (
+            participation2.status == SessionParticipationStatus.CONFIRMED
+        )  # Should be CONFIRMED, not WAITING
