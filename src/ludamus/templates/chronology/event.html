@@ -93,7 +93,7 @@
                                 <p class="mb-1">
                                     {% with total=user_enrollment_config.allowed_slots %}
                                         {% blocktranslate %}
-                                            You have {{ total }} enrollment slots.
+                                            You can enroll up to {{ total }} people (multiple enrollments allowed per person).
                                         {% endblocktranslate %}
                                     {% endwith %}
                                 </p>
@@ -108,7 +108,7 @@
                                                 Domain-based access: Users from @{{ domain }} have enrollment access.
                                             {% endblocktranslate %}
                                         {% else %}
-                                            {% translate "You can enroll yourself and your connected users using these slots." %}
+                                            {% translate "Each person can be enrolled in multiple sessions." %}
                                         {% endif %}
                                     </small>
                                 {% elif user_enrollment_config.is_domain_based %}
@@ -118,7 +118,7 @@
                                         {% endblocktranslate %}
                                     </small>
                                 {% else %}
-                                    <small class="text-muted">{% translate "You can enroll yourself and your connected users using these slots." %}</small>
+                                    <small class="text-muted">{% translate "Each person can be enrolled in multiple sessions." %}</small>
                                 {% endif %}
                             {% elif request.user.user_type == 'connected' %}
                                 <p class="mb-1">{% translate "You may be able to enroll using your manager's enrollment passes." %}</p>

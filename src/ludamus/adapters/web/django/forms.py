@@ -412,7 +412,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                             user_name = field_to_user_name.get(field_name, "User")
                             self.add_error(
                                 field_name,
-                                f"{user_name}: Cannot enroll more users. You have already enrolled {used_slots} out of {manager_config.allowed_slots} allowed users. Only {available_slots} user slots remaining.",
+                                f"{user_name}: Cannot enroll more users. You have already enrolled {used_slots} out of {manager_config.allowed_slots} unique people (each person can enroll in multiple sessions). Only {available_slots} slots remaining for new people.",
                             )
                             break
                     return cleaned_data
