@@ -296,10 +296,10 @@ class Event(models.Model):
                 ),
             )
             # Mark as combined access
-            combined_config._is_combined_access = True
-            combined_config._has_individual_config = has_individual_config
-            combined_config._has_domain_config = has_domain_config
-            combined_config._domain_config_source = domain_config_source
+            combined_config._is_combined_access = True  # type: ignore [attr-defined]
+            combined_config._has_individual_config = has_individual_config  # type: ignore [attr-defined]
+            combined_config._has_domain_config = has_domain_config  # type: ignore [attr-defined]
+            combined_config._domain_config_source = domain_config_source  # type: ignore [attr-defined]
             return combined_config
 
         return primary_config
@@ -464,7 +464,7 @@ class UserEnrollmentConfig(models.Model):
         """Check if user has been allocated any enrollment slots (not if they're available)."""
         return self.allowed_slots > 0
 
-    def can_enroll_users(self, users_to_enroll: list) -> bool:
+    def can_enroll_users(self, users_to_enroll: list[User]) -> bool:
         """Check if enrolling these users would exceed the user slot limit.
 
         Each unique user counts as one slot, regardless of how many sessions
@@ -522,13 +522,13 @@ class UserEnrollmentConfig(models.Model):
     def get_source_domain(self) -> str | None:
         """Get the domain name if this configuration includes domain-based access."""
         if self.is_domain_based() and hasattr(self, "_source_domain_config"):
-            return self._source_domain_config.domain
+            return self._source_domain_config.domain  # type: ignore [no-any-return]
         if (
             self.is_combined_access()
             and hasattr(self, "_domain_config_source")
             and self._domain_config_source
         ):
-            return self._domain_config_source.domain
+            return self._domain_config_source.domain  # type: ignore [no-any-return]
         return None
 
 
@@ -586,8 +586,8 @@ class DomainEnrollmentConfig(models.Model):
             fetched_from_api=False,
         )
         # Mark it as domain-based so we can identify it later
-        virtual_config._is_domain_based = True
-        virtual_config._source_domain_config = self
+        virtual_config._is_domain_based = True  # type: ignore [attr-defined]
+        virtual_config._source_domain_config = self  # type: ignore [attr-defined]
         return virtual_config
 
 

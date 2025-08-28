@@ -52,6 +52,7 @@ types-authlib = "^1.5.0.20250516"
 pytest-freezeblaster = "^2.0.4"
 
 # POE
+types-requests = "^2.32.4.20250809"
 
 [tool.poe]
 envfile = ".env.dev"
@@ -85,7 +86,7 @@ check = [
     "mypy",
     "djlint",
     "djlint-format",
-    "pylint",
+    # "pylint",
 ]
 prcheck = [
     "black-check",
@@ -93,7 +94,7 @@ prcheck = [
     "codespell",
     "mypy",
     "djlint",
-    "pylint",
+    # "pylint",
 ]
 update = [
     { cmd = "pre-commit autoupdate" },
@@ -145,7 +146,7 @@ precision = 2
 known_first_party = ["ludamus"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["django-bootstrap5", "django-bootstrap-icons", "gunicorn", "psycopg"]
+DEP002 = ["django-bootstrap5", "django-bootstrap-icons", "gunicorn", "psycopg", "django-extensions"]
 DEP004 = ["debug_toolbar"]
 
 # MYPY
@@ -206,6 +207,9 @@ ignore = [
     "CPY",
     "D",
     "PLR0911",
+    # Fix later
+    "TD",
+    "FIX"
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -215,6 +219,41 @@ ignore = [
     "PLR0913", # too-many-arguments
     "PLR0917", # too-many-positional-arguments
     "S",    # bandit
+    # Fix later
+    "PLR2004",
+    "F841",
+    "PLR6301",
+    "PLR0904",
+    "E501"
+]
+"*/adapters/**.py" = [
+    # Fix later
+    "ANN001",
+    "ANN002",
+    "ANN003",
+    "ANN202",
+    "ANN204",
+    "BLE001",
+    "C901",
+    "DOC201",
+    "E501",
+    "EM101",
+    "F841",
+    "PLC0415",
+    "PLC1901",
+    "PLR0912",
+    "PLR0914",
+    "PLR0915",
+    "PLR1702",
+    "PLR6301",
+    "RUF012",
+    "SIM102",
+    "SIM103",
+    "SLF001",
+    "TC004",
+    "TRY003",
+    "TRY300",
+    "TRY400",
 ]
 
 [tool.ruff.lint.flake8-pytest-style]

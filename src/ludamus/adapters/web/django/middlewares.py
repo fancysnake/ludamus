@@ -2,33 +2,34 @@ from typing import Protocol
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.sites.models import Site
-from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpRequest, HttpResponseBase, HttpResponseRedirect
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
 from ludamus.adapters.web.django.exceptions import RedirectError
+from ludamus.links.dao import NotFoundError, RootDAO
 
 
 class _GetResponseCallable(Protocol):
     def __call__(self, request: HttpRequest, /) -> HttpResponseBase: ...
 
 
-class SphereMiddleware:
+class RootMiddleware:
     def __init__(self, get_response: _GetResponseCallable) -> None:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponseBase:
         try:
-            site = get_current_site(request)
-        except Site.DoesNotExist:
-            root_domain = Site.objects.get(domain=settings.ROOT_DOMAIN).domain
-            url = f'{request.scheme}://{root_domain}{reverse("web:index")}'
+            request.root_dao = RootDAO(  # type: ignore [attr-defined]
+                domain=request.get_host(), root_domain=settings.ROOT_DOMAIN
+            )
+        except NotFoundError:
+            request.root_dao = RootDAO(  # type: ignore [attr-defined]
+                domain=settings.ROOT_DOMAIN, root_domain=settings.ROOT_DOMAIN
+            )
+            url = f'{request.scheme}://{settings.ROOT_DOMAIN}{reverse("web:index")}'
             messages.error(request, _("Sphere not found"))
             return HttpResponseRedirect(url)
-
-        request.sphere = getattr(site, "sphere", "")  # type: ignore [attr-defined]
 
         return self.get_response(request)
 

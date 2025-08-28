@@ -16,8 +16,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.sites.models import Site
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
@@ -43,7 +41,6 @@ from ludamus.adapters.db.django.models import (
     SessionParticipation,
     SessionParticipationStatus,
     Space,
-    Sphere,
     Tag,
     TimeSlot,
     User,
@@ -53,7 +50,7 @@ from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
 )
-from ludamus.pacts import ProposalCategoryDTO, TagCategoryDTO, TagDTO
+from ludamus.pacts import ProposalCategoryDTO, RootDAOProtocol, TagCategoryDTO, TagDTO
 
 from .exceptions import RedirectError
 from .forms import (
@@ -80,17 +77,16 @@ class WrongSiteTypeError(TypeError):
         super().__init__(_("Wrong type of site!"))
 
 
-def get_site_from_request(request: HttpRequest | None) -> Site:
-    site = get_current_site(request)
-    if isinstance(site, Site):
-        return site
-
-    raise WrongSiteTypeError
-
-
 class UserRequest(HttpRequest):
     user: User
-    sphere: Sphere | None
+
+
+class RootDAORequest(HttpRequest):
+    root_dao: RootDAOProtocol
+
+
+class AuthorizedRootDAORequest(RootDAORequest):
+    user: User
 
 
 def login(request: HttpRequest) -> HttpResponse:
@@ -104,7 +100,7 @@ def login(request: HttpRequest) -> HttpResponse:
     return TemplateResponse(request, "crowd/user/login_required.html", context)
 
 
-def auth0_login(request: HttpRequest) -> HttpResponse:
+def auth0_login(request: RootDAORequest) -> HttpResponse:
     """Redirect to Auth0 for authentication.
 
     Returns:
@@ -113,7 +109,7 @@ def auth0_login(request: HttpRequest) -> HttpResponse:
     Raises:
         RedirectError: If the request is not from the root domain.
     """
-    root_domain = Site.objects.get(domain=settings.ROOT_DOMAIN).domain
+    root_domain = request.root_dao.root_site.domain
     next_path = request.GET.get("next")
     if request.get_host() != root_domain:
         url = f'{request.scheme}://{root_domain}{reverse("web:auth0_login")}?next={next_path}'
@@ -137,6 +133,7 @@ def auth0_login(request: HttpRequest) -> HttpResponse:
 
 
 class CallbackView(RedirectView):
+    request: RootDAORequest
 
     def get_redirect_url(  # type: ignore [explicit-any]
         self, *args: Any, **kwargs: Any
@@ -219,22 +216,22 @@ class CallbackView(RedirectView):
             ) from None
 
 
-def logout(request: HttpRequest) -> HttpResponse:
+def logout(request: RootDAORequest) -> HttpResponse:
     django_logout(request)
 
-    last_domain = get_site_from_request(request).domain
+    last_domain = request.root_dao.current_site.domain
     messages.success(request, _("You have been successfully logged out."))
 
     return redirect(_auth0_logout_url(request, last_domain=last_domain))
 
 
 def _auth0_logout_url(
-    request: HttpRequest,
+    request: RootDAORequest,
     *,
     last_domain: str | None = None,
     redirect_to: str | None = None,
 ) -> str:
-    root_domain = Site.objects.get(domain=settings.ROOT_DOMAIN).domain
+    root_domain = request.root_dao.root_site.domain
     last_domain = last_domain or root_domain
     redirect_to = redirect_to or reverse("web:index")
     return f"https://{settings.AUTH0_DOMAIN}/v2/logout?" + urlencode(
@@ -248,7 +245,7 @@ def _auth0_logout_url(
     )
 
 
-def redirect_view(request: HttpRequest) -> HttpResponse:
+def redirect_view(request: RootDAORequest) -> HttpResponse:
     redirect_url = reverse("web:index")
 
     # Get the redirect_to parameter
@@ -262,7 +259,7 @@ def redirect_view(request: HttpRequest) -> HttpResponse:
     # Handle last_domain parameter for multi-site redirects
     if last_domain := request.GET.get("last_domain"):
         # Validate that the domain belongs to a known site
-        allowed_domains = list(Site.objects.values_list("domain", flat=True))
+        allowed_domains = request.root_dao.allowed_domains
 
         # Also allow subdomains of ROOT_DOMAIN if configured
         if hasattr(settings, "ROOT_DOMAIN") and (
@@ -280,13 +277,13 @@ def redirect_view(request: HttpRequest) -> HttpResponse:
     return redirect(redirect_url)
 
 
-def index(request: HttpRequest) -> HttpResponse:
+def index(request: RootDAORequest) -> HttpResponse:
     return TemplateResponse(
         request,
         "index.html",
         context={
             "events": list(
-                Event.objects.filter(sphere__site=get_site_from_request(request)).all()
+                Event.objects.filter(sphere=request.root_dao.current_sphere_orm).all()
             )
         },
     )
@@ -343,7 +340,7 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
     template_name = "crowd/user/edit.html"
     form_class = UserForm
     success_url = reverse_lazy("web:index")
-    request: UserRequest
+    request: AuthorizedRootDAORequest
 
     def get_object(
         self, queryset: QuerySet[User] | None = None  # noqa: ARG002
@@ -459,11 +456,11 @@ class EventView(DetailView):  # type: ignore [type-arg]
     template_name = "chronology/event.html"
     model = Event
     context_object_name = "event"
-    request: UserRequest
+    request: RootDAORequest
 
     def get_queryset(self) -> QuerySet[Event]:
         return (
-            Event.objects.filter(sphere=self.request.sphere)
+            Event.objects.filter(sphere=self.request.root_dao.current_sphere_orm)
             .select_related("sphere")
             .prefetch_related(
                 "spaces__agenda_items__session__tags__category",
@@ -641,6 +638,7 @@ class EnrollmentChoice(StrEnum):
     CANCEL = auto()
     ENROLL = auto()
     WAITLIST = auto()
+    BLOCK = auto()
 
 
 @dataclass
@@ -663,9 +661,13 @@ class Enrollments:
         super().__init__()
 
 
-def _get_session_or_redirect(request: UserRequest, session_id: int) -> Session:
+def _get_session_or_redirect(
+    request: AuthorizedRootDAORequest, session_id: int
+) -> Session:
     try:
-        return Session.objects.get(sphere=request.sphere, id=session_id)
+        return Session.objects.get(
+            sphere=request.root_dao.current_sphere_orm, id=session_id
+        )
     except Session.DoesNotExist:
         raise RedirectError(
             reverse("web:index"), error=_("Session not found.")
@@ -679,9 +681,9 @@ _status_by_choice = {
 
 
 class EnrollSelectView(LoginRequiredMixin, View):
-    request: UserRequest
+    request: AuthorizedRootDAORequest
 
-    def get(self, request: UserRequest, session_id: int) -> HttpResponse:
+    def get(self, request: AuthorizedRootDAORequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
 
         connected_users = list(
@@ -803,7 +805,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         return user_data
 
-    def post(self, request: UserRequest, session_id: int) -> HttpResponse:
+    def post(self, request: AuthorizedRootDAORequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
 
         # Initialize form with POST data
@@ -818,10 +820,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 for error in field_errors:
                     if field_name == "__all__":
                         # Non-field errors don't need any prefix
-                        messages.error(self.request, error)
+                        messages.error(self.request, str(error))
                     else:
                         # For field errors, just show the error message without field name
-                        messages.error(self.request, error)
+                        messages.error(self.request, str(error))
 
             # Check for specific enrollment restrictions and provide helpful messages
             enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
@@ -956,7 +958,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     # Mark the blocked users' requests for skipping
                     for req in enrollment_requests:
                         if req.choice == "enroll" and req.user in users_to_block:
-                            req.choice = "block"  # Special marker for blocking
+                            req.choice = (
+                                EnrollmentChoice.BLOCK
+                            )  # Special marker for blocking
 
         participations = SessionParticipation.objects.filter(session=session).order_by(
             "creation_time"
@@ -1244,7 +1248,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
 
 class ProposeSessionView(LoginRequiredMixin, View):
-    request: UserRequest
+    request: AuthorizedRootDAORequest
 
     def get(self, request: UserRequest, event_slug: str) -> HttpResponse:
         event = self._validate_event(event_slug)
@@ -1399,7 +1403,9 @@ class ProposeSessionView(LoginRequiredMixin, View):
 
     def _validate_event(self, event_slug: str) -> Event:
         try:
-            event = Event.objects.get(sphere=self.request.sphere, slug=event_slug)
+            event = Event.objects.get(
+                sphere=self.request.root_dao.current_sphere_orm, slug=event_slug
+            )
         except Event.DoesNotExist:
             raise RedirectError(
                 reverse("web:index"), error=_("Event not found.")
@@ -1429,10 +1435,10 @@ class ProposeSessionView(LoginRequiredMixin, View):
             ) from None
 
 
-def _get_proposal(request: UserRequest, proposal_id: int) -> Proposal:
+def _get_proposal(request: RootDAORequest, proposal_id: int) -> Proposal:
     try:
         proposal = Proposal.objects.get(
-            category__event__sphere=request.sphere, id=proposal_id
+            category__event__sphere=request.root_dao.current_sphere_orm, id=proposal_id
         )
     except Proposal.DoesNotExist:
         raise RedirectError(
@@ -1460,7 +1466,7 @@ def _check_proposal_permission(user: User, proposal: Proposal) -> bool:
 
 
 class AcceptProposalPageView(LoginRequiredMixin, View):
-    def get(self, request: UserRequest, proposal_id: int) -> HttpResponse:
+    def get(self, request: RootDAORequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
 
         # Check permissions
@@ -1522,7 +1528,7 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
 
 
 class AcceptProposalView(LoginRequiredMixin, View):
-    def post(self, request: UserRequest, proposal_id: int) -> HttpResponse:
+    def post(self, request: RootDAORequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
 
         # Check permissions

@@ -255,12 +255,12 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
 
         # Create a custom choice field with better error messages
         class UserEnrollmentChoiceField(forms.ChoiceField):
-            def __init__(self, user_obj, *args, **kwargs):
+            def __init__(self, user_obj: User, *args: Any, **kwargs: Any) -> None:  # type: ignore [explicit-any]
                 self.user_obj = user_obj
                 super().__init__(*args, **kwargs)
 
-            def validate(self, value):
-                if value and value not in [choice[0] for choice in self.choices]:
+            def validate(self, value: Any) -> None:  # type: ignore [explicit-any]
+                if value and value not in [choice[0] for choice in self.choices]:  # type: ignore [index,union-attr]
                     user_name = (
                         self.user_obj.get_full_name() or self.user_obj.name or _("User")
                     )
@@ -369,64 +369,61 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
             ),
         )
 
-    def clean(self):
+    def clean(self: forms.Form) -> dict[str, Any] | None:  # type: ignore [explicit-any]
         """Custom validation for enrollment form."""
-        cleaned_data = forms.Form.clean(self)
+        if cleaned_data := forms.Form.clean(self):
+            # Count enrollment requests to check user slot limits
+            enroll_requests = []
+            for field_name, value in cleaned_data.items():
+                if field_name.startswith("user_") and value == "enroll":
+                    user_id = int(field_name.split("_")[1])
+                    # Find the user from users_list
+                    user = next((u for u in users_list if u.id == user_id), None)
+                    if user:
+                        enroll_requests.append(user)
 
-        # Count enrollment requests to check user slot limits
-        enroll_requests = []
-        for field_name, value in cleaned_data.items():
-            if field_name.startswith("user_") and value == "enroll":
-                user_id = int(field_name.split("_")[1])
-                # Find the user from users_list
-                user = next((u for u in users_list if u.id == user_id), None)
-                if user:
-                    enroll_requests.append(user)
+            # Check if manager has enough user slots for all users being enrolled
+            if (
+                enroll_requests
+                and enrollment_config
+                and enrollment_config.restrict_to_configured_users
+            ):
+                manager_user = None
+                manager_config = None
 
-        # Check if manager has enough user slots for all users being enrolled
-        if (
-            enroll_requests
-            and enrollment_config
-            and enrollment_config.restrict_to_configured_users
-        ):
-            manager_user = None
-            manager_config = None
-
-            # Find the manager (the user who initiated the request)
-            for user in users_list:
-                if (
-                    user.user_type != User.UserType.CONNECTED
-                ):  # This is the main user/manager
-                    manager_user = user
-                    if user.email:
-                        manager_config = (
-                            session.agenda_item.space.event.get_user_enrollment_config(
+                # Find the manager (the user who initiated the request)
+                for user in users_list:
+                    if (
+                        user.user_type != User.UserType.CONNECTED
+                    ):  # This is the main user/manager
+                        manager_user = user
+                        if user.email:
+                            manager_config = session.agenda_item.space.event.get_user_enrollment_config(
                                 user.email
                             )
-                        )
-                    break
+                        break
 
-            if manager_config:
-                # Check if these new enrollments would exceed the limit
-                if not manager_config.can_enroll_users(enroll_requests):
-                    used_slots = manager_config.get_used_slots()
-                    available_slots = manager_config.get_available_slots()
-                    # Add error to first enrollment field using user's name
-                    for field_name, value in cleaned_data.items():
-                        if field_name.startswith("user_") and value == "enroll":
-                            user_name = field_to_user_name.get(field_name, "User")
-                            self.add_error(
-                                field_name,
-                                f"{user_name}: Cannot enroll more users. You have already enrolled {used_slots} out of {manager_config.allowed_slots} unique people (each person can enroll in multiple sessions). Only {available_slots} slots remaining for new people.",
-                            )
-                            break
-                    return cleaned_data
+                if manager_config:
+                    # Check if these new enrollments would exceed the limit
+                    if not manager_config.can_enroll_users(enroll_requests):
+                        used_slots = manager_config.get_used_slots()
+                        available_slots = manager_config.get_available_slots()
+                        # Add error to first enrollment field using user's name
+                        for field_name, value in cleaned_data.items():
+                            if field_name.startswith("user_") and value == "enroll":
+                                user_name = field_to_user_name.get(field_name, "User")
+                                self.add_error(
+                                    field_name,
+                                    f"{user_name}: Cannot enroll more users. You have already enrolled {used_slots} out of {manager_config.allowed_slots} unique people (each person can enroll in multiple sessions). Only {available_slots} slots remaining for new people.",
+                                )
+                                break
+                        return cleaned_data
 
         return cleaned_data
 
     # Create form class with custom clean method
     form_class = type("EnrollmentForm", (forms.Form,), form_fields)
-    form_class.clean = clean
+    form_class.clean = clean  # type: ignore [attr-defined]
     return form_class
 
 

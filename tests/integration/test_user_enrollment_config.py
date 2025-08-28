@@ -3,7 +3,6 @@ from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import pytest
-from django.contrib.messages import get_messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
@@ -1312,8 +1311,6 @@ class TestUserEnrollmentConfigView:
             data={f"user_{active_user.id}": "enroll"},
         )
         assert response.status_code == HTTPStatus.FOUND
-
-        print("mSG", list(get_messages(response.wsgi_request)))
 
         # Verify enrolled in first session
         participation1 = SessionParticipation.objects.get(

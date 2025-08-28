@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 class MembershipApiClient:
     """Client for external membership API integration."""
 
-    def __init__(self):
-        self.base_url = getattr(settings, "MEMBERSHIP_API_BASE_URL", None)
-        self.token = getattr(settings, "MEMBERSHIP_API_TOKEN", None)
-        self.timeout = getattr(settings, "MEMBERSHIP_API_TIMEOUT", 10)
+    def __init__(self) -> None:
+        self.base_url = settings.MEMBERSHIP_API_BASE_URL
+        self.token = settings.MEMBERSHIP_API_TOKEN
+        self.timeout = settings.MEMBERSHIP_API_TIMEOUT
 
     def is_configured(self) -> bool:
         """Check if API is properly configured."""
@@ -42,7 +42,7 @@ class MembershipApiClient:
             response.raise_for_status()
 
             data = response.json()
-            membership_count = data.get("membership_count", 0)
+            membership_count: int = data.get("membership_count", 0)
 
             logger.info(
                 "Fetched membership count %d for user %s", membership_count, email
