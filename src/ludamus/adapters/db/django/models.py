@@ -411,6 +411,9 @@ class UserEnrollmentConfig(models.Model):
     fetched_from_api = models.BooleanField(
         default=False, help_text="Whether this config was fetched from external API"
     )
+    last_check = models.DateTimeField(
+        null=True, blank=True, help_text="Last time the membership was checked via API"
+    )
 
     class Meta:
         db_table = "user_enrollment_config"

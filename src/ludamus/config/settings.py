@@ -33,6 +33,7 @@ Environment Variables:
         - MEMBERSHIP_API_BASE_URL: Base URL for membership API
         - MEMBERSHIP_API_TOKEN: Authentication token for membership API
         - MEMBERSHIP_API_TIMEOUT: Request timeout in seconds (default: 30)
+        - MEMBERSHIP_API_CHECK_INTERVAL: Check interval in minutes (default: 15)
 """
 
 import os
@@ -339,3 +340,6 @@ BS_ICONS_CACHE = BASE_DIR / "static" / "icon_cache"
 MEMBERSHIP_API_BASE_URL = os.getenv("MEMBERSHIP_API_BASE_URL", "")
 MEMBERSHIP_API_TOKEN = os.getenv("MEMBERSHIP_API_TOKEN", "")
 MEMBERSHIP_API_TIMEOUT = int(os.getenv("MEMBERSHIP_API_TIMEOUT", "30"))
+MEMBERSHIP_API_CHECK_INTERVAL = int(
+    os.getenv("MEMBERSHIP_API_CHECK_INTERVAL", "15")
+)  # minutes

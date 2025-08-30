@@ -1,9 +1,11 @@
 """External API integration for membership lookup."""
 
 import logging
+from datetime import timedelta
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 
 from ludamus.adapters.db.django.models import EnrollmentConfig, UserEnrollmentConfig
 
@@ -70,36 +72,110 @@ def get_or_create_user_enrollment_config(
     """
     # First try to get existing config
     user_config = enrollment_config.user_configs.filter(user_email=user_email).first()
+
     if user_config:
-        # If config was fetched from API and has 0 slots, return None (user has no access)
-        if user_config.fetched_from_api and user_config.allowed_slots == 0:
-            return None
-        return user_config
+        # If config has slots > 0, it's final - no need to refresh
+        if user_config.allowed_slots > 0:
+            logger.debug(
+                "Config for %s has %d slots, using final cached data",
+                user_email,
+                user_config.allowed_slots,
+            )
+            return user_config
 
-    # Check if we should fetch from API (only if we haven't tried before)
-    # Look for any config for this user email that was fetched from API
-    existing_api_config = UserEnrollmentConfig.objects.filter(
-        user_email=user_email, fetched_from_api=True
-    ).first()
+        # Only refresh configs with 0 slots, and only if enough time has passed
+        if user_config.fetched_from_api and user_config.last_check:
+            check_interval_minutes = getattr(
+                settings, "MEMBERSHIP_API_CHECK_INTERVAL", 15
+            )
+            time_threshold = timezone.now() - timedelta(minutes=check_interval_minutes)
 
-    if existing_api_config:
-        # We already tried the API for this user, don't try again
-        logger.debug("Already fetched from API for %s, not trying again", user_email)
+            if user_config.last_check < time_threshold:
+                logger.info(
+                    "Config for %s has 0 slots and is older than %d minutes, refreshing from API",
+                    user_email,
+                    check_interval_minutes,
+                )
+                # Update the existing config with fresh API data
+                return _refresh_user_config_from_api(user_config)
+            logger.debug(
+                "Config for %s has 0 slots but was checked recently, using cached data",
+                user_email,
+            )
+
+        # Config has 0 slots
         return None
 
-    # Try to fetch from API
+    # No existing config - try to fetch from API
     api_client = MembershipApiClient()
     if not api_client.is_configured():
         return None
 
-    membership_count = api_client.fetch_membership_count(user_email)
+    return _create_user_config_from_api(enrollment_config, user_email, api_client)
+
+
+def _refresh_user_config_from_api(
+    user_config: UserEnrollmentConfig,
+) -> UserEnrollmentConfig | None:
+    """Refresh an existing user config with fresh API data."""
+    api_client = MembershipApiClient()
+    if not api_client.is_configured():
+        logger.warning(
+            "API not configured, cannot refresh config for %s", user_config.user_email
+        )
+        return user_config if user_config.allowed_slots > 0 else None
+
+    membership_count = api_client.fetch_membership_count(user_config.user_email)
+    current_time = timezone.now()
+
     if membership_count is None:
-        # API call failed - create a placeholder to avoid retrying
+        # API call failed - update last_check but keep existing data
+        user_config.last_check = current_time
+        user_config.save(update_fields=["last_check"])
+        logger.warning(
+            "API call failed for %s, keeping existing config", user_config.user_email
+        )
+        return user_config if user_config.allowed_slots > 0 else None
+
+    # Update config with fresh data
+    if membership_count == 0:
+        user_config.allowed_slots = 0
+        user_config.last_check = current_time
+        user_config.save(update_fields=["allowed_slots", "last_check"])
+        logger.info(
+            "Refreshed config for %s: now has 0 slots (membership expired)",
+            user_config.user_email,
+        )
+        return None  # Return None since user has no slots
+    allowed_slots = min(membership_count, 5)  # Cap at 5 slots maximum
+    user_config.allowed_slots = allowed_slots
+    user_config.last_check = current_time
+    user_config.save(update_fields=["allowed_slots", "last_check"])
+    logger.info(
+        "Refreshed config for %s: now has %d slots",
+        user_config.user_email,
+        allowed_slots,
+    )
+    return user_config
+
+
+def _create_user_config_from_api(
+    enrollment_config: EnrollmentConfig,
+    user_email: str,
+    api_client: MembershipApiClient,
+) -> UserEnrollmentConfig | None:
+    """Create a new user config by fetching data from API."""
+    membership_count = api_client.fetch_membership_count(user_email)
+    current_time = timezone.now()
+
+    if membership_count is None:
+        # API call failed - create a placeholder to avoid retrying too soon
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=user_email,
             allowed_slots=0,  # No slots if API failed
             fetched_from_api=True,
+            last_check=current_time,
         )
         return None
 
@@ -110,6 +186,7 @@ def get_or_create_user_enrollment_config(
             user_email=user_email,
             allowed_slots=0,
             fetched_from_api=True,
+            last_check=current_time,
         )
         logger.info("Created zero-slot config for non-member %s", user_email)
         return None  # Return None since user has no slots
@@ -123,6 +200,7 @@ def get_or_create_user_enrollment_config(
         user_email=user_email,
         allowed_slots=allowed_slots,
         fetched_from_api=True,
+        last_check=current_time,
     )
 
     logger.info("Created config with %d slots for member %s", allowed_slots, user_email)
