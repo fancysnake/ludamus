@@ -568,6 +568,7 @@ def create_session_proposal_form(
                     "requirements",
                     "needs",
                     "participants_limit",
+                    "min_age",
                 ),
                 "widgets": {
                     "title": forms.TextInput(
@@ -619,7 +620,7 @@ def create_session_proposal_form(
         ),
         "clean_title": clean_title,
         "participants_limit": participants_limit_field,
-        "pegi_rating": pegi_rating_field,
+        "min_age": pegi_rating_field,
         **tag_fields,
     }
 
