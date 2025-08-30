@@ -12,7 +12,6 @@ from urllib.parse import quote_plus, urlencode, urlparse
 from django import forms
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
@@ -27,7 +26,6 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
-from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView, View
@@ -523,17 +521,36 @@ class EventView(DetailView):  # type: ignore [type-arg]
         filterable_categories = self.object.filterable_tag_categories.all()
         context["filterable_tag_categories"] = filterable_categories
 
-        # Add proposals for superusers
-        if self.request.user.is_superuser:
-            context["proposals"] = list(
-                Proposal.objects.filter(
-                    category__event=self.object,
-                    session__isnull=True,  # Only unaccepted proposals
+        # Add proposals for superusers, sphere managers, and proposal authors
+        if self.request.user.is_authenticated:
+            # Check if user is a sphere manager for this event's sphere
+            is_sphere_manager = self.object.sphere.managers.filter(
+                id=self.request.user.id
+            ).exists()
+
+            if self.request.user.is_superuser or is_sphere_manager:
+                # Show all unaccepted proposals for superusers and sphere managers
+                context["proposals"] = list(
+                    Proposal.objects.filter(
+                        category__event=self.object,
+                        session__isnull=True,  # Only unaccepted proposals
+                    )
+                    .select_related("host", "category")
+                    .prefetch_related("tags", "time_slots")
+                    .order_by("-creation_time")
                 )
-                .select_related("host", "category")
-                .prefetch_related("tags", "time_slots")
-                .order_by("-creation_time")
-            )
+            else:
+                # Show only the user's own proposals
+                context["proposals"] = list(
+                    Proposal.objects.filter(
+                        category__event=self.object,
+                        session__isnull=True,  # Only unaccepted proposals
+                        host=self.request.user,  # Only user's own proposals
+                    )
+                    .select_related("host", "category")
+                    .prefetch_related("tags", "time_slots")
+                    .order_by("-creation_time")
+                )
 
         return context
 
@@ -1425,10 +1442,29 @@ def _get_proposal(request: UserRequest, proposal_id: int) -> Proposal:
     return proposal
 
 
-@method_decorator(staff_member_required, name="dispatch")
+def _check_proposal_permission(user: User, proposal: Proposal) -> bool:
+    """Check if user has permission to accept proposals for this event."""
+    if user.is_superuser or user.is_staff:
+        return True
+
+    # Check if user is a sphere manager for this event's sphere
+    sphere = proposal.category.event.sphere
+    return sphere.managers.filter(id=user.id).exists()
+
+
 class AcceptProposalPageView(LoginRequiredMixin, View):
     def get(self, request: UserRequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
+
+        # Check permissions
+        if not _check_proposal_permission(request.user, proposal):
+            raise RedirectError(
+                reverse("web:event", kwargs={"slug": proposal.category.event.slug}),
+                error=_(
+                    "You don't have permission to accept proposals for this event."
+                ),
+            )
+
         event = proposal.category.event
 
         # Get available spaces and time slots for the event
@@ -1478,10 +1514,19 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
         return list(time_slots)
 
 
-@method_decorator(staff_member_required, name="dispatch")
 class AcceptProposalView(LoginRequiredMixin, View):
     def post(self, request: UserRequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
+
+        # Check permissions
+        if not _check_proposal_permission(request.user, proposal):
+            raise RedirectError(
+                reverse("web:event", kwargs={"slug": proposal.category.event.slug}),
+                error=_(
+                    "You don't have permission to accept proposals for this event."
+                ),
+            )
+
         event = proposal.category.event
 
         # Initialize form with POST data
