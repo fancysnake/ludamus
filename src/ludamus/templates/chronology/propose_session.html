@@ -149,6 +149,19 @@
                                 {% blocktranslate %}Maximum number of participants ({{ min_participants_limit }}-{{ max_participants_limit }}).{% endblocktranslate %}
                             </div>
                         </div>
+                        <div class="mb-4">
+                            <label for="min_age" class="form-label">
+                                {% bs_icon 'shield-check' %} {% translate "Age Rating" %} <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="min_age" name="min_age" required>
+                                <option value="3">{% translate "PEGI 3" %}</option>
+                                <option value="7">{% translate "PEGI 7" %}</option>
+                                <option value="12">{% translate "PEGI 12" %}</option>
+                                <option value="16">{% translate "PEGI 16" %}</option>
+                                <option value="18">{% translate "PEGI 18" %}</option>
+                            </select>
+                            <div class="form-text">{% translate "Select the appropriate age rating for this session" %}</div>
+                        </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <button type="submit" class="btn btn-warning w-100">{% bs_icon 'send' %} {% translate "Submit Proposal" %}</button>

@@ -1237,7 +1237,7 @@ class TestProposeSessionView:
             "requirements": faker.text(),
             "needs": faker.text(),
             "participants_limit": 6,
-            "pegi_rating": 3,  # PEGI 3
+            "min_age": 3,  # PEGI 3
         }
         response = authenticated_client.post(self._get_url(event.slug), data=data)
 
@@ -1251,7 +1251,7 @@ class TestProposeSessionView:
         assert proposal.requirements == data["requirements"]
         assert proposal.needs == data["needs"]
         assert proposal.participants_limit == data["participants_limit"]
-        assert proposal.min_age == data["pegi_rating"]
+        assert proposal.min_age == data["min_age"]
 
     def test_post_ok_with_tags(
         self, active_user, authenticated_client, event, faker, proposal_category
@@ -1276,7 +1276,7 @@ class TestProposeSessionView:
             "requirements": faker.text(),
             "needs": faker.text(),
             "participants_limit": 6,
-            "pegi_rating": 3,  # PEGI 3
+            "min_age": 3,  # PEGI 3
             f"tags_{type_tag.id}": "D&D, Ravenloft",
             f"tags_{select_tag.id}": [str(tag1.id), str(tag2.id)],
         }
@@ -1292,7 +1292,7 @@ class TestProposeSessionView:
         assert proposal.requirements == data["requirements"]
         assert proposal.needs == data["needs"]
         assert proposal.participants_limit == data["participants_limit"]
-        assert proposal.min_age == data["pegi_rating"]
+        assert proposal.min_age == data["min_age"]
         assert sorted(proposal.tags.all().values_list("name", flat=True)) == [
             "D&D",
             "Ravenloft",

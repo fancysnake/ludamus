@@ -1356,7 +1356,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
             requirements=form.cleaned_data["requirements"],
             needs=form.cleaned_data["needs"],
             participants_limit=form.cleaned_data["participants_limit"],
-            min_age=form.cleaned_data["pegi_rating"],  # PEGI rating maps to min_age
+            min_age=form.cleaned_data["min_age"],
         )
 
         for tag in self._get_tags(
