@@ -81,7 +81,7 @@
         {% endif %}
     {% endfor %}
     <!-- Enrollment Passes Info (for authenticated users) -->
-    {% if request.user.is_authenticated and event.get_active_enrollment_configs %}
+    {% if request.user.is_authenticated and event.get_active_enrollment_configs and enrollment_requires_slots %}
         <div class="row mb-4">
             <div class="col-12">
                 <div class="alert alert-success" role="alert">

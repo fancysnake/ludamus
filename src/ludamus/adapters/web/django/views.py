@@ -517,6 +517,13 @@ class EventView(DetailView):  # type: ignore [type-arg]
             )
         context["user_enrollment_config"] = user_enrollment_config
 
+        # Check if any active enrollment config requires slots
+        active_configs = self.object.get_active_enrollment_configs()
+        requires_slots = any(
+            config.restrict_to_configured_users for config in active_configs
+        )
+        context["enrollment_requires_slots"] = requires_slots
+
         # Add filterable tag categories for this event
         filterable_categories = self.object.filterable_tag_categories.all()
         context["filterable_tag_categories"] = filterable_categories
