@@ -30,8 +30,8 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
                 <a class="navbar-brand fw-bold"
-                   href="{{ request.scheme }}://{{ request.root_dao.current_site.domain }}{% url 'web:index' %}">
-                    {% bs_icon 'people' %} {{ request.root_dao.current_sphere.name }}
+                   href="{{ request.scheme }}://{{ request.root_dao.site.domain }}{% url 'web:index' %}">
+                    {% bs_icon 'people' %} {{ request.root_dao.sphere.name }}
                 </a>
                 <button class="navbar-toggler"
                         type="button"

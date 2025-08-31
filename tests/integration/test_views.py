@@ -35,7 +35,14 @@ from ludamus.adapters.web.django.views import (
     Enrollments,
     EnrollSelectView,
 )
-from ludamus.pacts import UserDTO, UserType
+from ludamus.pacts import (
+    EventDTO,
+    ProposalDTO,
+    SpaceDTO,
+    TimeSlotDTO,
+    UserDTO,
+    UserType,
+)
 from tests.integration.conftest import (
     AgendaItemFactory,
     SessionFactory,
@@ -277,7 +284,7 @@ class TestCallbackView:
     def test_invalid_authentication_state_keyerror(rf, sphere):
 
         request = rf.get("/callback", {"state": "test_token"})
-        request.root_dao = Mock(current_sphere=sphere)
+        request.root_dao = Mock(sphere=sphere)
 
         view = CallbackView()
         view.request = request
@@ -299,7 +306,7 @@ class TestCallbackView:
     def test_invalid_authentication_state_valueerror(rf, sphere):
 
         request = rf.get("/callback", {"state": "test_token"})
-        request.root_dao = Mock(current_sphere=sphere)
+        request.root_dao = Mock(sphere=sphere)
 
         view = CallbackView()
         view.request = request
@@ -1367,11 +1374,12 @@ class TestAcceptProposalPageView:
 
         assert response.status_code == HTTPStatus.OK
         assert response.context_data == {
-            "event": event,
+            "event": EventDTO.model_validate(event),
             "form": ANY,
-            "proposal": proposal,
-            "spaces": [space],
-            "time_slots": [time_slot],
+            "host": UserDTO.model_validate(proposal.host),
+            "proposal": ProposalDTO.model_validate(proposal),
+            "spaces": [SpaceDTO.model_validate(space)],
+            "time_slots": [TimeSlotDTO.model_validate(time_slot)],
         }
 
     def test_get_error_no_space(self, event, proposal, staff_client):
@@ -1418,17 +1426,18 @@ class TestAcceptProposalView:
 
         assert response.status_code == HTTPStatus.OK
         assert response.context_data == {
-            "event": event,
+            "event": EventDTO.model_validate(event),
             "form": ANY,
-            "proposal": proposal,
+            "host": UserDTO.model_validate(proposal.host),
+            "proposal": ProposalDTO.model_validate(proposal),
             "spaces": [],
-            "time_slots": [time_slot],
+            "time_slots": [TimeSlotDTO.model_validate(time_slot)],
         }
 
     def test_post_ok(self, event, proposal, space, staff_client, time_slot):
         response = staff_client.post(
             self._get_url(proposal.id),
-            data={"space": space.id, "time_slot": time_slot.id},
+            data={"space_id": space.id, "time_slot_id": time_slot.id},
         )
 
         assert response.status_code == HTTPStatus.FOUND

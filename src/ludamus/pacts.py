@@ -114,12 +114,79 @@ class UserDAOProtocol(Protocol):
     def update_connected_user(self, pk: int, user: UserData) -> None: ...
 
 
-class RootDAOProtocol(Protocol):
+class ProposalDTO(BaseModel):  # type: ignore [explicit-any]
+    model_config = ConfigDict(from_attributes=True)
+
+    title: str
+    description: str
+    requirements: str
+    needs: str
+    participants_limit: int
+    min_age: int
+    creation_time: datetime
+    pk: int
+
+
+class EventDTO(BaseModel):  # type: ignore [explicit-any]
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    slug: str
+    description: str
+    start_time: datetime
+    end_time: datetime
+    publication_time: datetime | None
+    proposal_start_time: datetime | None
+    proposal_end_time: datetime | None
+
+
+class SpaceDTO(BaseModel):  # type: ignore [explicit-any]
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    slug: str
+    creation_time: datetime
+    modification_time: datetime
+    pk: int
+
+
+class TimeSlotDTO(BaseModel):  # type: ignore [explicit-any]
+    model_config = ConfigDict(from_attributes=True)
+
+    end_time: datetime
+    start_time: datetime
+    pk: int
+
+
+class AcceptProposalDAOProtocol(Protocol):
     @property
-    def current_site(self) -> SiteDTO: ...
+    def has_session(self) -> bool: ...
 
     @property
-    def current_sphere(self) -> SphereDTO: ...
+    def proposal(self) -> ProposalDTO: ...
+
+    def accept_proposal(self, time_slot_id: int, space_id: int) -> None: ...
+
+    @property
+    def event(self) -> EventDTO: ...
+
+    @property
+    def spaces(self) -> list[SpaceDTO]: ...
+
+    @property
+    def time_slots(self) -> list[TimeSlotDTO]: ...
+    def read_time_slot(self, pk: int) -> TimeSlotDTO: ...
+
+    @property
+    def host(self) -> UserDTO: ...
+
+
+class RootDAOProtocol(Protocol):
+    @property
+    def site(self) -> SiteDTO: ...
+
+    @property
+    def sphere(self) -> SphereDTO: ...
 
     @property
     def root_site(self) -> SiteDTO: ...
@@ -127,6 +194,12 @@ class RootDAOProtocol(Protocol):
     @property
     def allowed_domains(self) -> list[str]: ...
     def create_user_dao(self, username: str, slug: str) -> UserDAOProtocol: ...
+
+    def get_accept_proposal_dao(
+        self, proposal_id: int
+    ) -> AcceptProposalDAOProtocol: ...
+
+    def is_sphere_manager(self, user_id: int) -> bool: ...
 
 
 class RootDAORequestProtocol(Protocol):

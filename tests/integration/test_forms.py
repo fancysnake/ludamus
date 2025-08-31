@@ -21,6 +21,7 @@ from ludamus.adapters.web.django.forms import (
     create_session_proposal_form,
     get_tag_data_from_form,
 )
+from ludamus.links.dao import AcceptProposalDAO
 from tests.integration.conftest import AgendaItemFactory, SessionFactory
 
 
@@ -891,11 +892,13 @@ class TestCreateProposalAcceptanceForm:
             end_time=time_slot.end_time,
         )
 
-        form_class = create_proposal_acceptance_form(event)
-        form_data = {"space": space.id, "time_slot": time_slot.id}
+        form_class = create_proposal_acceptance_form(
+            AcceptProposalDAO(Mock(sphere=event.sphere), proposal.id)
+        )
+        form_data = {"space_id": space.id, "time_slot_id": time_slot.id}
         form = form_class(data=form_data)
 
         assert not form.is_valid()
         assert "There is already a session scheduled at this space and time." in str(
             form.non_field_errors()
-        )
+        ), form.errors

@@ -37,9 +37,7 @@ class TestSphereMiddleware:
 
         middleware(request)
 
-        assert request.root_dao.current_sphere == SphereDTO(
-            name=sphere.name, pk=sphere.id
-        )
+        assert request.root_dao.sphere == SphereDTO(name=sphere.name, pk=sphere.id)
         assert request.user_dao.user == request.user
         get_response_mock.assert_called_once_with(request)
 

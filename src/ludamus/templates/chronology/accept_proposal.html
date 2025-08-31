@@ -23,7 +23,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6>{% translate "Host" %}</h6>
-                            <p>{{ proposal.host.name }}</p>
+                            <p>{{ host.name }}</p>
                             <h6>{% translate "Participants Limit" %}</h6>
                             <p>{{ proposal.participants_limit }}</p>
                         </div>
@@ -74,25 +74,25 @@
                 </div>
                 <div class="card-body">
                     <form method="post"
-                          action="{% url 'web:accept-proposal' proposal_id=proposal.id %}">
+                          action="{% url 'web:accept-proposal' proposal_id=proposal.pk %}">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="space" class="form-label">
+                            <label for="space_id" class="form-label">
                                 {% bs_icon 'geo-alt' %} {% translate "Space" %} <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select" id="space" name="space" required>
+                            <select class="form-select" id="space_id" name="space_id" required>
                                 <option value="">{% translate "Select a space..." %}</option>
-                                {% for space in spaces %}<option value="{{ space.id }}">{{ space.name }}</option>{% endfor %}
+                                {% for space in spaces %}<option value="{{ space.pk }}">{{ space.name }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label for="time_slot" class="form-label">
+                            <label for="time_slot_id" class="form-label">
                                 {% bs_icon 'clock' %} {% translate "Time Slot" %} <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select" id="time_slot" name="time_slot" required>
+                            <select class="form-select" id="time_slot_id" name="time_slot_id" required>
                                 <option value="">{% translate "Select a time slot..." %}</option>
                                 {% for slot in time_slots %}
-                                    <option value="{{ slot.id }}"
+                                    <option value="{{ slot.pk }}"
                                             {% if slot in proposal.time_slots.all %}class="fw-bold text-primary"{% endif %}>
                                         {{ slot.start_time|date:"l, M j - G:i" }} - {{ slot.end_time|date:"G:i" }}
                                         {% if slot in proposal.time_slots.all %}

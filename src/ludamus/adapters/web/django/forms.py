@@ -12,16 +12,13 @@ from ludamus.adapters.db.django.models import (
     Session,
     SessionParticipation,
     SessionParticipationStatus,
-    Space,
     TagCategory,
-    TimeSlot,
 )
-from ludamus.pacts import UserDTO, UserType
+from ludamus.pacts import AcceptProposalDAOProtocol, UserDTO, UserType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from ludamus.adapters.db.django.models import Event
     from ludamus.pacts import ProposalCategoryDTO, TagCategoryDTO, TagDTO
 
 
@@ -627,37 +624,48 @@ def create_session_proposal_form(
     return type("SessionProposalForm", (forms.ModelForm,), form_attrs)
 
 
-def create_proposal_acceptance_form(event: Event) -> type[forms.Form]:
-    space_field = forms.ModelChoiceField(
-        queryset=Space.objects.filter(event=event).order_by("name"),
+def create_proposal_acceptance_form(
+    accept_proposal_dao: AcceptProposalDAOProtocol,
+) -> type[forms.Form]:
+    space_field = forms.ChoiceField(
+        choices=[(s.pk, s.name) for s in accept_proposal_dao.spaces],
         label=_("Space"),
         widget=forms.Select(attrs={"class": "form-select"}),
         help_text=_("Select the space where this session will take place"),
-        empty_label=_("Select a space..."),
         required=True,
     )
 
-    time_slot_field = forms.ModelChoiceField(
-        queryset=TimeSlot.objects.filter(event=event).order_by("start_time"),
+    time_slot_field = forms.ChoiceField(
+        choices=[
+            (t.pk, f"{t.start_time} - {t.end_time}")
+            for t in accept_proposal_dao.time_slots
+        ],
         label=_("Time slot"),
         widget=forms.Select(attrs={"class": "form-select"}),
         help_text=_("Select the time slot for this session"),
-        empty_label=_("Select a time slot..."),
         required=True,
     )
 
     def clean(self: forms.Form) -> dict[str, Any] | None:  # type: ignore [explicit-any]
-        if (cleaned_data := super(forms.Form, self).clean()) and Session.objects.filter(
-            agenda_item__space=cleaned_data["space"],
-            agenda_item__start_time=cleaned_data["time_slot"].start_time,
-            agenda_item__end_time=cleaned_data["time_slot"].end_time,
-        ).exists():
-            raise ValidationError(
-                _("There is already a session scheduled at this space and time.")
+        if cleaned_data := super(forms.Form, self).clean():
+            time_slot = accept_proposal_dao.read_time_slot(
+                int(cleaned_data["time_slot_id"])
             )
+            if Session.objects.filter(
+                agenda_item__space_id=int(cleaned_data["space_id"]),
+                agenda_item__start_time=time_slot.start_time,
+                agenda_item__end_time=time_slot.end_time,
+            ).exists():
+                raise ValidationError(
+                    _("There is already a session scheduled at this space and time.")
+                )
         return cleaned_data
 
-    form_attrs = {"space": space_field, "time_slot": time_slot_field, "clean": clean}
+    form_attrs = {
+        "space_id": space_field,
+        "time_slot_id": time_slot_field,
+        "clean": clean,
+    }
 
     return type("ProposalAcceptanceForm", (forms.Form,), form_attrs)
 

@@ -3,11 +3,16 @@ from typing import TYPE_CHECKING
 
 from django.contrib.sites.models import Site
 
-from ludamus.adapters.db.django.models import Sphere
+from ludamus.adapters.db.django.models import AgendaItem, Proposal, Session, Sphere
 from ludamus.pacts import (
+    AcceptProposalDAOProtocol,
+    EventDTO,
+    ProposalDTO,
     RootDAOProtocol,
     SiteDTO,
+    SpaceDTO,
     SphereDTO,
+    TimeSlotDTO,
     UserDAOProtocol,
     UserData,
     UserDTO,
@@ -26,9 +31,10 @@ class NotFoundError(Exception): ...
 
 @dataclass
 class Storage:
-    current_site: Site
+    # Only absolute or site-wide current data
+    site: Site
     root_site: Site
-    current_sphere: Sphere
+    sphere: Sphere
 
     maybe_user: User | None = None
     maybe_connected_users: dict[int, User] | None = None
@@ -105,25 +111,105 @@ class UserDAO(UserDAOProtocol):
         self._storage.user.save()
 
 
+class AcceptProposalDAO(AcceptProposalDAOProtocol):
+    def __init__(self, storage: Storage, proposal_id: int) -> None:
+        self._storage = storage
+        try:
+            self._proposal = Proposal.objects.select_related("session").get(
+                category__event__sphere=self._storage.sphere, id=proposal_id
+            )
+        except Proposal.DoesNotExist as exception:
+            raise NotFoundError from exception
+        self._category = self._proposal.category
+        self._event = self._category.event
+        self._spaces = {x.pk: x for x in self._event.spaces.all()}
+        self._time_slots = {x.pk: x for x in self._event.time_slots.all()}
+
+    @property
+    def has_session(self) -> bool:
+        return bool(self._proposal.session)
+
+    @property
+    def proposal(self) -> ProposalDTO:
+        return ProposalDTO.model_validate(self._proposal)
+
+    @property
+    def host(self) -> UserDTO:
+        return UserDTO.model_validate(self._proposal.host)
+
+    def accept_proposal(self, time_slot_id: int, space_id: int) -> None:
+        if not (time_slot := self._time_slots.get(time_slot_id)):
+            raise NotFoundError
+        if not (space := self._spaces.get(space_id)):
+            raise NotFoundError
+
+        session = Session.objects.create(
+            sphere=self._proposal.category.event.sphere,
+            presenter_name=self._proposal.host.name,
+            title=self._proposal.title,
+            description=self._proposal.description,
+            requirements=self._proposal.requirements,
+            participants_limit=self._proposal.participants_limit,
+            min_age=self._proposal.min_age,  # Copy minimum age requirement
+        )
+
+        session.tags.set(self._proposal.tags.all())
+
+        AgendaItem.objects.create(
+            space=space,
+            session=session,
+            session_confirmed=True,
+            start_time=time_slot.start_time,
+            end_time=time_slot.end_time,
+        )
+
+        self._proposal.session = session
+        self._proposal.save()
+
+    @property
+    def event(self) -> EventDTO:
+        return EventDTO.model_validate(self._proposal.category.event)
+
+    @property
+    def spaces(self) -> list[SpaceDTO]:
+        return [
+            SpaceDTO.model_validate(s)
+            for s in self._proposal.category.event.spaces.all()
+        ]
+
+    @property
+    def time_slots(self) -> list[TimeSlotDTO]:
+        return [
+            TimeSlotDTO.model_validate(s)
+            for s in self._proposal.category.event.time_slots.all()
+        ]
+
+    def read_time_slot(self, pk: int) -> TimeSlotDTO:
+        if pk not in self._time_slots:
+            raise NotFoundError
+
+        return TimeSlotDTO.model_validate(self._time_slots[pk])
+
+
 class RootDAO(RootDAOProtocol):
     def __init__(self, domain: str, root_domain: str) -> None:
         try:
-            current_site = Site.objects.select_related("sphere").get(domain=domain)
+            site = Site.objects.select_related("sphere").get(domain=domain)
         except Site.DoesNotExist as exception:
             raise NotFoundError from exception
         self._storage = Storage(
-            current_site=current_site,
+            site=site,
             root_site=Site.objects.get(domain=root_domain),
-            current_sphere=current_site.sphere,
+            sphere=site.sphere,
         )
 
     @property
-    def current_site(self) -> SiteDTO:
-        return SiteDTO.model_validate(self._storage.current_site)
+    def site(self) -> SiteDTO:
+        return SiteDTO.model_validate(self._storage.site)
 
     @property
-    def current_sphere(self) -> SphereDTO:
-        return SphereDTO.model_validate(self._storage.current_sphere)
+    def sphere(self) -> SphereDTO:
+        return SphereDTO.model_validate(self._storage.sphere)
 
     @property
     def root_site(self) -> SiteDTO:
@@ -141,3 +227,9 @@ class RootDAO(RootDAOProtocol):
             username=username, defaults={"slug": slug}
         )
         return self.get_user_dao(self._storage.user)
+
+    def get_accept_proposal_dao(self, proposal_id: int) -> AcceptProposalDAO:
+        return AcceptProposalDAO(self._storage, proposal_id)
+
+    def is_sphere_manager(self, user_id: int) -> bool:
+        return self._storage.sphere.managers.filter(id=user_id).exists()
