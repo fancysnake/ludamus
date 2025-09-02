@@ -921,7 +921,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 self.request.user.email
             )
-            if user_config:
+            if enrollment_config.restrict_to_configured_users and user_config:
                 # Get currently enrolled unique users across ALL sessions in this event
                 currently_enrolled_users = set(
                     SessionParticipation.objects.filter(
@@ -1101,7 +1101,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 manager_user.email
             )
-            if user_config:
+            if enrollment_config.restrict_to_configured_users and user_config:
                 # Get currently enrolled unique users across ALL sessions in this event
                 currently_enrolled_users = set(
                     SessionParticipation.objects.filter(
