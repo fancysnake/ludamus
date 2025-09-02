@@ -261,7 +261,7 @@ def time_slot(event):
 @pytest.fixture(name="session")
 def session_fixture(active_user, sphere):
     return SessionFactory(
-        presenter_name=active_user.name, sphere=sphere, participants_limit=10
+        presenter_name=active_user.name, sphere=sphere, participants_limit=10, min_age=0
     )
 
 

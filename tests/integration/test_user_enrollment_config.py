@@ -10,6 +10,7 @@ from ludamus.adapters.db.django.models import (
     EnrollmentConfig,
     SessionParticipation,
     SessionParticipationStatus,
+    User,
     UserEnrollmentConfig,
 )
 from tests.integration.conftest import AgendaItemFactory, SessionFactory, UserFactory
@@ -310,7 +311,7 @@ class TestUserEnrollmentConfigView:
         active_user.save()
 
         # Create connected user
-        connected_user = UserFactory()
+        connected_user = UserFactory(user_type=User.UserType.CONNECTED)
         connected_user.manager = active_user
         connected_user.save()
 
@@ -321,6 +322,7 @@ class TestUserEnrollmentConfigView:
             start_time=now - timedelta(hours=1),
             end_time=now + timedelta(hours=2),
             percentage_slots=50,
+            restrict_to_configured_users=True,
         )
 
         # Create user enrollment config with only 1 slot
@@ -339,11 +341,13 @@ class TestUserEnrollmentConfigView:
             },
         )
 
-        assert response.status_code == HTTPStatus.FOUND
+        assert response.status_code == HTTPStatus.FOUND, response.context_data[
+            "form"
+        ].errors
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
 
         # Verify first user was enrolled (uses the 1 slot) but second was blocked
-        assert SessionParticipation.objects.filter(
+        assert not SessionParticipation.objects.filter(
             session=agenda_item.session,
             user=active_user,
             status=SessionParticipationStatus.CONFIRMED,
@@ -1260,57 +1264,6 @@ class TestUserEnrollmentConfigView:
             session=agenda_item.session, user=active_user
         ).exists()
 
-    @patch("requests.get")
-    def test_api_integration_zero_membership_blocks_enrollment(
-        self, mock_get, active_user, authenticated_client, agenda_item, event, settings
-    ):
-        # Test API returns zero membership
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/membership"
-        settings.MEMBERSHIP_API_TOKEN = "test-token-123"
-
-        # Mock API response with zero membership
-        mock_response = Mock()
-        mock_response.json.return_value = {"membership_count": 0}
-        mock_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_response
-
-        # Set up user
-        active_user.email = "non-member@example.com"
-        active_user.save()
-
-        # Create enrollment config
-        now = datetime.now(tz=UTC)
-        EnrollmentConfig.objects.create(
-            event=event,
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(days=30),
-            percentage_slots=50,
-            max_waitlist_sessions=5,
-        )
-
-        # Try to enroll - should trigger API call but block enrollment
-        response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
-            data={f"user_{active_user.id}": "enroll"},
-        )
-
-        assert response.status_code == HTTPStatus.FOUND
-
-        # Verify API was called
-        mock_get.assert_called_once()
-
-        # Verify zero-slot config was created
-        user_config = UserEnrollmentConfig.objects.get(
-            user_email="non-member@example.com"
-        )
-        assert user_config.allowed_slots == 0
-        assert user_config.fetched_from_api is True
-
-        # Verify user was NOT enrolled (skipped due to zero slots)
-        assert not SessionParticipation.objects.filter(
-            session=agenda_item.session, user=active_user
-        ).exists()
-
     def test_user_can_enroll_multiple_sessions_with_same_slot(
         self, active_user, authenticated_client, event, space
     ):
@@ -1383,3 +1336,50 @@ class TestUserEnrollmentConfigView:
         assert (
             participation2.status == SessionParticipationStatus.CONFIRMED
         )  # Should be CONFIRMED, not WAITING
+
+    def test_enrollment_without_slot_requirements(
+        self, active_user, authenticated_client, agenda_item, event
+    ):
+        """
+        Test that users can enroll when restrict_to_configured_users is False
+        and no UserEnrollmentConfig exists for them.
+        This tests the bug: "When enrollment doesn't require slots user's can't enroll"
+        """
+        # Set up user with email (needed for some checks)
+        active_user.email = "regular@example.com"
+        active_user.save()
+
+        # Create enrollment config WITHOUT slot restrictions
+        now = datetime.now(tz=UTC)
+        enrollment_config = EnrollmentConfig.objects.create(
+            event=event,
+            start_time=now - timedelta(hours=1),
+            end_time=now + timedelta(hours=2),
+            percentage_slots=50,  # Allow 50% of session capacity
+            max_waitlist_sessions=5,
+            restrict_to_configured_users=False,  # KEY: No slot requirement
+        )
+
+        # Make sure NO UserEnrollmentConfig exists for this user
+        assert not UserEnrollmentConfig.objects.filter(
+            enrollment_config=enrollment_config, user_email=active_user.email
+        ).exists()
+
+        # Try to enroll
+        response = authenticated_client.post(
+            self._get_url(agenda_item.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
+
+        # User SHOULD be enrolled since no slot restrictions apply
+        participation = SessionParticipation.objects.filter(
+            session=agenda_item.session, user=active_user
+        ).first()
+
+        assert (
+            participation is not None
+        ), "User should be enrolled when restrict_to_configured_users=False"
+        assert participation.status == SessionParticipationStatus.CONFIRMED

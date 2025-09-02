@@ -78,7 +78,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                         user.email
                     )
                 )
-                if not user_config:
+                if enrollment_config.restrict_to_configured_users and not user_config:
                     return False
 
         # Count current waitlist participations for this user
@@ -119,7 +119,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 user.email
             )
-            if user_config:
+            if enrollment_config.restrict_to_configured_users and user_config:
                 return True
 
             return False
@@ -217,7 +217,8 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                     )
                     has_manager_access = False
                     if (
-                        not user_config
+                        enrollment_config.restrict_to_configured_users
+                        and not user_config
                         and hasattr(user, "manager")
                         and user.manager
                         and user.manager.email
@@ -231,7 +232,11 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                             manager_config
                         )  # Don't check user slots here
 
-                    if not user_config and not has_manager_access:
+                    if (
+                        enrollment_config.restrict_to_configured_users
+                        and not user_config
+                        and not has_manager_access
+                    ):
                         help_text = _("Enrollment access permission required")
                         choices = [("", _("No enrollment options (access required)"))]
                     else:
