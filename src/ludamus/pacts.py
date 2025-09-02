@@ -181,6 +181,74 @@ class AcceptProposalDAOProtocol(Protocol):
     def host(self) -> UserDTO: ...
 
 
+class EnrollmentConfigDTO(BaseModel):  # type: ignore [explicit-any]
+    model_config = ConfigDict(from_attributes=True)
+
+    banner_text: str
+    end_time: datetime
+    limit_to_end_time: bool
+    max_waitlist_sessions: int
+    percentage_slots: int
+    pk: int
+    restrict_to_configured_users: bool
+    start_time: datetime
+
+    @property
+    def is_active(self) -> bool:
+        return self.start_time < datetime.now(tz=UTC) < self.end_time
+
+    def is_session_eligible(self, start_time: datetime) -> bool:
+        """Check if session is eligible for enrollment under this config.
+
+        Returns:
+            True if session can be enrolled in under this config.
+        """
+        if not self.is_active:
+            return False
+
+        if self.limit_to_end_time:
+            return start_time < self.end_time
+
+        return True
+
+
+class SessionDTO(BaseModel):  # type: ignore [explicit-any]
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    description: str
+    min_age: int
+    modification_time: datetime
+    participants_limit: int
+    pk: int
+    presenter_name: str
+    requirements: str
+    slug: str
+    title: str
+
+
+class AgendaItemDTO(BaseModel):  # type: ignore [explicit-any]
+    model_config = ConfigDict(from_attributes=True)
+
+    end_time: datetime
+    pk: int
+    session_confirmed: bool
+    start_time: datetime
+
+
+class EnrollSelectDAOProtocol(Protocol):
+    @property
+    def session(self) -> SessionDTO: ...
+
+    @property
+    def event(self) -> EventDTO: ...
+
+    def read_active_enrollment_configs(self) -> list[EnrollmentConfigDTO]: ...
+
+    @property
+    def agenda_item(self) -> AgendaItemDTO: ...
+
+
 class RootDAOProtocol(Protocol):
     @property
     def site(self) -> SiteDTO: ...
@@ -200,6 +268,7 @@ class RootDAOProtocol(Protocol):
     ) -> AcceptProposalDAOProtocol: ...
 
     def is_sphere_manager(self, user_id: int) -> bool: ...
+    def get_enroll_select_dao(self, session_id: int) -> EnrollSelectDAOProtocol: ...
 
 
 class RootDAORequestProtocol(Protocol):

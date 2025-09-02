@@ -35,7 +35,6 @@ from django.views.generic.edit import FormMixin, ProcessFormView
 
 from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
-    EnrollmentConfig,
     Event,
     Proposal,
     ProposalCategory,
@@ -53,8 +52,11 @@ from ludamus.adapters.web.django.entities import (
 from ludamus.links.dao import NotFoundError
 from ludamus.pacts import (
     AcceptProposalDAOProtocol,
+    EnrollmentConfigDTO,
+    EnrollSelectDAOProtocol,
     ProposalCategoryDTO,
     RootDAOProtocol,
+    SessionDTO,
     SpaceDTO,
     TagCategoryDTO,
     TagDTO,
@@ -723,10 +725,10 @@ class Enrollments:
 
 def _get_session_or_redirect(
     request: AuthorizedRootDAORequest, session_id: int
-) -> Session:
+) -> EnrollSelectDAOProtocol:
     try:
-        return Session.objects.get(sphere_id=request.root_dao.sphere.pk, id=session_id)
-    except Session.DoesNotExist:
+        return request.root_dao.get_enroll_select_dao(session_id=session_id)
+    except NotFoundError:
         raise RedirectError(
             reverse("web:index"), error=_("Session not found.")
         ) from None
@@ -742,21 +744,21 @@ class EnrollSelectView(LoginRequiredMixin, View):
     request: AuthorizedRootDAORequest
 
     def get(self, request: AuthorizedRootDAORequest, session_id: int) -> HttpResponse:
-        session = _get_session_or_redirect(request, session_id)
+        enroll_select_dao = _get_session_or_redirect(request, session_id)
 
         context = {
-            "session": session,
-            "event": session.agenda_item.space.event,
+            "session": enroll_select_dao.session,
+            "event": enroll_select_dao.event,
             "connected_users": self.request.user_dao.connected_users,
-            "user_data": self._get_user_participation_data(session),
+            "user_data": self._get_user_participation_data(enroll_select_dao.session),
             "form": create_enrollment_form(
-                session=session, users=self.request.user_dao.users
+                session=enroll_select_dao.session, users=self.request.user_dao.users
             )(),
         }
 
         return TemplateResponse(request, "chronology/enroll_select.html", context)
 
-    def _validate_request(self, session: Session) -> EnrollmentConfig:
+    def _validate_request(self, session: Session) -> EnrollmentConfigDTO:
         # Check if user has birth date set
         if not self.request.user_dao.user.birth_date:
             raise RedirectError(
@@ -807,7 +809,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         return enrollment_config
 
     def _get_user_participation_data(
-        self, session: Session
+        self, session: SessionDTO
     ) -> list[SessionUserParticipationData]:
         user_data: list[SessionUserParticipationData] = []
         # Bulk fetch all participations for the event and users
@@ -942,7 +944,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         self,
         enrollment_requests: list[EnrollmentRequest],
         session: Session,
-        enrollment_config: EnrollmentConfig,
+        enrollment_config: EnrollmentConfigDTO,
         user_dao: UserDAOProtocol,
     ) -> Enrollments:
         enrollments = Enrollments()
@@ -1245,7 +1247,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         self,
         enrollment_requests: list[EnrollmentRequest],
         session: Session,
-        enrollment_config: EnrollmentConfig,
+        enrollment_config: EnrollmentConfigDTO,
     ) -> bool:
         confirmed_requests = [
             req for req in enrollment_requests if req.choice == "enroll"
@@ -1268,7 +1270,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
         return False
 
     def _manage_enrollments(
-        self, form: forms.Form, session: Session, enrollment_config: EnrollmentConfig
+        self, form: forms.Form, session: Session, enrollment_config: EnrollmentConfigDTO
     ) -> None:
         # Collect enrollment requests from form
         if enrollment_requests := self._get_enrollment_requests(form):

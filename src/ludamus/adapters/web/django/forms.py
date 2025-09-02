@@ -14,7 +14,13 @@ from ludamus.adapters.db.django.models import (
     SessionParticipationStatus,
     TagCategory,
 )
-from ludamus.pacts import AcceptProposalDAOProtocol, UserDTO, UserType
+from ludamus.gears import get_most_liberal_config, get_user_enrollment_config
+from ludamus.pacts import (
+    AcceptProposalDAOProtocol,
+    EnrollSelectDAOProtocol,
+    UserDTO,
+    UserType,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -30,7 +36,7 @@ class UnsupportedTagCategoryInputTypeError(Exception):
 
 
 def create_enrollment_form(
-    session: Session, users: Iterable[UserDTO]
+    enroll_select_dao: EnrollSelectDAOProtocol, users: Iterable[UserDTO]
 ) -> type[forms.Form]:
     # Create form class dynamically with pre-generated fields
     form_fields = {}
@@ -40,7 +46,10 @@ def create_enrollment_form(
     field_to_user_name = {}
 
     # Get enrollment config to check waitlist settings
-    enrollment_config = session.agenda_item.space.event.get_most_liberal_config(session)
+    enrollment_config = get_most_liberal_config(
+        enroll_select_dao.read_active_enrollment_configs(),
+        enroll_select_dao.agenda_item.start_time,
+    )
 
     def can_join_waitlist(user: UserDTO) -> bool:
         """Check if user can join waitlist based on enrollment config limits and restrictions."""
@@ -56,10 +65,8 @@ def create_enrollment_form(
             # First check if this is a connected user - they use manager's config
             if user.user_type == UserType.CONNECTED:
                 if hasattr(user, "manager") and user.manager and user.manager.email:
-                    manager_config = (
-                        session.agenda_item.space.event.get_user_enrollment_config(
-                            user.manager.email
-                        )
+                    manager_config = get_user_enrollment_config(
+                        enroll_select_dao.event, user.manager.email
                     )
                     if (
                         not manager_config
@@ -72,10 +79,8 @@ def create_enrollment_form(
                 if not user.email:
                     return False
 
-                user_config = (
-                    session.agenda_item.space.event.get_user_enrollment_config(
-                        user.email
-                    )
+                user_config = get_user_enrollment_config(
+                    enroll_select_dao.event, user.email
                 )
                 if enrollment_config.restrict_to_configured_users and not user_config:
                     return False
@@ -84,7 +89,7 @@ def create_enrollment_form(
         current_waitlist_count = SessionParticipation.objects.filter(
             user_id=user.pk,
             status=SessionParticipationStatus.WAITING,
-            session__agenda_item__space__event=session.agenda_item.space.event,
+            session__agenda_item__space__event=enroll_select_dao.event,
         ).count()
 
         return current_waitlist_count < enrollment_config.max_waitlist_sessions
@@ -100,10 +105,8 @@ def create_enrollment_form(
             # First check if this is a connected user - they use manager's config
             if user.user_type == UserType.CONNECTED:
                 if hasattr(user, "manager") and user.manager and user.manager.email:
-                    manager_config = (
-                        session.agenda_item.space.event.get_user_enrollment_config(
-                            user.manager.email
-                        )
+                    manager_config = get_user_enrollment_config(
+                        enroll_select_dao.event, user.manager.email
                     )
                     if (
                         manager_config
@@ -115,8 +118,8 @@ def create_enrollment_form(
             if not user.email:
                 return False
 
-            user_config = session.agenda_item.space.event.get_user_enrollment_config(
-                user.email
+            user_config = get_user_enrollment_config(
+                enroll_select_dao.event, user.email
             )
             if enrollment_config.restrict_to_configured_users and user_config:
                 return True
@@ -128,10 +131,13 @@ def create_enrollment_form(
 
     for user in users_list:
         current_participation = SessionParticipation.objects.filter(
-            session=session, user_id=user.pk
+            session=enroll_select_dao.session, user_id=user.pk
         ).first()
-        has_conflict = Session.objects.has_conflicts(session, user)
-        meets_age_requirement = session.min_age == 0 or user.age >= session.min_age
+        has_conflict = Session.objects.has_conflicts(enroll_select_dao.session, user)
+        meets_age_requirement = (
+            enroll_select_dao.session.min_age == 0
+            or user.age >= enroll_select_dao.session.min_age
+        )
         field_name = f"user_{user.pk}"
         choices = [("", _("No change"))]
         help_text = ""
@@ -149,7 +155,7 @@ def create_enrollment_form(
                     if not meets_age_requirement:
                         help_text = _(
                             "Must be at least %(min_age)s years old for new enrollment"
-                        ) % {"min_age": session.min_age}
+                        ) % {"min_age": enroll_select_dao.session.min_age}
                 case SessionParticipationStatus.WAITING:
                     # On waiting list - can always cancel, but enrollment depends on age
                     base_waiting_choices = [("cancel", _("Cancel enrollment"))]
@@ -162,7 +168,7 @@ def create_enrollment_form(
                     if not meets_age_requirement:
                         help_text = _(
                             "Must be at least %(min_age)s years old for enrollment"
-                        ) % {"min_age": session.min_age}
+                        ) % {"min_age": enroll_select_dao.session.min_age}
                 case _:
                     # Unknown status - treat as if no participation exists
                     # Add default enrollment options only if age requirement is met
@@ -174,13 +180,13 @@ def create_enrollment_form(
                     else:
                         choices = [("", _("No change (age restriction)"))]
                         help_text = _("Must be at least %(min_age)s years old") % {
-                            "min_age": session.min_age
+                            "min_age": enroll_select_dao.session.min_age
                         }
         # No current participation - check age requirement for new enrollments
         elif not meets_age_requirement:
             choices = [("", _("No change (age restriction)"))]
             help_text = _("Must be at least %(min_age)s years old") % {
-                "min_age": session.min_age
+                "min_age": enroll_select_dao.session.min_age
             }
         else:
             if can_enroll(user) and not has_conflict:
@@ -209,10 +215,8 @@ def create_enrollment_form(
                     choices = [("", _("No enrollment options (email required)"))]
                 else:
                     # Check if user has their own config or manager's config
-                    user_config = (
-                        session.agenda_item.space.event.get_user_enrollment_config(
-                            user.email
-                        )
+                    user_config = get_user_enrollment_config(
+                        enroll_select_dao.event, user.email
                     )
                     has_manager_access = False
                     if (
@@ -222,10 +226,8 @@ def create_enrollment_form(
                         and user.manager
                         and user.manager.email
                     ):
-                        manager_config = (
-                            session.agenda_item.space.event.get_user_enrollment_config(
-                                user.manager.email
-                            )
+                        manager_config = get_user_enrollment_config(
+                            enroll_select_dao.event, user.manager.email
                         )
                         has_manager_access = bool(
                             manager_config
@@ -264,14 +266,18 @@ def create_enrollment_form(
                     if value == "enroll":
                         # Check age requirement first
                         meets_age_requirement = (
-                            session.min_age == 0 or self.user_obj.age >= session.min_age
+                            enroll_select_dao.session.min_age == 0
+                            or self.user_obj.age >= enroll_select_dao.session.min_age
                         )
                         if not meets_age_requirement:
                             raise ValidationError(
                                 _(
                                     "%(user)s cannot enroll: must be at least %(min_age)s years old"
                                 )
-                                % {"user": user_name, "min_age": session.min_age}
+                                % {
+                                    "user": user_name,
+                                    "min_age": enroll_select_dao.session.min_age,
+                                }
                             )
 
                         if (
@@ -293,8 +299,8 @@ def create_enrollment_form(
                                         % {"user": user_name}
                                     )
 
-                                manager_config = session.agenda_item.space.event.get_user_enrollment_config(
-                                    self.user_obj.manager.email
+                                manager_config = get_user_enrollment_config(
+                                    enroll_select_dao.event, self.user_obj.manager.email
                                 )
                                 if not manager_config:
                                     raise ValidationError(
@@ -314,8 +320,8 @@ def create_enrollment_form(
                                         % {"user": user_name}
                                     )
 
-                                user_config = session.agenda_item.space.event.get_user_enrollment_config(
-                                    self.user_obj.email
+                                user_config = get_user_enrollment_config(
+                                    enroll_select_dao.event, self.user_obj.email
                                 )
                                 if not user_config:
                                     raise ValidationError(
@@ -333,14 +339,18 @@ def create_enrollment_form(
                     elif value == "waitlist":
                         # Check age requirement for waitlist too
                         meets_age_requirement = (
-                            session.min_age == 0 or self.user_obj.age >= session.min_age
+                            enroll_select_dao.session.min_age == 0
+                            or self.user_obj.age >= enroll_select_dao.session.min_age
                         )
                         if not meets_age_requirement:
                             raise ValidationError(
                                 _(
                                     "%(user)s cannot join waitlist: must be at least %(min_age)s years old"
                                 )
-                                % {"user": user_name, "min_age": session.min_age}
+                                % {
+                                    "user": user_name,
+                                    "min_age": enroll_select_dao.session.min_age,
+                                }
                             )
                     else:
                         raise ValidationError(
@@ -393,8 +403,8 @@ def create_enrollment_form(
                     ):  # This is the main user/manager
                         manager_user = user
                         if user.email:
-                            manager_config = session.agenda_item.space.event.get_user_enrollment_config(
-                                user.email
+                            manager_config = get_user_enrollment_config(
+                                enroll_select_dao.event, user.email
                             )
                         break
 

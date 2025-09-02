@@ -6,9 +6,13 @@ from django.contrib.sites.models import Site
 from ludamus.adapters.db.django.models import AgendaItem, Proposal, Session, Sphere
 from ludamus.pacts import (
     AcceptProposalDAOProtocol,
+    AgendaItemDTO,
+    EnrollmentConfigDTO,
+    EnrollSelectDAOProtocol,
     EventDTO,
     ProposalDTO,
     RootDAOProtocol,
+    SessionDTO,
     SiteDTO,
     SpaceDTO,
     SphereDTO,
@@ -191,6 +195,41 @@ class AcceptProposalDAO(AcceptProposalDAOProtocol):
         return TimeSlotDTO.model_validate(self._time_slots[pk])
 
 
+class EnrollSelectDAO(EnrollSelectDAOProtocol):
+    def __init__(self, storage: Storage, session_id: int) -> None:
+        self._storage = storage
+
+        try:
+            self._session = Session.objects.get(
+                sphere=self._storage.sphere, id=session_id
+            )
+        except Session.DoesNotExist as exception:
+            raise NotFoundError from exception
+
+        self._event = self._session.agenda_item.space.event
+        self._enrollment_configs = self._event.enrollment_configs.all()
+        self._agenda_item = self._session.agenda_item
+
+    @property
+    def session(self) -> SessionDTO:
+        return SessionDTO.model_validate(self._session)
+
+    @property
+    def event(self) -> EventDTO:
+        return EventDTO.model_validate(self._event)
+
+    @property
+    def agenda_item(self) -> AgendaItemDTO:
+        return AgendaItemDTO.model_validate(self._agenda_item)
+
+    def read_active_enrollment_configs(self) -> list[EnrollmentConfigDTO]:
+        return [
+            EnrollmentConfigDTO.model_validate(c)
+            for c in self._enrollment_configs
+            if c.is_active
+        ]
+
+
 class RootDAO(RootDAOProtocol):
     def __init__(self, domain: str, root_domain: str) -> None:
         try:
@@ -233,3 +272,6 @@ class RootDAO(RootDAOProtocol):
 
     def is_sphere_manager(self, user_id: int) -> bool:
         return self._storage.sphere.managers.filter(id=user_id).exists()
+
+    def get_enroll_select_dao(self, session_id: int) -> EnrollSelectDAO:
+        return EnrollSelectDAO(storage=self._storage, session_id=session_id)
