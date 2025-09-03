@@ -136,6 +136,62 @@
             </div>
         </div>
     {% endif %}
+    <!-- Anonymous Mode Banner -->
+    {% if request.session.anonymous_enrollment_active and not request.user.is_authenticated %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">{% bs_icon 'incognito' size='1.5em' %}</div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="alert-heading mb-2">{% translate "Anonymous Mode Active" %}</h6>
+                            <p class="mb-2">
+                                {% translate "Your Anonymous Code" %}: <strong class="fs-5">{{ anonymous_code }}</strong>
+                                <br>
+                                <small class="text-muted">{% translate "Save this code to manage your enrollment later" %}</small>
+                            </p>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#anonymousCodeModal">
+                                    {% bs_icon 'key' %} {% translate "Enter Different Code" %}
+                                </button>
+                                <a href="{% url 'web:anonymous-reset' %}?finish=1" class="btn btn-outline-primary">
+                                    {% bs_icon 'check-circle' %} {% translate "Finish" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Anonymous Code Entry Modal -->
+        <div class="modal fade" id="anonymousCodeModal" tabindex="-1" aria-labelledby="anonymousCodeModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="anonymousCodeModalLabel">{% translate "Enter Different Code" %}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="post" action="{% url 'web:anonymous-manage' %}">
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="modalCode" class="form-label">{% translate "Anonymous Code" %}</label>
+                                <input type="text" class="form-control" id="modalCode" name="code" 
+                                       placeholder="{% translate 'Enter your code' %}" 
+                                       required maxlength="6" style="font-family: monospace;">
+                                <div class="form-text">{% translate "This will replace your current anonymous session" %}</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
+                            <button type="submit" class="btn btn-primary">{% translate "Switch to This Code" %}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <!-- Sessions by Time Slot -->
     <div class="row">
         <div class="col-12">
@@ -370,10 +426,25 @@
                                                                         </button>
                                                                     {% endif %}
                                                                 {% elif data.session.is_enrollment_available %}
-                                                                    <a href="{% url 'web:auth0_login' %}?next={{ request.build_absolute_uri }}"
-                                                                       class="btn btn-outline-success btn-sm">
-                                                                        {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
-                                                                    </a>
+                                                                    {% if request.session.anonymous_enrollment_active %}
+                                                                        <!-- Anonymous enrollment -->
+                                                                        {% if data.user_enrolled or data.user_waiting %}
+                                                                            <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                                                               class="btn btn-warning btn-sm">
+                                                                                {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
+                                                                            </a>
+                                                                        {% else %}
+                                                                            <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                                                               class="btn btn-success btn-sm">
+                                                                                {% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}
+                                                                            </a>
+                                                                        {% endif %}
+                                                                    {% else %}
+                                                                        <a href="{% url 'web:auth0_login' %}?next={{ request.build_absolute_uri }}"
+                                                                           class="btn btn-outline-success btn-sm">
+                                                                            {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
+                                                                        </a>
+                                                                    {% endif %}
                                                                 {% elif not data.session.is_enrollment_available %}
                                                                     <button class="btn btn-outline-secondary btn-sm"
                                                                             disabled
@@ -693,7 +764,10 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
                             {% if data.session.is_enrollment_available and not user_enrolled and not user_waiting %}
-                                {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                {% if request.session.anonymous_enrollment_active and not request.user.is_authenticated %}
+                                    <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                       class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}</a>
+                                {% elif request.user.user_type == 'connected' or request.user.user_type == 'active' %}
                                     <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
                                        class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
                                 {% endif %}
@@ -960,6 +1034,18 @@
                                                 {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
                                             </a>
                                         {% endif %}
+                                    {% endif %}
+                                {% elif request.session.anonymous_enrollment_active %}
+                                    {% if data.user_enrolled or data.user_waiting %}
+                                        <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                           class="btn btn-warning">
+                                            {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                           class="btn btn-success">
+                                            {% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}
+                                        </a>
                                     {% endif %}
                                 {% else %}
                                     <a href="{% url 'web:auth0_login' %}?next={{ request.build_absolute_uri }}"

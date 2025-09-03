@@ -53,4 +53,23 @@ urlpatterns = [
     path("crowd/user/under-age", views.under_age, name="under-age"),
     path("redirect", views.redirect_view, name="redirect"),
     path("theme/select", views.ThemeSelectionView.as_view(), name="theme-select"),
+    # Anonymous enrollment URLs
+    path(
+        "anonymous/activate/<int:event_id>/",
+        views.ActivateAnonymousEnrollmentView.as_view(),
+        name="anonymous-activate",
+    ),
+    path(
+        "anonymous/enroll/<int:session_id>/",
+        views.AnonymousEnrollView.as_view(),
+        name="anonymous-enroll",
+    ),
+    path(
+        "anonymous/manage/",
+        views.AnonymousManageView.as_view(),
+        name="anonymous-manage",
+    ),
+    path(
+        "anonymous/reset/", views.AnonymousResetView.as_view(), name="anonymous-reset"
+    ),
 ]

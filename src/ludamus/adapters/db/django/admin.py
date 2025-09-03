@@ -103,8 +103,13 @@ class EnrollmentConfigAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "end_time",
         "percentage_slots",
         "restrict_to_configured_users",
+        "allow_anonymous_enrollment",
     )
-    list_filter = ("restrict_to_configured_users", "event")
+    list_filter = (
+        "restrict_to_configured_users",
+        "allow_anonymous_enrollment",
+        "event",
+    )
     inlines = [UserEnrollmentConfigInline, DomainEnrollmentConfigInline]
     fields = (
         "event",
@@ -113,6 +118,7 @@ class EnrollmentConfigAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "percentage_slots",
         "limit_to_end_time",
         "restrict_to_configured_users",
+        "allow_anonymous_enrollment",
         "max_waitlist_sessions",
         "banner_text",
     )
