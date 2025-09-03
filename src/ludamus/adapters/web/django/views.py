@@ -16,12 +16,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.signals import user_logged_in
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
 from django.db.models.query import QuerySet
+from django.dispatch import receiver
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -507,7 +509,45 @@ class EventView(DetailView):  # type: ignore [type-arg]
         )
 
         hour_data = dict(self._get_hour_data(event_sessions))
-        context.update({"hour_data": hour_data, "sessions": list(event_sessions)})
+        # Get session data objects that include enrollment status
+        sessions_data = self._get_session_data(event_sessions)
+
+        # Categorize sessions into ended, current (available or in progress), and future unavailable
+        current_time = datetime.now(tz=UTC)
+        ended_hour_data: dict[datetime, list[SessionData]] = defaultdict(list)
+        current_hour_data: dict[datetime, list[SessionData]] = defaultdict(list)
+        future_unavailable_hour_data: dict[datetime, list[SessionData]] = defaultdict(
+            list
+        )
+
+        for session_data in sessions_data.values():
+            session = session_data.session
+            session_end_time = session.agenda_item.end_time
+            session_start_time = session.agenda_item.start_time
+            hour_key = session_start_time
+
+            # Check if session has ended
+            if session_end_time <= current_time:
+                ended_hour_data[hour_key].append(session_data)
+            # Check if session is not available for enrollment (future sessions blocked by limit_to_end_time)
+            elif (
+                not session.is_enrollment_available
+                and session_start_time > current_time
+            ):
+                future_unavailable_hour_data[hour_key].append(session_data)
+            else:
+                # Current sessions (available for enrollment or in progress)
+                current_hour_data[hour_key].append(session_data)
+
+        context.update(
+            {
+                "hour_data": hour_data,  # Keep original for backward compatibility
+                "sessions": list(sessions_data.values()),
+                "ended_hour_data": dict(ended_hour_data),
+                "current_hour_data": dict(current_hour_data),
+                "future_unavailable_hour_data": dict(future_unavailable_hour_data),
+            }
+        )
 
         # Add user enrollment config for authenticated users
         user_enrollment_config = None
@@ -523,6 +563,52 @@ class EventView(DetailView):  # type: ignore [type-arg]
             config.restrict_to_configured_users for config in active_configs
         )
         context["enrollment_requires_slots"] = requires_slots
+
+        # Handle anonymous mode
+        # Clear anonymous session flags if user is authenticated
+        if self.request.user.is_authenticated and self.request.session.get(
+            "anonymous_enrollment_active"
+        ):
+            self.request.session.pop("anonymous_user_id", None)
+            self.request.session.pop("anonymous_enrollment_active", None)
+            self.request.session.pop("anonymous_event_id", None)
+            self.request.session.pop("anonymous_site_id", None)
+        elif (
+            self.request.session.get("anonymous_enrollment_active")
+            and not self.request.user.is_authenticated
+        ):
+            # Load anonymous user data if in anonymous mode - validate site
+            anonymous_user_id = self.request.session.get("anonymous_user_id")
+            current_site_id = get_current_site(self.request).id
+            session_site_id = self.request.session.get("anonymous_site_id")
+            if anonymous_user_id and session_site_id == current_site_id:
+                try:
+                    anonymous_user = User.objects.get(
+                        id=anonymous_user_id, user_type=User.UserType.ANONYMOUS
+                    )
+                    context["anonymous_code"] = anonymous_user.slug.removeprefix(
+                        "code_"
+                    )
+
+                    # Get anonymous user's enrollments for this event
+                    anonymous_enrollments = SessionParticipation.objects.filter(
+                        user=anonymous_user,
+                        session__agenda_item__space__event=self.object,
+                    ).select_related("session")
+
+                    context["anonymous_user_enrollments"] = anonymous_enrollments
+                except User.DoesNotExist:
+                    # Clear invalid anonymous session
+                    self.request.session.pop("anonymous_user_id", None)
+                    self.request.session.pop("anonymous_enrollment_active", None)
+                    self.request.session.pop("anonymous_event_id", None)
+                    self.request.session.pop("anonymous_site_id", None)
+            elif anonymous_user_id and session_site_id != current_site_id:
+                # Clear anonymous session if site doesn't match
+                self.request.session.pop("anonymous_user_id", None)
+                self.request.session.pop("anonymous_enrollment_active", None)
+                self.request.session.pop("anonymous_event_id", None)
+                self.request.session.pop("anonymous_site_id", None)
 
         # Add filterable tag categories for this event
         filterable_categories = self.object.filterable_tag_categories.all()
@@ -564,45 +650,90 @@ class EventView(DetailView):  # type: ignore [type-arg]
     def _set_user_participations(
         self, sessions: dict[int, SessionData], event_sessions: QuerySet[Session]
     ) -> None:
-        # Get all connected users in a single query
-        connected_users = (
-            list(self.request.user.connected.select_related("manager").all())
-            if self.request.user.is_authenticated
-            else []
-        )
-        all_users = (
-            [self.request.user, *connected_users]
-            if self.request.user.is_authenticated
-            else []
-        )
+        # Handle authenticated users
+        if self.request.user.is_authenticated:
+            # Get all connected users in a single query
+            connected_users = list(
+                self.request.user.connected.select_related("manager").all()
+            )
+            all_users = [self.request.user, *connected_users]
 
-        # Pre-fetch all participations for relevant users and sessions
-        participations = SessionParticipation.objects.filter(
-            session__in=event_sessions, user__in=all_users
-        ).select_related("user", "session")
+            # Pre-fetch all participations for relevant users and sessions
+            participations = SessionParticipation.objects.filter(
+                session__in=event_sessions, user__in=all_users
+            ).select_related("user", "session")
 
-        # Create lookup dictionaries for efficient access
-        participation_by_user_session: dict[tuple[int, int], list[str]] = {}
-        for p in participations:
-            key = (p.user_id, p.session_id)
-            if key not in participation_by_user_session:
-                participation_by_user_session[key] = []
-            participation_by_user_session[key].append(p.status)
+            # Create lookup dictionaries for efficient access
+            participation_by_user_session: dict[tuple[int, int], list[str]] = {}
+            for p in participations:
+                key = (p.user_id, p.session_id)
+                if key not in participation_by_user_session:
+                    participation_by_user_session[key] = []
+                participation_by_user_session[key].append(p.status)
 
-        # Add user participation info for each session
-        for user in all_users:
-            for session in event_sessions:
-                statuses = set(
-                    participation_by_user_session.get((user.id, session.id), [])
-                )
+            # Add user participation info for each session
+            for user in all_users:
+                for session in event_sessions:
+                    statuses = set(
+                        participation_by_user_session.get((user.id, session.id), [])
+                    )
 
-                sessions[session.id].has_any_enrollments |= bool(statuses)
-                sessions[session.id].user_enrolled |= (
-                    SessionParticipationStatus.CONFIRMED in statuses
-                )
-                sessions[session.id].user_waiting |= (
-                    SessionParticipationStatus.WAITING in statuses
-                )
+                    sessions[session.id].has_any_enrollments |= bool(statuses)
+                    sessions[session.id].user_enrolled |= (
+                        SessionParticipationStatus.CONFIRMED in statuses
+                    )
+                    sessions[session.id].user_waiting |= (
+                        SessionParticipationStatus.WAITING in statuses
+                    )
+
+        # Handle anonymous users
+        elif self.request.session.get(
+            "anonymous_enrollment_active"
+        ) and self.request.session.get("anonymous_user_id"):
+            # Validate anonymous user is for the current site
+            current_site_id = get_current_site(self.request).id
+            session_site_id = self.request.session.get("anonymous_site_id")
+            if session_site_id == current_site_id:
+                try:
+                    anonymous_user_id = self.request.session.get("anonymous_user_id")
+                    anonymous_user = User.objects.get(
+                        id=anonymous_user_id, user_type=User.UserType.ANONYMOUS
+                    )
+
+                    # Pre-fetch anonymous user participations for event sessions
+                    anonymous_participations = SessionParticipation.objects.filter(
+                        session__in=event_sessions, user=anonymous_user
+                    ).select_related("session")
+
+                    # Create lookup dictionary for anonymous user
+                    anonymous_participation_by_session: dict[int, list[str]] = {}
+                    for p in anonymous_participations:
+                        if p.session_id not in anonymous_participation_by_session:
+                            anonymous_participation_by_session[p.session_id] = []
+                        anonymous_participation_by_session[p.session_id].append(
+                            p.status
+                        )
+
+                    # Add anonymous user participation info for each session
+                    for session in event_sessions:
+                        statuses = set(
+                            anonymous_participation_by_session.get(session.id, [])
+                        )
+
+                        sessions[session.id].has_any_enrollments = bool(statuses)
+                        sessions[session.id].user_enrolled = (
+                            SessionParticipationStatus.CONFIRMED in statuses
+                        )
+                        sessions[session.id].user_waiting = (
+                            SessionParticipationStatus.WAITING in statuses
+                        )
+
+                except User.DoesNotExist:
+                    # Clear invalid anonymous session
+                    self.request.session.pop("anonymous_user_id", None)
+                    self.request.session.pop("anonymous_enrollment_active", None)
+                    self.request.session.pop("anonymous_site_id", None)
+                    self.request.session.pop("anonymous_event_id", None)
 
     def _get_hour_data(
         self, event_sessions: QuerySet[Session]
@@ -622,7 +753,17 @@ class EventView(DetailView):  # type: ignore [type-arg]
     ) -> dict[int, SessionData]:
         sessions_data = {es.id: SessionData(session=es) for es in event_sessions}
 
-        # Set filterable tags for each session
+        # Check if any active enrollment config has limit_to_end_time enabled
+        active_configs = self.object.get_active_enrollment_configs()
+        limit_configs = [c for c in active_configs if c.limit_to_end_time]
+        current_time = datetime.now(tz=UTC)
+
+        # Get the earliest end_time from configs with limit_to_end_time
+        earliest_limit_end_time = None
+        if limit_configs:
+            earliest_limit_end_time = min(config.end_time for config in limit_configs)
+
+        # Set filterable tags and display status for each session
         filterable_categories = set(self.object.filterable_tag_categories.all())
         for session_data in sessions_data.values():
             session_data.filterable_tags = [
@@ -631,8 +772,23 @@ class EventView(DetailView):  # type: ignore [type-arg]
                 if tag.category in filterable_categories
             ]
 
-        if self.request.user.is_authenticated:
-            self._set_user_participations(sessions_data, event_sessions)
+            session_start = session_data.session.agenda_item.start_time
+
+            # Calculate if session is ongoing (has already started)
+            session_data.is_ongoing = session_start <= current_time
+
+            # Mark sessions as inactive for display based on limit_to_end_time rules
+            if limit_configs and earliest_limit_end_time:
+                # Mark as inactive ONLY if:
+                # 1. Session has already started (is ongoing/lasting)
+                # Sessions starting before the config end_time but not yet started should remain available
+                if session_data.is_ongoing:
+                    session_data.should_show_as_inactive = True
+                # Sessions starting at or after the config end_time are already marked as
+                # not available by the backend's is_enrollment_available property
+
+        # Set user participation data for authenticated users and anonymous users
+        self._set_user_participations(sessions_data, event_sessions)
 
         return sessions_data
 
@@ -1606,3 +1762,368 @@ class ThemeSelectionView(View):
 
         # If form is invalid, redirect back anyway
         return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+class ActivateAnonymousEnrollmentView(View):
+    def get(self, request: UserRequest, event_id: int) -> HttpResponse:
+        # Redirect to event page if user is authenticated (not anonymous)
+        if request.user.is_authenticated:
+            return redirect("web:event", slug=self._get_event_slug(event_id))
+
+        # Check if event exists and has anonymous enrollment enabled
+        try:
+            event = Event.objects.get(id=event_id)
+            active_configs = event.get_active_enrollment_configs()
+            enrollment_config = next(
+                (
+                    config
+                    for config in active_configs
+                    if config.allow_anonymous_enrollment
+                ),
+                None,
+            )
+
+            if not enrollment_config:
+                messages.error(
+                    request, _("Anonymous enrollment is not available for this event.")
+                )
+                return redirect("web:event", slug=event.slug)
+        except Event.DoesNotExist:
+            messages.error(request, _("Event not found."))
+            return redirect("web:index")
+
+        # Create new anonymous User immediately
+        anonymous_user = User.objects.create(
+            username=f"anon_{token_urlsafe(8).lower()}",
+            slug=f"code_{token_urlsafe(4).lower()}",
+            user_type=User.UserType.ANONYMOUS,
+            is_active=False,  # Anonymous users don't need to be active for login
+        )
+
+        # Set session flags - include site ID to prevent cross-site confusion
+        request.session["anonymous_user_id"] = anonymous_user.id
+        request.session["anonymous_enrollment_active"] = True
+        request.session["anonymous_event_id"] = event_id
+        request.session["anonymous_site_id"] = get_current_site(request).id
+
+        return redirect("web:event", slug=event.slug)
+
+    def _get_event_slug(self, event_id: int) -> str:
+        try:
+            return Event.objects.get(id=event_id).slug
+        except Event.DoesNotExist:
+            return "index"
+
+
+class AnonymousEnrollView(View):
+    def get(self, request: UserRequest, session_id: int) -> HttpResponse:
+        # Redirect to regular enrollment if user is authenticated
+        if request.user.is_authenticated:
+            return redirect("web:enroll-select", session_id=session_id)
+
+        # Check if anonymous mode is active
+        if not request.session.get("anonymous_enrollment_active"):
+            messages.error(request, _("Anonymous enrollment is not active."))
+            return redirect("web:index")
+
+        # Check if anonymous user is for the current site
+        current_site_id = get_current_site(request).id
+        session_site_id = request.session.get("anonymous_site_id")
+        if session_site_id != current_site_id:
+            messages.error(
+                request, _("Anonymous enrollment session is not valid for this site.")
+            )
+            return redirect("web:index")
+
+        # Get session
+        try:
+            session = Session.objects.get(
+                id=session_id, sphere__site=get_current_site(request)
+            )
+        except Session.DoesNotExist:
+            messages.error(request, _("Session not found."))
+            return redirect("web:index")
+
+        # Get anonymous user from session
+        anonymous_user_id = request.session.get("anonymous_user_id")
+        if not anonymous_user_id:
+            messages.error(request, _("Anonymous session expired."))
+            return redirect("web:index")
+
+        try:
+            anonymous_user = User.objects.get(
+                id=anonymous_user_id, user_type=User.UserType.ANONYMOUS
+            )
+        except User.DoesNotExist:
+            messages.error(request, _("Anonymous user not found."))
+            return redirect("web:index")
+
+        # Check if user is already enrolled in THIS specific session
+        existing_enrollment = SessionParticipation.objects.filter(
+            session=session, user=anonymous_user
+        ).first()
+
+        context = {
+            "session": session,
+            "event": session.agenda_item.space.event,
+            "anonymous_user": anonymous_user,
+            "anonymous_code": anonymous_user.slug.removeprefix("code_"),
+            "needs_user_data": not anonymous_user.name or not anonymous_user.birth_date,
+            "existing_enrollment": existing_enrollment,
+            "is_enrolled": existing_enrollment is not None,
+        }
+
+        return TemplateResponse(request, "chronology/anonymous_enroll.html", context)
+
+    def post(self, request: UserRequest, session_id: int) -> HttpResponse:
+        # Redirect to regular enrollment if user is authenticated
+        if request.user.is_authenticated:
+            return redirect("web:enroll-select", session_id=session_id)
+
+        # Check if anonymous mode is active
+        if not request.session.get("anonymous_enrollment_active"):
+            messages.error(request, _("Anonymous enrollment is not active."))
+            return redirect("web:index")
+
+        # Check if anonymous user is for the current site
+        current_site_id = get_current_site(request).id
+        session_site_id = request.session.get("anonymous_site_id")
+        if session_site_id != current_site_id:
+            messages.error(
+                request, _("Anonymous enrollment session is not valid for this site.")
+            )
+            return redirect("web:index")
+
+        # Get session
+        try:
+            session = Session.objects.get(
+                id=session_id, sphere__site=get_current_site(request)
+            )
+        except Session.DoesNotExist:
+            messages.error(request, _("Session not found."))
+            return redirect("web:index")
+
+        # Get anonymous user
+        anonymous_user_id = request.session.get("anonymous_user_id")
+        if not anonymous_user_id:
+            messages.error(request, _("Anonymous session expired."))
+            return redirect("web:index")
+
+        try:
+            anonymous_user = User.objects.get(
+                id=anonymous_user_id, user_type=User.UserType.ANONYMOUS
+            )
+        except User.DoesNotExist:
+            messages.error(request, _("Anonymous user not found."))
+            return redirect("web:index")
+
+        # Update user data if provided
+        name = request.POST.get("name", "").strip()
+        birth_date_str = request.POST.get("birth_date", "").strip()
+
+        if name:
+            anonymous_user.name = name
+
+        if birth_date_str:
+            try:
+                anonymous_user.birth_date = datetime.strptime(
+                    birth_date_str, "%Y-%m-%d"
+                ).date()
+            except ValueError:
+                messages.error(request, _("Invalid birth date format."))
+                return redirect("web:anonymous-enroll", session_id=session_id)
+
+        # Validate required fields
+        if not anonymous_user.name:
+            messages.error(request, _("Name is required."))
+            return redirect("web:anonymous-enroll", session_id=session_id)
+
+        if not anonymous_user.birth_date:
+            messages.error(request, _("Birth date is required."))
+            return redirect("web:anonymous-enroll", session_id=session_id)
+
+        # Check age requirement
+        if session.min_age > 0:
+            age = (datetime.now().date() - anonymous_user.birth_date).days // 365
+            if age < session.min_age:
+                messages.error(
+                    request,
+                    _(
+                        "You must be at least %(min_age)s years old to enroll in this session."
+                    )
+                    % {"min_age": session.min_age},
+                )
+                return redirect("web:anonymous-enroll", session_id=session_id)
+
+        anonymous_user.save()
+
+        # Check for cancellation request
+        action = request.POST.get("action", "enroll")
+
+        if action == "cancel":
+            # Cancel enrollment
+            try:
+                enrollment = SessionParticipation.objects.get(
+                    session=session, user=anonymous_user
+                )
+                enrollment.delete()
+                messages.success(
+                    request,
+                    _("Successfully cancelled enrollment in session: %(title)s")
+                    % {"title": session.title},
+                )
+            except SessionParticipation.DoesNotExist:
+                messages.warning(request, _("No enrollment found to cancel."))
+        else:
+            # Check for time conflicts before enrolling
+            if Session.objects.has_conflicts(session, anonymous_user):
+                messages.error(
+                    request,
+                    _(
+                        "Cannot enroll: You are already enrolled in another session that conflicts with this time slot."
+                    ),
+                )
+                return redirect("web:anonymous-enroll", session_id=session_id)
+
+            # Check if session is full and determine enrollment status
+            if session.is_full:
+                # Add to waitlist
+                enrollment, created = SessionParticipation.objects.get_or_create(
+                    session=session,
+                    user=anonymous_user,
+                    defaults={"status": SessionParticipationStatus.WAITING.value},
+                )
+
+                if not created:
+                    # Update existing enrollment to waiting status
+                    enrollment.status = SessionParticipationStatus.WAITING.value
+                    enrollment.save()
+
+                messages.success(
+                    request,
+                    _(
+                        "Session is full. You have been added to the waiting list for: %(title)s"
+                    )
+                    % {"title": session.title},
+                )
+            else:
+                # Enroll normally
+                enrollment, created = SessionParticipation.objects.get_or_create(
+                    session=session,
+                    user=anonymous_user,
+                    defaults={"status": SessionParticipationStatus.CONFIRMED.value},
+                )
+
+                if (
+                    not created
+                    and enrollment.status != SessionParticipationStatus.CONFIRMED.value
+                ):
+                    enrollment.status = SessionParticipationStatus.CONFIRMED.value
+                    enrollment.save()
+
+                messages.success(
+                    request,
+                    _("Successfully enrolled in session: %(title)s")
+                    % {"title": session.title},
+                )
+
+        return redirect("web:event", slug=session.agenda_item.space.event.slug)
+
+
+class AnonymousCodeEntryView(View):
+    """Handle entering an anonymous code to load a previous session"""
+
+    def post(self, request: UserRequest) -> HttpResponse:
+        # Only accessible to non-authenticated users
+        if request.user.is_authenticated:
+            return redirect("web:index")
+
+        code = request.POST.get("code", "").strip()
+
+        if not code:
+            messages.error(request, _("Please enter a code."))
+            # Try to redirect back to the referring event
+            referer = request.META.get("HTTP_REFERER", "")
+            if "event" in referer:
+                return redirect(referer)
+            return redirect("web:index")
+
+        # Look up user by code
+        try:
+            anonymous_user = User.objects.get(
+                slug=f"code_{code}", user_type=User.UserType.ANONYMOUS
+            )
+        except User.DoesNotExist:
+            messages.error(request, _("Invalid code. Please check and try again."))
+            # Try to redirect back to the referring event
+            referer = request.META.get("HTTP_REFERER", "")
+            if "event" in referer:
+                return redirect(referer)
+            return redirect("web:index")
+
+        # Get user's enrollments to find the event and site
+        enrollments = SessionParticipation.objects.filter(
+            user=anonymous_user
+        ).select_related("session__agenda_item__space__event", "session__sphere")
+
+        if not enrollments:
+            messages.warning(request, _("No enrollments found for this code."))
+            return redirect("web:index")
+
+        # Get the first enrollment to determine the event and site
+        first_enrollment = enrollments.first()
+        event = first_enrollment.session.agenda_item.space.event
+        site_id = first_enrollment.session.sphere.site_id
+
+        # Load user into session with proper site association
+        request.session["anonymous_user_id"] = anonymous_user.id
+        request.session["anonymous_enrollment_active"] = True
+        request.session["anonymous_event_id"] = event.id
+        request.session["anonymous_site_id"] = site_id
+
+        messages.success(
+            request, _("Code loaded successfully. You can now manage your enrollments.")
+        )
+        return redirect("web:event", slug=event.slug)
+
+
+class AnonymousResetView(View):
+    def get(self, request: UserRequest) -> HttpResponse:
+        event_id = request.session.get("anonymous_event_id")
+
+        # If 'finish=1' parameter, create new anonymous user with new code
+        if request.GET.get("finish") == "1":
+            # Clear current anonymous session data
+            request.session.pop("anonymous_user_id", None)
+            request.session.pop("anonymous_enrollment_active", None)
+            request.session.pop("anonymous_event_id", None)
+            request.session.pop("anonymous_site_id", None)
+
+            if event_id:
+                # Create new anonymous session (which generates new code)
+                return redirect("web:anonymous-activate", event_id=event_id)
+            return redirect("web:index")
+
+        # Otherwise just clear session and redirect to event page
+        request.session.pop("anonymous_user_id", None)
+        request.session.pop("anonymous_enrollment_active", None)
+        request.session.pop("anonymous_event_id", None)
+        request.session.pop("anonymous_site_id", None)
+
+        if event_id:
+            try:
+                event = Event.objects.get(id=event_id)
+                return redirect("web:event", slug=event.slug)
+            except Event.DoesNotExist:
+                pass
+
+        return redirect("web:index")
+
+
+@receiver(user_logged_in)
+def clear_anonymous_session_on_login(sender, request, user, **kwargs):
+    """Clear anonymous enrollment session data when a user logs in."""
+    if hasattr(request, "session"):
+        request.session.pop("anonymous_user_id", None)
+        request.session.pop("anonymous_enrollment_active", None)
+        request.session.pop("anonymous_event_id", None)

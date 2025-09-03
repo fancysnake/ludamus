@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load django_bootstrap5 %}
+{% load bootstrap_icons %}
+{% block title %}
+    {% translate "Manage Anonymous Enrollment" %}
+{% endblock title %}
+{% block header %}
+    {% translate "Manage Anonymous Enrollment" %}
+{% endblock header %}
+{% block description %}
+    {% translate "Enter your code to view and manage your enrollments" %}
+{% endblock description %}
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            {% if not form_submitted %}
+                <!-- Code Entry Form -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">{% bs_icon 'key' %} {% translate "Enter Your Code" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="code" class="form-label">{% translate "Anonymous Enrollment Code" %}</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="code"
+                                       name="code"
+                                       placeholder="{% translate 'Enter your code' %}"
+                                       required
+                                       maxlength="6"
+                                       style="font-family: monospace">
+                                <div class="form-text">{% translate "Enter the code you received when you enrolled (e.g., ab3x)" %}</div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">{% bs_icon 'search' %} {% translate "Find My Enrollments" %}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <!-- User Found - Show Enrollments -->
+                <div class="alert alert-success mb-4" role="alert">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">{% bs_icon 'check-circle' %}</div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">{% translate "Code found!" %}</h6>
+                            <p class="mb-0">
+                                {% translate "Showing enrollments for" %}: <strong>{{ anonymous_user.name }}</strong>
+                                <br>
+                                <small class="text-muted">{% translate "Code" %}: <code>{{ anonymous_code }}</code></small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% if enrollments %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">{% bs_icon 'calendar-check' %} {% translate "Your Enrollments" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                {% for enrollment in enrollments %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ enrollment.session.title }}</h6>
+                                            <small class="text-muted">
+                                                {% if enrollment.status == "confirmed" %}
+                                                    <span class="badge bg-success">{% translate "Enrolled" %}</span>
+                                                {% elif enrollment.status == "waiting" %}
+                                                    <span class="badge bg-warning text-dark">{% translate "Waiting" %}</span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <p class="mb-1">
+                                            <strong>{% translate "Host" %}:</strong> {{ enrollment.session.presenter_name }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <strong>{% translate "Time" %}:</strong>
+                                            {{ enrollment.session.agenda_item.start_time|date:"l, F j, Y G:i" }} -
+                                            {{ enrollment.session.agenda_item.end_time|date:"G:i" }}
+                                        </p>
+                                        {% if enrollment.session.agenda_item.space %}
+                                            <p class="mb-1">
+                                                <strong>{% translate "Space" %}:</strong> {{ enrollment.session.agenda_item.space.name }}
+                                            </p>
+                                        {% endif %}
+                                        <small class="text-muted">
+                                            <strong>{% translate "Event" %}:</strong> {{ enrollment.session.agenda_item.space.event.name }}
+                                        </small>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">{% bs_icon 'info-circle' %}</div>
+                            <div class="flex-grow-1 ms-3">{% translate "You don't have any enrollments yet." %}</div>
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Actions -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">{% bs_icon 'gear' %} {% translate "Actions" %}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            {% if enrollments %}
+                                <a href="{% url 'web:event' slug=enrollments.0.session.agenda_item.space.event.slug %}"
+                                   class="btn btn-primary">
+                                    {% bs_icon 'calendar-event' %} {% translate "View Event" %}
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'web:anonymous-manage' %}"
+                               class="btn btn-outline-secondary">
+                                {% bs_icon 'arrow-left' %} {% translate "Enter Different Code" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <!-- Help Section -->
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    {% translate "Lost your code? Unfortunately, we cannot recover it. You'll need to create a new enrollment." %}
+                </small>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
