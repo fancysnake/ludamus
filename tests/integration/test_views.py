@@ -661,7 +661,15 @@ class TestEventView:
         assert response.status_code == HTTPStatus.OK
         assert response.context_data["event"] == event
         assert response.context_data["object"] == event
-        assert response.context_data["sessions"] == [session]
+        assert response.context_data["sessions"] == [
+            SessionData(
+                session=session,
+                has_any_enrollments=True,
+                user_enrolled=True,
+                user_waiting=True,
+                filterable_tags=[],
+            )
+        ]
         assert response.context_data["hour_data"] == {
             agenda_item.start_time: [
                 SessionData(
@@ -669,6 +677,7 @@ class TestEventView:
                     has_any_enrollments=True,
                     user_enrolled=True,
                     user_waiting=True,
+                    filterable_tags=[],
                 )
             ]
         }

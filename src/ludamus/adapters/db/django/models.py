@@ -33,6 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     class UserType(models.TextChoices):  # pylint: disable=too-many-ancestors
         ACTIVE = "active", _("Active")
         CONNECTED = "connected", _("Connected")
+        ANONYMOUS = "anonymous", _("Anonymous")
 
     birth_date = models.DateField(blank=True, null=True)
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
@@ -349,6 +350,10 @@ class EnrollmentConfig(models.Model):
     restrict_to_configured_users = models.BooleanField(
         default=False,
         help_text="Only allow users with explicit UserEnrollmentConfig entries to enroll",
+    )
+    allow_anonymous_enrollment = models.BooleanField(
+        default=False,
+        help_text="Allow anonymous users to enroll without creating accounts",
     )
 
     class Meta:

@@ -332,7 +332,7 @@ class TestUserEnrollmentConfigView:
             allowed_slots=1,
         )
 
-        # Try to enroll both users (should fail due to slot limit)
+        # Try to enroll both users (should fail with form validation error due to slot limit)
         response = authenticated_client.post(
             self._get_url(agenda_item.session.pk),
             data={
@@ -341,12 +341,10 @@ class TestUserEnrollmentConfigView:
             },
         )
 
-        assert response.status_code == HTTPStatus.FOUND, response.context_data[
-            "form"
-        ].errors
-        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
+        # Should get form validation error when slot limit exceeded
+        assert response.status_code == HTTPStatus.OK
 
-        # Verify first user was enrolled (uses the 1 slot) but second was blocked
+        # Verify no users were enrolled due to form validation failure
         assert not SessionParticipation.objects.filter(
             session=agenda_item.session,
             user=active_user,
