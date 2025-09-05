@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-05 09:04+0200\n"
+"POT-Creation-Date: 2025-09-05 13:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -334,7 +334,9 @@ msgstr "Wykryto Czarną Magię!"
 
 #: src/ludamus/adapters/web/django/error_views.py:154
 msgid "Our system was corrupted by dark magic, we are casting dispel magic now"
-msgstr "Nasz system został uszkodzony przez czarną magię, rzucamy teraz rozproszenie magii"
+msgstr ""
+"Nasz system został uszkodzony przez czarną magię, rzucamy teraz rozproszenie "
+"magii"
 
 #: src/ludamus/adapters/web/django/error_views.py:157
 msgid "Please wait while our wizards restore order."
@@ -518,7 +520,7 @@ msgstr "Musi mieć co najmniej %(min_age)s lat do zapisu"
 
 #: src/ludamus/adapters/web/django/forms.py:172
 #: src/ludamus/adapters/web/django/forms.py:188
-#: src/ludamus/templates/chronology/_session_card.html:106
+#: src/ludamus/templates/chronology/_session_card.html:108
 #: src/ludamus/templates/chronology/enroll_select.html:79
 #: src/ludamus/templates/chronology/event.html:684
 msgid "Enroll"
@@ -610,7 +612,9 @@ msgstr "%(user)s nie może się zapisać: zapisy niedostępne"
 #: src/ludamus/adapters/web/django/forms.py:344
 #, python-format
 msgid "%(user)s cannot join waitlist: must be at least %(min_age)s years old"
-msgstr "%(user)s nie może dołączyć do listy oczekujących: musi mieć co najmniej %(min_age)s lat"
+msgstr ""
+"%(user)s nie może dołączyć do listy oczekujących: musi mieć co najmniej "
+"%(min_age)s lat"
 
 #: src/ludamus/adapters/web/django/forms.py:350
 #, python-format
@@ -803,7 +807,9 @@ msgstr "Nieprawidłowa domena do przekierowania."
 msgid ""
 "Your public display name that others will see. This can be a nickname and "
 "does not need to be your legal name."
-msgstr "Twoja publiczna nazwa widoczna dla innych. Może to być pseudonim i nie musi być Twoim prawdziwym imieniem."
+msgstr ""
+"Twoja publiczna nazwa widoczna dla innych. Może to być pseudonim i nie musi "
+"być Twoim prawdziwym imieniem."
 
 #: src/ludamus/adapters/web/django/views.py:310
 msgid "Birth date"
@@ -872,7 +878,9 @@ msgstr "Do zapisu na ten punkt programu wymagany jest adres email."
 msgid ""
 "Enrollment access permission is required for this session. Please contact "
 "the organizers to obtain access."
-msgstr "Do zapisu na tę sesję wymagane jest uprawnienie dostępu. Skontaktuj się z organizatorami, aby uzyskać dostęp."
+msgstr ""
+"Do zapisu na tę sesję wymagane jest uprawnienie dostępu. Skontaktuj się z "
+"organizatorami, aby uzyskać dostęp."
 
 #: src/ludamus/adapters/web/django/views.py:1003
 #: src/ludamus/adapters/web/django/views.py:1007
@@ -957,7 +965,9 @@ msgstr "Żadne zapisy nie zostały przetworzone."
 msgid ""
 "Not enough spots available. {} spots requested, {} available. Please use "
 "waiting list for some users."
-msgstr "Brak wystarczającej liczby miejsc. {} miejsc potrzebnych, {} dostępnych. Użyj listy oczekujących dla niektórych użytkowników."
+msgstr ""
+"Brak wystarczającej liczby miejsc. {} miejsc potrzebnych, {} dostępnych. "
+"Użyj listy oczekujących dla niektórych użytkowników."
 
 #: src/ludamus/adapters/web/django/views.py:1398
 msgid "Please select at least one user to enroll."
@@ -981,9 +991,9 @@ msgstr "Festiwal nie został znaleziony."
 
 #: src/ludamus/adapters/web/django/views.py:1567
 msgid "Proposal submission is not currently active for this event."
-msgstr "Składanie propozycji nie jest obecnie aktywne dla tego wydarzenia."
-"Składanie zgłoszeń punktów programu nie jest obecnie aktywne dla tego "
-"wydarzenia."
+msgstr ""
+"Składanie propozycji nie jest obecnie aktywne dla tego wydarzenia.Składanie "
+"zgłoszeń punktów programu nie jest obecnie aktywne dla tego wydarzenia."
 
 #: src/ludamus/adapters/web/django/views.py:1582
 msgid ""
@@ -1008,12 +1018,16 @@ msgstr "Nie masz uprawnień do akceptowania propozycji dla tego wydarzenia."
 
 #: src/ludamus/adapters/web/django/views.py:1658
 msgid "No spaces configured for this event. Please create spaces first."
-msgstr "Brak skonfigurowanych przestrzeni dla tego wydarzenia. Najpierw utwórz przestrzenie."
+msgstr ""
+"Brak skonfigurowanych przestrzeni dla tego wydarzenia. Najpierw utwórz "
+"przestrzenie."
 
 #: src/ludamus/adapters/web/django/views.py:1672
 msgid ""
 "No time slots configured for this event. Please create time slots first."
-msgstr "Brak skonfigurowanych przedziałów czasowych dla tego wydarzenia. Najpierw utwórz przedziały czasowe."
+msgstr ""
+"Brak skonfigurowanych przedziałów czasowych dla tego wydarzenia. Najpierw "
+"utwórz przedziały czasowe."
 
 #: src/ludamus/adapters/web/django/views.py:1716
 #, python-brace-format
@@ -1069,7 +1083,9 @@ msgstr "Nie znaleziono zapisu do anulowania."
 msgid ""
 "Cannot enroll: You are already enrolled in another session that conflicts "
 "with this time slot."
-msgstr "Nie można się zapisać: Jesteś już zapisany na inną sesję, która koliduje z tym terminem."
+msgstr ""
+"Nie można się zapisać: Jesteś już zapisany na inną sesję, która koliduje z "
+"tym terminem."
 
 #: src/ludamus/adapters/web/django/views.py:2005
 #, python-format
@@ -1146,42 +1162,48 @@ msgstr "Do ustalenia"
 msgid "All ages"
 msgstr "Bez ograniczeń"
 
-#: src/ludamus/templates/chronology/_session_card.html:94
-#: src/ludamus/templates/chronology/_session_card.html:116
+#: src/ludamus/templates/chronology/_session_card.html:96
+#: src/ludamus/templates/chronology/_session_card.html:117
 #: src/ludamus/templates/chronology/anonymous_enroll.html:80
 #: src/ludamus/templates/chronology/event.html:940
 #: src/ludamus/templates/chronology/event.html:954
 msgid "Manage Enrollment"
 msgstr "Zarządzaj zapisem"
 
-#: src/ludamus/templates/chronology/_session_card.html:100
-#: src/ludamus/templates/chronology/_session_card.html:121
+#: src/ludamus/templates/chronology/_session_card.html:102
 #: src/ludamus/templates/chronology/anonymous_enroll.html:163
 #: src/ludamus/templates/chronology/event.html:946
 msgid "Enroll Now"
 msgstr "Zapisz się teraz"
 
-#: src/ludamus/templates/chronology/_session_card.html:105
+#: src/ludamus/templates/chronology/_session_card.html:107
 msgid "Only connected users can enroll"
 msgstr "Tylko powiązani użytkownicy mogą się zapisać"
 
-#: src/ludamus/templates/chronology/_session_card.html:130
-msgid "Start Anonymous Enrollment"
-msgstr "Rozpocznij Anonimowy Zapis"
+#: src/ludamus/templates/chronology/_session_card.html:122
+#: src/ludamus/templates/chronology/event.html:681
+#: src/ludamus/templates/chronology/event.html:959
+msgid "Enroll Anonymously"
+msgstr "Zapisz się Anonimowo"
 
-#: src/ludamus/templates/chronology/_session_card.html:139
+#: src/ludamus/templates/chronology/_session_card.html:129
+#: src/ludamus/templates/chronology/event.html:965
+msgid "Login to Enroll"
+msgstr "Zaloguj się aby się zapisać"
+
+#: src/ludamus/templates/chronology/_session_card.html:135
 msgid "Session Ended"
 msgstr "Sesja Zakończona"
 
-#: src/ludamus/templates/chronology/_session_card.html:141
+#: src/ludamus/templates/chronology/_session_card.html:137
 msgid "In Progress"
 msgstr "W Trakcie"
 
-#: src/ludamus/templates/chronology/_session_card.html:143
+#: src/ludamus/templates/chronology/_session_card.html:139
 msgid "Not Available"
 msgstr "Niedostępne"
 
-#: src/ludamus/templates/chronology/_session_card.html:152
+#: src/ludamus/templates/chronology/_session_card.html:148
 #: src/ludamus/templates/chronology/_session_card_condensed.html:53
 msgid "Details"
 msgstr "Szczegóły"
@@ -1487,7 +1509,9 @@ msgstr "Wprowadź Inny Kod"
 msgid ""
 "Lost your code? Unfortunately, we cannot recover it. You'll need to create a "
 "new enrollment."
-msgstr "Zgubiłeś swój kod? Niestety, nie możemy go odzyskać. Musisz utworzyć nowy zapis."
+msgstr ""
+"Zgubiłeś swój kod? Niestety, nie możemy go odzyskać. Musisz utworzyć nowy "
+"zapis."
 
 #: src/ludamus/templates/chronology/enroll_select.html:12
 msgid "Select who to enroll in"
@@ -1550,9 +1574,10 @@ msgstr "Konflikt czasowy"
 
 #: src/ludamus/templates/chronology/enroll_select.html:163
 msgid "No connected users available. You can add connected users in your"
-msgstr "Brak dostępnych połączonych użytkowników. Możesz dodać połączonych użytkowników w swoich"
-"Brak dostępnych powiązanych użytkowników. Możesz dodać powiązanych "
-"użytkowników w swoich"
+msgstr ""
+"Brak dostępnych połączonych użytkowników. Możesz dodać połączonych "
+"użytkowników w swoichBrak dostępnych powiązanych użytkowników. Możesz dodać "
+"powiązanych użytkowników w swoich"
 
 #: src/ludamus/templates/chronology/enroll_select.html:164
 msgid "profile settings"
@@ -1872,11 +1897,6 @@ msgstr "Status powiązanych użytkowników"
 msgid "Session Information"
 msgstr "Informacje o punkcie programu"
 
-#: src/ludamus/templates/chronology/event.html:681
-#: src/ludamus/templates/chronology/event.html:959
-msgid "Enroll Anonymously"
-msgstr "Zapisz się Anonimowo"
-
 #: src/ludamus/templates/chronology/event.html:714
 msgid "Session"
 msgstr "Punkt programu"
@@ -1929,10 +1949,6 @@ msgstr "Jesteś na liście oczekujących"
 msgid "You are not enrolled in this session"
 msgstr "Nie jesteś zapisany na ten punkt programu"
 
-#: src/ludamus/templates/chronology/event.html:965
-msgid "Login to Enroll"
-msgstr "Zaloguj się aby się zapisać"
-
 #: src/ludamus/templates/chronology/event.html:978
 msgid "Back to Events"
 msgstr "Powrót do wydarzeń"
@@ -1969,15 +1985,17 @@ msgstr "Wprowadź atrakcyjny tytuł dla Twojego punktu programu"
 
 #: src/ludamus/templates/chronology/propose_session.html:68
 msgid "Choose a clear and engaging title that describes your session."
-msgstr "Wybierz jasny i angażujący tytuł, który opisuje Twoją sesję."
-"Wybierz klarowny i angażujący tytuł, który opisuje Twój punkt programu."
+msgstr ""
+"Wybierz jasny i angażujący tytuł, który opisuje Twoją sesję.Wybierz klarowny "
+"i angażujący tytuł, który opisuje Twój punkt programu."
 
 #: src/ludamus/templates/chronology/propose_session.html:76
 msgid ""
 "Describe what your session is about, what participants will learn or do..."
-msgstr "Opisz, o czym jest Twoja sesja, czego uczestnicy się nauczą lub co będą robić..."
-"Opisz o czym jest Twój punkt programu, czego nauczą się lub co będą robić "
-"uczestnicy..."
+msgstr ""
+"Opisz, o czym jest Twoja sesja, czego uczestnicy się nauczą lub co będą "
+"robić...Opisz o czym jest Twój punkt programu, czego nauczą się lub co będą "
+"robić uczestnicy..."
 
 #: src/ludamus/templates/chronology/propose_session.html:77
 msgid "Provide a detailed description of your session content and objectives."
@@ -1985,9 +2003,10 @@ msgstr "Podaj szczegółowy opis treści i celów Twojego punktu programu."
 
 #: src/ludamus/templates/chronology/propose_session.html:85
 msgid "Any prerequisites, skills, or materials participants should have..."
-msgstr "Wszelkie wymagania wstępne, umiejętności lub materiały, które uczestnicy powinni posiadać..."
-"Wszelkie wymagania wstępne, umiejętności lub materiały, które powinni mieć "
-"uczestnicy..."
+msgstr ""
+"Wszelkie wymagania wstępne, umiejętności lub materiały, które uczestnicy "
+"powinni posiadać...Wszelkie wymagania wstępne, umiejętności lub materiały, "
+"które powinni mieć uczestnicy..."
 
 #: src/ludamus/templates/chronology/propose_session.html:86
 msgid "List any requirements or prerequisites for participants."
@@ -1999,8 +2018,10 @@ msgstr "Sprzęt, ustawienie sali, wymagania techniczne..."
 
 #: src/ludamus/templates/chronology/propose_session.html:95
 msgid "Specify any special equipment or room setup requirements."
-msgstr "Określ wszelkie specjalne wymagania dotyczące sprzętu lub konfiguracji pomieszczenia."
-"Określ wszelkie specjalne wymagania sprzętowe lub dotyczące ustawienia sali."
+msgstr ""
+"Określ wszelkie specjalne wymagania dotyczące sprzętu lub konfiguracji "
+"pomieszczenia.Określ wszelkie specjalne wymagania sprzętowe lub dotyczące "
+"ustawienia sali."
 
 #: src/ludamus/templates/chronology/propose_session.html:121
 msgid "Hold Ctrl/Cmd to select multiple tags."
@@ -2013,18 +2034,20 @@ msgstr "Wprowadź tagi oddzielone przecinkami..."
 #: src/ludamus/templates/chronology/propose_session.html:129
 msgid ""
 "Enter tag names separated by commas. New tags will be reviewed by organizers."
-msgstr "Wprowadź nazwy tagów oddzielone przecinkami. Nowe tagi zostaną sprawdzone przez organizatorów."
-"Wprowadź nazwy tagów oddzielone przecinkami. Nowe tagi będą sprawdzone przez "
-"organizatorów."
+msgstr ""
+"Wprowadź nazwy tagów oddzielone przecinkami. Nowe tagi zostaną sprawdzone "
+"przez organizatorów.Wprowadź nazwy tagów oddzielone przecinkami. Nowe tagi "
+"będą sprawdzone przez organizatorów."
 
 #: src/ludamus/templates/chronology/propose_session.html:149
 #, python-format
 msgid ""
 "Maximum number of participants (%(min_participants_limit)s-"
 "%(max_participants_limit)s)."
-msgstr "Maksymalna liczba uczestników (%(min_participants_limit)s-%(max_participants_limit)s)."
+msgstr ""
 "Maksymalna liczba uczestników (%(min_participants_limit)s-"
-"%(max_participants_limit)s)."
+"%(max_participants_limit)s).Maksymalna liczba uczestników "
+"(%(min_participants_limit)s-%(max_participants_limit)s)."
 
 #: src/ludamus/templates/chronology/propose_session.html:154
 msgid "Age Rating"
@@ -2054,9 +2077,11 @@ msgstr "Zaakceptowane zgłoszenia zostaną dodane do programu wydarzenia"
 msgid ""
 "Your proposal is for a specific time slot, but organizers may adjust "
 "scheduling if needed"
-msgstr "Twoja propozycja dotyczy konkretnego przedziału czasowego, ale organizatorzy mogą dostosować harmonogram w razie potrzeby"
-"Twoje zgłoszenie dotyczy konkretnego bloku czasowego, ale organizatorzy mogą "
-"dostosować harmonogram w razie potrzeby"
+msgstr ""
+"Twoja propozycja dotyczy konkretnego przedziału czasowego, ale organizatorzy "
+"mogą dostosować harmonogram w razie potrzebyTwoje zgłoszenie dotyczy "
+"konkretnego bloku czasowego, ale organizatorzy mogą dostosować harmonogram w "
+"razie potrzeby"
 
 #: src/ludamus/templates/chronology/propose_session.html:192
 msgid "Organizers will assign time slots to accepted proposals"
@@ -2066,9 +2091,10 @@ msgstr "Organizatorzy przypiszą bloki czasowe do zaakceptowanych zgłoszeń"
 msgid ""
 "Make sure your title and description clearly explain what participants will "
 "gain from your session"
-msgstr "Upewnij się, że tytuł i opis jasno wyjaśniają, co uczestnicy zyskają z Twojej sesji"
+msgstr ""
 "Upewnij się, że tytuł i opis jasno wyjaśniają, co uczestnicy zyskają z "
-"Twojego punktu programu"
+"Twojej sesjiUpewnij się, że tytuł i opis jasno wyjaśniają, co uczestnicy "
+"zyskają z Twojego punktu programu"
 
 #: src/ludamus/templates/crowd/user/connected.html:6
 #: src/ludamus/templates/crowd/user/connected.html:22
@@ -2086,10 +2112,12 @@ msgid ""
 "Connected people are family members or friends that you can enroll in "
 "events. They won't have their own login accounts - you'll handle all their "
 "event registrations for them"
-msgstr "wydarzeń. Nie będą mieć własnych kont logowania - będziesz obsługiwać wszystkie ich rejestracje na wydarzenia"
-"Powiązane osoby to członkowie rodziny lub przyjaciele, których możesz "
-"zapisywać na wydarzenia. Nie będą mieli własnych kont logowania - wszystkie "
-"ich rejestracje na wydarzenia obsługujesz ty."
+msgstr ""
+"wydarzeń. Nie będą mieć własnych kont logowania - będziesz obsługiwać "
+"wszystkie ich rejestracje na wydarzeniaPowiązane osoby to członkowie rodziny "
+"lub przyjaciele, których możesz zapisywać na wydarzenia. Nie będą mieli "
+"własnych kont logowania - wszystkie ich rejestracje na wydarzenia "
+"obsługujesz ty."
 
 #: src/ludamus/templates/crowd/user/connected.html:42
 msgid "Add connected user"
@@ -2100,8 +2128,10 @@ msgstr "Dodaj powiązaną osobę"
 msgid ""
 "You have reached the maximum limit of %(max_connected_users)s connected "
 "users."
-msgstr "Osiągnąłeś maksymalny limit %(max_connected_users)s połączonych użytkowników."
-"Osiągnąłeś maksymalny limit %(max_connected_users)s powiązanych użytkowników."
+msgstr ""
+"Osiągnąłeś maksymalny limit %(max_connected_users)s połączonych "
+"użytkowników.Osiągnąłeś maksymalny limit %(max_connected_users)s powiązanych "
+"użytkowników."
 
 #: src/ludamus/templates/crowd/user/connected.html:65
 msgid "Your connected users"
@@ -2196,27 +2226,32 @@ msgstr "Ograniczenie wiekowe"
 msgid ""
 "We're sorry, but you must be at least 16 years old to create an account on "
 "our platform."
-msgstr "Przykro nam, ale musisz mieć co najmniej 16 lat, aby założyć konto na naszej platformie."
-"Przykro nam, ale musisz mieć co najmniej 16 lat, aby utworzyć konto na "
-"naszej platformie."
+msgstr ""
+"Przykro nam, ale musisz mieć co najmniej 16 lat, aby założyć konto na naszej "
+"platformie.Przykro nam, ale musisz mieć co najmniej 16 lat, aby utworzyć "
+"konto na naszej platformie."
 
 #: src/ludamus/templates/crowd/user/under_age.html:22
 msgid ""
 "This restriction is in place to ensure the safety and appropriate experience "
 "for all our users."
-msgstr "To ograniczenie ma na celu zapewnienie bezpieczeństwa i odpowiedniego doświadczenia dla wszystkich naszych użytkowników."
-"To ograniczenie zostało wprowadzone, aby zapewnić bezpieczeństwo i "
-"odpowiednie doświadczenie dla wszystkich naszych użytkowników."
+msgstr ""
+"To ograniczenie ma na celu zapewnienie bezpieczeństwa i odpowiedniego "
+"doświadczenia dla wszystkich naszych użytkowników.To ograniczenie zostało "
+"wprowadzone, aby zapewnić bezpieczeństwo i odpowiednie doświadczenie dla "
+"wszystkich naszych użytkowników."
 
 #: src/ludamus/templates/crowd/user/under_age.html:26
 msgid ""
 "If you'd like to participate in our events, please ask a parent or guardian "
 "to create an account and register you as a connected user. They will be able "
 "to sign you up for sessions on your behalf."
-msgstr "aby założyć konto i zarejestrować Cię jako połączonego użytkownika. Będą mogli zapisać Cię na sesje w Twoim imieniu."
-"Jeśli chcesz uczestniczyć w naszych wydarzeniach, poproś rodzica lub "
-"opiekuna o utworzenie konta i zarejestrowanie Cię jako użytkownika "
-"powiązanego. Będą mogli zapisać Cię na sesje w Twoim imieniu."
+msgstr ""
+"aby założyć konto i zarejestrować Cię jako połączonego użytkownika. Będą "
+"mogli zapisać Cię na sesje w Twoim imieniu.Jeśli chcesz uczestniczyć w "
+"naszych wydarzeniach, poproś rodzica lub opiekuna o utworzenie konta i "
+"zarejestrowanie Cię jako użytkownika powiązanego. Będą mogli zapisać Cię na "
+"sesje w Twoim imieniu."
 
 #: src/ludamus/templates/crowd/user/under_age.html:30
 msgid "Return to Home"
@@ -2249,6 +2284,9 @@ msgstr "Brak dostępnych wydarzeń"
 #: src/ludamus/templates/index.html:72
 msgid "There are currently no events scheduled. Please check back later!"
 msgstr "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź ponownie później!"
+
+#~ msgid "Start Anonymous Enrollment"
+#~ msgstr "Rozpocznij Anonimowy Zapis"
 
 #~ msgid "Manage"
 #~ msgstr "Zarządzaj"
