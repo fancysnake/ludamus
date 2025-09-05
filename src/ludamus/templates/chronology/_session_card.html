@@ -87,29 +87,30 @@
             <div class="mt-auto">
                 <div class="d-flex gap-1 flex-column">
                     <!-- Primary enrollment action -->
-                    {% if not ended and data.session.is_enrollment_available and not data.should_show_as_inactive and request.user.is_authenticated %}
-                        {% if data.user_enrolled or data.user_waiting %}
-                            <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
-                               class="btn btn-warning btn-sm">
-                                {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
-                            </a>
-                        {% else %}
-                            {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                    {% if not ended and data.session.is_enrollment_available and not data.should_show_as_inactive %}
+                        {% if request.user.is_authenticated %}
+                            <!-- Authenticated user -->
+                            {% if data.user_enrolled or data.user_waiting %}
                                 <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
-                                   class="btn btn-success btn-sm">
-                                    {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
+                                   class="btn btn-warning btn-sm">
+                                    {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
-                                <button class="btn btn-outline-secondary btn-sm"
-                                        disabled
-                                        title="{% translate "Only connected users can enroll" %}">
-                                    {% bs_icon 'person-plus' %} {% translate "Enroll" %}
-                                </button>
+                                {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                    <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                       class="btn btn-success btn-sm">
+                                        {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-outline-secondary btn-sm"
+                                            disabled
+                                            title="{% translate "Only connected users can enroll" %}">
+                                        {% bs_icon 'person-plus' %} {% translate "Enroll" %}
+                                    </button>
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
-                    {% elif not ended and data.session.is_enrollment_available and not data.should_show_as_inactive %}
-                        {% if request.session.anonymous_enrollment_active %}
-                            <!-- Anonymous enrollment -->
+                        {% elif request.session.anonymous_enrollment_active %}
+                            <!-- Anonymous enrollment mode is active -->
                             {% if data.user_enrolled or data.user_waiting %}
                                 <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
                                    class="btn btn-warning btn-sm">
@@ -118,20 +119,15 @@
                             {% else %}
                                 <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
                                    class="btn btn-success btn-sm">
-                                    {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
+                                    {% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}
                                 </a>
                             {% endif %}
                         {% else %}
-                            <!-- Check if anonymous enrollment is allowed -->
-                            {% for config in event.get_active_enrollment_configs %}
-                                {% if config.allow_anonymous_enrollment %}
-                                    <a href="{% url 'web:anonymous-start' event_id=event.id %}"
-                                       class="btn btn-outline-success btn-sm">
-                                        {% bs_icon 'incognito' %} {% translate "Start Anonymous Enrollment" %}
-                                    </a>
-                                    {% if forloop.first %}{% endif %}
-                                {% endif %}
-                            {% endfor %}
+                            <!-- Not authenticated and no anonymous mode -->
+                            <a href="{% url 'web:login' %}?next={% url 'web:event' slug=event.slug %}"
+                               class="btn btn-primary btn-sm">
+                                {% bs_icon 'box-arrow-in-right' %} {% translate "Login to Enroll" %}
+                            </a>
                         {% endif %}
                     {% else %}
                         <button class="btn btn-outline-secondary btn-sm" disabled>
