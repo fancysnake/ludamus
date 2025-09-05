@@ -1,0 +1,58 @@
+{% load i18n %}
+<div class="col-12 col-lg-6 col-xl-4">
+    <div class="card h-100 session-card text-muted opacity-75"
+         data-title="{{ data.session.title|lower }}"
+         data-host="{{ data.session.presenter_name }}"
+         data-tags="{% for tag in data.session.tags.all %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
+         data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
+         data-status="{% if ended %}ended{% elif data.is_ongoing %}in-progress{% elif not data.session.is_enrollment_available %}unavailable{% elif data.session.is_full %}full{% else %}available{% endif %}"
+         data-debug-ended="{{ ended|yesno:'true,false' }}"
+         data-debug-is-ongoing="{{ data.is_ongoing|yesno:'true,false' }}"
+         data-debug-enrollment-available="{{ data.session.is_enrollment_available|yesno:'true,false' }}"
+         data-debug-is-full="{{ data.session.is_full|yesno:'true,false' }}"
+         data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
+         data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
+         data-min-age="{{ data.session.min_age }}">
+        <div class="card-body d-flex flex-column py-2">
+            <!-- Session Title (smaller) -->
+            <h6 class="card-title mb-1 small">{{ data.session.title }}</h6>
+            <!-- Session Metadata (condensed) -->
+            <div class="mb-1">
+                <small class="text-muted d-block">
+                    {% load bootstrap_icons %}
+                    {% bs_icon 'person-circle' %} {{ data.session.presenter_name|default:data.session.presenter_name }}
+                    {% if data.session.agenda_item.space %}
+                        | {% bs_icon 'geo-alt' %} {{ data.session.agenda_item.space.name }}
+                    {% endif %}
+                </small>
+            </div>
+            <!-- Status indicator -->
+            <div class="mt-auto d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    {% if ended %}
+                        {% bs_icon 'check-circle' %} {% translate "Completed" %}
+                    {% elif not data.session.is_enrollment_available %}
+                        {% bs_icon 'clock' %} {% translate "Not Yet Available" %}
+                    {% endif %}
+                </small>
+                <div class="btn-group" role="group">
+                    <!-- Participants button -->
+                    <button type="button"
+                            class="btn btn-outline-primary btn-sm p-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#participantsModal{{ data.session.id }}"
+                            title="{% translate 'View Participants' %}">
+                        {% bs_icon 'people' %}
+                        <small>{{ data.session.enrolled_count }}</small>
+                    </button>
+                    <!-- View details button -->
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm p-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#sessionDetailModal{{ data.session.id }}"
+                            title="{% translate 'Details' %}">{% bs_icon 'info-circle' %}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
