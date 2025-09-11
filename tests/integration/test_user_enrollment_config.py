@@ -3,7 +3,6 @@ from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import pytest
-from django.contrib.messages import get_messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
@@ -19,7 +18,8 @@ from tests.integration.conftest import AgendaItemFactory, SessionFactory, UserFa
 @pytest.mark.django_db
 class TestUserEnrollmentConfigModel:
 
-    def test_user_enrollment_config_creation(self, event):
+    @staticmethod
+    def test_user_enrollment_config_creation(event):
         # Create enrollment config with 50% slots and banner text
         now = datetime.now(tz=UTC)
         enrollment_config = EnrollmentConfig.objects.create(
@@ -38,13 +38,15 @@ class TestUserEnrollmentConfigModel:
         )
 
         assert user_config.user_email == "test@example.com"
-        assert user_config.allowed_slots == 2
+        allowed_slots = 2
+        assert user_config.allowed_slots == allowed_slots
         assert user_config.get_used_slots() == 0
-        assert user_config.get_available_slots() == 2
+        assert user_config.get_available_slots() == allowed_slots
         assert user_config.has_available_slots() is True
 
+    @staticmethod
     def test_user_enrollment_config_used_slots_calculation(
-        self, event, active_user, agenda_item
+        event, active_user, agenda_item
     ):
         # Set up user with email
         active_user.email = "test@example.com"
@@ -73,12 +75,14 @@ class TestUserEnrollmentConfigModel:
             status=SessionParticipationStatus.CONFIRMED,
         )
 
+        expected_available_slots_number = 2
         assert user_config.get_used_slots() == 1
-        assert user_config.get_available_slots() == 2
+        assert user_config.get_available_slots() == expected_available_slots_number
         assert user_config.has_available_slots() is True
 
+    @staticmethod
     def test_user_enrollment_config_with_connected_users(
-        self, event, active_user, agenda_item
+        event, active_user, agenda_item
     ):
         # Set up main user with email
         active_user.email = "manager@example.com"
@@ -120,7 +124,8 @@ class TestUserEnrollmentConfigModel:
             status=SessionParticipationStatus.CONFIRMED,
         )
 
-        assert user_config.get_used_slots() == 2
+        expected_used_slots_number = 2
+        assert user_config.get_used_slots() == expected_used_slots_number
         assert user_config.get_available_slots() == 0
         assert (
             user_config.has_available_slots() is True
@@ -129,7 +134,8 @@ class TestUserEnrollmentConfigModel:
             user_config.can_enroll_users([connected_user2]) is False
         )  # Cannot enroll more users
 
-    def test_event_get_user_enrollment_config(self, event):
+    @staticmethod
+    def test_event_get_user_enrollment_config(event):
         # Create enrollment config with 50% slots
         now = datetime.now(tz=UTC)
         enrollment_config = EnrollmentConfig.objects.create(
@@ -140,16 +146,17 @@ class TestUserEnrollmentConfigModel:
         )
 
         # Create user enrollment config
+        allowed_slots = 2
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email="test@example.com",
-            allowed_slots=2,
+            allowed_slots=allowed_slots,
         )
 
         # Test getting existing config
         user_config = event.get_user_enrollment_config("test@example.com")
-        assert user_config is not None
-        assert user_config.allowed_slots == 2
+        assert user_config
+        assert user_config.allowed_slots == allowed_slots
 
         # Test getting non-existing config
         non_existing_config = event.get_user_enrollment_config(
@@ -157,7 +164,8 @@ class TestUserEnrollmentConfigModel:
         )
         assert non_existing_config is None
 
-    def test_user_enrollment_config_str_representation(self, event):
+    @staticmethod
+    def test_user_enrollment_config_str_representation(event):
         # Create enrollment config
         now = datetime.now(tz=UTC)
         enrollment_config = EnrollmentConfig.objects.create(
@@ -178,7 +186,8 @@ class TestUserEnrollmentConfigModel:
         expected_str = "test.user@example.com: 3 people enrollment limit"
         assert str(user_config) == expected_str
 
-    def test_user_enrollment_config_str_with_different_values(self, event):
+    @staticmethod
+    def test_user_enrollment_config_str_with_different_values(event):
         # Create enrollment config
         now = datetime.now(tz=UTC)
         enrollment_config = EnrollmentConfig.objects.create(
@@ -199,7 +208,8 @@ class TestUserEnrollmentConfigModel:
         expected_str = "another.user@company.org: 1 people enrollment limit"
         assert str(user_config) == expected_str
 
-    def test_user_enrollment_config_str_with_zero_slots(self, event):
+    @staticmethod
+    def test_user_enrollment_config_str_with_zero_slots(event):
         # Create enrollment config
         now = datetime.now(tz=UTC)
         enrollment_config = EnrollmentConfig.objects.create(
@@ -332,7 +342,6 @@ class TestUserEnrollmentConfigView:
             allowed_slots=1,
         )
 
-        # Try to enroll both users (should fail with form validation error due to slot limit)
         response = authenticated_client.post(
             self._get_url(agenda_item.session.pk),
             data={
@@ -358,9 +367,8 @@ class TestUserEnrollmentConfigView:
             status=SessionParticipationStatus.CONFIRMED,
         ).exists()
 
-    def test_50_percent_enrollment_config_limits_session_capacity(
-        self, agenda_item, event
-    ):
+    @staticmethod
+    def test_50_percent_enrollment_config_limits_session_capacity(agenda_item, event):
         # Set up session with 10 participants limit
         session = agenda_item.session
         session.participants_limit = 10
@@ -515,7 +523,6 @@ class TestUserEnrollmentConfigView:
         }
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
 
-        # Verify user was enrolled normally (same person can enroll in multiple sessions)
         participation = SessionParticipation.objects.get(
             session=agenda_item.session, user=active_user
         )
@@ -722,7 +729,7 @@ class TestUserEnrollmentConfigView:
 
         # Create enrollment config with waitlist DISABLED
         now = datetime.now(tz=UTC)
-        enrollment_config = EnrollmentConfig.objects.create(
+        EnrollmentConfig.objects.create(
             event=event,
             start_time=now - timedelta(hours=1),
             end_time=now + timedelta(days=30),
@@ -755,7 +762,7 @@ class TestUserEnrollmentConfigView:
 
         # Create enrollment config with very limited waitlist
         now = datetime.now(tz=UTC)
-        enrollment_config = EnrollmentConfig.objects.create(
+        EnrollmentConfig.objects.create(
             event=event,
             start_time=now - timedelta(hours=1),
             end_time=now + timedelta(days=30),
@@ -939,7 +946,7 @@ class TestUserEnrollmentConfigView:
 
         # Create enrollment config
         now = datetime.now(tz=UTC)
-        enrollment_config = EnrollmentConfig.objects.create(
+        EnrollmentConfig.objects.create(
             event=event,
             start_time=now - timedelta(hours=1),
             end_time=now + timedelta(days=30),
@@ -995,11 +1002,11 @@ class TestUserEnrollmentConfigView:
         # Create multiple sessions to have various participations
         session1 = agenda_item.session
         session2 = SessionFactory()
-        agenda_item2 = AgendaItemFactory(session=session2, space=agenda_item.space)
+        AgendaItemFactory(session=session2, space=agenda_item.space)
 
         # Create enrollment config
         now = datetime.now(tz=UTC)
-        enrollment_config = EnrollmentConfig.objects.create(
+        EnrollmentConfig.objects.create(
             event=event,
             start_time=now - timedelta(hours=1),
             end_time=now + timedelta(days=30),
@@ -1041,13 +1048,14 @@ class TestUserEnrollmentConfigView:
 
         # Should have data for all users (main + connected)
         # This exercises lines 549->551 and 734->736 for dictionary initialization
-        assert len(user_data) == 3  # active_user + 2 connected users
+        expected_user_data_number = 3
+        assert (
+            len(user_data) == expected_user_data_number
+        )  # active_user + 2 connected users
 
     def test_restrict_to_configured_users_enabled(
         self, active_user, authenticated_client, agenda_item, event
     ):
-        # Test that connected users cannot enroll when their manager has no UserEnrollmentConfig
-
         # Set up users - active_user will NOT have UserEnrollmentConfig
         active_user.email = "manager-no-config@example.com"
         active_user.save()
@@ -1125,7 +1133,7 @@ class TestUserEnrollmentConfigView:
 
         # Create enrollment config without restriction (default False)
         now = datetime.now(tz=UTC)
-        enrollment_config = EnrollmentConfig.objects.create(
+        EnrollmentConfig.objects.create(
             event=event,
             start_time=now - timedelta(hours=1),
             end_time=now + timedelta(days=30),
@@ -1311,15 +1319,12 @@ class TestUserEnrollmentConfigView:
         )
         assert response.status_code == HTTPStatus.FOUND
 
-        print("mSG", list(get_messages(response.wsgi_request)))
-
         # Verify enrolled in first session
         participation1 = SessionParticipation.objects.get(
             session=session1, user=active_user
         )
         assert participation1.status == SessionParticipationStatus.CONFIRMED
 
-        # Enroll in second session - should ALSO succeed (same person, different session)
         response = authenticated_client.post(
             self._get_url(agenda_item2.session.pk),
             data={f"user_{active_user.id}": "enroll"},

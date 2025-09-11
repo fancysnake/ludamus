@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -6,6 +6,7 @@ from django.db import connection
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    EnrollmentConfig,
     Proposal,
     Session,
     SessionParticipation,
@@ -20,6 +21,7 @@ from ludamus.adapters.web.django.forms import (
     create_session_proposal_form,
     get_tag_data_from_form,
 )
+from tests.integration.conftest import AgendaItemFactory, SessionFactory
 
 
 class TestGetTagDataFromForm:
@@ -324,9 +326,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_age_requirement_met(agenda_item, active_user, faker):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -365,9 +364,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_no_age_restriction(agenda_item, active_user, faker):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -406,9 +402,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_multiple_users_with_different_ages(agenda_item, active_user, faker):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -457,9 +450,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_user_on_waiting_list(agenda_item, active_user):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -501,9 +491,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_user_with_unknown_participation_status(agenda_item, active_user):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -559,9 +546,6 @@ class TestCreateEnrollmentForm:
     def test_user_with_unknown_participation_status_and_conflict(
         agenda_item, active_user
     ):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -616,9 +600,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_confirmed_user_can_join_waitlist(agenda_item, active_user):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -656,9 +637,6 @@ class TestCreateEnrollmentForm:
     def test_confirmed_user_cannot_join_waitlist_when_disabled(
         agenda_item, active_user
     ):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -694,9 +672,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_waiting_user_can_enroll_when_enrollment_active(agenda_item, active_user):
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -755,10 +730,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_user_with_time_conflict_and_waitlist_enabled(agenda_item, active_user):
-        from datetime import UTC, datetime, timedelta
-        from unittest.mock import patch
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -791,10 +762,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_user_with_time_conflict_and_waitlist_disabled(agenda_item, active_user):
-        from datetime import UTC, datetime, timedelta
-        from unittest.mock import patch
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -827,9 +794,6 @@ class TestCreateEnrollmentForm:
     @pytest.mark.django_db
     @staticmethod
     def test_user_no_enrollment_no_waitlist_no_conflict(agenda_item, active_user):
-        """Test user with no participation, no enrollment config, no waitlist, no conflicts.
-        This covers the case where only 'No change' option is available."""
-
         session = agenda_item.session
 
         # No enrollment config created - so can_enroll returns False
@@ -856,10 +820,6 @@ class TestCreateEnrollmentForm:
     @staticmethod
     def test_user_enrollment_active_but_waitlist_full(agenda_item, active_user):
         """Test user who can enroll but waitlist is at capacity."""
-        from datetime import UTC, datetime, timedelta
-
-        from ludamus.adapters.db.django.models import EnrollmentConfig
-        from tests.integration.conftest import AgendaItemFactory, SessionFactory
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -875,15 +835,13 @@ class TestCreateEnrollmentForm:
         )
 
         # Create another user to fill the waitlist slot
-        other_user = User.objects.create(
+        User.objects.create(
             username="other_user", slug="other-user", birth_date=active_user.birth_date
         )
 
         # Fill the waitlist with other user in a different session
         other_session = SessionFactory()
-        other_agenda_item = AgendaItemFactory(
-            session=other_session, space=agenda_item.space
-        )
+        AgendaItemFactory(session=other_session, space=agenda_item.space)
         SessionParticipation.objects.create(
             session=other_session,
             user=active_user,  # Active user uses up their 1 waitlist slot

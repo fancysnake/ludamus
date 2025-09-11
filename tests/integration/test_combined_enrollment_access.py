@@ -47,16 +47,17 @@ class TestCombinedEnrollmentAccess:
     def test_individual_access_only(self):
         """Test user with only individual access."""
         # Create individual user config
+        allowed_slots = 5
         UserEnrollmentConfig.objects.create(
             enrollment_config=self.enrollment_config,
             user_email="user@example.com",
-            allowed_slots=5,
+            allowed_slots=allowed_slots,
         )
 
         config = self.event.get_user_enrollment_config("user@example.com")
 
         assert config is not None
-        assert config.allowed_slots == 5
+        assert config.allowed_slots == allowed_slots
         assert config.has_individual_access() is True
         assert config.has_domain_access() is False
         assert config.is_combined_access() is False
@@ -65,16 +66,17 @@ class TestCombinedEnrollmentAccess:
     def test_domain_access_only(self):
         """Test user with only domain access."""
         # Create domain config
+        allowed_slots_per_user = 3
         DomainEnrollmentConfig.objects.create(
             enrollment_config=self.enrollment_config,
             domain="company.com",
-            allowed_slots_per_user=3,
+            allowed_slots_per_user=allowed_slots_per_user,
         )
 
         config = self.event.get_user_enrollment_config("user@company.com")
 
         assert config is not None
-        assert config.allowed_slots == 3
+        assert config.allowed_slots == allowed_slots_per_user
         assert config.has_individual_access() is False
         assert config.has_domain_access() is True
         assert config.is_combined_access() is False
@@ -101,7 +103,8 @@ class TestCombinedEnrollmentAccess:
 
         assert config is not None
         # Should sum individual (5) + domain (3) = 8 slots
-        assert config.allowed_slots == 8
+        expected_allowed_slots = 8
+        assert config.allowed_slots == expected_allowed_slots
         assert config.has_individual_access() is True
         assert config.has_domain_access() is True
         assert config.is_combined_access() is True
@@ -109,7 +112,6 @@ class TestCombinedEnrollmentAccess:
         assert config.get_source_domain() == "company.com"
 
     def test_multiple_individual_configs(self):
-        """Test user with multiple individual configs across different enrollment configs."""
         # Create second enrollment config for same event
         now = datetime.now(UTC)
         enrollment_config2 = EnrollmentConfig.objects.create(
@@ -135,7 +137,8 @@ class TestCombinedEnrollmentAccess:
 
         assert config is not None
         # Should sum both individual configs: 5 + 3 = 8
-        assert config.allowed_slots == 8
+        expected_allowed_slots = 8
+        assert config.allowed_slots == expected_allowed_slots
         assert config.has_individual_access() is True
         assert config.has_domain_access() is False
         assert config.is_combined_access() is True
@@ -148,10 +151,11 @@ class TestCombinedEnrollmentAccess:
     def test_domain_normalization(self):
         """Test that domain matching works with different email formats."""
         # Create domain config
+        allowed_slots_per_user = 3
         DomainEnrollmentConfig.objects.create(
             enrollment_config=self.enrollment_config,
             domain="company.com",
-            allowed_slots_per_user=3,
+            allowed_slots_per_user=allowed_slots_per_user,
         )
 
         # Test with different email formats
@@ -160,5 +164,5 @@ class TestCombinedEnrollmentAccess:
 
         assert config1 is not None
         assert config2 is not None
-        assert config1.allowed_slots == 3
-        assert config2.allowed_slots == 3
+        assert config1.allowed_slots == allowed_slots_per_user
+        assert config2.allowed_slots == allowed_slots_per_user

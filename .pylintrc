@@ -478,9 +478,17 @@ disable=consider-using-assignment-expr,
         too-many-statements, # REMOVE
         unsubscriptable-object,
         duplicate-code, # REMOVE
+        confusing-consecutive-elif, # REMOVE
+        broad-exception-caught, # REMOVE
+        simplify-boolean-expression, # REMOVE
+        docstring-first-line-empty,
+        attribute-defined-outside-init,
         # Handled by ruff
         unused-argument,
-        protected-access
+        protected-access,
+        import-outside-toplevel,
+        too-many-public-methods,
+        no-self-use
 
 
 # Enable the message, report, category or checker with the given id(s). You can

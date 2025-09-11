@@ -16,45 +16,50 @@ from ludamus.adapters.external.membership_api import (
 @pytest.mark.django_db
 class TestMembershipApiClient:
 
+    @staticmethod
     @override_settings(
         MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
-    def test_api_configured_correctly(self):
+    def test_api_configured_correctly():
         client = MembershipApiClient()
         assert client.is_configured()
         assert client.base_url == "https://api.example.com/membership"
         assert client.token == "test-token-123"
 
+    @staticmethod
     @override_settings(MEMBERSHIP_API_BASE_URL=None, MEMBERSHIP_API_TOKEN="test-token")
-    def test_api_not_configured_missing_url(self):
+    def test_api_not_configured_missing_url():
         client = MembershipApiClient()
         assert not client.is_configured()
 
+    @staticmethod
     @override_settings(
         MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN=None,
     )
-    def test_api_not_configured_missing_token(self):
+    def test_api_not_configured_missing_token():
         client = MembershipApiClient()
         assert not client.is_configured()
 
+    @staticmethod
     @override_settings(
         MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
-    def test_fetch_membership_count_success(self, mock_get):
+    def test_fetch_membership_count_success(mock_get):
         # Mock successful API response
         mock_response = Mock()
-        mock_response.json.return_value = {"membership_count": 3}
+        membership_count = 3
+        mock_response.json.return_value = {"membership_count": membership_count}
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
         client = MembershipApiClient()
         result = client.fetch_membership_count("test@example.com")
 
-        assert result == 3
+        assert result == membership_count
         mock_get.assert_called_once_with(
             "https://api.example.com/membership",
             params={"email": "test@example.com"},
@@ -62,12 +67,13 @@ class TestMembershipApiClient:
             timeout=30,
         )
 
+    @staticmethod
     @override_settings(
         MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
-    def test_fetch_membership_count_zero(self, mock_get):
+    def test_fetch_membership_count_zero(mock_get):
         # Mock API response with zero membership
         mock_response = Mock()
         mock_response.json.return_value = {"membership_count": 0}
@@ -79,12 +85,13 @@ class TestMembershipApiClient:
 
         assert result == 0
 
+    @staticmethod
     @override_settings(
         MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
-    def test_fetch_membership_count_api_error(self, mock_get):
+    def test_fetch_membership_count_api_error(mock_get):
         # Mock API error
         mock_get.side_effect = Exception("API Error")
 
@@ -93,12 +100,13 @@ class TestMembershipApiClient:
 
         assert result is None
 
+    @staticmethod
     @override_settings(
         MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
         MEMBERSHIP_API_TOKEN="test-token-123",
     )
     @patch("requests.get")
-    def test_fetch_membership_count_invalid_response(self, mock_get):
+    def test_fetch_membership_count_invalid_response(mock_get):
         # Mock invalid API response
         mock_response = Mock()
         mock_response.json.return_value = {"invalid": "response"}
@@ -114,7 +122,8 @@ class TestMembershipApiClient:
 @pytest.mark.django_db
 class TestGetOrCreateUserEnrollmentConfig:
 
-    def test_existing_config_returned(self, event):
+    @staticmethod
+    def test_existing_config_returned(event):
         # Create enrollment config and user config
         now = datetime.now(tz=UTC)
         enrollment_config = EnrollmentConfig.objects.create(
@@ -136,7 +145,8 @@ class TestGetOrCreateUserEnrollmentConfig:
         )
         assert result == existing_config
 
-    def test_api_not_configured(self, event):
+    @staticmethod
+    def test_api_not_configured(event):
         # Test when API is not configured
         now = datetime.now(tz=UTC)
         enrollment_config = EnrollmentConfig.objects.create(
@@ -179,7 +189,8 @@ class TestGetOrCreateUserEnrollmentConfig:
         # Should create and return user config
         assert result is not None
         assert result.user_email == "member@example.com"
-        assert result.allowed_slots == 3  # min(3, 5) = 3
+        expected_allowed_slots_number = 3
+        assert result.allowed_slots == expected_allowed_slots_number  # min(3, 5) = 3
         assert result.fetched_from_api is True
 
     @override_settings(
@@ -245,7 +256,8 @@ class TestGetOrCreateUserEnrollmentConfig:
         assert placeholder_config.allowed_slots == 0
         assert placeholder_config.fetched_from_api is True
 
-    def test_already_fetched_from_api_not_retried(self, event):
+    @staticmethod
+    def test_already_fetched_from_api_not_retried(event):
         # Create existing API-fetched config
         now = datetime.now(tz=UTC)
         enrollment_config = EnrollmentConfig.objects.create(
@@ -297,5 +309,6 @@ class TestGetOrCreateUserEnrollmentConfig:
 
         # Should cap at 5 slots maximum
         assert result is not None
-        assert result.allowed_slots == 5  # min(10, 5) = 5
+        expected_allowed_slots_number = 5
+        assert result.allowed_slots == expected_allowed_slots_number  # min(10, 5) = 5
         assert result.fetched_from_api is True

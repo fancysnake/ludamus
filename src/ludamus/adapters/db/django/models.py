@@ -233,7 +233,7 @@ class Event(models.Model):
     def get_user_enrollment_config(
         self, user_email: str
     ) -> UserEnrollmentConfig | None:
-        from ludamus.adapters.external.membership_api import (
+        from ludamus.adapters.external.membership_api import (  # noqa: PLC0415
             get_or_create_user_enrollment_config,
         )
 
@@ -297,18 +297,20 @@ class Event(models.Model):
                 ),
             )
             # Mark as combined access
-            combined_config._is_combined_access = True
-            combined_config._has_individual_config = has_individual_config
-            combined_config._has_domain_config = has_domain_config
-            combined_config._domain_config_source = domain_config_source
+            combined_config._is_combined_access = True  # noqa: SLF001
+            combined_config._has_individual_config = (  # noqa: SLF001
+                has_individual_config
+            )
+            combined_config._has_domain_config = has_domain_config  # noqa: SLF001
+            combined_config._domain_config_source = domain_config_source  # noqa: SLF001
             return combined_config
 
         return primary_config
 
+    @staticmethod
     def get_domain_config_for_email(
-        self, user_email: str, enrollment_config: EnrollmentConfig
+        user_email: str, enrollment_config: EnrollmentConfig
     ) -> DomainEnrollmentConfig | None:
-        """Find domain config that matches the user's email domain."""
         if not user_email or "@" not in user_email:
             return None
 
@@ -317,11 +319,10 @@ class Event(models.Model):
         return enrollment_config.domain_configs.filter(domain=email_domain).first()
 
     def has_domain_access(self, user_email: str) -> bool:
-        """Check if user has domain-based enrollment access."""
-        for config in self.get_active_enrollment_configs():
-            if self.get_domain_config_for_email(user_email, config):
-                return True
-        return False
+        return any(
+            self.get_domain_config_for_email(user_email, config)
+            for config in self.get_active_enrollment_configs()
+        )
 
 
 class EnrollmentConfig(models.Model):
@@ -345,11 +346,16 @@ class EnrollmentConfig(models.Model):
     )
     max_waitlist_sessions = models.PositiveIntegerField(
         default=10,
-        help_text="Maximum number of sessions a user can join waitlist for (0 = waitlist disabled)",
+        help_text=(
+            "Maximum number of sessions a user can join waitlist for "
+            "(0 = waitlist disabled)"
+        ),
     )
     restrict_to_configured_users = models.BooleanField(
         default=False,
-        help_text="Only allow users with explicit UserEnrollmentConfig entries to enroll",
+        help_text=(
+            "Only allow users with explicit UserEnrollmentConfig entries to enroll"
+        ),
     )
     allow_anonymous_enrollment = models.BooleanField(
         default=False,
@@ -411,7 +417,10 @@ class UserEnrollmentConfig(models.Model):
         help_text="Email address of the user this configuration applies to"
     )
     allowed_slots = models.PositiveIntegerField(
-        help_text="Maximum number of users (including connected users) that can be enrolled by this account"
+        help_text=(
+            "Maximum number of users (including connected users) that can "
+            "be enrolled by this account"
+        )
     )
     fetched_from_api = models.BooleanField(
         default=False, help_text="Whether this config was fetched from external API"
@@ -419,6 +428,13 @@ class UserEnrollmentConfig(models.Model):
     last_check = models.DateTimeField(
         null=True, blank=True, help_text="Last time the membership was checked via API"
     )
+
+    _domain_config_source: DomainEnrollmentConfig | None
+    _has_domain_config: bool | None
+    _has_individual_config: bool | None
+    _is_domain_based: bool | None
+    _source_domain_config: DomainEnrollmentConfig | None
+    _is_combined_access: bool | None
 
     class Meta:
         db_table = "user_enrollment_config"
@@ -433,13 +449,6 @@ class UserEnrollmentConfig(models.Model):
         return f"{self.user_email}: {self.allowed_slots} people enrollment limit"
 
     def get_used_slots(self) -> int:
-        """
-        Get the number of user slots currently used.
-
-        Returns the count of unique users (main user + connected users) who have
-        at least one enrollment in this event. Each user counts as one slot
-        regardless of how many sessions they're enrolled in.
-        """
         try:
             user = User.objects.get(email=self.user_email)
         except User.DoesNotExist:
@@ -462,19 +471,12 @@ class UserEnrollmentConfig(models.Model):
         return len(users_with_enrollments)
 
     def get_available_slots(self) -> int:
-        """Get the number of remaining user slots that can be enrolled."""
         return max(0, self.allowed_slots - self.get_used_slots())
 
     def has_available_slots(self) -> bool:
-        """Check if user has been allocated any enrollment slots (not if they're available)."""
         return self.allowed_slots > 0
 
-    def can_enroll_users(self, users_to_enroll: list) -> bool:
-        """Check if enrolling these users would exceed the user slot limit.
-
-        Each unique user counts as one slot, regardless of how many sessions
-        they enroll in.
-        """
+    def can_enroll_users(self, users_to_enroll: list[User]) -> bool:
         try:
             user = User.objects.get(email=self.user_email)
         except User.DoesNotExist:
@@ -501,32 +503,31 @@ class UserEnrollmentConfig(models.Model):
         return len(total_enrolled) <= self.allowed_slots
 
     def is_domain_based(self) -> bool:
-        """Check if this is a domain-based virtual configuration."""
-        return hasattr(self, "_is_domain_based") and self._is_domain_based
+        return bool(hasattr(self, "_is_domain_based") and self._is_domain_based)
 
     def is_combined_access(self) -> bool:
-        """Check if this combines multiple access types."""
-        return hasattr(self, "_is_combined_access") and self._is_combined_access
+        return bool(hasattr(self, "_is_combined_access") and self._is_combined_access)
 
     def has_domain_access(self) -> bool:
-        """Check if this config includes domain-based access."""
-        return self.is_domain_based() or (
+        return self.is_domain_based() or bool(
             self.is_combined_access()
             and hasattr(self, "_has_domain_config")
             and self._has_domain_config
         )
 
     def has_individual_access(self) -> bool:
-        """Check if this config includes individual access."""
-        return (not self.is_domain_based() and not self.is_combined_access()) or (
+        return (not self.is_domain_based() and not self.is_combined_access()) or bool(
             self.is_combined_access()
             and hasattr(self, "_has_individual_config")
             and self._has_individual_config
         )
 
     def get_source_domain(self) -> str | None:
-        """Get the domain name if this configuration includes domain-based access."""
-        if self.is_domain_based() and hasattr(self, "_source_domain_config"):
+        if (
+            self.is_domain_based()
+            and hasattr(self, "_source_domain_config")
+            and self._source_domain_config is not None
+        ):
             return self._source_domain_config.domain
         if (
             self.is_combined_access()
@@ -545,7 +546,10 @@ class DomainEnrollmentConfig(models.Model):
         max_length=255, help_text="Domain name (e.g. 'company.com', 'university.edu')"
     )
     allowed_slots_per_user = models.PositiveIntegerField(
-        help_text="Default number of users (including connected users) that can be enrolled by accounts from this domain"
+        help_text=(
+            "Default number of users (including connected users) that can be enrolled "
+            "by accounts from this domain"
+        )
     )
 
     class Meta:
@@ -558,7 +562,10 @@ class DomainEnrollmentConfig(models.Model):
         )
 
     def __str__(self) -> str:
-        return f"@{self.domain}: {self.allowed_slots_per_user} people enrollment limit per account"
+        return (
+            f"@{self.domain}: {self.allowed_slots_per_user} people enrollment "
+            "limit per account"
+        )
 
     def clean(self) -> None:
         super().clean()
@@ -574,14 +581,12 @@ class DomainEnrollmentConfig(models.Model):
                 )
 
     def matches_email(self, email: str) -> bool:
-        """Check if the given email address belongs to this domain."""
         if not email or "@" not in email:
             return False
         email_domain = email.split("@")[1].lower()
         return email_domain == self.domain
 
     def create_virtual_user_config(self, user_email: str) -> UserEnrollmentConfig:
-        """Create a virtual UserEnrollmentConfig for a domain-matched user."""
         # This creates a non-persistent UserEnrollmentConfig object
         # that behaves like a regular config but represents domain access
         virtual_config = UserEnrollmentConfig(
@@ -591,8 +596,8 @@ class DomainEnrollmentConfig(models.Model):
             fetched_from_api=False,
         )
         # Mark it as domain-based so we can identify it later
-        virtual_config._is_domain_based = True
-        virtual_config._source_domain_config = self
+        virtual_config._is_domain_based = True  # noqa: SLF001
+        virtual_config._source_domain_config = self  # noqa: SLF001
         return virtual_config
 
 

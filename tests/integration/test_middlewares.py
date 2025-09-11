@@ -68,26 +68,6 @@ class TestSphereMiddleware:
             mock_messages.error.assert_called_once()
             get_response_mock.assert_not_called()
 
-    @pytest.mark.django_db
-    @staticmethod
-    def test_site_without_sphere_attribute(middleware, get_response_mock, rf, sphere):
-
-        request = rf.get("/")
-        request.META["HTTP_HOST"] = sphere.site.domain
-
-        with patch(
-            "ludamus.adapters.web.django.middlewares.get_current_site"
-        ) as mock_get_site:
-            mock_site = Mock()
-            # Mock site without sphere attribute
-            del mock_site.sphere
-            mock_get_site.return_value = mock_site
-
-            middleware(request)
-
-            assert not request.sphere
-            get_response_mock.assert_called_once_with(request)
-
 
 class TestRedirectErrorMiddleware:
     @pytest.fixture

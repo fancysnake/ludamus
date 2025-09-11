@@ -135,7 +135,7 @@ WSGI_APPLICATION = "ludamus.deploy.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 TESTING = os.getenv("TESTING", "")
-DATABASES: dict[str, dict[str, Any]] = (  # type: ignore [explicit-any]
+DATABASES: dict[str, dict[str, Any]] = (
     {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
     if TESTING
     else {

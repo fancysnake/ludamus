@@ -28,6 +28,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView, View
@@ -48,7 +49,6 @@ from ludamus.adapters.db.django.models import (
     Sphere,
     Tag,
     TimeSlot,
-    User,
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
@@ -90,9 +90,12 @@ def get_site_from_request(request: HttpRequest | None) -> Site:
     raise WrongSiteTypeError
 
 
-class UserRequest(HttpRequest):
+class SphereRequest(HttpRequest):
+    sphere: Sphere
+
+
+class UserRequest(SphereRequest):
     user: User
-    sphere: Sphere | None
 
 
 def login(request: HttpRequest) -> HttpResponse:
@@ -140,9 +143,7 @@ def auth0_login(request: HttpRequest) -> HttpResponse:
 
 class CallbackView(RedirectView):
 
-    def get_redirect_url(  # type: ignore [explicit-any]
-        self, *args: Any, **kwargs: Any
-    ) -> str | None:
+    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
         redirect_to = super().get_redirect_url(*args, **kwargs)
 
         # Validate state parameter
@@ -302,7 +303,8 @@ class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
     name = forms.CharField(
         label=_("User name"),
         help_text=_(
-            "Your public display name that others will see. This can be a nickname and does not need to be your legal name."
+            "Your public display name that others will see. This can be a nickname "
+            "and does not need to be your legal name."
         ),
         required=True,
     )
@@ -380,9 +382,7 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
     request: UserRequest
     object: User
 
-    def get_context_data(  # type: ignore [explicit-any]
-        self, **kwargs: Any
-    ) -> dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
 
         context = super().get_context_data(**kwargs)
         connected_users = [
@@ -461,7 +461,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
     template_name = "chronology/event.html"
     model = Event
     context_object_name = "event"
-    request: UserRequest
+    request: SphereRequest
 
     def get_queryset(self) -> QuerySet[Event]:
         return (
@@ -476,9 +476,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
             )
         )
 
-    def get_context_data(  # type: ignore [explicit-any]
-        self, **kwargs: Any
-    ) -> dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
         # Get all sessions for this event that are published
@@ -512,7 +510,6 @@ class EventView(DetailView):  # type: ignore [type-arg]
         # Get session data objects that include enrollment status
         sessions_data = self._get_session_data(event_sessions)
 
-        # Categorize sessions into ended, current (available or in progress), and future unavailable
         current_time = datetime.now(tz=UTC)
         ended_hour_data: dict[datetime, list[SessionData]] = defaultdict(list)
         current_hour_data: dict[datetime, list[SessionData]] = defaultdict(list)
@@ -529,7 +526,6 @@ class EventView(DetailView):  # type: ignore [type-arg]
             # Check if session has ended
             if session_end_time <= current_time:
                 ended_hour_data[hour_key].append(session_data)
-            # Check if session is not available for enrollment (future sessions blocked by limit_to_end_time)
             elif (
                 not session.is_enrollment_available
                 and session_start_time > current_time
@@ -579,7 +575,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
         ):
             # Load anonymous user data if in anonymous mode - validate site
             anonymous_user_id = self.request.session.get("anonymous_user_id")
-            current_site_id = get_current_site(self.request).id
+            current_site_id = self.request.sphere.site.id
             session_site_id = self.request.session.get("anonymous_site_id")
             if anonymous_user_id and session_site_id == current_site_id:
                 try:
@@ -691,11 +687,14 @@ class EventView(DetailView):  # type: ignore [type-arg]
             "anonymous_enrollment_active"
         ) and self.request.session.get("anonymous_user_id"):
             # Validate anonymous user is for the current site
-            current_site_id = get_current_site(self.request).id
+            current_site_id = self.request.sphere.site.id
             session_site_id = self.request.session.get("anonymous_site_id")
-            if session_site_id == current_site_id:
+            if (
+                session_site_id == current_site_id
+                and self.request.session.get("anonymous_user_id", "").isdigit()
+            ):
                 try:
-                    anonymous_user_id = self.request.session.get("anonymous_user_id")
+                    anonymous_user_id = int(self.request.session["anonymous_user_id"])
                     anonymous_user = User.objects.get(
                         id=anonymous_user_id, user_type=User.UserType.ANONYMOUS
                     )
@@ -778,14 +777,8 @@ class EventView(DetailView):  # type: ignore [type-arg]
             session_data.is_ongoing = session_start <= current_time
 
             # Mark sessions as inactive for display based on limit_to_end_time rules
-            if limit_configs and earliest_limit_end_time:
-                # Mark as inactive ONLY if:
-                # 1. Session has already started (is ongoing/lasting)
-                # Sessions starting before the config end_time but not yet started should remain available
-                if session_data.is_ongoing:
-                    session_data.should_show_as_inactive = True
-                # Sessions starting at or after the config end_time are already marked as
-                # not available by the backend's is_enrollment_available property
+            if limit_configs and earliest_limit_end_time and session_data.is_ongoing:
+                session_data.should_show_as_inactive = True
 
         # Set user participation data for authenticated users and anonymous users
         self._set_user_participations(sessions_data, event_sessions)
@@ -797,6 +790,7 @@ class EnrollmentChoice(StrEnum):
     CANCEL = auto()
     ENROLL = auto()
     WAITLIST = auto()
+    BLOCK = auto()
 
 
 @dataclass
@@ -974,10 +968,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 for error in field_errors:
                     if field_name == "__all__":
                         # Non-field errors don't need any prefix
-                        messages.error(self.request, error)
+                        messages.error(self.request, str(error))
                     else:
-                        # For field errors, just show the error message without field name
-                        messages.error(self.request, error)
+                        messages.error(self.request, str(error))
 
             # Check for specific enrollment restrictions and provide helpful messages
             enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
@@ -995,7 +988,8 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     messages.error(
                         self.request,
                         _(
-                            "Enrollment access permission is required for this session. Please contact the organizers to obtain access."
+                            "Enrollment access permission is required for this "
+                            "session. Please contact the organizers to obtain access."
                         ),
                     )
                 else:
@@ -1071,8 +1065,6 @@ class EnrollSelectView(LoginRequiredMixin, View):
             # This should rarely happen due to double-checking, but handle gracefully
             return enrollments  # Return empty enrollments
 
-        # Slot checking: X slots = X unique people, each person can enroll in multiple sessions
-        # Pre-validate batch enrollments to prevent enrolling too many different people
         if self.request.user.email and confirmed_requests:
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 self.request.user.email
@@ -1111,8 +1103,13 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
                     # Mark the blocked users' requests for skipping
                     for req in enrollment_requests:
-                        if req.choice == "enroll" and req.user in users_to_block:
-                            req.choice = "block"  # Special marker for blocking
+                        if (
+                            req.choice == EnrollmentChoice.ENROLL
+                            and req.user in users_to_block
+                        ):
+                            req.choice = (
+                                EnrollmentChoice.BLOCK
+                            )  # Special marker for blocking
 
         participations = SessionParticipation.objects.filter(session=session).order_by(
             "creation_time"
@@ -1257,7 +1254,11 @@ class EnrollSelectView(LoginRequiredMixin, View):
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 manager_user.email
             )
-            if enrollment_config.restrict_to_configured_users and user_config:
+            if (
+                enrollment_config
+                and enrollment_config.restrict_to_configured_users
+                and user_config
+            ):
                 # Get currently enrolled unique users across ALL sessions in this event
                 currently_enrolled_users = set(
                     SessionParticipation.objects.filter(
@@ -1269,15 +1270,14 @@ class EnrollSelectView(LoginRequiredMixin, View):
                     .distinct()
                 )
 
-                # Allow existing enrolled users to enroll in additional sessions
-                # Only block if this is a NEW user and would exceed the unique people limit
-                if req.user.id not in currently_enrolled_users:
-                    # This is a new user - check if adding them would exceed the slot limit
-                    if len(currently_enrolled_users) >= user_config.allowed_slots:
-                        enrollments.skipped_users.append(
-                            f"{req.name} ({_('no user slots available')!s})"
-                        )
-                        return
+                if (
+                    req.user.id not in currently_enrolled_users
+                    and len(currently_enrolled_users) >= user_config.allowed_slots
+                ):
+                    enrollments.skipped_users.append(
+                        f"{req.name} ({_('no user slots available')!s})"
+                    )
+                    return
 
         # Check for time conflicts for confirmed enrollment
         if req.choice == "enroll" and Session.objects.has_conflicts(session, req.user):
@@ -1606,7 +1606,6 @@ def _get_proposal(request: UserRequest, proposal_id: int) -> Proposal:
 
 
 def _check_proposal_permission(user: User, proposal: Proposal) -> bool:
-    """Check if user has permission to accept proposals for this event."""
     if user.is_superuser or user.is_staff:
         return True
 
@@ -1765,7 +1764,7 @@ class ThemeSelectionView(View):
 
 
 class ActivateAnonymousEnrollmentView(View):
-    def get(self, request: UserRequest, event_id: int) -> HttpResponse:
+    def get(self, request: SphereRequest, event_id: int) -> HttpResponse:
         # Redirect to event page if user is authenticated (not anonymous)
         if request.user.is_authenticated:
             return redirect("web:event", slug=self._get_event_slug(event_id))
@@ -1804,11 +1803,12 @@ class ActivateAnonymousEnrollmentView(View):
         request.session["anonymous_user_id"] = anonymous_user.id
         request.session["anonymous_enrollment_active"] = True
         request.session["anonymous_event_id"] = event_id
-        request.session["anonymous_site_id"] = get_current_site(request).id
+        request.session["anonymous_site_id"] = request.sphere.site.id
 
         return redirect("web:event", slug=event.slug)
 
-    def _get_event_slug(self, event_id: int) -> str:
+    @staticmethod
+    def _get_event_slug(event_id: int) -> str:
         try:
             return Event.objects.get(id=event_id).slug
         except Event.DoesNotExist:
@@ -1816,7 +1816,8 @@ class ActivateAnonymousEnrollmentView(View):
 
 
 class AnonymousEnrollView(View):
-    def get(self, request: UserRequest, session_id: int) -> HttpResponse:
+    @staticmethod
+    def get(request: SphereRequest, session_id: int) -> HttpResponse:
         # Redirect to regular enrollment if user is authenticated
         if request.user.is_authenticated:
             return redirect("web:enroll-select", session_id=session_id)
@@ -1827,7 +1828,7 @@ class AnonymousEnrollView(View):
             return redirect("web:index")
 
         # Check if anonymous user is for the current site
-        current_site_id = get_current_site(request).id
+        current_site_id = request.sphere.site.id
         session_site_id = request.session.get("anonymous_site_id")
         if session_site_id != current_site_id:
             messages.error(
@@ -1875,7 +1876,8 @@ class AnonymousEnrollView(View):
 
         return TemplateResponse(request, "chronology/anonymous_enroll.html", context)
 
-    def post(self, request: UserRequest, session_id: int) -> HttpResponse:
+    @staticmethod
+    def post(request: SphereRequest, session_id: int) -> HttpResponse:
         # Redirect to regular enrollment if user is authenticated
         if request.user.is_authenticated:
             return redirect("web:enroll-select", session_id=session_id)
@@ -1886,7 +1888,7 @@ class AnonymousEnrollView(View):
             return redirect("web:index")
 
         # Check if anonymous user is for the current site
-        current_site_id = get_current_site(request).id
+        current_site_id = request.sphere.site.id
         session_site_id = request.session.get("anonymous_site_id")
         if session_site_id != current_site_id:
             messages.error(
@@ -1926,9 +1928,11 @@ class AnonymousEnrollView(View):
 
         if birth_date_str:
             try:
-                anonymous_user.birth_date = datetime.strptime(
-                    birth_date_str, "%Y-%m-%d"
-                ).date()
+                anonymous_user.birth_date = (
+                    datetime.strptime(birth_date_str, "%Y-%m-%d")
+                    .replace(tzinfo=UTC)
+                    .date()
+                )
             except ValueError:
                 messages.error(request, _("Invalid birth date format."))
                 return redirect("web:anonymous-enroll", session_id=session_id)
@@ -1944,12 +1948,13 @@ class AnonymousEnrollView(View):
 
         # Check age requirement
         if session.min_age > 0:
-            age = (datetime.now().date() - anonymous_user.birth_date).days // 365
+            age = (timezone.now().date() - anonymous_user.birth_date).days // 365
             if age < session.min_age:
                 messages.error(
                     request,
                     _(
-                        "You must be at least %(min_age)s years old to enroll in this session."
+                        "You must be at least %(min_age)s years old to enroll "
+                        "in this session."
                     )
                     % {"min_age": session.min_age},
                 )
@@ -1980,7 +1985,8 @@ class AnonymousEnrollView(View):
                 messages.error(
                     request,
                     _(
-                        "Cannot enroll: You are already enrolled in another session that conflicts with this time slot."
+                        "Cannot enroll: You are already enrolled in another session "
+                        "that conflicts with this time slot."
                     ),
                 )
                 return redirect("web:anonymous-enroll", session_id=session_id)
@@ -2002,7 +2008,8 @@ class AnonymousEnrollView(View):
                 messages.success(
                     request,
                     _(
-                        "Session is full. You have been added to the waiting list for: %(title)s"
+                        "Session is full. You have been added to the waiting list "
+                        "for: %(title)s"
                     )
                     % {"title": session.title},
                 )
@@ -2033,7 +2040,8 @@ class AnonymousEnrollView(View):
 class AnonymousCodeEntryView(View):
     """Handle entering an anonymous code to load a previous session"""
 
-    def post(self, request: UserRequest) -> HttpResponse:
+    @staticmethod
+    def post(request: HttpRequest) -> HttpResponse:
         # Only accessible to non-authenticated users
         if request.user.is_authenticated:
             return redirect("web:index")
@@ -2066,12 +2074,11 @@ class AnonymousCodeEntryView(View):
             user=anonymous_user
         ).select_related("session__agenda_item__space__event", "session__sphere")
 
-        if not enrollments:
+        if not (first_enrollment := enrollments.first()):
             messages.warning(request, _("No enrollments found for this code."))
             return redirect("web:index")
 
         # Get the first enrollment to determine the event and site
-        first_enrollment = enrollments.first()
         event = first_enrollment.session.agenda_item.space.event
         site_id = first_enrollment.session.sphere.site_id
 
@@ -2088,7 +2095,8 @@ class AnonymousCodeEntryView(View):
 
 
 class AnonymousResetView(View):
-    def get(self, request: UserRequest) -> HttpResponse:
+    @staticmethod
+    def get(request: UserRequest) -> HttpResponse:
         event_id = request.session.get("anonymous_event_id")
 
         # If 'finish=1' parameter, create new anonymous user with new code
@@ -2121,7 +2129,9 @@ class AnonymousResetView(View):
 
 
 @receiver(user_logged_in)
-def clear_anonymous_session_on_login(sender, request, user, **kwargs):
+def clear_anonymous_session_on_login(  # type: ignore [misc]  # Django
+    request: HttpRequest, **kwargs: Any  # noqa: ARG001
+) -> None:
     """Clear anonymous enrollment session data when a user logs in."""
     if hasattr(request, "session"):
         request.session.pop("anonymous_user_id", None)
