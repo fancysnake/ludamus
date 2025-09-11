@@ -85,7 +85,7 @@ check = [
     "mypy",
     "djlint",
     "djlint-format",
-    # "pylint",
+    "pylint",
 ]
 prcheck = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint"]
 update = [
