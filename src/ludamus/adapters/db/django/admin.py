@@ -103,7 +103,6 @@ class EnrollmentConfigAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
         "allow_anonymous_enrollment",
         "event",
     )
-    list_filter = ("restrict_to_configured_users", "event")
     fields = (
         "event",
         "start_time",

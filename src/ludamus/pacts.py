@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class ProposalCategoryDTO(BaseModel):  # type: ignore [explicit-any]
+class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     end_time: datetime | None
@@ -15,7 +15,7 @@ class ProposalCategoryDTO(BaseModel):  # type: ignore [explicit-any]
     start_time: datetime | None
 
 
-class TagCategoryDTO(BaseModel):  # type: ignore [explicit-any]
+class TagCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     icon: str
@@ -24,7 +24,7 @@ class TagCategoryDTO(BaseModel):  # type: ignore [explicit-any]
     pk: int
 
 
-class TagDTO(BaseModel):  # type: ignore [explicit-any]
+class TagDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     confirmed: bool

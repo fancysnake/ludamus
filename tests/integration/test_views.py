@@ -842,7 +842,8 @@ class TestEnrollSelectView:
         }
         # Should have both an error message from form validation and a warning message
         msgs = list(get_messages(response.wsgi_request))
-        assert len(msgs) == 2
+        expected_messages_number = 2
+        assert len(msgs) == expected_messages_number
         assert msgs[0].level == messages.ERROR  # Form validation error
         assert (
             msgs[1].level == messages.WARNING
@@ -989,7 +990,8 @@ class TestEnrollSelectView:
         }
         # Should have both an error message from form validation and a warning message
         msgs = list(get_messages(response.wsgi_request))
-        assert len(msgs) == 2
+        expected_messages_number = 2
+        assert len(msgs) == expected_messages_number
         assert msgs[0].level == messages.ERROR  # Form validation error
         assert (
             msgs[1].level == messages.WARNING
