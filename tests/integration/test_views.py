@@ -34,8 +34,6 @@ from ludamus.adapters.web.django.views import (
     CallbackView,
     Enrollments,
     EnrollSelectView,
-    WrongSiteTypeError,
-    get_site_from_request,
 )
 from tests.integration.conftest import (
     AgendaItemFactory,
@@ -278,7 +276,7 @@ class TestCallbackView:
     def test_invalid_authentication_state_keyerror(rf, sphere):
 
         request = rf.get("/callback", {"state": "test_token"})
-        request.sphere = sphere
+        request.root_dao = Mock(current_sphere=sphere)
 
         view = CallbackView()
         view.request = request
@@ -300,7 +298,7 @@ class TestCallbackView:
     def test_invalid_authentication_state_valueerror(rf, sphere):
 
         request = rf.get("/callback", {"state": "test_token"})
-        request.sphere = sphere
+        request.root_dao = Mock(current_sphere=sphere)
 
         view = CallbackView()
         view.request = request
@@ -1455,52 +1453,6 @@ class TestAcceptProposalView:
         assert session.agenda_item.start_time == time_slot.start_time
         assert session.agenda_item.end_time == time_slot.end_time
         assert session.proposal == proposal
-
-
-class TestGetSiteFromRequest:
-
-    @staticmethod
-    def test_valid_site_returns_site(rf, sphere):
-
-        request = rf.get("/")
-
-        with patch(
-            "ludamus.adapters.web.django.views.get_current_site"
-        ) as mock_get_site:
-            mock_get_site.return_value = sphere.site
-
-            result = get_site_from_request(request)
-
-            assert result == sphere.site
-            mock_get_site.assert_called_once_with(request)
-
-    @staticmethod
-    def test_non_site_object_raises_wrong_site_type_error(rf):
-
-        request = rf.get("/")
-
-        with patch(
-            "ludamus.adapters.web.django.views.get_current_site"
-        ) as mock_get_site:
-            mock_get_site.return_value = "not_a_site_instance"
-
-            with pytest.raises(WrongSiteTypeError):
-                get_site_from_request(request)
-
-            mock_get_site.assert_called_once_with(request)
-
-    @staticmethod
-    def test_none_request_passes_to_get_current_site():
-
-        with patch(
-            "ludamus.adapters.web.django.views.get_current_site"
-        ) as mock_get_site:
-            mock_get_site.return_value = {"fake": "site"}
-
-            with pytest.raises(WrongSiteTypeError):
-                get_site_from_request(None)
-
-            mock_get_site.assert_called_once_with(None)
 
 
 class TestThemeSelectionView:

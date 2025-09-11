@@ -1,19 +1,14 @@
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.contrib.sites.requests import RequestSite
-from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpRequest
 
-from ludamus.adapters.db.django.models import Sphere
+from ludamus.pacts import RootDAORequestProtocol, SiteDTO, SphereDTO
 
 
-def sites(request: HttpRequest) -> dict[str, Site | RequestSite | Sphere | None]:
-    root_site = Site.objects.get(domain=settings.ROOT_DOMAIN)
-    current_site = get_current_site(request)
+def sites(request: RootDAORequestProtocol) -> dict[str, SiteDTO | SphereDTO]:
     return {
-        "root_site": root_site,
-        "current_site": current_site,
-        "current_sphere": getattr(current_site, "sphere", None),
+        "root_site": request.root_dao.root_site,
+        "current_site": request.root_dao.current_site,
+        "current_sphere": request.root_dao.current_sphere,
     }
 
 

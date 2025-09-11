@@ -1,15 +1,15 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from django.contrib.sites.models import Site
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from ludamus.adapters.web.django.exceptions import RedirectError
 from ludamus.adapters.web.django.middlewares import (
     RedirectErrorMiddleware,
-    SphereMiddleware,
+    RootMiddleware,
 )
+from ludamus.pacts import SphereDTO
 
 
 @pytest.fixture(name="get_response_mock")
@@ -22,7 +22,7 @@ class TestSphereMiddleware:
     @pytest.fixture
     @staticmethod
     def middleware(get_response_mock):
-        return SphereMiddleware(get_response_mock)
+        return RootMiddleware(get_response_mock)
 
     @pytest.mark.django_db
     @staticmethod
@@ -30,36 +30,23 @@ class TestSphereMiddleware:
         request = rf.get("/")
         request.META["HTTP_HOST"] = sphere.site.domain
 
-        with patch(
-            "ludamus.adapters.web.django.middlewares.get_current_site"
-        ) as mock_get_site:
-            mock_get_site.return_value = sphere.site
-            sphere.site.sphere = sphere
+        sphere.site.sphere = sphere
 
-            middleware(request)
+        middleware(request)
 
-            assert request.sphere == sphere
-            get_response_mock.assert_called_once_with(request)
+        assert request.root_dao.current_sphere == SphereDTO(name=sphere.name)
+        get_response_mock.assert_called_once_with(request)
 
     @pytest.mark.django_db
     @staticmethod
-    def test_site_does_not_exist_redirects(middleware, get_response_mock, rf, sphere):
-
+    def test_site_does_not_exist_redirects(
+        middleware, get_response_mock, rf, settings, sphere
+    ):
+        settings.ALLOWED_HOSTS.append("nonexistent.example.com")
         request = rf.get("/")
         request.META["HTTP_HOST"] = "nonexistent.example.com"
 
-        with (
-            patch(
-                "ludamus.adapters.web.django.middlewares.get_current_site"
-            ) as mock_get_site,
-            patch(
-                "ludamus.adapters.web.django.middlewares.Site.objects.get"
-            ) as mock_site_get,
-            patch("ludamus.adapters.web.django.middlewares.messages") as mock_messages,
-        ):
-            mock_get_site.side_effect = Site.DoesNotExist()
-            mock_site_get.return_value = sphere.site
-
+        with patch("ludamus.adapters.web.django.middlewares.messages") as mock_messages:
             response = middleware(request)
 
             assert isinstance(response, HttpResponseRedirect)
