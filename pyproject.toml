@@ -54,7 +54,7 @@ pytest-freezeblaster = "^2.0.4"
 # POE
 
 [tool.poe]
-envfile = ".env.dev"
+envfile = ".env.ci"
 
 [tool.poe.env]
 PYTHONPATH = "src"
@@ -74,7 +74,6 @@ ruff = "ruff check ."
 ruff-fix = "ruff check --fix  ."
 # Django
 dj = "django-admin"
-start = "django-admin runserver ludamus.local:8000"
 # Tests
 unittest = "pytest tests/unit --cov=tests.unit --cov=ludamus"
 # Series
@@ -100,6 +99,10 @@ update = [
 [tool.poe.tasks.inttest]
 cmd = "pytest"
 envfile = ".testenv"
+
+[tool.poe.tasks.start]
+cmd = "django-admin runserver ludamus.local:8000"
+envfile = ".env.dev"
 
 # BLACK
 
