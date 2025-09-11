@@ -16,9 +16,9 @@ class MembershipApiClient:
     """Client for external membership API integration."""
 
     def __init__(self) -> None:
-        self.base_url: str = getattr(settings, "MEMBERSHIP_API_BASE_URL", "")
-        self.token: str = getattr(settings, "MEMBERSHIP_API_TOKEN", "")
-        self.timeout: int = getattr(settings, "MEMBERSHIP_API_TIMEOUT", 10)
+        self.base_url = settings.MEMBERSHIP_API_BASE_URL
+        self.token = settings.MEMBERSHIP_API_TOKEN
+        self.timeout = settings.MEMBERSHIP_API_TIMEOUT
 
     def is_configured(self) -> bool:
         return bool(self.base_url and self.token)

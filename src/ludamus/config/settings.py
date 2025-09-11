@@ -97,7 +97,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "ludamus.adapters.web.django.middlewares.SphereMiddleware",
+    "ludamus.adapters.web.django.middlewares.RootMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "ludamus.adapters.web.django.middlewares.RedirectErrorMiddleware",
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
@@ -196,7 +196,7 @@ LOGIN_URL = "/crowd/user/login"
 
 # Sites
 
-ROOT_DOMAIN = os.getenv("ROOT_DOMAIN")
+ROOT_DOMAIN = os.environ["ROOT_DOMAIN"]
 
 # Auth0
 
