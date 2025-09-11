@@ -15,17 +15,15 @@ logger = logging.getLogger(__name__)
 class MembershipApiClient:
     """Client for external membership API integration."""
 
-    def __init__(self):
-        self.base_url = getattr(settings, "MEMBERSHIP_API_BASE_URL", None)
-        self.token = getattr(settings, "MEMBERSHIP_API_TOKEN", None)
-        self.timeout = getattr(settings, "MEMBERSHIP_API_TIMEOUT", 10)
+    def __init__(self) -> None:
+        self.base_url: str = getattr(settings, "MEMBERSHIP_API_BASE_URL", "")
+        self.token: str = getattr(settings, "MEMBERSHIP_API_TOKEN", "")
+        self.timeout: int = getattr(settings, "MEMBERSHIP_API_TIMEOUT", 10)
 
     def is_configured(self) -> bool:
-        """Check if API is properly configured."""
         return bool(self.base_url and self.token)
 
     def fetch_membership_count(self, email: str) -> int | None:
-        """Fetch membership count for user from external API."""
         if not self.is_configured():
             logger.warning(
                 "Membership API not configured - skipping fetch for %s", email
@@ -42,34 +40,27 @@ class MembershipApiClient:
             response.raise_for_status()
 
             data = response.json()
-            membership_count = data.get("membership_count", 0)
+            membership_count: int = data.get("membership_count", 0)
 
             logger.info(
                 "Fetched membership count %d for user %s", membership_count, email
             )
-            return membership_count
+        except requests.RequestException:
+            logger.exception("Failed to fetch membership for %s", email)
+            return None
+        except (KeyError, ValueError):
+            logger.exception("Invalid response format for %s", email)
+            return None
+        except Exception:
+            logger.exception("Unexpected error fetching membership for %s", email)
+            return None
 
-        except requests.RequestException as e:
-            logger.error("Failed to fetch membership for %s: %s", email, str(e))
-            return None
-        except (KeyError, ValueError) as e:
-            logger.error("Invalid response format for %s: %s", email, str(e))
-            return None
-        except Exception as e:
-            logger.error(
-                "Unexpected error fetching membership for %s: %s", email, str(e)
-            )
-            return None
+        return membership_count
 
 
 def get_or_create_user_enrollment_config(
     enrollment_config: EnrollmentConfig, user_email: str
 ) -> UserEnrollmentConfig | None:
-    """
-    Get or create UserEnrollmentConfig, fetching from API if needed.
-
-    Returns None if user is not eligible for enrollment.
-    """
     # First try to get existing config
     user_config = enrollment_config.user_configs.filter(user_email=user_email).first()
 
@@ -92,7 +83,10 @@ def get_or_create_user_enrollment_config(
 
             if user_config.last_check < time_threshold:
                 logger.info(
-                    "Config for %s has 0 slots and is older than %d minutes, refreshing from API",
+                    (
+                        "Config for %s has 0 slots and is older than %d minutes, "
+                        "refreshing from API"
+                    ),
                     user_email,
                     check_interval_minutes,
                 )
@@ -117,7 +111,6 @@ def get_or_create_user_enrollment_config(
 def _refresh_user_config_from_api(
     user_config: UserEnrollmentConfig,
 ) -> UserEnrollmentConfig | None:
-    """Refresh an existing user config with fresh API data."""
     api_client = MembershipApiClient()
     if not api_client.is_configured():
         logger.warning(
@@ -164,7 +157,6 @@ def _create_user_config_from_api(
     user_email: str,
     api_client: MembershipApiClient,
 ) -> UserEnrollmentConfig | None:
-    """Create a new user config by fetching data from API."""
     membership_count = api_client.fetch_membership_count(user_email)
     current_time = timezone.now()
 

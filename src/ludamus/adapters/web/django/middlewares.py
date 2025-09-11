@@ -28,7 +28,7 @@ class SphereMiddleware:
             messages.error(request, _("Sphere not found"))
             return HttpResponseRedirect(url)
 
-        request.sphere = getattr(site, "sphere", "")  # type: ignore [attr-defined]
+        request.sphere = site.sphere  # type: ignore [attr-defined, union-attr]
 
         return self.get_response(request)
 

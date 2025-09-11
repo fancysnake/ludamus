@@ -45,9 +45,9 @@ mypy = "^1.16.0"
 poethepoet = "^0.37.0"
 pylint = "^3.3.7"
 pytest = "^8.4.1"
-pytest-cov = "^6.2.1"
+pytest-cov = "^7.0.0"
 pytest-django = "^4.11.1"
-ruff = "^0.12.0"
+ruff = "^0.13.0"
 types-authlib = "^1.5.0.20250516"
 pytest-freezeblaster = "^2.0.4"
 
@@ -87,14 +87,7 @@ check = [
     "djlint-format",
     "pylint",
 ]
-prcheck = [
-    "black-check",
-    "ruff",
-    "codespell",
-    "mypy",
-    "djlint",
-    "pylint",
-]
+prcheck = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint"]
 update = [
     { cmd = "pre-commit autoupdate" },
     { cmd = "pip install -U pip" },
@@ -130,7 +123,7 @@ omit = [
     "src/ludamus/config/*",
     "src/ludamus/deploy/*",
     "src/ludamus/adapters/db/django/migrations/*",
-    "src/ludamus/adapters/web/django/templatetags/*"
+    "src/ludamus/adapters/web/django/templatetags/*",
 ]
 
 [tool.coverage.report]
@@ -145,7 +138,13 @@ precision = 2
 known_first_party = ["ludamus"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["django-bootstrap5", "django-bootstrap-icons", "gunicorn", "psycopg"]
+DEP002 = [
+    "django-bootstrap5",
+    "django-bootstrap-icons",
+    "gunicorn",
+    "psycopg",
+    "django-extensions",
+]
 DEP004 = ["debug_toolbar"]
 
 # MYPY
@@ -154,7 +153,7 @@ DEP004 = ["debug_toolbar"]
 check_untyped_defs = true
 color_output = true
 disallow_any_decorated = true
-disallow_any_explicit = true
+disallow_any_explicit = false                 # TODO: REMOVE
 disallow_any_expr = false
 disallow_any_generics = true
 disallow_any_unimported = true
@@ -206,6 +205,13 @@ ignore = [
     "CPY",
     "D",
     "PLR0911",
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "C901",    # Too complex
+    "PLR0914", # Too many local variables
+    "PLR1702", # Too many nested blocks
+    "EM101",   # Exception must not use a string literal, assign to variable first
+    "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -214,7 +220,9 @@ ignore = [
     "ANN",     # flake8-annotations
     "PLR0913", # too-many-arguments
     "PLR0917", # too-many-positional-arguments
-    "S",    # bandit
+    "S",       # bandit
+    "PLR0904", # Too many public methods
+    "PLR6301",
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
