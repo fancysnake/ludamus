@@ -34,7 +34,9 @@ class TestSphereMiddleware:
 
         middleware(request)
 
-        assert request.root_dao.current_sphere == SphereDTO(name=sphere.name)
+        assert request.root_dao.current_sphere == SphereDTO(
+            name=sphere.name, pk=sphere.pk
+        )
         get_response_mock.assert_called_once_with(request)
 
     @pytest.mark.django_db
