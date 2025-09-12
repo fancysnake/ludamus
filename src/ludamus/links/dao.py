@@ -1,6 +1,5 @@
 from django.contrib.sites.models import Site
 
-from ludamus.adapters.db.django.models import Sphere
 from ludamus.pacts import SiteDTO, SphereDTO
 
 
@@ -33,7 +32,3 @@ class RootDAO:
     @property
     def allowed_domains(self) -> list[str]:
         return list(Site.objects.values_list("domain", flat=True))
-
-    @property
-    def current_sphere_orm(self) -> Sphere:  # TODO: Remove
-        return self._current_sphere

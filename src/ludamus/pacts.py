@@ -3,8 +3,6 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict
 
-from ludamus.adapters.db.django.models import Sphere
-
 
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -61,6 +59,7 @@ class SphereDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
+    pk: int
 
 
 class RootDAOProtocol(Protocol):
@@ -75,10 +74,6 @@ class RootDAOProtocol(Protocol):
 
     @property
     def allowed_domains(self) -> list[str]: ...
-
-    @property
-    def current_sphere_orm(self) -> Sphere:  # TODO: Remove
-        ...
 
 
 class RootDAORequestProtocol(Protocol):

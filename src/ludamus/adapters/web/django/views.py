@@ -284,7 +284,7 @@ def index(request: RootDAORequest) -> HttpResponse:
         "index.html",
         context={
             "events": list(
-                Event.objects.filter(sphere=request.root_dao.current_sphere_orm).all()
+                Event.objects.filter(sphere_id=request.root_dao.current_sphere.pk).all()
             )
         },
     )
@@ -460,7 +460,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
 
     def get_queryset(self) -> QuerySet[Event]:
         return (
-            Event.objects.filter(sphere=self.request.root_dao.current_sphere_orm)
+            Event.objects.filter(sphere_id=self.request.root_dao.current_sphere.pk)
             .select_related("sphere")
             .prefetch_related(
                 "spaces__agenda_items__session__tags__category",
@@ -813,7 +813,7 @@ def _get_session_or_redirect(
 ) -> Session:
     try:
         return Session.objects.get(
-            sphere=request.root_dao.current_sphere_orm, id=session_id
+            sphere_id=request.root_dao.current_sphere.pk, id=session_id
         )
     except Session.DoesNotExist:
         raise RedirectError(
@@ -1555,7 +1555,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
     def _validate_event(self, event_slug: str) -> Event:
         try:
             event = Event.objects.get(
-                sphere=self.request.root_dao.current_sphere_orm, slug=event_slug
+                sphere_id=self.request.root_dao.current_sphere.pk, slug=event_slug
             )
         except Event.DoesNotExist:
             raise RedirectError(
@@ -1589,7 +1589,8 @@ class ProposeSessionView(LoginRequiredMixin, View):
 def _get_proposal(request: RootDAORequest, proposal_id: int) -> Proposal:
     try:
         proposal = Proposal.objects.get(
-            category__event__sphere=request.root_dao.current_sphere_orm, id=proposal_id
+            category__event__sphere_id=request.root_dao.current_sphere.pk,
+            id=proposal_id,
         )
     except Proposal.DoesNotExist:
         raise RedirectError(
