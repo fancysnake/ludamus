@@ -1311,8 +1311,8 @@ msgid "Status: On waiting list"
 msgstr "Status: Na liście oczekujących"
 
 #: src/ludamus/templates/chronology/anonymous_enroll.html:107
-msgid "Please provide your name and birth date to complete the enrollment."
-msgstr "Podaj swoje imię i datę urodzenia, aby dokończyć zapis."
+msgid "Please provide your name to complete the enrollment."
+msgstr "Podaj swoje imię, aby dokończyć zapis."
 
 #: src/ludamus/templates/chronology/anonymous_enroll.html:114
 #: src/ludamus/templates/chronology/event.html:850

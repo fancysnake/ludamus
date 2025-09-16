@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from factory import Faker, LazyAttribute, SubFactory
 from factory.django import DjangoModelFactory
+from pytest_factoryboy import register
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
@@ -21,8 +22,20 @@ from ludamus.adapters.db.django.models import (
     TagCategory,
     TimeSlot,
 )
+from tests.integration.factories import AnonymousUserFactory, CompleteUserFactory
 
 User = get_user_model()
+
+
+pytest.register_assert_rewrite("tests.integration.utils")
+
+register(CompleteUserFactory)
+register(AnonymousUserFactory)
+
+
+@pytest.fixture(autouse=True)
+def _django_db(transactional_db):
+    pass
 
 
 class UserFactory(DjangoModelFactory):

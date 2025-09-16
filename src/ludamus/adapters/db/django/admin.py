@@ -8,7 +8,6 @@ from ludamus.adapters.db.django.models import (
     DomainEnrollmentConfig,
     EnrollmentConfig,
     Event,
-    Guild,
     Proposal,
     ProposalCategory,
     Session,
@@ -29,11 +28,6 @@ class AgendaItemAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
-
-
-@admin.register(Guild)
-class GuildAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 

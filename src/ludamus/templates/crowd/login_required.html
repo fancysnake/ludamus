@@ -15,7 +15,7 @@
                 <h1 class="display-5 mb-4">{% translate "Login Required" %}</h1>
                 <p class="lead text-muted mb-5">{% translate "You need to be logged in to access this page." %}</p>
                 <div class="d-grid gap-2 col-8 mx-auto mb-5">
-                    <a href="{% url 'web:auth0_login' %}{% if next %}?next={{ next }}{% endif %}"
+                    <a href="{% url 'web:crowd:auth0:login' %}{% if next %}?next={{ next }}{% endif %}"
                        class="btn btn-primary btn-lg py-3">
                         {% bs_icon 'box-arrow-in-right' %} {% translate "Log In" %}
                     </a>

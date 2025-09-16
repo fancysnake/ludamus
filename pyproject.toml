@@ -47,12 +47,13 @@ pylint = "^3.3.7"
 pytest = "^8.4.1"
 pytest-cov = "^7.0.0"
 pytest-django = "^4.11.1"
-ruff = "^0.13.0"
+ruff = "^0.14.0"
 types-authlib = "^1.5.0.20250516"
 pytest-freezeblaster = "^2.0.4"
 
 # POE
 types-requests = "^2.32.4.20250809"
+pytest-factoryboy = "^2.8.1"
 
 [tool.poe]
 envfile = ".env.ci"
@@ -97,8 +98,12 @@ update = [
     { cmd = "poetry show -o" },
 ]
 
-[tool.poe.tasks.inttest]
-cmd = "pytest"
+[tool.poe.tasks.test]
+cmd = "pytest tests"
+envfile = ".testenv"
+
+[tool.poe.tasks.newtest]
+cmd = "pytest -vxx tests/integration/views tests/unit --cov=ludamus"
 envfile = ".testenv"
 
 [tool.poe.tasks.start]

@@ -87,9 +87,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self) -> str:
         return self.name or DEFAULT_NAME
 
-    def get_short_name(self) -> str:
-        return self.name.split(" ")[0]
-
     class Meta:
         db_table = "user"
         verbose_name = _("user")
@@ -115,17 +112,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         return SessionParticipation.objects.filter(
             user=self, status=SessionParticipationStatus.CONFIRMED
-        ).count()
-
-    @property
-    def enrollment_access_count(self) -> int:
-        """Get count of UserEnrollmentConfig entries (enrollment access permissions)."""
-        if not self.email:
-            return 0
-
-        return UserEnrollmentConfig.objects.filter(
-            user_email=self.email,
-            allowed_slots__gt=0,  # Only count configs with actual slots
         ).count()
 
 
@@ -206,10 +192,6 @@ class Event(models.Model):
     @property
     def is_ended(self) -> bool:
         return self.end_time < datetime.now(tz=UTC)
-
-    @property
-    def enrollment_config(self) -> EnrollmentConfig | None:
-        return self.enrollment_configs.first()
 
     def get_active_enrollment_configs(self) -> list[EnrollmentConfig]:
         return [config for config in self.enrollment_configs.all() if config.is_active]
@@ -469,9 +451,6 @@ class UserEnrollmentConfig(models.Model):
     def get_available_slots(self) -> int:
         return max(0, self.allowed_slots - self.get_used_slots())
 
-    def has_available_slots(self) -> bool:
-        return self.allowed_slots > 0
-
     def can_enroll_users(self, users_to_enroll: list[User]) -> bool:
         try:
             user = User.objects.get(email=self.user_email)
@@ -575,12 +554,6 @@ class DomainEnrollmentConfig(models.Model):
                 raise ValidationError(
                     "Please enter a valid domain (e.g. 'company.com')"
                 )
-
-    def matches_email(self, email: str) -> bool:
-        if not email or "@" not in email:
-            return False
-        email_domain = email.split("@")[1].lower()
-        return email_domain == self.domain
 
     def create_virtual_user_config(self, user_email: str) -> UserEnrollmentConfig:
         # This creates a non-persistent UserEnrollmentConfig object
@@ -732,13 +705,6 @@ class Session(models.Model):
     sphere = models.ForeignKey(
         "Sphere", on_delete=models.CASCADE, related_name="sessions"
     )
-    guild = models.ForeignKey(
-        "Guild",
-        blank=True,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name="sessions",
-    )
     presenter_name = models.CharField(max_length=255)
     # ID
     title = models.CharField(max_length=255)
@@ -805,11 +771,6 @@ class Session(models.Model):
         return self.participants_limit
 
     @property
-    def available_spots(self) -> int:
-        """Get number of available enrollment spots."""
-        return max(0, self.effective_participants_limit - self.enrolled_count)
-
-    @property
     def is_full(self) -> bool:
         """Check if session is at capacity for enrollment."""
         return self.enrolled_count >= self.effective_participants_limit
@@ -869,12 +830,6 @@ class Session(models.Model):
         return base_info
 
 
-class AgendaItemStatus(StrEnum):
-    UNASSIGNED = auto()
-    UNCONFIRMED = auto()
-    CONFIRMED = auto()
-
-
 class AgendaItem(models.Model):
     space = models.ForeignKey(
         Space, on_delete=models.CASCADE, related_name="agenda_items"
@@ -900,13 +855,10 @@ class AgendaItem(models.Model):
         )
 
     def __str__(self) -> str:
-        return f"{self.session.title} by {self.session.presenter_name} ({self.status})"
-
-    @property
-    def status(self) -> AgendaItemStatus:
-        if self.session_confirmed:
-            return AgendaItemStatus.CONFIRMED
-        return AgendaItemStatus.UNCONFIRMED
+        return (
+            f"{self.session.title} by {self.session.presenter_name} "
+            f"({self.session_confirmed})"
+        )
 
     def overlaps_with(self, other_item: AgendaItem) -> bool:
         return bool(
@@ -950,12 +902,6 @@ class ProposalCategory(models.Model):
         return f"{self.name} ({self.id})"
 
 
-class ProposalStatus(StrEnum):
-    CREATED = auto()
-    ACCEPTED = auto()
-    REJECTED = auto()
-
-
 class Proposal(models.Model):
     # Owner
     category = models.ForeignKey(
@@ -990,64 +936,6 @@ class Proposal(models.Model):
 
     def __str__(self) -> str:
         return self.title
-
-
-class Guild(models.Model):
-    """Small group of users for a small club or team."""
-
-    # ID
-    name = models.CharField(max_length=255)
-    slug = models.SlugField()
-    description = models.TextField(default="", blank=True)
-    # Time
-    creation_time = models.DateTimeField(auto_now_add=True)
-    modification_time = models.DateTimeField(auto_now=True)
-    # Settings
-    is_public = models.BooleanField(default=True)
-    # Members
-    members: models.ManyToManyField[User, Never] = models.ManyToManyField(
-        User, through="GuildMember"
-    )
-
-    class Meta:
-        db_table = "guild"
-        constraints = (
-            models.UniqueConstraint(fields=["slug"], name="guild_unique_slug"),
-        )
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class MembershipType(StrEnum):
-    APPLIED = auto()
-    MEMBER = auto()
-    ADMIN = auto()
-
-
-class GuildMember(models.Model):
-    """Membership model for guilds."""
-
-    guild = models.ForeignKey(
-        "Guild", on_delete=models.CASCADE, related_name="guild_members"
-    )
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="guild_members"
-    )
-    membership_type = models.CharField(
-        max_length=255, choices=[(i.value, i.name) for i in MembershipType]
-    )
-
-    class Meta:
-        db_table = "guild_member"
-        constraints = (
-            models.UniqueConstraint(
-                fields=["guild", "user"], name="guildmember_unique_guild_and_user"
-            ),
-        )
-
-    def __str__(self) -> str:
-        return f"{self.user} ({self.membership_type} in {self.guild})"
 
 
 class SessionParticipationStatus(StrEnum):

@@ -58,7 +58,8 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'web:event' slug=event.slug %}" class="btn btn-primary">
+                                <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                                   class="btn btn-primary">
                                     {% bs_icon 'calendar-event' %} {% translate "View Event" %}
                                 </a>
                             </td>

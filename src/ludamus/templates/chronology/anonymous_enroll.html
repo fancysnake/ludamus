@@ -103,9 +103,7 @@
                             <div class="alert alert-warning" role="alert">
                                 <div class="d-flex">
                                     <div class="flex-shrink-0">{% bs_icon 'exclamation-triangle' %}</div>
-                                    <div class="flex-grow-1 ms-3">
-                                        {% translate "Please provide your name and birth date to complete the enrollment." %}
-                                    </div>
+                                    <div class="flex-grow-1 ms-3">{% translate "Please provide your name to complete the enrollment." %}</div>
                                 </div>
                             </div>
                             <div class="row">
@@ -135,7 +133,7 @@
                             </div>
                         {% endif %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'web:event' slug=event.slug %}"
+                            <a href="{% url 'web:chronology:event' slug=event.slug %}"
                                class="btn btn-outline-secondary">
                                 {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
                             </a>

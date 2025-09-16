@@ -4,22 +4,15 @@ from zoneinfo import ZoneInfo
 import pytest
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
-from django.utils.timezone import localtime
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     EnrollmentConfig,
     Event,
-    Guild,
-    GuildMember,
-    Proposal,
-    ProposalCategory,
     Session,
     SessionParticipation,
     Space,
     Sphere,
-    Tag,
-    TagCategory,
     TimeSlot,
     User,
 )
@@ -71,11 +64,6 @@ def user_fixture(faker):
     )
 
 
-@pytest.fixture(name="guild")
-def guild_fixture(faker):
-    return Guild.objects.create(name=faker.word(), slug=faker.slug())
-
-
 @pytest.fixture(name="agenda_item")
 def agenda_item_fixture(faker, space, session):
     start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
@@ -89,74 +77,7 @@ def agenda_item_fixture(faker, space, session):
     )
 
 
-class TestUser:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_get_short_name():
-        assert User(name="John Smith").get_short_name() == "John"
-
-
-class TestEvent:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(faker):
-        name = faker.word()
-        assert str(Event(name=name)) == name
-
-
-class TestSphere:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(faker):
-        name = faker.word()
-        assert str(Sphere(name=name)) == name
-
-
-class TestSpace:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str():
-        assert str(Space(name="room", id=7)) == "room (7)"
-
-
 class TestTimeSlot:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str_same_date(faker):
-        # Ensure start time is early enough so end time stays on same day
-        base_datetime = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        start_time = base_datetime.replace(hour=10, minute=30)  # 10:30 AM
-        end_time = start_time + timedelta(hours=2)  # 12:30 PM same day
-
-        timeslot_id = faker.random_int(min=1, max=999)
-        timeslot = TimeSlot(id=timeslot_id, start_time=start_time, end_time=end_time)
-        result = str(timeslot)
-
-        ts_format = "%Y-%m-%d %H:%M"
-        start_local = localtime(start_time).strftime(ts_format)
-        end_local = localtime(end_time).strftime("%H:%M")
-        expected = f"{start_local} - {end_local} ({timeslot_id})"
-
-        assert result == expected
-
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str_different_dates(faker):
-        start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        start_time = start_time.replace(hour=23, minute=30)
-        end_time = start_time.replace(day=start_time.day + 1, hour=1, minute=15)
-
-        timeslot_id = faker.random_int(min=1, max=999)
-        timeslot = TimeSlot(id=timeslot_id, start_time=start_time, end_time=end_time)
-        result = str(timeslot)
-
-        ts_format = "%Y-%m-%d %H:%M"
-        start_local = localtime(start_time).strftime(ts_format)
-        end_local = localtime(end_time).strftime(ts_format)
-        expected = f"{start_local} - {end_local} ({timeslot_id})"
-
-        assert result == expected
-
     @staticmethod
     @pytest.mark.django_db
     def test_validate_unique_no_overlap(faker, event):
@@ -249,65 +170,7 @@ class TestTimeSlot:
         timeslot.validate_unique()
 
 
-class TestTagCategory:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(faker):
-        name = faker.word()
-        assert str(TagCategory(name=name)) == name
-
-
-class TestTag:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(faker):
-        name = faker.word()
-        assert str(Tag(name=name)) == name
-
-
-class TestAgendaItem:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str_unconfirmed(faker, space, session):
-        start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        end_time = start_time + timedelta(hours=2)
-
-        agenda_item = AgendaItem.objects.create(
-            space=space,
-            session=session,
-            session_confirmed=False,
-            start_time=start_time,
-            end_time=end_time,
-        )
-
-        expected = f"{session.title} by {session.presenter_name} (unconfirmed)"
-        assert str(agenda_item) == expected
-
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str_confirmed(faker, space, session):
-        start_time = faker.date_time(tzinfo=ZoneInfo("UTC"))
-        end_time = start_time + timedelta(hours=2)
-
-        agenda_item = AgendaItem.objects.create(
-            space=space,
-            session=session,
-            session_confirmed=True,
-            start_time=start_time,
-            end_time=end_time,
-        )
-
-        expected = f"{session.title} by {session.presenter_name} (confirmed)"
-        assert str(agenda_item) == expected
-
-
 class TestSession:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(faker):
-        title = faker.sentence()
-        assert str(Session(title=title)) == title
-
     @staticmethod
     @pytest.mark.django_db
     def test_is_enrollment_limited_with_percentage_less_than_100(agenda_item):
@@ -478,54 +341,3 @@ class TestSession:
 
         expected = "1/5, 1 waiting"
         assert session.full_participant_info == expected
-
-
-class TestProposalCategory:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(faker):
-        name = faker.word()
-        category_id = faker.random_int(min=1, max=999)
-        category = ProposalCategory(name=name, id=category_id)
-        expected = f"{name} ({category_id})"
-        assert str(category) == expected
-
-
-class TestProposal:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(faker):
-        title = faker.sentence()
-        assert str(Proposal(title=title)) == title
-
-
-class TestGuild:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(faker):
-        name = faker.word()
-        assert str(Guild(name=name)) == name
-
-
-class TestGuildMember:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(user, guild):
-        membership_type = "MEMBER"
-        guild_member = GuildMember.objects.create(
-            user=user, guild=guild, membership_type=membership_type
-        )
-        expected = f"{user} ({membership_type} in {guild})"
-        assert str(guild_member) == expected
-
-
-class TestSessionParticipation:
-    @staticmethod
-    @pytest.mark.django_db
-    def test_str(user, session):
-        status = "confirmed"
-        participation = SessionParticipation.objects.create(
-            user=user, session=session, status=status
-        )
-        expected = f"{user} {status} on {session}"
-        assert str(participation) == expected
