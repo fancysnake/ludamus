@@ -11,7 +11,10 @@
          data-debug-is-full="{{ data.session.is_full|yesno:'true,false' }}"
          data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
-         data-min-age="{{ data.session.min_age }}">
+         data-min-age="{{ data.session.min_age }}"
+         style="cursor: pointer"
+         data-bs-toggle="modal"
+         data-bs-target="#sessionDetailModal{{ data.session.id }}">
         <div class="card-body d-flex flex-column">
             <!-- Session Title -->
             <h6 class="card-title mb-2">{{ data.session.title }}</h6>
@@ -32,15 +35,10 @@
             </div>
             <!-- Participants Info -->
             <div class="mb-2">
-                <button type="button"
-                        class="btn btn-sm btn-outline-primary border-0 text-start p-0"
-                        data-bs-toggle="modal"
-                        data-bs-target="#participantsModal{{ data.session.id }}">
-                    <span class="badge bg-success">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
-                    {% if data.session.waiting_count > 0 %}
-                        <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} waiting</span>
-                    {% endif %}
-                </button>
+                <span class="badge bg-success">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
+                {% if data.session.waiting_count > 0 %}
+                    <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} waiting</span>
+                {% endif %}
                 {% if data.session.is_full %}
                     <br>
                     {% load enrollment_tags %}
@@ -74,10 +72,7 @@
                         {% endfor %}
                         {% if data.filterable_tags|length > 2 %}
                             <small class="text-muted">
-                                <a href="#"
-                                   data-bs-toggle="modal"
-                                   data-bs-target="#sessionDetailModal{{ data.session.id }}"
-                                   class="text-decoration-none">+{{ data.filterable_tags|length|add:"-2" }} more...</a>
+                                <span class="text-decoration-none">+{{ data.filterable_tags|length|add:"-2" }} more...</span>
                             </small>
                         {% endif %}
                     {% endif %}
@@ -92,13 +87,15 @@
                             <!-- Authenticated user -->
                             {% if data.user_enrolled or data.user_waiting %}
                                 <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
-                                   class="btn btn-warning btn-sm">
+                                   class="btn btn-warning btn-sm"
+                                   onclick="event.stopPropagation();">
                                     {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
                                 {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
                                     <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
-                                       class="btn btn-success btn-sm">
+                                       class="btn btn-success btn-sm"
+                                       onclick="event.stopPropagation();">
                                         {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
                                     </a>
                                 {% else %}
@@ -113,19 +110,22 @@
                             <!-- Anonymous enrollment mode is active -->
                             {% if data.user_enrolled or data.user_waiting %}
                                 <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
-                                   class="btn btn-warning btn-sm">
+                                   class="btn btn-warning btn-sm"
+                                   onclick="event.stopPropagation();">
                                     {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
                                 <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
-                                   class="btn btn-success btn-sm">
+                                   class="btn btn-success btn-sm"
+                                   onclick="event.stopPropagation();">
                                     {% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}
                                 </a>
                             {% endif %}
                         {% else %}
                             <!-- Not authenticated and no anonymous mode -->
                             <a href="{% url 'web:login' %}?next={% url 'web:event' slug=event.slug %}"
-                               class="btn btn-primary btn-sm">
+                               class="btn btn-primary btn-sm"
+                               onclick="event.stopPropagation();">
                                 {% bs_icon 'box-arrow-in-right' %} {% translate "Login to Enroll" %}
                             </a>
                         {% endif %}
@@ -140,13 +140,6 @@
                             {% endif %}
                         </button>
                     {% endif %}
-                    <!-- View details -->
-                    <button type="button"
-                            class="btn btn-outline-primary btn-sm"
-                            data-bs-toggle="modal"
-                            data-bs-target="#sessionDetailModal{{ data.session.id }}">
-                        {% bs_icon 'info-circle' %} {% translate "Details" %}
-                    </button>
                 </div>
             </div>
         </div>

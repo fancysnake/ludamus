@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from datetime import UTC, datetime
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, ClassVar, Never
+from typing import TYPE_CHECKING, ClassVar, Never, cast
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.contrib.sites.models import Site
@@ -764,9 +764,6 @@ class Session(models.Model):
 
     objects = SessionManager()
 
-    enrolled_count_cached: int
-    waiting_count_cached: int
-
     class Meta:
         db_table = "session"
         constraints = (
@@ -786,7 +783,7 @@ class Session(models.Model):
     def enrolled_count(self) -> int:
         # Use cached count if available from annotation, otherwise query
         if hasattr(self, "enrolled_count_cached"):
-            return self.enrolled_count_cached
+            return cast("int", self.enrolled_count_cached)
         return self.session_participations.filter(
             status=SessionParticipationStatus.CONFIRMED
         ).count()
@@ -795,7 +792,7 @@ class Session(models.Model):
     def waiting_count(self) -> int:
         # Use cached count if available from annotation, otherwise query
         if hasattr(self, "waiting_count_cached"):
-            return self.waiting_count_cached
+            return cast("int", self.waiting_count_cached)
         return self.session_participations.filter(
             status=SessionParticipationStatus.WAITING
         ).count()

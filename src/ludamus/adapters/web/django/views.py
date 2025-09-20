@@ -17,7 +17,6 @@ from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.signals import user_logged_in
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
@@ -684,12 +683,12 @@ class EventView(DetailView):  # type: ignore [type-arg]
             # Validate anonymous user is for the current site
             current_site_id = self.request.root_dao.current_site.pk
             session_site_id = self.request.session.get("anonymous_site_id")
-            if (
-                session_site_id == current_site_id
-                and self.request.session.get("anonymous_user_id", "").isdigit()
-            ):
+            try:
+                anonymous_user_id = int(self.request.session["anonymous_user_id"])
+            except (KeyError, ValueError):
+                anonymous_user_id = None
+            if session_site_id == current_site_id and anonymous_user_id is not None:
                 try:
-                    anonymous_user_id = int(self.request.session["anonymous_user_id"])
                     anonymous_user = User.objects.get(
                         id=anonymous_user_id, user_type=User.UserType.ANONYMOUS
                     )
@@ -1733,6 +1732,7 @@ class AcceptProposalView(LoginRequiredMixin, View):
             requirements=proposal.requirements,
             participants_limit=proposal.participants_limit,
             min_age=proposal.min_age,  # Copy minimum age requirement
+            slug=slugify(proposal.title),
         )
 
         # Copy tags from proposal to session
@@ -1841,7 +1841,7 @@ class AnonymousEnrollView(View):
         # Get session
         try:
             session = Session.objects.get(
-                id=session_id, sphere__site=get_current_site(request)
+                id=session_id, sphere__site_id=request.root_dao.current_site.pk
             )
         except Session.DoesNotExist:
             messages.error(request, _("Session not found."))
@@ -1901,7 +1901,7 @@ class AnonymousEnrollView(View):
         # Get session
         try:
             session = Session.objects.get(
-                id=session_id, sphere__site=get_current_site(request)
+                id=session_id, sphere__site_id=request.root_dao.current_site.pk
             )
         except Session.DoesNotExist:
             messages.error(request, _("Session not found."))
