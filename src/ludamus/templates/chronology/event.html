@@ -684,145 +684,15 @@
             </div>
         </div>
     {% endfor %}
-    <!-- Participant Modals -->
-    {% for session_data in sessions %}
-        <div class="modal fade"
-             id="participantsModal{{ session_data.session.id }}"
-             tabindex="-1"
-             aria-labelledby="participantsModalLabel{{ session_data.session.id }}"
-             aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title"
-                            id="participantsModalLabel{{ session_data.session.id }}">
-                            {% translate "Participants" %} - {{ session_data.session.title }}
-                        </h5>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <h6>{% translate "Session" %}</h6>
-                                <p>{{ session_data.session.title }}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>{% translate "Participants Limit" %}</h6>
-                                <p>
-                                    <span class="badge bg-success">{{ session_data.session.enrolled_count }}/{{ session_data.session.effective_participants_limit }}</span>
-                                    {% if session_data.session.effective_participants_limit != session_data.session.participants_limit %}
-                                        <br>
-                                        <small class="text-muted">({% translate "session limit" %}: {{ session_data.session.participants_limit }})</small>
-                                    {% endif %}
-                                    {% if session_data.session.waiting_count > 0 %}
-                                        <br>
-                                        <span class="badge bg-warning text-dark">+{{ session_data.session.waiting_count }} {% translate "waiting" %}</span>
-                                    {% endif %}
-                                    {% if session_data.session.is_full %}
-                                        <br>
-                                        <small class="text-danger">{% enrollment_status_text session_data.session %}</small>
-                                    {% endif %}
-                                </p>
-                            </div>
-                        </div>
-                        <!-- Enrolled Participants -->
-                        {% with confirmed_participants=session_data.session.session_participations.all|dictsort:"creation_time" %}
-                            {% if confirmed_participants %}
-                                <h6>{% translate "Enrolled Participants" %}</h6>
-                                <div class="table-responsive mb-4">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>{% translate "Name" %}</th>
-                                                <th>{% translate "Enrolled" %}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for participation in confirmed_participants %}
-                                                {% if participation.status == 'confirmed' %}
-                                                    <tr>
-                                                        <td>
-                                                            <div class="d-flex align-items-center">
-                                                                {% bs_icon 'person-circle' %}
-                                                                <span class="ms-2">{{ participation.user.get_full_name }}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <small class="text-muted">{{ participation.creation_time|date:"M j, G:i" }}</small>
-                                                        </td>
-                                                    </tr>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            {% endif %}
-                        {% endwith %}
-                        <!-- Waiting List -->
-                        {% with waiting_participants=session_data.session.session_participations.all|dictsort:"creation_time" %}
-                            <h6>{% translate "Waiting List" %}</h6>
-                            {% if waiting_participants %}
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>{% translate "Position" %}</th>
-                                                <th>{% translate "Name" %}</th>
-                                                <th>{% translate "Added" %}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for participation in waiting_participants %}
-                                                {% if participation.status == 'waiting' %}
-                                                    <tr>
-                                                        <td>
-                                                            <span class="badge bg-warning text-dark">{{ forloop.counter }}</span>
-                                                        </td>
-                                                        <td>
-                                                            <div class="d-flex align-items-center">
-                                                                {% bs_icon 'clock' %}
-                                                                <span class="ms-2">{{ participation.user.get_full_name }}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <small class="text-muted">{{ participation.creation_time|date:"M j, G:i" }}</small>
-                                                        </td>
-                                                    </tr>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            {% else %}
-                                <div class="text-center text-muted py-3">
-                                    <p>{% translate "No one on the waiting list." %}</p>
-                                </div>
-                            {% endif %}
-                        {% endwith %}
-                        {% if not session_data.session.session_participations.exists %}
-                            <div class="text-center text-muted py-4">
-                                <p>{% translate "No participants enrolled yet." %}</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endfor %}
-    <!-- Session Detail Modals -->
+    <!-- Removed Participant Modals - now merged with Session Detail Modals -->
+    <!-- Session Detail Modals (merged with participant list) -->
     {% for data in sessions %}
         <div class="modal fade"
              id="sessionDetailModal{{ data.session.id }}"
              tabindex="-1"
              aria-labelledby="sessionDetailModalLabel{{ data.session.id }}"
              aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="sessionDetailModalLabel{{ data.session.id }}">{{ data.session.title }}</h5>
@@ -832,97 +702,218 @@
                                 aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <h6>{% bs_icon 'person-circle' %} {% translate "Host" %}</h6>
-                                <p class="ms-4">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
-                                <h6>{% bs_icon 'clock' %} {% translate "Time" %}</h6>
-                                <p class="ms-4">
-                                    {{ data.session.agenda_item.start_time|date:"l, F j, Y" }}
-                                    <br>
-                                    {{ data.session.agenda_item.start_time|time:"G:i" }} - {{ data.session.agenda_item.end_time|time:"G:i" }}
-                                </p>
-                                <h6>{% bs_icon 'geo-alt' %} {% translate "Location" %}</h6>
-                                <p class="ms-4">
-                                    {% if data.session.agenda_item.space %}
-                                        {{ data.session.agenda_item.space.name }}
-                                    {% else %}
-                                        <span class="text-muted">{% translate "To be announced" %}</span>
-                                    {% endif %}
-                                </p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>{% bs_icon 'people' %} {% translate "Participants" %}</h6>
-                                <p class="ms-4">
-                                    <span class="badge bg-primary">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
+                        <!-- Session Information Tab -->
+                        <ul class="nav nav-tabs mb-3" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active"
+                                        id="info-tab-{{ data.session.id }}"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#info-{{ data.session.id }}"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="info-{{ data.session.id }}"
+                                        aria-selected="true">
+                                    {% bs_icon 'info-circle' %} {% translate "Information" %}
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link"
+                                        id="participants-tab-{{ data.session.id }}"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#participants-{{ data.session.id }}"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="participants-{{ data.session.id }}"
+                                        aria-selected="false">
+                                    {% bs_icon 'people' %} {% translate "Participants" %}
+                                    <span class="badge bg-primary ms-1">{{ data.session.enrolled_count }}</span>
                                     {% if data.session.waiting_count > 0 %}
-                                        <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
+                                        <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }}</span>
                                     {% endif %}
-                                    {% if data.session.is_full %}
-                                        <span class="badge bg-danger ms-1">{% translate "Full" %}</span>
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <!-- Information Tab -->
+                            <div class="tab-pane fade show active"
+                                 id="info-{{ data.session.id }}"
+                                 role="tabpanel"
+                                 aria-labelledby="info-tab-{{ data.session.id }}">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6>{% bs_icon 'person-circle' %} {% translate "Host" %}</h6>
+                                        <p class="ms-4">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
+                                        <h6>{% bs_icon 'clock' %} {% translate "Time" %}</h6>
+                                        <p class="ms-4">
+                                            {{ data.session.agenda_item.start_time|date:"l, F j, Y" }}
+                                            <br>
+                                            {{ data.session.agenda_item.start_time|time:"G:i" }} - {{ data.session.agenda_item.end_time|time:"G:i" }}
+                                        </p>
+                                        <h6>{% bs_icon 'geo-alt' %} {% translate "Location" %}</h6>
+                                        <p class="ms-4">
+                                            {% if data.session.agenda_item.space %}
+                                                {{ data.session.agenda_item.space.name }}
+                                            {% else %}
+                                                <span class="text-muted">{% translate "To be announced" %}</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>{% bs_icon 'people' %} {% translate "Capacity" %}</h6>
+                                        <p class="ms-4">
+                                            <span class="badge bg-primary">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
+                                            {% if data.session.waiting_count > 0 %}
+                                                <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
+                                            {% endif %}
+                                            {% if data.session.is_full %}
+                                                <span class="badge bg-danger ms-1">{% translate "Full" %}</span>
+                                            {% endif %}
+                                        </p>
+                                        <h6>{% bs_icon 'shield-check' %} {% translate "Minimum Age" %}</h6>
+                                        <p class="ms-4">
+                                            {% if data.session.min_age > 0 %}
+                                                <span class="badge bg-info text-dark">{{ data.session.min_age }}+ {% translate "years" %}</span>
+                                            {% else %}
+                                                <span class="text-muted">{% translate "All ages welcome" %}</span>
+                                            {% endif %}
+                                        </p>
+                                        {% if data.session.tags.exists %}
+                                            <h6>{% bs_icon 'tags' %} {% translate "Tags" %}</h6>
+                                            <div class="ms-4">
+                                                {% for tag in data.session.tags.all %}
+                                                    <span class="badge bg-secondary me-1 mb-1 session-detail-tag"
+                                                          title="{{ tag.name }} ({{ tag.category.name }})">
+                                                        {% if tag.category.icon %}
+                                                            {% bs_icon tag.category.icon %}
+                                                        {% endif %}
+                                                        {{ tag.name }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if data.session.description %}
+                                    <div class="border-top pt-3">
+                                        <h6>{% bs_icon 'card-text' %} {% translate "Description" %}</h6>
+                                        <p class="ms-4">{{ data.session.description|linebreaks }}</p>
+                                    </div>
+                                {% endif %}
+                                {% if data.session.requirements %}
+                                    <div class="border-top pt-3">
+                                        <h6>{% bs_icon 'check-square' %} {% translate "Requirements" %}</h6>
+                                        <p class="ms-4">{{ data.session.requirements|linebreaks }}</p>
+                                    </div>
+                                {% endif %}
+                                <!-- Enrollment Status for Authenticated Users -->
+                                {% if request.user.is_authenticated %}
+                                    <div class="border-top pt-3">
+                                        <h6>{% bs_icon 'person-check' %} {% translate "Your Enrollment Status" %}</h6>
+                                        <div class="ms-4">
+                                            {% if data.user_enrolled %}
+                                                <div class="alert alert-success d-inline-flex align-items-center"
+                                                     role="alert">
+                                                    {% bs_icon 'check-circle-fill' %} <span class="ms-2">{% translate "You are enrolled in this session" %}</span>
+                                                </div>
+                                            {% elif data.user_waiting %}
+                                                <div class="alert alert-warning d-inline-flex align-items-center"
+                                                     role="alert">
+                                                    {% bs_icon 'clock-fill' %} <span class="ms-2">{% translate "You are on the waiting list" %}</span>
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-info d-inline-flex align-items-center"
+                                                     role="alert">
+                                                    {% bs_icon 'info-circle-fill' %} <span class="ms-2">{% translate "You are not enrolled in this session" %}</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!-- Participants Tab -->
+                            <div class="tab-pane fade"
+                                 id="participants-{{ data.session.id }}"
+                                 role="tabpanel"
+                                 aria-labelledby="participants-tab-{{ data.session.id }}">
+                                <!-- Enrolled Participants -->
+                                {% with confirmed_participants=data.session.session_participations.all|dictsort:"creation_time" %}
+                                    {% if confirmed_participants %}
+                                        <h6>{% bs_icon 'check-circle' %} {% translate "Enrolled Participants" %}</h6>
+                                        <div class="table-responsive mb-4">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>{% translate "Name" %}</th>
+                                                        <th>{% translate "Enrolled" %}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for participation in confirmed_participants %}
+                                                        {% if participation.status == 'confirmed' %}
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="d-flex align-items-center">
+                                                                        {% bs_icon 'person-circle' %}
+                                                                        <span class="ms-2">{{ participation.user.get_full_name }}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <small class="text-muted">{{ participation.creation_time|date:"M j, G:i" }}</small>
+                                                                </td>
+                                                            </tr>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     {% endif %}
-                                </p>
-                                <h6>{% bs_icon 'shield-check' %} {% translate "Minimum Age" %}</h6>
-                                <p class="ms-4">
-                                    {% if data.session.min_age > 0 %}
-                                        <span class="badge bg-info text-dark">{{ data.session.min_age }}+ {% translate "years" %}</span>
-                                    {% else %}
-                                        <span class="text-muted">{% translate "All ages welcome" %}</span>
-                                    {% endif %}
-                                </p>
-                                {% if data.session.tags.exists %}
-                                    <h6>{% bs_icon 'tags' %} {% translate "Tags" %} ({{ data.session.tags.count }} total)</h6>
-                                    <div class="ms-4">
-                                        {% comment %}Show ALL tags in modal, regardless of filterable categories{% endcomment %}
-                                        {% for tag in data.session.tags.all %}
-                                            <span class="badge bg-secondary me-1 mb-1 session-detail-tag"
-                                                  title="{{ tag.name }} ({{ tag.category.name }})">
-                                                {% if tag.category.icon %}
-                                                    {% bs_icon tag.category.icon %}
-                                                {% endif %}
-                                                {{ tag.name }}
-                                            </span>
-                                        {% endfor %}
+                                {% endwith %}
+                                <!-- Waiting List -->
+                                <h6>{% bs_icon 'clock' %} {% translate "Waiting List" %}</h6>
+                                {% if data.session.waiting_count > 0 %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>{% translate "Position" %}</th>
+                                                    <th>{% translate "Name" %}</th>
+                                                    <th>{% translate "Added" %}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for participation in data.session.session_participations.all|dictsort:"creation_time" %}
+                                                    {% if participation.status == 'waiting' %}
+                                                        <tr class="waiting-list-row">
+                                                            <td>
+                                                                <span class="badge bg-warning text-dark waiting-position"></span>
+                                                            </td>
+                                                            <td>
+                                                                <div class="d-flex align-items-center">
+                                                                    {% bs_icon 'clock' %}
+                                                                    <span class="ms-2">{{ participation.user.get_full_name }}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <small class="text-muted">{{ participation.creation_time|date:"M j, G:i" }}</small>
+                                                            </td>
+                                                        </tr>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center text-muted py-3">
+                                        <p>{% translate "No one on the waiting list." %}</p>
+                                    </div>
+                                {% endif %}
+                                {% if not data.session.session_participations.exists %}
+                                    <div class="text-center text-muted py-4">
+                                        <p>{% translate "No participants enrolled yet." %}</p>
                                     </div>
                                 {% endif %}
                             </div>
                         </div>
-                        {% if data.session.description %}
-                            <div class="border-top pt-3">
-                                <h6>{% bs_icon 'card-text' %} {% translate "Description" %}</h6>
-                                <p class="ms-4">{{ data.session.description|linebreaks }}</p>
-                            </div>
-                        {% endif %}
-                        {% if data.session.requirements %}
-                            <div class="border-top pt-3">
-                                <h6>{% bs_icon 'check-square' %} {% translate "Requirements" %}</h6>
-                                <p class="ms-4">{{ data.session.requirements|linebreaks }}</p>
-                            </div>
-                        {% endif %}
-                        <!-- Enrollment Status for Authenticated Users -->
-                        {% if request.user.is_authenticated %}
-                            <div class="border-top pt-3">
-                                <h6>{% bs_icon 'person-check' %} {% translate "Your Enrollment Status" %}</h6>
-                                <div class="ms-4">
-                                    {% if data.user_enrolled %}
-                                        <div class="alert alert-success d-inline-flex align-items-center"
-                                             role="alert">
-                                            {% bs_icon 'check-circle-fill' %} <span class="ms-2">{% translate "You are enrolled in this session" %}</span>
-                                        </div>
-                                    {% elif data.user_waiting %}
-                                        <div class="alert alert-warning d-inline-flex align-items-center"
-                                             role="alert">
-                                            {% bs_icon 'clock-fill' %} <span class="ms-2">{% translate "You are on the waiting list" %}</span>
-                                        </div>
-                                    {% else %}
-                                        <div class="alert alert-info d-inline-flex align-items-center"
-                                             role="alert">
-                                            {% bs_icon 'info-circle-fill' %} <span class="ms-2">{% translate "You are not enrolled in this session" %}</span>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endif %}
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
@@ -975,6 +966,13 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Prevent enrollment buttons from triggering card click
+            document.querySelectorAll('.session-card .btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+
             const sessionFilter = document.getElementById('sessionFilter');
             const statusFilter = document.getElementById('statusFilter');
             const minAgeFilter = document.getElementById('minAgeFilter');
@@ -1194,9 +1192,27 @@
             minAgeFilter.addEventListener('input', filterSessions);
             maxAgeFilter.addEventListener('input', filterSessions);
             clearFilters.addEventListener('click', clearAllFilters);
+
+            // Number waiting list positions
+            document.querySelectorAll('.tab-pane').forEach(tabPane => {
+                let position = 1;
+                tabPane.querySelectorAll('.waiting-list-row .waiting-position').forEach(badge => {
+                    badge.textContent = position++;
+                });
+            });
         });
     </script>
     <style>
+        /* Session card hover effect */
+        .session-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .session-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
         /* Ensure backdrop shows for status modals */
         .modal-backdrop.show {
             display: block !important;
