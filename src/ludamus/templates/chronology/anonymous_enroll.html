@@ -123,17 +123,6 @@
                                         {% translate "Your public display name that others will see. This can be a nickname and does not need to be your legal name." %}
                                     </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="birth_date" class="form-label">
-                                        {% translate "Birth Date" %} <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="date"
-                                           class="form-control"
-                                           id="birth_date"
-                                           name="birth_date"
-                                           value="{{ anonymous_user.birth_date|date:'Y-m-d'|default:'' }}"
-                                           required>
-                                </div>
                             </div>
                         {% else %}
                             <div class="alert alert-info" role="alert">

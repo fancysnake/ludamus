@@ -26,7 +26,6 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
-from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView, View
@@ -184,13 +183,6 @@ class CallbackView(RedirectView):
             if not (user := User.objects.filter(username=username).first()):
                 user = User.objects.create(username=username, slug=slugify(username))
 
-            # Check if user is inactive due to being under 16
-            if user.birth_date and user.age < MINIMUM_ALLOWED_USER_AGE:
-                # Redirect to under-age page without logging them in
-                return _auth0_logout_url(
-                    self.request, redirect_to=reverse("web:under-age")
-                )
-
             # Log the user in
             django_login(self.request, user)
             messages.success(self.request, _("Welcome!"))
@@ -289,10 +281,6 @@ def index(request: RootDAORequest) -> HttpResponse:
     )
 
 
-def under_age(request: HttpRequest) -> HttpResponse:
-    return TemplateResponse(request, "crowd/user/under_age.html")
-
-
 class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
     name = forms.CharField(
         label=_("User name"),
@@ -302,18 +290,10 @@ class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
         ),
         required=True,
     )
-    birth_date = forms.DateField(
-        label=_("Birth date"),
-        widget=forms.SelectDateWidget(
-            years=range(TODAY.year - 5, TODAY.year - 100, -1),  # Newest to oldest
-            attrs={"class": "form-select d-inline-block me-2", "style": "width: auto;"},
-        ),
-        required=True,
-    )
 
     class Meta:
         model = User
-        fields = ("name", "birth_date", "user_type")
+        fields = ("name", "user_type")
 
 
 class UserForm(BaseUserForm):
@@ -323,7 +303,7 @@ class UserForm(BaseUserForm):
 
     class Meta:
         model = User
-        fields = ("name", "email", "birth_date", "user_type")
+        fields = ("name", "email", "user_type")
 
 
 class ConnectedUserForm(BaseUserForm):
@@ -349,18 +329,7 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
         return self.request.user
 
     def form_valid(self, form: UserForm) -> HttpResponse:
-        user = form.save(commit=False)
-
-        # Check if user is under 16
-        if user.birth_date and user.age < MINIMUM_ALLOWED_USER_AGE:
-            user.is_active = False
-            user.save()
-            django_logout(self.request)
-            return redirect(
-                _auth0_logout_url(self.request, redirect_to=reverse("web:under-age"))
-            )
-
-        user.save()
+        form.save()
         messages.success(self.request, _("Profile updated successfully!"))
         return super().form_valid(form)
 
@@ -847,29 +816,8 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         return TemplateResponse(request, "chronology/enroll_select.html", context)
 
-    def _validate_request(self, session: Session) -> EnrollmentConfig:
-        # Check if user has birth date set
-        if not self.request.user.birth_date:
-            raise RedirectError(
-                reverse("web:edit"),
-                error=_(
-                    "Please complete your profile with birth date before enrolling."
-                ),
-            )
-
-        # Check if user meets age requirement
-        if session.min_age > 0 and self.request.user.age < session.min_age:
-            raise RedirectError(
-                reverse(
-                    "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
-                ),
-                error=_(
-                    "You must be at least %(min_age)s years old to enroll "
-                    "in this session."
-                )
-                % {"min_age": session.min_age},
-            )
-
+    @staticmethod
+    def _validate_request(session: Session) -> EnrollmentConfig:
         # Check if enrollment is available for this specific session
         if not session.is_enrollment_available:
             raise RedirectError(
@@ -1193,11 +1141,6 @@ class EnrollSelectView(LoginRequiredMixin, View):
             enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
             return
 
-        # Check if user meets age requirement
-        if session.min_age > 0 and req.user.age < session.min_age:
-            enrollments.skipped_users.append(f"{req.name} ({_('age restriction')!s})")
-            return
-
         # Check if enrollment is restricted to configured users only
         enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
             session
@@ -1403,16 +1346,6 @@ class ProposeSessionView(LoginRequiredMixin, View):
     def get(self, request: UserRequest, event_slug: str) -> HttpResponse:
         event = self._validate_event(event_slug)
 
-        # Check if user has birth date set
-        if not request.user.birth_date:
-            raise RedirectError(
-                reverse("web:edit"),
-                error=_(
-                    "Please complete your profile with birth date before "
-                    "submitting proposals."
-                ),
-            )
-
         proposal_category = self._get_proposal_category(event)
         tag_categories = proposal_category.tag_categories.all()
 
@@ -1451,19 +1384,10 @@ class ProposeSessionView(LoginRequiredMixin, View):
             },
         )
 
-    def post(self, request: UserRequest, event_slug: str) -> HttpResponse:
+    def post(
+        self, request: UserRequest, event_slug: str  # noqa: ARG002
+    ) -> HttpResponse:
         event = self._validate_event(event_slug)
-
-        # Check if user has birth date set
-        if not request.user.birth_date:
-            raise RedirectError(
-                reverse("web:edit"),
-                error=_(
-                    "Please complete your profile with birth date before "
-                    "submitting proposals."
-                ),
-            )
-
         proposal_category = self._get_proposal_category(event)
 
         return self._handle_form(proposal_category, event)
@@ -1871,7 +1795,7 @@ class AnonymousEnrollView(View):
             "event": session.agenda_item.space.event,
             "anonymous_user": anonymous_user,
             "anonymous_code": anonymous_user.slug.removeprefix("code_"),
-            "needs_user_data": not anonymous_user.name or not anonymous_user.birth_date,
+            "needs_user_data": not anonymous_user.name,
             "existing_enrollment": existing_enrollment,
             "is_enrolled": existing_enrollment is not None,
         }
@@ -1923,44 +1847,14 @@ class AnonymousEnrollView(View):
 
         # Update user data if provided
         name = request.POST.get("name", "").strip()
-        birth_date_str = request.POST.get("birth_date", "").strip()
 
         if name:
             anonymous_user.name = name
-
-        if birth_date_str:
-            try:
-                anonymous_user.birth_date = (
-                    datetime.strptime(birth_date_str, "%Y-%m-%d")
-                    .replace(tzinfo=UTC)
-                    .date()
-                )
-            except ValueError:
-                messages.error(request, _("Invalid birth date format."))
-                return redirect("web:anonymous-enroll", session_id=session_id)
 
         # Validate required fields
         if not anonymous_user.name:
             messages.error(request, _("Name is required."))
             return redirect("web:anonymous-enroll", session_id=session_id)
-
-        if not anonymous_user.birth_date:
-            messages.error(request, _("Birth date is required."))
-            return redirect("web:anonymous-enroll", session_id=session_id)
-
-        # Check age requirement
-        if session.min_age > 0:
-            age = (timezone.now().date() - anonymous_user.birth_date).days // 365
-            if age < session.min_age:
-                messages.error(
-                    request,
-                    _(
-                        "You must be at least %(min_age)s years old to enroll "
-                        "in this session."
-                    )
-                    % {"min_age": session.min_age},
-                )
-                return redirect("web:anonymous-enroll", session_id=session_id)
 
         anonymous_user.save()
 

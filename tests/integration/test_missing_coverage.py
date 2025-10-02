@@ -3,13 +3,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from ludamus.adapters.db.django.models import EnrollmentConfig, User
-from ludamus.adapters.web.django.views import (
-    EnrollmentRequest,
-    Enrollments,
-    EnrollSelectView,
-    RedirectError,
-)
+from ludamus.adapters.db.django.models import EnrollmentConfig
+from ludamus.adapters.web.django.views import EnrollSelectView, RedirectError
 
 
 @pytest.mark.django_db
@@ -76,7 +71,6 @@ class TestMissingCoverage:
         # Mock request
         request = Mock()
         request.user = active_user
-        request.user.birth_date = datetime.now(tz=UTC).date().replace(year=1990)
 
         view = EnrollSelectView()
         view.request = request
@@ -90,46 +84,3 @@ class TestMissingCoverage:
         assert "No enrollment configuration is available for this session" in str(
             exc_info.value.error
         )
-
-    @staticmethod
-    def test_connected_user_age_restriction_in_enrollment(
-        event, agenda_item, active_user, faker
-    ):
-        now = datetime.now(tz=UTC)
-        session = agenda_item.session
-        session.min_age = 16
-        session.save()
-
-        # Create active enrollment config
-        EnrollmentConfig.objects.create(
-            event=event,
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(hours=2),
-            percentage_slots=100,
-        )
-
-        # Create underage connected user
-        underage_user = User.objects.create(
-            username="underage",
-            slug="underage",
-            name="Underage User",
-            birth_date=faker.date_between("-15y", "-14y"),  # Under 16
-            manager=active_user,
-        )
-
-        # Create enrollment request for underage user
-        enrollment_req = EnrollmentRequest(
-            user=underage_user, choice="enroll", name=underage_user.name
-        )
-
-        # Create enrollments object to track results
-        enrollments = Enrollments()
-
-        # Call the static method that handles enrollment creation
-        EnrollSelectView._check_and_create_enrollment(  # noqa: SLF001
-            enrollment_req, session, enrollments
-        )
-
-        # Should have skipped the underage user
-        assert len(enrollments.skipped_users) == 1
-        assert "Underage User (age restriction)" in enrollments.skipped_users[0]

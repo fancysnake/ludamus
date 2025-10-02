@@ -36,7 +36,6 @@ class TagDTO(BaseModel):
 class UserDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    birth_date: datetime | None
     date_joined: datetime
     email: str
     is_active: bool

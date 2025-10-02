@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -34,7 +34,6 @@ class UserFactory(DjangoModelFactory):
     email = Faker("email")
     name = Faker("name")
     slug = LazyAttribute(lambda o: o.username)
-    birth_date = Faker("date_of_birth", minimum_age=18, maximum_age=65)
     user_type = "active"  # Use the actual choice value
     is_active = True
     is_staff = False
@@ -189,10 +188,7 @@ def staff_client(client, staff_user):
 @pytest.fixture(name="active_user")
 def active_user_fixture():
     return UserFactory(
-        username="testuser",
-        email="testuser@example.com",
-        birth_date=date(1990, 1, 1),
-        name="Test User",
+        username="testuser", email="testuser@example.com", name="Test User"
     )
 
 
@@ -201,7 +197,6 @@ def connected_user(active_user):
     return UserFactory(
         username="connecteduser",
         email="connected@example.com",
-        birth_date=date(1995, 1, 1),
         user_type="connected",
         manager=active_user,
     )
