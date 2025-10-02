@@ -167,7 +167,6 @@ class TestCallbackView:
         authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
         User.objects.create(
             username=f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"].encode('utf-8')}',
-            birth_date=datetime(2000, 12, 12, tzinfo=UTC),
             name=faker.name(),
             email=faker.email(),
         )
@@ -178,29 +177,6 @@ class TestCallbackView:
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "http://testserver/"
         _assert_message_sent(response, messages.SUCCESS)
-
-    @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
-    def test_error_user_under_age(
-        self, authorize_access_token_mock, client, faker, settings
-    ):
-        authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
-        User.objects.create(
-            username=f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"].encode('utf-8')}',
-            birth_date=datetime.now(tz=UTC),
-        )
-        state_token = self._setup_valid_state()
-
-        response = client.get(self.URL, {"state": state_token})
-
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == "https://auth0.example.com/v2/logout?" + urlencode(
-            {
-                "returnTo": (
-                    "http://testserver/redirect?last_domain=testserver&redirect_to=/crowd/user/under-age"
-                ),
-                "client_id": settings.AUTH0_CLIENT_ID,
-            }
-        )
 
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
     def test_error_bad_token(self, authorize_access_token_mock, client):
@@ -252,7 +228,6 @@ class TestCallbackView:
 
         User.objects.create(
             username=f'auth0|{sub_id.encode("utf-8")}',
-            birth_date=datetime(2000, 12, 12, tzinfo=UTC),
             name=faker.name(),
             email=faker.email(),
         )
@@ -414,16 +389,6 @@ class TestIndexView:
 
 
 @pytest.mark.django_db(transaction=True)
-class TestUnderAgeView:
-    URL = reverse("web:under-age")
-
-    def test_ok(self, client):
-        response = client.get(self.URL)
-
-        assert response.status_code == HTTPStatus.OK
-
-
-@pytest.mark.django_db(transaction=True)
 class TestEditProfileView:
     URL = reverse("web:edit")
 
@@ -441,7 +406,6 @@ class TestEditProfileView:
         data = {
             "name": faker.name(),
             "email": faker.email(),
-            "birth_date": faker.date_between("-100y", "-18y"),
             "user_type": User.UserType.ACTIVE,
         }
         response = authenticated_client.post(self.URL, data=data)
@@ -452,32 +416,6 @@ class TestEditProfileView:
         user = User.objects.get(id=active_user.id)
         assert user.name == data["name"]
         assert user.email == data["email"]
-        assert user.birth_date == data["birth_date"]
-
-    def test_post_error_underage_user(
-        self, authenticated_client, active_user, faker, settings
-    ):
-        data = {
-            "name": faker.name(),
-            "email": faker.email(),
-            "birth_date": faker.date_between("-15y", "-1y"),
-            "user_type": User.UserType.ACTIVE,
-        }
-        response = authenticated_client.post(self.URL, data=data)
-
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == "https://auth0.example.com/v2/logout?" + urlencode(
-            {
-                "returnTo": (
-                    "http://testserver/redirect?last_domain=testserver&redirect_to=/crowd/user/under-age"
-                ),
-                "client_id": settings.AUTH0_CLIENT_ID,
-            }
-        )
-        user = User.objects.get(id=active_user.id)
-        assert user.name == data["name"]
-        assert user.email == data["email"]
-        assert user.birth_date == data["birth_date"]
 
     def test_post_error_form_invalid(self, authenticated_client):
         response = authenticated_client.post(self.URL)
@@ -505,17 +443,12 @@ class TestConnectedView:
         assert response.context_data["connected_users"][0]["user"] == connected_user
 
     def test_post_ok(self, authenticated_client, faker):
-        data = {
-            "name": faker.name(),
-            "birth_date": faker.date(),
-            "user_type": User.UserType.CONNECTED,
-        }
+        data = {"name": faker.name(), "user_type": User.UserType.CONNECTED}
         response = authenticated_client.post(self.URL, data=data)
 
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == "/crowd/user/connected"
         user = User.objects.get(name=data["name"])
-        assert user.birth_date.isoformat() == data["birth_date"]
         assert user.user_type == User.UserType.CONNECTED
 
     def test_post_error_form_invalid(self, authenticated_client):
@@ -533,16 +466,11 @@ class TestConnectedView:
                 username=f"user_{i}_{faker.random_int()}",
                 name=unique_name,
                 slug=f"connected-{i}-{faker.random_int()}",
-                birth_date=faker.date(),
                 user_type=User.UserType.CONNECTED,
                 manager=active_user,
             )
 
-        data = {
-            "name": faker.name(),
-            "birth_date": faker.date(),
-            "user_type": User.UserType.CONNECTED,
-        }
+        data = {"name": faker.name(), "user_type": User.UserType.CONNECTED}
         response = authenticated_client.post(self.URL, data=data)
 
         assert response.status_code == HTTPStatus.OK
@@ -561,11 +489,7 @@ class TestEditConnectedView:
         return reverse(self.URL_NAME, kwargs={"slug": slug})
 
     def test_post_ok(self, authenticated_client, connected_user, faker):
-        data = {
-            "name": faker.name(),
-            "birth_date": faker.date(),
-            "user_type": User.UserType.CONNECTED,
-        }
+        data = {"name": faker.name(), "user_type": User.UserType.CONNECTED}
         response = authenticated_client.post(
             self._get_url(connected_user.slug), data=data
         )
@@ -575,7 +499,6 @@ class TestEditConnectedView:
         _assert_message_sent(response, messages.SUCCESS)
         user = User.objects.get(pk=connected_user.pk)
         assert user.name == data["name"]
-        assert user.birth_date.isoformat() == data["birth_date"]
         assert user.user_type == data["user_type"]
 
     def test_post_error_form_invalid(self, authenticated_client, connected_user):
@@ -715,17 +638,6 @@ class TestEnrollSelectView:
         assert response.url == "/"
         _assert_message_sent(response, messages.ERROR)
 
-    def test_post_error_birth_rate_missing(
-        self, active_user, agenda_item, authenticated_client
-    ):
-        active_user.birth_date = None
-        active_user.save()
-        response = authenticated_client.post(self._get_url(agenda_item.session.pk))
-
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == "/crowd/user/edit"
-        _assert_message_sent(response, messages.ERROR)
-
     def test_post_error_enrollment_inactive(
         self, agenda_item, authenticated_client, event, faker
     ):
@@ -739,83 +651,6 @@ class TestEnrollSelectView:
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse("web:event", kwargs={"slug": event.slug})
         _assert_message_sent(response, messages.ERROR)
-
-    def test_post_main_user_underage_with_valid_form(
-        self, agenda_item, authenticated_client, active_user, event, faker
-    ):
-        # Set session to require minimum age of 16
-        session = agenda_item.session
-        session.min_age = 16
-        session.save()
-
-        # Make user underage (14 years old)
-        active_user.birth_date = faker.date_between("-15y", "-14y")
-        active_user.save()
-
-        # Create enrollment config
-        EnrollmentConfig.objects.create(
-            event=event,
-            start_time=datetime.now(UTC) - timedelta(days=1),
-            end_time=datetime.now(UTC) + timedelta(days=1),
-        )
-
-        # Mock the form to be valid with an enrollment request
-        # This simulates bypassing the form's age check to test _validate_request
-        with patch(
-            "ludamus.adapters.web.django.views.create_enrollment_form"
-        ) as mock_form:
-            mock_form_instance = Mock()
-            mock_form_instance.is_valid.return_value = True
-            mock_form_instance.cleaned_data = {f"user_{active_user.id}": "enroll"}
-            mock_form.return_value = Mock(return_value=mock_form_instance)
-
-            # Try to submit - should be blocked by _validate_request
-            response = authenticated_client.post(
-                self._get_url(session.pk), data={f"user_{active_user.id}": "enroll"}
-            )
-
-        # Should redirect to event page with error due to age check in _validate_request
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
-
-        # Check error message about age requirement
-        messages_list = list(get_messages(response.wsgi_request))
-        assert len(messages_list) == 1
-        assert messages_list[0].level == messages.ERROR
-        assert "You must be at least 16 years old" in str(messages_list[0])
-
-    def test_get_user_underage_sees_disabled_form(
-        self, agenda_item, authenticated_client, active_user, event, faker
-    ):
-        # Set session to require minimum age of 16
-        session = agenda_item.session
-        session.min_age = 16
-        session.save()
-
-        # Make user underage (14 years old)
-        active_user.birth_date = faker.date_between("-15y", "-14y")
-        active_user.save()
-
-        # Create enrollment config
-        EnrollmentConfig.objects.create(
-            event=event,
-            start_time=datetime.now(UTC) - timedelta(days=1),
-            end_time=datetime.now(UTC) + timedelta(days=1),
-        )
-
-        # Access enrollment form via GET - should show form with disabled options
-        response = authenticated_client.get(self._get_url(session.pk))
-
-        # Should show the form (not redirect)
-        assert response.status_code == HTTPStatus.OK
-
-        # Check that the form shows age restriction for the user
-        form = response.context["form"]
-        field_name = f"user_{active_user.id}"
-        assert field_name in form.fields
-        field = form.fields[field_name]
-        assert field.choices == [("", "No change (age restriction)")]
-        assert field.widget.attrs.get("disabled") == "disabled"
 
     def test_post_invalid_form(self, active_user, agenda_item, authenticated_client):
         response = authenticated_client.post(
@@ -1201,21 +1036,6 @@ class TestProposeSessionView:
             "min_participants_limit": 2,
             "tag_categories": [],
         }
-
-    @pytest.mark.parametrize("method", ("get", "post"))
-    def test_error_without_birth_date(
-        self, active_user, authenticated_client, event, faker, method
-    ):
-        active_user.birth_date = None
-        active_user.save()
-        event.proposal_start_time = faker.date_time_between("-10d", "-1d")
-        event.proposal_end_time = faker.date_time_between("+1d", "+10d")
-        event.save()
-        response = getattr(authenticated_client, method)(self._get_url(event.slug))
-
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse("web:edit")
-        _assert_message_sent(response, messages.ERROR, number=1)
 
     @pytest.mark.usefixtures("proposal_category")
     def test_post_form_invalid(self, authenticated_client, event, faker):

@@ -50,7 +50,6 @@ urlpatterns = [
     path("crowd/user/login/auth0", views.auth0_login, name="auth0_login"),
     path("crowd/user/login/callback", views.CallbackView.as_view(), name="callback"),
     path("crowd/user/logout", views.logout, name="logout"),
-    path("crowd/user/under-age", views.under_age, name="under-age"),
     path("redirect", views.redirect_view, name="redirect"),
     path("theme/select", views.ThemeSelectionView.as_view(), name="theme-select"),
     # Anonymous enrollment URLs

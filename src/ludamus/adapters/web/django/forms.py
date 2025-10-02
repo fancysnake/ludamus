@@ -127,7 +127,6 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
             session=session, user=user
         ).first()
         has_conflict = Session.objects.has_conflicts(session, user)
-        meets_age_requirement = session.min_age == 0 or user.age >= session.min_age
         field_name = f"user_{user.id}"
         choices = [("", _("No change"))]
         help_text = ""
@@ -137,46 +136,26 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
             match current_participation.status:
                 case SessionParticipationStatus.CONFIRMED:
                     base_choices = [("cancel", _("Cancel enrollment"))]
-                    if meets_age_requirement and can_join_waitlist(user):
+                    if can_join_waitlist(user):
                         base_choices.append(("waitlist", _("Move to waiting list")))
                     choices.extend(base_choices)
-                    # Set help text if age restriction applies but they can still cancel
-                    if not meets_age_requirement:
-                        help_text = _(
-                            "Must be at least %(min_age)s years old for new enrollment"
-                        ) % {"min_age": session.min_age}
                 case SessionParticipationStatus.WAITING:
                     # On waiting list - can always cancel, but enrollment depends on age
                     base_waiting_choices = [("cancel", _("Cancel enrollment"))]
-                    if meets_age_requirement and can_enroll(user):
+                    if can_enroll(user):
                         base_waiting_choices.append(
                             ("enroll", _("Enroll (if spots available)"))
                         )
                     choices.extend(base_waiting_choices)
                     # Set help text if age restriction applies
-                    if not meets_age_requirement:
-                        help_text = _(
-                            "Must be at least %(min_age)s years old for enrollment"
-                        ) % {"min_age": session.min_age}
                 case _:
                     # Unknown status - treat as if no participation exists
                     # Add default enrollment options only if age requirement is met
-                    if meets_age_requirement:
-                        if can_enroll(user) and not has_conflict:
-                            choices.append(("enroll", _("Enroll")))
-                        if can_join_waitlist(user):
-                            choices.append(("waitlist", _("Join waiting list")))
-                    else:
-                        choices = [("", _("No change (age restriction)"))]
-                        help_text = _("Must be at least %(min_age)s years old") % {
-                            "min_age": session.min_age
-                        }
+                    if can_enroll(user) and not has_conflict:
+                        choices.append(("enroll", _("Enroll")))
+                    if can_join_waitlist(user):
+                        choices.append(("waitlist", _("Join waiting list")))
         # No current participation - check age requirement for new enrollments
-        elif not meets_age_requirement:
-            choices = [("", _("No change (age restriction)"))]
-            help_text = _("Must be at least %(min_age)s years old") % {
-                "min_age": session.min_age
-            }
         else:
             if can_enroll(user) and not has_conflict:
                 choices.append(("enroll", _("Enroll")))
@@ -194,10 +173,8 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
         # If no choices available, provide helpful explanation
         # But preserve age restriction and time conflict choices
         if (
-            (len(choices) == 0 or (len(choices) == 1 and not choices[0][0]))
-            and meets_age_requirement
-            and not has_conflict
-        ):
+            len(choices) == 0 or (len(choices) == 1 and not choices[0][0])
+        ) and not has_conflict:
             if enrollment_config and enrollment_config.restrict_to_configured_users:
                 if not user.email:
                     help_text = _("Email address required for enrollment")
@@ -260,18 +237,6 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                     )
                     if value == "enroll":
                         # Check age requirement first
-                        meets_age_requirement = (
-                            session.min_age == 0 or self.user_obj.age >= session.min_age
-                        )
-                        if not meets_age_requirement:
-                            raise ValidationError(
-                                _(
-                                    "%(user)s cannot enroll: must be at least "
-                                    "%(min_age)s years old"
-                                )
-                                % {"user": user_name, "min_age": session.min_age}
-                            )
-
                         if (
                             enrollment_config
                             and enrollment_config.restrict_to_configured_users
@@ -332,20 +297,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                                 _("%(user)s cannot enroll: enrollment not available")
                                 % {"user": user_name}
                             )
-                    elif value == "waitlist":
-                        # Check age requirement for waitlist too
-                        meets_age_requirement = (
-                            session.min_age == 0 or self.user_obj.age >= session.min_age
-                        )
-                        if not meets_age_requirement:
-                            raise ValidationError(
-                                _(
-                                    "%(user)s cannot join waitlist: must be at least "
-                                    "%(min_age)s years old"
-                                )
-                                % {"user": user_name, "min_age": session.min_age}
-                            )
-                    else:
+                    elif value != "waitlist":
                         raise ValidationError(
                             _("Invalid choice for %(user)s: %(value)s")
                             % {"user": user_name, "value": value}
@@ -364,7 +316,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                 attrs={
                     "class": "form-select",
                     "data-user-id": user.id,
-                    "disabled": "disabled" if not meets_age_requirement else None,
+                    "disabled": None,
                 }
             ),
         )

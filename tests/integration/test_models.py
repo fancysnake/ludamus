@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -94,18 +94,6 @@ class TestUser:
     @pytest.mark.django_db
     def test_get_short_name():
         assert User(name="John Smith").get_short_name() == "John"
-
-    @staticmethod
-    @pytest.mark.django_db
-    def test_age(freezer):
-        freezer.move_to("2025-04-02")
-        age = 24
-        assert User(birth_date=date(2001, 3, 1)).age == age
-
-    @staticmethod
-    @pytest.mark.django_db
-    def test_age_zero():
-        assert User().age == 0
 
 
 class TestEvent:

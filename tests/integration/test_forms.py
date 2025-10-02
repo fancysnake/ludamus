@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -298,44 +298,15 @@ class TestCreateSessionProposalForm:
 
 
 class TestCreateEnrollmentForm:
-
     @pytest.mark.django_db
     @staticmethod
-    def test_age_requirement_not_met(agenda_item, active_user, faker):
-
-        session = agenda_item.session
-
-        session.min_age = 16
-        session.save()
-
-        young_user = active_user
-        young_user.birth_date = faker.date_between("-15y", "-14y")
-        young_user.save()
-
-        form_class = create_enrollment_form(session, [young_user])
-        form = form_class()
-
-        field_name = f"user_{young_user.id}"
-        assert field_name in form.fields
-
-        field = form.fields[field_name]
-        assert field.choices == [("", "No change (age restriction)")]
-        assert field.help_text == "Must be at least 16 years old"
-        assert field.widget.attrs.get("disabled") == "disabled"
-
-    @pytest.mark.django_db
-    @staticmethod
-    def test_age_requirement_met(agenda_item, active_user, faker):
+    def test_age_requirement_met(agenda_item, active_user):
 
         session = agenda_item.session
         event = session.agenda_item.space.event
 
         session.min_age = 16
         session.save()
-
-        adult_user = active_user
-        adult_user.birth_date = faker.date_between("-20y", "-18y")
-        adult_user.save()
 
         # Create enrollment config to enable enrollment functionality
         now = datetime.now(tz=UTC)
@@ -347,10 +318,10 @@ class TestCreateEnrollmentForm:
             max_waitlist_sessions=10,  # Enable waitlist
         )
 
-        form_class = create_enrollment_form(session, [adult_user])
+        form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{adult_user.id}"
+        field_name = f"user_{active_user.id}"
         assert field_name in form.fields
 
         field = form.fields[field_name]
@@ -363,7 +334,7 @@ class TestCreateEnrollmentForm:
 
     @pytest.mark.django_db
     @staticmethod
-    def test_no_age_restriction(agenda_item, active_user, faker):
+    def test_no_age_restriction(agenda_item, active_user):
 
         session = agenda_item.session
         event = session.agenda_item.space.event
@@ -371,10 +342,6 @@ class TestCreateEnrollmentForm:
         session.min_age = 0
         session.save()
 
-        young_user = active_user
-        young_user.birth_date = faker.date_between("-15y", "-10y")
-        young_user.save()
-
         # Create enrollment config to enable enrollment functionality
         now = datetime.now(tz=UTC)
         EnrollmentConfig.objects.create(
@@ -385,10 +352,10 @@ class TestCreateEnrollmentForm:
             max_waitlist_sessions=10,  # Enable waitlist
         )
 
-        form_class = create_enrollment_form(session, [young_user])
+        form_class = create_enrollment_form(session, [active_user])
         form = form_class()
 
-        field_name = f"user_{young_user.id}"
+        field_name = f"user_{active_user.id}"
         assert field_name in form.fields
 
         field = form.fields[field_name]
@@ -398,54 +365,6 @@ class TestCreateEnrollmentForm:
         assert "waitlist" in choice_values
         assert not field.help_text
         assert field.widget.attrs.get("disabled") is None
-
-    @pytest.mark.django_db
-    @staticmethod
-    def test_multiple_users_with_different_ages(agenda_item, active_user, faker):
-
-        session = agenda_item.session
-        event = session.agenda_item.space.event
-
-        session.min_age = 16
-        session.save()
-
-        young_user = active_user
-        young_user.birth_date = faker.date_between("-15y", "-14y")  # Too young
-        young_user.save()
-
-        adult_user = User.objects.create(
-            username="adult_user",
-            slug="adult-user",
-            birth_date=faker.date_between("-20y", "-18y"),  # Old enough
-            manager=active_user.manager if hasattr(active_user, "manager") else None,
-        )
-
-        # Create enrollment config to enable enrollment functionality
-        now = datetime.now(tz=UTC)
-        EnrollmentConfig.objects.create(
-            event=event,
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(hours=2),
-            percentage_slots=100,
-            max_waitlist_sessions=10,  # Enable waitlist
-        )
-
-        form_class = create_enrollment_form(session, [young_user, adult_user])
-        form = form_class()
-
-        young_field_name = f"user_{young_user.id}"
-        young_field = form.fields[young_field_name]
-        assert young_field.choices == [("", "No change (age restriction)")]
-        assert young_field.help_text == "Must be at least 16 years old"
-        assert young_field.widget.attrs.get("disabled") == "disabled"
-
-        adult_field_name = f"user_{adult_user.id}"
-        adult_field = form.fields[adult_field_name]
-        choice_values = [choice[0] for choice in adult_field.choices]
-        assert "enroll" in choice_values
-        assert "waitlist" in choice_values
-        assert not adult_field.help_text
-        assert adult_field.widget.attrs.get("disabled") is None
 
     @pytest.mark.django_db
     @staticmethod
@@ -498,9 +417,6 @@ class TestCreateEnrollmentForm:
         session.min_age = 0
         session.save()
 
-        active_user.birth_date = date(1990, 1, 1)  # 30+ years old
-        active_user.save()
-
         # Create enrollment config to enable enrollment functionality
         now = datetime.now(tz=UTC)
         EnrollmentConfig.objects.create(
@@ -552,9 +468,6 @@ class TestCreateEnrollmentForm:
 
         session.min_age = 0
         session.save()
-
-        active_user.birth_date = date(1990, 1, 1)  # 30+ years old
-        active_user.save()
 
         # Create enrollment config to enable enrollment functionality
         now = datetime.now(tz=UTC)
@@ -835,9 +748,7 @@ class TestCreateEnrollmentForm:
         )
 
         # Create another user to fill the waitlist slot
-        User.objects.create(
-            username="other_user", slug="other-user", birth_date=active_user.birth_date
-        )
+        User.objects.create(username="other_user", slug="other-user")
 
         # Fill the waitlist with other user in a different session
         other_session = SessionFactory()

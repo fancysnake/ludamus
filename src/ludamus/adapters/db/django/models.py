@@ -35,7 +35,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         CONNECTED = "connected", _("Connected")
         ANONYMOUS = "anonymous", _("Anonymous")
 
-    birth_date = models.DateField(blank=True, null=True)
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
     email = models.EmailField(_("email address"), blank=True)
     is_active = models.BooleanField(
@@ -99,17 +98,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         )
 
     @property
-    def age(self) -> int:
-        if self.birth_date:
-            return math.floor(
-                (datetime.now(tz=UTC).date() - self.birth_date).days / 365.25
-            )
-
-        return 0
-
-    @property
     def is_incomplete(self) -> bool:
-        return not self.name and not self.birth_date and not self.email
+        return not self.name and not self.email
 
     @property
     def confirmed_participations_count(self) -> int:
