@@ -745,11 +745,11 @@
                                         <p class="ms-4">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
                                         {% if data.session.proposal %}
                                             {% with host=data.session.proposal.host %}
-                                                {% if host and host.id and host.discord_username %}
+                                                {% if host and host.slug and host.discord_username %}
                                                     <h6>{% bs_icon 'discord' %} {% translate "Host Discord" %}</h6>
                                                     <div class="ms-4">
                                                         <button class="btn btn-sm btn-outline-primary reveal-discord-btn"
-                                                                hx-get="{% url 'web:get-discord' user_id=host.id %}"
+                                                                hx-get="{% url 'web:get-discord' user_slug=host.slug %}"
                                                                 hx-swap="outerHTML"
                                                                 hx-trigger="click once">
                                                             {% bs_icon 'discord' %} {% translate "Show Discord" %}
@@ -875,9 +875,9 @@
                                                                 </td>
                                                                 <td>
                                                                     {% with user=participation.user %}
-                                                                        {% if user and user.id and user.discord_username %}
+                                                                        {% if user and user.slug and user.discord_username %}
                                                                             <button class="btn btn-sm btn-outline-info reveal-discord-btn"
-                                                                                    hx-get="{% url 'web:get-discord' user_id=user.id %}"
+                                                                                    hx-get="{% url 'web:get-discord' user_slug=user.slug %}"
                                                                                     hx-swap="outerHTML"
                                                                                     hx-trigger="click once">
                                                                                 {% bs_icon 'discord' size='0.875em' %} {% translate "Show" %}

@@ -2039,18 +2039,18 @@ def clear_anonymous_session_on_login(  # type: ignore [misc]  # Django
         request.session.pop("anonymous_event_id", None)
 
 
-def get_discord_username(request: HttpRequest, user_id: int) -> HttpResponse:
+def get_discord_username(request: HttpRequest, user_slug: str) -> HttpResponse:
     """Return Discord username HTML fragment via htmx.
 
     Args:
         request: HTTP request
-        user_id: ID of user whose Discord username to fetch
+        user_slug: Slug of user whose Discord username to fetch
 
     Returns:
         TemplateResponse with Discord username fragment
     """
     try:
-        user = User.objects.get(id=user_id)
+        user = User.objects.get(slug=user_slug)
         if user.discord_username:
             return TemplateResponse(
                 request,
