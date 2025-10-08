@@ -2047,12 +2047,12 @@ def get_discord_username(request: HttpRequest, user_id: int) -> HttpResponse:
     """
     try:
         user = User.objects.get(id=user_id)
-        return TemplateResponse(
-            request,
-            "chronology/_discord_username.html",
-            {"discord_username": user.discord_username},
-        )
+        if user.discord_username:
+            return TemplateResponse(
+                request,
+                "chronology/_discord_username.html",
+                {"discord_username": user.discord_username},
+            )
+        return HttpResponse("")  # Return empty if no discord username
     except User.DoesNotExist:
-        return TemplateResponse(
-            request, "chronology/_discord_username.html", {"discord_username": None}
-        )
+        return HttpResponse("")  # Return empty if user doesn't exist
