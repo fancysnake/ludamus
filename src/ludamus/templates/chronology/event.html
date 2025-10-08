@@ -743,16 +743,20 @@
                                     <div class="col-md-6">
                                         <h6>{% bs_icon 'person-circle' %} {% translate "Host" %}</h6>
                                         <p class="ms-4">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
-                                        {% if data.session.proposal.host.discord_username %}
-                                            <h6>{% bs_icon 'discord' %} {% translate "Host Discord" %}</h6>
-                                            <div class="ms-4">
-                                                <button class="btn btn-sm btn-outline-primary reveal-discord-btn"
-                                                        hx-get="{% url 'web:get-discord' user_id=data.session.proposal.host.id %}"
-                                                        hx-swap="outerHTML"
-                                                        hx-trigger="click once">
-                                                    {% bs_icon 'discord' %} {% translate "Show Discord" %}
-                                                </button>
-                                            </div>
+                                        {% if data.session.proposal %}
+                                            {% with host=data.session.proposal.host %}
+                                                {% if host and host.id and host.discord_username %}
+                                                    <h6>{% bs_icon 'discord' %} {% translate "Host Discord" %}</h6>
+                                                    <div class="ms-4">
+                                                        <button class="btn btn-sm btn-outline-primary reveal-discord-btn"
+                                                                hx-get="{% url 'web:get-discord' user_id=host.id %}"
+                                                                hx-swap="outerHTML"
+                                                                hx-trigger="click once">
+                                                            {% bs_icon 'discord' %} {% translate "Show Discord" %}
+                                                        </button>
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
                                         {% endif %}
                                         <h6>{% bs_icon 'clock' %} {% translate "Time" %}</h6>
                                         <p class="ms-4">
@@ -870,16 +874,18 @@
                                                                     </div>
                                                                 </td>
                                                                 <td>
-                                                                    {% if participation.user.discord_username %}
-                                                                        <button class="btn btn-sm btn-outline-info reveal-discord-btn"
-                                                                                hx-get="{% url 'web:get-discord' user_id=participation.user.id %}"
-                                                                                hx-swap="outerHTML"
-                                                                                hx-trigger="click once">
-                                                                            {% bs_icon 'discord' size='0.875em' %} {% translate "Show" %}
-                                                                        </button>
-                                                                    {% else %}
-                                                                        <span class="text-muted">—</span>
-                                                                    {% endif %}
+                                                                    {% with user=participation.user %}
+                                                                        {% if user and user.id and user.discord_username %}
+                                                                            <button class="btn btn-sm btn-outline-info reveal-discord-btn"
+                                                                                    hx-get="{% url 'web:get-discord' user_id=user.id %}"
+                                                                                    hx-swap="outerHTML"
+                                                                                    hx-trigger="click once">
+                                                                                {% bs_icon 'discord' size='0.875em' %} {% translate "Show" %}
+                                                                            </button>
+                                                                        {% else %}
+                                                                            <span class="text-muted">—</span>
+                                                                        {% endif %}
+                                                                    {% endwith %}
                                                                 </td>
                                                                 <td>
                                                                     <small class="text-muted">{{ participation.creation_time|date:"M j, G:i" }}</small>
@@ -990,7 +996,7 @@
     </div>
     <script>
         // Copy Discord username to clipboard with visual feedback
-        function copyToClipboard(button, text) {
+        window.copyToClipboard = function(button, text) {
             navigator.clipboard.writeText(text).then(() => {
                 // Store original content
                 const originalHTML = button.innerHTML;

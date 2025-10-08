@@ -311,6 +311,10 @@ class ConnectedUserForm(BaseUserForm):
         initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()
     )
 
+    class Meta:
+        model = User
+        fields = ("name", "discord_username", "user_type")
+
     def save(self, commit: bool = True) -> User:  # noqa: FBT001, FBT002
         self.instance.username = f"connected|{token_urlsafe(50)}"
         self.instance.slug = slugify(self.instance.username[:50])
