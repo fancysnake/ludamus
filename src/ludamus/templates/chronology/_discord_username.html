@@ -1,0 +1,12 @@
+{% load bootstrap_icons %}
+{% load i18n %}
+{% if discord_username %}
+    <div class="d-flex align-items-center gap-1">
+        <code>@{{ discord_username }}</code>
+        <button class="btn btn-sm btn-outline-secondary p-1"
+                onclick="copyToClipboard(this, '@{{ discord_username }}')"
+                title="{% translate "Copy to clipboard" %}">{% bs_icon 'clipboard' size='0.875em' %}</button>
+    </div>
+{% else %}
+    <span class="text-muted">—</span>
+{% endif %}

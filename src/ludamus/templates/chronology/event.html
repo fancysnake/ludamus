@@ -743,6 +743,17 @@
                                     <div class="col-md-6">
                                         <h6>{% bs_icon 'person-circle' %} {% translate "Host" %}</h6>
                                         <p class="ms-4">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
+                                        {% if data.session.proposal.host %}
+                                            <h6>{% bs_icon 'discord' %} {% translate "Host Discord" %}</h6>
+                                            <div class="ms-4">
+                                                <button class="btn btn-sm btn-outline-primary reveal-discord-btn"
+                                                        hx-get="{% url 'web:get-discord' user_id=data.session.proposal.host.id %}"
+                                                        hx-swap="outerHTML"
+                                                        hx-trigger="click once">
+                                                    {% bs_icon 'discord' %} {% translate "Show Discord" %}
+                                                </button>
+                                            </div>
+                                        {% endif %}
                                         <h6>{% bs_icon 'clock' %} {% translate "Time" %}</h6>
                                         <p class="ms-4">
                                             {{ data.session.agenda_item.start_time|date:"l, F j, Y" }}
@@ -844,6 +855,7 @@
                                                 <thead>
                                                     <tr>
                                                         <th>{% translate "Name" %}</th>
+                                                        <th>{% bs_icon 'discord' %} {% translate "Discord" %}</th>
                                                         <th>{% translate "Enrolled" %}</th>
                                                     </tr>
                                                 </thead>
@@ -856,6 +868,14 @@
                                                                         {% bs_icon 'person-circle' %}
                                                                         <span class="ms-2">{{ participation.user.get_full_name }}</span>
                                                                     </div>
+                                                                </td>
+                                                                <td>
+                                                                    <button class="btn btn-sm btn-outline-info reveal-discord-btn"
+                                                                            hx-get="{% url 'web:get-discord' user_id=participation.user.id %}"
+                                                                            hx-swap="outerHTML"
+                                                                            hx-trigger="click once">
+                                                                        {% bs_icon 'discord' size='0.875em' %} {% translate "Show" %}
+                                                                    </button>
                                                                 </td>
                                                                 <td>
                                                                     <small class="text-muted">{{ participation.creation_time|date:"M j, G:i" }}</small>
@@ -965,6 +985,33 @@
         </div>
     </div>
     <script>
+        // Copy Discord username to clipboard with visual feedback
+        function copyToClipboard(button, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Store original content
+                const originalHTML = button.innerHTML;
+                const originalClasses = button.className;
+
+                // Show success state
+                button.innerHTML = '{% bs_icon "check" %}';
+                button.className = 'btn btn-sm btn-success p-1';
+
+                // Revert after 2 seconds
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.className = originalClasses;
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                // Show error state
+                const originalClasses = button.className;
+                button.className = 'btn btn-sm btn-danger p-1';
+                setTimeout(() => {
+                    button.className = originalClasses;
+                }, 2000);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Prevent enrollment buttons from triggering card click
             document.querySelectorAll('.session-card .btn').forEach(button => {

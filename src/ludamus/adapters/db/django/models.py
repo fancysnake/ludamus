@@ -71,6 +71,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         ),
         error_messages={"unique": _("A user with that username already exists.")},
     )
+    discord_username = models.CharField(
+        _("Discord username"),
+        max_length=150,
+        blank=True,
+        help_text=_("Your Discord username for session coordination"),
+    )
 
     objects = UserManager()
 
