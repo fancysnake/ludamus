@@ -72,5 +72,5 @@ urlpatterns = [
         "anonymous/reset/", views.AnonymousResetView.as_view(), name="anonymous-reset"
     ),
     # Discord username endpoint
-    path("discord/<int:user_id>/", views.get_discord_username, name="get-discord"),
+    path("discord/<slug:user_slug>/", views.get_discord_username, name="get-discord"),
 ]
