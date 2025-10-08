@@ -303,7 +303,7 @@ class UserForm(BaseUserForm):
 
     class Meta:
         model = User
-        fields = ("name", "email", "user_type")
+        fields = ("name", "email", "discord_username", "user_type")
 
 
 class ConnectedUserForm(BaseUserForm):
@@ -2033,3 +2033,26 @@ def clear_anonymous_session_on_login(  # type: ignore [misc]  # Django
         request.session.pop("anonymous_user_id", None)
         request.session.pop("anonymous_enrollment_active", None)
         request.session.pop("anonymous_event_id", None)
+
+
+def get_discord_username(request: HttpRequest, user_id: int) -> HttpResponse:
+    """Return Discord username HTML fragment via htmx.
+
+    Args:
+        request: HTTP request
+        user_id: ID of user whose Discord username to fetch
+
+    Returns:
+        TemplateResponse with Discord username fragment
+    """
+    try:
+        user = User.objects.get(id=user_id)
+        return TemplateResponse(
+            request,
+            "chronology/_discord_username.html",
+            {"discord_username": user.discord_username},
+        )
+    except User.DoesNotExist:
+        return TemplateResponse(
+            request, "chronology/_discord_username.html", {"discord_username": None}
+        )
