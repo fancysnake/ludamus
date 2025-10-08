@@ -995,33 +995,34 @@
         </div>
     </div>
     <script>
-        // Copy Discord username to clipboard with visual feedback
-        window.copyToClipboard = function(button, text) {
+        // Event delegation for copy Discord buttons (works with htmx-loaded content)
+        document.addEventListener('click', function(e) {
+            const button = e.target.closest('.copy-discord');
+            if (!button) return;
+
+            const text = button.dataset.discord;
+            if (!text) return;
+
             navigator.clipboard.writeText(text).then(() => {
-                // Store original content
                 const originalHTML = button.innerHTML;
                 const originalClasses = button.className;
 
-                // Show success state
-                button.innerHTML = '{% bs_icon "check" %}';
-                button.className = 'btn btn-sm btn-success p-1';
+                button.innerHTML = '✓';
+                button.className = 'btn btn-sm btn-success p-1 copy-discord';
 
-                // Revert after 2 seconds
                 setTimeout(() => {
                     button.innerHTML = originalHTML;
                     button.className = originalClasses;
                 }, 2000);
             }).catch(err => {
                 console.error('Copy failed:', err);
-                // Show error state
                 const originalClasses = button.className;
-                button.className = 'btn btn-sm btn-danger p-1';
+                button.className = 'btn btn-sm btn-danger p-1 copy-discord';
                 setTimeout(() => {
                     button.className = originalClasses;
                 }, 2000);
             });
-        }
-
+        });
         document.addEventListener('DOMContentLoaded', function() {
             // Prevent enrollment buttons from triggering card click
             document.querySelectorAll('.session-card .btn').forEach(button => {
