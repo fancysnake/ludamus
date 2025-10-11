@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
+from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 from ludamus.adapters.db.django.models import (
@@ -24,8 +27,44 @@ if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import Event
     from ludamus.pacts import ProposalCategoryDTO, TagCategoryDTO, TagDTO
 
-
+TODAY = datetime.now(tz=UTC).date()
 logger = logging.getLogger(__name__)
+
+
+class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
+    name = forms.CharField(
+        label=_("User name"),
+        help_text=_(
+            "Your public display name that others will see. This can be a nickname "
+            "and does not need to be your legal name."
+        ),
+        required=True,
+    )
+
+    class Meta:
+        model = User
+        fields = ("name", "user_type")
+
+
+class UserForm(BaseUserForm):
+    user_type = forms.CharField(
+        initial=User.UserType.ACTIVE, widget=forms.HiddenInput()
+    )
+
+    class Meta:
+        model = User
+        fields = ("name", "email", "user_type")
+
+
+class ConnectedUserForm(BaseUserForm):
+    user_type = forms.CharField(
+        initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()
+    )
+
+    def save(self, commit: bool = True) -> User:  # noqa: FBT001, FBT002
+        self.instance.username = f"connected|{token_urlsafe(50)}"
+        self.instance.slug = slugify(self.instance.username[:50])
+        return super().save(commit)  # type: ignore [no-any-return]
 
 
 class UnsupportedTagCategoryInputTypeError(Exception):

@@ -157,7 +157,7 @@
                                         data-bs-target="#anonymousCodeModal">
                                     {% bs_icon 'key' %} {% translate "Enter Different Code" %}
                                 </button>
-                                <a href="{% url 'web:anonymous-reset' %}?finish=1"
+                                <a href="{% url 'web:chronology:anonymous-reset' %}"
                                    class="btn btn-outline-primary">
                                     {% bs_icon 'check-circle' %} {% translate "Finish" %}
                                 </a>
@@ -182,7 +182,7 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <form method="post" action="{% url 'web:anonymous-code-entry' %}">
+                    <form method="post" action="{% url 'web:chronology:anonymous-load' %}">
                         <div class="modal-body">
                             {% csrf_token %}
                             <div class="mb-3">
@@ -217,7 +217,7 @@
                         <span class="badge bg-primary ms-2">{{ sessions|length }}</span>
                     </h5>
                     {% if event.is_proposal_active %}
-                        <a href="{% url 'web:propose-session' event_slug=event.slug %}"
+                        <a href="{% url 'web:chronology:event-proposal-session' event_slug=event.slug %}"
                            class="btn btn-warning btn-sm">{% bs_icon 'plus-lg' %} {% translate "Propose Session" %}</a>
                     {% endif %}
                 </div>
@@ -330,7 +330,7 @@
                                         <small class="text-muted">{{ sessions|length }} session{{ sessions|length|pluralize }}</small>
                                     </div>
                                     {% if event.is_proposal_active %}
-                                        <a href="{% url 'web:propose-session' event_slug=event.slug %}"
+                                        <a href="{% url 'web:chronology:event-proposal-session' event_slug=event.slug %}"
                                            class="btn btn-outline-warning btn-sm">
                                             {% bs_icon 'plus-circle' %} {% translate "Propose Session" %}
                                         </a>
@@ -348,7 +348,7 @@
                                         <small class="text-muted">
                                             {% translate "No sessions scheduled for this time slot" %}
                                             {% if event.is_proposal_active %}
-                                                - <a href="{% url 'web:propose-session' event_slug=event.slug %}">{% translate "be the first to propose!" %}</a>
+                                                - <a href="{% url 'web:chronology:event-proposal-session' event_slug=event.slug %}">{% translate "be the first to propose!" %}</a>
                                             {% endif %}
                                         </small>
                                     </div>
@@ -478,7 +478,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="btn-group-vertical" role="group">
-                                                        <a href="{% url 'web:accept-proposal-page' proposal_id=proposal.id %}"
+                                                        <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.id %}"
                                                            class="btn btn-success btn-sm">
                                                             {% bs_icon 'check-lg' %} {% translate "Accept" %}
                                                         </a>
@@ -566,7 +566,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                            <a href="{% url 'web:accept-proposal-page' proposal_id=proposal.id %}"
+                            <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.id %}"
                                class="btn btn-success">{% bs_icon 'check-lg' %} {% translate "Accept Proposal" %}</a>
                         </div>
                     </div>
@@ -672,10 +672,10 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
                         {% if data.session.is_enrollment_available and not user_enrolled and not user_waiting %}
                             {% if request.session.anonymous_enrollment_active and not request.user.is_authenticated %}
-                                <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
                                    class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}</a>
                             {% elif request.user.user_type == 'connected' or request.user.user_type == 'active' %}
-                                <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                    class="btn btn-success">{% bs_icon 'person-plus' %} {% translate "Enroll" %}</a>
                             {% endif %}
                         {% endif %}
@@ -950,13 +950,13 @@
                         {% if data.session.is_enrollment_available %}
                             {% if request.user.is_authenticated %}
                                 {% if data.user_enrolled or data.user_waiting %}
-                                    <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                    <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                        class="btn btn-warning">
                                         {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                     </a>
                                 {% else %}
                                     {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
-                                        <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                        <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                            class="btn btn-success">
                                             {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
                                         </a>
@@ -964,18 +964,18 @@
                                 {% endif %}
                             {% elif request.session.anonymous_enrollment_active %}
                                 {% if data.user_enrolled or data.user_waiting %}
-                                    <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                    <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
                                        class="btn btn-warning">
                                         {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                     </a>
                                 {% else %}
-                                    <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                    <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
                                        class="btn btn-success">
                                         {% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}
                                     </a>
                                 {% endif %}
                             {% else %}
-                                <a href="{% url 'web:auth0_login' %}?next={{ request.build_absolute_uri }}"
+                                <a href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}"
                                    class="btn btn-primary">
                                     {% bs_icon 'box-arrow-in-right' %} {% translate "Login to Enroll" %}
                                 </a>

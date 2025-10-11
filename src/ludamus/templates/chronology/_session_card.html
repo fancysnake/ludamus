@@ -86,14 +86,14 @@
                         {% if request.user.is_authenticated %}
                             <!-- Authenticated user -->
                             {% if data.user_enrolled or data.user_waiting %}
-                                <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                    class="btn btn-warning btn-sm"
                                    onclick="event.stopPropagation();">
                                     {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
                                 {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
-                                    <a href="{% url 'web:enroll-select' session_id=data.session.id %}"
+                                    <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                        class="btn btn-success btn-sm"
                                        onclick="event.stopPropagation();">
                                         {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
@@ -109,13 +109,13 @@
                         {% elif request.session.anonymous_enrollment_active %}
                             <!-- Anonymous enrollment mode is active -->
                             {% if data.user_enrolled or data.user_waiting %}
-                                <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
                                    class="btn btn-warning btn-sm"
                                    onclick="event.stopPropagation();">
                                     {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
-                                <a href="{% url 'web:anonymous-enroll' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
                                    class="btn btn-success btn-sm"
                                    onclick="event.stopPropagation();">
                                     {% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}
@@ -123,7 +123,7 @@
                             {% endif %}
                         {% else %}
                             <!-- Not authenticated and no anonymous mode -->
-                            <a href="{% url 'web:login' %}?next={% url 'web:event' slug=event.slug %}"
+                            <a href="{% url 'web:crowd:login-required' %}?next={% url 'web:chronology:event' slug=event.slug %}"
                                class="btn btn-primary btn-sm"
                                onclick="event.stopPropagation();">
                                 {% bs_icon 'box-arrow-in-right' %} {% translate "Login to Enroll" %}

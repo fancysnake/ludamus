@@ -158,7 +158,7 @@
                                             <tr>
                                                 <td colspan="5" class="text-center text-muted">
                                                     {% translate "No connected users available. You can add connected users in your" %}
-                                                    <a href="{% url 'web:connected' %}">{% translate "profile settings" %}</a>.
+                                                    <a href="{% url 'web:crowd:profile-connected-users' %}">{% translate "profile settings" %}</a>.
                                                 </td>
                                             </tr>
                                         {% endif %}
@@ -182,7 +182,7 @@
                                 </button>
                             </div>
                             <div class="col-md-6">
-                                <a href="{% url 'web:event' slug=event.slug %}"
+                                <a href="{% url 'web:chronology:event' slug=event.slug %}"
                                    class="btn btn-outline-secondary w-100">
                                     {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
                                 </a>

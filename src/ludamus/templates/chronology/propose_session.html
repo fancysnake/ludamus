@@ -167,7 +167,7 @@
                                 <button type="submit" class="btn btn-warning w-100">{% bs_icon 'send' %} {% translate "Submit Proposal" %}</button>
                             </div>
                             <div class="col-md-6">
-                                <a href="{% url 'web:event' slug=event.slug %}"
+                                <a href="{% url 'web:chronology:event' slug=event.slug %}"
                                    class="btn btn-outline-secondary w-100">
                                     {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
                                 </a>

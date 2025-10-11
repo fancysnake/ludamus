@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
@@ -16,19 +16,17 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.signals import user_logged_in
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
 from django.db.models.query import QuerySet
-from django.dispatch import receiver
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
-from django.views.generic.base import RedirectView, View
+from django.views.generic.base import RedirectView, TemplateView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
@@ -55,7 +53,9 @@ from ludamus.pacts import ProposalCategoryDTO, RootDAOProtocol, TagCategoryDTO, 
 
 from .exceptions import RedirectError
 from .forms import (
+    ConnectedUserForm,
     ThemeSelectionForm,
+    UserForm,
     create_enrollment_form,
     create_proposal_acceptance_form,
     create_session_proposal_form,
@@ -68,14 +68,8 @@ else:
     User = get_user_model()
 
 
-TODAY = datetime.now(tz=UTC).date()
 MINIMUM_ALLOWED_USER_AGE = 16
 CACHE_TIMEOUT = 600  # 10 minutes
-
-
-class WrongSiteTypeError(TypeError):
-    def __init__(self) -> None:
-        super().__init__(_("Wrong type of site!"))
 
 
 class UserRequest(HttpRequest):
@@ -90,50 +84,52 @@ class AuthorizedRootDAORequest(RootDAORequest):
     user: User
 
 
-def login(request: HttpRequest) -> HttpResponse:
-    """Display login required page instead of immediate redirect to Auth0.
+class LoginRequiredPageView(TemplateView):
+    template_name = "crowd/login_required.html"
 
-    Returns:
-        TemplateResponse: The login required page.
-    """
-    next_url = request.GET.get("next", "")
-    context = {"next": next_url}
-    return TemplateResponse(request, "crowd/user/login_required.html", context)
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["next"] = self.request.GET.get("next", "")
+        return context
 
 
-def auth0_login(request: RootDAORequest) -> HttpResponse:
-    """Redirect to Auth0 for authentication.
+class Auth0LoginActionView(View):
+    @staticmethod
+    def get(request: RootDAORequest) -> HttpResponse:
+        """Redirect to Auth0 for authentication.
 
-    Returns:
-        HttpResponse: Redirect to Auth0 authorization endpoint.
+        Returns:
+            HttpResponse: Redirect to Auth0 authorization endpoint.
 
-    Raises:
-        RedirectError: If the request is not from the root domain.
-    """
-    root_domain = request.root_dao.root_site.domain
-    next_path = request.GET.get("next")
-    if request.get_host() != root_domain:
-        url = f'{request.scheme}://{root_domain}{reverse("web:auth0_login")}?next={next_path}'
-        raise RedirectError(url)
+        Raises:
+            RedirectError: If the request is not from the root domain.
+        """
+        root_domain = request.root_dao.root_site.domain
+        next_path = request.GET.get("next")
+        if request.get_host() != root_domain:
+            url = f'{request.scheme}://{root_domain}{reverse("web:crowd:auth0:login")}?next={next_path}'
+            raise RedirectError(url)
 
-    # Generate a secure state token
-    state_token = token_urlsafe(32)
+        # Generate a secure state token
+        state_token = token_urlsafe(32)
 
-    # Store state data in cache with 10 minute timeout
-    state_data = {
-        "redirect_to": next_path,
-        "created_at": datetime.now(UTC).isoformat(),
-        "csrf_token": request.META.get("CSRF_COOKIE", ""),
-    }
-    cache_key = f"oauth_state:{state_token}"
-    cache.set(cache_key, json.dumps(state_data), timeout=CACHE_TIMEOUT)
+        # Store state data in cache with 10 minute timeout
+        state_data = {
+            "redirect_to": next_path,
+            "created_at": datetime.now(UTC).isoformat(),
+            "csrf_token": request.META.get("CSRF_COOKIE", ""),
+        }
+        cache_key = f"oauth_state:{state_token}"
+        cache.set(cache_key, json.dumps(state_data), timeout=CACHE_TIMEOUT)
 
-    return oauth.auth0.authorize_redirect(  # type: ignore [no-any-return]
-        request, request.build_absolute_uri(reverse("web:callback")), state=state_token
-    )
+        return oauth.auth0.authorize_redirect(  # type: ignore [no-any-return]
+            request,
+            request.build_absolute_uri(reverse("web:crowd:auth0:login-callback")),
+            state=state_token,
+        )
 
 
-class CallbackView(RedirectView):
+class Auth0LoginCallbackActionView(RedirectView):
     request: RootDAORequest
 
     def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
@@ -185,15 +181,19 @@ class CallbackView(RedirectView):
 
             # Log the user in
             django_login(self.request, user)
+            if self.request.session.get("anonymous_enrollment_active"):
+                self.request.session.pop("anonymous_user_id", None)
+                self.request.session.pop("anonymous_enrollment_active", None)
+                self.request.session.pop("anonymous_event_id", None)
             messages.success(self.request, _("Welcome!"))
 
             # Check if profile needs completion
             if user.is_incomplete:
-                messages.success(self.request, _(" Please complete your profile."))
+                messages.success(self.request, _("Please complete your profile."))
                 if redirect_to:
                     parsed = urlparse(redirect_to)
-                    return f'{parsed.scheme}://{parsed.netloc}{reverse("web:edit")}'
-                return self.request.build_absolute_uri(reverse("web:edit"))
+                    return f'{parsed.scheme}://{parsed.netloc}{reverse("web:crowd:profile")}'
+                return self.request.build_absolute_uri(reverse("web:crowd:profile"))
 
         return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
 
@@ -208,13 +208,20 @@ class CallbackView(RedirectView):
             ) from None
 
 
-def logout(request: RootDAORequest) -> HttpResponse:
-    django_logout(request)
+class Auth0LogoutActionView(RedirectView):
+    request: RootDAORequest
 
-    last_domain = request.root_dao.current_site.domain
-    messages.success(request, _("You have been successfully logged out."))
+    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
+        redirect_to = super().get_redirect_url(*args, **kwargs)
 
-    return redirect(_auth0_logout_url(request, last_domain=last_domain))
+        django_logout(self.request)
+
+        last_domain = self.request.root_dao.current_site.domain
+        messages.success(self.request, _("You have been successfully logged out."))
+
+        return _auth0_logout_url(
+            self.request, last_domain=last_domain, redirect_to=redirect_to
+        )
 
 
 def _auth0_logout_url(
@@ -229,7 +236,7 @@ def _auth0_logout_url(
     return f"https://{settings.AUTH0_DOMAIN}/v2/logout?" + urlencode(
         {
             "returnTo": (
-                f'{request.scheme}://{root_domain}{reverse("web:redirect")}?last_domain={last_domain}&redirect_to={redirect_to}'
+                f'{request.scheme}://{root_domain}{reverse("web:crowd:auth0:logout-redirect")}?last_domain={last_domain}&redirect_to={redirect_to}'
             ),
             "client_id": settings.AUTH0_CLIENT_ID,
         },
@@ -237,91 +244,57 @@ def _auth0_logout_url(
     )
 
 
-def redirect_view(request: RootDAORequest) -> HttpResponse:
-    redirect_url = reverse("web:index")
+class Auth0LogoutRedirectActionView(RedirectView):
+    request: RootDAORequest
+    pattern_name = "web:index"
 
-    # Get the redirect_to parameter
-    if redirect_to := request.GET.get("redirect_to"):
-        # Only allow relative URLs (starting with /)
-        if redirect_to.startswith("/") and not redirect_to.startswith("//"):
-            redirect_url = redirect_to
-        else:
-            messages.warning(request, _("Invalid redirect URL."))
+    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
+        redirect_url = super().get_redirect_url(*args, **kwargs)
 
-    # Handle last_domain parameter for multi-site redirects
-    if last_domain := request.GET.get("last_domain"):
-        # Validate that the domain belongs to a known site
-        allowed_domains = request.root_dao.allowed_domains
+        # Get the redirect_to parameter
+        if redirect_to := self.request.GET.get("redirect_to"):
+            # Only allow relative URLs (starting with /)
+            if redirect_to.startswith("/") and not redirect_to.startswith("//"):
+                redirect_url = redirect_to
+            else:
+                messages.warning(self.request, _("Invalid redirect URL."))
 
-        # Also allow subdomains of ROOT_DOMAIN if configured
-        if hasattr(settings, "ROOT_DOMAIN") and (
-            last_domain.endswith(f".{settings.ROOT_DOMAIN}")
-            or last_domain == settings.ROOT_DOMAIN
-        ):
-            return redirect(f"{request.scheme}://{last_domain}{redirect_url}")
+        # Handle last_domain parameter for multi-site redirects
+        if last_domain := self.request.GET.get("last_domain"):
+            # Validate that the domain belongs to a known site
+            allowed_domains = self.request.root_dao.allowed_domains
 
-        # Check against explicitly allowed domains
-        if last_domain in allowed_domains:
-            return redirect(f"{request.scheme}://{last_domain}{redirect_url}")
+            # Also allow subdomains of ROOT_DOMAIN if configured
+            if hasattr(settings, "ROOT_DOMAIN") and (
+                last_domain.endswith(f".{settings.ROOT_DOMAIN}")
+                or last_domain == settings.ROOT_DOMAIN
+            ):
+                return f"{self.request.scheme}://{last_domain}{redirect_url}"
 
-        messages.warning(request, _("Invalid domain for redirect."))
+            # Check against explicitly allowed domains
+            if last_domain in allowed_domains:
+                return f"{self.request.scheme}://{last_domain}{redirect_url}"
 
-    return redirect(redirect_url)
+            messages.warning(self.request, _("Invalid domain for redirect."))
 
-
-def index(request: RootDAORequest) -> HttpResponse:
-    return TemplateResponse(
-        request,
-        "index.html",
-        context={
-            "events": list(
-                Event.objects.filter(sphere_id=request.root_dao.current_sphere.pk).all()
-            )
-        },
-    )
+        return redirect_url
 
 
-class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
-    name = forms.CharField(
-        label=_("User name"),
-        help_text=_(
-            "Your public display name that others will see. This can be a nickname "
-            "and does not need to be your legal name."
-        ),
-        required=True,
-    )
+class IndexPageView(TemplateView):
+    request: RootDAORequest
+    template_name = "index.html"
 
-    class Meta:
-        model = User
-        fields = ("name", "user_type")
-
-
-class UserForm(BaseUserForm):
-    user_type = forms.CharField(
-        initial=User.UserType.ACTIVE, widget=forms.HiddenInput()
-    )
-
-    class Meta:
-        model = User
-        fields = ("name", "email", "discord_username", "user_type")
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["events"] = list(
+            Event.objects.filter(
+                sphere_id=self.request.root_dao.current_sphere.pk
+            ).all()
+        )
+        return context
 
 
-class ConnectedUserForm(BaseUserForm):
-    user_type = forms.CharField(
-        initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()
-    )
-
-    class Meta:
-        model = User
-        fields = ("name", "discord_username", "user_type")
-
-    def save(self, commit: bool = True) -> User:  # noqa: FBT001, FBT002
-        self.instance.username = f"connected|{token_urlsafe(50)}"
-        self.instance.slug = slugify(self.instance.username[:50])
-        return super().save(commit)  # type: ignore [no-any-return]
-
-
-class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
+class ProfilePageView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     template_name = "crowd/user/edit.html"
     form_class = UserForm
     success_url = reverse_lazy("web:index")
@@ -342,15 +315,14 @@ class EditProfileView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg
         return super().form_invalid(form)
 
 
-class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
+class ProfileConnectedUsersPageView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
     template_name = "crowd/user/connected.html"
     form_class = ConnectedUserForm
-    success_url = reverse_lazy("web:connected")
+    success_url = reverse_lazy("web:crowd:profile-connected-users")
     request: UserRequest
     object: User
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-
         context = super().get_context_data(**kwargs)
         connected_users = [
             {"user": connected, "form": ConnectedUserForm(instance=connected)}
@@ -383,10 +355,10 @@ class ConnectedView(LoginRequiredMixin, CreateView):  # type: ignore [type-arg]
         return super().form_invalid(form)
 
 
-class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
+class ProfileConnectedUserUpdateActionView(LoginRequiredMixin, UpdateView):  # type: ignore [type-arg]
     template_name = "crowd/user/connected.html"
     form_class = ConnectedUserForm
-    success_url = reverse_lazy("web:connected")
+    success_url = reverse_lazy("web:crowd:profile-connected-users")
     model = User
     request: UserRequest
 
@@ -404,9 +376,9 @@ class EditConnectedView(LoginRequiredMixin, UpdateView):  # type: ignore [type-a
         return super().form_invalid(form)
 
 
-class DeleteConnectedView(LoginRequiredMixin, DeleteView):  # type: ignore [type-arg]
+class ProfileConnectedUserDeleteActionView(LoginRequiredMixin, DeleteView):  # type: ignore [type-arg]
     model = User
-    success_url = reverse_lazy("web:connected")
+    success_url = reverse_lazy("web:crowd:profile-connected-users")
     request: UserRequest
 
     def get_queryset(self) -> QuerySet[User]:
@@ -419,12 +391,7 @@ class DeleteConnectedView(LoginRequiredMixin, DeleteView):  # type: ignore [type
         return super().form_valid(form)
 
 
-class HourData(TypedDict):
-    time_slot: TimeSlot
-    sessions: list[SessionData]
-
-
-class EventView(DetailView):  # type: ignore [type-arg]
+class EventPageView(DetailView):  # type: ignore [type-arg]
     template_name = "chronology/event.html"
     model = Event
     context_object_name = "event"
@@ -449,7 +416,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
         # Get all sessions for this event that are published
         event_sessions = (
             Session.objects.filter(agenda_item__space__event=self.object)
-            .select_related("proposal__host", "agenda_item__space", "sphere", "guild")
+            .select_related("proposal__host", "agenda_item__space", "sphere")
             .prefetch_related(
                 "tags__category",
                 "session_participations__user__manager",
@@ -544,29 +511,25 @@ class EventView(DetailView):  # type: ignore [type-arg]
             anonymous_user_id = self.request.session.get("anonymous_user_id")
             current_site_id = self.request.root_dao.current_site.pk
             session_site_id = self.request.session.get("anonymous_site_id")
-            if anonymous_user_id and session_site_id == current_site_id:
-                try:
-                    anonymous_user = User.objects.get(
+            if (
+                anonymous_user_id
+                and session_site_id == current_site_id
+                and (
+                    anonymous_user := User.objects.filter(
                         id=anonymous_user_id, user_type=User.UserType.ANONYMOUS
-                    )
-                    context["anonymous_code"] = anonymous_user.slug.removeprefix(
-                        "code_"
-                    )
+                    ).first()
+                )
+            ):
 
-                    # Get anonymous user's enrollments for this event
-                    anonymous_enrollments = SessionParticipation.objects.filter(
-                        user=anonymous_user,
-                        session__agenda_item__space__event=self.object,
-                    ).select_related("session")
+                context["anonymous_code"] = anonymous_user.slug.removeprefix("code_")
 
-                    context["anonymous_user_enrollments"] = anonymous_enrollments
-                except User.DoesNotExist:
-                    # Clear invalid anonymous session
-                    self.request.session.pop("anonymous_user_id", None)
-                    self.request.session.pop("anonymous_enrollment_active", None)
-                    self.request.session.pop("anonymous_event_id", None)
-                    self.request.session.pop("anonymous_site_id", None)
-            elif anonymous_user_id and session_site_id != current_site_id:
+                # Get anonymous user's enrollments for this event
+                anonymous_enrollments = SessionParticipation.objects.filter(
+                    user=anonymous_user, session__agenda_item__space__event=self.object
+                ).select_related("session")
+
+                context["anonymous_user_enrollments"] = list(anonymous_enrollments)
+            else:
                 # Clear anonymous session if site doesn't match
                 self.request.session.pop("anonymous_user_id", None)
                 self.request.session.pop("anonymous_enrollment_active", None)
@@ -575,7 +538,7 @@ class EventView(DetailView):  # type: ignore [type-arg]
 
         # Add filterable tag categories for this event
         filterable_categories = self.object.filterable_tag_categories.all()
-        context["filterable_tag_categories"] = filterable_categories
+        context["filterable_tag_categories"] = list(filterable_categories)
 
         # Add proposals for superusers, sphere managers, and proposal authors
         if self.request.user.is_authenticated:
@@ -627,11 +590,11 @@ class EventView(DetailView):  # type: ignore [type-arg]
             ).select_related("user", "session")
 
             # Create lookup dictionaries for efficient access
-            participation_by_user_session: dict[tuple[int, int], list[str]] = {}
+            participation_by_user_session: dict[tuple[int, int], list[str]] = (
+                defaultdict(list)
+            )
             for p in participations:
                 key = (p.user_id, p.session_id)
-                if key not in participation_by_user_session:
-                    participation_by_user_session[key] = []
                 participation_by_user_session[key].append(p.status)
 
             # Add user participation info for each session
@@ -660,46 +623,40 @@ class EventView(DetailView):  # type: ignore [type-arg]
                 anonymous_user_id = int(self.request.session["anonymous_user_id"])
             except (KeyError, ValueError):
                 anonymous_user_id = None
-            if session_site_id == current_site_id and anonymous_user_id is not None:
-                try:
-                    anonymous_user = User.objects.get(
+            if (
+                session_site_id == current_site_id
+                and anonymous_user_id is not None
+                and (
+                    anonymous_user := User.objects.filter(
                         id=anonymous_user_id, user_type=User.UserType.ANONYMOUS
+                    ).first()
+                )
+            ):
+                # Pre-fetch anonymous user participations for event sessions
+                anonymous_participations = SessionParticipation.objects.filter(
+                    session__in=event_sessions, user=anonymous_user
+                ).select_related("session")
+
+                # Create lookup dictionary for anonymous user
+                anonymous_participation_by_session: dict[int, list[str]] = defaultdict(
+                    list
+                )
+                for p in anonymous_participations:
+                    anonymous_participation_by_session[p.session_id].append(p.status)
+
+                # Add anonymous user participation info for each session
+                for session in event_sessions:
+                    statuses = set(
+                        anonymous_participation_by_session.get(session.id, [])
                     )
 
-                    # Pre-fetch anonymous user participations for event sessions
-                    anonymous_participations = SessionParticipation.objects.filter(
-                        session__in=event_sessions, user=anonymous_user
-                    ).select_related("session")
-
-                    # Create lookup dictionary for anonymous user
-                    anonymous_participation_by_session: dict[int, list[str]] = {}
-                    for p in anonymous_participations:
-                        if p.session_id not in anonymous_participation_by_session:
-                            anonymous_participation_by_session[p.session_id] = []
-                        anonymous_participation_by_session[p.session_id].append(
-                            p.status
-                        )
-
-                    # Add anonymous user participation info for each session
-                    for session in event_sessions:
-                        statuses = set(
-                            anonymous_participation_by_session.get(session.id, [])
-                        )
-
-                        sessions[session.id].has_any_enrollments = bool(statuses)
-                        sessions[session.id].user_enrolled = (
-                            SessionParticipationStatus.CONFIRMED in statuses
-                        )
-                        sessions[session.id].user_waiting = (
-                            SessionParticipationStatus.WAITING in statuses
-                        )
-
-                except User.DoesNotExist:
-                    # Clear invalid anonymous session
-                    self.request.session.pop("anonymous_user_id", None)
-                    self.request.session.pop("anonymous_enrollment_active", None)
-                    self.request.session.pop("anonymous_site_id", None)
-                    self.request.session.pop("anonymous_event_id", None)
+                    sessions[session.id].has_any_enrollments = bool(statuses)
+                    sessions[session.id].user_enrolled = (
+                        SessionParticipationStatus.CONFIRMED in statuses
+                    )
+                    sessions[session.id].user_waiting = (
+                        SessionParticipationStatus.WAITING in statuses
+                    )
 
     def _get_hour_data(
         self, event_sessions: QuerySet[Session]
@@ -799,7 +756,7 @@ _status_by_choice = {
 }
 
 
-class EnrollSelectView(LoginRequiredMixin, View):
+class SessionEnrollPageView(LoginRequiredMixin, View):
     request: AuthorizedRootDAORequest
 
     def get(self, request: AuthorizedRootDAORequest, session_id: int) -> HttpResponse:
@@ -822,23 +779,13 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
     @staticmethod
     def _validate_request(session: Session) -> EnrollmentConfig:
-        # Check if enrollment is available for this specific session
-        if not session.is_enrollment_available:
-            raise RedirectError(
-                reverse(
-                    "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
-                ),
-                error=_("Enrollment is not currently available for this session."),
-            )
-
         # Get the most liberal config for this session
-        enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
-            session
-        )
-        if not enrollment_config:
+        event = session.agenda_item.space.event
+        if not (enrollment_config := event.get_most_liberal_config(session)):
             raise RedirectError(
                 reverse(
-                    "web:event", kwargs={"slug": session.agenda_item.space.event.slug}
+                    "web:chronology:event",
+                    kwargs={"slug": session.agenda_item.space.event.slug},
                 ),
                 error=_("No enrollment configuration is available for this session."),
             )
@@ -867,11 +814,11 @@ class EnrollSelectView(LoginRequiredMixin, View):
         ).select_related("session__agenda_item")
 
         # Group participations by user for efficient lookup
-        participations_by_user: dict[int, list[SessionParticipation]] = {}
+        participations_by_user: dict[int, list[SessionParticipation]] = defaultdict(
+            list
+        )
         for participation in user_participations:
             user_id = participation.user_id
-            if user_id not in participations_by_user:
-                participations_by_user[user_id] = []
             participations_by_user[user_id].append(participation)
 
         # Add enrollment status and time conflict info for each connected user
@@ -914,13 +861,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
         form = form_class(data=request.POST)
         if not form.is_valid():
             # Add detailed form validation error messages without field name prefixes
-            for field_name, field_errors in form.errors.items():
+            for field_errors in form.errors.values():
                 for error in field_errors:
-                    if field_name == "__all__":
-                        # Non-field errors don't need any prefix
-                        messages.error(self.request, str(error))
-                    else:
-                        messages.error(self.request, str(error))
+                    messages.error(self.request, str(error))
 
             # Check for specific enrollment restrictions and provide helpful messages
             enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
@@ -971,7 +914,9 @@ class EnrollSelectView(LoginRequiredMixin, View):
 
         self._manage_enrollments(form, session, enrollment_config)
 
-        return redirect("web:event", slug=session.agenda_item.space.event.slug)
+        return redirect(
+            "web:chronology:event", slug=session.agenda_item.space.event.slug
+        )
 
     def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
         enrollment_requests = []
@@ -995,72 +940,12 @@ class EnrollSelectView(LoginRequiredMixin, View):
         return enrollment_requests
 
     def _process_enrollments(
-        self,
-        enrollment_requests: list[EnrollmentRequest],
-        session: Session,
-        enrollment_config: EnrollmentConfig,
+        self, enrollment_requests: list[EnrollmentRequest], session: Session
     ) -> Enrollments:
         enrollments = Enrollments()
 
         # Lock the session to prevent race conditions within the transaction
         session = Session.objects.select_for_update().get(id=session.id)
-
-        # Double-check capacity within the transaction (race condition protection)
-        confirmed_requests = [
-            req for req in enrollment_requests if req.choice == "enroll"
-        ]
-        available_spots = enrollment_config.get_available_slots(session)
-
-        if len(confirmed_requests) > available_spots:
-            # This should rarely happen due to double-checking, but handle gracefully
-            return enrollments  # Return empty enrollments
-
-        if self.request.user.email and confirmed_requests:
-            user_config = session.agenda_item.space.event.get_user_enrollment_config(
-                self.request.user.email
-            )
-            if enrollment_config.restrict_to_configured_users and user_config:
-                # Get currently enrolled unique users across ALL sessions in this event
-                currently_enrolled_users = set(
-                    SessionParticipation.objects.filter(
-                        status=SessionParticipationStatus.CONFIRMED,
-                        user__in=[
-                            self.request.user,
-                            *self.request.user.connected.all(),
-                        ],
-                        session__agenda_item__space__event=session.agenda_item.space.event,
-                    )
-                    .values_list("user_id", flat=True)
-                    .distinct()
-                )
-
-                # Get unique users that would be newly enrolled
-                users_to_enroll = {req.user for req in confirmed_requests}
-                new_users_to_enroll = [
-                    u for u in users_to_enroll if u.id not in currently_enrolled_users
-                ]
-
-                # Check if adding all new users would exceed the limit
-                if (
-                    len(currently_enrolled_users) + len(new_users_to_enroll)
-                    > user_config.allowed_slots
-                ):
-                    # Mark excess users for blocking (keep first users up to the limit)
-                    allowed_new_users = user_config.allowed_slots - len(
-                        currently_enrolled_users
-                    )
-                    users_to_block = set(new_users_to_enroll[allowed_new_users:])
-
-                    # Mark the blocked users' requests for skipping
-                    for req in enrollment_requests:
-                        if (
-                            req.choice == EnrollmentChoice.ENROLL
-                            and req.user in users_to_block
-                        ):
-                            req.choice = (
-                                EnrollmentChoice.BLOCK
-                            )  # Special marker for blocking
-
         participations = SessionParticipation.objects.filter(session=session).order_by(
             "creation_time"
         )
@@ -1130,13 +1015,6 @@ class EnrollSelectView(LoginRequiredMixin, View):
     def _check_and_create_enrollment(
         req: EnrollmentRequest, session: Session, enrollments: Enrollments
     ) -> None:
-        # Handle blocked enrollments (pre-marked due to slot limits)
-        if req.choice == "block":
-            enrollments.skipped_users.append(
-                f"{req.name} ({_('no user slots available')!s})"
-            )
-            return
-
         # Check if user is the session presenter
         if (
             Proposal.objects.filter(session=session).exists()
@@ -1145,113 +1023,10 @@ class EnrollSelectView(LoginRequiredMixin, View):
             enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
             return
 
-        # Check if enrollment is restricted to configured users only
-        enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
-            session
-        )
-        if enrollment_config and enrollment_config.restrict_to_configured_users:
-            # Handle connected users - they use their manager's config
-            if req.user.user_type == User.UserType.CONNECTED:
-                if not (
-                    hasattr(req.user, "manager")
-                    and req.user.manager
-                    and req.user.manager.email
-                ):
-                    enrollments.skipped_users.append(
-                        f"{req.name} ({_('manager information missing')!s})"
-                    )
-                    return
-
-                manager_config = (
-                    session.agenda_item.space.event.get_user_enrollment_config(
-                        req.user.manager.email
-                    )
-                )
-                if not manager_config:
-                    enrollments.skipped_users.append(
-                        f"{req.name} ({_('manager not in enrollment list')!s})"
-                    )
-                    return
-            else:
-                # Handle regular users - they need their own email and config
-                if not req.user.email:
-                    enrollments.skipped_users.append(
-                        f"{req.name} ({_('no email configured')!s})"
-                    )
-                    return
-                user_config = (
-                    session.agenda_item.space.event.get_user_enrollment_config(
-                        req.user.email
-                    )
-                )
-                if not user_config:
-                    enrollments.skipped_users.append(
-                        f"{req.name} ({_('not in enrollment list')!s})"
-                    )
-                    return
-
-        # Check if user has available slots (regardless of restriction setting)
-        if req.choice == "enroll" and req.user.email:
-            manager_user = req.user
-            if req.user.user_type == User.UserType.CONNECTED and req.user.manager:
-                manager_user = req.user.manager
-
-            user_config = session.agenda_item.space.event.get_user_enrollment_config(
-                manager_user.email
-            )
-            if (
-                enrollment_config
-                and enrollment_config.restrict_to_configured_users
-                and user_config
-            ):
-                # Get currently enrolled unique users across ALL sessions in this event
-                currently_enrolled_users = set(
-                    SessionParticipation.objects.filter(
-                        status=SessionParticipationStatus.CONFIRMED,
-                        user__in=[manager_user, *manager_user.connected.all()],
-                        session__agenda_item__space__event=session.agenda_item.space.event,
-                    )
-                    .values_list("user_id", flat=True)
-                    .distinct()
-                )
-
-                if (
-                    req.user.id not in currently_enrolled_users
-                    and len(currently_enrolled_users) >= user_config.allowed_slots
-                ):
-                    enrollments.skipped_users.append(
-                        f"{req.name} ({_('no user slots available')!s})"
-                    )
-                    return
-
         # Check for time conflicts for confirmed enrollment
         if req.choice == "enroll" and Session.objects.has_conflicts(session, req.user):
             enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
             return
-
-        # Check waitlist limits for waitlist enrollment
-        if req.choice == "waitlist":
-            enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
-                session
-            )
-            if enrollment_config and enrollment_config.max_waitlist_sessions == 0:
-                enrollments.skipped_users.append(
-                    f"{req.name} ({_('waitlist disabled')!s})"
-                )
-                return
-            if enrollment_config:
-                # Count current waitlist participations for this user in this event
-                current_waitlist_count = SessionParticipation.objects.filter(
-                    user=req.user,
-                    status=SessionParticipationStatus.WAITING,
-                    session__agenda_item__space__event=session.agenda_item.space.event,
-                ).count()
-
-                if current_waitlist_count >= enrollment_config.max_waitlist_sessions:
-                    enrollments.skipped_users.append(
-                        f"{req.name} ({_('waitlist limit exceeded')!s})"
-                    )
-                    return
 
         # Use get_or_create to prevent duplicate enrollments in race conditions
         __, created = SessionParticipation.objects.get_or_create(
@@ -1266,7 +1041,6 @@ class EnrollSelectView(LoginRequiredMixin, View):
             enrollments.skipped_users.append(f"{req.name} ({_('already enrolled')!s})")
 
     def _send_message(self, enrollments: Enrollments) -> None:
-        any_users = False
         for users, message in [
             (
                 enrollments.users_by_status[SessionParticipationStatus.CONFIRMED],
@@ -1283,11 +1057,7 @@ class EnrollSelectView(LoginRequiredMixin, View):
             ),
         ]:
             if users:
-                any_users = True
                 messages.success(self.request, message.format(", ".join(users)))
-
-        if not any_users:
-            messages.warning(self.request, _("No enrollments were processed."))
 
     def _is_capacity_invalid(
         self,
@@ -1325,26 +1095,30 @@ class EnrollSelectView(LoginRequiredMixin, View):
                 enrollment_requests, session, enrollment_config
             ):
                 raise RedirectError(
-                    reverse("web:enroll-select", kwargs={"session_id": session.id})
+                    reverse(
+                        "web:chronology:session-enrollment",
+                        kwargs={"session_id": session.id},
+                    )
                 )
 
             # Use atomic transaction only for database operations
             with transaction.atomic():
                 # Process enrollments and create success message
-                enrollments = self._process_enrollments(
-                    enrollment_requests, session, enrollment_config
-                )
+                enrollments = self._process_enrollments(enrollment_requests, session)
 
             # Send message outside transaction
             self._send_message(enrollments)
         else:
             raise RedirectError(
-                reverse("web:enroll-select", kwargs={"session_id": session.id}),
+                reverse(
+                    "web:chronology:session-enrollment",
+                    kwargs={"session_id": session.id},
+                ),
                 warning=_("Please select at least one user to enroll."),
             )
 
 
-class ProposeSessionView(LoginRequiredMixin, View):
+class EventProposalPageView(LoginRequiredMixin, View):
     request: AuthorizedRootDAORequest
 
     def get(self, request: UserRequest, event_slug: str) -> HttpResponse:
@@ -1459,7 +1233,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
                 form.cleaned_data["title"]
             ),
         )
-        return redirect("web:event", slug=event.slug)
+        return redirect("web:chronology:event", slug=event.slug)
 
     @staticmethod
     def _get_tags(
@@ -1491,7 +1265,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
 
         if not event.is_proposal_active:
             raise RedirectError(
-                reverse("web:event", kwargs={"slug": event_slug}),
+                reverse("web:chronology:event", kwargs={"slug": event_slug}),
                 error=_("Proposal submission is not currently active for this event."),
             )
 
@@ -1505,7 +1279,7 @@ class ProposeSessionView(LoginRequiredMixin, View):
             ).get(event=event)
         except ProposalCategory.DoesNotExist:
             raise RedirectError(
-                reverse("web:event", kwargs={"slug": event.slug}),
+                reverse("web:chronology:event", kwargs={"slug": event.slug}),
                 error=_(
                     "No proposal category configured for this event. "
                     "Please contact the organizers."
@@ -1527,7 +1301,9 @@ def _get_proposal(request: RootDAORequest, proposal_id: int) -> Proposal:
     # Check if proposal is already accepted
     if proposal.session:
         raise RedirectError(
-            reverse("web:event", kwargs={"slug": proposal.category.event.slug}),
+            reverse(
+                "web:chronology:event", kwargs={"slug": proposal.category.event.slug}
+            ),
             warning=_("This proposal has already been accepted."),
         )
 
@@ -1543,14 +1319,17 @@ def _check_proposal_permission(user: User, proposal: Proposal) -> bool:
     return sphere.managers.filter(id=user.id).exists()
 
 
-class AcceptProposalPageView(LoginRequiredMixin, View):
+class ProposalAcceptPageView(LoginRequiredMixin, View):
     def get(self, request: AuthorizedRootDAORequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
 
         # Check permissions
         if not _check_proposal_permission(request.user, proposal):
             raise RedirectError(
-                reverse("web:event", kwargs={"slug": proposal.category.event.slug}),
+                reverse(
+                    "web:chronology:event",
+                    kwargs={"slug": proposal.category.event.slug},
+                ),
                 error=_(
                     "You don't have permission to accept proposals for this event."
                 ),
@@ -1581,7 +1360,7 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
         spaces = Space.objects.filter(event=event)
         if not spaces.exists():
             raise RedirectError(
-                reverse("web:event", kwargs={"slug": event.slug}),
+                reverse("web:chronology:event", kwargs={"slug": event.slug}),
                 error=_(
                     "No spaces configured for this event. Please create spaces first."
                 ),
@@ -1595,7 +1374,7 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
 
         if not time_slots.exists():
             raise RedirectError(
-                reverse("web:event", kwargs={"slug": event.slug}),
+                reverse("web:chronology:event", kwargs={"slug": event.slug}),
                 error=_(
                     "No time slots configured for this event. "
                     "Please create time slots first."
@@ -1605,14 +1384,17 @@ class AcceptProposalPageView(LoginRequiredMixin, View):
         return list(time_slots)
 
 
-class AcceptProposalView(LoginRequiredMixin, View):
+class ProposalAcceptConfirmAction(LoginRequiredMixin, View):
     def post(self, request: AuthorizedRootDAORequest, proposal_id: int) -> HttpResponse:
         proposal = _get_proposal(request, proposal_id)
 
         # Check permissions
         if not _check_proposal_permission(request.user, proposal):
             raise RedirectError(
-                reverse("web:event", kwargs={"slug": proposal.category.event.slug}),
+                reverse(
+                    "web:chronology:event",
+                    kwargs={"slug": proposal.category.event.slug},
+                ),
                 error=_(
                     "You don't have permission to accept proposals for this event."
                 ),
@@ -1645,7 +1427,7 @@ class AcceptProposalView(LoginRequiredMixin, View):
                 proposal.title
             ),
         )
-        return redirect("web:event", slug=event.slug)
+        return redirect("web:chronology:event", slug=event.slug)
 
     @staticmethod
     def _create_session(form: forms.Form, proposal: Proposal) -> None:
@@ -1679,7 +1461,7 @@ class AcceptProposalView(LoginRequiredMixin, View):
         proposal.save()
 
 
-class ThemeSelectionView(View):
+class ThemeSelectionActionView(View):
     @staticmethod
     def post(request: UserRequest) -> HttpResponse:
         form = ThemeSelectionForm(request.POST)
@@ -1693,33 +1475,29 @@ class ThemeSelectionView(View):
         return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-class ActivateAnonymousEnrollmentView(View):
-    def get(self, request: RootDAORequest, event_id: int) -> HttpResponse:
+class EventAnonymousActivateActionView(View):
+    @staticmethod
+    def get(request: RootDAORequest, event_slug: str) -> HttpResponse:
         # Redirect to event page if user is authenticated (not anonymous)
         if request.user.is_authenticated:
-            return redirect("web:event", slug=self._get_event_slug(event_id))
+            return redirect("web:chronology:event", slug=event_slug)
 
         # Check if event exists and has anonymous enrollment enabled
         try:
-            event = Event.objects.get(id=event_id)
-            active_configs = event.get_active_enrollment_configs()
-            enrollment_config = next(
-                (
-                    config
-                    for config in active_configs
-                    if config.allow_anonymous_enrollment
-                ),
-                None,
-            )
-
-            if not enrollment_config:
-                messages.error(
-                    request, _("Anonymous enrollment is not available for this event.")
-                )
-                return redirect("web:event", slug=event.slug)
+            event = Event.objects.get(slug=event_slug)
         except Event.DoesNotExist:
             messages.error(request, _("Event not found."))
             return redirect("web:index")
+
+        active_configs = event.get_active_enrollment_configs()
+
+        if not any(
+            config for config in active_configs if config.allow_anonymous_enrollment
+        ):
+            messages.error(
+                request, _("Anonymous enrollment is not available for this event.")
+            )
+            return redirect("web:chronology:event", slug=event.slug)
 
         # Create new anonymous User immediately
         anonymous_user = User.objects.create(
@@ -1732,25 +1510,18 @@ class ActivateAnonymousEnrollmentView(View):
         # Set session flags - include site ID to prevent cross-site confusion
         request.session["anonymous_user_id"] = anonymous_user.id
         request.session["anonymous_enrollment_active"] = True
-        request.session["anonymous_event_id"] = event_id
+        request.session["anonymous_event_id"] = event.id
         request.session["anonymous_site_id"] = request.root_dao.current_site.pk
 
-        return redirect("web:event", slug=event.slug)
-
-    @staticmethod
-    def _get_event_slug(event_id: int) -> str:
-        try:
-            return Event.objects.get(id=event_id).slug
-        except Event.DoesNotExist:
-            return "index"
+        return redirect("web:chronology:event", slug=event.slug)
 
 
-class AnonymousEnrollView(View):
+class SessionEnrollmentAnonymousPageView(View):
     @staticmethod
     def get(request: RootDAORequest, session_id: int) -> HttpResponse:
         # Redirect to regular enrollment if user is authenticated
         if request.user.is_authenticated:
-            return redirect("web:enroll-select", session_id=session_id)
+            return redirect("web:chronology:session-enrollment", session_id=session_id)
 
         # Check if anonymous mode is active
         if not request.session.get("anonymous_enrollment_active"):
@@ -1810,7 +1581,7 @@ class AnonymousEnrollView(View):
     def post(request: RootDAORequest, session_id: int) -> HttpResponse:
         # Redirect to regular enrollment if user is authenticated
         if request.user.is_authenticated:
-            return redirect("web:enroll-select", session_id=session_id)
+            return redirect("web:chronology:session-enrollment", session_id=session_id)
 
         # Check if anonymous mode is active
         if not request.session.get("anonymous_enrollment_active"):
@@ -1858,7 +1629,9 @@ class AnonymousEnrollView(View):
         # Validate required fields
         if not anonymous_user.name:
             messages.error(request, _("Name is required."))
-            return redirect("web:anonymous-enroll", session_id=session_id)
+            return redirect(
+                "web:chronology:session-enrollment-anonymous", session_id=session_id
+            )
 
         anonymous_user.save()
 
@@ -1889,7 +1662,9 @@ class AnonymousEnrollView(View):
                         "that conflicts with this time slot."
                     ),
                 )
-                return redirect("web:anonymous-enroll", session_id=session_id)
+                return redirect(
+                    "web:chronology:session-enrollment-anonymous", session_id=session_id
+                )
 
             # Check if session is full and determine enrollment status
             if session.is_full:
@@ -1899,11 +1674,6 @@ class AnonymousEnrollView(View):
                     user=anonymous_user,
                     defaults={"status": SessionParticipationStatus.WAITING.value},
                 )
-
-                if not created:
-                    # Update existing enrollment to waiting status
-                    enrollment.status = SessionParticipationStatus.WAITING.value
-                    enrollment.save()
 
                 messages.success(
                     request,
@@ -1934,10 +1704,12 @@ class AnonymousEnrollView(View):
                     % {"title": session.title},
                 )
 
-        return redirect("web:event", slug=session.agenda_item.space.event.slug)
+        return redirect(
+            "web:chronology:event", slug=session.agenda_item.space.event.slug
+        )
 
 
-class AnonymousCodeEntryView(View):
+class AnonymousLoadActionView(View):
     """Handle entering an anonymous code to load a previous session"""
 
     @staticmethod
@@ -1991,52 +1763,30 @@ class AnonymousCodeEntryView(View):
         messages.success(
             request, _("Code loaded successfully. You can now manage your enrollments.")
         )
-        return redirect("web:event", slug=event.slug)
+        return redirect("web:chronology:event", slug=event.slug)
 
 
-class AnonymousResetView(View):
+class AnonymousResetActionView(View):
     @staticmethod
     def get(request: UserRequest) -> HttpResponse:
         event_id = request.session.get("anonymous_event_id")
 
-        # If 'finish=1' parameter, create new anonymous user with new code
-        if request.GET.get("finish") == "1":
-            # Clear current anonymous session data
-            request.session.pop("anonymous_user_id", None)
-            request.session.pop("anonymous_enrollment_active", None)
-            request.session.pop("anonymous_event_id", None)
-            request.session.pop("anonymous_site_id", None)
+        event = None
+        if event_id:
+            event = Event.objects.filter(id=event_id).first()
 
-            if event_id:
-                # Create new anonymous session (which generates new code)
-                return redirect("web:anonymous-activate", event_id=event_id)
-            return redirect("web:index")
-
-        # Otherwise just clear session and redirect to event page
+        # Clear current anonymous session data
         request.session.pop("anonymous_user_id", None)
         request.session.pop("anonymous_enrollment_active", None)
         request.session.pop("anonymous_event_id", None)
         request.session.pop("anonymous_site_id", None)
 
-        if event_id:
-            try:
-                event = Event.objects.get(id=event_id)
-                return redirect("web:event", slug=event.slug)
-            except Event.DoesNotExist:
-                pass
-
+        if event:
+            # Create new anonymous session (which generates new code)
+            return redirect(
+                "web:chronology:event-anonymous-activate", event_slug=event.slug
+            )
         return redirect("web:index")
-
-
-@receiver(user_logged_in)
-def clear_anonymous_session_on_login(  # type: ignore [misc]  # Django
-    request: HttpRequest, **kwargs: Any  # noqa: ARG001
-) -> None:
-    """Clear anonymous enrollment session data when a user logs in."""
-    if hasattr(request, "session"):
-        request.session.pop("anonymous_user_id", None)
-        request.session.pop("anonymous_enrollment_active", None)
-        request.session.pop("anonymous_event_id", None)
 
 
 def get_discord_username(request: HttpRequest, user_slug: str) -> HttpResponse:
