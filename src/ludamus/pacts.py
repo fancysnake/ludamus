@@ -33,19 +33,6 @@ class TagDTO(BaseModel):
     pk: int
 
 
-class UserDTO(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    date_joined: datetime
-    email: str
-    is_active: bool
-    is_staff: bool
-    name: str
-    slug: str
-    user_type: str
-    username: str
-
-
 class SiteDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

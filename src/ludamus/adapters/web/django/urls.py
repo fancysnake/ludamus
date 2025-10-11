@@ -1,75 +1,100 @@
-# 📁 webappexample/urls.py -----
-
-from django.urls import path
+from django.urls import URLPattern, URLResolver, include, path
 
 from . import views
 
 app_name = "web"  # pylint: disable=invalid-name
 
+
+auth0_urls = [
+    path("do/login", views.Auth0LoginActionView.as_view(), name="login"),
+    path(
+        "do/login/callback",
+        views.Auth0LoginCallbackActionView.as_view(),
+        name="login-callback",
+    ),
+    path("do/logout", views.Auth0LogoutActionView.as_view(), name="logout"),
+    path(
+        "do/logout/redirect",
+        views.Auth0LogoutRedirectActionView.as_view(),
+        name="logout-redirect",
+    ),
+]
+
+crowd_urls: list[URLPattern | URLResolver] = [
+    path("auth0/", include((auth0_urls, "auth0"), namespace="auth0")),
+    path(
+        "login-required/", views.LoginRequiredPageView.as_view(), name="login-required"
+    ),
+    path("profile/", views.ProfilePageView.as_view(), name="profile"),
+    path(
+        "profile/connected-users/",
+        views.ProfileConnectedUsersPageView.as_view(),
+        name="profile-connected-users",
+    ),
+    path(
+        "profile/connected-users/<str:slug>/do/update",
+        views.ProfileConnectedUserUpdateActionView.as_view(),
+        name="profile-connected-users-update",
+    ),
+    path(
+        "profile/connected-users/<str:slug>/do/delete",
+        views.ProfileConnectedUserDeleteActionView.as_view(),
+        name="profile-connected-users-delete",
+    ),
+]
+
+chronology_urls = [
+    path("event/<str:slug>/", views.EventPageView.as_view(), name="event"),
+    path(
+        "session/<int:session_id>/enrollment/",
+        views.SessionEnrollPageView.as_view(),
+        name="session-enrollment",
+    ),
+    path(
+        "event/<str:event_slug>/proposal/",
+        views.EventProposalPageView.as_view(),
+        name="event-proposal",
+    ),
+    path(
+        "proposal/<int:proposal_id>/accept/",
+        views.ProposalAcceptPageView.as_view(),
+        name="proposal-accept",
+    ),
+    path(
+        "proposal/<int:proposal_id>/accept/do/confirm",
+        views.ProposalAcceptConfirmAction.as_view(),
+        name="proposal-accept-confirm",
+    ),
+    path(
+        "event/<str:event_slug>/anonymous/do/activate",
+        views.EventAnonymousActivateActionView.as_view(),
+        name="event-anonymous-activate",
+    ),
+    path(
+        "session/<int:session_id>/enrollment/anonymous",
+        views.SessionEnrollmentAnonymousPageView.as_view(),
+        name="session-enrollment-anonymous",
+    ),
+    path(
+        "anonymous/do/load",
+        views.AnonymousLoadActionView.as_view(),
+        name="anonymous-load",
+    ),
+    path(
+        "anonymous/do/reset/",
+        views.AnonymousResetActionView.as_view(),
+        name="anonymous-reset",
+    ),
+]
+
 urlpatterns = [
-    path("", views.index, name="index"),
-    path("chronology/event/<str:slug>", views.EventView.as_view(), name="event"),
+    path("", views.IndexPageView.as_view(), name="index"),
     path(
-        "chronology/session/<int:session_id>/enroll-select",
-        views.EnrollSelectView.as_view(),
-        name="enroll-select",
+        "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
+    path("crowd/", include((crowd_urls, "crowd"), namespace="crowd")),
     path(
-        "chronology/event/<str:event_slug>/propose",
-        views.ProposeSessionView.as_view(),
-        name="propose-session",
-    ),
-    path(
-        "chronology/event/<str:event_slug>/propose/<int:time_slot_id>",
-        views.ProposeSessionView.as_view(),
-        name="propose-session-slot",
-    ),
-    path(
-        "chronology/proposal/<int:proposal_id>/accept",
-        views.AcceptProposalPageView.as_view(),
-        name="accept-proposal-page",
-    ),
-    path(
-        "chronology/proposal/<int:proposal_id>/accept/confirm",
-        views.AcceptProposalView.as_view(),
-        name="accept-proposal",
-    ),
-    path("crowd/user/connected", views.ConnectedView.as_view(), name="connected"),
-    path(
-        "crowd/user/connected/<str:slug>",
-        views.EditConnectedView.as_view(),
-        name="connected-details",
-    ),
-    path(
-        "crowd/user/connected/<str:slug>/delete",
-        views.DeleteConnectedView.as_view(),
-        name="connected-delete",
-    ),
-    path("crowd/user/edit", views.EditProfileView.as_view(), name="edit"),
-    path("crowd/user/login", views.login, name="login"),
-    path("crowd/user/login/auth0", views.auth0_login, name="auth0_login"),
-    path("crowd/user/login/callback", views.CallbackView.as_view(), name="callback"),
-    path("crowd/user/logout", views.logout, name="logout"),
-    path("redirect", views.redirect_view, name="redirect"),
-    path("theme/select", views.ThemeSelectionView.as_view(), name="theme-select"),
-    # Anonymous enrollment URLs
-    path(
-        "anonymous/activate/<int:event_id>/",
-        views.ActivateAnonymousEnrollmentView.as_view(),
-        name="anonymous-activate",
-    ),
-    path(
-        "anonymous/enroll/<int:session_id>/",
-        views.AnonymousEnrollView.as_view(),
-        name="anonymous-enroll",
-    ),
-    path(
-        "anonymous/code-entry/",
-        views.AnonymousCodeEntryView.as_view(),
-        name="anonymous-code-entry",
-    ),
-    path(
-        "anonymous/reset/", views.AnonymousResetView.as_view(), name="anonymous-reset"
+        "theme/do/select", views.ThemeSelectionActionView.as_view(), name="theme-select"
     ),
     # Discord username endpoint
     path("discord/<slug:user_slug>/", views.get_discord_username, name="get-discord"),

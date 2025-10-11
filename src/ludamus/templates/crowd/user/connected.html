@@ -11,13 +11,14 @@
             <div class="card-header bg-white">
                 <ul class="nav nav-tabs card-header-tabs">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'web:edit' %}">
+                        <a class="nav-link" href="{% url 'web:crowd:profile' %}">
                             {% bs_icon 'person' %}
                             {% translate "Personal Information" %}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'web:connected' %}">
+                        <a class="nav-link active"
+                           href="{% url 'web:crowd:profile-connected-users' %}">
                             {% bs_icon 'people' %}
                             {% translate "Connected users" %}
                         </a>
@@ -41,7 +42,7 @@
                             {% bs_icon 'plus-circle' %}
                             {% translate "Add connected user" %}
                         </h6>
-                        <form action="{% url 'web:connected' %}" method="post">
+                        <form action="{% url 'web:crowd:profile-connected-users' %}" method="post">
                             {% csrf_token %}
                             {% bootstrap_form form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}
                             {% bootstrap_button button_type="submit" content="OK" %}
@@ -77,7 +78,7 @@
                                             </div>
                                             <div class="col-md-4 text-md-end">
                                                 <form method="post"
-                                                      action="{% url 'web:connected-delete' slug=connected.user.slug %}">
+                                                      action="{% url 'web:crowd:profile-connected-users-delete' slug=connected.user.slug %}">
                                                     {% csrf_token %}
                                                     <div class="btn-group" role="group">
                                                         <button type="button"
@@ -100,7 +101,7 @@
                                         </div>
                                     </div>
                                     <div class="item-edit collapse" id="edit-{{ forloop.counter }}">
-                                        <form action="{% url 'web:connected-details' slug=connected.user.slug %}"
+                                        <form action="{% url 'web:crowd:profile-connected-users-update' slug=connected.user.slug %}"
                                               method="post">
                                             {% csrf_token %}
                                             {% bootstrap_form connected.form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}

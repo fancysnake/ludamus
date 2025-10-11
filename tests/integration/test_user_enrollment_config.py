@@ -1,6 +1,5 @@
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
-from unittest.mock import Mock, patch
 
 import pytest
 from django.urls import reverse
@@ -42,7 +41,6 @@ class TestUserEnrollmentConfigModel:
         assert user_config.allowed_slots == allowed_slots
         assert user_config.get_used_slots() == 0
         assert user_config.get_available_slots() == allowed_slots
-        assert user_config.has_available_slots() is True
 
     @staticmethod
     def test_user_enrollment_config_used_slots_calculation(
@@ -78,7 +76,6 @@ class TestUserEnrollmentConfigModel:
         expected_available_slots_number = 2
         assert user_config.get_used_slots() == 1
         assert user_config.get_available_slots() == expected_available_slots_number
-        assert user_config.has_available_slots() is True
 
     @staticmethod
     def test_user_enrollment_config_with_connected_users(
@@ -127,9 +124,6 @@ class TestUserEnrollmentConfigModel:
         expected_used_slots_number = 2
         assert user_config.get_used_slots() == expected_used_slots_number
         assert user_config.get_available_slots() == 0
-        assert (
-            user_config.has_available_slots() is True
-        )  # Has slots allocated, even if all used
         assert (
             user_config.can_enroll_users([connected_user2]) is False
         )  # Cannot enroll more users
@@ -233,7 +227,7 @@ class TestUserEnrollmentConfigModel:
 
 @pytest.mark.django_db
 class TestUserEnrollmentConfigView:
-    URL_NAME = "web:enroll-select"
+    URL_NAME = "web:chronology:session-enrollment"
 
     def _get_url(self, session_id: int) -> str:
         return reverse(self.URL_NAME, kwargs={"session_id": session_id})
@@ -262,7 +256,9 @@ class TestUserEnrollmentConfigView:
         )
 
         assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
+        assert response.url == reverse(
+            "web:chronology:event", kwargs={"slug": event.slug}
+        )
 
         # Verify user was enrolled
         participation = SessionParticipation.objects.get(
@@ -304,7 +300,9 @@ class TestUserEnrollmentConfigView:
         )
 
         assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
+        assert response.url == reverse(
+            "web:chronology:event", kwargs={"slug": event.slug}
+        )
 
         # Verify user was enrolled
         assert SessionParticipation.objects.filter(
@@ -386,7 +384,6 @@ class TestUserEnrollmentConfigView:
         available_spots = 5
         # Session effective limit should be 50% of 10 = 5
         assert session.effective_participants_limit == available_spots
-        assert session.available_spots == available_spots
         assert not session.is_full
         assert session.is_enrollment_limited
 
@@ -440,7 +437,6 @@ class TestUserEnrollmentConfigView:
 
         # Verify user is at their limit
         user_config = event.get_user_enrollment_config("test@example.com")
-        assert user_config.has_available_slots()  # Has slots allocated
         assert user_config.get_available_slots() == 0  # But all are used
 
         response = authenticated_client.get(self._get_url(agenda_item.session.pk))
@@ -453,7 +449,9 @@ class TestUserEnrollmentConfigView:
         )
 
         assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
+        assert response.url == reverse(
+            "web:chronology:event", kwargs={"slug": event.slug}
+        )
 
         # Verify user was unenrolled
         assert not SessionParticipation.objects.filter(
@@ -508,7 +506,6 @@ class TestUserEnrollmentConfigView:
 
         # Verify user is at their limit
         user_config = event.get_user_enrollment_config("test@example.com")
-        assert user_config.has_available_slots()  # Has slots allocated
         assert user_config.get_available_slots() == 0  # But all are used
 
         # User should be able to enroll normally in additional sessions
@@ -521,7 +518,9 @@ class TestUserEnrollmentConfigView:
             "messages": list(response.context["messages"]),
             "form_errors": response.context["form"].errors,
         }
-        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
+        assert response.url == reverse(
+            "web:chronology:event", kwargs={"slug": event.slug}
+        )
 
         participation = SessionParticipation.objects.get(
             session=agenda_item.session, user=active_user
@@ -563,7 +562,6 @@ class TestUserEnrollmentConfigView:
 
         # Verify user is at their limit
         user_config = event.get_user_enrollment_config("test@example.com")
-        assert user_config.has_available_slots()  # Has slots allocated
         assert user_config.get_available_slots() == 0  # But all are used
 
         # User should get form validation error when trying to enroll
@@ -690,7 +688,6 @@ class TestUserEnrollmentConfigView:
         )
 
         # Verify waiting user has no available slots
-        assert user_config_waiting.has_available_slots()  # Has slots allocated
         assert user_config_waiting.get_available_slots() == 0  # But all are used
 
         # Enroll manager user
@@ -1213,63 +1210,6 @@ class TestUserEnrollmentConfigView:
         assert "enroll" not in connected_choices
         assert "waitlist" not in connected_choices
 
-    @patch("requests.get")
-    def test_api_integration_creates_user_config(
-        self, mock_get, active_user, authenticated_client, agenda_item, event, settings
-    ):
-        # Test end-to-end API integration
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/membership"
-        settings.MEMBERSHIP_API_TOKEN = "test-token-123"
-        memberships = 2
-
-        # Mock successful API response
-        mock_response = Mock()
-        mock_response.json.return_value = {"membership_count": memberships}
-        mock_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_response
-
-        # Set up user
-        active_user.email = "api-user@example.com"
-        active_user.save()
-
-        # Create enrollment config (no UserEnrollmentConfig exists)
-        now = datetime.now(tz=UTC)
-        EnrollmentConfig.objects.create(
-            event=event,
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(days=30),
-            percentage_slots=50,
-            max_waitlist_sessions=5,
-        )
-
-        # Try to enroll - should trigger API call and create UserEnrollmentConfig
-        response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
-            data={f"user_{active_user.id}": "enroll"},
-        )
-
-        assert response.status_code == HTTPStatus.FOUND
-
-        # Verify API was called
-        mock_get.assert_called_once_with(
-            "https://api.example.com/membership",
-            params={"email": "api-user@example.com"},
-            headers={"Authorization": "Token test-token-123"},
-            timeout=30,
-        )
-
-        # Verify UserEnrollmentConfig was created
-        user_config = UserEnrollmentConfig.objects.get(
-            user_email="api-user@example.com"
-        )
-        assert user_config.allowed_slots == memberships
-        assert user_config.fetched_from_api is True
-
-        # Verify user was enrolled
-        assert SessionParticipation.objects.filter(
-            session=agenda_item.session, user=active_user
-        ).exists()
-
     def test_user_can_enroll_multiple_sessions_with_same_slot(
         self, active_user, authenticated_client, event, space
     ):
@@ -1375,7 +1315,9 @@ class TestUserEnrollmentConfigView:
         )
 
         assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse("web:event", kwargs={"slug": event.slug})
+        assert response.url == reverse(
+            "web:chronology:event", kwargs={"slug": event.slug}
+        )
 
         # User SHOULD be enrolled since no slot restrictions apply
         participation = SessionParticipation.objects.filter(

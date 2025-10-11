@@ -74,7 +74,7 @@
                 </div>
                 <div class="card-body">
                     <form method="post"
-                          action="{% url 'web:accept-proposal' proposal_id=proposal.id %}">
+                          action="{% url 'web:chronology:proposal-accept-confirm' proposal_id=proposal.id %}">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="space" class="form-label">
@@ -110,7 +110,7 @@
                                 </button>
                             </div>
                             <div class="col-md-6">
-                                <a href="{% url 'web:event' slug=event.slug %}"
+                                <a href="{% url 'web:chronology:event' slug=event.slug %}"
                                    class="btn btn-outline-secondary w-100">
                                     {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
                                 </a>

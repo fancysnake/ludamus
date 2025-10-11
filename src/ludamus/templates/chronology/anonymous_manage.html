@@ -111,7 +111,7 @@
                     <div class="card-body">
                         <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                             {% if enrollments %}
-                                <a href="{% url 'web:event' slug=enrollments.0.session.agenda_item.space.event.slug %}"
+                                <a href="{% url 'web:chronology:event' slug=enrollments.0.session.agenda_item.space.event.slug %}"
                                    class="btn btn-primary">
                                     {% bs_icon 'calendar-event' %} {% translate "View Event" %}
                                 </a>
