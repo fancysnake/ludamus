@@ -31,6 +31,10 @@ class RootMiddleware:
             messages.error(request, _("Sphere not found"))
             return HttpResponseRedirect(url)
 
+        request.user_dao = None  # type: ignore [attr-defined]
+        if hasattr(request, "user") and request.user.is_authenticated:
+            request.user_dao = request.root_dao.get_user_dao(request.user)  # type: ignore [attr-defined]
+
         return self.get_response(request)
 
 

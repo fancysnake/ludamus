@@ -15,8 +15,12 @@ from django.utils import timezone
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
+from ludamus.pacts import UserType
+
 if TYPE_CHECKING:
     from collections.abc import Collection
+
+    from ludamus.pacts import UserDTO
 
 
 MAX_SLUG_RETRIES = 10
@@ -29,11 +33,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS: ClassVar = ["email"]
-
-    class UserType(models.TextChoices):  # pylint: disable=too-many-ancestors
-        ACTIVE = "active", _("Active")
-        CONNECTED = "connected", _("Connected")
-        ANONYMOUS = "anonymous", _("Anonymous")
 
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
     email = models.EmailField(_("email address"), blank=True)
@@ -60,7 +59,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(_("User name"), max_length=255, blank=True)
     slug = models.SlugField(unique=True, db_index=True)
     user_type = models.CharField(
-        max_length=255, choices=UserType, default=UserType.ACTIVE
+        max_length=255,
+        choices=[(t.value, t.name) for t in UserType],
+        default=UserType.ACTIVE,
     )
     username = models.CharField(
         _("username"),
@@ -451,7 +452,7 @@ class UserEnrollmentConfig(models.Model):
     def get_available_slots(self) -> int:
         return max(0, self.allowed_slots - self.get_used_slots())
 
-    def can_enroll_users(self, users_to_enroll: list[User]) -> bool:
+    def can_enroll_users(self, users_to_enroll: list[UserDTO]) -> bool:
         try:
             user = User.objects.get(email=self.user_email)
         except User.DoesNotExist:
@@ -472,7 +473,7 @@ class UserEnrollmentConfig(models.Model):
         )
 
         # Add new users to enroll
-        users_to_enroll_ids = {u.id for u in users_to_enroll if u in all_users}
+        users_to_enroll_ids = {u.pk for u in users_to_enroll}
         total_enrolled = currently_enrolled | users_to_enroll_ids
 
         return len(total_enrolled) <= self.allowed_slots
@@ -675,12 +676,12 @@ class Tag(models.Model):
 
 
 class SessionManager(models.Manager["Session"]):
-    def has_conflicts(self, session: Session, user: User) -> bool:
+    def has_conflicts(self, session: Session, user: UserDTO) -> bool:
         return (
             self.get_queryset()
             .filter(
                 agenda_item__space__event=session.agenda_item.space.event,
-                session_participations__user=user,
+                session_participations__user_id=user.pk,
                 session_participations__status=SessionParticipationStatus.CONFIRMED,
             )
             .filter(

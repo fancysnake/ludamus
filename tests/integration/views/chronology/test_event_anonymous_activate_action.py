@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import User
+from ludamus.pacts import UserType
 from tests.integration.utils import assert_response
 
 
@@ -62,9 +63,9 @@ class TestEventAnonymousActivateActionView:
         anonymous_user = User.objects.get()
         assert anonymous_user.username.startswith("anon_")
         assert anonymous_user.slug.startswith("code_")
-        assert anonymous_user.user_type == User.UserType.ANONYMOUS
+        assert anonymous_user.user_type == UserType.ANONYMOUS
         assert not anonymous_user.is_active
-        client.session["anonymous_user_id"] = anonymous_user.id
+        client.session["anonymous_user_code"] = anonymous_user.id
         client.session["anonymous_enrollment_active"] = True
         client.session["anonymous_event_id"] = enrollment_config.event.id
         client.session["anonymous_site_id"] = sphere.site.pk

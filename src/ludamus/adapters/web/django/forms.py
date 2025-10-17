@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from django import forms
 from django.core.exceptions import ValidationError
-from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 from ludamus.adapters.db.django.models import (
@@ -18,60 +16,69 @@ from ludamus.adapters.db.django.models import (
     Space,
     TagCategory,
     TimeSlot,
-    User,
+)
+from ludamus.pacts import (
+    ProposalCategoryDTO,
+    TagCategoryDTO,
+    TagDTO,
+    UserData,
+    UserDTO,
+    UserType,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from ludamus.adapters.db.django.models import Event
-    from ludamus.pacts import ProposalCategoryDTO, TagCategoryDTO, TagDTO
 
 TODAY = datetime.now(tz=UTC).date()
 logger = logging.getLogger(__name__)
 
 
-class BaseUserForm(forms.ModelForm):  # type: ignore [type-arg]
+class BaseUserForm(forms.Form):
     name = forms.CharField(
         label=_("User name"),
         help_text=_(
             "Your public display name that others will see. This can be a nickname "
             "and does not need to be your legal name."
         ),
-        required=True,
     )
 
-    class Meta:
-        model = User
-        fields = ("name", "user_type")
+    @property
+    def user_data(self) -> UserData:
+        cleaned_data = self.cleaned_data or {}
+        user_data = UserData()
+        if "email" in cleaned_data:
+            user_data["email"] = cleaned_data["email"]
+        if "name" in cleaned_data:
+            user_data["name"] = cleaned_data["name"]
+        if "slug" in cleaned_data:
+            user_data["slug"] = cleaned_data["slug"]
+        if "user_type" in cleaned_data:
+            user_data["user_type"] = cleaned_data["user_type"]
+        if "username" in cleaned_data:
+            user_data["username"] = cleaned_data["username"]
+        return user_data
 
 
 class UserForm(BaseUserForm):
-    user_type = forms.CharField(
-        initial=User.UserType.ACTIVE, widget=forms.HiddenInput()
-    )
-
-    class Meta:
-        model = User
-        fields = ("name", "email", "user_type")
+    user_type = forms.CharField(initial=UserType.ACTIVE, widget=forms.HiddenInput())
+    email = forms.EmailField(label=_("email address"), required=False)
 
 
 class ConnectedUserForm(BaseUserForm):
     user_type = forms.CharField(
-        initial=User.UserType.CONNECTED.value, widget=forms.HiddenInput()
+        initial=UserType.CONNECTED.value, widget=forms.HiddenInput()
     )
-
-    def save(self, commit: bool = True) -> User:  # noqa: FBT001, FBT002
-        self.instance.username = f"connected|{token_urlsafe(50)}"
-        self.instance.slug = slugify(self.instance.username[:50])
-        return super().save(commit)  # type: ignore [no-any-return]
 
 
 class UnsupportedTagCategoryInputTypeError(Exception):
     """Raised when encountering an unsupported TagCategory input type."""
 
 
-def create_enrollment_form(session: Session, users: Iterable[User]) -> type[forms.Form]:
+def create_enrollment_form(
+    session: Session, users: Iterable[UserDTO], manager_email: str | None
+) -> type[forms.Form]:
     # Create form class dynamically with pre-generated fields
     form_fields = {}
     users_list = list(users)
@@ -82,7 +89,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
     # Get enrollment config to check waitlist settings
     enrollment_config = session.agenda_item.space.event.get_most_liberal_config(session)
 
-    def can_join_waitlist(user: User) -> bool:
+    def can_join_waitlist(user: UserDTO) -> bool:
         # No enrollment config = no enrollment functionality at all
         if not enrollment_config:
             return False
@@ -93,11 +100,11 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
         # If restricted to configured users only, check if user has UserEnrollmentConfig
         if enrollment_config.restrict_to_configured_users:
             # First check if this is a connected user - they use manager's config
-            if user.user_type == User.UserType.CONNECTED:
-                if hasattr(user, "manager") and user.manager and user.manager.email:
+            if user.user_type == UserType.CONNECTED:
+                if user.manager_id and manager_email:
                     manager_config = (
                         session.agenda_item.space.event.get_user_enrollment_config(
-                            user.manager.email
+                            manager_email
                         )
                     )
                     if (
@@ -121,14 +128,14 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
 
         # Count current waitlist participations for this user
         current_waitlist_count = SessionParticipation.objects.filter(
-            user=user,
+            user_id=user.pk,
             status=SessionParticipationStatus.WAITING,
             session__agenda_item__space__event=session.agenda_item.space.event,
         ).count()
 
         return current_waitlist_count < enrollment_config.max_waitlist_sessions
 
-    def can_enroll(user: User) -> bool:
+    def can_enroll(user: UserDTO) -> bool:
         # No enrollment config = no enrollment functionality at all
         if not enrollment_config:
             return False
@@ -136,11 +143,11 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
         # If restricted to configured users only, check if user has UserEnrollmentConfig
         if enrollment_config.restrict_to_configured_users:
             # First check if this is a connected user - they use manager's config
-            if user.user_type == User.UserType.CONNECTED:
-                if hasattr(user, "manager") and user.manager and user.manager.email:
+            if user.user_type == UserType.CONNECTED:
+                if manager_email:
                     manager_config = (
                         session.agenda_item.space.event.get_user_enrollment_config(
-                            user.manager.email
+                            manager_email
                         )
                     )
                     if (
@@ -163,10 +170,10 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
 
     for user in users_list:
         current_participation = SessionParticipation.objects.filter(
-            session=session, user=user
+            session=session, user_id=user.pk
         ).first()
         has_conflict = Session.objects.has_conflicts(session, user)
-        field_name = f"user_{user.id}"
+        field_name = f"user_{user.pk}"
         choices = [("", _("No change"))]
         help_text = ""
 
@@ -229,13 +236,12 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                     if (
                         enrollment_config.restrict_to_configured_users
                         and not user_config
-                        and hasattr(user, "manager")
-                        and user.manager
-                        and user.manager.email
+                        and user.manager_id
+                        and manager_email
                     ):
                         manager_config = (
                             session.agenda_item.space.event.get_user_enrollment_config(
-                                user.manager.email
+                                manager_email
                             )
                         )
                         has_manager_access = bool(
@@ -261,19 +267,17 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                 choices = [("", _("No change"))]
 
         # Add to field name mapping
-        field_to_user_name[field_name] = user.get_full_name() or user.name or _("User")
+        field_to_user_name[field_name] = user.name or _("User")
 
         # Create a custom choice field with better error messages
         class UserEnrollmentChoiceField(forms.ChoiceField):
-            def __init__(self, user_obj: User, *args: Any, **kwargs: Any) -> None:
+            def __init__(self, user_obj: UserDTO, *args: Any, **kwargs: Any) -> None:
                 self.user_obj = user_obj
                 super().__init__(*args, **kwargs)
 
             def validate(self, value: str) -> None:
                 if value and value not in [choice[0] for choice in self.choices]:  # type: ignore [index, union-attr]
-                    user_name = (
-                        self.user_obj.get_full_name() or self.user_obj.name or _("User")
-                    )
+                    user_name = self.user_obj.name or _("User")
                     if value == "enroll":
                         # Check age requirement first
                         if (
@@ -281,13 +285,9 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                             and enrollment_config.restrict_to_configured_users
                         ):
                             # Check if this is a connected user
-                            if self.user_obj.user_type == User.UserType.CONNECTED:
+                            if self.user_obj.user_type == UserType.CONNECTED:
                                 # Connected users use their manager's config
-                                if not (
-                                    hasattr(self.user_obj, "manager")
-                                    and self.user_obj.manager
-                                    and self.user_obj.manager.email
-                                ):
+                                if manager_email is None:
                                     raise ValidationError(
                                         _(
                                             "%(user)s cannot enroll: manager "
@@ -298,7 +298,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
 
                                 event = session.agenda_item.space.event
                                 manager_config = event.get_user_enrollment_config(
-                                    self.user_obj.manager.email
+                                    manager_email
                                 )
                                 if not manager_config:
                                     raise ValidationError(
@@ -347,14 +347,12 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
             user_obj=user,
             choices=choices,
             required=False,
-            label=user.get_full_name()
-            or user.name
-            or _("User"),  # Use user's name as label
+            label=user.name or _("User"),  # Use user's name as label
             help_text=help_text,
             widget=forms.Select(
                 attrs={
                     "class": "form-select",
-                    "data-user-id": user.id,
+                    "data-user-id": user.pk,
                     "disabled": None,
                 }
             ),
@@ -368,7 +366,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                 if field_name.startswith("user_") and value == "enroll":
                     user_id = int(field_name.split("_")[1])
                     # Find the user from users_list
-                    user = next((u for u in users_list if u.id == user_id), None)
+                    user = next((u for u in users_list if u.pk == user_id), None)
                     if user:
                         enroll_requests.append(user)
 
@@ -384,7 +382,7 @@ def create_enrollment_form(session: Session, users: Iterable[User]) -> type[form
                 event = session.agenda_item.space.event
                 for user in users_list:
                     if (
-                        user.user_type != User.UserType.CONNECTED
+                        user.user_type != UserType.CONNECTED
                     ):  # This is the main user/manager
                         if user.email:
                             manager_config = event.get_user_enrollment_config(
