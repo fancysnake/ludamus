@@ -18,6 +18,7 @@ from ludamus.adapters.db.django.models import (
     TimeSlot,
 )
 from ludamus.pacts import (
+    EventDTO,
     ProposalCategoryDTO,
     TagCategoryDTO,
     TagDTO,
@@ -29,7 +30,6 @@ from ludamus.pacts import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from ludamus.adapters.db.django.models import Event
 
 TODAY = datetime.now(tz=UTC).date()
 logger = logging.getLogger(__name__)
@@ -623,9 +623,9 @@ def create_session_proposal_form(
     return type("SessionProposalForm", (forms.ModelForm,), form_attrs)
 
 
-def create_proposal_acceptance_form(event: Event) -> type[forms.Form]:
+def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
     space_field = forms.ModelChoiceField(
-        queryset=Space.objects.filter(event=event).order_by("name"),
+        queryset=Space.objects.filter(event_id=event.pk).order_by("name"),
         label=_("Space"),
         widget=forms.Select(attrs={"class": "form-select"}),
         help_text=_("Select the space where this session will take place"),
@@ -634,7 +634,7 @@ def create_proposal_acceptance_form(event: Event) -> type[forms.Form]:
     )
 
     time_slot_field = forms.ModelChoiceField(
-        queryset=TimeSlot.objects.filter(event=event).order_by("start_time"),
+        queryset=TimeSlot.objects.filter(event_id=event.pk).order_by("start_time"),
         label=_("Time slot"),
         widget=forms.Select(attrs={"class": "form-select"}),
         help_text=_("Select the time slot for this session"),

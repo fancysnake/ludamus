@@ -3,14 +3,27 @@ from typing import TYPE_CHECKING
 
 from django.contrib.sites.models import Site
 
-from ludamus.adapters.db.django.models import Sphere
+from ludamus.adapters.db.django.models import (
+    AgendaItem,
+    Proposal,
+    Session,
+    Space,
+    Sphere,
+    TimeSlot,
+)
 from ludamus.pacts import (
+    AcceptProposalDAOProtocol,
     AnonymousUserDAOProtocol,
     AuthDAOProtocol,
+    EventDTO,
     OtherUserDAOProtocol,
+    ProposalCategoryDTO,
+    ProposalDTO,
     RootDAOProtocol,
     SiteDTO,
+    SpaceDTO,
     SphereDTO,
+    TimeSlotDTO,
     UserDAOProtocol,
     UserData,
     UserDTO,
@@ -161,6 +174,91 @@ class AuthDAO(AuthDAOProtocol):
         return UserDTO.model_validate(self._storage.user)
 
 
+class AcceptProposalDAO(AcceptProposalDAOProtocol):
+    def __init__(self, storage: Storage, proposal_id: int) -> None:
+        self._storage = storage
+        try:
+            self._proposal = Proposal.objects.get(id=proposal_id)
+        except Proposal.DoesNotExist as exception:
+            raise NotFoundError from exception
+
+        self._spaces: dict[int, Space] = {}
+        self._maybe_time_slots: dict[int, TimeSlot] = {}
+
+    @property
+    def proposal(self) -> ProposalDTO:
+        return ProposalDTO.model_validate(self._proposal)
+
+    @property
+    def has_session(self) -> bool:
+        return bool(self._proposal.session)
+
+    @property
+    def proposal_category(self) -> ProposalCategoryDTO:
+        return ProposalCategoryDTO.model_validate(self._proposal.category)
+
+    @property
+    def event(self) -> EventDTO:
+        return EventDTO.model_validate(self._proposal.category.event)
+
+    @property
+    def spaces(self) -> list[SpaceDTO]:
+        if not self._spaces:
+            self._spaces = {
+                space.id: space
+                for space in Space.objects.filter(event=self._proposal.category.event)
+            }
+
+        return [SpaceDTO.model_validate(space) for space in self._spaces.values()]
+
+    @property
+    def _time_slots(self) -> dict[int, TimeSlot]:
+        if not self._maybe_time_slots:
+            self._maybe_time_slots = {
+                time_slot.id: time_slot
+                for time_slot in TimeSlot.objects.filter(
+                    event=self._proposal.category.event
+                )
+            }
+
+        return self._maybe_time_slots
+
+    @property
+    def time_slots(self) -> list[TimeSlotDTO]:
+        return [
+            TimeSlotDTO.model_validate(time_slot)
+            for time_slot in self._time_slots.values()
+        ]
+
+    def accept_proposal(self, *, time_slot_id: int, space_id: int, slug: str) -> None:
+        # Create a session from the proposal
+        session = Session.objects.create(
+            sphere=self._storage.current_sphere,
+            presenter_name=self._proposal.host.name,
+            title=self._proposal.title,
+            description=self._proposal.description,
+            requirements=self._proposal.requirements,
+            participants_limit=self._proposal.participants_limit,
+            min_age=self._proposal.min_age,
+            slug=slug,
+        )
+
+        # Copy tags from self._proposal to session
+        session.tags.set(self._proposal.tags.all())
+
+        AgendaItem.objects.create(
+            space_id=space_id,
+            session=session,
+            session_confirmed=True,
+            start_time=self._time_slots[time_slot_id].start_time,
+            end_time=self._time_slots[time_slot_id].end_time,
+        )
+
+        # Link self._proposal to session
+        self._proposal.session = session
+        self._proposal.save()
+
+
 class RootDAO(RootDAOProtocol):
     def __init__(self, domain: str, root_domain: str) -> None:
         try:
@@ -200,3 +298,9 @@ class RootDAO(RootDAOProtocol):
 
     def get_auth_dao(self) -> AuthDAO:
         return AuthDAO(self._storage)
+
+    def get_accept_proposal_dao(self, proposal_id: int) -> AcceptProposalDAO:
+        return AcceptProposalDAO(self._storage, proposal_id)
+
+    def is_sphere_manager(self, user_id: int) -> bool:
+        return self._storage.current_sphere.managers.filter(id=user_id).exists()
