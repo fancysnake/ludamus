@@ -478,14 +478,14 @@
                                                 </td>
                                                 <td>
                                                     <div class="btn-group-vertical" role="group">
-                                                        <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.id %}"
+                                                        <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}"
                                                            class="btn btn-success btn-sm">
                                                             {% bs_icon 'check-lg' %} {% translate "Accept" %}
                                                         </a>
                                                         <button type="button"
                                                                 class="btn btn-outline-secondary btn-sm mt-1"
                                                                 data-bs-toggle="modal"
-                                                                data-bs-target="#proposalModal{{ proposal.id }}">
+                                                                data-bs-target="#proposalModal{{ proposal.pk }}">
                                                             {% bs_icon 'eye' %} {% translate "Review" %}
                                                         </button>
                                                     </div>
@@ -509,7 +509,7 @@
         <!-- Proposal Review Modals -->
         {% for proposal in proposals %}
             <div class="modal fade"
-                 id="proposalModal{{ proposal.id }}"
+                 id="proposalModal{{ proposal.pk }}"
                  tabindex="-1"
                  aria-hidden="true">
                 <div class="modal-dialog modal-lg">
@@ -566,7 +566,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                            <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.id %}"
+                            <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}"
                                class="btn btn-success">{% bs_icon 'check-lg' %} {% translate "Accept Proposal" %}</a>
                         </div>
                     </div>

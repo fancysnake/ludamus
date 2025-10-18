@@ -74,7 +74,7 @@
                 </div>
                 <div class="card-body">
                     <form method="post"
-                          action="{% url 'web:chronology:proposal-accept-confirm' proposal_id=proposal.id %}">
+                          action="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="space" class="form-label">

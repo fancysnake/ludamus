@@ -61,11 +61,6 @@ chronology_urls = [
         name="proposal-accept",
     ),
     path(
-        "proposal/<int:proposal_id>/accept/do/confirm",
-        views.ProposalAcceptConfirmAction.as_view(),
-        name="proposal-accept-confirm",
-    ),
-    path(
         "event/<str:event_slug>/anonymous/do/activate",
         views.EventAnonymousActivateActionView.as_view(),
         name="event-anonymous-activate",
