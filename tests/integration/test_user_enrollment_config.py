@@ -8,9 +8,9 @@ from ludamus.adapters.db.django.models import (
     EnrollmentConfig,
     SessionParticipation,
     SessionParticipationStatus,
-    User,
     UserEnrollmentConfig,
 )
+from ludamus.pacts import UserType
 from tests.integration.conftest import AgendaItemFactory, SessionFactory, UserFactory
 
 
@@ -319,7 +319,7 @@ class TestUserEnrollmentConfigView:
         active_user.save()
 
         # Create connected user
-        connected_user = UserFactory(user_type=User.UserType.CONNECTED)
+        connected_user = UserFactory(user_type=UserType.CONNECTED)
         connected_user.manager = active_user
         connected_user.save()
 

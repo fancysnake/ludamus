@@ -9,6 +9,7 @@ from ludamus.adapters.db.django.models import (
     SessionParticipationStatus,
     User,
 )
+from ludamus.pacts import UserDTO
 from tests.integration.conftest import AgendaItemFactory, SessionFactory
 from tests.integration.utils import assert_response
 
@@ -100,7 +101,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = 789
+        session["anonymous_user_code"] = "789"
         session.save()
 
         response = getattr(client, method)(self.get_url(agenda_item.session.id))
@@ -117,7 +118,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session.save()
 
         response = client.get(self.get_url(agenda_item.session.id))
@@ -128,7 +129,7 @@ class TestSessionEnrollmentAnonymousPageView:
             context_data={
                 "session": agenda_item.session,
                 "event": agenda_item.space.event,
-                "anonymous_user": user,
+                "anonymous_user": UserDTO.model_validate(user),
                 "anonymous_code": user.slug.removeprefix("code_"),
                 "needs_user_data": True,
                 "existing_enrollment": None,
@@ -144,7 +145,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session.save()
 
         response = client.post(self.get_url(agenda_item.session.id), data={})
@@ -167,7 +168,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session.save()
         name = "johny"
 
@@ -206,7 +207,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session.save()
         name = "johny"
 
@@ -236,7 +237,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session.save()
         SessionParticipation.objects.create(
             session=agenda_item.session,
@@ -278,7 +279,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session.save()
         session2 = SessionFactory()
         AgendaItemFactory(
@@ -327,7 +328,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session.save()
         name = "johny"
 
@@ -364,7 +365,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session.save()
         SessionParticipation.objects.create(
             session=agenda_item.session,

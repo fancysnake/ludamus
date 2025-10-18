@@ -1,14 +1,7 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
-
-from django.contrib.auth import get_user_model
 
 from ludamus.adapters.db.django.models import Session, Tag
-
-if TYPE_CHECKING:
-    from ludamus.adapters.db.django.models import User
-else:
-    User = get_user_model()
+from ludamus.pacts import UserDTO
 
 
 @dataclass
@@ -26,7 +19,7 @@ class SessionData:
 
 @dataclass
 class SessionUserParticipationData:
-    user: User
+    user: UserDTO
     user_enrolled: bool = False
     user_waiting: bool = False
     has_time_conflict: bool = False

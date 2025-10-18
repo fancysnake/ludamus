@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import MAX_CONNECTED_USERS, User
+from ludamus.pacts import UserDTO, UserType
 from tests.integration.utils import assert_response
 
 
@@ -37,14 +38,16 @@ class TestProfileConnectedUsersPageView:
             context_data={
                 "form": ANY,
                 "view": ANY,
-                "connected_users": [{"user": connected_user, "form": ANY}],
+                "connected_users": [
+                    {"user": UserDTO.model_validate(connected_user), "form": ANY}
+                ],
                 "max_connected_users": MAX_CONNECTED_USERS,
             },
             template_name=["crowd/user/connected.html"],
         )
 
     def test_post_ok(self, authenticated_client, faker):
-        data = {"name": faker.name(), "user_type": User.UserType.CONNECTED}
+        data = {"name": faker.name(), "user_type": UserType.CONNECTED}
         response = authenticated_client.post(self.URL, data=data)
 
         assert_response(
@@ -54,7 +57,7 @@ class TestProfileConnectedUsersPageView:
             url="/crowd/profile/connected-users/",
         )
         user = User.objects.get(name=data["name"])
-        assert user.user_type == User.UserType.CONNECTED
+        assert user.user_type == UserType.CONNECTED
 
     def test_post_error_form_invalid(self, authenticated_client):
         response = authenticated_client.post(self.URL)
@@ -83,12 +86,12 @@ class TestProfileConnectedUsersPageView:
                     username=f"user_{i}_{faker.random_int()}",
                     name=unique_name,
                     slug=f"connected-{i}-{faker.random_int()}",
-                    user_type=User.UserType.CONNECTED,
+                    user_type=UserType.CONNECTED,
                     manager=active_user,
                 )
             )
 
-        data = {"name": faker.name(), "user_type": User.UserType.CONNECTED}
+        data = {"name": faker.name(), "user_type": UserType.CONNECTED}
         response = authenticated_client.post(self.URL, data=data)
 
         assert_response(
@@ -102,11 +105,12 @@ class TestProfileConnectedUsersPageView:
                 "form": ANY,
                 "view": ANY,
                 "connected_users": [
-                    {"user": user, "form": ANY} for user in connected_users
+                    {"user": UserDTO.model_validate(user), "form": ANY}
+                    for user in connected_users
                 ],
                 "max_connected_users": MAX_CONNECTED_USERS,
             },
             template_name=["crowd/user/connected.html"],
         )
-        connected_count = User.objects.filter(user_type=User.UserType.CONNECTED).count()
+        connected_count = User.objects.filter(user_type=UserType.CONNECTED).count()
         assert connected_count == MAX_CONNECTED_USERS

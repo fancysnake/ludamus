@@ -93,7 +93,7 @@ class TestAnonymousLoadActionView:
                 "web:chronology:event", kwargs={"slug": agenda_item.space.event.slug}
             ),
         )
-        assert client.session["anonymous_user_id"] == user.id
+        assert client.session["anonymous_user_code"] == user.slug.split("_")[1]
         assert client.session["anonymous_enrollment_active"]
         assert client.session["anonymous_event_id"] == agenda_item.space.event.id
         assert (

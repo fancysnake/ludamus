@@ -14,6 +14,7 @@ from ludamus.adapters.db.django.models import (
     UserEnrollmentConfig,
 )
 from ludamus.adapters.web.django.entities import SessionUserParticipationData
+from ludamus.pacts import UserDTO
 from tests.integration.conftest import (
     AgendaItemFactory,
     SessionFactory,
@@ -42,7 +43,7 @@ class TestSessionEnrollPageView:
                 "session": agenda_item.session,
                 "user_data": [
                     SessionUserParticipationData(
-                        user=active_user,
+                        user=UserDTO.model_validate(active_user),
                         user_enrolled=False,
                         user_waiting=False,
                         has_time_conflict=False,
@@ -104,7 +105,7 @@ class TestSessionEnrollPageView:
                 "session": agenda_item.session,
                 "user_data": [
                     SessionUserParticipationData(
-                        user=active_user,
+                        user=UserDTO.model_validate(active_user),
                         user_enrolled=False,
                         user_waiting=False,
                         has_time_conflict=False,
@@ -279,7 +280,7 @@ class TestSessionEnrollPageView:
                 "session": agenda_item.session,
                 "user_data": [
                     SessionUserParticipationData(
-                        user=active_user,
+                        user=UserDTO.model_validate(active_user),
                         user_enrolled=False,  # User is not enrolled in THIS session
                         user_waiting=False,
                         has_time_conflict=True,
@@ -528,7 +529,7 @@ class TestSessionEnrollPageView:
                 "connected_users": [],
                 "user_data": [
                     SessionUserParticipationData(
-                        user=staff_user,
+                        user=UserDTO.model_validate(staff_user),
                         user_enrolled=False,
                         user_waiting=False,
                         has_time_conflict=False,
@@ -570,7 +571,7 @@ class TestSessionEnrollPageView:
                 "connected_users": [],
                 "user_data": [
                     SessionUserParticipationData(
-                        user=staff_user,
+                        user=UserDTO.model_validate(staff_user),
                         user_enrolled=False,
                         user_waiting=False,
                         has_time_conflict=False,
@@ -609,7 +610,7 @@ class TestSessionEnrollPageView:
                 "connected_users": [],
                 "user_data": [
                     SessionUserParticipationData(
-                        user=staff_user,
+                        user=UserDTO.model_validate(staff_user),
                         user_enrolled=False,
                         user_waiting=False,
                         has_time_conflict=False,
@@ -662,18 +663,18 @@ class TestSessionEnrollPageView:
                 (messages.WARNING, "Please review the enrollment options below."),
             ],
             context_data={
-                "connected_users": [connected_user],
+                "connected_users": [UserDTO.model_validate(connected_user)],
                 "session": agenda_item.session,
                 "event": event,
                 "user_data": [
                     SessionUserParticipationData(
-                        user=staff_user,
+                        user=UserDTO.model_validate(staff_user),
                         user_enrolled=False,
                         user_waiting=False,
                         has_time_conflict=False,
                     ),
                     SessionUserParticipationData(
-                        user=connected_user,
+                        user=UserDTO.model_validate(connected_user),
                         user_enrolled=False,
                         user_waiting=False,
                         has_time_conflict=False,
@@ -750,18 +751,18 @@ class TestSessionEnrollPageView:
                 (messages.WARNING, "Please review the enrollment options below."),
             ],
             context_data={
-                "connected_users": [connected_user],
+                "connected_users": [UserDTO.model_validate(connected_user)],
                 "session": agenda_item.session,
                 "event": event,
                 "user_data": [
                     SessionUserParticipationData(
-                        user=staff_user,
+                        user=UserDTO.model_validate(staff_user),
                         user_enrolled=False,
                         user_waiting=False,
                         has_time_conflict=False,
                     ),
                     SessionUserParticipationData(
-                        user=connected_user,
+                        user=UserDTO.model_validate(connected_user),
                         user_enrolled=True,
                         user_waiting=False,
                         has_time_conflict=False,

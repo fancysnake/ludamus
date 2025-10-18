@@ -12,7 +12,7 @@ class TestAnonymousResetActionView:
         response = client.get(self.URL)
 
         assert_response(response, HTTPStatus.FOUND, url=reverse("web:index"))
-        assert client.session.get("anonymous_user_id") is None
+        assert client.session.get("anonymous_user_code") is None
         assert client.session.get("anonymous_enrollment_active") is None
         assert client.session.get("anonymous_event_id") is None
         assert client.session.get("anonymous_site_id") is None
@@ -25,7 +25,7 @@ class TestAnonymousResetActionView:
         response = client.get(self.URL)
 
         assert_response(response, HTTPStatus.FOUND, url=reverse("web:index"))
-        assert client.session.get("anonymous_user_id") is None
+        assert client.session.get("anonymous_user_code") is None
         assert client.session.get("anonymous_enrollment_active") is None
         assert client.session.get("anonymous_event_id") is None
         assert client.session.get("anonymous_site_id") is None
@@ -45,7 +45,7 @@ class TestAnonymousResetActionView:
                 kwargs={"event_slug": event.slug},
             ),
         )
-        assert client.session.get("anonymous_user_id") is None
+        assert client.session.get("anonymous_user_code") is None
         assert client.session.get("anonymous_enrollment_active") is None
         assert client.session.get("anonymous_event_id") is None
         assert client.session.get("anonymous_site_id") is None
