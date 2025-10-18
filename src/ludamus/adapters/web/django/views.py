@@ -31,7 +31,6 @@ from django.views.generic.edit import FormMixin, ProcessFormView
 
 from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
-    AgendaItem,
     EnrollmentConfig,
     Event,
     Proposal,
@@ -39,9 +38,7 @@ from ludamus.adapters.db.django.models import (
     Session,
     SessionParticipation,
     SessionParticipationStatus,
-    Space,
     Tag,
-    TimeSlot,
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
@@ -50,6 +47,7 @@ from ludamus.adapters.web.django.entities import (
 )
 from ludamus.links.dao import NotFoundError
 from ludamus.pacts import (
+    AcceptProposalDAOProtocol,
     ProposalCategoryDTO,
     RootDAOProtocol,
     TagCategoryDTO,
@@ -1336,59 +1334,51 @@ class EventProposalPageView(LoginRequiredMixin, View):
             ) from None
 
 
-def _get_proposal(request: RootDAORequest, proposal_id: int) -> Proposal:
-    try:
-        proposal = Proposal.objects.get(
-            category__event__sphere_id=request.root_dao.current_sphere.pk,
-            id=proposal_id,
-        )
-    except Proposal.DoesNotExist:
-        raise RedirectError(
-            reverse("web:index"), error=_("Proposal not found.")
-        ) from None
-
-    # Check if proposal is already accepted
-    if proposal.session:
-        raise RedirectError(
-            reverse(
-                "web:chronology:event", kwargs={"slug": proposal.category.event.slug}
-            ),
-            warning=_("This proposal has already been accepted."),
-        )
-
-    return proposal
-
-
-def _check_proposal_permission(user: UserDTO, proposal: Proposal) -> bool:
+def _check_proposal_permission(root_dao: RootDAOProtocol, user: UserDTO) -> bool:
     if user.is_superuser or user.is_staff:
         return True
 
     # Check if user is a sphere manager for this event's sphere
-    sphere = proposal.category.event.sphere
-    return sphere.managers.filter(id=user.pk).exists()
+    return root_dao.is_sphere_manager(user.pk)
 
 
 class ProposalAcceptPageView(LoginRequiredMixin, View):
     def get(self, request: AuthorizedRootDAORequest, proposal_id: int) -> HttpResponse:
-        proposal = _get_proposal(request, proposal_id)
+        try:
+            accept_proposal_dao = request.root_dao.get_accept_proposal_dao(proposal_id)
+        except NotFoundError as exception:
+            raise RedirectError(
+                reverse("web:index"), error=_("Proposal not found.")
+            ) from exception
 
-        # Check permissions
-        if not _check_proposal_permission(request.user_dao.user, proposal):
+        proposal = accept_proposal_dao.proposal
+        # Check if proposal is already accepted
+        if accept_proposal_dao.has_session:
             raise RedirectError(
                 reverse(
                     "web:chronology:event",
-                    kwargs={"slug": proposal.category.event.slug},
+                    kwargs={"slug": accept_proposal_dao.event.slug},
+                ),
+                warning=_("This proposal has already been accepted."),
+            )
+
+        # Check permissions
+        if not _check_proposal_permission(request.root_dao, request.user_dao.user):
+            raise RedirectError(
+                reverse(
+                    "web:chronology:event",
+                    kwargs={"slug": accept_proposal_dao.event.slug},
                 ),
                 error=_(
                     "You don't have permission to accept proposals for this event."
                 ),
             )
 
-        event = proposal.category.event
+        event = accept_proposal_dao.event
 
         # Get available spaces and time slots for the event
-        spaces = self._get_spaces(event)
-        time_slots = self._get_time_slots(event)
+        self._check_spaces(accept_proposal_dao)
+        self._check_time_slots(accept_proposal_dao)
 
         # Create the form
         form_class = create_proposal_acceptance_form(event)
@@ -1397,59 +1387,45 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         context = {
             "proposal": proposal,
             "event": event,
-            "spaces": spaces,
-            "time_slots": time_slots,
+            "spaces": accept_proposal_dao.spaces,
+            "time_slots": accept_proposal_dao.time_slots,
             "form": form,
         }
 
         return TemplateResponse(request, "chronology/accept_proposal.html", context)
 
-    @staticmethod
-    def _get_spaces(event: Event) -> list[Space]:
-        spaces = Space.objects.filter(event=event)
-        if not spaces.exists():
-            raise RedirectError(
-                reverse("web:chronology:event", kwargs={"slug": event.slug}),
-                error=_(
-                    "No spaces configured for this event. Please create spaces first."
-                ),
-            )
-
-        return list(spaces)
-
-    @staticmethod
-    def _get_time_slots(event: Event) -> list[TimeSlot]:
-        time_slots = TimeSlot.objects.filter(event=event)
-
-        if not time_slots.exists():
-            raise RedirectError(
-                reverse("web:chronology:event", kwargs={"slug": event.slug}),
-                error=_(
-                    "No time slots configured for this event. "
-                    "Please create time slots first."
-                ),
-            )
-
-        return list(time_slots)
-
-
-class ProposalAcceptConfirmAction(LoginRequiredMixin, View):
     def post(self, request: AuthorizedRootDAORequest, proposal_id: int) -> HttpResponse:
-        proposal = _get_proposal(request, proposal_id)
+        try:
+            accept_proposal_dao = request.root_dao.get_accept_proposal_dao(proposal_id)
+        except NotFoundError as exception:
+            raise RedirectError(
+                reverse("web:index"), error=_("Proposal not found.")
+            ) from exception
 
-        # Check permissions
-        if not _check_proposal_permission(request.user_dao.user, proposal):
+        proposal = accept_proposal_dao.proposal
+        # Check if proposal is already accepted
+        if accept_proposal_dao.has_session:
             raise RedirectError(
                 reverse(
                     "web:chronology:event",
-                    kwargs={"slug": proposal.category.event.slug},
+                    kwargs={"slug": accept_proposal_dao.event.slug},
+                ),
+                warning=_("This proposal has already been accepted."),
+            )
+
+        # Check permissions
+        if not _check_proposal_permission(request.root_dao, request.user_dao.user):
+            raise RedirectError(
+                reverse(
+                    "web:chronology:event",
+                    kwargs={"slug": accept_proposal_dao.event.slug},
                 ),
                 error=_(
                     "You don't have permission to accept proposals for this event."
                 ),
             )
 
-        event = proposal.category.event
+        event = accept_proposal_dao.event
 
         # Initialize form with POST data
         form_class = create_proposal_acceptance_form(event)
@@ -1462,13 +1438,17 @@ class ProposalAcceptConfirmAction(LoginRequiredMixin, View):
                 {
                     "proposal": proposal,
                     "event": event,
-                    "spaces": list(Space.objects.filter(event=event)),
-                    "time_slots": list(TimeSlot.objects.filter(event=event)),
+                    "spaces": accept_proposal_dao.spaces,
+                    "time_slots": accept_proposal_dao.time_slots,
                     "form": form,
                 },
             )
 
-        self._create_session(form, proposal)
+        accept_proposal_dao.accept_proposal(
+            slug=slugify(accept_proposal_dao.proposal.title),
+            space_id=form.cleaned_data["space"].id,
+            time_slot_id=form.cleaned_data["time_slot"].id,
+        )
 
         messages.success(
             self.request,
@@ -1479,35 +1459,31 @@ class ProposalAcceptConfirmAction(LoginRequiredMixin, View):
         return redirect("web:chronology:event", slug=event.slug)
 
     @staticmethod
-    def _create_session(form: forms.Form, proposal: Proposal) -> None:
-        time_slot = form.cleaned_data["time_slot"]
+    def _check_spaces(accept_proposal_dao: AcceptProposalDAOProtocol) -> None:
+        if not accept_proposal_dao.spaces:
+            raise RedirectError(
+                reverse(
+                    "web:chronology:event",
+                    kwargs={"slug": accept_proposal_dao.event.slug},
+                ),
+                error=_(
+                    "No spaces configured for this event. Please create spaces first."
+                ),
+            )
 
-        # Create a session from the proposal
-        session = Session.objects.create(
-            sphere=proposal.category.event.sphere,
-            presenter_name=proposal.host.name,
-            title=proposal.title,
-            description=proposal.description,
-            requirements=proposal.requirements,
-            participants_limit=proposal.participants_limit,
-            min_age=proposal.min_age,  # Copy minimum age requirement
-            slug=slugify(proposal.title),
-        )
-
-        # Copy tags from proposal to session
-        session.tags.set(proposal.tags.all())
-
-        AgendaItem.objects.create(
-            space=form.cleaned_data["space"],
-            session=session,
-            session_confirmed=True,
-            start_time=time_slot.start_time,
-            end_time=time_slot.end_time,
-        )
-
-        # Link proposal to session
-        proposal.session = session
-        proposal.save()
+    @staticmethod
+    def _check_time_slots(accept_proposal_dao: AcceptProposalDAOProtocol) -> None:
+        if not accept_proposal_dao.time_slots:
+            raise RedirectError(
+                reverse(
+                    "web:chronology:event",
+                    kwargs={"slug": accept_proposal_dao.event.slug},
+                ),
+                error=_(
+                    "No time slots configured for this event. "
+                    "Please create time slots first."
+                ),
+            )
 
 
 class ThemeSelectionActionView(View):

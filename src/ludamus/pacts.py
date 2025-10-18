@@ -17,6 +17,57 @@ class ProposalCategoryDTO(BaseModel):
     start_time: datetime | None
 
 
+class ProposalDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    description: str
+    min_age: int
+    needs: str
+    participants_limit: int
+    pk: int
+    requirements: str
+    title: str
+
+
+class AgendaItemDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    end_time: datetime
+    session_confirmed: bool
+    start_time: datetime
+
+
+class SessionDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    description: str
+    min_age: int
+    modification_time: datetime
+    participants_limit: int
+    presenter_name: str
+    requirements: str
+    slug: str
+    title: str
+
+
+class SpaceDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    modification_time: datetime
+    name: str
+    slug: str
+
+
+class TimeSlotDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    end_time: datetime
+    start_time: datetime
+
+
 class TagCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -77,6 +128,20 @@ class SphereDTO(BaseModel):
     pk: int
 
 
+class EventDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    description: str
+    end_time: datetime
+    name: str
+    pk: int
+    proposal_end_time: datetime
+    proposal_start_time: datetime
+    publication_time: datetime | None
+    slug: str
+    start_time: datetime
+
+
 class UserData(TypedDict, total=False):
     email: str
     name: str
@@ -122,7 +187,34 @@ class AuthDAOProtocol(Protocol):
     def user(self) -> UserDTO: ...
 
 
+class AcceptProposalDAOProtocol(Protocol):
+    @property
+    def proposal(self) -> ProposalDTO: ...
+
+    @property
+    def has_session(self) -> bool: ...
+
+    @property
+    def proposal_category(self) -> ProposalCategoryDTO: ...
+
+    @property
+    def event(self) -> EventDTO: ...
+    @property
+    def spaces(self) -> list[SpaceDTO]: ...
+
+    @property
+    def time_slots(self) -> list[TimeSlotDTO]: ...
+
+    def accept_proposal(
+        self, *, time_slot_id: int, space_id: int, slug: str
+    ) -> None: ...
+
+
 class RootDAOProtocol(Protocol):
+    def get_other_user_dao(self) -> OtherUserDAOProtocol: ...
+    def get_anonymous_user_dao(self) -> AnonymousUserDAOProtocol: ...
+    def get_auth_dao(self) -> AuthDAOProtocol: ...
+
     @property
     def current_site(self) -> SiteDTO: ...
 
@@ -135,11 +227,11 @@ class RootDAOProtocol(Protocol):
     @property
     def allowed_domains(self) -> list[str]: ...
 
-    def get_other_user_dao(self) -> OtherUserDAOProtocol: ...
+    def get_accept_proposal_dao(
+        self, proposal_id: int
+    ) -> AcceptProposalDAOProtocol: ...
 
-    def get_anonymous_user_dao(self) -> AnonymousUserDAOProtocol: ...
-
-    def get_auth_dao(self) -> AuthDAOProtocol: ...
+    def is_sphere_manager(self, user_id: int) -> bool: ...
 
 
 class RootDAORequestProtocol(Protocol):
