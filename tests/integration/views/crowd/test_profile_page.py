@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import User
+from ludamus.pacts import UserDTO, UserType
 from tests.integration.utils import assert_response
 
 
@@ -18,8 +19,8 @@ class TestProfilePageView:
             response,
             HTTPStatus.OK,
             context_data={
-                "object": active_user,
-                "user": active_user,
+                "object": UserDTO.model_validate(active_user),
+                "user": UserDTO.model_validate(active_user),
                 "form": ANY,
                 "view": ANY,
             },
@@ -30,7 +31,7 @@ class TestProfilePageView:
         data = {
             "name": faker.name(),
             "email": faker.email(),
-            "user_type": User.UserType.ACTIVE,
+            "user_type": UserType.ACTIVE,
         }
         response = authenticated_client.post(self.URL, data=data)
 
@@ -52,8 +53,8 @@ class TestProfilePageView:
             HTTPStatus.OK,
             messages=[(messages.WARNING, "Please correct the errors below.")],
             context_data={
-                "object": active_user,
-                "user": active_user,
+                "object": UserDTO.model_validate(active_user),
+                "user": UserDTO.model_validate(active_user),
                 "form": ANY,
                 "view": ANY,
             },

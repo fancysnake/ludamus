@@ -318,7 +318,9 @@ class TestCreateEnrollmentForm:
             max_waitlist_sessions=10,  # Enable waitlist
         )
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -352,7 +354,9 @@ class TestCreateEnrollmentForm:
             max_waitlist_sessions=10,  # Enable waitlist
         )
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -387,7 +391,9 @@ class TestCreateEnrollmentForm:
             session=session, user=active_user, status=SessionParticipationStatus.WAITING
         )
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -439,7 +445,9 @@ class TestCreateEnrollmentForm:
 
         participation.refresh_from_db()
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -490,7 +498,9 @@ class TestCreateEnrollmentForm:
             )
 
         with patch.object(Session.objects, "has_conflicts", return_value=True):
-            form_class = create_enrollment_form(session, [active_user])
+            form_class = create_enrollment_form(
+                session, [active_user], manager_email=active_user.email
+            )
             form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -534,7 +544,9 @@ class TestCreateEnrollmentForm:
             status=SessionParticipationStatus.CONFIRMED,
         )
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -571,7 +583,9 @@ class TestCreateEnrollmentForm:
             status=SessionParticipationStatus.CONFIRMED,
         )
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -604,7 +618,9 @@ class TestCreateEnrollmentForm:
             session=session, user=active_user, status=SessionParticipationStatus.WAITING
         )
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -629,7 +645,9 @@ class TestCreateEnrollmentForm:
             session=session, user=active_user, status=SessionParticipationStatus.WAITING
         )
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -659,7 +677,9 @@ class TestCreateEnrollmentForm:
 
         # Mock time conflict
         with patch.object(Session.objects, "has_conflicts", return_value=True):
-            form_class = create_enrollment_form(session, [active_user])
+            form_class = create_enrollment_form(
+                session, [active_user], manager_email=active_user.email
+            )
             form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -691,7 +711,9 @@ class TestCreateEnrollmentForm:
 
         # Mock time conflict
         with patch.object(Session.objects, "has_conflicts", return_value=True):
-            form_class = create_enrollment_form(session, [active_user])
+            form_class = create_enrollment_form(
+                session, [active_user], manager_email=active_user.email
+            )
             form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -714,7 +736,9 @@ class TestCreateEnrollmentForm:
         # No time conflicts - so has_conflict is False
         # No waitlist available - so can_join_waitlist returns False
 
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"
@@ -760,7 +784,9 @@ class TestCreateEnrollmentForm:
         )
 
         # Now test form for this user - they can enroll but not join waitlist
-        form_class = create_enrollment_form(session, [active_user])
+        form_class = create_enrollment_form(
+            session, [active_user], manager_email=active_user.email
+        )
         form = form_class()
 
         field_name = f"user_{active_user.id}"

@@ -51,7 +51,7 @@ class TestAuth0LoginCallbackActionView:
         self, authorize_access_token_mock, client, faker
     ):
         session = client.session
-        session["anonymous_user_id"] = 123
+        session["anonymous_user_code"] = 123
         session["anonymous_enrollment_active"] = True
         session["anonymous_event_id"] = 456
         session.save()
@@ -72,7 +72,7 @@ class TestAuth0LoginCallbackActionView:
         )
         assert User.objects.get().username == f"auth0|{sub.encode('utf-8')}"
         assert cache.get(f"oauth_state:{state_token}") is None
-        assert client.session.get("anonymous_user_id") is None
+        assert client.session.get("anonymous_user_code") is None
         assert client.session.get("anonymous_enrollment_active") is None
         assert client.session.get("anonymous_event_id") is None
 

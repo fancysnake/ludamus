@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import User
+from ludamus.pacts import UserDTO, UserType
 from tests.integration.utils import assert_response
 
 
@@ -15,7 +16,7 @@ class TestProfileConnectedUserUpdateActionView:
         return reverse(self.URL_NAME, kwargs={"slug": slug})
 
     def test_post_ok(self, authenticated_client, connected_user, faker):
-        data = {"name": faker.name(), "user_type": User.UserType.CONNECTED}
+        data = {"name": faker.name(), "user_type": UserType.CONNECTED}
         response = authenticated_client.post(
             self._get_url(connected_user.slug), data=data
         )
@@ -38,8 +39,8 @@ class TestProfileConnectedUserUpdateActionView:
             HTTPStatus.OK,
             messages=[(messages.WARNING, "Please correct the errors below.")],
             context_data={
-                "object": connected_user,
-                "user": connected_user,
+                "object": UserDTO.model_validate(connected_user),
+                "user": UserDTO.model_validate(connected_user),
                 "form": ANY,
                 "view": ANY,
             },

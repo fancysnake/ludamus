@@ -263,7 +263,7 @@ class TestEventPageView:
 
     def test_ok_reset_anonymous_enrollment(self, authenticated_client, event):
         session = authenticated_client.session
-        session["anonymous_user_id"] = 123
+        session["anonymous_user_code"] = 123
         session["anonymous_enrollment_active"] = 123
         session["anonymous_event_id"] = 123
         session["anonymous_site_id"] = 123
@@ -289,7 +289,7 @@ class TestEventPageView:
             },
             template_name=["chronology/event.html"],
         )
-        assert not authenticated_client.session.get("anonymous_user_id")
+        assert not authenticated_client.session.get("anonymous_user_code")
         assert not authenticated_client.session.get("anonymous_enrollment_active")
         assert not authenticated_client.session.get("anonymous_event_id")
         assert not authenticated_client.session.get("anonymous_site_id")
@@ -299,7 +299,7 @@ class TestEventPageView:
     ):
         session = client.session
         user = anonymous_user_factory()
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session["anonymous_enrollment_active"] = True
         session["anonymous_event_id"] = event.pk
         session["anonymous_site_id"] = event.sphere.site.pk
@@ -312,7 +312,7 @@ class TestEventPageView:
             response,
             HTTPStatus.OK,
             context_data={
-                "anonymous_code": user.slug,
+                "anonymous_code": user.slug.split("_")[1],
                 "anonymous_user_enrollments": [],
                 "current_hour_data": {},
                 "ended_hour_data": {},
@@ -331,7 +331,7 @@ class TestEventPageView:
 
     def test_ok_anonymous_enrollment_active_no_user(self, client, event, settings):
         session = client.session
-        session["anonymous_user_id"] = 17
+        session["anonymous_user_code"] = 17
         session["anonymous_enrollment_active"] = True
         session["anonymous_event_id"] = event.pk
         session["anonymous_site_id"] = event.sphere.site.pk
@@ -358,14 +358,14 @@ class TestEventPageView:
             },
             template_name=["chronology/event.html"],
         )
-        assert not client.session.get("anonymous_user_id")
+        assert not client.session.get("anonymous_user_code")
         assert not client.session.get("anonymous_enrollment_active")
         assert not client.session.get("anonymous_event_id")
         assert not client.session.get("anonymous_site_id")
 
     def test_ok_anonymous_enrollment_active_wrong_site(self, client, event, settings):
         session = client.session
-        session["anonymous_user_id"] = 17
+        session["anonymous_user_code"] = 17
         session["anonymous_enrollment_active"] = True
         session["anonymous_event_id"] = event.pk
         session["anonymous_site_id"] = "nosite"
@@ -392,7 +392,7 @@ class TestEventPageView:
             },
             template_name=["chronology/event.html"],
         )
-        assert not client.session.get("anonymous_user_id")
+        assert not client.session.get("anonymous_user_code")
         assert not client.session.get("anonymous_enrollment_active")
         assert not client.session.get("anonymous_event_id")
         assert not client.session.get("anonymous_site_id")
@@ -425,7 +425,7 @@ class TestEventPageView:
             },
             template_name=["chronology/event.html"],
         )
-        assert not client.session.get("anonymous_user_id")
+        assert not client.session.get("anonymous_user_code")
         assert not client.session.get("anonymous_enrollment_active")
         assert not client.session.get("anonymous_event_id")
         assert not client.session.get("anonymous_site_id")
@@ -434,7 +434,7 @@ class TestEventPageView:
         self, client, event, settings
     ):
         session = client.session
-        session["anonymous_user_id"] = "notanid"
+        session["anonymous_user_code"] = "notanid"
         session["anonymous_enrollment_active"] = True
         session["anonymous_event_id"] = event.pk
         session["anonymous_site_id"] = "nosite"
@@ -461,7 +461,7 @@ class TestEventPageView:
             },
             template_name=["chronology/event.html"],
         )
-        assert not client.session.get("anonymous_user_id")
+        assert not client.session.get("anonymous_user_code")
         assert not client.session.get("anonymous_enrollment_active")
         assert not client.session.get("anonymous_event_id")
         assert not client.session.get("anonymous_site_id")
@@ -476,7 +476,7 @@ class TestEventPageView:
             session=agenda_item.session,
             status=SessionParticipationStatus.CONFIRMED,
         )
-        session["anonymous_user_id"] = user.id
+        session["anonymous_user_code"] = user.slug.split("_")[1]
         session["anonymous_enrollment_active"] = True
         session["anonymous_event_id"] = event.pk
         session["anonymous_site_id"] = event.sphere.site.pk
@@ -489,7 +489,7 @@ class TestEventPageView:
             response,
             HTTPStatus.OK,
             context_data={
-                "anonymous_code": user.slug,
+                "anonymous_code": user.slug.split("_")[1],
                 "anonymous_user_enrollments": [participation],
                 "current_hour_data": {},
                 "ended_hour_data": {},
