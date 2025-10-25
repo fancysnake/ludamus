@@ -307,6 +307,10 @@ class ProfilePageView(
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         kwargs["user"] = self.request.user_dao.user
         kwargs["object"] = self.request.user_dao.user
+        kwargs["confirmed_participations_count"] = SessionParticipation.objects.filter(
+            user_id=self.request.user_dao.user.pk,
+            status=SessionParticipationStatus.CONFIRMED,
+        ).count()
         return super().get_context_data(**kwargs)
 
     def form_valid(self, form: UserForm) -> HttpResponse:
@@ -389,7 +393,18 @@ class ProfileConnectedUserUpdateActionView(
         return self.request.user_dao.read_connected_user(self.kwargs["slug"])
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context = {"user": self.get_object(), "object": self.get_object()}
+        context = {
+            "user": self.get_object(),
+            "object": self.get_object(),
+            "max_connected_users": MAX_CONNECTED_USERS,
+            "connected_users": [
+                {
+                    "user": connected,
+                    "form": ConnectedUserForm(initial=connected.model_dump()),
+                }
+                for connected in self.request.user_dao.connected_users
+            ],
+        }
         context.update(kwargs)
         return super().get_context_data(**context)
 
@@ -1053,7 +1068,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                         enrollments.users_by_status[
                             SessionParticipationStatus.CONFIRMED
                         ].append(
-                            f"{participation.user.get_full_name()} "
+                            f"{participation.user.name} "
                             f"({_("promoted from waiting list")})"
                         )
                         break
@@ -1390,6 +1405,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
             "spaces": accept_proposal_dao.spaces,
             "time_slots": accept_proposal_dao.time_slots,
             "form": form,
+            "proposal_host": accept_proposal_dao.host,
         }
 
         return TemplateResponse(request, "chronology/accept_proposal.html", context)
@@ -1441,6 +1457,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                     "spaces": accept_proposal_dao.spaces,
                     "time_slots": accept_proposal_dao.time_slots,
                     "form": form,
+                    "proposal_host": accept_proposal_dao.host,
                 },
             )
 

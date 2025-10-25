@@ -101,20 +101,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             ),
         )
 
-    @property
-    def is_incomplete(self) -> bool:
-        return not self.name and not self.email
-
-    @property
-    def confirmed_participations_count(self) -> int:
-        """Get count of confirmed session participations."""
-        if not self.email:
-            return 0
-
-        return SessionParticipation.objects.filter(
-            user=self, status=SessionParticipationStatus.CONFIRMED
-        ).count()
-
 
 class Sphere(models.Model):
     """Big group for whole provinces, topics, organizations or big events."""
@@ -296,12 +282,6 @@ class Event(models.Model):
         email_domain = user_email.split("@")[1].lower()
 
         return enrollment_config.domain_configs.filter(domain=email_domain).first()
-
-    def has_domain_access(self, user_email: str) -> bool:
-        return any(
-            self.get_domain_config_for_email(user_email, config)
-            for config in self.get_active_enrollment_configs()
-        )
 
 
 class EnrollmentConfig(models.Model):

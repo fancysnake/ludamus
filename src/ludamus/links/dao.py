@@ -200,6 +200,10 @@ class AcceptProposalDAO(AcceptProposalDAOProtocol):
         return ProposalDTO.model_validate(self._proposal)
 
     @property
+    def host(self) -> UserDTO:
+        return UserDTO.model_validate(self._proposal.host)
+
+    @property
     def has_session(self) -> bool:
         return bool(self._proposal.session)
 
