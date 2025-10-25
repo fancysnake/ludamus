@@ -58,6 +58,7 @@ class SpaceDTO(BaseModel):
     creation_time: datetime
     modification_time: datetime
     name: str
+    pk: int
     slug: str
     pk: int
 
@@ -66,6 +67,7 @@ class TimeSlotDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     end_time: datetime
+    pk: int
     start_time: datetime
     pk: int
 
@@ -194,6 +196,9 @@ class AcceptProposalDAOProtocol(Protocol):
     def proposal(self) -> ProposalDTO: ...
     @property
     def host(self) -> UserDTO: ...
+    @property
+    def host(self) -> UserDTO: ...
+
     @property
     def has_session(self) -> bool: ...
 

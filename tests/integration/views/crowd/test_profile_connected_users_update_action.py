@@ -4,7 +4,7 @@ from unittest.mock import ANY
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import User
+from ludamus.adapters.db.django.models import MAX_CONNECTED_USERS, User
 from ludamus.pacts import UserDTO, UserType
 from tests.integration.utils import assert_response
 
@@ -43,9 +43,9 @@ class TestProfileConnectedUserUpdateActionView:
                 "user": UserDTO.model_validate(connected_user),
                 "form": ANY,
                 "view": ANY,
-                "max_connected_users": 6,
+                "max_connected_users": MAX_CONNECTED_USERS,
                 "connected_users": [
-                    {"form": ANY, "user": UserDTO.model_validate(connected_user)}
+                    {"user": UserDTO.model_validate(connected_user), "form": ANY}
                 ],
             },
             template_name=["crowd/user/connected.html"],

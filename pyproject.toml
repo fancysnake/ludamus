@@ -77,7 +77,7 @@ ruff-fix = "ruff check --fix  ."
 # Django
 dj = "django-admin"
 # Tests
-unittest = "pytest tests/unit --cov=tests.unit --cov=ludamus"
+unittest = "pytest tests/unit --cov=tests.unit --cov=ludamus --fail-on-template-vars"
 # Series
 check = [
     "black",

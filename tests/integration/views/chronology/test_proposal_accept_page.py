@@ -51,6 +51,7 @@ class TestProposalAcceptPageView:
                 "host": UserDTO.model_validate(proposal.host),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
+                "proposal_host": UserDTO.model_validate(proposal.host),
             },
             template_name="chronology/accept_proposal.html",
         )
@@ -139,6 +140,7 @@ class TestProposalAcceptPageView:
                 "host": UserDTO.model_validate(proposal.host),
                 "spaces": [],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
+                "proposal_host": UserDTO.model_validate(proposal.host),
             },
             template_name="chronology/accept_proposal.html",
         )
