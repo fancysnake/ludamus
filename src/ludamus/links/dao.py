@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from django.contrib.auth.hashers import make_password
 from django.contrib.sites.models import Site
 
 from ludamus.adapters.db.django.models import (
@@ -88,7 +89,9 @@ class UserDAO(UserDAOProtocol):
         return [self.user, *self.connected_users]
 
     def create_connected_user(self, user_data: UserData) -> None:
-        connected_user = User.objects.create(manager=self._storage.user, **user_data)
+        connected_user = User.objects.create(
+            manager=self._storage.user, **user_data, password=make_password(None)
+        )
         self._storage.connected_users[connected_user.slug] = connected_user
 
     def read_connected_user(self, slug: str) -> UserDTO:
@@ -104,6 +107,7 @@ class UserDAO(UserDAOProtocol):
         original_user = self._storage.connected_users[slug]
         for key, value in user_data.items():
             setattr(original_user, key, value)
+        original_user.full_clean()
         original_user.save()
 
     def delete_connected_user(self, slug: str) -> None:
@@ -116,6 +120,7 @@ class UserDAO(UserDAOProtocol):
         for key, value in user_data.items():
             setattr(self._storage.user, key, value)
 
+        self._storage.user.full_clean()
         self._storage.user.save()
 
 
@@ -151,12 +156,17 @@ class AnonymousUserDAO(AnonymousUserDAOProtocol):
 
     def create_user(self, username: str, slug: str) -> None:
         self._storage.other_users[slug] = User.objects.create(
-            username=username, slug=slug, user_type=UserType.ANONYMOUS, is_active=False
+            username=username,
+            slug=slug,
+            user_type=UserType.ANONYMOUS,
+            is_active=False,
+            password=make_password(None),
         )
 
     def update_user_name(self, slug: str, name: str) -> None:
         user = self._storage.other_users[slug]
         user.name = name
+        user.full_clean()
         user.save()
 
 
@@ -166,7 +176,7 @@ class AuthDAO(AuthDAOProtocol):
 
     def fetch_or_create_user(self, username: str, slug: str) -> None:
         self._storage.maybe_user, __ = User.objects.get_or_create(
-            username=username, defaults={"slug": slug}
+            username=username, defaults={"slug": slug, "password": make_password(None)}
         )
 
     @property
