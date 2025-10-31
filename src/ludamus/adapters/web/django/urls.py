@@ -1,6 +1,6 @@
 from django.urls import URLPattern, URLResolver, include, path
 
-from . import views
+from . import views, views_v2
 
 app_name = "web"  # pylint: disable=invalid-name
 
@@ -49,6 +49,11 @@ chronology_urls = [
         "session/<int:session_id>/enrollment/",
         views.SessionEnrollPageView.as_view(),
         name="session-enrollment",
+    ),
+    path(
+        "session/<int:session_id>/enrollment/v2/",
+        views_v2.SessionEnrollPageViewV2.as_view(),
+        name="session-enrollment-v2",
     ),
     path(
         "event/<str:event_slug>/proposal/",

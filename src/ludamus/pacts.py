@@ -1,8 +1,48 @@
 from datetime import datetime
-from enum import StrEnum
-from typing import Protocol, TypedDict
+from enum import StrEnum, auto
+from typing import Protocol, Self, TypedDict
 
 from pydantic import BaseModel, ConfigDict
+
+
+class SessionParticipationStatus(StrEnum):
+    CONFIRMED = auto()
+    WAITING = auto()
+
+
+class EnrollmentConfigDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    allow_anonymous_enrollment: bool
+    banner_text: str
+    end_time: datetime
+    event_id: int
+    limit_to_end_time: bool
+    max_waitlist_sessions: int
+    percentage_slots: int
+    pk: int
+    restrict_to_configured_users: bool
+    start_time: datetime
+
+
+class UserEnrollmentConfigDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    allowed_slots: int
+    enrollment_config_id: int
+    fetched_from_api: bool
+    last_check: datetime | None
+    pk: int
+    user_email: str
+
+
+class DomainEnrollmentConfigDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    allowed_slots_per_user: int
+    domain: str
+    enrollment_config_id: int
+    pk: int
 
 
 class ProposalCategoryDTO(BaseModel):
@@ -46,6 +86,7 @@ class SessionDTO(BaseModel):
     min_age: int
     modification_time: datetime
     participants_limit: int
+    pk: int
     presenter_name: str
     requirements: str
     slug: str
@@ -87,6 +128,17 @@ class TagDTO(BaseModel):
     pk: int
 
 
+class SessionParticipationDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    modification_time: datetime
+    pk: int
+    session_id: int
+    status: SessionParticipationStatus
+    user_id: int
+
+
 class UserType(StrEnum):
     ACTIVE = "active"
     CONNECTED = "connected"
@@ -109,10 +161,6 @@ class UserDTO(BaseModel):
     slug: str
     user_type: UserType
     username: str
-
-    @property
-    def is_incomplete(self) -> bool:
-        return not self.name and not self.email
 
 
 class SiteDTO(BaseModel):
@@ -142,6 +190,32 @@ class EventDTO(BaseModel):
     publication_time: datetime | None
     slug: str
     start_time: datetime
+
+
+class VirtualEnrollmentConfigData(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    allowed_slots: int
+    domain_config_pk: int | None = None
+    domain: str | None = None
+    enrollment_config_id: int
+    fetched_from_api: bool
+    has_domain_config: bool = False
+    has_individual_config: bool
+    is_combined_access: bool = False
+    user_config_id: int | None = None
+    user_email: str
+
+    @classmethod
+    def from_user_config(cls, user_config: UserEnrollmentConfigDTO) -> Self:
+        return cls(
+            allowed_slots=user_config.allowed_slots,
+            enrollment_config_id=user_config.enrollment_config_id,
+            fetched_from_api=user_config.fetched_from_api,
+            user_config_id=user_config.pk,
+            user_email=user_config.user_email,
+            has_individual_config=True,
+        )
 
 
 class UserData(TypedDict, total=False):
@@ -215,10 +289,46 @@ class AcceptProposalDAOProtocol(Protocol):
     ) -> None: ...
 
 
+class EventDAOProtocol(Protocol):
+    @property
+    def users_participations(self) -> list[SessionParticipationDTO]: ...
+
+    def read_user_participation_agenda_item(
+        self, session_participation_id: int
+    ) -> AgendaItemDTO: ...
+
+    def read_user_waitslits_count(self, user: UserDTO) -> int: ...
+    @property
+    def enrollment_configs(self) -> list[EnrollmentConfigDTO]: ...
+    def read_user_config(
+        self, config: EnrollmentConfigDTO, user_email: str
+    ) -> UserEnrollmentConfigDTO | None: ...
+
+
+class SessionDAOProtocol(Protocol):
+
+    @property
+    def session(self) -> SessionDTO: ...
+
+    @property
+    def event(self) -> EventDTO: ...
+
+    @property
+    def agenda_item(self) -> AgendaItemDTO: ...
+
+    @property
+    def space(self) -> SpaceDTO: ...
+
+    def get_event_dao(self) -> EventDAOProtocol: ...
+
+    def has_conflicts(self, user: UserDTO) -> bool: ...
+
+
 class RootDAOProtocol(Protocol):
     def get_other_user_dao(self) -> OtherUserDAOProtocol: ...
     def get_anonymous_user_dao(self) -> AnonymousUserDAOProtocol: ...
     def get_auth_dao(self) -> AuthDAOProtocol: ...
+    def get_session_dao(self, session_id: int) -> SessionDAOProtocol: ...
 
     @property
     def current_site(self) -> SiteDTO: ...

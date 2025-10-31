@@ -52,7 +52,6 @@ from ludamus.pacts import (
     RootDAOProtocol,
     TagCategoryDTO,
     TagDTO,
-    UserDAOProtocol,
     UserDTO,
 )
 
@@ -66,18 +65,10 @@ from .forms import (
     create_session_proposal_form,
     get_tag_data_from_form,
 )
+from .http import AuthorizedRootDAORequest, RootDAORequest
 
 MINIMUM_ALLOWED_USER_AGE = 16
 CACHE_TIMEOUT = 600  # 10 minutes
-
-
-class RootDAORequest(HttpRequest):
-    root_dao: RootDAOProtocol
-    user_dao: UserDAOProtocol | None
-
-
-class AuthorizedRootDAORequest(RootDAORequest):
-    user_dao: UserDAOProtocol
 
 
 class LoginRequiredPageView(TemplateView):

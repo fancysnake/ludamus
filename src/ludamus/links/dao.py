@@ -3,24 +3,35 @@ from typing import TYPE_CHECKING
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.sites.models import Site
+from django.db.models import Q
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    EnrollmentConfig,
+    Event,
     Proposal,
     Session,
+    SessionParticipation,
     Space,
     Sphere,
     TimeSlot,
 )
 from ludamus.pacts import (
     AcceptProposalDAOProtocol,
+    AgendaItemDTO,
     AnonymousUserDAOProtocol,
     AuthDAOProtocol,
+    EnrollmentConfigDTO,
+    EventDAOProtocol,
     EventDTO,
     OtherUserDAOProtocol,
     ProposalCategoryDTO,
     ProposalDTO,
     RootDAOProtocol,
+    SessionDAOProtocol,
+    SessionDTO,
+    SessionParticipationDTO,
+    SessionParticipationStatus,
     SiteDTO,
     SpaceDTO,
     SphereDTO,
@@ -28,6 +39,7 @@ from ludamus.pacts import (
     UserDAOProtocol,
     UserData,
     UserDTO,
+    UserEnrollmentConfigDTO,
     UserType,
 )
 
@@ -273,6 +285,146 @@ class AcceptProposalDAO(AcceptProposalDAOProtocol):
         self._proposal.save()
 
 
+class EventDAO(EventDAOProtocol):
+    def __init__(self, storage: Storage, event_id: int) -> None:
+        self._storage = storage
+
+        try:
+            self._event = Event.objects.get(
+                sphere=self._storage.current_sphere, id=event_id
+            )
+        except Event.DoesNotExist as exception:
+            raise NotFoundError from exception
+
+        self._maybe_users_participations: dict[int, SessionParticipation] | None = None
+        self._maybe_enrollment_configs: dict[int, EnrollmentConfig] | None = None
+
+    @property
+    def _users_participations(self) -> dict[int, SessionParticipation]:
+        if self._maybe_users_participations is None:
+            self._maybe_users_participations = {
+                p.id: p
+                for p in SessionParticipation.objects.filter(
+                    user_id__in=[
+                        self._storage.user.id,
+                        *[u.id for u in self._storage.connected_users.values()],
+                    ],
+                    session__agenda_item__space__event=self._event,
+                )
+            }
+
+        return self._maybe_users_participations
+
+    @property
+    def users_participations(self) -> list[SessionParticipationDTO]:
+        return [
+            SessionParticipationDTO.model_validate(p)
+            for p in self._users_participations.values()
+        ]
+
+    def read_user_participation_agenda_item(
+        self, session_participation_id: int
+    ) -> AgendaItemDTO:
+        if session_participation_id not in self._users_participations:
+            raise NotFoundError
+
+        return AgendaItemDTO.model_validate(
+            self._users_participations[session_participation_id].session.agenda_item
+        )
+
+    def read_user_waitslits_count(self, user: UserDTO) -> int:
+        return SessionParticipation.objects.filter(
+            user_id=user.pk,
+            status=SessionParticipationStatus.WAITING,
+            session__agenda_item__space__event=self._event,
+        ).count()
+
+    @property
+    def _enrollment_configs(self) -> dict[int, EnrollmentConfig]:
+        if self._maybe_enrollment_configs is None:
+            self._maybe_enrollment_configs = {
+                p.id: p for p in EnrollmentConfig.objects.filter(event=self._event)
+            }
+
+        return self._maybe_enrollment_configs
+
+    @property
+    def enrollment_configs(self) -> list[EnrollmentConfigDTO]:
+        return [
+            EnrollmentConfigDTO.model_validate(ec)
+            for ec in self._enrollment_configs.values()
+        ]
+
+    def read_user_config(
+        self, config: EnrollmentConfigDTO, user_email: str
+    ) -> UserEnrollmentConfigDTO | None:
+        if (
+            user_config := self._enrollment_configs[config.pk]
+            .user_configs.filter(user_email=user_email)
+            .first()
+        ):
+            return UserEnrollmentConfigDTO.model_validate(user_config)
+
+        return None
+
+
+class SessionDAO(SessionDAOProtocol):
+    def __init__(self, storage: Storage, session_id: int) -> None:
+        self._storage = storage
+
+        try:
+            self._session = Session.objects.get(
+                sphere=self._storage.current_sphere, id=session_id
+            )
+        except Session.DoesNotExist as exception:
+            raise NotFoundError from exception
+
+        self._agenda_item = self._session.agenda_item
+        self._space = self._agenda_item.space
+
+    @property
+    def session(self) -> SessionDTO:
+        return SessionDTO.model_validate(self._session)
+
+    @property
+    def event(self) -> EventDTO:
+        return EventDTO.model_validate(self._session.agenda_item.space.event)
+
+    @property
+    def agenda_item(self) -> AgendaItemDTO:
+        return AgendaItemDTO.model_validate(self._agenda_item)
+
+    @property
+    def space(self) -> SpaceDTO:
+        return SpaceDTO.model_validate(self._space)
+
+    def get_event_dao(self) -> EventDAO:
+        return EventDAO(
+            self._storage, event_id=self._session.agenda_item.space.event.id
+        )
+
+    def has_conflicts(self, user: UserDTO) -> bool:
+        return (
+            Session.objects.filter(
+                agenda_item__space__event=self._session.agenda_item.space.event,
+                session_participations__user_id=user.pk,
+                session_participations__status=SessionParticipationStatus.CONFIRMED,
+            )
+            .filter(
+                Q(
+                    agenda_item__start_time__gte=self._session.agenda_item.start_time,
+                    agenda_item__start_time__lt=self._session.agenda_item.end_time,
+                )
+                | Q(
+                    agenda_item__end_time__gt=self._session.agenda_item.start_time,
+                    agenda_item__end_time__lte=self._session.agenda_item.end_time,
+                )
+            )
+            .exclude(id=self._session.id)
+            .exists()
+        )
+
+
 class RootDAO(RootDAOProtocol):
     def __init__(self, domain: str, root_domain: str) -> None:
         try:
@@ -318,3 +470,6 @@ class RootDAO(RootDAOProtocol):
 
     def is_sphere_manager(self, user_id: int) -> bool:
         return self._storage.current_sphere.managers.filter(id=user_id).exists()
+
+    def get_session_dao(self, session_id: int) -> SessionDAO:
+        return SessionDAO(self._storage, session_id=session_id)

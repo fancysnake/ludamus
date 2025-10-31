@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, datetime
-from enum import StrEnum, auto
 from typing import TYPE_CHECKING, ClassVar, Never, cast
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
@@ -15,7 +14,7 @@ from django.utils import timezone
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
-from ludamus.pacts import UserType
+from ludamus.pacts import SessionParticipationStatus, UserType
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -917,11 +916,6 @@ class Proposal(models.Model):
 
     def __str__(self) -> str:
         return self.title
-
-
-class SessionParticipationStatus(StrEnum):
-    CONFIRMED = auto()
-    WAITING = auto()
 
 
 class SessionParticipation(models.Model):

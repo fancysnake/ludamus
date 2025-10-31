@@ -24,14 +24,18 @@ from tests.integration.conftest import (
 from tests.integration.utils import assert_response
 
 
+@pytest.mark.parametrize(
+    "url_name",
+    ("web:chronology:session-enrollment", "web:chronology:session-enrollment-v2"),
+)
 class TestSessionEnrollPageView:
-    URL_NAME = "web:chronology:session-enrollment"
+    def _get_url(self, url_name: str, session_id: int) -> str:
+        return reverse(url_name, kwargs={"session_id": session_id})
 
-    def _get_url(self, session_id: int) -> str:
-        return reverse(self.URL_NAME, kwargs={"session_id": session_id})
-
-    def test_get_get_ok(self, active_user, authenticated_client, agenda_item):
-        response = authenticated_client.get(self._get_url(agenda_item.session.pk))
+    def test_get_get_ok(self, active_user, authenticated_client, agenda_item, url_name):
+        response = authenticated_client.get(
+            self._get_url(url_name, agenda_item.session.pk)
+        )
 
         assert_response(
             response,
@@ -53,8 +57,8 @@ class TestSessionEnrollPageView:
             template_name="chronology/enroll_select.html",
         )
 
-    def test_get_error_404(self, authenticated_client):
-        response = authenticated_client.get(self._get_url(17))
+    def test_get_error_404(self, authenticated_client, url_name):
+        response = authenticated_client.get(self._get_url(url_name, 17))
 
         assert_response(
             response,
@@ -64,14 +68,16 @@ class TestSessionEnrollPageView:
         )
 
     def test_post_error_enrollment_inactive(
-        self, agenda_item, authenticated_client, event, faker, time_zone
+        self, agenda_item, authenticated_client, event, faker, time_zone, url_name
     ):
         EnrollmentConfig.objects.create(
             event=event,
             start_time=faker.date_time_between("-10d", "-5d", tzinfo=time_zone),
             end_time=faker.date_time_between("-4d", "-1d", tzinfo=time_zone),
         )
-        response = authenticated_client.post(self._get_url(agenda_item.session.pk))
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk)
+        )
 
         assert_response(
             response,
@@ -85,9 +91,11 @@ class TestSessionEnrollPageView:
             url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
         )
 
-    def test_post_invalid_form(self, active_user, agenda_item, authenticated_client):
+    def test_post_invalid_form(
+        self, active_user, agenda_item, authenticated_client, url_name
+    ):
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "wrong data"},
         )
 
@@ -117,21 +125,23 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_error_please_select_at_least_one(
-        self, agenda_item, authenticated_client
+        self, agenda_item, authenticated_client, url_name
     ):
-        response = authenticated_client.post(self._get_url(agenda_item.session.pk))
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk)
+        )
 
         assert_response(
             response,
             HTTPStatus.FOUND,
             messages=[(messages.WARNING, "Please select at least one user to enroll.")],
-            url=self._get_url(agenda_item.session.pk),
+            url=self._get_url(url_name, agenda_item.session.pk),
         )
 
     @pytest.mark.usefixtures("enrollment_config")
-    def test_post_ok(self, staff_user, agenda_item, staff_client, event):
+    def test_post_ok(self, staff_user, agenda_item, staff_client, event, url_name):
         response = staff_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{staff_user.id}": "enroll"},
         )
 
@@ -148,7 +158,9 @@ class TestSessionEnrollPageView:
         )
 
     @pytest.mark.usefixtures("enrollment_config")
-    def test_post_cancel(self, active_user, agenda_item, authenticated_client, event):
+    def test_post_cancel(
+        self, active_user, agenda_item, authenticated_client, event, url_name
+    ):
         SessionParticipation.objects.create(
             user=active_user,
             session=agenda_item.session,
@@ -156,7 +168,7 @@ class TestSessionEnrollPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -172,7 +184,7 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_cancel_waiting(
-        self, active_user, agenda_item, authenticated_client, event
+        self, active_user, agenda_item, authenticated_client, event, url_name
     ):
         SessionParticipation.objects.create(
             user=active_user,
@@ -181,7 +193,7 @@ class TestSessionEnrollPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -197,7 +209,13 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_cancel_promote(
-        self, active_user, agenda_item, authenticated_client, event, connected_user
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        connected_user,
+        url_name,
     ):
         SessionParticipation.objects.create(
             user=active_user,
@@ -211,7 +229,7 @@ class TestSessionEnrollPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -238,7 +256,7 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post__error_conflict(
-        self, active_user, agenda_item, authenticated_client, event
+        self, active_user, agenda_item, authenticated_client, event, url_name
     ):
         other_session = SessionFactory(
             presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
@@ -256,7 +274,7 @@ class TestSessionEnrollPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
 
@@ -292,7 +310,13 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_invalid_capacity(
-        self, active_user, agenda_item, authenticated_client, session, connected_user
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        session,
+        connected_user,
+        url_name,
     ):
         session.participants_limit = 1
         session.save()
@@ -302,7 +326,7 @@ class TestSessionEnrollPageView:
             status=SessionParticipationStatus.CONFIRMED,
         )
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
 
@@ -325,12 +349,12 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_connected_user_inactive(
-        self, agenda_item, authenticated_client, session, connected_user
+        self, agenda_item, authenticated_client, session, connected_user, url_name
     ):
         connected_user.is_active = False
         connected_user.save()
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{connected_user.id}": "enroll"},
         )
 
@@ -345,7 +369,12 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_session_host_skipped(
-        self, authenticated_client, agenda_item, proposal_category, active_user
+        self,
+        authenticated_client,
+        agenda_item,
+        proposal_category,
+        active_user,
+        url_name,
     ):
 
         proposal = Proposal.objects.create(
@@ -360,7 +389,7 @@ class TestSessionEnrollPageView:
         proposal.save()
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
 
@@ -381,7 +410,7 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_already_enrolled_skipped(
-        self, authenticated_client, agenda_item, active_user
+        self, authenticated_client, agenda_item, active_user, url_name
     ):
         SessionParticipation.objects.create(
             user=active_user,
@@ -390,7 +419,7 @@ class TestSessionEnrollPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "waitlist"},
         )
 
@@ -416,7 +445,9 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     @staticmethod
-    def test_post_time_conflict_skipped(authenticated_client, active_user, event):
+    def test_post_time_conflict_skipped(
+        authenticated_client, active_user, event, url_name
+    ):
         space1 = SpaceFactory(event=event)
         space2 = SpaceFactory(event=event)
         time_slot = TimeSlotFactory(event=event)
@@ -453,10 +484,7 @@ class TestSessionEnrollPageView:
             mock_form_factory.return_value = mock_form_class
 
             response = authenticated_client.post(
-                reverse(
-                    "web:chronology:session-enrollment",
-                    kwargs={"session_id": session2.id},
-                ),
+                reverse(url_name, kwargs={"session_id": session2.id}),
                 data={f"user_{active_user.id}": "enroll"},
             )
 
@@ -479,9 +507,10 @@ class TestSessionEnrollPageView:
         ).exists()
 
     @pytest.mark.usefixtures("enrollment_config")
-    def test_post_no_user_selected(self, authenticated_client, agenda_item):
+    def test_post_no_user_selected(self, authenticated_client, agenda_item, url_name):
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk), data={}  # No user selections
+            self._get_url(url_name, agenda_item.session.pk),
+            data={},  # No user selections
         )
 
         assert_response(
@@ -495,12 +524,12 @@ class TestSessionEnrollPageView:
         )
 
     def test_post_restrict_to_configured_users(
-        self, staff_user, agenda_item, staff_client, event, enrollment_config
+        self, staff_user, agenda_item, staff_client, event, enrollment_config, url_name
     ):
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
         response = staff_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{staff_user.id}": "enroll"},
         )
 
@@ -541,14 +570,14 @@ class TestSessionEnrollPageView:
         )
 
     def test_post_restrict_to_configured_users_without_email(
-        self, staff_user, agenda_item, staff_client, event, enrollment_config
+        self, staff_user, agenda_item, staff_client, event, enrollment_config, url_name
     ):
         staff_user.email = ""
         staff_user.save()
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
         response = staff_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{staff_user.id}": "enroll"},
         )
 
@@ -583,7 +612,7 @@ class TestSessionEnrollPageView:
         )
 
     def test_post_restrict_to_configured_users_config_exists(
-        self, staff_user, agenda_item, staff_client, event, enrollment_config
+        self, staff_user, agenda_item, staff_client, event, enrollment_config, url_name
     ):
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
@@ -593,7 +622,7 @@ class TestSessionEnrollPageView:
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
         response = staff_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{staff_user.id}": "wrong"},
         )
 
@@ -629,6 +658,7 @@ class TestSessionEnrollPageView:
         event,
         enrollment_config,
         connected_user,
+        url_name,
     ):
         connected_user.manager = staff_user
         connected_user.save()
@@ -640,7 +670,7 @@ class TestSessionEnrollPageView:
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
         response = staff_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={
                 f"user_{staff_user.id}": "enroll",
                 f"user_{connected_user.id}": "enroll",
@@ -686,7 +716,7 @@ class TestSessionEnrollPageView:
         )
 
     def test_post_restrict_to_configured_users_config_exists_success(
-        self, staff_user, agenda_item, staff_client, event, enrollment_config
+        self, staff_user, agenda_item, staff_client, event, enrollment_config, url_name
     ):
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
@@ -696,7 +726,7 @@ class TestSessionEnrollPageView:
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
         response = staff_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{staff_user.id}": "enroll"},
         )
 
@@ -715,6 +745,7 @@ class TestSessionEnrollPageView:
         event,
         enrollment_config,
         connected_user,
+        url_name,
     ):
         connected_user.manager = staff_user
         connected_user.save()
@@ -731,7 +762,7 @@ class TestSessionEnrollPageView:
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
         response = staff_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{staff_user.id}": "enroll"},
         )
 
@@ -775,7 +806,13 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_cancel_promote_no_email(
-        self, active_user, agenda_item, authenticated_client, event, connected_user
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        connected_user,
+        url_name,
     ):
         connected_user.email = ""
         connected_user.save()
@@ -791,7 +828,7 @@ class TestSessionEnrollPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -818,7 +855,13 @@ class TestSessionEnrollPageView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_post_cancel_promote_staff_user(
-        self, active_user, agenda_item, authenticated_client, event, staff_user
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        staff_user,
+        url_name,
     ):
         SessionParticipation.objects.create(
             user=active_user,
@@ -832,7 +875,7 @@ class TestSessionEnrollPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -865,6 +908,7 @@ class TestSessionEnrollPageView:
         event,
         staff_user,
         enrollment_config,
+        url_name,
     ):
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
@@ -890,7 +934,7 @@ class TestSessionEnrollPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -912,6 +956,7 @@ class TestSessionEnrollPageView:
         authenticated_client,
         event,
         enrollment_config,
+        url_name,
     ):
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
@@ -921,7 +966,7 @@ class TestSessionEnrollPageView:
             allowed_slots=1,
         )
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{connected_user.id}": "enroll"},
         )
 
