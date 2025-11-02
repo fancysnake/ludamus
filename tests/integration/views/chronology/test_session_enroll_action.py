@@ -14,7 +14,7 @@ from ludamus.adapters.db.django.models import (
     UserEnrollmentConfig,
 )
 from ludamus.adapters.web.django.entities import SessionUserParticipationData
-from ludamus.pacts import UserDTO
+from ludamus.pacts import AgendaItemDTO, EventDTO, SessionDTO, UserDTO
 from tests.integration.conftest import (
     AgendaItemFactory,
     SessionFactory,
@@ -42,9 +42,12 @@ class TestSessionEnrollPageView:
             HTTPStatus.OK,
             context_data={
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": EventDTO.model_validate(agenda_item.space.event),
                 "form": ANY,
-                "session": agenda_item.session,
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "enrolled_count": 0,
+                "effective_participants_limit": 10,
                 "user_data": [
                     SessionUserParticipationData(
                         user=UserDTO.model_validate(active_user),

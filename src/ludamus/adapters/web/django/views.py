@@ -2,9 +2,7 @@ import json
 from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
-from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from enum import StrEnum, auto
 from secrets import token_urlsafe
 from typing import Any
 from urllib.parse import quote_plus, urlencode, urlparse
@@ -48,8 +46,14 @@ from ludamus.adapters.web.django.entities import (
 from ludamus.links.dao import NotFoundError
 from ludamus.pacts import (
     AcceptProposalDAOProtocol,
+    AgendaItemDTO,
+    EnrollmentChoice,
+    EnrollmentRequest,
+    Enrollments,
+    EventDTO,
     ProposalCategoryDTO,
     RootDAOProtocol,
+    SessionDTO,
     TagCategoryDTO,
     TagDTO,
     UserDTO,
@@ -177,7 +181,7 @@ class Auth0LoginCallbackActionView(RedirectView):
             messages.success(self.request, _("Welcome!"))
 
             # Check if profile needs completion
-            if auth_dao.user.is_incomplete:
+            if not auth_dao.user.name:
                 messages.success(self.request, _("Please complete your profile."))
                 if redirect_to:
                     parsed = urlparse(redirect_to)
@@ -771,33 +775,6 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         return sessions_data
 
 
-class EnrollmentChoice(StrEnum):
-    CANCEL = auto()
-    ENROLL = auto()
-    WAITLIST = auto()
-    BLOCK = auto()
-
-
-@dataclass
-class EnrollmentRequest:
-    user: UserDTO
-    choice: EnrollmentChoice
-    name: str = _("yourself")
-
-
-@dataclass
-class Enrollments:
-    cancelled_users: list[str]
-    skipped_users: list[str]
-    users_by_status: dict[SessionParticipationStatus, list[str]]
-
-    def __init__(self) -> None:
-        self.cancelled_users = []
-        self.skipped_users = []
-        self.users_by_status = defaultdict(list)
-        super().__init__()
-
-
 def _get_session_or_redirect(
     request: AuthorizedRootDAORequest, session_id: int
 ) -> Session:
@@ -824,8 +801,11 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         session = _get_session_or_redirect(request, session_id)
 
         context = {
-            "session": session,
-            "event": session.agenda_item.space.event,
+            "session": SessionDTO.model_validate(session),
+            "agenda_item": AgendaItemDTO.model_validate(session.agenda_item),
+            "enrolled_count": session.enrolled_count,
+            "effective_participants_limit": session.effective_participants_limit,
+            "event": EventDTO.model_validate(session.agenda_item.space.event),
             "connected_users": self.request.user_dao.connected_users,
             "user_data": self._get_user_participation_data(session),
             "form": create_enrollment_form(

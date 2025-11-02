@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import logging
+import math
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
+from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import timezone
@@ -21,11 +24,16 @@ from ludamus.links.dao import NotFoundError
 from ludamus.pacts import (
     AgendaItemDTO,
     DomainEnrollmentConfigDTO,
+    EnrollmentChoice,
     EnrollmentConfigDTO,
+    EnrollmentRequest,
+    Enrollments,
     EventDAOProtocol,
     SessionDAOProtocol,
+    SessionDTO,
     SessionParticipationDTO,
     SessionParticipationStatus,
+    UserDAOProtocol,
     UserDTO,
     UserEnrollmentConfigDTO,
     UserType,
@@ -35,7 +43,6 @@ from ludamus.pacts import (
 from .exceptions import RedirectError
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
 
     from django.http import HttpResponse
 
@@ -46,7 +53,10 @@ CACHE_TIMEOUT = 600  # 10 minutes
 
 logger = logging.getLogger(__name__)
 
-
+_status_by_choice = {
+    "enroll": SessionParticipationStatus.CONFIRMED,
+    "waitlist": SessionParticipationStatus.WAITING,
+}
 # Views
 
 
@@ -71,8 +81,18 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
             user_id = participation.user_id
             participations_by_user[user_id].append(participation)
 
+        # Get enrollment config to check waitlist settings
+        enrollment_config = get_most_liberal_config(
+            event_dao.enrollment_configs, session_dao.agenda_item
+        )
+
         context = {
             "session": session_dao.session,
+            "agenda_item": session_dao.agenda_item,
+            "enrolled_count": session_dao.read_enrolled_count(),
+            "effective_participants_limit": effective_participants_limit(
+                session_dao.session, enrollment_config
+            ),
             "event": session_dao.event,
             "connected_users": self.request.user_dao.connected_users,
             "user_data": self._get_user_participation_data(
@@ -80,14 +100,320 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
             ),
             "form": create_enrollment_form(
                 event_dao=event_dao,
+                enrollment_config=enrollment_config,
                 session_dao=session_dao,
-                users=self.request.user_dao.users,
-                manager_email=self.request.user_dao.user.email,
+                user_dao=self.request.user_dao,
                 participations_by_user=participations_by_user,
             )(),
         }
 
         return TemplateResponse(request, "chronology/enroll_select.html", context)
+
+    def post(self, request: AuthorizedRootDAORequest, session_id: int) -> HttpResponse:
+        try:
+            session_dao = request.root_dao.get_session_dao(session_id=session_id)
+        except NotFoundError:
+            raise RedirectError(
+                reverse("web:index"), error=_("Session not found.")
+            ) from None
+
+        event_dao = session_dao.get_event_dao()
+        # Group participations by user for efficient lookup
+        participations_by_user: dict[int, list[SessionParticipationDTO]] = defaultdict(
+            list
+        )
+        # Bulk fetch all participations for the event and users
+        for participation in event_dao.users_participations:
+            user_id = participation.user_id
+            participations_by_user[user_id].append(participation)
+
+        # Get enrollment config to check waitlist settings
+        enrollment_config = get_most_liberal_config(
+            event_dao.enrollment_configs, session_dao.agenda_item
+        )
+
+        # Initialize form with POST data
+        form_class = create_enrollment_form(
+            event_dao=event_dao,
+            enrollment_config=enrollment_config,
+            session_dao=session_dao,
+            user_dao=self.request.user_dao,
+            participations_by_user=participations_by_user,
+        )
+        form = form_class(data=request.POST)
+        if not form.is_valid():
+            # Add detailed form validation error messages without field name prefixes
+            for field_errors in form.errors.values():
+                for error in field_errors:
+                    messages.error(self.request, str(error))
+
+            if enrollment_config and enrollment_config.restrict_to_configured_users:
+                if not request.user_dao.user.email:
+                    messages.error(
+                        self.request,
+                        _("Email address is required for enrollment in this session."),
+                    )
+                elif not get_user_enrollment_config(
+                    event_dao, request.user_dao.user.email
+                ):
+                    messages.error(
+                        self.request,
+                        _(
+                            "Enrollment access permission is required for this "
+                            "session. Please contact the organizers to obtain access."
+                        ),
+                    )
+                else:
+                    messages.warning(
+                        self.request, _("Please review the enrollment options below.")
+                    )
+            else:
+                messages.warning(
+                    self.request, _("Please review the enrollment options below.")
+                )
+
+            # Re-render with form errors
+            return TemplateResponse(
+                request,
+                "chronology/enroll_select.html",
+                {
+                    "session": session_dao.session,
+                    "event": session_dao.event,
+                    "connected_users": self.request.user_dao.connected_users,
+                    "user_data": self._get_user_participation_data(
+                        event_dao, session_dao, participations_by_user
+                    ),
+                    "form": form,
+                },
+            )
+
+        # Only validate enrollment requirements when form is valid
+        enrollment_config = self._validate_request(session_dao, enrollment_config)
+
+        self._manage_enrollments(
+            request.user_dao, event_dao, session_dao, form, enrollment_config
+        )
+
+        return redirect("web:chronology:event", slug=session_dao.event.slug)
+
+    @staticmethod
+    def _validate_request(
+        session_dao: SessionDAOProtocol, enrollment_config: EnrollmentConfigDTO | None
+    ) -> EnrollmentConfigDTO:
+        # Get the most liberal config for this session
+        if not enrollment_config:
+            raise RedirectError(
+                reverse(
+                    "web:chronology:event", kwargs={"slug": session_dao.event.slug}
+                ),
+                error=_("No enrollment configuration is available for this session."),
+            )
+
+        # Note: UserDTO slot limits (max number of unique users that can be enrolled)
+        # are handled in _process_enrollments(). Users can enroll in multiple sessions
+        # without consuming additional slots. No need to block access here.
+
+        return enrollment_config
+
+    def _manage_enrollments(
+        self,
+        user_dao: UserDAOProtocol,
+        event_dao: EventDAOProtocol,
+        session_dao: SessionDAOProtocol,
+        form: forms.Form,
+        enrollment_config: EnrollmentConfigDTO,
+    ) -> None:
+        # Collect enrollment requests from form
+        if enrollment_requests := self._get_enrollment_requests(form):
+            # Validate capacity for confirmed enrollments (outside transaction)
+            if self._is_capacity_invalid(
+                session_dao, enrollment_requests, enrollment_config
+            ):
+                raise RedirectError(
+                    reverse(
+                        "web:chronology:session-enrollment",
+                        kwargs={"session_id": session_dao.session.pk},
+                    )
+                )
+
+            # Process enrollments and create success message
+            enrollments = self._process_enrollments(
+                user_dao, event_dao, session_dao, enrollment_requests
+            )
+
+            # Send message outside transaction
+            self._send_message(enrollments)
+        else:
+            raise RedirectError(
+                reverse(
+                    "web:chronology:session-enrollment",
+                    kwargs={"session_id": session_dao.session.pk},
+                ),
+                warning=_("Please select at least one user to enroll."),
+            )
+
+    def _send_message(self, enrollments: Enrollments) -> None:
+        for users, message in [
+            (
+                enrollments.users_by_status[SessionParticipationStatus.CONFIRMED],
+                _("Enrolled: {}"),
+            ),
+            (
+                enrollments.users_by_status[SessionParticipationStatus.WAITING],
+                _("Added to waiting list: {}"),
+            ),
+            (enrollments.cancelled_users, _("Cancelled: {}")),
+            (
+                enrollments.skipped_users,
+                _("Skipped (already enrolled or conflicts): {}"),
+            ),
+        ]:
+            if users:
+                messages.success(self.request, message.format(", ".join(users)))
+
+    def _process_enrollments(
+        self,
+        user_dao: UserDAOProtocol,
+        event_dao: EventDAOProtocol,
+        session_dao: SessionDAOProtocol,
+        enrollment_requests: list[EnrollmentRequest],
+    ) -> Enrollments:
+        enrollments = Enrollments()
+        participations = session_dao.read_participations_from_oldest()
+
+        for req in enrollment_requests:
+            # Handle cancellation
+            if req.choice == "cancel" and (
+                existing_participation := next(
+                    p for p in participations if p.user_id == req.user.pk
+                )
+            ):
+                session_dao.delete_session_participation(req.user)
+                enrollments.cancelled_users.append(req.name)
+
+                # If this was a confirmed enrollment, promote from waiting list
+                self._promote_from_waitlist(
+                    user_dao,
+                    event_dao,
+                    session_dao,
+                    existing_participation,
+                    participations,
+                    req,
+                    enrollments,
+                )
+                continue
+
+            self._check_and_create_enrollment(session_dao, req, enrollments)
+        return enrollments
+
+    @staticmethod
+    def _promote_from_waitlist(  # noqa: PLR0913, PLR0917
+        user_dao: UserDAOProtocol,
+        event_dao: EventDAOProtocol,
+        session_dao: SessionDAOProtocol,
+        existing_participation: SessionParticipationDTO,
+        participations: list[SessionParticipationDTO],
+        req: EnrollmentRequest,
+        enrollments: Enrollments,
+    ) -> None:
+        currently_enrolled = event_dao.read_confirmed_participations_user_ids()
+        if existing_participation.status == SessionParticipationStatus.CONFIRMED:
+            for participation in participations:
+                if (
+                    participation.user_id != req.user.pk
+                    and participation.status == SessionParticipationStatus.WAITING
+                ):
+                    user = session_dao.read_participation_user(participation)
+                    if not session_dao.has_conflicts(user):
+                        can_be_promoted = True
+                        manager = user_dao.read_user_manager(user)
+                        if not manager:
+                            manager_user = user
+
+                            user_config = get_user_enrollment_config(
+                                event_dao, manager_user.email
+                            )
+                            if user_config and not can_enroll_users(
+                                currently_enrolled, user_config, [user]
+                            ):
+                                can_be_promoted = False
+
+                        if can_be_promoted:
+                            participation.status = SessionParticipationStatus.CONFIRMED
+                            event_dao.update_session_participation(participation)
+                            enrollments.users_by_status[
+                                SessionParticipationStatus.CONFIRMED
+                            ].append(f"{user.name} ({_("promoted from waiting list")})")
+                            break
+
+    @staticmethod
+    def _check_and_create_enrollment(
+        session_dao: SessionDAOProtocol,
+        req: EnrollmentRequest,
+        enrollments: Enrollments,
+    ) -> None:
+        # Check if user is the session presenter
+        if session_dao.proposal and req.user.pk == session_dao.proposal.host_id:
+            enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
+            return
+
+        # Check for time conflicts for confirmed enrollment
+        if req.choice == "enroll" and session_dao.has_conflicts(req.user):
+            enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
+            return
+
+        # Use get_or_create to prevent duplicate enrollments in race conditions
+        try:
+            session_dao.read_participation(user_id=req.user.pk)
+        except NotFoundError:
+            session_dao.create_participation(
+                user_id=req.user.pk, status=_status_by_choice[req.choice]
+            )
+            enrollments.users_by_status[_status_by_choice[req.choice]].append(req.name)
+        else:
+            enrollments.skipped_users.append(f"{req.name} ({_('already enrolled')!s})")
+
+    def _is_capacity_invalid(
+        self,
+        session_dao: SessionDAOProtocol,
+        enrollment_requests: list[EnrollmentRequest],
+        enrollment_config: EnrollmentConfigDTO,
+    ) -> bool:
+        confirmed_requests = [
+            req for req in enrollment_requests if req.choice == "enroll"
+        ]
+
+        available_spots = get_available_slots(session_dao, enrollment_config)
+
+        if len(confirmed_requests) > available_spots:
+            messages.error(
+                self.request,
+                str(
+                    _(
+                        "Not enough spots available. {} spots requested, {} available. "
+                        "Please use waiting list for some users."
+                    )
+                ).format(len(confirmed_requests), available_spots),
+            )
+            return True
+
+        return False
+
+    def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
+        enrollment_requests = []
+        for user in self.request.user_dao.users:
+            # Skip inactive users
+            if not user.is_active:
+                continue
+            user_field = f"user_{user.pk}"
+            if form.cleaned_data.get(user_field):
+                choice = form.cleaned_data[user_field]
+                enrollment_requests.append(
+                    EnrollmentRequest(
+                        user=user, choice=EnrollmentChoice(choice), name=user.name
+                    )
+                )
+        return enrollment_requests
 
     def _get_user_participation_data(
         self,
@@ -137,23 +463,20 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
 
 
 def create_enrollment_form(
+    *,
     event_dao: EventDAOProtocol,
+    enrollment_config: EnrollmentConfigDTO | None,
     session_dao: SessionDAOProtocol,
-    users: Iterable[UserDTO],
-    manager_email: str | None,
+    user_dao: UserDAOProtocol,
     participations_by_user: dict[int, list[SessionParticipationDTO]],
 ) -> type[forms.Form]:
     # Create form class dynamically with pre-generated fields
     form_fields = {}
-    users_list = list(users)
+    users_list = list(user_dao.users)
+    manager_email = user_dao.user.email
 
     # Create mapping from field names to user names for error display
     field_to_user_name = {}
-
-    # Get enrollment config to check waitlist settings
-    enrollment_config = get_most_liberal_config(
-        event_dao.enrollment_configs, session_dao.agenda_item
-    )
 
     def can_join_waitlist(user: UserDTO) -> bool:
         # No enrollment config = no enrollment functionality at all
@@ -439,11 +762,12 @@ def create_enrollment_form(
                             )
                         break
 
+                currently_enrolled = event_dao.read_confirmed_participations_user_ids()
                 if manager_config and not can_enroll_users(
-                    manager_config, enroll_requests
+                    currently_enrolled, manager_config, enroll_requests
                 ):
-                    used_slots = get_used_slots(manager_config)
-                    available_slots = get_available_slots(manager_config)
+                    used_slots = len(currently_enrolled)
+                    available_slots = max(0, manager_config.allowed_slots - used_slots)
                     # Add error to first enrollment field using user's name
                     for field_name, value in cleaned_data.items():
                         if field_name.startswith("user_") and value == "enroll":
@@ -530,7 +854,7 @@ def get_user_enrollment_config(
             config_found = False
 
             # Check for explicit user config
-            user_config = event_dao.read_user_config(config, user_email)
+            user_config = event_dao.read_user_enrollment_config(config, user_email)
             if user_config:
                 total_slots += user_config.allowed_slots
                 if not primary_config:
@@ -543,7 +867,7 @@ def get_user_enrollment_config(
             # Try to fetch from API if not found locally
             if not config_found:
                 api_user_config = get_or_create_user_enrollment_config(
-                    config, user_email
+                    event_dao, config, user_email
                 )
                 if api_user_config:
                     total_slots += api_user_config.allowed_slots
@@ -555,7 +879,7 @@ def get_user_enrollment_config(
                     config_found = True
 
             # Always check for domain-based access regardless of individual config
-            domain_config = get_domain_config_for_email(user_email, config)
+            domain_config = get_domain_config_for_email(event_dao, config, user_email)
             if domain_config:
                 total_slots += domain_config.allowed_slots_per_user
                 has_domain_config = True
@@ -593,38 +917,21 @@ def get_user_enrollment_config(
 
 
 def get_domain_config_for_email(
-    user_email: str, enrollment_config: EnrollmentConfigDTO
+    event_dao: EventDAOProtocol, enrollment_config: EnrollmentConfigDTO, user_email: str
 ) -> DomainEnrollmentConfigDTO | None:
     if not user_email or "@" not in user_email:
         return None
 
     email_domain = user_email.split("@")[1].lower()
 
-    return enrollment_config.domain_configs.filter(domain=email_domain).first()
+    return event_dao.read_domain_config(config=enrollment_config, domain=email_domain)
 
 
 def can_enroll_users(
-    user_enrollment_config: VirtualEnrollmentConfigData, users_to_enroll: list[UserDTO]
+    currently_enrolled: set[int],
+    user_enrollment_config: VirtualEnrollmentConfigData,
+    users_to_enroll: list[UserDTO],
 ) -> bool:
-    try:
-        user = UserDTO.objects.get(email=user_enrollment_config.user_email)
-    except UserDTO.DoesNotExist:
-        return False
-
-    # Get all users (main user + connected users)
-    all_users = [user, *user.connected.all()]
-
-    # Get currently enrolled users
-    currently_enrolled = set(
-        SessionParticipationDTO.objects.filter(
-            status=SessionParticipationStatus.CONFIRMED,
-            user__in=all_users,
-            session__agenda_item__space__event=user_enrollment_config.enrollment_config.event,
-        )
-        .values_list("user_id", flat=True)
-        .distinct()
-    )
-
     # Add new users to enroll
     users_to_enroll_ids = {u.pk for u in users_to_enroll}
     total_enrolled = currently_enrolled | users_to_enroll_ids
@@ -632,41 +939,13 @@ def can_enroll_users(
     return len(total_enrolled) <= user_enrollment_config.allowed_slots
 
 
-def get_used_slots(user_enrollment_config: VirtualEnrollmentConfigData) -> int:
-    try:
-        user = UserDTO.objects.get(email=user_enrollment_config.user_email)
-    except UserDTO.DoesNotExist:
-        return 0
-
-    # Get all users (main user + connected users)
-    all_users = [user, *user.connected.all()]
-
-    # Count unique users who have at least one confirmed enrollment
-    users_with_enrollments = (
-        SessionParticipationDTO.objects.filter(
-            status=SessionParticipationStatus.CONFIRMED,
-            user__in=all_users,
-            session__agenda_item__space__event=user_enrollment_config.enrollment_config.event,
-        )
-        .values_list("user", flat=True)
-        .distinct()
-    )
-
-    return len(users_with_enrollments)
-
-
-def get_available_slots(user_enrollment_config: VirtualEnrollmentConfigData) -> int:
-    return max(
-        0,
-        user_enrollment_config.allowed_slots - user_enrollment_config.get_used_slots(),
-    )
-
-
 def get_or_create_user_enrollment_config(
-    enrollment_config: EnrollmentConfigDTO, user_email: str
+    event_dao: EventDAOProtocol, enrollment_config: EnrollmentConfigDTO, user_email: str
 ) -> UserEnrollmentConfigDTO | None:
     # First try to get existing config
-    user_config = enrollment_config.user_configs.filter(user_email=user_email).first()
+    user_config = event_dao.read_user_enrollment_config(
+        config=enrollment_config, user_email=user_email
+    )
 
     if user_config:
         # If config has slots > 0, it's final - no need to refresh
@@ -695,7 +974,7 @@ def get_or_create_user_enrollment_config(
                     check_interval_minutes,
                 )
                 # Update the existing config with fresh API data
-                return _refresh_user_config_from_api(user_config)
+                return _refresh_user_config_from_api(event_dao, user_config)
             logger.debug(
                 "Config for %s has 0 slots but was checked recently, using cached data",
                 user_email,
@@ -709,11 +988,13 @@ def get_or_create_user_enrollment_config(
     if not api_client.is_configured():
         return None
 
-    return _create_user_config_from_api(enrollment_config, user_email, api_client)
+    return _create_user_config_from_api(
+        event_dao, enrollment_config, user_email, api_client
+    )
 
 
 def _refresh_user_config_from_api(
-    user_config: UserEnrollmentConfigDTO,
+    event_dao: EventDAOProtocol, user_config: UserEnrollmentConfigDTO
 ) -> UserEnrollmentConfigDTO | None:
     api_client = MembershipApiClient()
     if not api_client.is_configured():
@@ -728,7 +1009,7 @@ def _refresh_user_config_from_api(
     if membership_count is None:
         # API call failed - update last_check but keep existing data
         user_config.last_check = current_time
-        user_config.save(update_fields=["last_check"])
+        event_dao.update_user_config(user_config=user_config)
         logger.warning(
             "API call failed for %s, keeping existing config", user_config.user_email
         )
@@ -736,18 +1017,18 @@ def _refresh_user_config_from_api(
 
     # Update config with fresh data
     if membership_count == 0:
-        user_config.allowed_slots = 0
         user_config.last_check = current_time
-        user_config.save(update_fields=["allowed_slots", "last_check"])
+        user_config.allowed_slots = 0
+        event_dao.update_user_config(user_config=user_config)
         logger.info(
             "Refreshed config for %s: now has 0 slots (membership expired)",
             user_config.user_email,
         )
         return None  # Return None since user has no slots
     allowed_slots = min(membership_count, 5)  # Cap at 5 slots maximum
-    user_config.allowed_slots = allowed_slots
     user_config.last_check = current_time
-    user_config.save(update_fields=["allowed_slots", "last_check"])
+    user_config.allowed_slots = allowed_slots
+    event_dao.update_user_config(user_config=user_config)
     logger.info(
         "Refreshed config for %s: now has %d slots",
         user_config.user_email,
@@ -757,6 +1038,7 @@ def _refresh_user_config_from_api(
 
 
 def _create_user_config_from_api(
+    event_dao: EventDAOProtocol,
     enrollment_config: EnrollmentConfigDTO,
     user_email: str,
     api_client: MembershipApiClient,
@@ -766,7 +1048,7 @@ def _create_user_config_from_api(
 
     if membership_count is None:
         # API call failed - create a placeholder to avoid retrying too soon
-        UserEnrollmentConfigDTO.objects.create(
+        event_dao.create_user_enrollment_config(
             enrollment_config=enrollment_config,
             user_email=user_email,
             allowed_slots=0,  # No slots if API failed
@@ -777,7 +1059,7 @@ def _create_user_config_from_api(
 
     if membership_count == 0:
         # User has no membership - create config with 0 slots and mark as API-fetched
-        user_config = UserEnrollmentConfigDTO.objects.create(
+        event_dao.create_user_enrollment_config(
             enrollment_config=enrollment_config,
             user_email=user_email,
             allowed_slots=0,
@@ -791,7 +1073,7 @@ def _create_user_config_from_api(
     # You can customize this logic based on your business rules
     allowed_slots = min(membership_count, 5)  # Cap at 5 slots maximum
 
-    user_config = UserEnrollmentConfigDTO.objects.create(
+    event_dao.create_user_enrollment_config(
         enrollment_config=enrollment_config,
         user_email=user_email,
         allowed_slots=allowed_slots,
@@ -800,7 +1082,9 @@ def _create_user_config_from_api(
     )
 
     logger.info("Created config with %d slots for member %s", allowed_slots, user_email)
-    return user_config
+    return event_dao.read_user_enrollment_config(
+        config=enrollment_config, user_email=user_email
+    )
 
 
 def create_virtual_user_config(
@@ -808,13 +1092,34 @@ def create_virtual_user_config(
 ) -> VirtualEnrollmentConfigData:
     # This creates a non-persistent UserEnrollmentConfig object
     # that behaves like a regular config but represents domain access
-    virtual_config = VirtualEnrollmentConfigData(
-        enrollment_config=domain_config.enrollment_config,
+    return VirtualEnrollmentConfigData(
+        enrollment_config_id=domain_config.enrollment_config_id,
         user_email=user_email,
         allowed_slots=domain_config.allowed_slots_per_user,
         fetched_from_api=False,
+        has_individual_config=False,
+        has_domain_config=True,
+        domain_config_pk=domain_config.pk,
     )
-    # Mark it as domain-based so we can identify it later
-    virtual_config._is_domain_based = True  # noqa: SLF001
-    virtual_config._source_domain_config = domain_config  # noqa: SLF001
-    return virtual_config
+
+
+def effective_participants_limit(
+    session: SessionDTO, enrollment_config: EnrollmentConfigDTO | None
+) -> int:
+    if enrollment_config:
+        return math.ceil(
+            session.participants_limit * enrollment_config.percentage_slots / 100
+        )
+    return session.participants_limit
+
+
+def get_available_slots(
+    session_dao: SessionDAOProtocol, enrollment_config: EnrollmentConfigDTO
+) -> int:
+    effective_limit = math.ceil(
+        session_dao.session.participants_limit
+        * enrollment_config.percentage_slots
+        / 100
+    )
+    current_enrolled = session_dao.read_enrolled_count()
+    return max(0, effective_limit - current_enrolled)

@@ -1,3 +1,5 @@
+from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum, auto
 from typing import Protocol, Self, TypedDict
@@ -62,6 +64,7 @@ class ProposalDTO(BaseModel):
 
     creation_time: datetime
     description: str
+    host_id: int
     min_age: int
     needs: str
     participants_limit: int
@@ -242,6 +245,8 @@ class UserDAOProtocol(Protocol):
     def read_connected_user(self, slug: str) -> UserDTO: ...
     def delete_connected_user(self, slug: str) -> None: ...
     def update_connected_user(self, slug: str, user_data: UserData) -> None: ...
+    @staticmethod
+    def read_user_manager(user: UserDTO) -> UserDTO | None: ...
 
 
 class OtherUserDAOProtocol(Protocol):
@@ -300,9 +305,28 @@ class EventDAOProtocol(Protocol):
     def read_user_waitslits_count(self, user: UserDTO) -> int: ...
     @property
     def enrollment_configs(self) -> list[EnrollmentConfigDTO]: ...
-    def read_user_config(
+    def read_user_enrollment_config(
         self, config: EnrollmentConfigDTO, user_email: str
     ) -> UserEnrollmentConfigDTO | None: ...
+    def read_domain_config(
+        self, config: EnrollmentConfigDTO, domain: str
+    ) -> DomainEnrollmentConfigDTO | None: ...
+    def read_confirmed_participations_user_ids(self) -> set[int]: ...
+    @staticmethod
+    def update_user_config(user_config: UserEnrollmentConfigDTO) -> None: ...
+    @staticmethod
+    def create_user_enrollment_config(
+        *,
+        enrollment_config: EnrollmentConfigDTO,
+        user_email: str,
+        allowed_slots: int,
+        fetched_from_api: bool,
+        last_check: datetime,
+    ) -> None: ...
+    @staticmethod
+    def update_session_participation(
+        session_participation: SessionParticipationDTO,
+    ) -> None: ...
 
 
 class SessionDAOProtocol(Protocol):
@@ -322,6 +346,23 @@ class SessionDAOProtocol(Protocol):
     def get_event_dao(self) -> EventDAOProtocol: ...
 
     def has_conflicts(self, user: UserDTO) -> bool: ...
+    def read_enrolled_count(self) -> int: ...
+    def read_participations_from_oldest(self) -> list[SessionParticipationDTO]: ...
+    @staticmethod
+    def delete_session_participation(user: UserDTO) -> None: ...
+
+    @staticmethod
+    def read_participation_user(
+        session_participation: SessionParticipationDTO,
+    ) -> UserDTO: ...
+
+    @property
+    def proposal(self) -> ProposalDTO | None: ...
+    def read_participation(self, user_id: int) -> SessionParticipationDTO: ...
+
+    def create_participation(
+        self, user_id: int, status: SessionParticipationStatus
+    ) -> None: ...
 
 
 class RootDAOProtocol(Protocol):
@@ -351,3 +392,30 @@ class RootDAOProtocol(Protocol):
 
 class RootDAORequestProtocol(Protocol):
     root_dao: RootDAOProtocol
+
+
+class EnrollmentChoice(StrEnum):
+    CANCEL = auto()
+    ENROLL = auto()
+    WAITLIST = auto()
+    BLOCK = auto()
+
+
+@dataclass
+class EnrollmentRequest:
+    user: UserDTO
+    choice: EnrollmentChoice
+    name: str = ""
+
+
+@dataclass
+class Enrollments:
+    cancelled_users: list[str]
+    skipped_users: list[str]
+    users_by_status: dict[SessionParticipationStatus, list[str]]
+
+    def __init__(self) -> None:
+        self.cancelled_users = []
+        self.skipped_users = []
+        self.users_by_status = defaultdict(list)
+        super().__init__()

@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.sites.models import Site
+from django.db import transaction
 from django.db.models import Q
 
 from ludamus.adapters.db.django.models import (
@@ -15,12 +17,14 @@ from ludamus.adapters.db.django.models import (
     Space,
     Sphere,
     TimeSlot,
+    UserEnrollmentConfig,
 )
 from ludamus.pacts import (
     AcceptProposalDAOProtocol,
     AgendaItemDTO,
     AnonymousUserDAOProtocol,
     AuthDAOProtocol,
+    DomainEnrollmentConfigDTO,
     EnrollmentConfigDTO,
     EventDAOProtocol,
     EventDTO,
@@ -116,11 +120,13 @@ class UserDAO(UserDAOProtocol):
         if slug not in self._storage.connected_users:
             raise NotFoundError
 
-        original_user = self._storage.connected_users[slug]
-        for key, value in user_data.items():
-            setattr(original_user, key, value)
-        original_user.full_clean()
-        original_user.save()
+        with transaction.atomic():
+            original_user = User.objects.select_for_update().get(slug=slug)
+            for key, value in user_data.items():
+                setattr(original_user, key, value)
+            original_user.full_clean()
+            original_user.save()
+        self._storage.connected_users[slug] = User.objects.get(slug=slug)
 
     def delete_connected_user(self, slug: str) -> None:
         if slug not in self._storage.connected_users:
@@ -129,11 +135,24 @@ class UserDAO(UserDAOProtocol):
         self._storage.connected_users[slug].delete()
 
     def update_user(self, user_data: UserData) -> None:
-        for key, value in user_data.items():
-            setattr(self._storage.user, key, value)
+        with transaction.atomic():
+            user = User.objects.select_for_update().get(id=self._storage.user.id)
+            for key, value in user_data.items():
+                setattr(user, key, value)
 
-        self._storage.user.full_clean()
-        self._storage.user.save()
+            user.full_clean()
+            user.save()
+
+        self._storage.maybe_user = User.objects.get(id=user.id)
+
+    @staticmethod
+    def read_user_manager(user: UserDTO) -> UserDTO | None:
+        if user.manager_id and (
+            manager := User.objects.filter(id=user.manager_id).first()
+        ):
+            return UserDTO.model_validate(manager)
+
+        return None
 
 
 class OtherUserDAO(OtherUserDAOProtocol):
@@ -176,10 +195,13 @@ class AnonymousUserDAO(AnonymousUserDAOProtocol):
         )
 
     def update_user_name(self, slug: str, name: str) -> None:
-        user = self._storage.other_users[slug]
-        user.name = name
-        user.full_clean()
-        user.save()
+        with transaction.atomic():
+            user = User.objects.select_for_update().get(slug=slug)
+            user.name = name
+            user.full_clean()
+            user.save()
+
+        self._storage.other_users[slug] = User.objects.get(slug=slug)
 
 
 class AuthDAO(AuthDAOProtocol):
@@ -257,32 +279,37 @@ class AcceptProposalDAO(AcceptProposalDAOProtocol):
         ]
 
     def accept_proposal(self, *, time_slot_id: int, space_id: int, slug: str) -> None:
-        # Create a session from the proposal
-        session = Session.objects.create(
-            sphere=self._storage.current_sphere,
-            presenter_name=self._proposal.host.name,
-            title=self._proposal.title,
-            description=self._proposal.description,
-            requirements=self._proposal.requirements,
-            participants_limit=self._proposal.participants_limit,
-            min_age=self._proposal.min_age,
-            slug=slug,
-        )
+        with transaction.atomic():
+            proposal = Proposal.objects.select_for_update().get(id=self._proposal.id)
 
-        # Copy tags from self._proposal to session
-        session.tags.set(self._proposal.tags.all())
+            # Create a session from the proposal
+            session = Session.objects.create(
+                sphere=self._storage.current_sphere,
+                presenter_name=self._proposal.host.name,
+                title=self._proposal.title,
+                description=self._proposal.description,
+                requirements=self._proposal.requirements,
+                participants_limit=self._proposal.participants_limit,
+                min_age=self._proposal.min_age,
+                slug=slug,
+            )
 
-        AgendaItem.objects.create(
-            space_id=space_id,
-            session=session,
-            session_confirmed=True,
-            start_time=self._time_slots[time_slot_id].start_time,
-            end_time=self._time_slots[time_slot_id].end_time,
-        )
+            # Copy tags from self._proposal to session
+            session.tags.set(self._proposal.tags.all())
 
-        # Link self._proposal to session
-        self._proposal.session = session
-        self._proposal.save()
+            AgendaItem.objects.create(
+                space_id=space_id,
+                session=session,
+                session_confirmed=True,
+                start_time=self._time_slots[time_slot_id].start_time,
+                end_time=self._time_slots[time_slot_id].end_time,
+            )
+
+            # Link self._proposal to session
+            proposal.session = session
+            proposal.save()
+
+        self._proposal = Proposal.objects.get(id=proposal.id)
 
 
 class EventDAO(EventDAOProtocol):
@@ -298,6 +325,17 @@ class EventDAO(EventDAOProtocol):
 
         self._maybe_users_participations: dict[int, SessionParticipation] | None = None
         self._maybe_enrollment_configs: dict[int, EnrollmentConfig] | None = None
+
+    def read_confirmed_participations_user_ids(self) -> set[int]:
+        return set(
+            SessionParticipation.objects.filter(
+                status=SessionParticipationStatus.CONFIRMED,
+                user__in=[self._storage.user, *self._storage.connected_users],
+                session__agenda_item__space__event=self._event,
+            )
+            .values_list("user_id", flat=True)
+            .distinct()
+        )
 
     @property
     def _users_participations(self) -> dict[int, SessionParticipation]:
@@ -355,7 +393,7 @@ class EventDAO(EventDAOProtocol):
             for ec in self._enrollment_configs.values()
         ]
 
-    def read_user_config(
+    def read_user_enrollment_config(
         self, config: EnrollmentConfigDTO, user_email: str
     ) -> UserEnrollmentConfigDTO | None:
         if (
@@ -366,6 +404,49 @@ class EventDAO(EventDAOProtocol):
             return UserEnrollmentConfigDTO.model_validate(user_config)
 
         return None
+
+    def read_domain_config(
+        self, config: EnrollmentConfigDTO, domain: str
+    ) -> DomainEnrollmentConfigDTO | None:
+        if (
+            domain_config := self._enrollment_configs[config.pk]
+            .domain_configs.filter(domain=domain)
+            .first()
+        ):
+            return DomainEnrollmentConfigDTO.model_validate(domain_config)
+
+        return None
+
+    @staticmethod
+    def update_user_config(user_config: UserEnrollmentConfigDTO) -> None:
+        UserEnrollmentConfig.objects.select_for_update().filter(
+            id=user_config.pk
+        ).update(**user_config.model_dump())
+
+    @staticmethod
+    def create_user_enrollment_config(
+        *,
+        enrollment_config: EnrollmentConfigDTO,
+        user_email: str,
+        allowed_slots: int,
+        fetched_from_api: bool,
+        last_check: datetime,
+    ) -> None:
+        UserEnrollmentConfig.objects.create(
+            enrollment_config_id=enrollment_config.pk,
+            user_email=user_email,
+            allowed_slots=allowed_slots,
+            fetched_from_api=fetched_from_api,
+            last_check=last_check,
+        )
+
+    @staticmethod
+    def update_session_participation(
+        session_participation: SessionParticipationDTO,
+    ) -> None:
+        SessionParticipation.objects.select_for_update().filter(
+            id=session_participation.pk
+        ).update(**session_participation.model_dump())
 
 
 class SessionDAO(SessionDAOProtocol):
@@ -398,6 +479,13 @@ class SessionDAO(SessionDAOProtocol):
     def space(self) -> SpaceDTO:
         return SpaceDTO.model_validate(self._space)
 
+    @property
+    def proposal(self) -> ProposalDTO | None:
+        if self._session.proposal:
+            return ProposalDTO.model_validate(self._session.proposal)
+
+        return None
+
     def get_event_dao(self) -> EventDAO:
         return EventDAO(
             self._storage, event_id=self._session.agenda_item.space.event.id
@@ -422,6 +510,46 @@ class SessionDAO(SessionDAOProtocol):
             )
             .exclude(id=self._session.id)
             .exists()
+        )
+
+    def read_enrolled_count(self) -> int:
+        return self._session.session_participations.filter(
+            status=SessionParticipationStatus.CONFIRMED
+        ).count()
+
+    def read_participations_from_oldest(self) -> list[SessionParticipationDTO]:
+        return [
+            SessionParticipationDTO.model_validate(p)
+            for p in self._session.session_participations.order_by("creation_time")
+        ]
+
+    @staticmethod
+    def delete_session_participation(user: UserDTO) -> None:
+        SessionParticipation.objects.select_for_update().get(user_id=user.pk).delete()
+
+    @staticmethod
+    def read_participation_user(
+        session_participation: SessionParticipationDTO,
+    ) -> UserDTO:
+        return UserDTO.model_validate(
+            SessionParticipation.objects.get(id=session_participation.pk).user
+        )
+
+    def read_participation(self, user_id: int) -> SessionParticipationDTO:
+        try:
+            return SessionParticipationDTO.model_validate(
+                SessionParticipation.objects.get(
+                    session_id=self._session.pk, user_id=user_id
+                )
+            )
+        except SessionParticipation.DoesNotExist as exception:
+            raise NotFoundError from exception
+
+    def create_participation(
+        self, user_id: int, status: SessionParticipationStatus
+    ) -> None:
+        SessionParticipation.objects.create(
+            session_id=self._session.pk, user_id=user_id, status=status
         )
 
 

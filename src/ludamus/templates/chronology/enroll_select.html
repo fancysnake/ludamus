@@ -26,7 +26,7 @@
                             <p>{{ session.presenter_name }}</p>
                             <h6>{% translate "Participants" %}</h6>
                             <p>
-                                {{ session.enrolled_count }}/{{ session.effective_participants_limit }}
+                                {{ effective_participants_limit }}
                                 {% if session.waiting_count > 0 %}
                                     (+{{ session.waiting_count }} {% translate "waiting" %})
                                 {% endif %}
@@ -35,13 +35,14 @@
                         <div class="col-md-6">
                             <h6>{% translate "Time" %}</h6>
                             <p>
-                                {{ session.agenda_item.start_time|date:"l, F j, Y" }}
+                                {{ agenda_item.start_time|date:"l, F j, Y" }}
                                 <br>
-                                <small class="text-muted">{{ session.agenda_item.start_time|date:"G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}</small>
+                                <small class="text-muted">{{ agenda_item.start_time|date:"G:i" }} - {{
+                                agenda_item.end_time|date:"G:i" }}</small>
                             </p>
-                            {% if session.agenda_item.space %}
+                            {% if agenda_item.space %}
                                 <h6>{% translate "Space" %}</h6>
-                                <p>{{ session.agenda_item.space.name }}</p>
+                                <p>{{ agenda_item.space.name }}</p>
                             {% endif %}
                             <h6>{% translate "Minimum Age" %}</h6>
                             <p>
@@ -69,7 +70,10 @@
                         {% csrf_token %}
                         <!-- User Enrollment Options -->
                         <div class="mb-3">
-                            <label class="form-label">{% bs_icon 'people' %} {% translate "Select enrollment options for each user" %}</label>
+                            <label class="form-label">
+                                {% bs_icon 'people' %} {% translate "Select enrollment options for
+                                each user" %}
+                            </label>
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead class="table-light">
@@ -99,7 +103,8 @@
                                                     {% if user_data.user_enrolled %}
                                                         <span class="badge bg-success">{% translate "Already Enrolled" %}</span>
                                                     {% elif user_data.user_waiting %}
-                                                        <span class="badge bg-warning text-dark">{% translate "On Waiting List" %}</span>
+                                                        <span class="badge bg-warning text-dark">{% translate "On Waiting List"
+                                                        %}</span>
                                                     {% elif user_data.has_time_conflict %}
                                                         <span class="badge bg-danger">{% translate "Time Conflict" %}</span>
                                                     {% else %}
@@ -115,7 +120,10 @@
                                                                        name="user_{{ user_data.user.pk }}"
                                                                        id="user_{{ user_data.user.pk }}_enroll"
                                                                        value="enroll">
-                                                                <label class="form-check-label" for="user_{{ user_data.user.pk }}_enroll">{% bs_icon 'check-circle' %}</label>
+                                                                <label class="form-check-label" for="user_{{ user_data.user.pk }}_enroll">
+                                                                    {% bs_icon 'check-circle'
+                                                                    %}
+                                                                </label>
                                                             </div>
                                                         {% else %}
                                                             <span class="text-muted">{% translate "Time conflict" %}</span>
@@ -132,7 +140,10 @@
                                                                    name="user_{{ user_data.user.pk }}"
                                                                    id="user_{{ user_data.user.pk }}_waitlist"
                                                                    value="waitlist">
-                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_waitlist">{% bs_icon 'clock' %}</label>
+                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_waitlist">
+                                                                {% bs_icon 'clock'
+                                                                %}
+                                                            </label>
                                                         </div>
                                                     {% else %}
                                                         <span class="text-muted">-</span>
@@ -146,7 +157,10 @@
                                                                    name="user_{{ user_data.user.pk }}"
                                                                    id="user_{{ user_data.user.pk }}_cancel"
                                                                    value="cancel">
-                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_cancel">{% bs_icon 'x-circle' %}</label>
+                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_cancel">
+                                                                {% bs_icon 'x-circle'
+                                                                %}
+                                                            </label>
                                                         </div>
                                                     {% else %}
                                                         <span class="text-muted">-</span>
@@ -157,40 +171,43 @@
                                         {% if user_data|length == 1 %}
                                             <tr>
                                                 <td colspan="5" class="text-center text-muted">
-                                                    {% translate "No connected users available. You can add connected users in your" %}
-                                                    <a href="{% url 'web:crowd:profile-connected-users' %}">{% translate "profile settings" %}</a>.
-                                                </td>
-                                            </tr>
+                                                    {% translate "No connected users available. You can add connected users in
+                                                    your" %}
+                                                    <a href="{% url 'web:crowd:profile-connected-users' %}">{% translate
+                                                        "profile settings" %}</a>.
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <small>
+                                        {% bs_icon 'info-circle' %}
+                                        <strong>{% translate "Session capacity" %}:</strong> {{ enrolled_count }}/{{
+                                        effective_participants_limit }} {% translate "enrolled" %}
+                                        {% if session.waiting_count > 0 %}
+                                            (+{{ session.waiting_count }} {% translate "waiting" %})
                                         {% endif %}
-                                    </tbody>
-                                </table>
+                                    </small>
+                                </div>
                             </div>
-                            <div class="alert alert-info mt-3">
-                                <small>
-                                    {% bs_icon 'info-circle' %}
-                                    <strong>{% translate "Session capacity" %}:</strong> {{ session.enrolled_count }}/{{ session.effective_participants_limit }} {% translate "enrolled" %}
-                                    {% if session.waiting_count > 0 %}
-                                        (+{{ session.waiting_count }} {% translate "waiting" %})
-                                    {% endif %}
-                                </small>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-success w-100">
+                                        {% bs_icon 'person-plus' %} {% translate "Enroll Selected Users" %}
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                                       class="btn btn-outline-secondary w-100">
+                                        {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
+                                    </a>
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <button type="submit" class="btn btn-success w-100">
-                                    {% bs_icon 'person-plus' %} {% translate "Enroll Selected Users" %}
-                                </button>
-                            </div>
-                            <div class="col-md-6">
-                                <a href="{% url 'web:chronology:event' slug=event.slug %}"
-                                   class="btn btn-outline-secondary w-100">
-                                    {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
-                                </a>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-{% endblock body %}
+    {% endblock body %}
