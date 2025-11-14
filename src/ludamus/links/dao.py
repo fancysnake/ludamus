@@ -330,7 +330,10 @@ class EventDAO(EventDAOProtocol):
         return set(
             SessionParticipation.objects.filter(
                 status=SessionParticipationStatus.CONFIRMED,
-                user__in=[self._storage.user, *self._storage.connected_users],
+                user__in=[
+                    self._storage.user.pk,
+                    *[u.pk for u in self._storage.connected_users.values()],
+                ],
                 session__agenda_item__space__event=self._event,
             )
             .values_list("user_id", flat=True)
@@ -446,7 +449,7 @@ class EventDAO(EventDAOProtocol):
     ) -> None:
         SessionParticipation.objects.select_for_update().filter(
             id=session_participation.pk
-        ).update(**session_participation.model_dump())
+        ).update(**session_participation.model_dump(exclude={"pk"}))
 
 
 class SessionDAO(SessionDAOProtocol):
@@ -481,8 +484,8 @@ class SessionDAO(SessionDAOProtocol):
 
     @property
     def proposal(self) -> ProposalDTO | None:
-        if self._session.proposal:
-            return ProposalDTO.model_validate(self._session.proposal)
+        if proposal := Proposal.objects.filter(session_id=self._session.pk).first():
+            return ProposalDTO.model_validate(proposal)
 
         return None
 

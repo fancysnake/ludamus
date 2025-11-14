@@ -937,8 +937,13 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 request,
                 "chronology/enroll_select.html",
                 {
-                    "session": session,
-                    "event": session.agenda_item.space.event,
+                    "session": SessionDTO.model_validate(session),
+                    "agenda_item": AgendaItemDTO.model_validate(session.agenda_item),
+                    "enrolled_count": session.enrolled_count,
+                    "effective_participants_limit": (
+                        session.effective_participants_limit
+                    ),
+                    "event": EventDTO.model_validate(session.agenda_item.space.event),
                     "connected_users": self.request.user_dao.connected_users,
                     "user_data": self._get_user_participation_data(session),
                     "form": form,

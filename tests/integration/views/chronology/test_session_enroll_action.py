@@ -111,9 +111,12 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": EventDTO.model_validate(agenda_item.space.event),
                 "form": ANY,
-                "session": agenda_item.session,
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
                 "user_data": [
                     SessionUserParticipationData(
                         user=UserDTO.model_validate(active_user),
@@ -295,10 +298,13 @@ class TestSessionEnrollPageView:
                 (messages.WARNING, "Please review the enrollment options below."),
             ],
             context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": EventDTO.model_validate(agenda_item.space.event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
                 "form": ANY,
-                "session": agenda_item.session,
+                "session": SessionDTO.model_validate(agenda_item.session),
                 "user_data": [
                     SessionUserParticipationData(
                         user=UserDTO.model_validate(active_user),
@@ -345,9 +351,7 @@ class TestSessionEnrollPageView:
                     ),
                 )
             ],
-            url=reverse(
-                "web:chronology:session-enrollment", kwargs={"session_id": session.id}
-            ),
+            url=reverse(url_name, kwargs={"session_id": session.id}),
         )
 
     @pytest.mark.usefixtures("enrollment_config")
@@ -365,9 +369,7 @@ class TestSessionEnrollPageView:
             response,
             HTTPStatus.FOUND,
             messages=[(messages.WARNING, "Please select at least one user to enroll.")],
-            url=reverse(
-                "web:chronology:session-enrollment", kwargs={"session_id": session.id}
-            ),
+            url=reverse(url_name, kwargs={"session_id": session.id}),
         )
 
     @pytest.mark.usefixtures("enrollment_config")
@@ -520,10 +522,7 @@ class TestSessionEnrollPageView:
             response,
             HTTPStatus.FOUND,
             messages=[(messages.WARNING, "Please select at least one user to enroll.")],
-            url=reverse(
-                "web:chronology:session-enrollment",
-                kwargs={"session_id": agenda_item.session.id},
-            ),
+            url=reverse(url_name, kwargs={"session_id": agenda_item.session.id}),
         )
 
     def test_post_restrict_to_configured_users(

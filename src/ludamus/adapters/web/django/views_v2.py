@@ -178,6 +178,11 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
                 "chronology/enroll_select.html",
                 {
                     "session": session_dao.session,
+                    "agenda_item": session_dao.agenda_item,
+                    "enrolled_count": session_dao.read_enrolled_count(),
+                    "effective_participants_limit": effective_participants_limit(
+                        session_dao.session, enrollment_config
+                    ),
                     "event": session_dao.event,
                     "connected_users": self.request.user_dao.connected_users,
                     "user_data": self._get_user_participation_data(
@@ -231,7 +236,7 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
             ):
                 raise RedirectError(
                     reverse(
-                        "web:chronology:session-enrollment",
+                        "web:chronology:session-enrollment-v2",
                         kwargs={"session_id": session_dao.session.pk},
                     )
                 )
@@ -246,7 +251,7 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
         else:
             raise RedirectError(
                 reverse(
-                    "web:chronology:session-enrollment",
+                    "web:chronology:session-enrollment-v2",
                     kwargs={"session_id": session_dao.session.pk},
                 ),
                 warning=_("Please select at least one user to enroll."),
