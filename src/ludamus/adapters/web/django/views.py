@@ -2,9 +2,7 @@ import json
 from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
-from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from enum import StrEnum, auto
 from secrets import token_urlsafe
 from typing import Any
 from urllib.parse import quote_plus, urlencode, urlparse
@@ -48,11 +46,16 @@ from ludamus.adapters.web.django.entities import (
 from ludamus.links.dao import NotFoundError
 from ludamus.pacts import (
     AcceptProposalDAOProtocol,
+    AgendaItemDTO,
+    EnrollmentChoice,
+    EnrollmentRequest,
+    Enrollments,
+    EventDTO,
     ProposalCategoryDTO,
     RootDAOProtocol,
+    SessionDTO,
     TagCategoryDTO,
     TagDTO,
-    UserDAOProtocol,
     UserDTO,
 )
 
@@ -66,18 +69,10 @@ from .forms import (
     create_session_proposal_form,
     get_tag_data_from_form,
 )
+from .http import AuthorizedRootDAORequest, RootDAORequest
 
 MINIMUM_ALLOWED_USER_AGE = 16
 CACHE_TIMEOUT = 600  # 10 minutes
-
-
-class RootDAORequest(HttpRequest):
-    root_dao: RootDAOProtocol
-    user_dao: UserDAOProtocol | None
-
-
-class AuthorizedRootDAORequest(RootDAORequest):
-    user_dao: UserDAOProtocol
 
 
 class LoginRequiredPageView(TemplateView):
@@ -186,7 +181,7 @@ class Auth0LoginCallbackActionView(RedirectView):
             messages.success(self.request, _("Welcome!"))
 
             # Check if profile needs completion
-            if auth_dao.user.is_incomplete:
+            if not auth_dao.user.name:
                 messages.success(self.request, _("Please complete your profile."))
                 if redirect_to:
                     parsed = urlparse(redirect_to)
@@ -307,6 +302,10 @@ class ProfilePageView(
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         kwargs["user"] = self.request.user_dao.user
         kwargs["object"] = self.request.user_dao.user
+        kwargs["confirmed_participations_count"] = SessionParticipation.objects.filter(
+            user_id=self.request.user_dao.user.pk,
+            status=SessionParticipationStatus.CONFIRMED,
+        ).count()
         return super().get_context_data(**kwargs)
 
     def form_valid(self, form: UserForm) -> HttpResponse:
@@ -389,7 +388,18 @@ class ProfileConnectedUserUpdateActionView(
         return self.request.user_dao.read_connected_user(self.kwargs["slug"])
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context = {"user": self.get_object(), "object": self.get_object()}
+        context = {
+            "user": self.get_object(),
+            "object": self.get_object(),
+            "max_connected_users": MAX_CONNECTED_USERS,
+            "connected_users": [
+                {
+                    "user": connected,
+                    "form": ConnectedUserForm(initial=connected.model_dump()),
+                }
+                for connected in self.request.user_dao.connected_users
+            ],
+        }
         context.update(kwargs)
         return super().get_context_data(**context)
 
@@ -765,33 +775,6 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         return sessions_data
 
 
-class EnrollmentChoice(StrEnum):
-    CANCEL = auto()
-    ENROLL = auto()
-    WAITLIST = auto()
-    BLOCK = auto()
-
-
-@dataclass
-class EnrollmentRequest:
-    user: UserDTO
-    choice: EnrollmentChoice
-    name: str = _("yourself")
-
-
-@dataclass
-class Enrollments:
-    cancelled_users: list[str]
-    skipped_users: list[str]
-    users_by_status: dict[SessionParticipationStatus, list[str]]
-
-    def __init__(self) -> None:
-        self.cancelled_users = []
-        self.skipped_users = []
-        self.users_by_status = defaultdict(list)
-        super().__init__()
-
-
 def _get_session_or_redirect(
     request: AuthorizedRootDAORequest, session_id: int
 ) -> Session:
@@ -818,8 +801,11 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         session = _get_session_or_redirect(request, session_id)
 
         context = {
-            "session": session,
-            "event": session.agenda_item.space.event,
+            "session": SessionDTO.model_validate(session),
+            "agenda_item": AgendaItemDTO.model_validate(session.agenda_item),
+            "enrolled_count": session.enrolled_count,
+            "effective_participants_limit": session.effective_participants_limit,
+            "event": EventDTO.model_validate(session.agenda_item.space.event),
             "connected_users": self.request.user_dao.connected_users,
             "user_data": self._get_user_participation_data(session),
             "form": create_enrollment_form(
@@ -951,8 +937,13 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 request,
                 "chronology/enroll_select.html",
                 {
-                    "session": session,
-                    "event": session.agenda_item.space.event,
+                    "session": SessionDTO.model_validate(session),
+                    "agenda_item": AgendaItemDTO.model_validate(session.agenda_item),
+                    "enrolled_count": session.enrolled_count,
+                    "effective_participants_limit": (
+                        session.effective_participants_limit
+                    ),
+                    "event": EventDTO.model_validate(session.agenda_item.space.event),
                     "connected_users": self.request.user_dao.connected_users,
                     "user_data": self._get_user_participation_data(session),
                     "form": form,
@@ -1053,7 +1044,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                         enrollments.users_by_status[
                             SessionParticipationStatus.CONFIRMED
                         ].append(
-                            f"{participation.user.get_full_name()} "
+                            f"{participation.user.name} "
                             f"({_("promoted from waiting list")})"
                         )
                         break
@@ -1390,6 +1381,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
             "spaces": accept_proposal_dao.spaces,
             "time_slots": accept_proposal_dao.time_slots,
             "form": form,
+            "proposal_host": accept_proposal_dao.host,
         }
 
         return TemplateResponse(request, "chronology/accept_proposal.html", context)
@@ -1441,6 +1433,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                     "spaces": accept_proposal_dao.spaces,
                     "time_slots": accept_proposal_dao.time_slots,
                     "form": form,
+                    "proposal_host": accept_proposal_dao.host,
                 },
             )
 

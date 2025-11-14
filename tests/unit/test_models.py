@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from ludamus.adapters.db.django.models import (
+    DEFAULT_NAME,
     AgendaItem,
     DomainEnrollmentConfig,
     EnrollmentConfig,
@@ -163,3 +164,15 @@ class TestSessionParticipation:
             )
             == f"{username} confirmed on {title}"
         )
+
+
+class TestUser:
+    def test_get_full_name_no_name(self):
+        user = User()
+
+        assert user.get_full_name() == DEFAULT_NAME
+
+    def test_get_full_name(self, faker):
+        user = User(name=faker.name())
+
+        assert user.get_full_name() == user.name

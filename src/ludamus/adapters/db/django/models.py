@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, datetime
-from enum import StrEnum, auto
 from typing import TYPE_CHECKING, ClassVar, Never, cast
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
@@ -15,7 +14,7 @@ from django.utils import timezone
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
-from ludamus.pacts import UserType
+from ludamus.pacts import SessionParticipationStatus, UserType
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -100,20 +99,6 @@ class User(AbstractBaseUser, PermissionsMixin):
                 condition=~Q(email=""),
             ),
         )
-
-    @property
-    def is_incomplete(self) -> bool:
-        return not self.name and not self.email
-
-    @property
-    def confirmed_participations_count(self) -> int:
-        """Get count of confirmed session participations."""
-        if not self.email:
-            return 0
-
-        return SessionParticipation.objects.filter(
-            user=self, status=SessionParticipationStatus.CONFIRMED
-        ).count()
 
 
 class Sphere(models.Model):
@@ -296,12 +281,6 @@ class Event(models.Model):
         email_domain = user_email.split("@")[1].lower()
 
         return enrollment_config.domain_configs.filter(domain=email_domain).first()
-
-    def has_domain_access(self, user_email: str) -> bool:
-        return any(
-            self.get_domain_config_for_email(user_email, config)
-            for config in self.get_active_enrollment_configs()
-        )
 
 
 class EnrollmentConfig(models.Model):
@@ -937,11 +916,6 @@ class Proposal(models.Model):
 
     def __str__(self) -> str:
         return self.title
-
-
-class SessionParticipationStatus(StrEnum):
-    CONFIRMED = auto()
-    WAITING = auto()
 
 
 class SessionParticipation(models.Model):

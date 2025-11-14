@@ -77,7 +77,7 @@ ruff-fix = "ruff check --fix  ."
 # Django
 dj = "django-admin"
 # Tests
-unittest = "pytest tests/unit --cov=tests.unit --cov=ludamus"
+unittest = "pytest tests/unit --cov=tests.unit --cov=ludamus --fail-on-template-vars"
 # Series
 check = [
     "black",
@@ -99,7 +99,7 @@ update = [
 ]
 
 [tool.poe.tasks.test]
-cmd = "pytest tests"
+cmd = "pytest tests --fail-on-template-vars"
 envfile = ".testenv"
 
 [tool.poe.tasks.newtest]

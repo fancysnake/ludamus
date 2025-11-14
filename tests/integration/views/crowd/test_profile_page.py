@@ -23,6 +23,7 @@ class TestProfilePageView:
                 "user": UserDTO.model_validate(active_user),
                 "form": ANY,
                 "view": ANY,
+                "confirmed_participations_count": 0,
             },
             template_name=["crowd/user/edit.html"],
         )
@@ -57,6 +58,7 @@ class TestProfilePageView:
                 "user": UserDTO.model_validate(active_user),
                 "form": ANY,
                 "view": ANY,
+                "confirmed_participations_count": 0,
             },
             template_name=["crowd/user/edit.html"],
         )

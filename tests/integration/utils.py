@@ -21,7 +21,7 @@ def assert_response(
     messages: Iterable[tuple[int, str]] = (),
     **response_fields: Any,
 ) -> None:
-    assert response.status_code == status_code, response.status_code
+    assert response.status_code == status_code, response.context_data["form"].errors
     _assert_messages(response, messages)
 
     default_fields = {"context_data": None, "template_name": None, "url": None}
