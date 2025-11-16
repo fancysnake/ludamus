@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Session
-from ludamus.pacts import EventDTO, ProposalDTO, SpaceDTO, TimeSlotDTO
+from ludamus.pacts import EventDTO, ProposalDTO, SpaceDTO, TimeSlotDTO, UserDTO
 from tests.integration.utils import assert_response
 
 
@@ -48,6 +48,7 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "proposal": ProposalDTO.model_validate(proposal),
+                "host": UserDTO.model_validate(proposal.host),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
             },
@@ -135,6 +136,7 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "proposal": ProposalDTO.model_validate(proposal),
+                "host": UserDTO.model_validate(proposal.host),
                 "spaces": [],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
             },
