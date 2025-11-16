@@ -43,7 +43,7 @@ class TestAuth0LoginCallbackActionView:
                 (messages.SUCCESS, "Please complete your profile."),
             ],
         )
-        assert User.objects.get().username == f"auth0|{sub.encode('utf-8')}"
+        assert User.objects.get().username == f"auth0|{sub}"
         assert cache.get(f"oauth_state:{state_token}") is None
 
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
@@ -70,7 +70,7 @@ class TestAuth0LoginCallbackActionView:
                 (messages.SUCCESS, "Please complete your profile."),
             ],
         )
-        assert User.objects.get().username == f"auth0|{sub.encode('utf-8')}"
+        assert User.objects.get().username == f"auth0|{sub}"
         assert cache.get(f"oauth_state:{state_token}") is None
         assert client.session.get("anonymous_user_code") is None
         assert client.session.get("anonymous_enrollment_active") is None
@@ -94,7 +94,7 @@ class TestAuth0LoginCallbackActionView:
                 (messages.SUCCESS, "Please complete your profile."),
             ],
         )
-        assert User.objects.get().username == f"auth0|{sub.encode('utf-8')}"
+        assert User.objects.get().username == f"auth0|{sub}"
 
     def test_ok_already_authenticated(self, authenticated_client):
         state_token = self._setup_valid_state()
@@ -115,7 +115,7 @@ class TestAuth0LoginCallbackActionView:
     ):
         authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
         complete_user_factory(
-            username=f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"].encode('utf-8')}'
+            username=f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"]}'
         )
         state_token = self._setup_valid_state()
 
@@ -199,7 +199,7 @@ class TestAuth0LoginCallbackActionView:
         sub_id = faker.uuid4()
         authorize_access_token_mock.return_value = {"userinfo": {"sub": sub_id}}
 
-        complete_user_factory(username=f'auth0|{sub_id.encode("utf-8")}')
+        complete_user_factory(username=f"auth0|{sub_id}")
 
         state_token = self._setup_valid_state()
 
