@@ -99,7 +99,7 @@ update = [
 ]
 
 [tool.poe.tasks.test]
-cmd = "pytest tests"
+cmd = "pytest tests --fail-on-template-vars"
 envfile = ".testenv"
 
 [tool.poe.tasks.newtest]

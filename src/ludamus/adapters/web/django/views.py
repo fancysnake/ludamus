@@ -389,7 +389,18 @@ class ProfileConnectedUserUpdateActionView(
         return self.request.user_dao.read_connected_user(self.kwargs["slug"])
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context = {"user": self.get_object(), "object": self.get_object()}
+        context = {
+            "user": self.get_object(),
+            "object": self.get_object(),
+            "max_connected_users": MAX_CONNECTED_USERS,
+            "connected_users": [
+                {
+                    "user": connected,
+                    "form": ConnectedUserForm(initial=connected.model_dump()),
+                }
+                for connected in self.request.user_dao.connected_users
+            ],
+        }
         context.update(kwargs)
         return super().get_context_data(**context)
 
@@ -1386,6 +1397,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
 
         context = {
             "proposal": proposal,
+            "host": accept_proposal_dao.host,
             "event": event,
             "spaces": accept_proposal_dao.spaces,
             "time_slots": accept_proposal_dao.time_slots,
@@ -1437,6 +1449,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                 "chronology/accept_proposal.html",
                 {
                     "proposal": proposal,
+                    "host": accept_proposal_dao.host,
                     "event": event,
                     "spaces": accept_proposal_dao.spaces,
                     "time_slots": accept_proposal_dao.time_slots,

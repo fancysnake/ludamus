@@ -88,10 +88,10 @@
                                                     <div class="d-flex align-items-center">
                                                         {% if user_data.user == request.user %}
                                                             {% bs_icon 'person-circle' %}
-                                                            <span class="ms-2">{% translate "Myself" %} ({{ user.get_full_name }})</span>
+                                                            <span class="ms-2">{% translate "Myself" %} ({{ user.name }})</span>
                                                         {% else %}
                                                             {% bs_icon 'person-heart' %}
-                                                            <span class="ms-2">{{ user_data.user.get_full_name }}</span>
+                                                            <span class="ms-2">{{ user_data.user.name }}</span>
                                                         {% endif %}
                                                     </div>
                                                 </td>
@@ -112,10 +112,10 @@
                                                             <div class="form-check">
                                                                 <input class="form-check-input"
                                                                        type="radio"
-                                                                       name="user_{{ user_data.user.id }}"
-                                                                       id="user_{{ user_data.user.id }}_enroll"
+                                                                       name="user_{{ user_data.user.pk }}"
+                                                                       id="user_{{ user_data.user.pk }}_enroll"
                                                                        value="enroll">
-                                                                <label class="form-check-label" for="user_{{ user_data.user.id }}_enroll">{% bs_icon 'check-circle' %}</label>
+                                                                <label class="form-check-label" for="user_{{ user_data.user.pk }}_enroll">{% bs_icon 'check-circle' %}</label>
                                                             </div>
                                                         {% else %}
                                                             <span class="text-muted">{% translate "Time conflict" %}</span>
@@ -129,10 +129,10 @@
                                                         <div class="form-check">
                                                             <input class="form-check-input"
                                                                    type="radio"
-                                                                   name="user_{{ user_data.user.id }}"
-                                                                   id="user_{{ user_data.user.id }}_waitlist"
+                                                                   name="user_{{ user_data.user.pk }}"
+                                                                   id="user_{{ user_data.user.pk }}_waitlist"
                                                                    value="waitlist">
-                                                            <label class="form-check-label" for="user_{{ user_data.user.id }}_waitlist">{% bs_icon 'clock' %}</label>
+                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_waitlist">{% bs_icon 'clock' %}</label>
                                                         </div>
                                                     {% else %}
                                                         <span class="text-muted">-</span>
@@ -143,10 +143,10 @@
                                                         <div class="form-check">
                                                             <input class="form-check-input"
                                                                    type="radio"
-                                                                   name="user_{{ user_data.user.id }}"
-                                                                   id="user_{{ user_data.user.id }}_cancel"
+                                                                   name="user_{{ user_data.user.pk }}"
+                                                                   id="user_{{ user_data.user.pk }}_cancel"
                                                                    value="cancel">
-                                                            <label class="form-check-label" for="user_{{ user_data.user.id }}_cancel">{% bs_icon 'x-circle' %}</label>
+                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_cancel">{% bs_icon 'x-circle' %}</label>
                                                         </div>
                                                     {% else %}
                                                         <span class="text-muted">-</span>

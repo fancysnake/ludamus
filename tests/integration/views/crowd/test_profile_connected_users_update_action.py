@@ -43,6 +43,10 @@ class TestProfileConnectedUserUpdateActionView:
                 "user": UserDTO.model_validate(connected_user),
                 "form": ANY,
                 "view": ANY,
+                "max_connected_users": 6,
+                "connected_users": [
+                    {"form": ANY, "user": UserDTO.model_validate(connected_user)}
+                ],
             },
             template_name=["crowd/user/connected.html"],
         )
