@@ -236,8 +236,8 @@ if IS_PRODUCTION:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"  # Changed from Strict to allow OAuth callbacks
-    SESSION_COOKIE_AGE = 3600  # 1 hour
-    SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+    SESSION_COOKIE_AGE = 3600 * 24 * 30  # 30 days
+    SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
     # CSRF Security
     CSRF_COOKIE_SECURE = True

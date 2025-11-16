@@ -199,7 +199,7 @@ class Auth0LoginCallbackActionView(RedirectView):
         token = oauth.auth0.authorize_access_token(self.request)
 
         try:
-            return f'auth0|{token["userinfo"]["sub"].encode("UTF-8")}'
+            return f'auth0|{token["userinfo"]["sub"]}'
         except (KeyError, TypeError):
             raise RedirectError(
                 reverse("web:index"), error=_("Authentication failed")
