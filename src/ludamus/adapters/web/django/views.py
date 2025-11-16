@@ -318,6 +318,9 @@ class ProfilePageView(
         messages.warning(self.request, _("Please correct the errors below."))
         return super().form_invalid(form)
 
+    def get_initial(self) -> dict[str, Any]:
+        return self.request.user_dao.user.model_dump()
+
 
 class ProfileConnectedUsersPageView(
     LoginRequiredMixin,
