@@ -217,7 +217,7 @@
                         <span class="badge bg-primary ms-2">{{ sessions|length }}</span>
                     </h5>
                     {% if event.is_proposal_active %}
-                        <a href="{% url 'web:chronology:event-proposal-session' event_slug=event.slug %}"
+                        <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
                            class="btn btn-warning btn-sm">{% bs_icon 'plus-lg' %} {% translate "Propose Session" %}</a>
                     {% endif %}
                 </div>
@@ -330,7 +330,7 @@
                                         <small class="text-muted">{{ sessions|length }} session{{ sessions|length|pluralize }}</small>
                                     </div>
                                     {% if event.is_proposal_active %}
-                                        <a href="{% url 'web:chronology:event-proposal-session' event_slug=event.slug %}"
+                                        <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
                                            class="btn btn-outline-warning btn-sm">
                                             {% bs_icon 'plus-circle' %} {% translate "Propose Session" %}
                                         </a>
@@ -348,7 +348,7 @@
                                         <small class="text-muted">
                                             {% translate "No sessions scheduled for this time slot" %}
                                             {% if event.is_proposal_active %}
-                                                - <a href="{% url 'web:chronology:event-proposal-session' event_slug=event.slug %}">{% translate "be the first to propose!" %}</a>
+                                                - <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}">{% translate "be the first to propose!" %}</a>
                                             {% endif %}
                                         </small>
                                     </div>
