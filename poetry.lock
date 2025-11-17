@@ -852,14 +852,14 @@ tzdata = "*"
 
 [[package]]
 name = "freezeblaster"
-version = "0.4.0"
+version = "0.6.0"
 description = "FreezeBlaster is a library that allows time travel by mocking the datetime module"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "freezeblaster-0.4.0-py3-none-any.whl", hash = "sha256:d198b5b71c52bc5aac8e9708da5fdff4a84329dc1ae0091922ea0671ba1bee19"},
-    {file = "freezeblaster-0.4.0.tar.gz", hash = "sha256:74d4a0bbc91fa5022113c5aa2d2b4a5274844fa9d9fc0f3cd41961fdd15d4bb4"},
+    {file = "freezeblaster-0.6.0-py3-none-any.whl", hash = "sha256:8412663fecd22f56d33c17de2a8fb75fdaa97c260cdaa655e9a113797874e01a"},
+    {file = "freezeblaster-0.6.0.tar.gz", hash = "sha256:6c63dd07e835668846c9f8848c73c52cef672dab2b4f3c2443682c881782ef23"},
 ]
 
 [package.dependencies]
@@ -1468,18 +1468,18 @@ typing_extensions = "*"
 
 [[package]]
 name = "pytest-freezeblaster"
-version = "2.0.4"
+version = "2.1.0"
 description = "Wrap tests with fixtures in freeze_time"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "pytest_freezeblaster-2.0.4-py3-none-any.whl", hash = "sha256:8bc7db545e93e3f438af6176b08535a85f4af3ee6ddc6a96474f1641bd0d37f8"},
-    {file = "pytest_freezeblaster-2.0.4.tar.gz", hash = "sha256:b7435da9870030a6e8988a1ec2b0011814d5d34eb9df0c980ed12a1aca8a4d61"},
+    {file = "pytest_freezeblaster-2.1.0-py3-none-any.whl", hash = "sha256:ee83db7a4565ae1f4c7fa688281b3f50b1d1b860e90610dddb2b16db5964405c"},
+    {file = "pytest_freezeblaster-2.1.0.tar.gz", hash = "sha256:b65151cba75296e4fa06d8298640fde64a1ff0f885bda81f2cf204d1fbd0d853"},
 ]
 
 [package.dependencies]
-freezeblaster = "0.4.0"
+freezeblaster = "0.6.0"
 pytest = ">=6.2.5"
 
 [[package]]
@@ -1963,4 +1963,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13.0,<3.14"
-content-hash = "f7a305234fada3c87fe48076b68e801ff61a8cf8e5f51037d2d63f3981c70c61"
+content-hash = "d54e7b35c7644ed0a416de6da88b83e79207a24f2ca19faaec3259c39ade139a"

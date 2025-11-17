@@ -49,7 +49,7 @@ pytest-cov = "^7.0.0"
 pytest-django = "^4.11.1"
 ruff = "^0.14.0"
 types-authlib = "^1.5.0.20250516"
-pytest-freezeblaster = "^2.0.4"
+pytest-freezeblaster = "^2.1.0"
 
 # POE
 types-requests = "^2.32.4.20250809"
