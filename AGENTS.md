@@ -180,6 +180,12 @@ Use these notes when creating bd issues and implementing the UX from the brain d
 - Stand up a TypeScript Playwright suite in `tests/e2e/` (or `playwright/`). Cover: hero render, navbar transparency change on scroll, session card location link, markdown rendering only in detail modals, anonymous enrollment banner, chat widget open/close, and the zagrajmy.net landing grid. Use fixtures to seed data via Django management commands or serialized fixtures.
 - Wire Playwright into CI (GitHub Actions) so `npm install && npx playwright install && npx playwright test` runs after `poetry run poe test`.
 
+### Passkey login
+
+On a macbook I want to be able to log in with Touch ID. On an iPhone I want to be able to log in with my face.
+Auth0 provides a way: https://auth0.com/docs/authenticate/database-connections/passkeys
+We should skip MFA if the user chose a passkey.
+
 ## Reference docs
 
 - `docs/CODE_LAYOUT.md` – URL/page conventions.
@@ -188,3 +194,4 @@ Use these notes when creating bd issues and implementing the UX from the brain d
 - `.github/workflows/ci.yml` – what CI already enforces.
 
 Keep this file updated whenever architecture, tooling, or backlog expectations change.
+****
