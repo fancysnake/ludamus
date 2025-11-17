@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001
 from datetime import datetime
 from typing import Any
 
@@ -23,7 +24,8 @@ def _format_date_range(start: datetime, end: datetime) -> str:
             return (
                 f"{date_format(start, 'F j', use_l10n=True)}–"
                 f"{date_format(end, 'j, Y', use_l10n=False)}, "
-                f"{time_format(start, 'TIME_FORMAT')} – {time_format(end, 'TIME_FORMAT')}"
+                f"{time_format(start, 'TIME_FORMAT')} – "
+                f"{time_format(end, 'TIME_FORMAT')}"
             )
         start_month = date_format(start, format="F", use_l10n=True)
         end_month = date_format(end, format="F", use_l10n=True)
