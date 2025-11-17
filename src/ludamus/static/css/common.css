@@ -1,0 +1,18 @@
+.main-content,
+.navbar {
+  padding-inline: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .main-content,
+  .navbar {
+    padding-inline: 1rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .main-content,
+  .navbar {
+    padding-inline: 2rem;
+  }
+}
