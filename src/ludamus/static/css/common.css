@@ -28,3 +28,7 @@ body {
 .page-footer {
   margin-top: auto;
 }
+
+.cursor-pointer {
+  cursor: pointer;
+}
