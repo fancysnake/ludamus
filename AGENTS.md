@@ -1,3 +1,5 @@
+In communication, sacrifice grammar for brevity.
+
 # Workflow
 
 - Track **every** task with Beads `bd` and keep statuses accurate (claim work with `--status in_progress`, close with a reason, link discovered work via `discovered-from`).
