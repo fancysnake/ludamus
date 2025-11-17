@@ -15,7 +15,7 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"events": [], "view": ANY},
+            context_data={"past_events": [], "upcoming_events": [], "view": ANY},
             template_name=["index.html"],
         )
 
@@ -25,6 +25,6 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"events": [event], "view": ANY},
+            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
             template_name=["index.html"],
         )
