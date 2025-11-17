@@ -1,83 +1,77 @@
-{% extends "base.html" %} {% load i18n %} {% load bootstrap_icons %} {% load
-date_tags %} {% block title %} {% translate "Events" %} {% endblock title %} {%
-block header %} {% endblock header %} {% block body %}
-<div id="events">
-  {% if upcoming_events or past_events %} {% if upcoming_events %}
-  <h1 class="mb-4">{% translate "Upcoming events" %}</h1>
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 mb-5">
-    {% for event in upcoming_events %}
-    <div class="col">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <h5 class="card-title mb-0">{{ event.name }}</h5>
-            {% if event.is_live %}
-            <span class="badge bg-secondary">{% translate "LIVE" %}</span>
+{% extends "base.html" %}
+{% load i18n %}
+{% load bootstrap_icons %}
+{% load date_tags %}
+{% block title %}
+    {% translate "Events" %}
+{% endblock title %}
+{% block header %}
+{% endblock header %}
+{% block body %}
+    <div id="events">
+        {% if upcoming_events or past_events %}
+            {% if upcoming_events %}
+                <h1 class="mb-4">{% translate "Upcoming events" %}</h1>
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 mb-5">
+                    {% for event in upcoming_events %}
+                        <div class="col">
+                            <a href="{% url 'web:chronology:event' slug=event.slug %}" class="text-decoration-none">
+                            <div class="card h-100" style="cursor: pointer">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="card-title mb-0">{{ event.name }}</h5>
+                                        {% if event.is_live %}
+                                            <span class="badge bg-secondary">{% translate "LIVE" %}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if event.description %}
+                                        <p class="card-text text-muted">{{ event.description }}</p>
+                                    {% endif %}
+                                    <div class="d-flex align-items-center text-muted">
+                                        {% bs_icon 'calendar3' %}
+                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
+                                    </div>
+                                </div>
+                                </a>
+                            </div>
+                        </div>
+                        </a>
+                    {% endfor %}
+                </div>
             {% endif %}
-          </div>
-          {% if event.description %}
-          <p class="card-text text-muted">{{ event.description }}</p>
-          {% endif %}
-          <div class="mb-3 d-flex align-items-center text-muted">
-            {% bs_icon 'calendar3' %}
-            <time datetime="{{ event.start_time|date:'c' }}" class="ms-2"
-              >{{ event.start_time|format_datetime_range:event.end_time }}</time
-            >
-          </div>
-        </div>
-        <div class="card-footer bg-transparent border-top-0">
-          <a
-            href="{% url 'web:chronology:event' slug=event.slug %}"
-            class="btn btn-primary w-100"
-          >
-            {% bs_icon 'calendar-event' %} {% translate "View Event" %}
-          </a>
-        </div>
-      </div>
+            {% if past_events %}
+                <h1 class="mb-4">{% translate "Past events" %}</h1>
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+                    {% for event in past_events %}
+                        <div class="col">
+                            <a href="{% url 'web:chronology:event' slug=event.slug %}" class="text-decoration-none">
+                            <div class="card h-100" style="cursor: pointer">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-3">{{ event.name }}</h5>
+                                    {% if event.description %}
+                                        <p class="card-text text-muted">{{ event.description }}</p>
+                                    {% endif %}
+                                    <div class="d-flex align-items-center text-muted">
+                                        {% bs_icon 'calendar3' %}
+                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
+                                    </div>
+                                </div>
+                                </a>
+                            </div>
+                        </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <div class="text-muted">
+                    <p class="fs-1 mb-3">{% bs_icon 'calendar-x' size='3em' %}</p>
+                    <p class="fs-5 mb-2">{% translate "No events available" %}</p>
+                    <p>{% translate "There are currently no events scheduled. Please check back later!" %}</p>
+                </div>
+            </div>
+            </a>
+        {% endif %}
     </div>
-    {% endfor %}
-  </div>
-  {% endif %} {% if past_events %}
-  <h1 class="mb-4">{% translate "Past events" %}</h1>
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-    {% for event in past_events %}
-    <div class="col">
-      <div class="card h-100">
-        <div class="card-body">
-          <h5 class="card-title mb-3">{{ event.name }}</h5>
-          {% if event.description %}
-          <p class="card-text text-muted">{{ event.description }}</p>
-          {% endif %}
-          <div class="mb-3 d-flex align-items-center text-muted">
-            {% bs_icon 'calendar3' %}
-            <time datetime="{{ event.start_time|date:'c' }}" class="ms-2"
-              >{{ event.start_time|format_datetime_range:event.end_time }}</time
-            >
-          </div>
-        </div>
-        <div class="card-footer bg-transparent border-top-0">
-          <a
-            href="{% url 'web:chronology:event' slug=event.slug %}"
-            class="btn btn-primary w-100"
-          >
-            {% bs_icon 'calendar-event' %} {% translate "View Event" %}
-          </a>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %} {% else %}
-  <div class="text-center py-5">
-    <div class="text-muted">
-      <p class="fs-1 mb-3">{% bs_icon 'calendar-x' size='3em' %}</p>
-      <p class="fs-5 mb-2">{% translate "No events available" %}</p>
-      <p>
-        {% translate "There are currently no events scheduled. Please check back
-        later!" %}
-      </p>
-    </div>
-  </div>
-  {% endif %}
-</div>
 {% endblock body %}
