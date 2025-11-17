@@ -198,3 +198,11 @@ cython_debug/
 .vscode
 dev.sqlite3
 src/ludamus/static/icon_cache/
+<<<<<<< HEAD
+||||||| parent of 45318a8 (Init Playwright config)
+.beads/
+=======
+
+.beads/
+worktrees/
+>>>>>>> 45318a8 (Init Playwright config)
