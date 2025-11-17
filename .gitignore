@@ -199,3 +199,5 @@ cython_debug/
 dev.sqlite3
 src/ludamus/static/icon_cache/
 .beads/
+
+worktrees/

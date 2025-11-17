@@ -1,7 +1,7 @@
 # Workflow
 
 - Track **every** task with Beads `bd` and keep statuses accurate (claim work with `--status in_progress`, close with a reason, link discovered work via `discovered-from`).
-- Work feature-by-feature inside dedicated git worktrees so efforts stay isolated:
+- Work feature-by-feature inside dedicated git worktrees in `./worktrees` dir so efforts stay isolated:
   1. `bd ready --json` to pick an issue.
   2. `git worktree add ../ludamus-<issue-id> origin/main && cd ../ludamus-<issue-id>`.
   3. Build + test; push the worktree branch and open a PR that references the bd issue.
