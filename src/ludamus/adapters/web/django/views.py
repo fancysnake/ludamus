@@ -284,11 +284,13 @@ class IndexPageView(TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["events"] = list(
+        all_events = list(
             Event.objects.filter(
                 sphere_id=self.request.root_dao.current_sphere.pk
             ).all()
         )
+        context["upcoming_events"] = [e for e in all_events if not e.is_ended]
+        context["past_events"] = [e for e in all_events if e.is_ended]
         return context
 
 
