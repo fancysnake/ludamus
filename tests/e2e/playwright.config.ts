@@ -1,11 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const DEFAULT_HOST = process.env.E2E_HOST ?? '127.0.0.1';
-const DEFAULT_PORT = process.env.E2E_PORT ?? '8000';
-const BASE_URL = process.env.E2E_BASE_URL ?? `http://${DEFAULT_HOST}:${DEFAULT_PORT}`;
+const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:8000`;
+
 export default defineConfig({
   testDir: './tests',
   outputDir: 'test-results',
+  globalSetup: './global-setup.ts',
   /* Timeout per test */
   timeout: 120 * 1000,
   expect: {
@@ -42,7 +42,7 @@ export default defineConfig({
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { ...devices['iPhone 14 Pro'] },
     },
   ],
   webServer: {

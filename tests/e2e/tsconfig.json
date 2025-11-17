@@ -10,5 +10,5 @@
     "types": ["node", "@playwright/test"],
     "resolveJsonModule": true
   },
-  "include": ["playwright.config.ts", "tests/**/*.ts"]
+  "include": ["playwright.config.ts", "tests/**/*.ts", "global-setup.ts"]
 }
