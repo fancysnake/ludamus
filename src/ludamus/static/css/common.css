@@ -1,10 +1,12 @@
 .main-content,
+.page-footer,
 .navbar {
   padding-inline: 0.5rem;
 }
 
 @media (min-width: 768px) {
   .main-content,
+  .page-footer,
   .navbar {
     padding-inline: 1rem;
   }
@@ -12,7 +14,17 @@
 
 @media (min-width: 992px) {
   .main-content,
+  .page-footer,
   .navbar {
     padding-inline: 2rem;
   }
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-footer {
+  margin-top: auto;
 }
