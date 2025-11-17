@@ -33,6 +33,7 @@ services:
       "
     volumes:
       - ./src:/app/src
+      - ./tests:/app/tests
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     ports:
