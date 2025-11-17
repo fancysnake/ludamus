@@ -45,26 +45,6 @@ body {
         radial-gradient(circle at 50% 50%, rgba(255, 111, 0, 0.02) 0%, transparent 50%);
 }
 
-/* Main content container with warm styling */
-main .container,
-.content .container,
-body>.container:not(.navbar .container) {
-    background-color: var(--dragon-bg-smoke);
-    padding: 2rem;
-    box-shadow: 0 0.25rem 1rem rgba(211, 47, 47, 0.1);
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-/* Ensure navbar container has no background */
-.navbar .container {
-    background-color: transparent !important;
-    padding: 0;
-    box-shadow: none;
-    border-radius: 0;
-}
 
 /* Bootstrap overrides for Dragon theme */
 :root {
