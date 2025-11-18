@@ -1033,7 +1033,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                                 manager_user.email
                             )
                         )
-                        if user_config and not user_config.can_enroll_users(
+                        if not user_config or not user_config.can_enroll_users(
                             [UserDTO.model_validate(participation.user)]
                         ):
                             can_be_promoted = False

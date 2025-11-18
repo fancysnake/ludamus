@@ -3,11 +3,10 @@ from __future__ import annotations
 import logging
 import math
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from django import forms
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
@@ -78,12 +77,16 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
         )
         # Bulk fetch all participations for the event and users
         for participation in event_dao.users_participations:
-            user_id = participation.user_id
-            participations_by_user[user_id].append(participation)
+            participations_by_user[participation.user_id].append(participation)
 
         # Get enrollment config to check waitlist settings
         enrollment_config = get_most_liberal_config(
             event_dao.enrollment_configs, session_dao.agenda_item
+        )
+        user_enrollment_config = (
+            get_user_enrollment_config(event_dao, request.user_dao.user.email)
+            if ("@" in request.user_dao.user.email)
+            else None
         )
 
         context = {
@@ -104,6 +107,7 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
                 session_dao=session_dao,
                 user_dao=self.request.user_dao,
                 participations_by_user=participations_by_user,
+                user_enrollment_config=user_enrollment_config,
             )(),
         }
 
@@ -131,6 +135,11 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
         enrollment_config = get_most_liberal_config(
             event_dao.enrollment_configs, session_dao.agenda_item
         )
+        user_enrollment_config = (
+            get_user_enrollment_config(event_dao, request.user_dao.user.email)
+            if ("@" in request.user_dao.user.email)
+            else None
+        )
 
         # Initialize form with POST data
         form_class = create_enrollment_form(
@@ -139,6 +148,7 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
             session_dao=session_dao,
             user_dao=self.request.user_dao,
             participations_by_user=participations_by_user,
+            user_enrollment_config=user_enrollment_config,
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
@@ -146,16 +156,13 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
             for field_errors in form.errors.values():
                 for error in field_errors:
                     messages.error(self.request, str(error))
-
             if enrollment_config and enrollment_config.restrict_to_configured_users:
                 if not request.user_dao.user.email:
                     messages.error(
                         self.request,
                         _("Email address is required for enrollment in this session."),
                     )
-                elif not get_user_enrollment_config(
-                    event_dao, request.user_dao.user.email
-                ):
+                elif not user_enrollment_config:
                     messages.error(
                         self.request,
                         _(
@@ -196,7 +203,12 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
         enrollment_config = self._validate_request(session_dao, enrollment_config)
 
         self._manage_enrollments(
-            request.user_dao, event_dao, session_dao, form, enrollment_config
+            user_dao=request.user_dao,
+            event_dao=event_dao,
+            session_dao=session_dao,
+            form=form,
+            enrollment_config=enrollment_config,
+            user_enrollment_config=user_enrollment_config,
         )
 
         return redirect("web:chronology:event", slug=session_dao.event.slug)
@@ -222,11 +234,13 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
 
     def _manage_enrollments(
         self,
+        *,
         user_dao: UserDAOProtocol,
         event_dao: EventDAOProtocol,
         session_dao: SessionDAOProtocol,
         form: forms.Form,
         enrollment_config: EnrollmentConfigDTO,
+        user_enrollment_config: VirtualEnrollmentConfigData | None,
     ) -> None:
         # Collect enrollment requests from form
         if enrollment_requests := self._get_enrollment_requests(form):
@@ -243,7 +257,11 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
 
             # Process enrollments and create success message
             enrollments = self._process_enrollments(
-                user_dao, event_dao, session_dao, enrollment_requests
+                user_dao=user_dao,
+                event_dao=event_dao,
+                session_dao=session_dao,
+                enrollment_requests=enrollment_requests,
+                user_enrollment_config=user_enrollment_config,
             )
 
             # Send message outside transaction
@@ -278,10 +296,12 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
 
     def _process_enrollments(
         self,
+        *,
         user_dao: UserDAOProtocol,
         event_dao: EventDAOProtocol,
         session_dao: SessionDAOProtocol,
         enrollment_requests: list[EnrollmentRequest],
+        user_enrollment_config: VirtualEnrollmentConfigData | None,
     ) -> Enrollments:
         enrollments = Enrollments()
         participations = session_dao.read_participations_from_oldest()
@@ -298,13 +318,13 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
 
                 # If this was a confirmed enrollment, promote from waiting list
                 self._promote_from_waitlist(
-                    user_dao,
-                    event_dao,
-                    session_dao,
-                    existing_participation,
-                    participations,
-                    req,
-                    enrollments,
+                    user_dao=user_dao,
+                    event_dao=event_dao,
+                    session_dao=session_dao,
+                    existing_participation=existing_participation,
+                    participations=participations,
+                    req=req,
+                    enrollments=enrollments,
                 )
                 continue
 
@@ -312,7 +332,8 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
         return enrollments
 
     @staticmethod
-    def _promote_from_waitlist(  # noqa: PLR0913, PLR0917
+    def _promote_from_waitlist(  # noqa: PLR0913
+        *,
         user_dao: UserDAOProtocol,
         event_dao: EventDAOProtocol,
         session_dao: SessionDAOProtocol,
@@ -331,12 +352,9 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
                     user = session_dao.read_participation_user(participation)
                     if not session_dao.has_conflicts(user):
                         can_be_promoted = True
-                        manager = user_dao.read_user_manager(user)
-                        if not manager:
-                            manager_user = user
-
+                        if not user_dao.user.manager_id:
                             user_config = get_user_enrollment_config(
-                                event_dao, manager_user.email
+                                event_dao, user.email
                             )
                             if user_config and not can_enroll_users(
                                 currently_enrolled, user_config, [user]
@@ -360,11 +378,6 @@ class SessionEnrollPageViewV2(LoginRequiredMixin, View):
         # Check if user is the session presenter
         if session_dao.proposal and req.user.pk == session_dao.proposal.host_id:
             enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
-            return
-
-        # Check for time conflicts for confirmed enrollment
-        if req.choice == "enroll" and session_dao.has_conflicts(req.user):
-            enrollments.skipped_users.append(f"{req.name} ({_('time conflict')!s})")
             return
 
         # Use get_or_create to prevent duplicate enrollments in race conditions
@@ -474,6 +487,7 @@ def create_enrollment_form(
     session_dao: SessionDAOProtocol,
     user_dao: UserDAOProtocol,
     participations_by_user: dict[int, list[SessionParticipationDTO]],
+    user_enrollment_config: VirtualEnrollmentConfigData | None,
 ) -> type[forms.Form]:
     # Create form class dynamically with pre-generated fields
     form_fields = {}
@@ -496,11 +510,8 @@ def create_enrollment_form(
             # First check if this is a connected user - they use manager's config
             if user.user_type == UserType.CONNECTED:
                 if user.manager_id and manager_email:
-                    manager_config = get_user_enrollment_config(
-                        event_dao, manager_email
-                    )
                     if (
-                        not manager_config
+                        not user_enrollment_config
                     ):  # Don't check available user slots here - check at form level
                         return False
                 else:
@@ -510,8 +521,10 @@ def create_enrollment_form(
                 if not user.email:
                     return False
 
-                user_config = get_user_enrollment_config(event_dao, user.email)
-                if enrollment_config.restrict_to_configured_users and not user_config:
+                if (
+                    enrollment_config.restrict_to_configured_users
+                    and not user_enrollment_config
+                ):
                     return False
 
         # Count current waitlist participations for this user
@@ -536,11 +549,8 @@ def create_enrollment_form(
             # First check if this is a connected user - they use manager's config
             if user.user_type == UserType.CONNECTED:
                 if manager_email:
-                    manager_config = get_user_enrollment_config(
-                        event_dao, manager_email
-                    )
                     if (
-                        manager_config
+                        user_enrollment_config
                     ):  # Don't check available user slots here - check at form level
                         return True
                 return False
@@ -549,8 +559,10 @@ def create_enrollment_form(
             if not user.email:
                 return False
 
-            user_config = get_user_enrollment_config(event_dao, user.email)
-            return bool(enrollment_config.restrict_to_configured_users and user_config)
+            return bool(
+                enrollment_config.restrict_to_configured_users
+                and user_enrollment_config
+            )
 
         # Otherwise, allow enrollment when config exists
         return True
@@ -571,22 +583,18 @@ def create_enrollment_form(
 
         # Determine available choices based on current status first
         if current_participation and current_participation.status:
-            match current_participation.status:
-                case SessionParticipationStatus.CONFIRMED:
-                    base_choices = [("cancel", _("Cancel enrollment"))]
-                    if can_join_waitlist(user):
-                        base_choices.append(("waitlist", _("Move to waiting list")))
-                    choices.extend(base_choices)
-                case SessionParticipationStatus.WAITING:
-                    # On waiting list - can always cancel, but enrollment depends on age
-                    base_waiting_choices = [("cancel", _("Cancel enrollment"))]
-                    if can_enroll(user):
-                        base_waiting_choices.append(
-                            ("enroll", _("Enroll (if spots available)"))
-                        )
-                    choices.extend(base_waiting_choices)
-                    # Set help text if age restriction applies
-
+            base_choices = [("cancel", _("Cancel enrollment"))]
+            if (
+                current_participation.status == SessionParticipationStatus.CONFIRMED
+                and can_join_waitlist(user)
+            ):
+                base_choices.append(("waitlist", _("Move to waiting list")))
+            if (
+                current_participation.status == SessionParticipationStatus.WAITING
+                and can_enroll(user)
+            ):
+                base_choices.append(("enroll", _("Enroll (if spots available)")))
+            choices.extend(base_choices)
         # No current participation - check age requirement for new enrollments
         else:
             if can_enroll(user) and not has_conflict:
@@ -611,38 +619,17 @@ def create_enrollment_form(
                 if not user.email:
                     help_text = _("Email address required for enrollment")
                     choices = [("", _("No enrollment options (email required)"))]
-                else:
-                    # Check if user has their own config or manager's config
-                    user_config = get_user_enrollment_config(event_dao, user.email)
-                    has_manager_access = False
-                    if (
-                        enrollment_config.restrict_to_configured_users
-                        and not user_config
-                        and user.manager_id
-                        and manager_email
-                    ):
-                        manager_config = get_user_enrollment_config(
-                            event_dao, manager_email
-                        )
-                        has_manager_access = bool(
-                            manager_config
-                        )  # Don't check user slots here
-
-                    if (
-                        enrollment_config.restrict_to_configured_users
-                        and not user_config
-                        and not has_manager_access
-                    ):
-                        help_text = _("Enrollment access permission required")
-                        choices = [("", _("No enrollment options (access required)"))]
-                    else:
-                        help_text = _("No enrollment options available")
-                        choices = [("", _("No change"))]
+                elif not user_enrollment_config:
+                    help_text = _("Enrollment access permission required")
+                    choices = [("", _("No enrollment options (access required)"))]
+                else:  # Not gonna happen!
+                    help_text = _("No enrollment options available")
+                    choices = [("", _("No change"))]
             elif not enrollment_config:
                 # No enrollment config means enrollment is simply not available
                 # Keep the original "No change" choice without additional help text
                 choices = [("", _("No change"))]
-            else:
+            else:  # Not gonna happen!
                 help_text = _("No enrollment options available")
                 choices = [("", _("No change"))]
 
@@ -667,7 +654,7 @@ def create_enrollment_form(
                             # Check if this is a connected user
                             if self.user_obj.user_type == UserType.CONNECTED:
                                 # Connected users use their manager's config
-                                if manager_email is None:
+                                if not manager_email:
                                     raise ValidationError(
                                         _(
                                             "%(user)s cannot enroll: manager "
@@ -675,40 +662,23 @@ def create_enrollment_form(
                                         )
                                         % {"user": user_name}
                                     )
-
-                                manager_config = get_user_enrollment_config(
-                                    event_dao, manager_email
+                            # Regular users need their own email and config
+                            elif not self.user_obj.email:
+                                raise ValidationError(
+                                    _(
+                                        "%(user)s cannot enroll: email address "
+                                        "required"
+                                    )
+                                    % {"user": user_name}
                                 )
-                                if not manager_config:
-                                    raise ValidationError(
-                                        _(
-                                            "%(user)s cannot enroll: manager has no "
-                                            "enrollment access"
-                                        )
-                                        % {"user": user_name}
+                            elif not user_enrollment_config:
+                                raise ValidationError(
+                                    _(
+                                        "%(user)s cannot enroll: enrollment access "
+                                        "permission required"
                                     )
-                            else:
-                                # Regular users need their own email and config
-                                if not self.user_obj.email:
-                                    raise ValidationError(
-                                        _(
-                                            "%(user)s cannot enroll: email address "
-                                            "required"
-                                        )
-                                        % {"user": user_name}
-                                    )
-
-                                user_config = get_user_enrollment_config(
-                                    event_dao, self.user_obj.email
+                                    % {"user": user_name}
                                 )
-                                if not user_config:
-                                    raise ValidationError(
-                                        _(
-                                            "%(user)s cannot enroll: enrollment access "
-                                            "permission required"
-                                        )
-                                        % {"user": user_name}
-                                    )
                         elif not can_enroll(self.user_obj):
                             raise ValidationError(
                                 _("%(user)s cannot enroll: enrollment not available")
@@ -744,9 +714,8 @@ def create_enrollment_form(
                 if field_name.startswith("user_") and value == "enroll":
                     user_id = int(field_name.split("_")[1])
                     # Find the user from users_list
-                    user = next((u for u in users_list if u.pk == user_id), None)
-                    if user:
-                        enroll_requests.append(user)
+                    user = next(u for u in users_list if u.pk == user_id)
+                    enroll_requests.append(user)
 
             # Check if manager has enough user slots for all users being enrolled
             if (
@@ -754,41 +723,33 @@ def create_enrollment_form(
                 and enrollment_config
                 and enrollment_config.restrict_to_configured_users
             ):
-                manager_config = None
-
                 # Find the manager (the user who initiated the request)
-                for user in users_list:
-                    if (
-                        user.user_type != UserType.CONNECTED
-                    ):  # This is the main user/manager
-                        if user.email:
-                            manager_config = get_user_enrollment_config(
-                                event_dao, user.email
-                            )
-                        break
-
                 currently_enrolled = event_dao.read_confirmed_participations_user_ids()
-                if manager_config and not can_enroll_users(
-                    currently_enrolled, manager_config, enroll_requests
+                if user_enrollment_config and not can_enroll_users(
+                    currently_enrolled, user_enrollment_config, enroll_requests
                 ):
                     used_slots = len(currently_enrolled)
-                    available_slots = max(0, manager_config.allowed_slots - used_slots)
+                    available_slots = max(
+                        0, user_enrollment_config.allowed_slots - used_slots
+                    )
                     # Add error to first enrollment field using user's name
-                    for field_name, value in cleaned_data.items():
-                        if field_name.startswith("user_") and value == "enroll":
-                            user_name = field_to_user_name.get(field_name, "User")
-                            self.add_error(
-                                field_name,
-                                (
-                                    f"{user_name}: Cannot enroll more users. You have "
-                                    f"already enrolled {used_slots} out of "
-                                    f"{manager_config.allowed_slots} unique people "
-                                    "(each person can enroll in multiple sessions). "
-                                    f"Only {available_slots} slots remaining for "
-                                    "new people."
-                                ),
-                            )
-                            break
+                    field_name, value = next(
+                        item
+                        for item in cleaned_data.items()
+                        if item[0].startswith("user_") and item[1] == "enroll"
+                    )
+                    user_name = field_to_user_name.get(field_name, "User")
+                    self.add_error(
+                        field_name,
+                        (
+                            f"{user_name}: Cannot enroll more users. You have "
+                            f"already enrolled {used_slots} out of "
+                            f"{user_enrollment_config.allowed_slots} unique people "
+                            "(each person can enroll in multiple sessions). "
+                            f"Only {available_slots} slots remaining for "
+                            "new people."
+                        ),
+                    )
                     return cleaned_data
 
         return cleaned_data
@@ -876,10 +837,9 @@ def get_user_enrollment_config(
                 )
                 if api_user_config:
                     total_slots += api_user_config.allowed_slots
-                    if not primary_config:
-                        primary_config = VirtualEnrollmentConfigData.from_user_config(
-                            api_user_config
-                        )
+                    primary_config = VirtualEnrollmentConfigData.from_user_config(
+                        api_user_config
+                    )
                     has_individual_config = True
                     config_found = True
 
@@ -947,99 +907,11 @@ def can_enroll_users(
 def get_or_create_user_enrollment_config(
     event_dao: EventDAOProtocol, enrollment_config: EnrollmentConfigDTO, user_email: str
 ) -> UserEnrollmentConfigDTO | None:
-    # First try to get existing config
-    user_config = event_dao.read_user_enrollment_config(
-        config=enrollment_config, user_email=user_email
-    )
-
-    if user_config:
-        # If config has slots > 0, it's final - no need to refresh
-        if user_config.allowed_slots > 0:
-            logger.debug(
-                "Config for %s has %d slots, using final cached data",
-                user_email,
-                user_config.allowed_slots,
-            )
-            return user_config
-
-        # Only refresh configs with 0 slots, and only if enough time has passed
-        if user_config.fetched_from_api and user_config.last_check:
-            check_interval_minutes = getattr(
-                settings, "MEMBERSHIP_API_CHECK_INTERVAL", 15
-            )
-            time_threshold = timezone.now() - timedelta(minutes=check_interval_minutes)
-
-            if user_config.last_check < time_threshold:
-                logger.info(
-                    (
-                        "Config for %s has 0 slots and is older than %d minutes, "
-                        "refreshing from API"
-                    ),
-                    user_email,
-                    check_interval_minutes,
-                )
-                # Update the existing config with fresh API data
-                return _refresh_user_config_from_api(event_dao, user_config)
-            logger.debug(
-                "Config for %s has 0 slots but was checked recently, using cached data",
-                user_email,
-            )
-
-        # Config has 0 slots
-        return None
-
     # No existing config - try to fetch from API
     api_client = MembershipApiClient()
-    if not api_client.is_configured():
-        return None
-
     return _create_user_config_from_api(
         event_dao, enrollment_config, user_email, api_client
     )
-
-
-def _refresh_user_config_from_api(
-    event_dao: EventDAOProtocol, user_config: UserEnrollmentConfigDTO
-) -> UserEnrollmentConfigDTO | None:
-    api_client = MembershipApiClient()
-    if not api_client.is_configured():
-        logger.warning(
-            "API not configured, cannot refresh config for %s", user_config.user_email
-        )
-        return user_config if user_config.allowed_slots > 0 else None
-
-    membership_count = api_client.fetch_membership_count(user_config.user_email)
-    current_time = timezone.now()
-
-    if membership_count is None:
-        # API call failed - update last_check but keep existing data
-        user_config.last_check = current_time
-        event_dao.update_user_config(user_config=user_config)
-        logger.warning(
-            "API call failed for %s, keeping existing config", user_config.user_email
-        )
-        return user_config if user_config.allowed_slots > 0 else None
-
-    # Update config with fresh data
-    if membership_count == 0:
-        user_config.last_check = current_time
-        user_config.allowed_slots = 0
-        event_dao.update_user_config(user_config=user_config)
-        logger.info(
-            "Refreshed config for %s: now has 0 slots (membership expired)",
-            user_config.user_email,
-        )
-        return None  # Return None since user has no slots
-    allowed_slots = min(membership_count, 5)  # Cap at 5 slots maximum
-    user_config.last_check = current_time
-    user_config.allowed_slots = allowed_slots
-    event_dao.update_user_config(user_config=user_config)
-    logger.info(
-        "Refreshed config for %s: now has %d slots",
-        user_config.user_email,
-        allowed_slots,
-    )
-    return user_config
 
 
 def _create_user_config_from_api(

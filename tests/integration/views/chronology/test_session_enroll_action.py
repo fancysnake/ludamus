@@ -1,12 +1,15 @@
 from http import HTTPStatus
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import ANY
 
 import pytest
+import responses
 from django.contrib import messages
 from django.urls import reverse
+from responses import matchers
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    DomainEnrollmentConfig,
     EnrollmentConfig,
     Proposal,
     SessionParticipation,
@@ -15,12 +18,7 @@ from ludamus.adapters.db.django.models import (
 )
 from ludamus.adapters.web.django.entities import SessionUserParticipationData
 from ludamus.pacts import AgendaItemDTO, EventDTO, SessionDTO, UserDTO
-from tests.integration.conftest import (
-    AgendaItemFactory,
-    SessionFactory,
-    SpaceFactory,
-    TimeSlotFactory,
-)
+from tests.integration.conftest import SessionFactory
 from tests.integration.utils import assert_response
 
 
@@ -60,6 +58,41 @@ class TestSessionEnrollPageView:
             template_name="chronology/enroll_select.html",
         )
 
+    def test_get_get_ok_with_existing_participations(
+        self, active_user, authenticated_client, agenda_item, url_name
+    ):
+        SessionParticipation.objects.create(
+            user=active_user,
+            session=agenda_item.session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+        response = authenticated_client.get(
+            self._get_url(url_name, agenda_item.session.pk)
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "connected_users": [],
+                "event": EventDTO.model_validate(agenda_item.space.event),
+                "form": ANY,
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "enrolled_count": 1,
+                "effective_participants_limit": 10,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=True,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    )
+                ],
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
     def test_get_error_404(self, authenticated_client, url_name):
         response = authenticated_client.get(self._get_url(url_name, 17))
 
@@ -68,6 +101,18 @@ class TestSessionEnrollPageView:
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, "Session not found.")],
             url="/",
+        )
+
+    def test_post_error_session_not_found(
+        self, authenticated_client, event, enrollment_config, url_name
+    ):
+        response = authenticated_client.post(self._get_url(url_name, 12))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Session not found.")],
+            url=reverse("web:index"),
         )
 
     def test_post_error_enrollment_inactive(
@@ -161,6 +206,65 @@ class TestSessionEnrollPageView:
             user=staff_user,
             session=agenda_item.session,
             status=SessionParticipationStatus.CONFIRMED,
+        )
+
+    @responses.activate
+    def test_post_ok_no_current_enrollment_config(
+        self,
+        enrollment_config,
+        staff_user,
+        agenda_item,
+        staff_client,
+        settings,
+        url_name,
+        faker,
+    ):
+        enrollment_config.start_time = faker.date_time_between("-10d", "-5d")
+        enrollment_config.env_time = faker.date_time_between("-4d", "-1d")
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        responses.get(
+            settings.MEMBERSHIP_API_BASE_URL,
+            json={"membership_count": None},
+            match=[matchers.query_param_matcher({"email": staff_user.email})],
+        )
+
+        response = staff_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{staff_user.id}": "srenroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (messages.ERROR, f"Invalid choice for {staff_user.name}: srenroll"),
+                (
+                    messages.ERROR,
+                    (
+                        "Enrollment access permission is required for this session. "
+                        "Please contact the organizers to obtain access."
+                    ),
+                ),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "connected_users": [],
+                "event": EventDTO.model_validate(agenda_item.space.event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "form": ANY,
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(staff_user),
+                        user_enrolled=False,  # User is not enrolled in THIS session
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    )
+                ],
+            },
+            template_name="chronology/enroll_select.html",
         )
 
     @pytest.mark.usefixtures("enrollment_config")
@@ -261,9 +365,128 @@ class TestSessionEnrollPageView:
         ).exists()
 
     @pytest.mark.usefixtures("enrollment_config")
+    def test_post_cancel_cant_promote_because_of_conflict(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        connected_user,
+        url_name,
+    ):
+        other_session = SessionFactory(
+            presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
+        )
+        AgendaItem.objects.create(
+            session=other_session,
+            space=agenda_item.space,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+        )
+        SessionParticipation.objects.create(
+            user=connected_user,
+            session=other_session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+        SessionParticipation.objects.create(
+            user=active_user,
+            session=agenda_item.session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+        SessionParticipation.objects.create(
+            user=connected_user,
+            session=agenda_item.session,
+            status=SessionParticipationStatus.WAITING,
+        )
+
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{active_user.id}": "cancel"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, f"Cancelled: {active_user.name}")],
+            url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
+        )
+        assert not SessionParticipation.objects.filter(
+            user=active_user, session=agenda_item.session
+        ).exists()
+        assert not SessionParticipation.objects.filter(
+            user=connected_user,
+            session=agenda_item.session,
+            status=SessionParticipationStatus.CONFIRMED,
+        ).exists()
+
+    @pytest.mark.usefixtures("enrollment_config")
     def test_post__error_conflict(
         self, active_user, agenda_item, authenticated_client, event, url_name
     ):
+        other_session = SessionFactory(
+            presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
+        )
+        AgendaItem.objects.create(
+            session=other_session,
+            space=agenda_item.space,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+        )
+        SessionParticipation.objects.create(
+            user=active_user,
+            session=other_session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        "Select a valid choice. enroll is not one of the available "
+                        "choices."
+                    ),
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "connected_users": [],
+                "event": EventDTO.model_validate(agenda_item.space.event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "form": ANY,
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,  # User is not enrolled in THIS session
+                        user_waiting=False,
+                        has_time_conflict=True,
+                    )
+                ],
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    def test_post__error_conflict_cannot_join_waitlist(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        enrollment_config,
+        url_name,
+    ):
+        enrollment_config.max_waitlist_sessions = 0
+        enrollment_config.save()
         other_session = SessionFactory(
             presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
         )
@@ -449,69 +672,6 @@ class TestSessionEnrollPageView:
         assert participations.first().status == SessionParticipationStatus.CONFIRMED
 
     @pytest.mark.usefixtures("enrollment_config")
-    @staticmethod
-    def test_post_time_conflict_skipped(
-        authenticated_client, active_user, event, url_name
-    ):
-        space1 = SpaceFactory(event=event)
-        space2 = SpaceFactory(event=event)
-        time_slot = TimeSlotFactory(event=event)
-
-        session1 = SessionFactory(sphere=event.sphere)
-        AgendaItemFactory(
-            session=session1,
-            space=space1,
-            start_time=time_slot.start_time,
-            end_time=time_slot.end_time,
-        )
-        SessionParticipation.objects.create(
-            user=active_user,
-            session=session1,
-            status=SessionParticipationStatus.CONFIRMED,
-        )
-
-        session2 = SessionFactory(sphere=event.sphere)
-        AgendaItemFactory(
-            session=session2,
-            space=space2,
-            start_time=time_slot.start_time,
-            end_time=time_slot.end_time,
-        )
-
-        with patch(
-            "ludamus.adapters.web.django.views.create_enrollment_form"
-        ) as mock_form_factory:
-            mock_form_class = Mock()
-            mock_form_instance = Mock()
-            mock_form_instance.is_valid.return_value = True
-            mock_form_instance.cleaned_data = {f"user_{active_user.id}": "enroll"}
-            mock_form_class.return_value = mock_form_instance
-            mock_form_factory.return_value = mock_form_class
-
-            response = authenticated_client.post(
-                reverse(url_name, kwargs={"session_id": session2.id}),
-                data={f"user_{active_user.id}": "enroll"},
-            )
-
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[
-                (
-                    messages.SUCCESS,
-                    (
-                        "Skipped (already enrolled or conflicts): Test User "
-                        "(time conflict)"
-                    ),
-                )
-            ],
-            url=f"/chronology/event/{event.slug}/",
-        )
-        assert not SessionParticipation.objects.filter(
-            user=active_user, session=session2
-        ).exists()
-
-    @pytest.mark.usefixtures("enrollment_config")
     def test_post_no_user_selected(self, authenticated_client, agenda_item, url_name):
         response = authenticated_client.post(
             self._get_url(url_name, agenda_item.session.pk),
@@ -525,11 +685,25 @@ class TestSessionEnrollPageView:
             url=reverse(url_name, kwargs={"session_id": agenda_item.session.id}),
         )
 
+    @responses.activate
     def test_post_restrict_to_configured_users(
-        self, staff_user, agenda_item, staff_client, event, enrollment_config, url_name
+        self,
+        agenda_item,
+        enrollment_config,
+        event,
+        settings,
+        staff_client,
+        staff_user,
+        url_name,
     ):
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
+        responses.get(
+            settings.MEMBERSHIP_API_BASE_URL,
+            json={"membership_count": None},
+            match=[matchers.query_param_matcher({"email": staff_user.email})],
+        )
+
         response = staff_client.post(
             self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{staff_user.id}": "enroll"},
@@ -542,8 +716,8 @@ class TestSessionEnrollPageView:
                 (
                     messages.ERROR,
                     (
-                        f"{staff_user.name} cannot enroll: enrollment access "
-                        "permission required"
+                        f"{staff_user.name} cannot enroll: "
+                        "enrollment access permission required"
                     ),
                 ),
                 (
@@ -555,9 +729,12 @@ class TestSessionEnrollPageView:
                 ),
             ],
             context_data={
-                "session": agenda_item.session,
-                "event": event,
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
                 "connected_users": [],
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
                 "user_data": [
                     SessionUserParticipationData(
                         user=UserDTO.model_validate(staff_user),
@@ -597,8 +774,11 @@ class TestSessionEnrollPageView:
                 ),
             ],
             context_data={
-                "session": agenda_item.session,
-                "event": event,
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
                 "connected_users": [],
                 "user_data": [
                     SessionUserParticipationData(
@@ -636,8 +816,11 @@ class TestSessionEnrollPageView:
                 (messages.WARNING, "Please review the enrollment options below."),
             ],
             context_data={
-                "session": agenda_item.session,
-                "event": event,
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
                 "connected_users": [],
                 "user_data": [
                     SessionUserParticipationData(
@@ -696,8 +879,11 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [UserDTO.model_validate(connected_user)],
-                "session": agenda_item.session,
-                "event": event,
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
                 "user_data": [
                     SessionUserParticipationData(
                         user=UserDTO.model_validate(staff_user),
@@ -737,6 +923,94 @@ class TestSessionEnrollPageView:
             HTTPStatus.FOUND,
             messages=[(messages.SUCCESS, f"Enrolled: {staff_user.name}")],
             url=f"/chronology/event/{event.slug}/",
+        )
+
+    def test_post_restrict_to_configured_users_domain_config_exists_success(
+        self, staff_user, agenda_item, staff_client, event, enrollment_config, url_name
+    ):
+        DomainEnrollmentConfig.objects.create(
+            enrollment_config=enrollment_config,
+            domain=staff_user.email.split("@")[1],
+            allowed_slots_per_user=1,
+        )
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        response = staff_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{staff_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, f"Enrolled: {staff_user.name}")],
+            url=f"/chronology/event/{event.slug}/",
+        )
+
+    @responses.activate
+    def test_post_restrict_to_configured_users_wrong_email(
+        self,
+        agenda_item,
+        enrollment_config,
+        event,
+        settings,
+        staff_client,
+        staff_user,
+        url_name,
+    ):
+        staff_user.email = "notaonemail"
+        staff_user.save()
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+
+        responses.get(
+            settings.MEMBERSHIP_API_BASE_URL,
+            json={"membership_count": None},
+            match=[matchers.query_param_matcher({"email": staff_user.email})],
+        )
+
+        response = staff_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{staff_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        f"{staff_user.name} cannot enroll: "
+                        "enrollment access permission required"
+                    ),
+                ),
+                (
+                    messages.ERROR,
+                    (
+                        "Enrollment access permission is required for this session. "
+                        "Please contact the organizers to obtain access."
+                    ),
+                ),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "connected_users": [],
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(staff_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    )
+                ],
+                "form": ANY,
+            },
+            template_name="chronology/enroll_select.html",
         )
 
     def test_post_restrict_to_configured_users_config_exists_too_many_enrollment2(
@@ -785,8 +1059,11 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [UserDTO.model_validate(connected_user)],
-                "session": agenda_item.session,
-                "event": event,
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 1,
                 "user_data": [
                     SessionUserParticipationData(
                         user=UserDTO.model_validate(staff_user),
@@ -816,8 +1093,6 @@ class TestSessionEnrollPageView:
         connected_user,
         url_name,
     ):
-        connected_user.email = ""
-        connected_user.save()
         SessionParticipation.objects.create(
             user=active_user,
             session=agenda_item.session,
@@ -912,6 +1187,8 @@ class TestSessionEnrollPageView:
         enrollment_config,
         url_name,
     ):
+        print("active_user", active_user.email)
+        print("staff_user", staff_user.email)
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()
         UserEnrollmentConfig.objects.create(
@@ -977,4 +1254,627 @@ class TestSessionEnrollPageView:
             HTTPStatus.FOUND,
             messages=[(messages.SUCCESS, f"Enrolled: {connected_user.name}")],
             url=f"/chronology/event/{event.slug}/",
+        )
+
+    def test_post_waitlist_not_allowed(
+        self, enrollment_config, staff_user, agenda_item, staff_client, event, url_name
+    ):
+        enrollment_config.max_waitlist_sessions = 0
+        enrollment_config.save()
+
+        response = staff_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{staff_user.id}": "waitlist"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        "Select a valid choice. waitlist is not one of the available "
+                        "choices."
+                    ),
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "connected_users": [],
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(staff_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    )
+                ],
+                "form": ANY,
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    @responses.activate
+    def test_post_restrict_to_configured_users_no_manager_config(
+        self,
+        active_user,
+        connected_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        enrollment_config,
+        url_name,
+        faker,
+        settings,
+    ):
+        EnrollmentConfig.objects.create(
+            event=event,
+            start_time=faker.date_time_between("-10d", "-5d"),
+            end_time=faker.date_time_between("-4d", "-1d"),
+        )
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        responses.get(
+            settings.MEMBERSHIP_API_BASE_URL,
+            json={"membership_count": None},
+            match=[matchers.query_param_matcher({"email": active_user.email})],
+        )
+
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{connected_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        f"{connected_user.name}: Cannot enroll more users. "
+                        "You have already enrolled 0 out of 0 unique people "
+                        "(each person can enroll in multiple sessions). "
+                        "Only 0 slots remaining for new people."
+                    ),
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "connected_users": [UserDTO.model_validate(connected_user)],
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    ),
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(connected_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    ),
+                ],
+                "form": ANY,
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    def test_post_restrict_to_configured_users_manager_config_exists(
+        self,
+        active_user,
+        connected_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        enrollment_config,
+        url_name,
+    ):
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        UserEnrollmentConfig.objects.create(
+            enrollment_config=enrollment_config,
+            user_email=active_user.email,
+            allowed_slots=1,
+        )
+        other_session = SessionFactory(
+            presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
+        )
+        AgendaItem.objects.create(
+            session=other_session,
+            space=agenda_item.space,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+        )
+        SessionParticipation.objects.create(
+            user=connected_user,
+            session=other_session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{connected_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        "Select a valid choice. enroll is not one of the available "
+                        "choices."
+                    ),
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "connected_users": [UserDTO.model_validate(connected_user)],
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    ),
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(connected_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=True,
+                    ),
+                ],
+                "form": ANY,
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    def test_post_restrict_to_configured_users_manager_config_exists_multiple_configs(
+        self,
+        active_user,
+        connected_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        enrollment_config,
+        url_name,
+        faker,
+    ):
+        other_config = EnrollmentConfig.objects.create(
+            event=event,
+            start_time=faker.date_time_between("-10d", "-5d"),
+            end_time=faker.date_time_between("+5d", "+10d"),
+            restrict_to_configured_users=True,
+        )
+        UserEnrollmentConfig.objects.create(
+            enrollment_config=other_config,
+            user_email=active_user.email,
+            allowed_slots=1,
+        )
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        UserEnrollmentConfig.objects.create(
+            enrollment_config=enrollment_config,
+            user_email=active_user.email,
+            allowed_slots=1,
+        )
+        other_session = SessionFactory(
+            presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
+        )
+        AgendaItem.objects.create(
+            session=other_session,
+            space=agenda_item.space,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+        )
+        SessionParticipation.objects.create(
+            user=connected_user,
+            session=other_session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{connected_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        "Select a valid choice. enroll is not one of the available "
+                        "choices."
+                    ),
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "connected_users": [UserDTO.model_validate(connected_user)],
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    ),
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(connected_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=True,
+                    ),
+                ],
+                "form": ANY,
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    def test_post_restrict_to_configured_users_no_config_no_enroll(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        enrollment_config,
+        event,
+        staff_user,
+        url_name,
+    ):
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        other_session = SessionFactory(
+            presenter_name=staff_user.name, sphere=event.sphere, participants_limit=10
+        )
+        UserEnrollmentConfig.objects.create(
+            enrollment_config=enrollment_config,
+            user_email=active_user.email,
+            allowed_slots=1,
+        )
+        AgendaItem.objects.create(
+            session=other_session,
+            space=agenda_item.space,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+        )
+        SessionParticipation.objects.create(
+            user=active_user,
+            session=other_session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        "Select a valid choice. "
+                        "enroll is not one of the available choices."
+                    ),
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "connected_users": [],
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=True,
+                    )
+                ],
+                "form": ANY,
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    def test_post_enrollment_not_available(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        staff_user,
+        url_name,
+    ):
+        other_session = SessionFactory(
+            presenter_name=staff_user.name, sphere=event.sphere, participants_limit=10
+        )
+        AgendaItem.objects.create(
+            session=other_session,
+            space=agenda_item.space,
+            start_time=agenda_item.start_time,
+            end_time=agenda_item.end_time,
+        )
+        SessionParticipation.objects.create(
+            user=active_user,
+            session=other_session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    f"{active_user.name} cannot enroll: enrollment not available",
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "connected_users": [],
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=True,
+                    )
+                ],
+                "form": ANY,
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    def test_post_restrict_to_configured_users_no_manager_email(
+        self,
+        active_user,
+        connected_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        enrollment_config,
+        url_name,
+    ):
+        active_user.email = ""
+        active_user.save()
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{connected_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        f"{connected_user.name} cannot enroll: "
+                        "manager information missing"
+                    ),
+                ),
+                (
+                    messages.ERROR,
+                    ("Email address is required for enrollment in this session."),
+                ),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "event": EventDTO.model_validate(event),
+                "connected_users": [UserDTO.model_validate(connected_user)],
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    ),
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(connected_user),
+                        user_enrolled=False,
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    ),
+                ],
+                "form": ANY,
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    @responses.activate
+    def test_post_restrict_to_configured_users_config_get_from_api(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        enrollment_config,
+        url_name,
+        settings,
+    ):
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        responses.get(
+            settings.MEMBERSHIP_API_BASE_URL,
+            json={"membership_count": 1},
+            match=[matchers.query_param_matcher({"email": active_user.email})],
+        )
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, f"Enrolled: {active_user.name}")],
+            url=f"/chronology/event/{event.slug}/",
+        )
+        assert UserEnrollmentConfig.objects.get(
+            enrollment_config=enrollment_config,
+            user_email=active_user.email,
+            allowed_slots=1,
+        )
+
+    @responses.activate
+    def test_post_restrict_to_configured_users_config_get_from_api_none(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        enrollment_config,
+        url_name,
+        settings,
+        faker,
+    ):
+        settings.MEMBERSHIP_API_BASE_URL = "https://example.com"
+        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        responses.get(
+            settings.MEMBERSHIP_API_BASE_URL,
+            json={"membership_count": None},
+            match=[matchers.query_param_matcher({"email": active_user.email})],
+        )
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.ERROR,
+                    (
+                        "Select a valid choice. enroll is not one of the available "
+                        "choices."
+                    ),
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "connected_users": [],
+                "event": EventDTO.model_validate(agenda_item.space.event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "form": ANY,
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,  # User is not enrolled in THIS session
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    )
+                ],
+            },
+            template_name="chronology/enroll_select.html",
+        )
+
+    @responses.activate
+    def test_post_restrict_to_configured_users_config_get_from_api_zero(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        event,
+        enrollment_config,
+        url_name,
+        settings,
+        faker,
+    ):
+        settings.MEMBERSHIP_API_BASE_URL = "https://example.com"
+        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        responses.get(
+            settings.MEMBERSHIP_API_BASE_URL,
+            json={"membership_count": 0},
+            match=[matchers.query_param_matcher({"email": active_user.email})],
+        )
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk),
+            data={f"user_{active_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[
+                (
+                    messages.WARNING,
+                    (
+                        "Enrollment access permission is required for this session. "
+                        "Please contact the organizers to obtain access."
+                    ),
+                ),
+                (messages.WARNING, "Please review the enrollment options below."),
+            ],
+            context_data={
+                "agenda_item": AgendaItemDTO.model_validate(agenda_item),
+                "connected_users": [],
+                "event": EventDTO.model_validate(agenda_item.space.event),
+                "effective_participants_limit": 10,
+                "enrolled_count": 0,
+                "form": ANY,
+                "session": SessionDTO.model_validate(agenda_item.session),
+                "user_data": [
+                    SessionUserParticipationData(
+                        user=UserDTO.model_validate(active_user),
+                        user_enrolled=False,  # User is not enrolled in THIS session
+                        user_waiting=False,
+                        has_time_conflict=False,
+                    )
+                ],
+            },
+            template_name="chronology/enroll_select.html",
         )

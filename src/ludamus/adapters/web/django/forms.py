@@ -287,7 +287,7 @@ def create_enrollment_form(
                             # Check if this is a connected user
                             if self.user_obj.user_type == UserType.CONNECTED:
                                 # Connected users use their manager's config
-                                if manager_email is None:
+                                if not manager_email:
                                     raise ValidationError(
                                         _(
                                             "%(user)s cannot enroll: manager "

@@ -5,3 +5,5 @@ SECRET_KEY=test_secret_key
 ALLOWED_HOSTS=.testserver
 ROOT_DOMAIN=testserver
 TESTING=true
+MEMBERSHIP_API_BASE_URL=https://example.com/a/b/c
+MEMBERSHIP_API_TOKEN=token123456

@@ -213,7 +213,7 @@ def active_user_fixture():
 def connected_user(active_user):
     return UserFactory(
         username="connecteduser",
-        email="connected@example.com",
+        email="",
         user_type="connected",
         manager=active_user,
         password=make_password(None),

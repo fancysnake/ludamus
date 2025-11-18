@@ -212,7 +212,7 @@ class Event(models.Model):
 
             # Check for explicit user config
             user_config = config.user_configs.filter(user_email=user_email).first()
-            if user_config:
+            if user_config and user_config.allowed_slots:
                 total_slots += user_config.allowed_slots
                 if not primary_config:
                     primary_config = user_config
@@ -224,7 +224,7 @@ class Event(models.Model):
                 api_user_config = get_or_create_user_enrollment_config(
                     config, user_email
                 )
-                if api_user_config:
+                if api_user_config and api_user_config.allowed_slots:
                     total_slots += api_user_config.allowed_slots
                     if not primary_config:
                         primary_config = api_user_config
@@ -233,7 +233,7 @@ class Event(models.Model):
 
             # Always check for domain-based access regardless of individual config
             domain_config = self.get_domain_config_for_email(user_email, config)
-            if domain_config:
+            if domain_config and domain_config.allowed_slots_per_user:
                 total_slots += domain_config.allowed_slots_per_user
                 has_domain_config = True
                 domain_config_source = domain_config

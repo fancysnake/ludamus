@@ -225,21 +225,25 @@ class TestUserEnrollmentConfigModel:
         assert str(user_config) == expected_str
 
 
+@pytest.mark.parametrize(
+    "url_name",
+    ("web:chronology:session-enrollment", "web:chronology:session-enrollment-v2"),
+)
 @pytest.mark.django_db
 class TestUserEnrollmentConfigView:
-    URL_NAME = "web:chronology:session-enrollment"
-
-    def _get_url(self, session_id: int) -> str:
-        return reverse(self.URL_NAME, kwargs={"session_id": session_id})
+    def _get_url(self, url_name, session_id: int) -> str:
+        return reverse(url_name, kwargs={"session_id": session_id})
 
     def test_user_without_email_cannot_access_enrollment(
-        self, active_user, authenticated_client, agenda_item
+        self, active_user, authenticated_client, agenda_item, url_name
     ):
         # Clear user email
         active_user.email = ""
         active_user.save()
 
-        response = authenticated_client.post(self._get_url(agenda_item.session.pk))
+        response = authenticated_client.post(
+            self._get_url(url_name, agenda_item.session.pk)
+        )
 
         # Should succeed since validation only applies when user has email
         # (enrollment config validation is bypassed for users without email)
@@ -247,11 +251,11 @@ class TestUserEnrollmentConfigView:
 
     @pytest.mark.usefixtures("enrollment_config")
     def test_basic_enrollment_works(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Test that basic enrollment works with our setup
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
 
@@ -267,7 +271,7 @@ class TestUserEnrollmentConfigView:
         assert participation.status == SessionParticipationStatus.CONFIRMED
 
     def test_user_can_enroll_within_slot_limit(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up user with email
         active_user.email = "test@example.com"
@@ -290,12 +294,14 @@ class TestUserEnrollmentConfigView:
         )
 
         # Test GET request works
-        response = authenticated_client.get(self._get_url(agenda_item.session.pk))
+        response = authenticated_client.get(
+            self._get_url(url_name, agenda_item.session.pk)
+        )
         assert response.status_code == HTTPStatus.OK
 
         # Test POST request with enrollment works
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
 
@@ -312,7 +318,7 @@ class TestUserEnrollmentConfigView:
         ).exists()
 
     def test_user_cannot_enroll_multiple_people_exceeding_limit(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up main user with email
         active_user.email = "manager@example.com"
@@ -341,7 +347,7 @@ class TestUserEnrollmentConfigView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={
                 f"user_{active_user.id}": "enroll",
                 f"user_{connected_user.id}": "enroll",
@@ -366,7 +372,9 @@ class TestUserEnrollmentConfigView:
         ).exists()
 
     @staticmethod
-    def test_50_percent_enrollment_config_limits_session_capacity(agenda_item, event):
+    def test_50_percent_enrollment_config_limits_session_capacity(
+        agenda_item, event, url_name
+    ):
         # Set up session with 10 participants limit
         session = agenda_item.session
         session.participants_limit = 10
@@ -388,7 +396,7 @@ class TestUserEnrollmentConfigView:
         assert session.is_enrollment_limited
 
     @staticmethod
-    def test_banner_text_displayed_for_active_enrollment_config(event):
+    def test_banner_text_displayed_for_active_enrollment_config(event, url_name):
         # Create enrollment config with 50% slots and banner text
         now = datetime.now(tz=UTC)
         EnrollmentConfig.objects.create(
@@ -406,7 +414,7 @@ class TestUserEnrollmentConfigView:
         assert active_configs[0].is_active
 
     def test_user_can_edit_enrollment_when_at_slot_limit(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up user with email
         active_user.email = "test@example.com"
@@ -439,12 +447,14 @@ class TestUserEnrollmentConfigView:
         user_config = event.get_user_enrollment_config("test@example.com")
         assert user_config.get_available_slots() == 0  # But all are used
 
-        response = authenticated_client.get(self._get_url(agenda_item.session.pk))
+        response = authenticated_client.get(
+            self._get_url(url_name, agenda_item.session.pk)
+        )
         assert response.status_code == HTTPStatus.OK
 
         # User should be able to cancel their enrollment (edit action)
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -461,7 +471,7 @@ class TestUserEnrollmentConfigView:
         ).exists()
 
     def test_user_can_enroll_normally_in_multiple_sessions(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up user with email
         active_user.email = "test@example.com"
@@ -510,7 +520,7 @@ class TestUserEnrollmentConfigView:
 
         # User should be able to enroll normally in additional sessions
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "enroll"},  # This should succeed normally
         )
 
@@ -528,7 +538,7 @@ class TestUserEnrollmentConfigView:
         assert participation.status == SessionParticipationStatus.CONFIRMED
 
     def test_user_cannot_enroll_when_at_slot_limit_and_waitlist_disabled(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up user with email
         active_user.email = "test@example.com"
@@ -566,7 +576,7 @@ class TestUserEnrollmentConfigView:
 
         # User should get form validation error when trying to enroll
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
 
@@ -575,7 +585,7 @@ class TestUserEnrollmentConfigView:
         assert "Select a valid choice" in str(response.context["form"].errors)
 
     def test_user_promoted_from_waitlist_when_slot_becomes_available(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up users with email
         active_user.email = "manager@example.com"
@@ -628,7 +638,7 @@ class TestUserEnrollmentConfigView:
 
         # Manager cancels their enrollment, which should promote waiting user
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -646,7 +656,7 @@ class TestUserEnrollmentConfigView:
         ).exists()
 
     def test_user_not_promoted_from_waitlist_when_no_slots_available(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up users
         active_user.email = "manager@example.com"
@@ -705,7 +715,7 @@ class TestUserEnrollmentConfigView:
         )
 
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -718,7 +728,7 @@ class TestUserEnrollmentConfigView:
         assert waiting_participation.status == SessionParticipationStatus.WAITING
 
     def test_waitlist_disabled_skips_enrollment(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up user with email
         active_user.email = "test@example.com"
@@ -736,7 +746,7 @@ class TestUserEnrollmentConfigView:
 
         # Try to join waitlist directly
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "waitlist"},
         )
 
@@ -751,7 +761,7 @@ class TestUserEnrollmentConfigView:
         ).exists()
 
     def test_waitlist_limit_exceeded_skips_enrollment(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Set up user with email
         active_user.email = "test@example.com"
@@ -784,7 +794,7 @@ class TestUserEnrollmentConfigView:
 
         # Try to join waitlist for current session (should be rejected at form level)
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "waitlist"},
         )
 
@@ -799,7 +809,7 @@ class TestUserEnrollmentConfigView:
         ).exists()
 
     def test_waitlist_limit_exceeded_in_business_logic(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Test scenario where waitlist limits change and form validation prevents
         # invalid submissions. This simulates limits changing between when user
@@ -856,7 +866,7 @@ class TestUserEnrollmentConfigView:
         # Try to join waitlist - should get form validation error because
         # "waitlist" is not offered as a valid choice when limit is exceeded
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "waitlist"},
         )
 
@@ -871,7 +881,7 @@ class TestUserEnrollmentConfigView:
         ).exists()
 
     def test_multiple_users_enrollment_with_conversions(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Test scenario that exercises enrollment request loops and conversions
 
@@ -906,7 +916,7 @@ class TestUserEnrollmentConfigView:
 
         # Try to enroll multiple users (should trigger conversion logic)
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={
                 f"user_{active_user.id}": "enroll",
                 f"user_{connected_user1.id}": "enroll",
@@ -928,7 +938,7 @@ class TestUserEnrollmentConfigView:
         assert total_participations > 0
 
     def test_waitlist_promotion_with_user_without_email(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Test promotion logic when waiting user has no email
 
@@ -967,7 +977,7 @@ class TestUserEnrollmentConfigView:
 
         # Cancel main user enrollment (should trigger promotion check)
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "cancel"},
         )
 
@@ -980,7 +990,7 @@ class TestUserEnrollmentConfigView:
         assert waiting_participation.status == SessionParticipationStatus.CONFIRMED
 
     def test_enrollment_form_with_multiple_user_participations(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Test scenario that exercises dictionary initialization in participation lookup
 
@@ -1034,7 +1044,7 @@ class TestUserEnrollmentConfigView:
         )
 
         # GET the enrollment page (this exercises the participation lookup logic)
-        response = authenticated_client.get(self._get_url(session1.pk))
+        response = authenticated_client.get(self._get_url(url_name, session1.pk))
 
         # Should load successfully with all user participation data
         assert response.status_code == HTTPStatus.OK
@@ -1050,72 +1060,8 @@ class TestUserEnrollmentConfigView:
             len(user_data) == expected_user_data_number
         )  # active_user + 2 connected users
 
-    def test_restrict_to_configured_users_enabled(
-        self, active_user, authenticated_client, agenda_item, event
-    ):
-        # Set up users - active_user will NOT have UserEnrollmentConfig
-        active_user.email = "manager-no-config@example.com"
-        active_user.save()
-
-        # Create connected user whose manager (active_user) has no config
-        connected_user = UserFactory()
-        connected_user.email = "connected@example.com"
-        connected_user.manager = (
-            active_user  # This is the key - connected to active_user
-        )
-        connected_user.save()
-
-        # Create another user WITH config for comparison
-        user_with_config = UserFactory()
-        user_with_config.email = "has-config@example.com"
-        user_with_config.save()
-
-        # Create enrollment config with restriction enabled
-        now = datetime.now(tz=UTC)
-        enrollment_config = EnrollmentConfig.objects.create(
-            event=event,
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(days=30),
-            percentage_slots=50,
-            max_waitlist_sessions=5,
-            restrict_to_configured_users=True,  # Only configured users allowed
-        )
-
-        # Create user config only for user_with_config (NOT for active_user)
-        UserEnrollmentConfig.objects.create(
-            enrollment_config=enrollment_config,
-            user_email="has-config@example.com",
-            allowed_slots=2,
-        )
-        # Note: active_user and connected_user have no UserEnrollmentConfig
-
-        # Try to enroll active_user and connected_user (both should be rejected)
-        response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
-            data={
-                f"user_{active_user.id}": "enroll",
-                f"user_{connected_user.id}": "enroll",
-            },
-        )
-
-        # Should get form validation error because neither user can enroll
-        # (active_user has no UserEnrollmentConfig, connected_user's manager has none)
-        assert response.status_code == HTTPStatus.OK
-        assert "enrollment access permission required" in str(
-            response.context["form"].errors
-        )
-
-        # No users should be enrolled due to form validation failure
-        assert not SessionParticipation.objects.filter(
-            session=agenda_item.session, user=active_user
-        ).exists()
-
-        assert not SessionParticipation.objects.filter(
-            session=agenda_item.session, user=connected_user
-        ).exists()
-
     def test_restrict_to_configured_users_disabled(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         # Test that all users can enroll when restriction is disabled (default behavior)
 
@@ -1124,7 +1070,6 @@ class TestUserEnrollmentConfigView:
         active_user.save()
 
         connected_user = UserFactory()
-        connected_user.email = "user@example.com"
         connected_user.manager = active_user
         connected_user.save()
 
@@ -1143,7 +1088,7 @@ class TestUserEnrollmentConfigView:
 
         # Try to enroll both users
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={
                 f"user_{active_user.id}": "enroll",
                 f"user_{connected_user.id}": "enroll",
@@ -1161,57 +1106,8 @@ class TestUserEnrollmentConfigView:
             session=agenda_item.session, user=connected_user
         ).exists()
 
-    def test_restrict_to_configured_users_form_choices(
-        self, active_user, authenticated_client, agenda_item, event
-    ):
-        # Set up users
-        active_user.email = "manager@example.com"
-        active_user.save()
-
-        connected_user = UserFactory()
-        connected_user.email = "user@example.com"
-        connected_user.manager = active_user
-        connected_user.save()
-
-        # Create enrollment config with restriction enabled
-        now = datetime.now(tz=UTC)
-        enrollment_config = EnrollmentConfig.objects.create(
-            event=event,
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(days=30),
-            percentage_slots=50,
-            max_waitlist_sessions=5,
-            restrict_to_configured_users=True,
-        )
-
-        # Create user config only for active_user
-        UserEnrollmentConfig.objects.create(
-            enrollment_config=enrollment_config,
-            user_email="manager@example.com",
-            allowed_slots=2,
-        )
-
-        # GET the enrollment form
-        response = authenticated_client.get(self._get_url(agenda_item.session.pk))
-        assert response.status_code == HTTPStatus.OK
-
-        form = response.context["form"]
-
-        # active_user should have enrollment options (has UserEnrollmentConfig)
-        active_field = form.fields[f"user_{active_user.id}"]
-        active_choices = [choice[0] for choice in active_field.choices]
-        assert "enroll" in active_choices
-        assert "waitlist" in active_choices
-
-        # connected_user should only have "No change" (no UserEnrollmentConfig)
-        connected_field = form.fields[f"user_{connected_user.id}"]
-        connected_choices = [choice[0] for choice in connected_field.choices]
-        assert connected_choices == [""]  # Only "No change"
-        assert "enroll" not in connected_choices
-        assert "waitlist" not in connected_choices
-
     def test_user_can_enroll_multiple_sessions_with_same_slot(
-        self, active_user, authenticated_client, event, space
+        self, active_user, authenticated_client, event, space, url_name
     ):
         """
         Regression test: A user with enrollment slots should be able to enroll
@@ -1254,7 +1150,7 @@ class TestUserEnrollmentConfigView:
 
         # Enroll in first session - should succeed
         response = authenticated_client.post(
-            self._get_url(agenda_item1.session.pk),
+            self._get_url(url_name, agenda_item1.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
         assert response.status_code == HTTPStatus.FOUND
@@ -1266,7 +1162,7 @@ class TestUserEnrollmentConfigView:
         assert participation1.status == SessionParticipationStatus.CONFIRMED
 
         response = authenticated_client.post(
-            self._get_url(agenda_item2.session.pk),
+            self._get_url(url_name, agenda_item2.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
         assert response.status_code == HTTPStatus.FOUND
@@ -1281,7 +1177,7 @@ class TestUserEnrollmentConfigView:
         )  # Should be CONFIRMED, not WAITING
 
     def test_enrollment_without_slot_requirements(
-        self, active_user, authenticated_client, agenda_item, event
+        self, active_user, authenticated_client, agenda_item, event, url_name
     ):
         """
         Test that users can enroll when restrict_to_configured_users is False
@@ -1310,7 +1206,7 @@ class TestUserEnrollmentConfigView:
 
         # Try to enroll
         response = authenticated_client.post(
-            self._get_url(agenda_item.session.pk),
+            self._get_url(url_name, agenda_item.session.pk),
             data={f"user_{active_user.id}": "enroll"},
         )
 

@@ -20,16 +20,7 @@ class MembershipApiClient:
         self.token = settings.MEMBERSHIP_API_TOKEN
         self.timeout = settings.MEMBERSHIP_API_TIMEOUT
 
-    def is_configured(self) -> bool:
-        return bool(self.base_url and self.token)
-
     def fetch_membership_count(self, email: str) -> int | None:
-        if not self.is_configured():
-            logger.warning(
-                "Membership API not configured - skipping fetch for %s", email
-            )
-            return None
-
         try:
             response = requests.get(
                 self.base_url,
@@ -43,7 +34,7 @@ class MembershipApiClient:
             membership_count: int = data.get("membership_count", 0)
 
             logger.info(
-                "Fetched membership count %d for user %s", membership_count, email
+                "Fetched membership count %s for user %s", membership_count, email
             )
         except requests.RequestException:
             logger.exception("Failed to fetch membership for %s", email)
@@ -102,9 +93,6 @@ def get_or_create_user_enrollment_config(
 
     # No existing config - try to fetch from API
     api_client = MembershipApiClient()
-    if not api_client.is_configured():
-        return None
-
     return _create_user_config_from_api(enrollment_config, user_email, api_client)
 
 
@@ -112,12 +100,6 @@ def _refresh_user_config_from_api(
     user_config: UserEnrollmentConfig,
 ) -> UserEnrollmentConfig | None:
     api_client = MembershipApiClient()
-    if not api_client.is_configured():
-        logger.warning(
-            "API not configured, cannot refresh config for %s", user_config.user_email
-        )
-        return user_config if user_config.allowed_slots > 0 else None
-
     membership_count = api_client.fetch_membership_count(user_config.user_email)
     current_time = timezone.now()
 

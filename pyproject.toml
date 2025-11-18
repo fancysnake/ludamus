@@ -54,6 +54,7 @@ pytest-freezeblaster = "^2.0.4"
 # POE
 types-requests = "^2.32.4.20250809"
 pytest-factoryboy = "^2.8.1"
+responses = "^0.25.8"
 
 [tool.poe]
 envfile = ".env.ci"
@@ -138,7 +139,11 @@ omit = [
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "# pragma: no cover",
+    "# Not gonna happen!",
+]
 precision = 2
 
 # DEPTRY

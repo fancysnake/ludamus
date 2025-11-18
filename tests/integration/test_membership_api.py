@@ -15,33 +15,6 @@ from ludamus.adapters.external.membership_api import (
 
 @pytest.mark.django_db
 class TestMembershipApiClient:
-
-    @staticmethod
-    @override_settings(
-        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
-        MEMBERSHIP_API_TOKEN="test-token-123",
-    )
-    def test_api_configured_correctly():
-        client = MembershipApiClient()
-        assert client.is_configured()
-        assert client.base_url == "https://api.example.com/membership"
-        assert client.token == "test-token-123"
-
-    @staticmethod
-    @override_settings(MEMBERSHIP_API_BASE_URL=None, MEMBERSHIP_API_TOKEN="test-token")
-    def test_api_not_configured_missing_url():
-        client = MembershipApiClient()
-        assert not client.is_configured()
-
-    @staticmethod
-    @override_settings(
-        MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",
-        MEMBERSHIP_API_TOKEN=None,
-    )
-    def test_api_not_configured_missing_token():
-        client = MembershipApiClient()
-        assert not client.is_configured()
-
     @staticmethod
     @override_settings(
         MEMBERSHIP_API_BASE_URL="https://api.example.com/membership",

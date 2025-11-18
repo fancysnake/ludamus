@@ -122,15 +122,17 @@ class TestSessionModelProperties:
         assert session.effective_participants_limit == expected_limit
 
 
+@pytest.mark.parametrize(
+    "url_name",
+    ("web:chronology:session-enrollment", "web:chronology:session-enrollment-v2"),
+)
 @pytest.mark.django_db
 class TestEnrollmentViewsEdgeCases:
-    URL_NAME = "web:chronology:session-enrollment"
-
-    def _get_url(self, session_id: int) -> str:
-        return reverse(self.URL_NAME, kwargs={"session_id": session_id})
+    def _get_url(self, url_name, session_id: int) -> str:
+        return reverse(url_name, kwargs={"session_id": session_id})
 
     def test_enrollment_fallback_logic_no_config(
-        self, active_user, connected_user, authenticated_client, space, sphere
+        self, active_user, connected_user, authenticated_client, space, sphere, url_name
     ):
         session = SessionFactory(
             presenter_name=active_user.name, sphere=sphere, participants_limit=2
@@ -152,7 +154,7 @@ class TestEnrollmentViewsEdgeCases:
         )
 
         response = authenticated_client.post(
-            self._get_url(session.pk),
+            self._get_url(url_name, session.pk),
             data={
                 f"user_{active_user.id}": "enroll",
                 f"user_{connected_user.id}": "enroll",  # This exceeds capacity
@@ -160,5 +162,5 @@ class TestEnrollmentViewsEdgeCases:
         )
 
         assert response.status_code == HTTPStatus.FOUND
-        assert response.url == self._get_url(session.pk)
+        assert response.url == self._get_url(url_name, session.pk)
         _assert_message_sent(response, messages.ERROR)
