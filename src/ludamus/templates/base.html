@@ -136,15 +136,13 @@
     </div>
     <footer class="page-footer bg-light py-4">
         <div>
-            <div class="row align-items-center">
-                <div class="col-md-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-2">
+                <div>
                     <p class="mb-0">
-                        © 2025 Radosław Ganczarek. <a href="https://github.com/fancysnake/ludamus">Source code</a> available under BSD-3-Clause license.
+                        © 2025 Radosław Ganczarek. <br class="d-md-none" /><a href="https://github.com/fancysnake/ludamus">Source code</a> available under BSD-3-Clause license.
                     </p>
                 </div>
-                <div class="col-md-4 text-center">
-                </div>
-                <div class="col-md-4 text-md-end">
+                <div>
                     <a href="mailto:{{ SUPPORT_EMAIL }}" class="text-decoration-none me-3">{% translate "Contact me" %}</a>
                     <a href="{% url 'django.contrib.flatpages.views.flatpage' url='/privacy-policy/' %}"
                        class="text-decoration-none me-3">{% translate "Privacy Policy" %}</a>
