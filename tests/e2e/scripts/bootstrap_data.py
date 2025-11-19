@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Seed deterministic data for Playwright end-to-end tests."""
+
 from __future__ import annotations
 
 import os
