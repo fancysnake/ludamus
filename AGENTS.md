@@ -3,10 +3,6 @@ In communication, sacrifice grammar for brevity.
 # Workflow
 
 - Track **every** task with Beads `bd` and keep statuses accurate (claim work with `--status in_progress`, close with a reason, link discovered work via `discovered-from`).
-- Work feature-by-feature inside dedicated git worktrees in `./worktrees` dir so efforts stay isolated:
-  1. `bd ready --json` to pick an issue.
-  2. `git worktree add ../ludamus-<issue-id> origin/main && cd ../ludamus-<issue-id>`.
-  3. Build + test; push the worktree branch and open a PR that references the bd issue.
 - Install deps once with `poetry install`; run the dev server via `poetry run poe start` (uses `.env.dev`) or `docker compose up web` when you need Postgres locally.
 - Lint + typecheck with `poetry run poe prcheck` and run suites via `poetry run poe test`; add Playwright tests for any UI changes before asking for review.
 - No markdown TODO lists or ad-hoc trackers—create a `bd` issue instead.
@@ -146,7 +142,7 @@ Use these notes when creating bd issues and implementing the UX from the brain d
 
 - `templates/index.html` currently jumps straight into the cards; add a hero section (title, subtitle/description) before the card grid. Tie copy to the sphere context (use `current_sphere.name` and a customizable description field on `Sphere` if needed).
 - Make the navbar transparent while it overlaps the hero: update `templates/base.html` + `static/css/custom.css` so the nav background becomes `transparent` by default, and a solid background appears once the page is scrolled past the hero (IntersectionObserver or a Bootstrap class toggle). Keep z-index low enough that hero content sits visually “above” the nav background while still keeping nav links clickable.
-- After the hero, transition into the card list with a `mask-image: linear-gradient(...)` or `background: linear-gradient` overlay that feathers the hero into the list. Respect `prefers-reduced-motion`.
+- The hero image smoothly overlaps into the card list with a `mask-image: linear-gradient(...)` or `background: linear-gradient` overlay that feathers the hero into the list.
 
 ### Session location pin + optional external link
 
