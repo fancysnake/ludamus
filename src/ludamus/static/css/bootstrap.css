@@ -12278,10 +12278,6 @@ textarea.form-control-lg {
   color: #fff;
 }
 
-a {
-  font-weight: 500;
-}
-
 .form-range:not([disabled])::-moz-range-progress {
   height: 0.6rem;
   background-color: #a2e436;

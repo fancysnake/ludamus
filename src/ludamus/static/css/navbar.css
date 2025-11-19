@@ -39,7 +39,8 @@ body {
   animation: navbar-bg-fade-in linear;
   animation-timeline: --page-scroll;
   animation-range: 0px 64px;
-  animation-fill-mode: forwards
+  animation-fill-mode: forwards;
+  font-size: 1rem !important;
 }
 
 @media (min-width: 992px) {
@@ -107,7 +108,7 @@ body:not(:has(.events-hero)) .main-content {
   border-radius: 0.5rem;
   text-decoration: none;
   color: inherit;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   transition: background-color 0.2s, color 0.2s;
 }
 
@@ -126,7 +127,6 @@ body:not(:has(.events-hero)) .main-content {
   border-radius: 0.5rem;
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.9375rem;
   transition: all 0.2s;
   border: 1px solid transparent;
   cursor: pointer;
