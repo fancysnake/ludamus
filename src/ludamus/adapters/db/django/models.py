@@ -120,6 +120,11 @@ class Sphere(models.Model):
     """Big group for whole provinces, topics, organizations or big events."""
 
     name = models.CharField(max_length=255)
+    description = models.TextField(
+        blank=True,
+        default="",
+        help_text="Description shown on the overview page",
+    )
     site = models.OneToOneField(Site, on_delete=models.PROTECT, related_name="sphere")
     managers = models.ManyToManyField(User)
 

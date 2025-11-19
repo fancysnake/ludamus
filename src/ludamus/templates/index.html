@@ -8,10 +8,42 @@
 {% block header %}
 {% endblock header %}
 {% block body %}
-    <div id="events">
+    <section id="events-hero" class="events-hero position-relative overflow-hidden mb-4">
+        <div class="events-hero__backdrop" aria-hidden="true"></div>
+        <div class="events-hero__content d-flex flex-column gap-3">
+            <p class="text-uppercase tracking-wide text-muted mb-1 fw-semibold small">
+                {% blocktranslate with sphere_name=current_sphere.name %}Hosted by {{ sphere_name }}{% endblocktranslate %}
+            </p>
+            <h1 class="display-4 fw-bold text-primary mb-2">
+                {% blocktranslate with sphere_name=current_sphere.name %}Gatherings for {{ sphere_name }}{% endblocktranslate %}
+            </h1>
+            {% with hero_description=current_sphere.hero_description|default:'' %}
+                {% if hero_description %}
+                    <p class="lead text-muted mb-0">{{ hero_description }}</p>
+                {% else %}
+                    <p class="lead text-muted mb-0">
+                        {% blocktranslate with sphere_name=current_sphere.name %}
+                            Discover upcoming adventures, workshops, and play sessions curated by {{ sphere_name }}.
+                        {% endblocktranslate %}
+                    </p>
+                {% endif %}
+            {% endwith %}
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <a class="btn btn-primary" href="#events">
+                    {% translate "Browse events" %}
+                </a>
+                <a class="btn btn-outline-primary" href="#past-events">
+                    {% translate "See history" %}
+                </a>
+            </div>
+        </div>
+    </section>
+    <div class="events-hero__fade" aria-hidden="true"></div>
+    <div class="navbar-backdrop-sentinel" aria-hidden="true"></div>
+    <div id="events" class="events-section">
         {% if upcoming_events or past_events %}
             {% if upcoming_events %}
-                <h1 class="mb-4">{% translate "Upcoming events" %}</h1>
+                <h2 class="mb-4">{% translate "Upcoming events" %}</h2>
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2 mb-5">
                     {% for event in upcoming_events %}
                         <a href="{% url 'web:chronology:event' slug=event.slug %}" class="col text-decoration-none">
@@ -37,7 +69,7 @@
                 </div>
             {% endif %}
             {% if past_events %}
-                <h1 class="mb-4">{% translate "Past events" %}</h1>
+                <h2 id="past-events" class="mb-4">{% translate "Past events" %}</h2>
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
                     {% for event in past_events %}
                         <a href="{% url 'web:chronology:event' slug=event.slug %}" class="col text-decoration-none">
