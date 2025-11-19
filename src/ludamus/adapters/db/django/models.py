@@ -192,6 +192,10 @@ class Event(models.Model):
         return self.name
 
     @property
+    def display_location(self) -> str:
+        return self.location_label or self.name
+
+    @property
     def is_proposal_active(self) -> bool:
         return (
             self.proposal_start_time is not None
@@ -208,10 +212,6 @@ class Event(models.Model):
     @property
     def is_ended(self) -> bool:
         return self.end_time < datetime.now(tz=UTC)
-
-    @property
-    def display_location(self) -> str:
-        return self.location_label
 
     def get_active_enrollment_configs(self) -> list[EnrollmentConfig]:
         return [config for config in self.enrollment_configs.all() if config.is_active]

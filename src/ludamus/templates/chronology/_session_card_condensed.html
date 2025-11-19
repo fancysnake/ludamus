@@ -24,9 +24,6 @@
                 <small class="text-muted d-block">
                     {% load bootstrap_icons %}
                     {% bs_icon 'person-circle' %} {{ data.session.presenter_name|default:data.session.presenter_name }}
-                    {% if data.session.agenda_item.space %}
-                        | {% bs_icon 'geo-alt' %} {{ data.session.agenda_item.space.name }}
-                    {% endif %}
                 </small>
             </div>
             <!-- Status indicator -->
