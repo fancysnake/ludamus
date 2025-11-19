@@ -27,7 +27,7 @@
                 </div>
                 {% for sphere in spheres %}
                     <div class="col-md-6 col-lg-4">
-                        <a href="https://{{ sphere.site.domain }}" class="card h-100 position-relative no-underline">
+                        <a href="{{ request.scheme }}://{{ sphere.site.domain }}" class="card h-100 position-relative no-underline">
                             <span class="card-body d-flex flex-column">
                                 <span class="card-title text-xl">{{ sphere.name }}</span>
                                 {% if sphere.description %}

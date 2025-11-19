@@ -119,6 +119,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Sphere(models.Model):
     """Big group for whole provinces, topics, organizations or big events."""
 
+    class Visibility(models.TextChoices):
+        PUBLIC = "public", "Public"
+        UNLISTED = "unlisted", "Unlisted"
+        PRIVATE = "private", "Private"
+
     name = models.CharField(max_length=255)
     description = models.TextField(
         blank=True,
@@ -127,6 +132,12 @@ class Sphere(models.Model):
     )
     site = models.OneToOneField(Site, on_delete=models.PROTECT, related_name="sphere")
     managers = models.ManyToManyField(User)
+    visibility = models.CharField(
+        max_length=20,
+        choices=Visibility.choices,
+        default=Visibility.PUBLIC,
+        help_text="Public: visible on root page. Unlisted: accessible but not listed. Private: hidden.",
+    )
 
     class Meta:
         db_table = "sphere"

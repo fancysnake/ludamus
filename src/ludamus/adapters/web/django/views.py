@@ -281,13 +281,9 @@ class IndexPageView(TemplateView):
     request: RootDAORequest
 
     def get_template_names(self) -> list[str]:
-        import logging
-        from django.conf import settings
-        logger = logging.getLogger(__name__)
         current_domain = self.request.root_dao.current_site.domain.split(":")[0]
         root_domain = self.request.root_dao.root_site.domain.split(":")[0]
         is_root = current_domain == root_domain
-        logger.error(f"Template selection: current={current_domain}, root={root_domain}, ROOT_DOMAIN={settings.ROOT_DOMAIN}, is_root={is_root}")
         if is_root:
             return ["root/index.html"]
         return ["index.html"]
@@ -299,7 +295,10 @@ class IndexPageView(TemplateView):
         if current_domain == root_domain:
             from django.contrib.sites.models import Site
             from ludamus.adapters.db.django.models import Sphere
-            spheres = Sphere.objects.filter(site__isnull=False).exclude(
+            spheres = Sphere.objects.filter(
+                site__isnull=False,
+                visibility=Sphere.Visibility.PUBLIC
+            ).exclude(
                 site__domain=root_domain
             ).select_related("site")
             context["spheres"] = [s for s in spheres]
