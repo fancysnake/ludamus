@@ -21,49 +21,121 @@
         {% bootstrap_css %}
         <link rel="stylesheet" href="{% static 'css/common.css' %}">
         <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+        <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
         <link rel="stylesheet" href="{% static 'css/themes/cold-steel.css' %}">
         <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     </head>
     <body>
-        <nav class="navbar navbar-expand navbar-dark bg-primary sticky top-0 z-20">
-            <a class="navbar-brand fw-bold"
+        {% block page_nav_bg %}
+        <div class="page-nav-bg"></div>
+        {% endblock page_nav_bg %}
+        <header class="page-nav">
+            <a class="page-nav__brand"
                href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
-                {% bs_icon 'people' %} {{ current_sphere.name }}
+                {{ current_sphere.name }}
             </a>
-            <div class="navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
+
+            <button class="page-nav__toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="page-nav-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="32" height="32" fill="currentColor">
+                    <rect width="256" height="256" fill="none"/>
+                    <line x1="40" y1="128" x2="216" y2="128" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                    <line x1="40" y1="64" x2="216" y2="64" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                    <line x1="40" y1="192" x2="216" y2="192" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                </svg>
+            </button>
+
+            <div class="page-nav-overlay" id="page-nav-overlay"></div>
+
+            <nav class="page-nav__menu" id="page-nav-menu" aria-hidden="true">
+                <ul class="page-nav__list">
+                    <li class="page-nav__item">
+                        <a href="https://github.com/fancysnake/ludamus" class="page-nav__link" target="_blank" rel="noopener noreferrer">
+                            GitHub
+                        </a>
+                    </li>
+                    <li class="page-nav__item">
+                        <a href="mailto:{{ SUPPORT_EMAIL }}" class="page-nav__link">
+                            Contact
+                        </a>
+                    </li>
+
                     {% if request.user.is_authenticated and request.user.name %}
-                        <li class="nav-item">
-                            <span class="navbar-text text-light me-3">
-                                {% bs_icon 'person-circle' %}
+                        <li class="page-nav__item">
+                            <span class="page-nav__link">
                                 {{ request.user.name }}
                             </span>
                         </li>
                     {% endif %}
+                    
                     {% if request.user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="btn btn-outline-light me-2"
+                        <li class="page-nav__item">
+                            <a class="page-nav__btn page-nav__btn--outline"
                                href="{% url 'web:crowd:profile' %}">
-                                {% bs_icon 'person-gear' %} {% translate "Edit Profile" %}
+                                {% translate "Edit Profile" %}
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="btn btn-light me-2"
+                        <li class="page-nav__item">
+                            <a class="page-nav__btn page-nav__btn--outline"
                                href="{% url 'web:crowd:auth0:logout' %}">
-                                {% bs_icon 'box-arrow-right' %} {% translate "Logout" %}
+                                {% translate "Logout" %}
                             </a>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="btn btn-light me-2"
+                        <li class="page-nav__item">
+                            <a class="page-nav__btn page-nav__btn--login"
                                href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}">
-                                {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
+                                {% translate "Login" %}
                             </a>
                         </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+                    {% endif %}
+                </ul>
+            </nav>
+        </header>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                // Elements
+                const toggle = document.querySelector('.page-nav__toggle');
+                const nav = document.querySelector('.page-nav__menu');
+                const overlay = document.querySelector('.page-nav-overlay');
+                const bg = document.querySelector('.page-nav-bg');
+                const body = document.body;
+                
+                // Scroll effect - control opacity of background
+                const handleScroll = () => {
+                    const scrollY = window.scrollY;
+                    // Fully transparent at top, fully opaque after 50px
+                    const opacity = Math.min(scrollY / 50, 1);
+                    
+                    // Only apply if on homepage (where style="opacity: 0" is set initially)
+                    if (bg && bg.style.opacity !== '') {
+                        bg.style.opacity = opacity;
+                    }
+                };
+
+                window.addEventListener('scroll', handleScroll);
+                handleScroll(); // Initial check
+
+                // Mobile menu toggle
+                function toggleMenu() {
+                    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+                    toggle.setAttribute('aria-expanded', !isExpanded);
+                    nav.setAttribute('aria-hidden', isExpanded);
+                    overlay.classList.toggle('is-visible');
+                    body.style.overflow = isExpanded ? '' : 'hidden';
+                }
+
+                toggle.addEventListener('click', toggleMenu);
+                overlay.addEventListener('click', toggleMenu);
+                
+                // Close menu on escape
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && nav.getAttribute('aria-hidden') === 'false') {
+                        toggleMenu();
+                    }
+                });
+            });
+        </script>
     {% if messages %}
         <div class="mt-3">
             {% for message in messages %}
@@ -117,20 +189,7 @@
             {% endfor %}
         </div>
     {% endif %}
-    <div class="mt-md-4 main-content content-section">
-        <!-- Page Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1 class="display-5 fw-bold text-center mb-2">
-                    {% block header %}
-                    {% endblock header %}
-                </h1>
-                <p class="lead text-center text-muted">
-                    {% block description %}
-                    {% endblock description %}
-                </p>
-            </div>
-        </div>
+    <div class="main-content content-section">
         {% block body %}
         {% endblock body %}
     </div>

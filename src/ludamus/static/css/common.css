@@ -12,28 +12,27 @@ a {
 }
 
 .main-content,
-.page-footer,
-.navbar {
+.page-footer {
   padding-inline: 0.5rem;
+}
+
+.main-content {
+  padding-bottom: 64px;
 }
 
 @media (min-width: 768px) {
   .main-content,
-  .page-footer,
-  .navbar {
+  .page-footer {
     padding-inline: 1rem;
   }
 }
 
 @media (min-width: 992px) {
   .main-content,
-  .page-footer,
-  .navbar {
+  .page-footer {
     padding-inline: 2rem;
   }
 }
-
-
 
 .page-footer {
   margin-top: auto;

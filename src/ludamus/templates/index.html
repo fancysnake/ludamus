@@ -7,31 +7,22 @@
 {% endblock title %}
 {% block header %}
 {% endblock header %}
+
+{% block page_nav_bg %}
+    {# Background handled via JS for hero overlap #}
+    <div class="page-nav-bg" style="opacity: 0;"></div>
+{% endblock page_nav_bg %}
+
 {% block body %}
     <section id="events-hero" class="events-hero">
         <div class="events-hero__backdrop" aria-hidden="true"></div>
         <div class="events-hero__content">
             <h1 class="events-hero__title">
-                <span>{% translate "Welcome to" %}</span>
                 {% blocktranslate with sphere_name=current_sphere.name %}{{ sphere_name }}{% endblocktranslate %}
             </h1>
             {% if current_sphere.hero_description %}
                 <p class="events-hero__description">{{ current_sphere.hero_description }}</p>
-            {% else %}
-                <p class="events-hero__description">
-                    {% blocktranslate with sphere_name=current_sphere.name %}
-                        Discover upcoming adventures, workshops, and play sessions curated by {{ sphere_name }}.
-                    {% endblocktranslate %}
-                </p>
             {% endif %}
-            <div class="events-hero__actions">
-                <a class="btn btn-primary btn-lg px-4 py-2 rounded-pill" href="#events">
-                    {% translate "Browse events" %}
-                </a>
-                <a class="btn btn-outline-gold btn-lg px-4 py-2 rounded-pill" href="#past-events">
-                    {% translate "See history" %}
-                </a>
-            </div>
         </div>
     </section>
     
@@ -94,26 +85,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const navbar = document.querySelector('.navbar');
-            const hero = document.querySelector('.events-hero');
-            
-            if (navbar && hero) {
-                navbar.classList.add('navbar-transparent');
-                
-                const handleScroll = () => {
-                    if (window.scrollY > 50) {
-                        navbar.classList.remove('navbar-transparent');
-                        navbar.classList.add('navbar-scrolled');
-                    } else {
-                        navbar.classList.add('navbar-transparent');
-                        navbar.classList.remove('navbar-scrolled');
-                    }
-                };
-
-                window.addEventListener('scroll', handleScroll);
-                // Initial check
-                handleScroll();
-            }
+            // Legacy script cleanup - navbar scroll logic is now centralized in base.html
+            // Keeping this block empty or removing it entirely is fine.
         });
     </script>
 {% endblock body %}
