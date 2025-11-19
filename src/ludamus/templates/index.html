@@ -15,7 +15,7 @@
 {% block body %}
     <section id="events-hero" class="events-hero">
         <div class="events-hero__backdrop" aria-hidden="true"></div>
-        <div class="events-hero__content">
+        <div class="events-hero__content container-fluid">
             <h1 class="events-hero__title">
                 {% blocktranslate with sphere_name=current_sphere.name %}{{ sphere_name }}{% endblocktranslate %}
             </h1>
@@ -25,7 +25,7 @@
         </div>
     </section>
     
-    <div id="events" class="events-section container-fluid px-4">
+    <div id="events" class="events-section container-fluid">
         {% if upcoming_events or past_events %}
             {% if upcoming_events %}
                 <h2 class="mb-4 border-bottom border-gold pb-2 d-inline-block">{% translate "Upcoming events" %}</h2>
@@ -81,11 +81,4 @@
             </div>
         {% endif %}
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Legacy script cleanup - navbar scroll logic is now centralized in base.html
-            // Keeping this block empty or removing it entirely is fine.
-        });
-    </script>
 {% endblock body %}

@@ -300,7 +300,7 @@ class IndexPageView(TemplateView):
                 Sphere.objects.filter(
                     site__isnull=False, visibility=Sphere.Visibility.PUBLIC
                 )
-                .exclude(site__domain=root_domain)
+                .exclude(site_id=self.request.root_dao.root_site.pk)
                 .select_related("site")
             )
             context["spheres"] = [s for s in spheres]

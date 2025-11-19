@@ -112,12 +112,6 @@
                                     {% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}
                                 </a>
                             {% endif %}
-                        {% else %}
-                            <a href="{% url 'web:crowd:login-required' %}?next={% url 'web:chronology:event' slug=event.slug %}"
-                               class="btn btn-outline-primary btn-sm w-100 text-uppercase fw-bold tracking-wide"
-                               onclick="event.stopPropagation();">
-                                {% bs_icon 'box-arrow-in-right' %} {% translate "Login to Enroll" %}
-                            </a>
                         {% endif %}
                     {% else %}
                         <div class="text-center text-muted small text-uppercase tracking-wide">

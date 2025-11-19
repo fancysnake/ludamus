@@ -7,6 +7,10 @@ In communication, sacrifice grammar for brevity.
 - Lint + typecheck with `poetry run poe prcheck` and run suites via `poetry run poe test`; add Playwright tests for any UI changes before asking for review.
 - No markdown TODO lists or ad-hoc trackers—create a `bd` issue instead.
 
+## Rules
+
+- Never use Bootstrap's `row` and `g-X` rules. Use Flexbox with `d-flex` and `gap-X` instead.
+
 ## Docker
 
 Remember to run all poetry and django commands in the Docker `web` container.
@@ -81,6 +85,7 @@ bd close bd-42 --reason "Completed" --json
 
 - Python 3.13 with Poetry, Django 5.2.2, Gunicorn for prod, SQLite in dev (Postgres via `USE_POSTGRES=1`).
 - UI built with Bootstrap 5 + `django-bootstrap-icons`, custom CSS themes in `src/ludamus/static/css/themes` and shared styles in `static/css/common.css`.
+- Always use Phosphor Icons (in `static/phosphor-icons`) if you need an icon.
 - Auth via Auth0 (`authlib`), root-level multi-tenancy via Django `Site` + `Sphere` models, htmx sprinkled for async snippets (Discord reveal buttons).
 - External membership API integration in `src/ludamus/adapters/external/membership_api.py` to fetch enrollment slots.
 
@@ -200,4 +205,7 @@ We should skip MFA if the user chose a passkey.
 - `.github/workflows/ci.yml` – what CI already enforces.
 
 Keep this file updated whenever architecture, tooling, or backlog expectations change.
-****
+
+## Database
+
+You can seed the database for local development with `/management/commands/seed_db.py`.

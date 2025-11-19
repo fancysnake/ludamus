@@ -166,7 +166,9 @@ class Event(models.Model):
         ),
     )
     location_url = models.URLField(
-        blank=True, help_text="Optional URL for the location (e.g. Google Maps link)"
+        blank=True,
+        max_length=500,
+        help_text="Optional URL for the location (e.g. Google Maps link)",
     )
     image = models.ImageField(
         upload_to="events", blank=True, help_text="Cover image for the event"

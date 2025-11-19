@@ -29,7 +29,7 @@
         {% block page_nav_bg %}
         <div class="page-nav-bg"></div>
         {% endblock page_nav_bg %}
-        <header class="page-nav">
+        <header class="page-nav container-fluid">
             <a class="page-nav__brand"
                href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
                 {{ current_sphere.name }}

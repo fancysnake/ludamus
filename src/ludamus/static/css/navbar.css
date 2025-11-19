@@ -3,7 +3,6 @@
   --navbar-bg: #1a1a1a;
   --navbar-text: #ffffff;
   --navbar-border: rgba(255, 255, 255, 0.1);
-  --navbar-padding-x: 1.5rem;
 }
 
 /* Page Nav (Navbar) */
@@ -16,10 +15,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--navbar-padding-x);
   z-index: 20;
-  background-color: transparent;
+  background-color: rgb(0 0 0 / 0.1);
   color: var(--navbar-text);
+  backdrop-filter: blur(12px);
+}
+
+@media (min-width: 992px) {
+  .page-nav {
+    padding-inline: 2rem;
+  }
 }
 
 .page-nav-bg {
@@ -27,8 +32,9 @@
   top: 0;
   left: 0;
   right: 0;
-  height: var(--navbar-height);
+  height: calc(var(--navbar-height) + 1px);
   background-color: var(--navbar-bg);
+  opacity: 0.4;
   border-bottom: 1px solid var(--navbar-border);
   z-index: 10;
 }
