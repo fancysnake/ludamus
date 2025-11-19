@@ -293,14 +293,16 @@ class IndexPageView(TemplateView):
         current_domain = self.request.root_dao.current_site.domain.split(":")[0]
         root_domain = self.request.root_dao.root_site.domain.split(":")[0]
         if current_domain == root_domain:
-            from django.contrib.sites.models import Site
+
             from ludamus.adapters.db.django.models import Sphere
-            spheres = Sphere.objects.filter(
-                site__isnull=False,
-                visibility=Sphere.Visibility.PUBLIC
-            ).exclude(
-                site__domain=root_domain
-            ).select_related("site")
+
+            spheres = (
+                Sphere.objects.filter(
+                    site__isnull=False, visibility=Sphere.Visibility.PUBLIC
+                )
+                .exclude(site__domain=root_domain)
+                .select_related("site")
+            )
             context["spheres"] = [s for s in spheres]
             return context
         all_events = list(
