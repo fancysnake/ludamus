@@ -7,6 +7,10 @@ In communication, sacrifice grammar for brevity.
 - Lint + typecheck with `poetry run poe prcheck` and run suites via `poetry run poe test`; add Playwright tests for any UI changes before asking for review.
 - No markdown TODO lists or ad-hoc trackers—create a `bd` issue instead.
 
+## UI Guidelines
+
+- If a card has just one button or link, it shouldn't. The entire card should be interactive instead.
+
 ## Issue Tracking with bd (beads)
 
 **IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.

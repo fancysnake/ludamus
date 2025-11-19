@@ -2,6 +2,15 @@
 
 @import './hero.css';
 
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  cursor: pointer;
+}
+
 .main-content,
 .page-footer,
 .navbar {
@@ -24,10 +33,7 @@
   }
 }
 
-body {
-  display: flex;
-  flex-direction: column;
-}
+
 
 .page-footer {
   margin-top: auto;
@@ -35,4 +41,24 @@ body {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+.text-lg {
+  font-size: 1.5rem;
+}
+
+.text-xl {
+  font-size: 2rem;
+}
+
+.text-2xl {
+  font-size: 2.5rem;
+}
+
+.text-3xl {
+  font-size: 3rem;
+}
+
+.no-underline {
+  text-decoration: none;
 }

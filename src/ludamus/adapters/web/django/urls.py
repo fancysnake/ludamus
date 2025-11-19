@@ -88,9 +88,6 @@ urlpatterns = [
         "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
     path("crowd/", include((crowd_urls, "crowd"), namespace="crowd")),
-    path(
-        "theme/do/select", views.ThemeSelectionActionView.as_view(), name="theme-select"
-    ),
     # Discord username endpoint
     path("discord/<slug:user_slug>/", views.get_discord_username, name="get-discord"),
 ]

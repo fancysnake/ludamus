@@ -8,54 +8,54 @@
 {% block header %}
 {% endblock header %}
 {% block body %}
-    <section id="events-hero" class="events-hero position-relative overflow-hidden mb-4">
+    <section id="events-hero" class="events-hero">
         <div class="events-hero__backdrop" aria-hidden="true"></div>
-        <div class="events-hero__content d-flex flex-column gap-3">
-            <h1 class="display-4 fw-bold text-primary mb-2">
+        <div class="events-hero__content">
+            <h1 class="events-hero__title">
+                <span>{% translate "Welcome to" %}</span>
                 {% blocktranslate with sphere_name=current_sphere.name %}{{ sphere_name }}{% endblocktranslate %}
             </h1>
             {% if current_sphere.hero_description %}
-                <p class="lead text-muted mb-0">{{ current_sphere.hero_description }}</p>
+                <p class="events-hero__description">{{ current_sphere.hero_description }}</p>
             {% else %}
-                <p class="lead text-muted mb-0">
+                <p class="events-hero__description">
                     {% blocktranslate with sphere_name=current_sphere.name %}
                         Discover upcoming adventures, workshops, and play sessions curated by {{ sphere_name }}.
                     {% endblocktranslate %}
                 </p>
             {% endif %}
-            <div class="d-flex flex-wrap gap-2 mt-3">
-                <a class="btn btn-primary" href="#events">
+            <div class="events-hero__actions">
+                <a class="btn btn-primary btn-lg px-4 py-2 rounded-pill" href="#events">
                     {% translate "Browse events" %}
                 </a>
-                <a class="btn btn-outline-primary" href="#past-events">
+                <a class="btn btn-outline-gold btn-lg px-4 py-2 rounded-pill" href="#past-events">
                     {% translate "See history" %}
                 </a>
             </div>
         </div>
     </section>
-    <div class="events-hero__fade" aria-hidden="true"></div>
-    <div class="navbar-backdrop-sentinel" aria-hidden="true"></div>
-    <div id="events" class="events-section">
+    
+    <div id="events" class="events-section container-fluid px-4">
         {% if upcoming_events or past_events %}
             {% if upcoming_events %}
-                <h2 class="mb-4">{% translate "Upcoming events" %}</h2>
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2 mb-5">
+                <h2 class="mb-4 border-bottom border-gold pb-2 d-inline-block">{% translate "Upcoming events" %}</h2>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-5">
                     {% for event in upcoming_events %}
                         <a href="{% url 'web:chronology:event' slug=event.slug %}" class="col text-decoration-none">
-                            <div class="card h-100 cursor-pointer">
-                                <div class="card-body">
+                            <div class="card h-100 cursor-pointer event-card border-0 shadow-sm hover-lift">
+                                <div class="card-body p-4">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">{{ event.name }}</h5>
+                                        <h5 class="card-title fw-bold mb-0 text-dark">{{ event.name }}</h5>
                                         {% if event.is_live %}
-                                            <span class="badge bg-secondary">{% translate "LIVE" %}</span>
+                                            <span class="badge bg-success rounded-pill">{% translate "LIVE" %}</span>
                                         {% endif %}
                                     </div>
                                     {% if event.description %}
-                                        <p class="card-text text-muted">{{ event.description }}</p>
+                                        <p class="card-text text-muted mb-4 line-clamp-3">{{ event.description|striptags|truncatechars:120 }}</p>
                                     {% endif %}
-                                    <div class="d-flex align-items-center text-muted">
+                                    <div class="d-flex align-items-center text-muted mt-auto">
                                         {% bs_icon 'calendar3' %}
-                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
+                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2 small fw-medium">{{ event.start_time|format_datetime_range:event.end_time }}</time>
                                     </div>
                                 </div>
                             </div>
@@ -64,19 +64,16 @@
                 </div>
             {% endif %}
             {% if past_events %}
-                <h2 id="past-events" class="mb-4">{% translate "Past events" %}</h2>
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
+                <h2 id="past-events" class="mb-4 border-bottom border-gold pb-2 d-inline-block text-muted">{% translate "Past events" %}</h2>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
                     {% for event in past_events %}
-                        <a href="{% url 'web:chronology:event' slug=event.slug %}" class="col text-decoration-none">
-                            <div class="card h-100 cursor-pointer">
-                                <div class="card-body">
-                                    <h5 class="card-title mb-3">{{ event.name }}</h5>
-                                    {% if event.description %}
-                                        <p class="card-text text-muted">{{ event.description }}</p>
-                                    {% endif %}
+                        <a href="{% url 'web:chronology:event' slug=event.slug %}" class="col text-decoration-none opacity-75 hover-opacity-100 transition-all">
+                            <div class="card h-100 cursor-pointer border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h5 class="card-title mb-3 text-dark">{{ event.name }}</h5>
                                     <div class="d-flex align-items-center text-muted">
                                         {% bs_icon 'calendar3' %}
-                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
+                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2 small">{{ event.start_time|format_datetime_range:event.end_time }}</time>
                                     </div>
                                 </div>
                             </div>
@@ -86,7 +83,7 @@
             {% endif %}
         {% else %}
             <div class="text-center py-5">
-                <div class="text-muted">
+                <div class="text-muted opacity-50">
                     <p class="fs-1 mb-3">{% bs_icon 'calendar-x' size='3em' %}</p>
                     <p class="fs-5 mb-2">{% translate "No events available" %}</p>
                     <p>{% translate "There are currently no events scheduled. Please check back later!" %}</p>
@@ -94,4 +91,29 @@
             </div>
         {% endif %}
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navbar = document.querySelector('.navbar');
+            const hero = document.querySelector('.events-hero');
+            
+            if (navbar && hero) {
+                navbar.classList.add('navbar-transparent');
+                
+                const handleScroll = () => {
+                    if (window.scrollY > 50) {
+                        navbar.classList.remove('navbar-transparent');
+                        navbar.classList.add('navbar-scrolled');
+                    } else {
+                        navbar.classList.add('navbar-transparent');
+                        navbar.classList.remove('navbar-scrolled');
+                    }
+                };
+
+                window.addEventListener('scroll', handleScroll);
+                // Initial check
+                handleScroll();
+            }
+        });
+    </script>
 {% endblock body %}

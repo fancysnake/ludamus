@@ -21,7 +21,7 @@ class RootMiddleware:
     def __call__(self, request: HttpRequest) -> HttpResponseBase:
         try:
             request.root_dao = RootDAO(  # type: ignore [attr-defined]
-                domain=request.get_host(), root_domain=settings.ROOT_DOMAIN
+                domain=request.get_host().split(":")[0], root_domain=settings.ROOT_DOMAIN
             )
         except NotFoundError:
             request.root_dao = RootDAO(  # type: ignore [attr-defined]

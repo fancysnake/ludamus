@@ -27,17 +27,14 @@
                 </div>
                 {% for sphere in spheres %}
                     <div class="col-md-6 col-lg-4">
-                        <div class="card h-100">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">{{ sphere.name }}</h5>
+                        <a href="https://{{ sphere.site.domain }}" class="card h-100 position-relative no-underline">
+                            <span class="card-body d-flex flex-column">
+                                <span class="card-title text-xl">{{ sphere.name }}</span>
                                 {% if sphere.description %}
-                                    <p class="card-text text-muted flex-grow-1">{{ sphere.description }}</p>
+                                    <span class="card-text text-muted flex-grow-1">{{ sphere.description }}</span>
                                 {% endif %}
-                                <a href="http://{{ sphere.site.domain }}" class="btn btn-primary mt-auto">
-                                    {% translate "Visit" %} {{ sphere.name }}
-                                </a>
-                            </div>
-                        </div>
+                            </span>
+                        </a>
                     </div>
                 {% endfor %}
             </div>
