@@ -15,7 +15,7 @@
 {% block body %}
     <section id="events-hero" class="events-hero">
         <div class="events-hero__backdrop" aria-hidden="true"></div>
-        <div class="events-hero__content container-fluid">
+        <div class="events-hero__content container-fluid d-flex align-items-center" style="height: 303px;">
             <h1 class="events-hero__title">
                 {% blocktranslate with sphere_name=current_sphere.name %}{{ sphere_name }}{% endblocktranslate %}
             </h1>

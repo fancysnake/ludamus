@@ -4,6 +4,7 @@
 {% load bootstrap_icons %}
 {% load enrollment_tags %}
 {% load date_tags %}
+{% load maps_tags %}
 {% load static %}
 
 {% block title %}
@@ -66,14 +67,27 @@
 
                 {% if event.location_url and "maps.google" in event.location_url or "google.com/maps" in event.location_url or "goo.gl" in event.location_url %}
                     <div class="events-hero__map-container">
-                        <iframe 
-                            width="100%" 
-                            height="100%" 
-                            style="border:0; min-height: 300px;" 
-                            loading="lazy" 
-                            allowfullscreen 
-                            src="https://maps.google.com/maps?q={{ event.display_location|urlencode }}&t=&z=15&ie=UTF8&iwloc=&output=embed">
-                        </iframe>
+                        {% google_maps_api_key as maps_api_key %}
+                        {% if maps_api_key %}
+                            <iframe
+                                width="100%"
+                                height="100%"
+                                style="border:0; min-height: 300px;"
+                                loading="lazy"
+                                allowfullscreen
+                                referrerpolicy="no-referrer-when-downgrade"
+                                src="https://www.google.com/maps/embed/v1/place?key={{ maps_api_key }}&q={{ event|google_maps_query|urlencode }}">
+                            </iframe>
+                        {% else %}
+                            <iframe 
+                                width="100%" 
+                                height="100%" 
+                                style="border:0; min-height: 300px;" 
+                                loading="lazy" 
+                                allowfullscreen 
+                                src="https://maps.google.com/maps?q={{ event.display_location|urlencode }}&t=&z=15&ie=UTF8&iwloc=&output=embed">
+                            </iframe>
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
