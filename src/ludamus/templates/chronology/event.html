@@ -42,6 +42,23 @@
                             </p>
                         </div>
                     </div>
+                    {% if event.location_label or event.location_url %}
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-muted">{% translate "Location" %}</h6>
+                                <p class="mb-3">
+                                    {% bs_icon 'geo-alt' %}
+                                    {% if event.location_url %}
+                                        <a href="{{ event.location_url }}" target="_blank" rel="noopener">
+                                            {{ event.display_location }}
+                                        </a>
+                                    {% else %}
+                                        {{ event.display_location }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
                     <!-- Event Status -->
                     <div class="row">
                         <div class="col-12">
@@ -763,20 +780,6 @@
                                             {{ data.session.agenda_item.start_time|date:"l, F j, Y" }}
                                             <br>
                                             {{ data.session.agenda_item.start_time|time:"G:i" }} - {{ data.session.agenda_item.end_time|time:"G:i" }}
-                                        </p>
-                                        <h6>{% bs_icon 'geo-alt' %} {% translate "Location" %}</h6>
-                                        <p class="ms-4">
-                                            {% if data.session.agenda_item.space %}
-                                                {% if data.session.agenda_item.space.location_url %}
-                                                    <a href="{{ data.session.agenda_item.space.location_url }}" target="_blank" rel="noopener">
-                                                        {{ data.session.agenda_item.space.display_location }}
-                                                    </a>
-                                                {% else %}
-                                                    {{ data.session.agenda_item.space.display_location }}
-                                                {% endif %}
-                                            {% else %}
-                                                <span class="text-muted">{% translate "To be announced" %}</span>
-                                            {% endif %}
                                         </p>
                                     </div>
                                     <div class="col-md-6">

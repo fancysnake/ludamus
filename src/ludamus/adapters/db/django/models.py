@@ -137,6 +137,16 @@ class Event(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(default="", blank=True)
+    # Location info
+    location_label = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Optional label to display instead of name (e.g. 'Convention Center')",
+    )
+    location_url = models.URLField(
+        blank=True,
+        help_text="Optional URL for the location (e.g. Google Maps link)",
+    )
     # Time - start and end
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -175,6 +185,10 @@ class Event(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def display_location(self) -> str:
+        return self.location_label or self.name
 
     @property
     def is_proposal_active(self) -> bool:
@@ -577,16 +591,6 @@ class Space(models.Model):
     # ID
     name = models.CharField(max_length=255)
     slug = models.SlugField()
-    # Location info
-    location_label = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="Optional label to display instead of name (e.g. 'Room 3 (Main Building)')",
-    )
-    location_url = models.URLField(
-        blank=True,
-        help_text="Optional URL for the location (e.g. Google Maps link)",
-    )
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
@@ -601,10 +605,6 @@ class Space(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
-
-    @property
-    def display_location(self) -> str:
-        return self.location_label or self.name
 
 
 class TimeSlot(models.Model):

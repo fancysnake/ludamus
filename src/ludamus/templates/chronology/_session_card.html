@@ -1,3 +1,4 @@
+{% load i18n %}
 <div class="col-12 col-lg-6 col-xl-4">
     <div class="card h-100 session-card{% if not data.session.is_enrollment_available or data.should_show_as_inactive or ended %} text-muted{% endif %}"
          data-title="{{ data.session.title|lower }}"
@@ -23,21 +24,6 @@
                 <small class="text-muted d-block mb-1">
                     {% load bootstrap_icons %}
                     {% bs_icon 'person-circle' %} {{ data.session.presenter_name|default:data.session.presenter_name }}
-                </small>
-                <small class="text-muted d-block mb-1">
-                    {% if data.session.agenda_item.space %}
-                        {% bs_icon 'geo-alt' %}
-                        {% if data.session.agenda_item.space.location_url %}
-                            <a href="{{ data.session.agenda_item.space.location_url }}" target="_blank" rel="noopener" class="text-reset text-decoration-underline">
-                                {{ data.session.agenda_item.space.display_location }}
-                            </a>
-                        {% else %}
-                            {{ data.session.agenda_item.space.display_location }}
-                        {% endif %}
-                    {% else %}
-                        {% load i18n %}
-                        {% bs_icon 'geo-alt' %} {% translate "TBA" %}
-                    {% endif %}
                 </small>
             </div>
             <!-- Participants Info -->

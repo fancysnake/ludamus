@@ -24,16 +24,6 @@
                 <small class="text-muted d-block">
                     {% load bootstrap_icons %}
                     {% bs_icon 'person-circle' %} {{ data.session.presenter_name|default:data.session.presenter_name }}
-                    {% if data.session.agenda_item.space %}
-                        | {% bs_icon 'geo-alt' %}
-                        {% if data.session.agenda_item.space.location_url %}
-                            <a href="{{ data.session.agenda_item.space.location_url }}" target="_blank" rel="noopener" class="text-reset text-decoration-underline">
-                                {{ data.session.agenda_item.space.display_location }}
-                            </a>
-                        {% else %}
-                            {{ data.session.agenda_item.space.display_location }}
-                        {% endif %}
-                    {% endif %}
                 </small>
             </div>
             <!-- Status indicator -->
