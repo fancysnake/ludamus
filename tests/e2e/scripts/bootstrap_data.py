@@ -15,7 +15,8 @@ if str(SRC_DIR) not in sys.path:
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ludamus.config.settings")
 
-import django  # noqa: E402  (import after DJANGO_SETTINGS_MODULE is set)
+# pylint: disable=wrong-import-position  # Django imports must be after setup
+import django  # noqa: E402
 
 django.setup()
 
