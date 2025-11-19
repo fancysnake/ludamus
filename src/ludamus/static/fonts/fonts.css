@@ -1,0 +1,19 @@
+@font-face {
+  font-family: 'Marauder';
+  src: url('./Marauder[wght].woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Marauder';
+  src: url('./Marauder-Italic[wght].woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+body, .font-serif {
+  font-family: 'Marauder', serif;
+}
