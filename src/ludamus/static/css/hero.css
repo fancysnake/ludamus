@@ -1,0 +1,113 @@
+.tracking-wide {
+  letter-spacing: 0.3em;
+}
+
+.events-hero {
+  border-radius: 1.5rem;
+  padding: clamp(2.5rem, 6vw, 4.5rem);
+  background: linear-gradient(135deg, rgba(74, 93, 122, 0.12), rgba(90, 139, 111, 0.08));
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+  color: #2d3a4d;
+}
+
+.events-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 30% 20%, rgba(212, 165, 116, 0.35), transparent 55%),
+    radial-gradient(circle at 70% 80%, rgba(90, 139, 111, 0.3), transparent 60%),
+    linear-gradient(135deg, rgba(74, 93, 122, 0.7), rgba(74, 93, 122, 0));
+  filter: blur(2px);
+  opacity: 0.8;
+  transform: scale(1.05);
+  animation: heroGlow 22s ease-in-out infinite alternate;
+}
+
+.events-hero__content {
+  position: relative;
+  z-index: 1;
+}
+
+.events-hero__fade {
+  height: clamp(48px, 10vh, 112px);
+  margin-top: -20px;
+  background: linear-gradient(180deg, rgba(253, 252, 250, 0) 0%, #fdfcfa 100%);
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.events-hero__fade {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+}
+
+.navbar-backdrop-sentinel {
+  position: sticky;
+  top: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.navbar-backdrop-sentinel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  height: var(--navbar-height);
+  transform: translate(-50%, -100%);
+  background: rgba(58, 74, 97, 0.95);
+  box-shadow: 0 1rem 2rem rgba(58, 74, 97, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.events-section {
+  position: relative;
+  z-index: 1;
+}
+
+#events,
+#past-events {
+  scroll-margin-top: calc(var(--navbar-height) + 2rem);
+}
+
+@keyframes heroGlow {
+  from {
+    transform: scale(1.05) translateY(0);
+  }
+  to {
+    transform: scale(1.1) translateY(-2%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .events-hero__backdrop {
+    animation: none;
+  }
+}
+
+:root {
+  --navbar-height: 64px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --navbar-height: 72px;
+  }
+}
+
+.sticky {
+  position: sticky;
+}
+
+.top-0 {
+  top: 0;
+}
+
+.z-20 {
+  z-index: 20;
+}

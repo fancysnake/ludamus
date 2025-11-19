@@ -29,7 +29,7 @@
         <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     </head>
     <body>
-        <nav class="navbar navbar-expand navbar-dark bg-primary">
+        <nav class="navbar navbar-expand navbar-dark bg-primary sticky top-0 z-20">
             <a class="navbar-brand fw-bold"
                href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
                 {% bs_icon 'people' %} {{ current_sphere.name }}
@@ -52,12 +52,18 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-light me-2"" href="{% url 'web:crowd:auth0:logout' %}"> {% bs_icon 'person-gear' %} {% translate "Logout" %} </a> </li>
+                            <a class="btn btn-light me-2"
+                               href="{% url 'web:crowd:auth0:logout' %}">
+                                {% bs_icon 'box-arrow-right' %} {% translate "Logout" %}
+                            </a>
+                        </li>
                     {% else %}
-                        <li class="nav-item"> <a class="btn btn-light me-2"" href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}">
-                            {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
-                        </a>
-                    </li>
+                        <li class="nav-item">
+                            <a class="btn btn-light me-2"
+                               href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}">
+                                {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
+                            </a>
+                        </li>
                 {% endif %}
             </ul>
         </div>

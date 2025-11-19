@@ -1,5 +1,7 @@
 @import '../fonts/fonts.css';
 
+@import './hero.css';
+
 .main-content,
 .page-footer,
 .navbar {
