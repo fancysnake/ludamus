@@ -282,8 +282,25 @@ class IndexPageView(TemplateView):
     request: RootDAORequest
     template_name = "index.html"
 
+    def get_template_names(self) -> list[str]:
+        current_domain = self.request.root_dao.current_site.domain.split(":")[0]
+        root_domain = self.request.root_dao.root_site.domain.split(":")[0]
+        if current_domain == root_domain:
+            return ["root/index.html"]
+        return ["index.html"]
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+        current_domain = self.request.root_dao.current_site.domain.split(":")[0]
+        root_domain = self.request.root_dao.root_site.domain.split(":")[0]
+        if current_domain == root_domain:
+            from django.contrib.sites.models import Site
+            from ludamus.adapters.db.django.models import Sphere
+            spheres = Sphere.objects.filter(site__isnull=False).exclude(
+                site__domain=root_domain
+            ).select_related("site")
+            context["spheres"] = [s for s in spheres]
+            return context
         all_events = list(
             Event.objects.filter(
                 sphere_id=self.request.root_dao.current_sphere.pk

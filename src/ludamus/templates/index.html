@@ -11,23 +11,18 @@
     <section id="events-hero" class="events-hero position-relative overflow-hidden mb-4">
         <div class="events-hero__backdrop" aria-hidden="true"></div>
         <div class="events-hero__content d-flex flex-column gap-3">
-            <p class="text-uppercase tracking-wide text-muted mb-1 fw-semibold small">
-                {% blocktranslate with sphere_name=current_sphere.name %}Hosted by {{ sphere_name }}{% endblocktranslate %}
-            </p>
             <h1 class="display-4 fw-bold text-primary mb-2">
-                {% blocktranslate with sphere_name=current_sphere.name %}Gatherings for {{ sphere_name }}{% endblocktranslate %}
+                {% blocktranslate with sphere_name=current_sphere.name %}{{ sphere_name }}{% endblocktranslate %}
             </h1>
-            {% with hero_description=current_sphere.hero_description|default:'' %}
-                {% if hero_description %}
-                    <p class="lead text-muted mb-0">{{ hero_description }}</p>
-                {% else %}
-                    <p class="lead text-muted mb-0">
-                        {% blocktranslate with sphere_name=current_sphere.name %}
-                            Discover upcoming adventures, workshops, and play sessions curated by {{ sphere_name }}.
-                        {% endblocktranslate %}
-                    </p>
-                {% endif %}
-            {% endwith %}
+            {% if current_sphere.hero_description %}
+                <p class="lead text-muted mb-0">{{ current_sphere.hero_description }}</p>
+            {% else %}
+                <p class="lead text-muted mb-0">
+                    {% blocktranslate with sphere_name=current_sphere.name %}
+                        Discover upcoming adventures, workshops, and play sessions curated by {{ sphere_name }}.
+                    {% endblocktranslate %}
+                </p>
+            {% endif %}
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <a class="btn btn-primary" href="#events">
                     {% translate "Browse events" %}
