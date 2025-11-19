@@ -20,6 +20,7 @@
   margin-bottom: 4rem;
   margin-inline: calc(-50vw + 50%); /* Break out of container to full width */
   width: 100vw;
+  z-index: 15; /* Above navbar bg (10) but below navbar content (20) */
 }
 
 .events-hero__backdrop {

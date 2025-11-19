@@ -3,6 +3,7 @@
 {% load django_bootstrap5 %}
 {% load bootstrap_icons %}
 {% load enrollment_tags %}
+{% load static %}
 {% block title %}
     {{ event.name }}
 {% endblock title %}
@@ -17,7 +18,7 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header">
                     <h5 class="mb-0">
                         {% bs_icon 'calendar-event' %}
                         {% translate "Event Information" %}
@@ -227,7 +228,7 @@
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         {% bs_icon 'calendar-week' %}
                         {% translate "Sessions by Time Slot" %}
@@ -312,10 +313,10 @@
                         {% comment %} Process each time slot in chronological order {% endcomment %}
                         {% comment %} Ended Sessions {% endcomment %}
                         {% for hour, sessions in ended_hour_data.items %}
-                            <div class="mb-4 time-slot-section {% cycle 'bg-light' 'bg-white' %}"
+                            <div class="mb-4 time-slot-section"
                                  data-time-slot="ended-{{ forloop.counter }}">
                                 <!-- Time Slot Header -->
-                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-body-secondary rounded">
                                     <div>
                                         <h6 class="mb-1 text-muted">
                                             {% bs_icon 'clock' %}
@@ -335,10 +336,10 @@
                         {% endfor %}
                         {% comment %} Current & Upcoming Sessions {% endcomment %}
                         {% for hour, sessions in current_hour_data.items %}
-                            <div class="mb-4 time-slot-section {% cycle 'bg-light' 'bg-white' %}"
+                            <div class="mb-4 time-slot-section"
                                  data-time-slot="current-{{ forloop.counter }}">
                                 <!-- Time Slot Header -->
-                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-body-secondary rounded">
                                     <div>
                                         <h6 class="mb-1">
                                             {% bs_icon 'clock' %}
@@ -374,10 +375,10 @@
                         {% endfor %}
                         {% comment %} Future Unavailable Sessions {% endcomment %}
                         {% for hour, sessions in future_unavailable_hour_data.items %}
-                            <div class="mb-4 time-slot-section {% cycle 'bg-light' 'bg-white' %}"
+                            <div class="mb-4 time-slot-section"
                                  data-time-slot="future-{{ forloop.counter }}">
                                 <!-- Time Slot Header -->
-                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-body-secondary rounded">
                                     <div>
                                         <h6 class="mb-1 text-warning">
                                             {% bs_icon 'clock' %}
@@ -453,7 +454,7 @@
                                                         {% if proposal.tags.exists %}
                                                             <br>
                                                             {% for tag in proposal.tags.all %}
-                                                                <span class="badge bg-light text-dark me-1 proposal-tag"
+                                                                <span class="badge bg-body-secondary text-dark me-1 proposal-tag"
                                                                       title="{{ tag.name }}">{{ tag.name }}</span>
                                                             {% endfor %}
                                                         {% endif %}
@@ -1269,97 +1270,5 @@
             });
         });
     </script>
-    <style>
-        /* Session card hover effect */
-        .session-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .session-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-        }
-
-        /* Ensure backdrop shows for status modals */
-        .modal-backdrop.show {
-            display: block !important;
-            opacity: 0.5 !important;
-        }
-
-        /* Tag styling to replace inline styles */
-        .tag-container {
-            max-height: 1.5em;
-            overflow: hidden;
-        }
-
-        .filterable-tag,
-        .proposal-tag,
-        .modal-tag,
-        .session-detail-tag {
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            display: inline-block;
-        }
-
-        /* Tag filter container styling */
-        .tag-filter-container {
-            width: 18vw;
-        }
-
-        .tag-filter-container .tag-filter {
-            width: 100%;
-        }
-
-        /* Styles for collapsible sections */
-        .collapse-icon {
-            transition: transform 0.3s ease;
-        }
-
-        button[aria-expanded="true"] .collapse-icon {
-            transform: rotate(180deg);
-        }
-
-        /* Hover effects for collapse buttons */
-        .btn-link:hover {
-            text-decoration: none !important;
-            opacity: 0.8;
-        }
-
-        /* Style ended sessions with reduced opacity */
-        .time-slot-section[data-time-slot*="ended"] {
-            opacity: 0.8;
-        }
-
-        /* Style future unavailable sessions with warning border */
-        .time-slot-section[data-time-slot*="future"] .session-card {
-            border-left: 3px solid #ffc107;
-        }
-
-        /* Alternating background colors for time slot sections */
-        .time-slot-section.bg-light {
-            background-color: #f8f5ff !important;
-            /* Very light purple */
-            padding: 1rem;
-            border-radius: 0.5rem;
-        }
-
-        .time-slot-section.bg-light .bg-light.rounded {
-            background-color: #e8e0ff !important;
-            /* Slightly darker purple for header */
-        }
-
-        .time-slot-section.bg-white {
-            background-color: #f0f8ff !important;
-            /* Very light blue */
-            padding: 1rem;
-            border-radius: 0.5rem;
-        }
-
-        .time-slot-section.bg-white .bg-light.rounded {
-            background-color: #e0f0ff !important;
-            /* Slightly darker blue for header */
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/chronology/event.css' %}">
 {% endblock body %}

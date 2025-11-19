@@ -1,0 +1,51 @@
+.modal-backdrop.show {
+  display: block !important;
+  opacity: 0.5 !important;
+}
+
+.tag-container {
+  max-height: 1.5em;
+  overflow: hidden;
+}
+
+.filterable-tag,
+.proposal-tag,
+.modal-tag,
+.session-detail-tag {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.tag-filter-container {
+  width: 18vw;
+}
+
+.tag-filter-container .tag-filter {
+  width: 100%;
+}
+
+.collapse-icon {
+  transition: transform 0.3s ease;
+}
+
+button[aria-expanded="true"] .collapse-icon {
+  transform: rotate(180deg);
+}
+
+.btn-link:hover {
+  text-decoration: none !important;
+  opacity: 0.8;
+}
+
+.time-slot-section[data-time-slot*="ended"] {
+  opacity: 0.8;
+}
+
+.time-slot-section[data-time-slot*="future"] .session-card {
+  border-left: 3px solid var(--bs-warning);
+}
+
+

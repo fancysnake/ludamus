@@ -76,7 +76,7 @@ bd close bd-42 --reason "Completed" --json
 ### Stack
 
 - Python 3.13 with Poetry, Django 5.2.2, Gunicorn for prod, SQLite in dev (Postgres via `USE_POSTGRES=1`).
-- UI built with Bootstrap 5 + `django-bootstrap-icons`, custom CSS themes in `src/ludamus/static/css/themes` and shared styles in `static/css/common.css` and `custom.css`.
+- UI built with Bootstrap 5 + `django-bootstrap-icons`, custom CSS themes in `src/ludamus/static/css/themes` and shared styles in `static/css/common.css`.
 - Auth via Auth0 (`authlib`), root-level multi-tenancy via Django `Site` + `Sphere` models, htmx sprinkled for async snippets (Discord reveal buttons).
 - External membership API integration in `src/ludamus/adapters/external/membership_api.py` to fetch enrollment slots.
 

@@ -106,13 +106,7 @@ body:not(:has(.events-hero)) .main-content {
 }
 
 .page-nav__btn--login {
-  background-color: var(--bs-primary, #4a5d7a);
-  color: white !important;
-}
-
-.page-nav__btn--login:hover {
-  background-color: var(--bs-primary-dark, #3a4a61);
-  transform: translateY(-1px);
+  background-color: var(--bs-primary);
 }
 
 .page-nav__btn--outline {

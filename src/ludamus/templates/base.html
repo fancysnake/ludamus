@@ -20,8 +20,8 @@
               href="{% static 'favicon.ico' %}">
         {% bootstrap_css %}
         <link rel="stylesheet" href="{% static 'css/common.css' %}">
-        <link rel="stylesheet" href="{% static 'css/custom.css' %}">
         <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+        <link rel="stylesheet" href="{% static 'css/cinematic-card.css' %}">
         <link rel="stylesheet" href="{% static 'css/themes/cold-steel.css' %}">
         <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     </head>
@@ -82,7 +82,7 @@
                         </li>
                     {% else %}
                         <li class="page-nav__item">
-                            <a class="page-nav__btn page-nav__btn--login"
+                            <a class="page-nav__btn page-nav__btn--login text-dark"
                                href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}">
                                 {% translate "Login" %}
                             </a>
@@ -98,23 +98,7 @@
                 const toggle = document.querySelector('.page-nav__toggle');
                 const nav = document.querySelector('.page-nav__menu');
                 const overlay = document.querySelector('.page-nav-overlay');
-                const bg = document.querySelector('.page-nav-bg');
                 const body = document.body;
-                
-                // Scroll effect - control opacity of background
-                const handleScroll = () => {
-                    const scrollY = window.scrollY;
-                    // Fully transparent at top, fully opaque after 50px
-                    const opacity = Math.min(scrollY / 50, 1);
-                    
-                    // Only apply if on homepage (where style="opacity: 0" is set initially)
-                    if (bg && bg.style.opacity !== '') {
-                        bg.style.opacity = opacity;
-                    }
-                };
-
-                window.addEventListener('scroll', handleScroll);
-                handleScroll(); // Initial check
 
                 // Mobile menu toggle
                 function toggleMenu() {
@@ -193,7 +177,7 @@
         {% block body %}
         {% endblock body %}
     </div>
-    <footer class="page-footer bg-light py-4">
+    <footer class="page-footer bg-body-secondary py-4">
         <div>
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-2">
                 <div>

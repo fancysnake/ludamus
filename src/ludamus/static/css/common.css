@@ -1,10 +1,13 @@
 @import '../fonts/fonts.css';
 
+@import './bootstrap.css';
+@import './prose.css';
 @import './hero.css';
 
 body {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 a {

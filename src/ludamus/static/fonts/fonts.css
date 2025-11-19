@@ -17,3 +17,11 @@
 body, .font-serif {
   font-family: 'Marauder', serif;
 }
+
+:root {
+  --bs-body-font-family: 'Marauder', serif;
+}
+
+*, ::before, ::after {
+  corner-shape: superellipse(-0.3);
+}
