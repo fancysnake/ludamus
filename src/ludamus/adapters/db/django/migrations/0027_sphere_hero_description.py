@@ -5,9 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ("db_main", "0026_event_location_label_event_location_url"),
-    ]
+    dependencies = [("db_main", "0026_event_location_label_event_location_url")]
 
     operations = [
         migrations.AddField(
@@ -18,6 +16,5 @@ class Migration(migrations.Migration):
                 default="",
                 help_text="Description shown on the overview page",
             ),
-        ),
+        )
     ]
-

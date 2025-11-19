@@ -126,17 +126,22 @@ class Sphere(models.Model):
 
     name = models.CharField(max_length=255)
     description = models.TextField(
-        blank=True,
-        default="",
-        help_text="Description shown on the overview page",
+        blank=True, default="", help_text="Description shown on the overview page"
     )
     site = models.OneToOneField(Site, on_delete=models.PROTECT, related_name="sphere")
     managers = models.ManyToManyField(User)
+    image = models.ImageField(
+        upload_to="spheres", blank=True, help_text="Cover image for the sphere"
+    )
     visibility = models.CharField(
         max_length=20,
         choices=Visibility.choices,
         default=Visibility.PUBLIC,
-        help_text="Public: visible on root page. Unlisted: accessible but not listed. Private: hidden.",
+        help_text=(
+            "Public: visible on root page. "
+            "Unlisted: accessible but not listed. "
+            "Private: hidden."
+        ),
     )
 
     class Meta:
@@ -156,11 +161,15 @@ class Event(models.Model):
     location_label = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Optional label to display instead of name (e.g. 'Convention Center')",
+        help_text=(
+            "Optional label to display instead of name (e.g. 'Convention Center')"
+        ),
     )
     location_url = models.URLField(
-        blank=True,
-        help_text="Optional URL for the location (e.g. Google Maps link)",
+        blank=True, help_text="Optional URL for the location (e.g. Google Maps link)"
+    )
+    image = models.ImageField(
+        upload_to="events", blank=True, help_text="Cover image for the event"
     )
     # Time - start and end
     start_time = models.DateTimeField()
@@ -743,6 +752,9 @@ class Session(models.Model):
     description = models.TextField(default="", blank=True)
     requirements = models.TextField(blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    image = models.ImageField(
+        upload_to="sessions", blank=True, help_text="Cover image for the session"
+    )
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
