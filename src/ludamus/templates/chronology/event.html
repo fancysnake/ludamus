@@ -767,7 +767,13 @@
                                         <h6>{% bs_icon 'geo-alt' %} {% translate "Location" %}</h6>
                                         <p class="ms-4">
                                             {% if data.session.agenda_item.space %}
-                                                {{ data.session.agenda_item.space.name }}
+                                                {% if data.session.agenda_item.space.location_url %}
+                                                    <a href="{{ data.session.agenda_item.space.location_url }}" target="_blank" rel="noopener">
+                                                        {{ data.session.agenda_item.space.display_location }}
+                                                    </a>
+                                                {% else %}
+                                                    {{ data.session.agenda_item.space.display_location }}
+                                                {% endif %}
                                             {% else %}
                                                 <span class="text-muted">{% translate "To be announced" %}</span>
                                             {% endif %}

@@ -26,7 +26,14 @@
                 </small>
                 <small class="text-muted d-block mb-1">
                     {% if data.session.agenda_item.space %}
-                        {% bs_icon 'geo-alt' %} {{ data.session.agenda_item.space.name }}
+                        {% bs_icon 'geo-alt' %}
+                        {% if data.session.agenda_item.space.location_url %}
+                            <a href="{{ data.session.agenda_item.space.location_url }}" target="_blank" rel="noopener" class="text-reset text-decoration-underline">
+                                {{ data.session.agenda_item.space.display_location }}
+                            </a>
+                        {% else %}
+                            {{ data.session.agenda_item.space.display_location }}
+                        {% endif %}
                     {% else %}
                         {% load i18n %}
                         {% bs_icon 'geo-alt' %} {% translate "TBA" %}

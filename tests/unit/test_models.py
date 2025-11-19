@@ -65,6 +65,15 @@ class TestSpace:
 
         assert str(Space(name=name, id=pk)) == f"{name} ({pk})"
 
+    def test_display_location_fallback(self, faker):
+        name = faker.word()
+        assert Space(name=name).display_location == name
+
+    def test_display_location_label(self, faker):
+        name = faker.word()
+        label = faker.word()
+        assert Space(name=name, location_label=label).display_location == label
+
 
 class TestTimeSlot:
     def test_str(self, faker, time_zone):
