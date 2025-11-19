@@ -198,6 +198,6 @@ cython_debug/
 .vscode
 dev.sqlite3
 src/ludamus/static/icon_cache/
-.beads/
 
+.beads/
 worktrees/

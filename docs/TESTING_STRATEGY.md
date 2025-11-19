@@ -48,7 +48,7 @@ Asserts:
 
 ## End-to-End tests
 
-Yes: Whole features
+Yes: Full features, complete flows
 
 ## Migration to the new strategy
 
