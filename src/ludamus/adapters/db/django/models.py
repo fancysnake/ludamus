@@ -137,8 +137,18 @@ class Event(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(default="", blank=True)
+    location_label = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Optional label to display instead of name (e.g. 'Convention Center')",
+    )
+    location_url = models.URLField(
+        blank=True,
+        help_text="Optional URL for the location (e.g. Google Maps link)",
+    )
     # Time - start and end
     start_time = models.DateTimeField()
+
     end_time = models.DateTimeField()
     # Publication time
     publication_time = models.DateTimeField(blank=True, null=True)
@@ -193,6 +203,10 @@ class Event(models.Model):
     @property
     def is_ended(self) -> bool:
         return self.end_time < datetime.now(tz=UTC)
+
+    @property
+    def display_location(self) -> str:
+        return self.location_label
 
     def get_active_enrollment_configs(self) -> list[EnrollmentConfig]:
         return [config for config in self.enrollment_configs.all() if config.is_active]
