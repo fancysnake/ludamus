@@ -14,7 +14,8 @@
                 <h1 class="mb-4">{% translate "Upcoming events" %}</h1>
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2 mb-5">
                     {% for event in upcoming_events %}
-                        <a href="{% url 'web:chronology:event' slug=event.slug %}" class="col text-decoration-none">
+                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                           class="col text-decoration-none">
                             <div class="card h-100 cursor-pointer">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -23,9 +24,7 @@
                                             <span class="badge bg-secondary">{% translate "LIVE" %}</span>
                                         {% endif %}
                                     </div>
-                                    {% if event.description %}
-                                        <p class="card-text text-muted">{{ event.description }}</p>
-                                    {% endif %}
+                                    {% if event.description %}<p class="card-text text-muted">{{ event.description }}</p>{% endif %}
                                     <div class="d-flex align-items-center text-muted">
                                         {% bs_icon 'calendar3' %}
                                         <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
@@ -40,13 +39,12 @@
                 <h1 class="mb-4">{% translate "Past events" %}</h1>
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
                     {% for event in past_events %}
-                        <a href="{% url 'web:chronology:event' slug=event.slug %}" class="col text-decoration-none">
+                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                           class="col text-decoration-none">
                             <div class="card h-100 cursor-pointer">
                                 <div class="card-body">
                                     <h5 class="card-title mb-3">{{ event.name }}</h5>
-                                    {% if event.description %}
-                                        <p class="card-text text-muted">{{ event.description }}</p>
-                                    {% endif %}
+                                    {% if event.description %}<p class="card-text text-muted">{{ event.description }}</p>{% endif %}
                                     <div class="d-flex align-items-center text-muted">
                                         {% bs_icon 'calendar3' %}
                                         <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
