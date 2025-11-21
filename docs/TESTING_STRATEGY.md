@@ -48,7 +48,7 @@ Asserts:
 
 ## End-to-End tests
 
-Yes: Dynamic website elements (JS)
+Yes: Full features, complete flows
 
 ## Migration to the new strategy
 
