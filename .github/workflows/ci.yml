@@ -66,6 +66,22 @@ jobs:
       - name: Run end-to-end tests
         run: bun playwright test
         working-directory: ./tests/e2e
+        env:
+          ENV: test
+          SECRET_KEY: test-secret-key-for-ci
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          DB_NAME: ludamus_test
+          DB_USER: ludamus_user
+          DB_PASSWORD: test_password
+          DB_HOST: db
+          DB_PORT: 5432
+          AUTH0_DOMAIN: test.auth0.com
+          AUTH0_CLIENT_ID: test_client_id
+          AUTH0_CLIENT_SECRET: test_client_secret
+          ROOT_DOMAIN: localhost
+          SUPPORT_EMAIL: test@example.com
+          DEBUG: true
+          USE_POSTGRES: false
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
