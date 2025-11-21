@@ -43,6 +43,10 @@ jobs:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
 
+      - name: Install dependencies
+        run: bun install
+        working-directory: ./tests/e2e
+
         # per the docs: "caching browser binaries is not recommended,
         # since the amount of time it takes to restore the cache is
         # comparable to the time it takes to download the binaries"
