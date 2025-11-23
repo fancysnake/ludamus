@@ -48,6 +48,8 @@ class BaseUserForm(forms.Form):
     def user_data(self) -> UserData:
         cleaned_data = self.cleaned_data or {}
         user_data = UserData()
+        if "discord_username" in cleaned_data:
+            user_data["discord_username"] = cleaned_data["discord_username"]
         if "email" in cleaned_data:
             user_data["email"] = cleaned_data["email"]
         if "name" in cleaned_data:
@@ -64,6 +66,12 @@ class BaseUserForm(forms.Form):
 class UserForm(BaseUserForm):
     user_type = forms.CharField(initial=UserType.ACTIVE, widget=forms.HiddenInput())
     email = forms.EmailField(label=_("email address"), required=False)
+    discord_username = forms.CharField(
+        label=_("Discord username"),
+        required=False,
+        max_length=150,
+        help_text=_("Your Discord username for session coordination"),
+    )
 
 
 class ConnectedUserForm(BaseUserForm):

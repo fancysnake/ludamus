@@ -46,6 +46,26 @@ class TestProfilePageView:
         assert user.name == data["name"]
         assert user.email == data["email"]
 
+    def test_post_updates_discord_username(
+        self, authenticated_client, active_user, faker
+    ):
+        data = {
+            "name": faker.name(),
+            "email": faker.email(),
+            "user_type": UserType.ACTIVE,
+            "discord_username": "testuser#1234",
+        }
+        response = authenticated_client.post(self.URL, data=data)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Profile updated successfully!")],
+            url="/",
+        )
+        user = User.objects.get(id=active_user.id)
+        assert user.discord_username == "testuser#1234"
+
     def test_post_error_form_invalid(self, active_user, authenticated_client):
         response = authenticated_client.post(self.URL)
 

@@ -175,6 +175,7 @@ class EventDTO(BaseModel):
 
 
 class UserData(TypedDict, total=False):
+    discord_username: str
     email: str
     is_active: bool
     name: str
