@@ -7,33 +7,44 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 
 from ludamus.adapters.web.django.exceptions import RedirectError
-from ludamus.links.dao import NotFoundError, RootDAO
+from ludamus.adapters.web.django.requests import RootRepositoryRequest
+from ludamus.pacts import AuthenticatedRequestContext, NotFoundError, RequestContext
 
 
 class _GetResponseCallable(Protocol):
     def __call__(self, request: HttpRequest, /) -> HttpResponseBase: ...
 
 
-class RootMiddleware:
+class RequestContextMiddleware:
     def __init__(self, get_response: _GetResponseCallable) -> None:
         self.get_response = get_response
 
-    def __call__(self, request: HttpRequest) -> HttpResponseBase:
+    def __call__(self, request: RootRepositoryRequest) -> HttpResponseBase:
+        sphere_repository = request.uow.spheres
+        root_sphere = sphere_repository.read_by_domain(settings.ROOT_DOMAIN)
         try:
-            request.root_dao = RootDAO(  # type: ignore [attr-defined]
-                domain=request.get_host(), root_domain=settings.ROOT_DOMAIN
-            )
+            current_sphere = sphere_repository.read_by_domain(request.get_host())
         except NotFoundError:
-            request.root_dao = RootDAO(  # type: ignore [attr-defined]
-                domain=settings.ROOT_DOMAIN, root_domain=settings.ROOT_DOMAIN
-            )
             url = f'{request.scheme}://{settings.ROOT_DOMAIN}{reverse("web:index")}'
             messages.error(request, _("Sphere not found"))
             return HttpResponseRedirect(url)
 
-        request.user_dao = None  # type: ignore [attr-defined]
         if hasattr(request, "user") and request.user.is_authenticated:
-            request.user_dao = request.root_dao.get_user_dao(request.user)  # type: ignore [attr-defined]
+            request.context = AuthenticatedRequestContext(
+                root_sphere_id=root_sphere.pk,
+                current_sphere_id=current_sphere.pk,
+                root_site_id=root_sphere.site_id,
+                current_site_id=current_sphere.site_id,
+                current_user_slug=request.user.slug,
+                current_user_id=request.user.pk,
+            )
+        else:
+            request.context = RequestContext(
+                root_sphere_id=root_sphere.pk,
+                current_sphere_id=current_sphere.pk,
+                root_site_id=root_sphere.site_id,
+                current_site_id=current_sphere.site_id,
+            )
 
         return self.get_response(request)
 

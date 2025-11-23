@@ -1,0 +1,53 @@
+from contextlib import AbstractContextManager
+from functools import cached_property
+
+from django.contrib.auth import login as django_login
+from django.db import transaction
+from django.http import HttpRequest
+
+from ludamus.adapters.db.django.models import User
+from ludamus.links.db.django import repositories
+from ludamus.links.db.django.storage import Storage
+from ludamus.pacts import UnitOfWorkProtocol, UserType
+
+
+class UnitOfWork(UnitOfWorkProtocol):
+    def __init__(self) -> None:
+        self._storage = Storage()
+
+    @staticmethod
+    def atomic() -> AbstractContextManager[None]:
+        return transaction.atomic()
+
+    @staticmethod
+    def login_user(request: HttpRequest, user_slug: str) -> None:
+        user = User.objects.get(slug=user_slug)
+        django_login(request, user)
+
+    @cached_property
+    def active_users(self) -> repositories.UserRepository:
+        return repositories.UserRepository(self._storage, user_type=UserType.ACTIVE)
+
+    @cached_property
+    def agenda_items(self) -> repositories.AgendaItemRepository:
+        return repositories.AgendaItemRepository(self._storage)
+
+    @cached_property
+    def anonymous_users(self) -> repositories.UserRepository:
+        return repositories.UserRepository(self._storage, user_type=UserType.ANONYMOUS)
+
+    @cached_property
+    def connected_users(self) -> repositories.ConnectedUserRepository:
+        return repositories.ConnectedUserRepository(self._storage)
+
+    @cached_property
+    def proposals(self) -> repositories.ProposalRepository:
+        return repositories.ProposalRepository(self._storage)
+
+    @cached_property
+    def sessions(self) -> repositories.SessionRepository:
+        return repositories.SessionRepository(self._storage)
+
+    @cached_property
+    def spheres(self) -> repositories.SphereRepository:
+        return repositories.SphereRepository(self._storage)
