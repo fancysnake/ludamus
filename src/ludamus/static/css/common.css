@@ -1,28 +1,40 @@
+@import '../fonts/fonts.css';
+
+@import './bootstrap.css';
+@import './prose.css';
+@import './hero.css';
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+a {
+  cursor: pointer;
+}
+
 .main-content,
-.page-footer,
-.navbar {
+.page-footer {
   padding-inline: 0.5rem;
+}
+
+.main-content {
+  padding-bottom: 64px;
 }
 
 @media (min-width: 768px) {
   .main-content,
-  .page-footer,
-  .navbar {
+  .page-footer {
     padding-inline: 1rem;
   }
 }
 
 @media (min-width: 992px) {
   .main-content,
-  .page-footer,
-  .navbar {
+  .page-footer {
     padding-inline: 2rem;
   }
-}
-
-body {
-  display: flex;
-  flex-direction: column;
 }
 
 .page-footer {
@@ -31,4 +43,24 @@ body {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+.text-lg {
+  font-size: 1.5rem;
+}
+
+.text-xl {
+  font-size: 2rem;
+}
+
+.text-2xl {
+  font-size: 2.5rem;
+}
+
+.text-3xl {
+  font-size: 3rem;
+}
+
+.no-underline {
+  text-decoration: none;
 }

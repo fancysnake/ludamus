@@ -34,7 +34,7 @@
                                 <h6>{% translate "Tags" %}</h6>
                                 <p>
                                     {% for tag in proposal.tags.all %}
-                                        <span class="badge bg-light text-dark me-1">
+                                        <span class="badge bg-body-secondary text-dark me-1">
                                             {% if tag.category.icon %}
                                                 {% bs_icon tag.category.icon %}
                                             {% endif %}

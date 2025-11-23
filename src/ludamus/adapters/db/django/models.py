@@ -105,9 +105,30 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Sphere(models.Model):
     """Big group for whole provinces, topics, organizations or big events."""
 
+    class Visibility(models.TextChoices):
+        PUBLIC = "public", "Public"
+        UNLISTED = "unlisted", "Unlisted"
+        PRIVATE = "private", "Private"
+
     name = models.CharField(max_length=255)
+    description = models.TextField(
+        blank=True, default="", help_text="Description shown on the overview page"
+    )
     site = models.OneToOneField(Site, on_delete=models.PROTECT, related_name="sphere")
     managers = models.ManyToManyField(User)
+    image = models.ImageField(
+        upload_to="spheres", blank=True, help_text="Cover image for the sphere"
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=Visibility.choices,
+        default=Visibility.PUBLIC,
+        help_text=(
+            "Public: visible on root page. "
+            "Unlisted: accessible but not listed. "
+            "Private: hidden."
+        ),
+    )
 
     class Meta:
         db_table = "sphere"
@@ -123,8 +144,24 @@ class Event(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(default="", blank=True)
+    location_label = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=(
+            "Optional label to display instead of name (e.g. 'Convention Center')"
+        ),
+    )
+    location_url = models.URLField(
+        blank=True,
+        max_length=500,
+        help_text="Optional URL for the location (e.g. Google Maps link)",
+    )
+    image = models.ImageField(
+        upload_to="events", blank=True, help_text="Cover image for the event"
+    )
     # Time - start and end
     start_time = models.DateTimeField()
+
     end_time = models.DateTimeField()
     # Publication time
     publication_time = models.DateTimeField(blank=True, null=True)
@@ -161,6 +198,10 @@ class Event(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def display_location(self) -> str:
+        return self.location_label or self.name
 
     @property
     def is_proposal_active(self) -> bool:
@@ -693,6 +734,9 @@ class Session(models.Model):
     description = models.TextField(default="", blank=True)
     requirements = models.TextField(blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    image = models.ImageField(
+        upload_to="sessions", blank=True, help_text="Cover image for the session"
+    )
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
