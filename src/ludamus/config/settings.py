@@ -34,6 +34,7 @@ Environment Variables:
         - MEMBERSHIP_API_TOKEN: Authentication token for membership API
         - MEMBERSHIP_API_TIMEOUT: Request timeout in seconds (default: 30)
         - MEMBERSHIP_API_CHECK_INTERVAL: Check interval in minutes (default: 15)
+        - GOOGLE_MAPS_API_KEY: API key for Google Maps Embed API
 """
 
 import os
@@ -343,3 +344,6 @@ MEMBERSHIP_API_TIMEOUT = int(os.getenv("MEMBERSHIP_API_TIMEOUT", "30"))
 MEMBERSHIP_API_CHECK_INTERVAL = int(
     os.getenv("MEMBERSHIP_API_CHECK_INTERVAL", "15")
 )  # minutes
+
+# Google Maps
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")

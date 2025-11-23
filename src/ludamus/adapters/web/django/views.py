@@ -59,7 +59,6 @@ from ludamus.pacts import (
 from .exceptions import RedirectError
 from .forms import (
     ConnectedUserForm,
-    ThemeSelectionForm,
     UserForm,
     create_enrollment_form,
     create_proposal_acceptance_form,
@@ -280,10 +279,32 @@ class Auth0LogoutRedirectActionView(RedirectView):
 
 class IndexPageView(TemplateView):
     request: RootDAORequest
-    template_name = "index.html"
+
+    def get_template_names(self) -> list[str]:
+        current_domain = self.request.root_dao.current_site.domain.split(":")[0]
+        root_domain = self.request.root_dao.root_site.domain.split(":")[0]
+        is_root = current_domain == root_domain
+        if is_root:
+            return ["root/index.html"]
+        return ["index.html"]
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+        current_domain = self.request.root_dao.current_site.domain.split(":")[0]
+        root_domain = self.request.root_dao.root_site.domain.split(":")[0]
+        if current_domain == root_domain:
+
+            from ludamus.adapters.db.django.models import Sphere
+
+            spheres = (
+                Sphere.objects.filter(
+                    site__isnull=False, visibility=Sphere.Visibility.PUBLIC
+                )
+                .exclude(site_id=self.request.root_dao.root_site.pk)
+                .select_related("site")
+            )
+            context["spheres"] = [s for s in spheres]
+            return context
         all_events = list(
             Event.objects.filter(
                 sphere_id=self.request.root_dao.current_sphere.pk
@@ -1502,20 +1523,6 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                     "Please create time slots first."
                 ),
             )
-
-
-class ThemeSelectionActionView(View):
-    @staticmethod
-    def post(request: AuthorizedRootDAORequest) -> HttpResponse:
-        form = ThemeSelectionForm(request.POST)
-        if form.is_valid():
-            theme = form.cleaned_data["theme"]
-            request.session["theme"] = theme
-            # Redirect back to the referring page
-            return redirect(request.META.get("HTTP_REFERER", "/"))
-
-        # If form is invalid, redirect back anyway
-        return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 class EventAnonymousActivateActionView(View):

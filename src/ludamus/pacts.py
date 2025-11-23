@@ -127,6 +127,7 @@ class SphereDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
+    description: str = ""
     pk: int
 
 
