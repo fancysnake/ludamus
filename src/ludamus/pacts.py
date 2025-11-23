@@ -1,8 +1,14 @@
+from collections.abc import Iterable
+from contextlib import AbstractContextManager
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Protocol, TypedDict
+from typing import Any, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
+
+
+class NotFoundError(Exception): ...
 
 
 class ProposalCategoryDTO(BaseModel):
@@ -22,11 +28,13 @@ class ProposalDTO(BaseModel):
 
     creation_time: datetime
     description: str
+    host_id: int
     min_age: int
     needs: str
     participants_limit: int
     pk: int
     requirements: str
+    session_id: int | None
     title: str
 
 
@@ -34,6 +42,7 @@ class AgendaItemDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     end_time: datetime
+    pk: int
     session_confirmed: bool
     start_time: datetime
 
@@ -46,6 +55,7 @@ class SessionDTO(BaseModel):
     min_age: int
     modification_time: datetime
     participants_limit: int
+    pk: int
     presenter_name: str
     requirements: str
     slug: str
@@ -85,6 +95,25 @@ class TagDTO(BaseModel):
     confirmed: bool
     name: str
     pk: int
+
+
+class SessionData(TypedDict):
+    description: str
+    min_age: int
+    participants_limit: int
+    presenter_name: str
+    requirements: str
+    slug: str
+    sphere_id: int
+    title: str
+
+
+class AgendaItemData(TypedDict):
+    end_time: datetime
+    session_confirmed: bool
+    session_id: int
+    space_id: int
+    start_time: datetime
 
 
 class UserType(StrEnum):
@@ -128,6 +157,7 @@ class SphereDTO(BaseModel):
 
     name: str
     pk: int
+    site_id: int
 
 
 class EventDTO(BaseModel):
@@ -146,97 +176,93 @@ class EventDTO(BaseModel):
 
 class UserData(TypedDict, total=False):
     email: str
+    is_active: bool
     name: str
+    password: str
     slug: str
     user_type: UserType
     username: str
 
 
-class UserDAOProtocol(Protocol):
-    @property
-    def user(self) -> UserDTO: ...
-
-    @property
-    def users(self) -> list[UserDTO]: ...
-
-    @property
-    def connected_users(self) -> list[UserDTO]: ...
-
-    def update_user(self, user_data: UserData) -> None: ...
-
-    def create_connected_user(self, user_data: UserData) -> None: ...
-    def read_connected_user(self, slug: str) -> UserDTO: ...
-    def delete_connected_user(self, slug: str) -> None: ...
-    def update_connected_user(self, slug: str, user_data: UserData) -> None: ...
+@dataclass
+class RequestContext:
+    current_site_id: int
+    current_sphere_id: int
+    root_site_id: int
+    root_sphere_id: int
+    current_user_slug: str | None = None
+    current_user_id: int | None = None
 
 
-class OtherUserDAOProtocol(Protocol):
-    def get_user_by_slug(self, slug: str) -> UserDTO: ...
+@dataclass
+class AuthenticatedRequestContext(RequestContext):
+    current_user_slug: str
+    current_user_id: int
 
 
-class AnonymousUserDAOProtocol(Protocol):
-    def get_by_code(self, code: str) -> UserDTO: ...
-
-    def create_user(self, username: str, slug: str) -> None: ...
-
-    def update_user_name(self, slug: str, name: str) -> None: ...
-
-
-class AuthDAOProtocol(Protocol):
-    def fetch_or_create_user(self, username: str, slug: str) -> None: ...
-
-    @property
-    def user(self) -> UserDTO: ...
+class SphereRepositoryProtocol(Protocol):
+    def read_by_domain(self, domain: str) -> SphereDTO: ...
+    def read(self, pk: int) -> SphereDTO: ...
+    def read_site(self, sphere_id: int) -> SiteDTO: ...
+    def is_manager(self, sphere_id: int, user_slug: str) -> bool: ...
 
 
-class AcceptProposalDAOProtocol(Protocol):
-    @property
-    def proposal(self) -> ProposalDTO: ...
-    @property
-    def host(self) -> UserDTO: ...
+class UserRepositoryProtocol(Protocol):
+    def create(self, user_data: UserData) -> None: ...
+    def read(self, slug: str) -> UserDTO: ...
+    def update(self, user_slug: str, user_data: UserData) -> None: ...
 
-    @property
-    def has_session(self) -> bool: ...
 
-    @property
-    def proposal_category(self) -> ProposalCategoryDTO: ...
+class ProposalRepositoryProtocol(Protocol):
+    def read_event(self, proposal_id: int) -> EventDTO: ...
+    def read_host(self, proposal_id: int) -> UserDTO: ...
+    def read_spaces(self, proposal_id: int) -> list[SpaceDTO]: ...
+    def read_tag_ids(self, proposal_id: int) -> list[int]: ...
+    def read_time_slot(self, proposal_id: int, time_slot_id: int) -> TimeSlotDTO: ...
+    def read_time_slots(self, proposal_id: int) -> list[TimeSlotDTO]: ...
+    def read(self, pk: int) -> ProposalDTO: ...
+    def update(self, proposal_dto: ProposalDTO) -> None: ...
 
-    @property
-    def event(self) -> EventDTO: ...
-    @property
-    def spaces(self) -> list[SpaceDTO]: ...
 
-    @property
-    def time_slots(self) -> list[TimeSlotDTO]: ...
+class SessionRepositoryProtocol(Protocol):
+    def create(self, session_data: SessionData, tag_ids: Iterable[int]) -> int: ...
 
-    def accept_proposal(
-        self, *, time_slot_id: int, space_id: int, slug: str
+
+class AgendaItemRepositoryProtocol(Protocol):
+    def create(self, agenda_item_data: AgendaItemData) -> None: ...
+
+
+class ConnectedUserRepositoryProtocol(Protocol):
+    def create(self, manager_slug: str, user_data: UserData) -> None: ...
+    def read_all(self, manager_slug: str) -> list[UserDTO]: ...
+    def read(self, manager_slug: str, user_slug: str) -> UserDTO: ...
+    def delete(self, manager_slug: str, user_slug: str) -> None: ...
+    def update(
+        self, manager_slug: str, user_slug: str, user_data: UserData
     ) -> None: ...
 
 
-class RootDAOProtocol(Protocol):
-    def get_other_user_dao(self) -> OtherUserDAOProtocol: ...
-    def get_anonymous_user_dao(self) -> AnonymousUserDAOProtocol: ...
-    def get_auth_dao(self) -> AuthDAOProtocol: ...
-
+class UnitOfWorkProtocol(Protocol):
+    @staticmethod
+    def atomic() -> AbstractContextManager[None]: ...
+    @staticmethod
+    def login_user(request: Any, user_slug: str) -> None: ...
     @property
-    def current_site(self) -> SiteDTO: ...
-
+    def active_users(self) -> UserRepositoryProtocol: ...
     @property
-    def current_sphere(self) -> SphereDTO: ...
-
+    def agenda_items(self) -> AgendaItemRepositoryProtocol: ...
     @property
-    def root_site(self) -> SiteDTO: ...
-
+    def anonymous_users(self) -> UserRepositoryProtocol: ...
     @property
-    def allowed_domains(self) -> list[str]: ...
+    def connected_users(self) -> ConnectedUserRepositoryProtocol: ...
+    @property
+    def proposals(self) -> ProposalRepositoryProtocol: ...
+    @property
+    def sessions(self) -> SessionRepositoryProtocol: ...
+    @property
+    def spheres(self) -> SphereRepositoryProtocol: ...
 
-    def get_accept_proposal_dao(
-        self, proposal_id: int
-    ) -> AcceptProposalDAOProtocol: ...
 
-    def is_sphere_manager(self, user_id: int) -> bool: ...
-
-
-class RootDAORequestProtocol(Protocol):
-    root_dao: RootDAOProtocol
+class RootRequestProtocol(Protocol):
+    uow: UnitOfWorkProtocol
+    context: RequestContext

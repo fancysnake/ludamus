@@ -1,8 +1,10 @@
 from http import HTTPStatus
 
 from django.contrib import messages
+from django.contrib.sites.models import Site
 from django.urls import reverse
 
+from ludamus.adapters.db.django.models import Sphere
 from tests.integration.utils import assert_response
 
 
@@ -10,9 +12,10 @@ class TestAuth0LogoutRedirectActionView:
     URL = reverse("web:crowd:auth0:logout-redirect")
 
     def test_ok_with_domain(self, client):
-        response = client.get(
-            self.URL, {"last_domain": "example.com", "redirect_to": "/test"}
-        )
+        domain = "example.com"
+        site = Site.objects.get(domain=domain)
+        Sphere.objects.create(site=site, name="Example")
+        response = client.get(self.URL, {"last_domain": domain, "redirect_to": "/test"})
 
         assert_response(response, HTTPStatus.FOUND, url="http://example.com/test")
 

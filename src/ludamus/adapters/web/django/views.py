@@ -12,8 +12,8 @@ from urllib.parse import quote_plus, urlencode, urlparse
 from django import forms
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.db import transaction
@@ -45,14 +45,18 @@ from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
 )
-from ludamus.links.dao import NotFoundError
+from ludamus.gears import AcceptProposalService, AnonymousEnrollmentService
 from ludamus.pacts import (
-    AcceptProposalDAOProtocol,
+    AuthenticatedRequestContext,
+    NotFoundError,
     ProposalCategoryDTO,
-    RootDAOProtocol,
+    ProposalDTO,
+    ProposalRepositoryProtocol,
+    RequestContext,
     TagCategoryDTO,
     TagDTO,
-    UserDAOProtocol,
+    UnitOfWorkProtocol,
+    UserData,
     UserDTO,
 )
 
@@ -71,13 +75,14 @@ MINIMUM_ALLOWED_USER_AGE = 16
 CACHE_TIMEOUT = 600  # 10 minutes
 
 
-class RootDAORequest(HttpRequest):
-    root_dao: RootDAOProtocol
-    user_dao: UserDAOProtocol | None
+class AuthenticatedRootRequest(HttpRequest):
+    context: AuthenticatedRequestContext
+    uow: UnitOfWorkProtocol
 
 
-class AuthorizedRootDAORequest(RootDAORequest):
-    user_dao: UserDAOProtocol
+class RootRequest(HttpRequest):
+    context: RequestContext
+    uow: UnitOfWorkProtocol
 
 
 class LoginRequiredPageView(TemplateView):
@@ -91,7 +96,7 @@ class LoginRequiredPageView(TemplateView):
 
 class Auth0LoginActionView(View):
     @staticmethod
-    def get(request: RootDAORequest) -> HttpResponse:
+    def get(request: RootRequest) -> HttpResponse:
         """Redirect to Auth0 for authentication.
 
         Returns:
@@ -100,7 +105,9 @@ class Auth0LoginActionView(View):
         Raises:
             RedirectError: If the request is not from the root domain.
         """
-        root_domain = request.root_dao.root_site.domain
+        root_domain = request.uow.spheres.read_site(
+            request.context.root_sphere_id
+        ).domain
         next_path = request.GET.get("next")
         if request.get_host() != root_domain:
             url = f'{request.scheme}://{root_domain}{reverse("web:crowd:auth0:login")}?next={next_path}'
@@ -126,7 +133,7 @@ class Auth0LoginActionView(View):
 
 
 class Auth0LoginCallbackActionView(RedirectView):
-    request: RootDAORequest
+    request: RootRequest
 
     def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
         redirect_to = super().get_redirect_url(*args, **kwargs)
@@ -170,15 +177,19 @@ class Auth0LoginCallbackActionView(RedirectView):
             return self.request.build_absolute_uri(reverse("web:index"))
 
         # Handle login/signup
-        if not self.request.user_dao:
+        if not self.request.context.current_user_slug:
             username = self._get_username()
-            auth_dao = self.request.root_dao.get_auth_dao()
-            auth_dao.fetch_or_create_user(username=username, slug=slugify(username))
+            slug = slugify(username)
+            try:
+                user = self.request.uow.active_users.read(slug=slug)
+            except NotFoundError:
+                self.request.uow.active_users.create(
+                    UserData(slug=slug, username=username, password=make_password(None))
+                )
+                user = self.request.uow.active_users.read(slug=slug)
+
             # Log the user in
-            django_login(
-                self.request,
-                auth_dao._storage.maybe_user,  # type: ignore [attr-defined] # noqa: SLF001
-            )
+            self.request.uow.login_user(self.request, slug)
             if self.request.session.get("anonymous_enrollment_active"):
                 self.request.session.pop("anonymous_user_code", None)
                 self.request.session.pop("anonymous_enrollment_active", None)
@@ -186,7 +197,7 @@ class Auth0LoginCallbackActionView(RedirectView):
             messages.success(self.request, _("Welcome!"))
 
             # Check if profile needs completion
-            if auth_dao.user.is_incomplete:
+            if not user.name:
                 messages.success(self.request, _("Please complete your profile."))
                 if redirect_to:
                     parsed = urlparse(redirect_to)
@@ -207,14 +218,16 @@ class Auth0LoginCallbackActionView(RedirectView):
 
 
 class Auth0LogoutActionView(RedirectView):
-    request: RootDAORequest
+    request: RootRequest
 
     def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
         redirect_to = super().get_redirect_url(*args, **kwargs)
 
         django_logout(self.request)
 
-        last_domain = self.request.root_dao.current_site.domain
+        last_domain = self.request.uow.spheres.read_site(
+            self.request.context.current_sphere_id
+        ).domain
         messages.success(self.request, _("You have been successfully logged out."))
 
         return _auth0_logout_url(
@@ -223,12 +236,12 @@ class Auth0LogoutActionView(RedirectView):
 
 
 def _auth0_logout_url(
-    request: RootDAORequest,
+    request: RootRequest,
     *,
     last_domain: str | None = None,
     redirect_to: str | None = None,
 ) -> str:
-    root_domain = request.root_dao.root_site.domain
+    root_domain = request.uow.spheres.read_site(request.context.root_sphere_id).domain
     last_domain = last_domain or root_domain
     redirect_to = redirect_to or reverse("web:index")
     return f"https://{settings.AUTH0_DOMAIN}/v2/logout?" + urlencode(
@@ -243,7 +256,7 @@ def _auth0_logout_url(
 
 
 class Auth0LogoutRedirectActionView(RedirectView):
-    request: RootDAORequest
+    request: RootRequest
     pattern_name = "web:index"
 
     def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
@@ -259,18 +272,20 @@ class Auth0LogoutRedirectActionView(RedirectView):
 
         # Handle last_domain parameter for multi-site redirects
         if last_domain := self.request.GET.get("last_domain"):
-            # Validate that the domain belongs to a known site
-            allowed_domains = self.request.root_dao.allowed_domains
-
             # Also allow subdomains of ROOT_DOMAIN if configured
-            if hasattr(settings, "ROOT_DOMAIN") and (
+            if (
                 last_domain.endswith(f".{settings.ROOT_DOMAIN}")
                 or last_domain == settings.ROOT_DOMAIN
             ):
                 return f"{self.request.scheme}://{last_domain}{redirect_url}"
 
             # Check against explicitly allowed domains
-            if last_domain in allowed_domains:
+            try:
+                last_sphere = self.request.uow.spheres.read_by_domain(last_domain)
+            except NotFoundError:
+                last_sphere = None
+
+            if last_sphere:
                 return f"{self.request.scheme}://{last_domain}{redirect_url}"
 
             messages.warning(self.request, _("Invalid domain for redirect."))
@@ -279,15 +294,13 @@ class Auth0LogoutRedirectActionView(RedirectView):
 
 
 class IndexPageView(TemplateView):
-    request: RootDAORequest
+    request: RootRequest
     template_name = "index.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         all_events = list(
-            Event.objects.filter(
-                sphere_id=self.request.root_dao.current_sphere.pk
-            ).all()
+            Event.objects.filter(sphere_id=self.request.context.current_sphere_id).all()
         )
         context["upcoming_events"] = [e for e in all_events if not e.is_ended]
         context["past_events"] = [e for e in all_events if e.is_ended]
@@ -302,21 +315,27 @@ class ProfilePageView(
     ProcessFormView,
 ):
     form_class = UserForm
-    request: AuthorizedRootDAORequest
+    request: AuthenticatedRootRequest
     success_url = reverse_lazy("web:index")
     template_name = "crowd/user/edit.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        kwargs["user"] = self.request.user_dao.user
-        kwargs["object"] = self.request.user_dao.user
+        kwargs["user"] = self.request.uow.active_users.read(
+            self.request.context.current_user_slug
+        )
+        kwargs["object"] = self.request.uow.active_users.read(
+            self.request.context.current_user_slug
+        )
         kwargs["confirmed_participations_count"] = SessionParticipation.objects.filter(
-            user_id=self.request.user_dao.user.pk,
+            user_id=self.request.context.current_user_id,
             status=SessionParticipationStatus.CONFIRMED,
         ).count()
         return super().get_context_data(**kwargs)
 
     def form_valid(self, form: UserForm) -> HttpResponse:
-        self.request.user_dao.update_user(form.user_data)
+        self.request.uow.active_users.update(
+            self.request.context.current_user_slug, form.user_data
+        )
         messages.success(self.request, _("Profile updated successfully!"))
         return super().form_valid(form)
 
@@ -325,7 +344,9 @@ class ProfilePageView(
         return super().form_invalid(form)
 
     def get_initial(self) -> dict[str, Any]:
-        return self.request.user_dao.user.model_dump()
+        return self.request.uow.active_users.read(
+            self.request.context.current_user_slug
+        ).model_dump()
 
 
 class ProfileConnectedUsersPageView(
@@ -337,7 +358,7 @@ class ProfileConnectedUsersPageView(
 ):
     form_class = ConnectedUserForm
     object: UserDTO
-    request: AuthorizedRootDAORequest
+    request: AuthenticatedRootRequest
     success_url = reverse_lazy("web:crowd:profile-connected-users")
     template_name = "crowd/user/connected.html"
     template_name_suffix = "_form"
@@ -349,7 +370,9 @@ class ProfileConnectedUsersPageView(
                 "user": connected,
                 "form": ConnectedUserForm(initial=connected.model_dump()),
             }
-            for connected in self.request.user_dao.connected_users
+            for connected in self.request.uow.connected_users.read_all(
+                self.request.context.current_user_slug
+            )
         ]
         context["connected_users"] = connected_users
         context["max_connected_users"] = MAX_CONNECTED_USERS
@@ -358,7 +381,11 @@ class ProfileConnectedUsersPageView(
     def form_valid(self, form: ConnectedUserForm) -> HttpResponse:
         # Check if user has reached the maximum number of connected users
 
-        connected_count = len(self.request.user_dao.connected_users)
+        connected_count = len(
+            self.request.uow.connected_users.read_all(
+                self.request.context.current_user_slug
+            )
+        )
         if connected_count >= MAX_CONNECTED_USERS:
             messages.error(
                 self.request,
@@ -371,7 +398,9 @@ class ProfileConnectedUsersPageView(
         user_data["username"] = f"connected|{token_urlsafe(50)}"
         user_data["slug"] = slugify(user_data["username"][:50])
         result = super().form_valid(form)
-        self.request.user_dao.create_connected_user(user_data=user_data)
+        self.request.uow.connected_users.create(
+            self.request.context.current_user_slug, user_data=user_data
+        )
         messages.success(self.request, _("Connected user added successfully!"))
         return result
 
@@ -389,13 +418,15 @@ class ProfileConnectedUserUpdateActionView(
 ):
 
     form_class = ConnectedUserForm
-    request: AuthorizedRootDAORequest
+    request: AuthenticatedRootRequest
     success_url = reverse_lazy("web:crowd:profile-connected-users")
     template_name = "crowd/user/connected.html"
     template_name_suffix = "_form"
 
     def get_object(self) -> UserDTO:
-        return self.request.user_dao.read_connected_user(self.kwargs["slug"])
+        return self.request.uow.connected_users.read(
+            self.request.context.current_user_slug, self.kwargs["slug"]
+        )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = {
@@ -407,15 +438,19 @@ class ProfileConnectedUserUpdateActionView(
                     "user": connected,
                     "form": ConnectedUserForm(initial=connected.model_dump()),
                 }
-                for connected in self.request.user_dao.connected_users
+                for connected in self.request.uow.connected_users.read_all(
+                    self.request.context.current_user_slug
+                )
             ],
         }
         context.update(kwargs)
         return super().get_context_data(**context)
 
     def form_valid(self, form: ConnectedUserForm) -> HttpResponse:
-        self.request.user_dao.update_connected_user(
-            slug=self.kwargs["slug"], user_data=form.user_data
+        self.request.uow.connected_users.update(
+            manager_slug=self.request.context.current_user_slug,
+            user_slug=self.kwargs["slug"],
+            user_data=form.user_data,
         )
         messages.success(self.request, _("Connected user updated successfully!"))
         return super().form_valid(form)
@@ -438,14 +473,16 @@ class ProfileConnectedUserDeleteActionView(
     pk_url_kwarg = "pk"
     query_pk_and_slug = False
     queryset = None
-    request: AuthorizedRootDAORequest
+    request: AuthenticatedRootRequest
     slug_field = "slug"
     slug_url_kwarg = "slug"
     success_url = reverse_lazy("web:crowd:profile-connected-users")
     template_name_suffix = "_confirm_delete"
 
     def get_object(self) -> UserDTO:
-        return self.request.user_dao.read_connected_user(self.kwargs["slug"])
+        return self.request.uow.connected_users.read(
+            self.request.context.current_user_slug, self.kwargs["slug"]
+        )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = {"user": self.get_object()}
@@ -454,7 +491,9 @@ class ProfileConnectedUserDeleteActionView(
 
     def form_valid(self, form: forms.Form) -> HttpResponseRedirect:  # noqa: ARG002
         success_url = self.get_success_url()
-        self.request.user_dao.delete_connected_user(self.kwargs["slug"])
+        self.request.uow.connected_users.delete(
+            self.request.context.current_user_slug, self.kwargs["slug"]
+        )
         messages.success(self.request, _("Connected user deleted successfully."))
         return HttpResponseRedirect(success_url)
 
@@ -463,11 +502,11 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
     template_name = "chronology/event.html"
     model = Event
     context_object_name = "event"
-    request: RootDAORequest
+    request: RootRequest
 
     def get_queryset(self) -> QuerySet[Event]:
         return (
-            Event.objects.filter(sphere_id=self.request.root_dao.current_sphere.pk)
+            Event.objects.filter(sphere_id=self.request.context.current_sphere_id)
             .select_related("sphere")
             .prefetch_related(
                 "spaces__agenda_items__session__tags__category",
@@ -549,9 +588,16 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
 
         # Add user enrollment config for authenticated users
         user_enrollment_config = None
-        if self.request.user_dao and self.request.user_dao.user.email:
+        if (
+            self.request.context.current_user_slug
+            and self.request.uow.active_users.read(
+                self.request.context.current_user_slug
+            ).email
+        ):
             user_enrollment_config = self.object.get_user_enrollment_config(
-                self.request.user_dao.user.email
+                self.request.uow.active_users.read(
+                    self.request.context.current_user_slug
+                ).email
             )
         context["user_enrollment_config"] = user_enrollment_config
 
@@ -561,10 +607,11 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             config.restrict_to_configured_users for config in active_configs
         )
         context["enrollment_requires_slots"] = requires_slots
+        anonymous_service = AnonymousEnrollmentService(self.request.uow.anonymous_users)
 
         # Handle anonymous mode
         # Clear anonymous session flags if user is authenticated
-        if self.request.user_dao and self.request.session.get(
+        if self.request.context.current_user_id and self.request.session.get(
             "anonymous_enrollment_active"
         ):
             self.request.session.pop("anonymous_user_code", None)
@@ -573,17 +620,16 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             self.request.session.pop("anonymous_site_id", None)
         elif (
             self.request.session.get("anonymous_enrollment_active")
-            and not self.request.user_dao
+            and not self.request.context.current_user_id
         ):
             # Load anonymous user data if in anonymous mode - validate site
             anonymous_user_code = self.request.session.get("anonymous_user_code")
-            current_site_id = self.request.root_dao.current_site.pk
+            current_site_id = self.request.context.current_site_id
             session_site_id = self.request.session.get("anonymous_site_id")
             if anonymous_user_code and session_site_id == current_site_id:
-                anonymous_user_dao = self.request.root_dao.get_anonymous_user_dao()
                 anonymous_user = None
                 with suppress(NotFoundError):
-                    anonymous_user = anonymous_user_dao.get_by_code(
+                    anonymous_user = anonymous_service.get_user_by_code(
                         code=anonymous_user_code
                     )
 
@@ -617,13 +663,18 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         context["filterable_tag_categories"] = list(filterable_categories)
 
         # Add proposals for superusers, sphere managers, and proposal authors
-        if self.request.user_dao:
+        if self.request.context.current_user_slug:
             # Check if user is a sphere manager for this event's sphere
             is_sphere_manager = self.object.sphere.managers.filter(
-                id=self.request.user_dao.user.pk
+                id=self.request.context.current_user_id
             ).exists()
 
-            if self.request.user_dao.user.is_superuser or is_sphere_manager:
+            if (
+                self.request.uow.active_users.read(
+                    self.request.context.current_user_slug
+                ).is_superuser
+                or is_sphere_manager
+            ):
                 # Show all unaccepted proposals for superusers and sphere managers
                 context["proposals"] = list(
                     Proposal.objects.filter(
@@ -640,7 +691,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                     Proposal.objects.filter(
                         category__event=self.object,
                         session__isnull=True,  # Only unaccepted proposals
-                        host_id=self.request.user_dao.user.pk,
+                        host_id=self.request.context.current_user_id,
                     )
                     .select_related("host", "category")
                     .prefetch_related("tags", "time_slots")
@@ -652,10 +703,18 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
     def _set_user_participations(
         self, sessions: dict[int, SessionData], event_sessions: QuerySet[Session]
     ) -> None:
+        anonymous_service = AnonymousEnrollmentService(self.request.uow.anonymous_users)
         # Handle authenticated users
-        if self.request.user_dao:
+        if self.request.context.current_user_slug:
             # Get all connected users in a single query
-            all_users = self.request.user_dao.users
+            all_users = [
+                self.request.uow.active_users.read(
+                    self.request.context.current_user_slug
+                ),
+                *self.request.uow.connected_users.read_all(
+                    self.request.context.current_user_slug
+                ),
+            ]
 
             # Pre-fetch all participations for relevant users and sessions
             participations = SessionParticipation.objects.filter(
@@ -690,17 +749,16 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             "anonymous_enrollment_active"
         ) and self.request.session.get("anonymous_user_code"):
             # Validate anonymous user is for the current site
-            current_site_id = self.request.root_dao.current_site.pk
+            current_site_id = self.request.context.current_site_id
             session_site_id = self.request.session.get("anonymous_site_id")
             try:
                 anonymous_user_code = self.request.session["anonymous_user_code"]
             except (KeyError, ValueError):
                 anonymous_user_code = None
             if session_site_id == current_site_id and anonymous_user_code is not None:
-                anonymous_user_dao = self.request.root_dao.get_anonymous_user_dao()
                 anonymous_user = None
                 with suppress(NotFoundError):
-                    anonymous_user = anonymous_user_dao.get_by_code(
+                    anonymous_user = anonymous_service.get_user_by_code(
                         code=anonymous_user_code
                     )
 
@@ -813,11 +871,11 @@ class Enrollments:
 
 
 def _get_session_or_redirect(
-    request: AuthorizedRootDAORequest, session_id: int
+    request: AuthenticatedRootRequest, session_id: int
 ) -> Session:
     try:
         return Session.objects.get(
-            sphere_id=request.root_dao.current_sphere.pk, id=session_id
+            sphere_id=request.context.current_sphere_id, id=session_id
         )
     except Session.DoesNotExist:
         raise RedirectError(
@@ -832,20 +890,31 @@ _status_by_choice = {
 
 
 class SessionEnrollPageView(LoginRequiredMixin, View):
-    request: AuthorizedRootDAORequest
+    request: AuthenticatedRootRequest
 
-    def get(self, request: AuthorizedRootDAORequest, session_id: int) -> HttpResponse:
+    def get(self, request: AuthenticatedRootRequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
 
         context = {
             "session": session,
             "event": session.agenda_item.space.event,
-            "connected_users": self.request.user_dao.connected_users,
+            "connected_users": self.request.uow.connected_users.read_all(
+                self.request.context.current_user_slug
+            ),
             "user_data": self._get_user_participation_data(session),
             "form": create_enrollment_form(
                 session=session,
-                users=self.request.user_dao.users,
-                manager_email=self.request.user_dao.user.email,
+                users=[
+                    self.request.uow.active_users.read(
+                        self.request.context.current_user_slug
+                    ),
+                    *self.request.uow.connected_users.read_all(
+                        self.request.context.current_user_slug
+                    ),
+                ],
+                manager_email=self.request.uow.active_users.read(
+                    request.context.current_user_slug
+                ).email,
             )(),
         }
 
@@ -876,7 +945,12 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         user_data: list[SessionUserParticipationData] = []
 
         # Get all connected users with proper prefetching
-        all_users = self.request.user_dao.users
+        all_users = [
+            self.request.uow.active_users.read(self.request.context.current_user_slug),
+            *self.request.uow.connected_users.read_all(
+                self.request.context.current_user_slug
+            ),
+        ]
 
         # Bulk fetch all participations for the event and users
         user_participations = SessionParticipation.objects.filter(
@@ -921,14 +995,23 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
         return user_data
 
-    def post(self, request: AuthorizedRootDAORequest, session_id: int) -> HttpResponse:
+    def post(self, request: AuthenticatedRootRequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
 
         # Initialize form with POST data
         form_class = create_enrollment_form(
             session=session,
-            users=self.request.user_dao.users,
-            manager_email=self.request.user_dao.user.email,
+            users=[
+                self.request.uow.active_users.read(
+                    self.request.context.current_user_slug
+                ),
+                *self.request.uow.connected_users.read_all(
+                    self.request.context.current_user_slug
+                ),
+            ],
+            manager_email=self.request.uow.active_users.read(
+                request.context.current_user_slug
+            ).email,
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
@@ -942,13 +1025,17 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 session
             )
             if enrollment_config and enrollment_config.restrict_to_configured_users:
-                if not request.user_dao.user.email:
+                if not request.uow.active_users.read(
+                    request.context.current_user_slug
+                ).email:
                     messages.error(
                         self.request,
                         _("Email address is required for enrollment in this session."),
                     )
                 elif not session.agenda_item.space.event.get_user_enrollment_config(
-                    request.user_dao.user.email
+                    request.uow.active_users.read(
+                        request.context.current_user_slug
+                    ).email
                 ):
                     messages.error(
                         self.request,
@@ -973,7 +1060,9 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 {
                     "session": session,
                     "event": session.agenda_item.space.event,
-                    "connected_users": self.request.user_dao.connected_users,
+                    "connected_users": self.request.uow.connected_users.read_all(
+                        self.request.context.current_user_slug
+                    ),
                     "user_data": self._get_user_participation_data(session),
                     "form": form,
                 },
@@ -990,7 +1079,12 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
     def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
         enrollment_requests = []
-        for user in self.request.user_dao.users:
+        for user in [
+            self.request.uow.active_users.read(self.request.context.current_user_slug),
+            *self.request.uow.connected_users.read_all(
+                self.request.context.current_user_slug
+            ),
+        ]:
             # Skip inactive users
             if not user.is_active:
                 continue
@@ -1186,9 +1280,9 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
 
 class EventProposalPageView(LoginRequiredMixin, View):
-    request: AuthorizedRootDAORequest
+    request: AuthenticatedRootRequest
 
-    def get(self, request: AuthorizedRootDAORequest, event_slug: str) -> HttpResponse:
+    def get(self, request: AuthenticatedRootRequest, event_slug: str) -> HttpResponse:
         event = self._validate_event(event_slug)
 
         proposal_category = self._get_proposal_category(event)
@@ -1230,7 +1324,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
         )
 
     def post(
-        self, request: AuthorizedRootDAORequest, event_slug: str  # noqa: ARG002
+        self, request: AuthenticatedRootRequest, event_slug: str  # noqa: ARG002
     ) -> HttpResponse:
         event = self._validate_event(event_slug)
         proposal_category = self._get_proposal_category(event)
@@ -1280,7 +1374,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
         # Create the proposal using form data
         proposal = Proposal.objects.create(
             category=proposal_category,
-            host_id=self.request.user_dao.user.pk,
+            host_id=self.request.context.current_user_id,
             title=form.cleaned_data["title"],
             description=form.cleaned_data["description"],
             requirements=form.cleaned_data["requirements"],
@@ -1323,7 +1417,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
     def _validate_event(self, event_slug: str) -> Event:
         try:
             event = Event.objects.get(
-                sphere_id=self.request.root_dao.current_sphere.pk, slug=event_slug
+                sphere_id=self.request.context.current_sphere_id, slug=event_slug
             )
         except Event.DoesNotExist:
             raise RedirectError(
@@ -1354,51 +1448,37 @@ class EventProposalPageView(LoginRequiredMixin, View):
             ) from None
 
 
-def _check_proposal_permission(root_dao: RootDAOProtocol, user: UserDTO) -> bool:
-    if user.is_superuser or user.is_staff:
-        return True
-
-    # Check if user is a sphere manager for this event's sphere
-    return root_dao.is_sphere_manager(user.pk)
-
-
 class ProposalAcceptPageView(LoginRequiredMixin, View):
-    def get(self, request: AuthorizedRootDAORequest, proposal_id: int) -> HttpResponse:
+    def get(self, request: AuthenticatedRootRequest, proposal_id: int) -> HttpResponse:
+        proposal_repository = request.uow.proposals
         try:
-            accept_proposal_dao = request.root_dao.get_accept_proposal_dao(proposal_id)
+            proposal = proposal_repository.read(proposal_id)
         except NotFoundError as exception:
             raise RedirectError(
                 reverse("web:index"), error=_("Proposal not found.")
             ) from exception
 
-        proposal = accept_proposal_dao.proposal
+        event = proposal_repository.read_event(proposal.pk)
         # Check if proposal is already accepted
-        if accept_proposal_dao.has_session:
+        if proposal.session_id:
             raise RedirectError(
-                reverse(
-                    "web:chronology:event",
-                    kwargs={"slug": accept_proposal_dao.event.slug},
-                ),
+                reverse("web:chronology:event", kwargs={"slug": event.slug}),
                 warning=_("This proposal has already been accepted."),
             )
 
+        service = AcceptProposalService(request.uow, context=request.context)
         # Check permissions
-        if not _check_proposal_permission(request.root_dao, request.user_dao.user):
+        if not service.can_accept_proposals():
             raise RedirectError(
-                reverse(
-                    "web:chronology:event",
-                    kwargs={"slug": accept_proposal_dao.event.slug},
-                ),
+                reverse("web:chronology:event", kwargs={"slug": event.slug}),
                 error=_(
                     "You don't have permission to accept proposals for this event."
                 ),
             )
 
-        event = accept_proposal_dao.event
-
         # Get available spaces and time slots for the event
-        self._check_spaces(accept_proposal_dao)
-        self._check_time_slots(accept_proposal_dao)
+        self._check_spaces(proposal, proposal_repository)
+        self._check_time_slots(proposal, proposal_repository)
 
         # Create the form
         form_class = create_proposal_acceptance_form(event)
@@ -1406,48 +1486,42 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
 
         context = {
             "proposal": proposal,
-            "host": accept_proposal_dao.host,
+            "host": proposal_repository.read_host(proposal.pk),
             "event": event,
-            "spaces": accept_proposal_dao.spaces,
-            "time_slots": accept_proposal_dao.time_slots,
+            "spaces": proposal_repository.read_spaces(proposal.pk),
+            "time_slots": proposal_repository.read_time_slots(proposal.pk),
             "form": form,
-            "proposal_host": accept_proposal_dao.host,
+            "proposal_host": proposal_repository.read_host(proposal.pk),
         }
 
         return TemplateResponse(request, "chronology/accept_proposal.html", context)
 
-    def post(self, request: AuthorizedRootDAORequest, proposal_id: int) -> HttpResponse:
+    def post(self, request: AuthenticatedRootRequest, proposal_id: int) -> HttpResponse:
+        proposal_repository = request.uow.proposals
         try:
-            accept_proposal_dao = request.root_dao.get_accept_proposal_dao(proposal_id)
+            proposal = proposal_repository.read(proposal_id)
         except NotFoundError as exception:
             raise RedirectError(
                 reverse("web:index"), error=_("Proposal not found.")
             ) from exception
 
-        proposal = accept_proposal_dao.proposal
+        event = proposal_repository.read_event(proposal.pk)
         # Check if proposal is already accepted
-        if accept_proposal_dao.has_session:
+        if proposal.session_id:
             raise RedirectError(
-                reverse(
-                    "web:chronology:event",
-                    kwargs={"slug": accept_proposal_dao.event.slug},
-                ),
+                reverse("web:chronology:event", kwargs={"slug": event.slug}),
                 warning=_("This proposal has already been accepted."),
             )
 
+        service = AcceptProposalService(request.uow, context=request.context)
         # Check permissions
-        if not _check_proposal_permission(request.root_dao, request.user_dao.user):
+        if not service.can_accept_proposals():
             raise RedirectError(
-                reverse(
-                    "web:chronology:event",
-                    kwargs={"slug": accept_proposal_dao.event.slug},
-                ),
+                reverse("web:chronology:event", kwargs={"slug": event.slug}),
                 error=_(
                     "You don't have permission to accept proposals for this event."
                 ),
             )
-
-        event = accept_proposal_dao.event
 
         # Initialize form with POST data
         form_class = create_proposal_acceptance_form(event)
@@ -1459,17 +1533,18 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                 "chronology/accept_proposal.html",
                 {
                     "proposal": proposal,
-                    "host": accept_proposal_dao.host,
+                    "host": proposal_repository.read_host(proposal.pk),
                     "event": event,
-                    "spaces": accept_proposal_dao.spaces,
-                    "time_slots": accept_proposal_dao.time_slots,
+                    "spaces": proposal_repository.read_spaces(proposal.pk),
+                    "time_slots": proposal_repository.read_time_slots(proposal.pk),
                     "form": form,
-                    "proposal_host": accept_proposal_dao.host,
+                    "proposal_host": proposal_repository.read_host(proposal.pk),
                 },
             )
 
-        accept_proposal_dao.accept_proposal(
-            slug=slugify(accept_proposal_dao.proposal.title),
+        service.accept_proposal(
+            proposal=proposal,
+            slugifier=slugify,
             space_id=form.cleaned_data["space"].id,
             time_slot_id=form.cleaned_data["time_slot"].id,
         )
@@ -1483,12 +1558,14 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         return redirect("web:chronology:event", slug=event.slug)
 
     @staticmethod
-    def _check_spaces(accept_proposal_dao: AcceptProposalDAOProtocol) -> None:
-        if not accept_proposal_dao.spaces:
+    def _check_spaces(
+        proposal: ProposalDTO, proposal_repository: ProposalRepositoryProtocol
+    ) -> None:
+        if not proposal_repository.read_spaces(proposal.pk):
             raise RedirectError(
                 reverse(
                     "web:chronology:event",
-                    kwargs={"slug": accept_proposal_dao.event.slug},
+                    kwargs={"slug": proposal_repository.read_event(proposal.pk).slug},
                 ),
                 error=_(
                     "No spaces configured for this event. Please create spaces first."
@@ -1496,12 +1573,14 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
             )
 
     @staticmethod
-    def _check_time_slots(accept_proposal_dao: AcceptProposalDAOProtocol) -> None:
-        if not accept_proposal_dao.time_slots:
+    def _check_time_slots(
+        proposal: ProposalDTO, proposal_repository: ProposalRepositoryProtocol
+    ) -> None:
+        if not proposal_repository.read_time_slots(proposal.pk):
             raise RedirectError(
                 reverse(
                     "web:chronology:event",
-                    kwargs={"slug": accept_proposal_dao.event.slug},
+                    kwargs={"slug": proposal_repository.read_event(proposal.pk).slug},
                 ),
                 error=_(
                     "No time slots configured for this event. "
@@ -1512,7 +1591,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
 
 class ThemeSelectionActionView(View):
     @staticmethod
-    def post(request: AuthorizedRootDAORequest) -> HttpResponse:
+    def post(request: RootRequest) -> HttpResponse:
         form = ThemeSelectionForm(request.POST)
         if form.is_valid():
             theme = form.cleaned_data["theme"]
@@ -1526,9 +1605,9 @@ class ThemeSelectionActionView(View):
 
 class EventAnonymousActivateActionView(View):
     @staticmethod
-    def get(request: RootDAORequest, event_slug: str) -> HttpResponse:
+    def get(request: RootRequest, event_slug: str) -> HttpResponse:
         # Redirect to event page if user is authenticated (not anonymous)
-        if request.user_dao:
+        if request.context.current_user_slug:
             return redirect("web:chronology:event", slug=event_slug)
 
         # Check if event exists and has anonymous enrollment enabled
@@ -1550,25 +1629,25 @@ class EventAnonymousActivateActionView(View):
 
         code = token_urlsafe(4).lower()
         # Create new anonymous UserDTO immediately
-        anonymous_user_dao = request.root_dao.get_anonymous_user_dao()
-        anonymous_user_dao.create_user(
-            username=f"anon_{token_urlsafe(8).lower()}", slug=f"code_{code}"
-        )
+        user_repository = request.uow.anonymous_users
+        service = AnonymousEnrollmentService(user_repository=user_repository)
+        user = service.build_user(code)
+        user_repository.create(user)
 
         # Set session flags - include site ID to prevent cross-site confusion
         request.session["anonymous_user_code"] = code
         request.session["anonymous_enrollment_active"] = True
         request.session["anonymous_event_id"] = event.id
-        request.session["anonymous_site_id"] = request.root_dao.current_site.pk
+        request.session["anonymous_site_id"] = request.context.current_site_id
 
         return redirect("web:chronology:event", slug=event.slug)
 
 
 class SessionEnrollmentAnonymousPageView(View):
     @staticmethod
-    def get(request: RootDAORequest, session_id: int) -> HttpResponse:
+    def get(request: RootRequest, session_id: int) -> HttpResponse:
         # Redirect to regular enrollment if user is authenticated
-        if request.user_dao:
+        if request.context.current_user_slug:
             return redirect("web:chronology:session-enrollment", session_id=session_id)
 
         # Check if anonymous mode is active
@@ -1577,7 +1656,7 @@ class SessionEnrollmentAnonymousPageView(View):
             return redirect("web:index")
 
         # Check if anonymous user is for the current site
-        current_site_id = request.root_dao.current_site.pk
+        current_site_id = request.context.current_site_id
         session_site_id = request.session.get("anonymous_site_id")
         if session_site_id != current_site_id:
             messages.error(
@@ -1588,7 +1667,7 @@ class SessionEnrollmentAnonymousPageView(View):
         # Get session
         try:
             session = Session.objects.get(
-                id=session_id, sphere__site_id=request.root_dao.current_site.pk
+                id=session_id, sphere__site_id=request.context.current_site_id
             )
         except Session.DoesNotExist:
             messages.error(request, _("Session not found."))
@@ -1600,10 +1679,11 @@ class SessionEnrollmentAnonymousPageView(View):
             messages.error(request, _("Anonymous session expired."))
             return redirect("web:index")
 
-        anonymous_user_dao = request.root_dao.get_anonymous_user_dao()
+        user_repository = request.uow.anonymous_users
+        service = AnonymousEnrollmentService(user_repository=user_repository)
         # Look up user by code
         try:
-            anonymous_user = anonymous_user_dao.get_by_code(code=anonymous_user_code)
+            anonymous_user = service.get_user_by_code(code=anonymous_user_code)
         except NotFoundError:
             messages.error(request, _("Anonymous user not found."))
             return redirect("web:index")
@@ -1626,9 +1706,9 @@ class SessionEnrollmentAnonymousPageView(View):
         return TemplateResponse(request, "chronology/anonymous_enroll.html", context)
 
     @staticmethod
-    def post(request: RootDAORequest, session_id: int) -> HttpResponse:
+    def post(request: RootRequest, session_id: int) -> HttpResponse:
         # Redirect to regular enrollment if user is authenticated
-        if request.user_dao:
+        if request.context.current_user_slug:
             return redirect("web:chronology:session-enrollment", session_id=session_id)
 
         # Check if anonymous mode is active
@@ -1637,7 +1717,7 @@ class SessionEnrollmentAnonymousPageView(View):
             return redirect("web:index")
 
         # Check if anonymous user is for the current site
-        current_site_id = request.root_dao.current_site.pk
+        current_site_id = request.context.current_site_id
         session_site_id = request.session.get("anonymous_site_id")
         if session_site_id != current_site_id:
             messages.error(
@@ -1648,7 +1728,7 @@ class SessionEnrollmentAnonymousPageView(View):
         # Get session
         try:
             session = Session.objects.get(
-                id=session_id, sphere__site_id=request.root_dao.current_site.pk
+                id=session_id, sphere__site_id=request.context.current_site_id
             )
         except Session.DoesNotExist:
             messages.error(request, _("Session not found."))
@@ -1660,10 +1740,11 @@ class SessionEnrollmentAnonymousPageView(View):
             messages.error(request, _("Anonymous session expired."))
             return redirect("web:index")
 
-        anonymous_user_dao = request.root_dao.get_anonymous_user_dao()
+        user_repository = request.uow.anonymous_users
+        service = AnonymousEnrollmentService(user_repository=user_repository)
         # Look up user by code
         try:
-            anonymous_user = anonymous_user_dao.get_by_code(code=anonymous_user_code)
+            anonymous_user = service.get_user_by_code(code=anonymous_user_code)
         except NotFoundError:
             messages.error(request, _("Anonymous user not found."))
             return redirect("web:index")
@@ -1681,7 +1762,7 @@ class SessionEnrollmentAnonymousPageView(View):
                 "web:chronology:session-enrollment-anonymous", session_id=session_id
             )
 
-        anonymous_user_dao.update_user_name(anonymous_user.slug, name)
+        user_repository.update(anonymous_user.slug, UserData(name=name))
 
         # Check for cancellation request
         action = request.POST.get("action", "enroll")
@@ -1761,9 +1842,9 @@ class AnonymousLoadActionView(View):
     """Handle entering an anonymous code to load a previous session"""
 
     @staticmethod
-    def post(request: RootDAORequest) -> HttpResponse:
+    def post(request: RootRequest) -> HttpResponse:
         # Only accessible to non-authenticated users
-        if request.user_dao:
+        if request.context.current_user_slug:
             return redirect("web:index")
 
         code = request.POST.get("code", "").strip()
@@ -1776,10 +1857,11 @@ class AnonymousLoadActionView(View):
                 return redirect(referer)
             return redirect("web:index")
 
-        anonymous_user_dao = request.root_dao.get_anonymous_user_dao()
+        user_repository = request.uow.anonymous_users
+        service = AnonymousEnrollmentService(user_repository=user_repository)
         # Look up user by code
         try:
-            anonymous_user = anonymous_user_dao.get_by_code(code=code)
+            anonymous_user = service.get_user_by_code(code=code)
         except NotFoundError:
             messages.error(request, _("Invalid code. Please check and try again."))
             # Try to redirect back to the referring event
@@ -1836,7 +1918,7 @@ class AnonymousResetActionView(View):
         return redirect("web:index")
 
 
-def get_discord_username(request: RootDAORequest, user_slug: str) -> HttpResponse:
+def get_discord_username(request: RootRequest, user_slug: str) -> HttpResponse:
     """Return Discord username HTML fragment via htmx.
 
     Args:
@@ -1846,8 +1928,8 @@ def get_discord_username(request: RootDAORequest, user_slug: str) -> HttpRespons
     Returns:
         TemplateResponse with Discord username fragment
     """
-    other_user_dao = request.root_dao.get_other_user_dao()
-    user = other_user_dao.get_user_by_slug(user_slug)
+    user_repository = request.uow.active_users
+    user = user_repository.read(user_slug)
     if user.discord_username:
         return TemplateResponse(
             request,

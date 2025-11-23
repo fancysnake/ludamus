@@ -4,12 +4,14 @@ import pytest
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
+from ludamus.adapters.db.django.models import Sphere
 from ludamus.adapters.web.django.exceptions import RedirectError
 from ludamus.adapters.web.django.middlewares import (
     RedirectErrorMiddleware,
-    RootMiddleware,
+    RequestContextMiddleware,
 )
-from ludamus.pacts import SphereDTO
+from ludamus.links.db.django.uow import UnitOfWork
+from ludamus.pacts import RequestContext
 
 
 @pytest.fixture(name="get_response_mock")
@@ -17,25 +19,32 @@ def get_response_mock_fixture():
     return Mock()
 
 
-class TestSphereMiddleware:
+class TestRequestContextMiddleware:
 
     @pytest.fixture
     @staticmethod
     def middleware(get_response_mock):
-        return RootMiddleware(get_response_mock)
+        return RequestContextMiddleware(get_response_mock)
 
     @pytest.mark.django_db
     @staticmethod
-    def test_successful_sphere_lookup(get_response_mock, middleware, rf, sphere):
+    def test_successful_sphere_lookup(
+        get_response_mock, middleware, rf, sphere, settings
+    ):
         request = rf.get("/")
         request.META["HTTP_HOST"] = sphere.site.domain
+        request.uow = UnitOfWork()
+        root_sphere = Sphere.objects.get(site__domain=settings.ROOT_DOMAIN)
 
         sphere.site.sphere = sphere
 
         middleware(request)
 
-        assert request.root_dao.current_sphere == SphereDTO(
-            name=sphere.name, pk=sphere.pk
+        assert request.context == RequestContext(
+            current_site_id=sphere.site.id,
+            current_sphere_id=sphere.id,
+            root_site_id=root_sphere.site.id,
+            root_sphere_id=root_sphere.id,
         )
         get_response_mock.assert_called_once_with(request)
 
@@ -47,6 +56,7 @@ class TestSphereMiddleware:
         settings.ALLOWED_HOSTS.append("nonexistent.example.com")
         request = rf.get("/")
         request.META["HTTP_HOST"] = "nonexistent.example.com"
+        request.uow = UnitOfWork()
 
         with patch("ludamus.adapters.web.django.middlewares.messages") as mock_messages:
             response = middleware(request)
