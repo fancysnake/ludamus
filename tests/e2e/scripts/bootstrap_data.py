@@ -38,7 +38,9 @@ from ludamus.adapters.db.django.models import (  # noqa: E402
 def _create_site(domain: str, *, name: str) -> tuple[Site, Sphere]:
     site, _ = Site.objects.get_or_create(domain=domain, defaults={"name": name})
     # Site has a one-to-one Sphere; look it up by site to avoid unique clashes
-    sphere, _ = Sphere.objects.get_or_create(site=site, defaults={"name": f"{name} Sphere"})
+    sphere, _ = Sphere.objects.get_or_create(
+        site=site, defaults={"name": f"{name} Sphere"}
+    )
     return site, sphere
 
 
@@ -134,7 +136,6 @@ def main() -> None:
         sphere_domain = "127.0.0.1:8000"
     _, sphere = _create_site(sphere_domain, name="E2E Test")
 
-    # Make sure any stray Site rows (e.g., default from django.contrib.sites) have spheres
     _ensure_spheres_for_all_sites()
 
     upcoming_event = _create_event(
