@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  linter:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,3 +35,61 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  playwright:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      - name: Create .env file for docker-compose
+        run: |
+          cat << EOF > .env
+          ENV=test
+          SECRET_KEY=test-secret-key-for-ci
+          ALLOWED_HOSTS=localhost,127.0.0.1
+          DB_NAME=ludamus_test
+          DB_USER=ludamus_user
+          DB_PASSWORD=test_password
+          DB_HOST=db
+          DB_PORT=5432
+          AUTH0_DOMAIN=test.auth0.com
+          AUTH0_CLIENT_ID=test_client_id
+          AUTH0_CLIENT_SECRET=test_client_secret
+          ROOT_DOMAIN=127.0.0.1:8000
+          SUPPORT_EMAIL=test@example.com
+          DEBUG=true
+          USE_POSTGRES=true
+          EOF
+
+      - name: Run image
+        uses: abatilo/actions-poetry@v3
+
+      - run: poetry install
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: ./tests/e2e
+
+        # per the docs: "caching browser binaries is not recommended,
+        # since the amount of time it takes to restore the cache is
+        # comparable to the time it takes to download the binaries"
+      - name: Install Playwright Browsers
+        run: bun playwright install --with-deps
+        working-directory: ./tests/e2e
+
+      - name: Run end-to-end tests
+        run: bun playwright test
+        working-directory: ./tests/e2e
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: ./tests/e2e/playwright-report/
+          retention-days: 30
