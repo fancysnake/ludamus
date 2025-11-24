@@ -5,11 +5,17 @@ import type { FullConfig } from '@playwright/test';
 const repoRoot = path.resolve(__dirname, '..', '..');
 const scriptPath = path.join('tests', 'e2e', 'scripts', 'bootstrap_data.py');
 
+const baseEnv = {
+  ...process.env,
+  DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE ?? 'ludamus.config.settings',
+  PYTHONPATH: process.env.PYTHONPATH ?? path.join(repoRoot, 'src'),
+};
+
 const run = (command: string) =>
   execSync(command, {
     cwd: repoRoot,
     stdio: 'inherit',
-    env: process.env,
+    env: baseEnv,
   });
 
 export default async function globalSetup(_config: FullConfig) {
