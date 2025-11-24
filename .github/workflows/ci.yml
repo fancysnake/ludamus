@@ -63,7 +63,7 @@ jobs:
           ROOT_DOMAIN=127.0.0.1:8000
           SUPPORT_EMAIL=test@example.com
           DEBUG=true
-          USE_POSTGRES=true
+          USE_POSTGRES=false
           EOF
 
       - name: Run image
