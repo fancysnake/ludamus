@@ -20,48 +20,106 @@
               href="{% static 'favicon.ico' %}">
         {% bootstrap_css %}
         <link rel="stylesheet" href="{% static 'css/common.css' %}">
-        {% if request.session.theme %}
-            <link rel="stylesheet"
-                  href="{% static 'css/themes/'|add:request.session.theme|add:'.css' %}">
-        {% else %}
-            <link rel="stylesheet" href="{% static 'css/themes/cold-steel.css' %}">
-        {% endif %}
+        <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+        <link rel="stylesheet" href="{% static 'css/cinematic-card.css' %}">
+        <link rel="stylesheet" href="{% static 'css/themes/cold-steel.css' %}">
         <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     </head>
     <body>
-        <nav class="navbar navbar-expand navbar-dark bg-primary">
-            <a class="navbar-brand fw-bold"
+        {% block page_nav_bg %}
+        <div class="page-nav-bg"></div>
+        {% endblock page_nav_bg %}
+        <header class="page-nav container-fluid">
+            <a class="page-nav__brand"
                href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
-                {% bs_icon 'people' %} {{ current_sphere.name }}
+                {{ current_sphere.name }}
             </a>
-            <div class="navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
+
+            <button class="page-nav__toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="page-nav-menu">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="32" height="32" fill="currentColor">
+                    <rect width="256" height="256" fill="none"/>
+                    <line x1="40" y1="128" x2="216" y2="128" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                    <line x1="40" y1="64" x2="216" y2="64" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                    <line x1="40" y1="192" x2="216" y2="192" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                </svg>
+            </button>
+
+            <div class="page-nav-overlay" id="page-nav-overlay"></div>
+
+            <nav class="page-nav__menu" id="page-nav-menu" aria-hidden="true">
+                <ul class="page-nav__list">
+                    <li class="page-nav__item">
+                        <a href="https://github.com/fancysnake/ludamus" class="page-nav__link" target="_blank" rel="noopener noreferrer">
+                            GitHub
+                        </a>
+                    </li>
+                    <li class="page-nav__item">
+                        <a href="mailto:{{ SUPPORT_EMAIL }}" class="page-nav__link">
+                            Contact
+                        </a>
+                    </li>
+
                     {% if request.user.is_authenticated and request.user.name %}
-                        <li class="nav-item">
-                            <span class="navbar-text text-light me-3">
-                                {% bs_icon 'person-circle' %}
+                        <li class="page-nav__item">
+                            <span class="page-nav__link">
                                 {{ request.user.name }}
                             </span>
                         </li>
                     {% endif %}
+                    
                     {% if request.user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="btn btn-outline-light me-2"
+                        <li class="page-nav__item">
+                            <a class="page-nav__btn page-nav__btn--outline"
                                href="{% url 'web:crowd:profile' %}">
-                                {% bs_icon 'person-gear' %} {% translate "Edit Profile" %}
+                                {% translate "Edit Profile" %}
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="btn btn-light me-2"" href="{% url 'web:crowd:auth0:logout' %}"> {% bs_icon 'person-gear' %} {% translate "Logout" %} </a> </li>
+                        <li class="page-nav__item">
+                            <a class="page-nav__btn page-nav__btn--outline"
+                               href="{% url 'web:crowd:auth0:logout' %}">
+                                {% translate "Logout" %}
+                            </a>
+                        </li>
                     {% else %}
-                        <li class="nav-item"> <a class="btn btn-light me-2"" href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}">
-                            {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+                        <li class="page-nav__item">
+                            <a class="page-nav__btn page-nav__btn--login text-dark"
+                               href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}">
+                                {% translate "Login" %}
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </header>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                // Elements
+                const toggle = document.querySelector('.page-nav__toggle');
+                const nav = document.querySelector('.page-nav__menu');
+                const overlay = document.querySelector('.page-nav-overlay');
+                const body = document.body;
+
+                // Mobile menu toggle
+                function toggleMenu() {
+                    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+                    toggle.setAttribute('aria-expanded', !isExpanded);
+                    nav.setAttribute('aria-hidden', isExpanded);
+                    overlay.classList.toggle('is-visible');
+                    body.style.overflow = isExpanded ? '' : 'hidden';
+                }
+
+                toggle.addEventListener('click', toggleMenu);
+                overlay.addEventListener('click', toggleMenu);
+                
+                // Close menu on escape
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && nav.getAttribute('aria-hidden') === 'false') {
+                        toggleMenu();
+                    }
+                });
+            });
+        </script>
     {% if messages %}
         <div class="mt-3">
             {% for message in messages %}
@@ -115,65 +173,19 @@
             {% endfor %}
         </div>
     {% endif %}
-    <div class="mt-md-4 main-content content-section">
-        <!-- Page Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1 class="display-5 fw-bold text-center mb-2">
-                    {% block header %}
-                    {% endblock header %}
-                </h1>
-                <p class="lead text-center text-muted">
-                    {% block description %}
-                    {% endblock description %}
-                </p>
-            </div>
-        </div>
+    <div class="main-content content-section">
         {% block body %}
         {% endblock body %}
     </div>
-    <footer class="page-footer bg-light py-4">
+    <footer class="page-footer bg-body-secondary py-4">
         <div>
-            <div class="row align-items-center">
-                <div class="col-md-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-2">
+                <div>
                     <p class="mb-0">
-                        © 2025 Radosław Ganczarek. <a href="https://github.com/fancysnake/ludamus">Source code</a> available under BSD-3-Clause license.
+                        © 2025 Radosław Ganczarek. <br class="d-md-none" /><a href="https://github.com/fancysnake/ludamus">Source code</a> available under BSD-3-Clause license.
                     </p>
                 </div>
-                <div class="col-md-4 text-center">
-                    <form method="post"
-                          action="{% url 'web:theme-select' %}"
-                          class="d-inline-flex align-items-center">
-                        {% csrf_token %}
-                        <label for="theme-select" class="me-2 mb-0">{% translate "Theme:" %}</label>
-                        <select name="theme"
-                                id="theme-select"
-                                class="form-select form-select-sm theme-select-form"
-                                onchange="this.form.submit()">
-                            <option value="cold-steel"
-                                    {% if request.session.theme == "cold-steel" or not request.session.theme %}selected{% endif %}>
-                                {% translate "Cold Steel (Default)" %}
-                            </option>
-                            <option value="cyberpunk"
-                                    {% if request.session.theme == "cyberpunk" %}selected{% endif %}>
-                                {% translate "Cyberpunk" %}
-                            </option>
-                            <option value="green-forest"
-                                    {% if request.session.theme == "green-forest" %}selected{% endif %}>
-                                {% translate "Green Forest" %}
-                            </option>
-                            <option value="dragons-lair"
-                                    {% if request.session.theme == "dragons-lair" %}selected{% endif %}>
-                                {% translate "Dragon's Lair" %}
-                            </option>
-                            <option value="outer-space"
-                                    {% if request.session.theme == "outer-space" %}selected{% endif %}>
-                                {% translate "Outer Space" %}
-                            </option>
-                        </select>
-                    </form>
-                </div>
-                <div class="col-md-4 text-md-end">
+                <div>
                     <a href="mailto:{{ SUPPORT_EMAIL }}" class="text-decoration-none me-3">{% translate "Contact me" %}</a>
                     <a href="{% url 'django.contrib.flatpages.views.flatpage' url='/privacy-policy/' %}"
                        class="text-decoration-none me-3">{% translate "Privacy Policy" %}</a>

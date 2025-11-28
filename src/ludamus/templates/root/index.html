@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load bootstrap_icons %}
+
+{% block title %}
+    {% translate "Welcome" %}
+{% endblock title %}
+
+{% block header %}
+{% endblock header %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-5">
+                <h1 class="display-3 fw-bold mb-4">{% translate "Welcome to Ludamus" %}</h1>
+                <p class="lead text-muted mb-4">
+                    {% translate "Discover and join gaming events, workshops, and play sessions in your community." %}
+                </p>
+            </div>
+        </div>
+
+        {% if spheres %}
+            <div class="row g-4 mb-5">
+                <div class="col-12">
+                    <h2 class="text-center mb-4">{% translate "Available Communities" %}</h2>
+                </div>
+                {% for sphere in spheres %}
+                    <div class="col-md-6 col-lg-4">
+                        <a href="{{ request.scheme }}://{{ sphere.site.domain }}" class="cinematic-card h-100 d-block text-decoration-none">
+                            <div class="cinematic-card__bg">
+                                <div class="cinematic-card__gradient"></div>
+                                <div class="cinematic-card__blur"></div>
+                            </div>
+                            <div class="cinematic-card__content">
+                                <div class="cinematic-card__corner-tl"></div>
+                                <div class="cinematic-card__corner-br"></div>
+                                
+                                <h3 class="cinematic-card__title">{{ sphere.name }}</h3>
+                                {% if sphere.description %}
+                                    <div class="cinematic-card__text">{{ sphere.description }}</div>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted">{% translate "No communities available at this time." %}</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock body %}
+

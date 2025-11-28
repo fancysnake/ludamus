@@ -59,12 +59,39 @@ class TestDomainEnrollmentConfig:
         ) == (f"@{domain}: {slots} people enrollment limit per account")
 
 
+class TestEvent:
+    def test_str(self, faker):
+        name = faker.word()
+
+        assert str(Event(name=name)) == name
+
+    def test_display_location_fallback(self, faker):
+        name = faker.word()
+        assert Event(name=name).display_location == ""
+
+    def test_display_location_label(self, faker):
+        name = faker.word()
+        label = faker.word()
+        assert Event(name=name, location_label=label).display_location == label
+
+
 class TestSpace:
     def test_str(self, faker):
         name = faker.word()
         pk = faker.random_int(min=1)
 
         assert str(Space(name=name, id=pk)) == f"{name} ({pk})"
+
+
+class TestEvent:
+    def test_display_location_fallback(self, faker):
+        name = faker.word()
+        assert Event(name=name).display_location == name
+
+    def test_display_location_label(self, faker):
+        name = faker.word()
+        label = faker.word()
+        assert Event(name=name, location_label=label).display_location == label
 
 
 class TestTimeSlot:

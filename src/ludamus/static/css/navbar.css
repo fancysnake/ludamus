@@ -1,0 +1,220 @@
+:root {
+  --navbar-height: 4.5rem;
+  --navbar-bg: #1a1a1a;
+  --navbar-text: #ffffff;
+  --navbar-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  scroll-timeline-name: --page-scroll;
+  scroll-timeline-axis: block;
+}
+
+@keyframes navbar-bg-fade-in {
+  from {
+    background-color: rgb(0 0 0 / 0);
+    border-bottom: 1px solid transparent;
+  }
+  to {
+    background-color: rgb(0 0 0 / 0.1);
+    border-bottom: 1px solid var(--navbar-border);
+  }
+}
+
+/* Page Nav (Navbar) */
+.page-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--navbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 20;
+  background-color: rgb(0 0 0 / 0.1);
+  border-bottom: 1px solid var(--navbar-border);
+  color: var(--navbar-text);
+  backdrop-filter: blur(12px);
+  animation: navbar-bg-fade-in linear;
+  animation-timeline: --page-scroll;
+  animation-range: 0px 64px;
+  animation-fill-mode: forwards;
+  font-size: 1rem !important;
+}
+
+@media (min-width: 992px) {
+  .page-nav {
+    padding-inline: 2rem;
+  }
+}
+
+.page-nav-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--navbar-height) + 1px);
+  background-color: var(--navbar-bg);
+  opacity: 0.4;
+  border-bottom: 1px solid var(--navbar-border);
+  z-index: 10;
+}
+
+body:not(:has(.events-hero)) .main-content {
+  padding-top: calc(var(--navbar-height) + 2rem);
+}
+
+/* Brand */
+.page-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  font-size: 1.25rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.page-nav__brand:hover {
+  color: inherit;
+  opacity: 0.9;
+}
+
+ /* Navigation Menu */
+.page-nav__menu {
+  display: flex;
+  align-items: center;
+}
+
+.page-nav__list {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.page-nav__item {
+  margin: 0;
+}
+
+.page-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  font-size: 1rem;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.page-nav__link:hover,
+.page-nav__link:focus-visible {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: inherit;
+}
+
+/* Buttons in nav */
+.page-nav__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.page-nav__btn--login {
+  background-color: var(--bs-primary);
+}
+
+.page-nav__btn--outline {
+  border-color: currentColor;
+  color: inherit;
+}
+
+.page-nav__btn--outline:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile Toggle */
+.page-nav__toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  color: inherit;
+  cursor: pointer;
+  z-index: 1002;
+  line-height: 0;
+}
+
+.page-nav__toggle svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-nav__toggle {
+    display: block;
+  }
+
+  .page-nav__menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 80%;
+    max-width: 300px;
+    background-color: var(--navbar-bg);
+    padding: calc(var(--navbar-height) + 1rem) 1.5rem 2rem;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    z-index: 1003;
+    color: var(--navbar-text);
+    border-left: 1px solid var(--navbar-border);
+  }
+
+  .page-nav__menu[aria-hidden="false"] {
+    transform: translateX(0);
+  }
+
+  .page-nav__list {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .page-nav__link {
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+  }
+  
+  /* Overlay */
+  .page-nav-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+
+  .page-nav-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}

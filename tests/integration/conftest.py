@@ -69,6 +69,7 @@ class SphereFactory(DjangoModelFactory):
 
     name = Faker("company")
     site = SubFactory(SiteFactory)
+    description = Faker("sentence")
 
 
 class EventFactory(DjangoModelFactory):
