@@ -62,7 +62,7 @@ jobs:
           AUTH0_CLIENT_SECRET=test_client_secret
           ROOT_DOMAIN=127.0.0.1:8000
           SUPPORT_EMAIL=test@example.com
-          DEBUG=true
+          DEBUG=false
           USE_POSTGRES=false
           EOF
 

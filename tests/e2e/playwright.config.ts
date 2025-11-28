@@ -25,7 +25,7 @@ const loadEnv = (filePath: string) => {
 };
 
 loadEnv(path.join(repoRoot, '.env'));
-loadEnv(path.join(repoRoot, '.env.ci'));
+// We do not load .env.ci here. It's not meant for our end-to-end tests.
 
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:8000`;
 
