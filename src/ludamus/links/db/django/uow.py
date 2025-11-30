@@ -45,6 +45,10 @@ class UnitOfWork(UnitOfWorkProtocol):
         return repositories.ConnectedUserRepository(self._storage)
 
     @cached_property
+    def events(self) -> repositories.EventRepository:
+        return repositories.EventRepository(self._storage)
+
+    @cached_property
     def proposals(self) -> repositories.ProposalRepository:
         return repositories.ProposalRepository(self._storage)
 
@@ -55,3 +59,11 @@ class UnitOfWork(UnitOfWorkProtocol):
     @cached_property
     def spheres(self) -> repositories.SphereRepository:
         return repositories.SphereRepository(self._storage)
+
+    @cached_property
+    def roles(self) -> repositories.RoleRepository:
+        return repositories.RoleRepository(self._storage)
+
+    @cached_property
+    def user_permissions(self) -> repositories.UserPermissionRepository:
+        return repositories.UserPermissionRepository(self._storage)

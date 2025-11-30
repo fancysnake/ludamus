@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% load i18n %}{% translate "Users & Permissions" %} - {{ sphere.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        .sidebar-panel { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
+                <p class="text-gray-400 text-sm">{% translate "Panel" %}</p>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <a href="{% url 'web:panel:index' %}" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    {% translate "Dashboard" %}
+                </a>
+                <a href="{% url 'web:panel:events' %}" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    {% translate "Events" %}
+                </a>
+                <a href="{% url 'web:panel:users' %}" class="flex items-center px-4 py-3 text-white bg-gray-800 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    {% translate "Users & Permissions" %}
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-gray-800">
+                    <p class="px-4 text-xs text-gray-500 uppercase tracking-wider mb-2">{% translate "Settings" %}</p>
+                    <a href="{% url 'web:panel:settings' %}" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {% translate "Sphere Settings" %}
+                    </a>
+                    <a href="{% url 'web:index' %}" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        {% translate "Back to Site" %}
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-3 sm:px-4 lg:px-8 py-3 sm:py-4 sticky top-0 z-10">
+                <div class="flex items-center justify-between gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-xl lg:text-2xl font-bold text-gray-900 truncate">{% translate "Users & Permissions" %}</h2>
+                        <p class="text-gray-500 text-sm lg:text-base truncate">{{ sphere.name }}</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-3 sm:p-4 lg:p-8">
+                <!-- Roles List -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">{% translate "Roles" %}</h3>
+                                <p class="text-sm text-gray-500 mt-1">{% translate "Manage roles and their permissions" %}</p>
+                            </div>
+                            <button onclick="openCreateRoleModal()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                    {% translate "Create Role" %}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        {% for role in roles %}
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h4 class="font-semibold text-gray-900">{{ role.name }}</h4>
+                                        {% if role.is_system %}
+                                        <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{% translate "System" %}</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-sm text-gray-500">{{ role.description }}</p>
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    <a href="{% url 'web:panel:role-permissions' role.pk %}" class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                        {% translate "View Permissions" %}
+                                    </a>
+                                    {% if not role.is_system %}
+                                    <button onclick="openEditRoleModal({{ role.pk }}, '{{ role.name }}', '{{ role.description }}')" class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                        {% translate "Edit" %}
+                                    </button>
+                                    <button onclick="deleteRole({{ role.pk }}, '{{ role.name }}')" class="px-4 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition">
+                                        {% translate "Delete" %}
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="p-12 text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "No roles yet" %}</h3>
+                            <p class="text-gray-500 mb-4">{% translate "Create your first role to start managing permissions" %}</p>
+                            <button onclick="openCreateRoleModal()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                                {% translate "Create Role" %}
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Info about system roles -->
+                {% if roles %}
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex">
+                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div class="ml-3">
+                            <h4 class="text-sm font-medium text-blue-900">{% translate "About Roles" %}</h4>
+                            <p class="text-sm text-blue-700 mt-1">
+                                {% translate "System roles are predefined and cannot be edited or deleted. You can create custom roles with specific permissions for your sphere." %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Role Modal -->
+    <div id="createRoleModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-900">{% translate "Create New Role" %}</h3>
+            </div>
+            <form method="post" action="{% url 'web:panel:role-create' %}" class="p-6 space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="role_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% translate "Role Name" %}
+                    </label>
+                    <input
+                        type="text"
+                        id="role_name"
+                        name="name"
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="{% translate 'Enter role name' %}"
+                    >
+                </div>
+                <div>
+                    <label for="role_description" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% translate "Description" %}
+                    </label>
+                    <textarea
+                        id="role_description"
+                        name="description"
+                        rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="{% translate 'Enter role description' %}"
+                    ></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeCreateRoleModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        {% translate "Cancel" %}
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                        {% translate "Create Role" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Role Modal -->
+    <div id="editRoleModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-900">{% translate "Edit Role" %}</h3>
+            </div>
+            <form id="editRoleForm" method="post" action="" class="p-6 space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="edit_role_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% translate "Role Name" %}
+                    </label>
+                    <input
+                        type="text"
+                        id="edit_role_name"
+                        name="name"
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="{% translate 'Enter role name' %}"
+                    >
+                </div>
+                <div>
+                    <label for="edit_role_description" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% translate "Description" %}
+                    </label>
+                    <textarea
+                        id="edit_role_description"
+                        name="description"
+                        rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="{% translate 'Enter role description' %}"
+                    ></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeEditRoleModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        {% translate "Cancel" %}
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                        {% translate "Save Changes" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function openCreateRoleModal() {
+            document.getElementById('createRoleModal').classList.remove('hidden');
+        }
+
+        function closeCreateRoleModal() {
+            document.getElementById('createRoleModal').classList.add('hidden');
+            document.getElementById('role_name').value = '';
+            document.getElementById('role_description').value = '';
+        }
+
+        function openEditRoleModal(roleId, roleName, roleDescription) {
+            const modal = document.getElementById('editRoleModal');
+            const form = document.getElementById('editRoleForm');
+
+            // Set form action URL
+            form.action = '/panel/role/' + roleId + '/do/update';
+
+            // Fill in current values
+            document.getElementById('edit_role_name').value = roleName;
+            document.getElementById('edit_role_description').value = roleDescription;
+
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditRoleModal() {
+            document.getElementById('editRoleModal').classList.add('hidden');
+            document.getElementById('edit_role_name').value = '';
+            document.getElementById('edit_role_description').value = '';
+        }
+
+        function deleteRole(roleId, roleName) {
+            if (confirm('{% translate "Are you sure you want to delete the role" %} "' + roleName + '"?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/panel/role/' + roleId + '/do/delete';
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = '{{ csrf_token }}';
+                form.appendChild(csrfInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Close modals on outside click
+        document.getElementById('createRoleModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateRoleModal();
+            }
+        });
+
+        document.getElementById('editRoleModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditRoleModal();
+            }
+        });
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCreateRoleModal();
+                closeEditRoleModal();
+            }
+        });
+    </script>
+</body>
+</html>

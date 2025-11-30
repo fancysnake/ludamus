@@ -15,7 +15,7 @@ from django.utils import timezone
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
-from ludamus.pacts import UserType
+from ludamus.pacts import Action, ResourceType, UserType
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -932,3 +932,93 @@ class SessionParticipation(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} {self.status} on {self.session}"
+
+
+class Role(models.Model):
+    """Permission template assigned to users with specific resources"""
+
+    sphere = models.ForeignKey(Sphere, on_delete=models.CASCADE, related_name="roles")
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    is_system = models.BooleanField(
+        default=False, help_text="System roles cannot be deleted"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "role"
+        unique_together: ClassVar = [["sphere", "name"]]
+        ordering: ClassVar = ["name"]
+
+    def __str__(self) -> str:
+        return f"{self.sphere.name} - {self.name}"
+
+
+class RolePermission(models.Model):
+    """Permission granted by a role (template)"""
+
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name="permissions")
+    action = models.CharField(
+        max_length=50, choices=[(a.value, a.name) for a in Action]
+    )
+    resource_type = models.CharField(
+        max_length=50, choices=[(r.value, r.name) for r in ResourceType]
+    )
+
+    class Meta:
+        db_table = "role_permission"
+        unique_together: ClassVar = [["role", "action", "resource_type"]]
+        indexes: ClassVar = [models.Index(fields=["role", "action", "resource_type"])]
+
+    def __str__(self) -> str:
+        return f"{self.role.name}: {self.action} on {self.resource_type}"
+
+
+class UserPermission(models.Model):
+    """Actual permission granted to a user on a specific resource"""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="permissions")
+    sphere = models.ForeignKey(
+        Sphere, on_delete=models.CASCADE, related_name="user_permissions"
+    )
+    action = models.CharField(
+        max_length=50, choices=[(a.value, a.name) for a in Action]
+    )
+    resource_type = models.CharField(
+        max_length=50, choices=[(r.value, r.name) for r in ResourceType]
+    )
+    resource_id = models.PositiveIntegerField()
+
+    # Audit fields
+    granted_from_role = models.ForeignKey(
+        Role,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Role this permission was copied from",
+    )
+    granted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text="User who granted this permission",
+    )
+    granted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "user_permission"
+        unique_together: ClassVar = [
+            ["user", "sphere", "action", "resource_type", "resource_id"]
+        ]
+        indexes: ClassVar = [
+            models.Index(fields=["user", "sphere"]),
+            models.Index(fields=["action", "resource_type", "resource_id"]),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"{self.user.slug}: {self.action} "
+            f"on {self.resource_type}#{self.resource_id}"
+        )

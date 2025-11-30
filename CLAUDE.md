@@ -410,3 +410,144 @@ src/ludamus/
 - Move views from `adapters/web/django/` to `gates/web/`
 - Move settings to `specs/`
 - Extract business logic from views to `gears`
+
+## Permission System
+
+Ludamus implements a flexible object-level permission system following Clean
+Architecture principles.
+
+### Key Concepts
+
+**Actions (Verbs)** - Defined in code as `Action` enum:
+- Universal: `READ`, `CREATE`, `UPDATE`, `DELETE`
+- Specific: `APPROVE`, `REJECT`, `SCHEDULE`, `PUBLISH`, `MANAGE`
+- Special: `MANAGE_PERMISSIONS`, `ALL` (wildcard)
+
+**Resources (Nouns)** - Defined in code as `ResourceType` enum:
+- `SPHERE`, `EVENT`, `PROPOSAL`, `CATEGORY`, `SESSION`, `SPACE`, `VENUE`
+- `ALL` (wildcard)
+
+**Action Applicability** - `ACTION_APPLICABLE_TO` dict defines which actions
+apply to which resources (e.g., `APPROVE` only applies to `PROPOSAL`).
+
+### Architecture
+
+**Roles as Templates:**
+- Roles are permission templates stored in DB
+- Contain multiple `(action, resource_type)` pairs
+- When assigned to a user, permissions are **copied** with concrete resource IDs
+- Example: "Category Organizer" role → assigned to user for category #42
+
+**Object-Level Permissions:**
+- Everything scoped to a sphere
+- Permissions are always: `(user_id, sphere_id, action, resource_type, resource_id)`
+- No special "sphere-level" permissions - uniform model
+
+**Permission Hierarchy:**
+1. **Django Superuser** - Manages sphere managers in Django admin only
+2. **Sphere Managers** (`Sphere.managers` M2M) - Can do anything in panel
+3. **Permission Managers** (`MANAGE_PERMISSIONS` action) - Can grant permissions
+4. **Organizers** - Work based on granted permissions
+
+### Permission Checking
+
+**PermissionCheckRegistry** - Business logic for permission derivation:
+- Registry of functions that check if permission should be granted
+- Supports wildcards (`Action.ALL`, `ResourceType.ALL`)
+- Example: User can `SCHEDULE` session if they `MANAGE` its space
+
+**AuthorizationService** - Main service for permission checks:
+```python
+auth = AuthorizationService(context, uow)
+auth.can(Action.APPROVE, ResourceType.PROPOSAL, proposal_id)  # Returns bool
+auth.require(Action.APPROVE, ResourceType.PROPOSAL, proposal_id)  # Raises PermissionDenied
+auth.has_any_permission_in_sphere()  # Check if user can access panel
+```
+
+**Permission Check Flow:**
+1. Check direct permission in DB
+2. Check if user is sphere manager (bypass)
+3. Check derived permissions via registry (wildcards + specific rules)
+
+### Registering Permission Rules
+
+Add permission derivation logic in `gears.py`:
+
+```python
+@PermissionCheckRegistry.register(Action.SCHEDULE, ResourceType.SESSION)
+def can_schedule_via_space_management(uow, user_id, resource_type, resource_id):
+    """User can SCHEDULE session if they can MANAGE its space"""
+    session = uow.sessions.read(resource_id)
+    return uow.user_permissions.has_permission(
+        user_id, session.sphere_id, Action.MANAGE, ResourceType.SPACE, session.space_id
+    )
+```
+
+### Role Assignment
+
+**RoleAssignmentService** - Copies role permissions to user:
+```python
+role_service = RoleAssignmentService(context, uow)
+role_service.assign_role(
+    user_id=user.pk,
+    role_id=category_organizer_role.pk,
+    resource_type=ResourceType.CATEGORY,
+    resource_id=literature_category.pk
+)
+# → Creates UserPermission records for all actions in the role
+```
+
+### Database Models
+
+**Role** - Permission template:
+- `sphere_id`, `name`, `description`, `is_system`
+
+**RolePermission** - Actions in a role:
+- `role_id`, `action`, `resource_type`
+
+**UserPermission** - Actual grants:
+- `user_id`, `sphere_id`, `action`, `resource_type`, `resource_id`
+- `granted_from_role_id`, `granted_by_id`, `granted_at` (audit)
+
+### Management Commands
+
+**Initialize default roles:**
+```bash
+poe dj init_permissions
+```
+
+Creates system roles for each sphere:
+- Sphere Admin (can do everything)
+- Event Coordinator (manage specific events)
+- Category Organizer (approve/reject proposals in category)
+- Space Coordinator (schedule sessions in space)
+
+### Design Principles
+
+**Single Source of Truth:**
+- Actions and Resources defined in code (`pacts.py`)
+- Permission matrix logic in code (`gears.py`)
+- Only user-role assignments stored in DB
+
+**Clean Architecture:**
+- `pacts.py` - Enums, DTOs, Protocols
+- `adapters/` - Django models
+- `links/` - Repositories with caching
+- `gears.py` - Permission registry and services
+
+**No Scope Filters:**
+- Database only stores IDs, no JSON filters
+- Permission hierarchy logic implemented in registry functions
+- Type-safe, testable, discoverable
+
+### Testing Permissions
+
+**Unit Tests:**
+- Test repository methods with mocked ORM
+- Test authorization service with mocked repositories
+- Test individual registry functions
+
+**Integration Tests:**
+- Full permission check flows with real database
+- Role assignment workflows
+- Permission inheritance scenarios

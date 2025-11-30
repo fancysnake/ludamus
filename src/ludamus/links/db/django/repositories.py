@@ -4,20 +4,32 @@ from ludamus.adapters.db.django.models import (
     AgendaItem,
     Event,
     Proposal,
+    Role,
+    RolePermission,
     Session,
     Space,
     Sphere,
     TimeSlot,
+    UserPermission,
 )
 from ludamus.pacts import (
+    Action,
     AgendaItemData,
     AgendaItemRepositoryProtocol,
     ConnectedUserRepositoryProtocol,
+    EventData,
     EventDTO,
+    EventRepositoryProtocol,
     NotFoundError,
     ProposalDTO,
     ProposalRepositoryProtocol,
+    ResourceType,
+    RoleData,
+    RoleDTO,
+    RolePermissionDTO,
+    RoleRepositoryProtocol,
     SessionData,
+    SessionDTO,
     SessionRepositoryProtocol,
     SiteDTO,
     SpaceDTO,
@@ -26,6 +38,9 @@ from ludamus.pacts import (
     TimeSlotDTO,
     UserData,
     UserDTO,
+    UserPermissionData,
+    UserPermissionDTO,
+    UserPermissionRepositoryProtocol,
     UserRepositoryProtocol,
     UserType,
 )
@@ -214,6 +229,12 @@ class SessionRepository(SessionRepositoryProtocol):
 
         return session.pk
 
+    def read(self, pk: int) -> SessionDTO:
+        if not (session := self._storage.sessions.get(pk)):
+            session = Session.objects.get(pk=pk)
+            self._storage.sessions[pk] = session
+        return SessionDTO.model_validate(session)
+
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):
     def __init__(self, storage: Storage) -> None:
@@ -286,3 +307,191 @@ class ConnectedUserRepository(ConnectedUserRepositoryProtocol):
         user = self._read_user(manager_slug, user_slug)
         user.delete()
         del self._storage.connected_users_by_user[manager_slug][user_slug]
+
+
+class EventRepository(EventRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(self, event_data: EventData) -> EventDTO:
+        event = Event.objects.create(**event_data)
+        self._storage.events[event.id] = event
+        return EventDTO.model_validate(event)
+
+    def read(self, event_id: int) -> EventDTO:
+        if not (event := self._storage.events.get(event_id)):
+            try:
+                event = Event.objects.get(id=event_id)
+            except Event.DoesNotExist as exception:
+                raise NotFoundError from exception
+            self._storage.events[event_id] = event
+        return EventDTO.model_validate(event)
+
+    def update(self, event_id: int, event_data: EventData) -> EventDTO:
+        event = Event.objects.get(id=event_id)
+
+        # Update fields
+        for field, value in event_data.items():
+            setattr(event, field, value)
+
+        event.save()
+        self._storage.events[event_id] = event
+        return EventDTO.model_validate(event)
+
+    def list_by_sphere(self, sphere_id: int) -> list[EventDTO]:
+        events = Event.objects.filter(sphere_id=sphere_id).order_by("-start_time")
+        for event in events:
+            self._storage.events[event.id] = event
+        return [EventDTO.model_validate(event) for event in events]
+
+    def delete(self, event_id: int) -> None:
+        event = Event.objects.get(id=event_id)
+        event.delete()
+        self._storage.events.pop(event_id, None)
+
+
+class RoleRepository(RoleRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(self, role_data: RoleData) -> RoleDTO:
+        role = Role.objects.create(**role_data)
+        self._storage.roles[role.id] = role
+        return RoleDTO.model_validate(role)
+
+    def read(self, role_id: int) -> RoleDTO:
+        if not (role := self._storage.roles.get(role_id)):
+            try:
+                role = Role.objects.get(id=role_id)
+            except Role.DoesNotExist as exception:
+                raise NotFoundError from exception
+            self._storage.roles[role_id] = role
+        return RoleDTO.model_validate(role)
+
+    def update(self, role_id: int, role_data: RoleData) -> RoleDTO:
+        role = Role.objects.get(id=role_id)
+        if role.is_system:
+            raise ValueError("Cannot update system role")
+
+        # Update fields
+        if "name" in role_data:
+            role.name = role_data["name"]
+        if "description" in role_data:
+            role.description = role_data["description"]
+
+        role.save()
+        self._storage.roles[role_id] = role
+        return RoleDTO.model_validate(role)
+
+    def list_by_sphere(self, sphere_id: int) -> list[RoleDTO]:
+        roles = Role.objects.filter(sphere_id=sphere_id)
+        for role in roles:
+            self._storage.roles[role.id] = role
+        return [RoleDTO.model_validate(role) for role in roles]
+
+    def delete(self, role_id: int) -> None:
+        role = Role.objects.get(id=role_id)
+        if role.is_system:
+            raise ValueError("Cannot delete system role")
+        role.delete()
+        self._storage.roles.pop(role_id, None)
+        self._storage.role_permissions.pop(role_id, None)
+
+    def add_permission(
+        self, role_id: int, action: Action, resource_type: ResourceType
+    ) -> None:
+        RolePermission.objects.create(
+            role_id=role_id, action=action, resource_type=resource_type
+        )
+        # Invalidate cache
+        self._storage.role_permissions.pop(role_id, None)
+
+    def remove_permission(
+        self, role_id: int, action: Action, resource_type: ResourceType
+    ) -> None:
+        RolePermission.objects.filter(
+            role_id=role_id, action=action, resource_type=resource_type
+        ).delete()
+        self._storage.role_permissions.pop(role_id, None)
+
+    def get_permissions(self, role_id: int) -> list[RolePermissionDTO]:
+        if role_id not in self._storage.role_permissions:
+            perms = list(RolePermission.objects.filter(role_id=role_id))
+            self._storage.role_permissions[role_id] = perms
+        return [
+            RolePermissionDTO.model_validate(p)
+            for p in self._storage.role_permissions[role_id]
+        ]
+
+
+class UserPermissionRepository(UserPermissionRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def grant(self, permission_data: UserPermissionData) -> UserPermissionDTO:
+        # Separate lookup keys from defaults
+        user_id = permission_data["user_id"]
+        sphere_id = permission_data["sphere_id"]
+        action = permission_data["action"]
+        resource_type = permission_data["resource_type"]
+        resource_id = permission_data["resource_id"]
+
+        defaults = {}
+        if "granted_from_role_id" in permission_data:
+            defaults["granted_from_role_id"] = permission_data["granted_from_role_id"]
+        if "granted_by_id" in permission_data:
+            defaults["granted_by_id"] = permission_data["granted_by_id"]
+
+        perm, _created = UserPermission.objects.get_or_create(
+            user_id=user_id,
+            sphere_id=sphere_id,
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            defaults=defaults,
+        )
+        # Invalidate cache
+        self._storage.user_permissions.pop((user_id, sphere_id), None)
+        return UserPermissionDTO.model_validate(perm)
+
+    def revoke(self, permission_id: int) -> None:
+        perm = UserPermission.objects.get(id=permission_id)
+        user_id, sphere_id = perm.user_id, perm.sphere_id
+        perm.delete()
+        self._storage.user_permissions.pop((user_id, sphere_id), None)
+
+    @staticmethod
+    def has_permission(
+        user_id: int,
+        sphere_id: int,
+        action: Action,
+        resource_type: ResourceType,
+        resource_id: int,
+    ) -> bool:
+        return UserPermission.objects.filter(
+            user_id=user_id,
+            sphere_id=sphere_id,
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+        ).exists()
+
+    def list_user_permissions(
+        self, user_id: int, sphere_id: int
+    ) -> list[UserPermissionDTO]:
+        cache_key = (user_id, sphere_id)
+        if cache_key not in self._storage.user_permissions:
+            perms = list(
+                UserPermission.objects.filter(user_id=user_id, sphere_id=sphere_id)
+            )
+            self._storage.user_permissions[cache_key] = perms
+        return [
+            UserPermissionDTO.model_validate(p)
+            for p in self._storage.user_permissions[cache_key]
+        ]
+
+    @staticmethod
+    def has_any_permission_in_sphere(user_id: int, sphere_id: int) -> bool:
+        return UserPermission.objects.filter(
+            user_id=user_id, sphere_id=sphere_id
+        ).exists()

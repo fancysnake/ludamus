@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% load i18n %}{% translate "Events" %} - {{ sphere.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        .sidebar-panel { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
+                <p class="text-gray-400 text-sm">{% translate "Panel" %}</p>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <a href="{% url 'web:panel:index' %}" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    {% translate "Dashboard" %}
+                </a>
+                <a href="{% url 'web:panel:events' %}" class="flex items-center px-4 py-3 text-white bg-gray-800 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    {% translate "Events" %}
+                </a>
+                <a href="{% url 'web:panel:users' %}" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    {% translate "Users & Permissions" %}
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-gray-800">
+                    <p class="px-4 text-xs text-gray-500 uppercase tracking-wider mb-2">{% translate "Settings" %}</p>
+                    <a href="{% url 'web:panel:settings' %}" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {% translate "Sphere Settings" %}
+                    </a>
+                    <a href="{% url 'web:index' %}" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        {% translate "Back to Site" %}
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-3 sm:px-4 lg:px-8 py-3 sm:py-4 sticky top-0 z-10">
+                <div class="flex items-center justify-between gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-xl lg:text-2xl font-bold text-gray-900 truncate">{% translate "Events" %}</h2>
+                        <p class="text-gray-500 text-sm lg:text-base truncate">{{ sphere.name }}</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-3 sm:p-4 lg:p-8">
+                <!-- Events List -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">{% translate "Events" %}</h3>
+                                <p class="text-sm text-gray-500 mt-1">{% translate "Manage your events" %}</p>
+                            </div>
+                            <button onclick="openCreateEventModal()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                    {% translate "Create Event" %}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        {% for event in events %}
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-semibold text-gray-900 mb-2">{{ event.name }}</h4>
+                                    {% if event.description %}
+                                    <p class="text-sm text-gray-500 mb-3">{{ event.description }}</p>
+                                    {% endif %}
+                                    <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                            <span>{{ event.start_time|date:"Y-m-d H:i" }} - {{ event.end_time|date:"Y-m-d H:i" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    <button onclick="openEditEventModal({{ event.pk }}, '{{ event.name }}', '{{ event.description|escapejs }}', '{{ event.start_time|date:'Y-m-d\TH:i' }}', '{{ event.end_time|date:'Y-m-d\TH:i' }}')" class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                        {% translate "Edit" %}
+                                    </button>
+                                    <button onclick="deleteEvent({{ event.pk }}, '{{ event.name }}')" class="px-4 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition">
+                                        {% translate "Delete" %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="p-12 text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "No events yet" %}</h3>
+                            <p class="text-gray-500 mb-4">{% translate "Create your first event to get started" %}</p>
+                            <button onclick="openCreateEventModal()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                                {% translate "Create Event" %}
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div id="createEventModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-900">{% translate "Create New Event" %}</h3>
+            </div>
+            <form method="post" action="{% url 'web:panel:event-create' %}" class="p-6 space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="event_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% translate "Event Name" %}
+                    </label>
+                    <input
+                        type="text"
+                        id="event_name"
+                        name="name"
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="{% translate 'Enter event name' %}"
+                    >
+                </div>
+                <div>
+                    <label for="event_description" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% translate "Description" %}
+                    </label>
+                    <textarea
+                        id="event_description"
+                        name="description"
+                        rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="{% translate 'Enter event description' %}"
+                    ></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="event_start_time" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% translate "Start Time" %}
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="event_start_time"
+                            name="start_time"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                    </div>
+                    <div>
+                        <label for="event_end_time" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% translate "End Time" %}
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="event_end_time"
+                            name="end_time"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeCreateEventModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        {% translate "Cancel" %}
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                        {% translate "Create Event" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Event Modal -->
+    <div id="editEventModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-900">{% translate "Edit Event" %}</h3>
+            </div>
+            <form id="editEventForm" method="post" action="" class="p-6 space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="edit_event_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% translate "Event Name" %}
+                    </label>
+                    <input
+                        type="text"
+                        id="edit_event_name"
+                        name="name"
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="{% translate 'Enter event name' %}"
+                    >
+                </div>
+                <div>
+                    <label for="edit_event_description" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% translate "Description" %}
+                    </label>
+                    <textarea
+                        id="edit_event_description"
+                        name="description"
+                        rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="{% translate 'Enter event description' %}"
+                    ></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit_event_start_time" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% translate "Start Time" %}
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="edit_event_start_time"
+                            name="start_time"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                    </div>
+                    <div>
+                        <label for="edit_event_end_time" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% translate "End Time" %}
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="edit_event_end_time"
+                            name="end_time"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeEditEventModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        {% translate "Cancel" %}
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                        {% translate "Save Changes" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function openCreateEventModal() {
+            document.getElementById('createEventModal').classList.remove('hidden');
+        }
+
+        function closeCreateEventModal() {
+            document.getElementById('createEventModal').classList.add('hidden');
+            document.getElementById('event_name').value = '';
+            document.getElementById('event_description').value = '';
+            document.getElementById('event_start_time').value = '';
+            document.getElementById('event_end_time').value = '';
+        }
+
+        function openEditEventModal(eventId, eventName, eventDescription, startTime, endTime) {
+            const modal = document.getElementById('editEventModal');
+            const form = document.getElementById('editEventForm');
+
+            // Set form action URL
+            form.action = '/panel/event/' + eventId + '/do/update';
+
+            // Fill in current values
+            document.getElementById('edit_event_name').value = eventName;
+            document.getElementById('edit_event_description').value = eventDescription;
+            document.getElementById('edit_event_start_time').value = startTime;
+            document.getElementById('edit_event_end_time').value = endTime;
+
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditEventModal() {
+            document.getElementById('editEventModal').classList.add('hidden');
+        }
+
+        function deleteEvent(eventId, eventName) {
+            if (confirm('{% translate "Are you sure you want to delete the event" %} "' + eventName + '"?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/panel/event/' + eventId + '/do/delete';
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = '{{ csrf_token }}';
+                form.appendChild(csrfInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Close modals on outside click
+        document.getElementById('createEventModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateEventModal();
+            }
+        });
+
+        document.getElementById('editEventModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditEventModal();
+            }
+        });
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCreateEventModal();
+                closeEditEventModal();
+            }
+        });
+    </script>
+</body>
+</html>

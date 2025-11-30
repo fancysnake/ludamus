@@ -43,14 +43,22 @@ from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
 )
-from ludamus.gears import AcceptProposalService, AnonymousEnrollmentService
+from ludamus.gears import (
+    AcceptProposalService,
+    AnonymousEnrollmentService,
+    AuthorizationService,
+)
 from ludamus.pacts import (
+    Action,
     AuthenticatedRequestContext,
+    EventData,
     NotFoundError,
     ProposalCategoryDTO,
     ProposalDTO,
     ProposalRepositoryProtocol,
     RequestContext,
+    ResourceType,
+    RoleData,
     TagCategoryDTO,
     TagDTO,
     UnitOfWorkProtocol,
@@ -1933,3 +1941,457 @@ class AnonymousResetActionView(View):
                 "web:chronology:event-anonymous-activate", event_slug=event.slug
             )
         return redirect("web:index")
+
+
+# =============================================================================
+# PANEL (Sphere Management)
+# =============================================================================
+
+
+class PanelIndexPageView(LoginRequiredMixin, TemplateView):
+    """Panel index page showing sphere management overview"""
+
+    template_name = "panel/index.html"
+    request: AuthenticatedRootRequest
+
+    def dispatch(
+        self, request: AuthenticatedRootRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(
+                request, _("You don't have permission to access the sphere panel.")
+            )
+            return redirect("web:index")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["sphere"] = self.request.uow.spheres.read(
+            self.request.context.current_sphere_id
+        )
+        return context
+
+
+class PanelSettingsPageView(LoginRequiredMixin, TemplateView):
+    """Sphere settings page"""
+
+    template_name = "panel/settings.html"
+    request: AuthenticatedRootRequest
+
+    def dispatch(
+        self, request: AuthenticatedRootRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(
+                request, _("You don't have permission to access the sphere panel.")
+            )
+            return redirect("web:index")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["sphere"] = self.request.uow.spheres.read(
+            self.request.context.current_sphere_id
+        )
+        return context
+
+
+class PanelUsersPageView(LoginRequiredMixin, TemplateView):
+    """Users & permissions management page"""
+
+    template_name = "panel/users.html"
+    request: AuthenticatedRootRequest
+
+    def dispatch(
+        self, request: AuthenticatedRootRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(
+                request, _("You don't have permission to access the sphere panel.")
+            )
+            return redirect("web:index")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["sphere"] = self.request.uow.spheres.read(
+            self.request.context.current_sphere_id
+        )
+        context["roles"] = self.request.uow.roles.list_by_sphere(
+            self.request.context.current_sphere_id
+        )
+        return context
+
+
+class PanelRoleCreateActionView(LoginRequiredMixin, View):
+    """Create a new role"""
+
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest) -> HttpResponse:
+        # Check permissions
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(request, _("You don't have permission to create roles."))
+            return redirect("web:panel:users")
+
+        # Get form data
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+
+        # Validate
+        if not name:
+            messages.error(request, _("Role name is required."))
+            return redirect("web:panel:users")
+
+        # Create role
+        role_data: RoleData = {
+            "sphere_id": request.context.current_sphere_id,
+            "name": name,
+            "description": description,
+        }
+
+        try:
+            request.uow.roles.create(role_data)
+            messages.success(request, _("Role created successfully."))
+        except ValueError as e:
+            messages.error(request, _("Failed to create role: {}").format(str(e)))
+
+        return redirect("web:panel:users")
+
+
+class PanelRoleUpdateActionView(LoginRequiredMixin, View):
+    """Update a role"""
+
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest, role_id: int) -> HttpResponse:
+        # Check permissions
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(request, _("You don't have permission to update roles."))
+            return redirect("web:panel:users")
+
+        # Get form data
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+
+        # Validate
+        if not name:
+            messages.error(request, _("Role name is required."))
+            return redirect("web:panel:users")
+
+        # Update role
+        role_data: RoleData = {"name": name, "description": description}
+
+        try:
+            request.uow.roles.update(role_id, role_data)
+            messages.success(request, _("Role updated successfully."))
+        except ValueError as e:
+            messages.error(request, str(e))
+
+        return redirect("web:panel:users")
+
+
+class PanelRolePermissionsPageView(LoginRequiredMixin, TemplateView):
+    """View and manage role permissions"""
+
+    template_name = "panel/role_permissions.html"
+    request: AuthenticatedRootRequest
+
+    def dispatch(
+        self, request: AuthenticatedRootRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(
+                request, _("You don't have permission to access the sphere panel.")
+            )
+            return redirect("web:index")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        role_id = self.kwargs["role_id"]
+
+        context["sphere"] = self.request.uow.spheres.read(
+            self.request.context.current_sphere_id
+        )
+        context["role"] = self.request.uow.roles.read(role_id)
+        context["permissions"] = self.request.uow.roles.get_permissions(role_id)
+
+        # Get all available actions and resource types
+        context["all_actions"] = [
+            {"value": action.value, "label": action.value.replace("_", " ").title()}
+            for action in Action
+        ]
+        context["all_resource_types"] = [
+            {"value": resource.value, "label": resource.value.replace("_", " ").title()}
+            for resource in ResourceType
+        ]
+
+        return context
+
+
+class PanelRolePermissionAddActionView(LoginRequiredMixin, View):
+    """Add permission to a role"""
+
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest, role_id: int) -> HttpResponse:
+        # Check permissions
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(
+                request, _("You don't have permission to manage role permissions.")
+            )
+            return redirect("web:panel:users")
+
+        # Get form data
+        action_str = request.POST.get("action", "")
+        resource_type_str = request.POST.get("resource_type", "")
+
+        try:
+            action = Action(action_str)
+            resource_type = ResourceType(resource_type_str)
+
+            # Check if role is system role
+            role = request.uow.roles.read(role_id)
+            if role.is_system:
+                messages.error(request, _("Cannot modify system role permissions."))
+                return redirect("web:panel:role-permissions", role_id=role_id)
+
+            request.uow.roles.add_permission(role_id, action, resource_type)
+            messages.success(request, _("Permission added successfully."))
+        except ValueError as e:
+            messages.error(request, str(e))
+
+        return redirect("web:panel:role-permissions", role_id=role_id)
+
+
+class PanelRolePermissionRemoveActionView(LoginRequiredMixin, View):
+    """Remove permission from a role"""
+
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest, role_id: int) -> HttpResponse:
+        # Check permissions
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(
+                request, _("You don't have permission to manage role permissions.")
+            )
+            return redirect("web:panel:users")
+
+        # Get form data
+        action_str = request.POST.get("action", "")
+        resource_type_str = request.POST.get("resource_type", "")
+
+        try:
+            action = Action(action_str)
+            resource_type = ResourceType(resource_type_str)
+
+            # Check if role is system role
+            role = request.uow.roles.read(role_id)
+            if role.is_system:
+                messages.error(request, _("Cannot modify system role permissions."))
+                return redirect("web:panel:role-permissions", role_id=role_id)
+
+            request.uow.roles.remove_permission(role_id, action, resource_type)
+            messages.success(request, _("Permission removed successfully."))
+        except ValueError as e:
+            messages.error(request, str(e))
+
+        return redirect("web:panel:role-permissions", role_id=role_id)
+
+
+class PanelEventsPageView(LoginRequiredMixin, TemplateView):
+    """Events management page"""
+
+    template_name = "panel/events.html"
+    request: AuthenticatedRootRequest
+
+    def dispatch(
+        self, request: AuthenticatedRootRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(
+                request, _("You don't have permission to access the sphere panel.")
+            )
+            return redirect("web:index")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["sphere"] = self.request.uow.spheres.read(
+            self.request.context.current_sphere_id
+        )
+        context["events"] = self.request.uow.events.list_by_sphere(
+            self.request.context.current_sphere_id
+        )
+        return context
+
+
+class PanelEventCreateActionView(LoginRequiredMixin, View):
+    """Create a new event"""
+
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest) -> HttpResponse:
+        # Check permissions
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(request, _("You don't have permission to create events."))
+            return redirect("web:panel:events")
+
+        # Get form data
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+        start_time_str = request.POST.get("start_time", "")
+        end_time_str = request.POST.get("end_time", "")
+
+        # Validate
+        if not name:
+            messages.error(request, _("Event name is required."))
+            return redirect("web:panel:events")
+
+        if not start_time_str or not end_time_str:
+            messages.error(request, _("Start and end times are required."))
+            return redirect("web:panel:events")
+
+        try:
+            start_time = datetime.fromisoformat(start_time_str)
+            end_time = datetime.fromisoformat(end_time_str)
+        except ValueError:
+            messages.error(request, _("Invalid date/time format."))
+            return redirect("web:panel:events")
+
+        # Create event
+        event_data: EventData = {
+            "sphere_id": request.context.current_sphere_id,
+            "name": name,
+            "slug": slugify(name),
+            "description": description,
+            "start_time": start_time,
+            "end_time": end_time,
+        }
+
+        try:
+            request.uow.events.create(event_data)
+            messages.success(request, _("Event created successfully."))
+        except ValueError as e:
+            messages.error(request, _("Failed to create event: {}").format(str(e)))
+
+        return redirect("web:panel:events")
+
+
+class PanelEventUpdateActionView(LoginRequiredMixin, View):
+    """Update an event"""
+
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest, event_id: int) -> HttpResponse:
+        # Check permissions
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(request, _("You don't have permission to update events."))
+            return redirect("web:panel:events")
+
+        # Get form data
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+        start_time_str = request.POST.get("start_time", "")
+        end_time_str = request.POST.get("end_time", "")
+
+        # Validate
+        if not name:
+            messages.error(request, _("Event name is required."))
+            return redirect("web:panel:events")
+
+        if not start_time_str or not end_time_str:
+            messages.error(request, _("Start and end times are required."))
+            return redirect("web:panel:events")
+
+        try:
+            start_time = datetime.fromisoformat(start_time_str)
+            end_time = datetime.fromisoformat(end_time_str)
+        except ValueError:
+            messages.error(request, _("Invalid date/time format."))
+            return redirect("web:panel:events")
+
+        # Update event
+        event_data: EventData = {
+            "name": name,
+            "slug": slugify(name),
+            "description": description,
+            "start_time": start_time,
+            "end_time": end_time,
+        }
+
+        try:
+            request.uow.events.update(event_id, event_data)
+            messages.success(request, _("Event updated successfully."))
+        except ValueError as e:
+            messages.error(request, _("Failed to update event: {}").format(str(e)))
+
+        return redirect("web:panel:events")
+
+
+class PanelEventDeleteActionView(LoginRequiredMixin, View):
+    """Delete an event"""
+
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest, event_id: int) -> HttpResponse:
+        # Check permissions
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(request, _("You don't have permission to delete events."))
+            return redirect("web:panel:events")
+
+        try:
+            request.uow.events.delete(event_id)
+            messages.success(request, _("Event deleted successfully."))
+        except ValueError as e:
+            messages.error(request, _("Failed to delete event: {}").format(str(e)))
+
+        return redirect("web:panel:events")
+
+
+class PanelRoleDeleteActionView(LoginRequiredMixin, View):
+    """Delete a role"""
+
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest, role_id: int) -> HttpResponse:
+        # Check permissions
+        auth = AuthorizationService(request.context, request.uow)
+        if not auth.has_any_permission_in_sphere():
+            messages.error(request, _("You don't have permission to delete roles."))
+            return redirect("web:panel:users")
+
+        try:
+            # Check if role is system role
+            role = request.uow.roles.read(role_id)
+            if role.is_system:
+                messages.error(request, _("Cannot delete system role."))
+                return redirect("web:panel:users")
+
+            request.uow.roles.delete(role_id)
+            messages.success(request, _("Role deleted successfully."))
+        except ValueError as e:
+            messages.error(request, str(e))
+
+        return redirect("web:panel:users")

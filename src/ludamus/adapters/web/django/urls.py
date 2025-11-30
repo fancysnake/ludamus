@@ -87,12 +87,63 @@ chronology_urls = [
     ),
 ]
 
+panel_urls = [
+    path("", views.PanelIndexPageView.as_view(), name="index"),
+    path("events/", views.PanelEventsPageView.as_view(), name="events"),
+    path("users/", views.PanelUsersPageView.as_view(), name="users"),
+    path("settings/", views.PanelSettingsPageView.as_view(), name="settings"),
+    path(
+        "event/do/create",
+        views.PanelEventCreateActionView.as_view(),
+        name="event-create",
+    ),
+    path(
+        "event/<int:event_id>/do/update",
+        views.PanelEventUpdateActionView.as_view(),
+        name="event-update",
+    ),
+    path(
+        "event/<int:event_id>/do/delete",
+        views.PanelEventDeleteActionView.as_view(),
+        name="event-delete",
+    ),
+    path(
+        "role/do/create", views.PanelRoleCreateActionView.as_view(), name="role-create"
+    ),
+    path(
+        "role/<int:role_id>/do/update",
+        views.PanelRoleUpdateActionView.as_view(),
+        name="role-update",
+    ),
+    path(
+        "role/<int:role_id>/do/delete",
+        views.PanelRoleDeleteActionView.as_view(),
+        name="role-delete",
+    ),
+    path(
+        "role/<int:role_id>/permissions/",
+        views.PanelRolePermissionsPageView.as_view(),
+        name="role-permissions",
+    ),
+    path(
+        "role/<int:role_id>/permission/do/add",
+        views.PanelRolePermissionAddActionView.as_view(),
+        name="role-permission-add",
+    ),
+    path(
+        "role/<int:role_id>/permission/do/remove",
+        views.PanelRolePermissionRemoveActionView.as_view(),
+        name="role-permission-remove",
+    ),
+]
+
 urlpatterns = [
     path("", views.IndexPageView.as_view(), name="index"),
     path(
         "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
     path("crowd/", include((crowd_urls, "crowd"), namespace="crowd")),
+    path("panel/", include((panel_urls, "panel"), namespace="panel")),
     path(
         "theme/do/select", views.ThemeSelectionActionView.as_view(), name="theme-select"
     ),

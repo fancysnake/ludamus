@@ -62,6 +62,7 @@ class SessionDTO(BaseModel):
     presenter_name: str
     requirements: str
     slug: str
+    sphere_id: int
     title: str
 
 
@@ -119,10 +120,116 @@ class AgendaItemData(TypedDict):
     start_time: datetime
 
 
+class RoleData(TypedDict, total=False):
+    """Data for creating a role"""
+
+    sphere_id: int
+    name: str
+    description: str
+    is_system: bool
+
+
+class EventData(TypedDict, total=False):
+    """Data for creating/updating an event"""
+
+    sphere_id: int
+    name: str
+    slug: str
+    description: str
+    start_time: datetime
+    end_time: datetime
+    publication_time: datetime | None
+    proposal_start_time: datetime | None
+    proposal_end_time: datetime | None
+
+
+class UserPermissionData(TypedDict, total=False):
+    """Data for creating a user permission"""
+
+    user_id: int
+    sphere_id: int
+    action: Action
+    resource_type: ResourceType
+    resource_id: int
+    granted_from_role_id: int | None
+    granted_by_id: int | None
+
+
 class UserType(StrEnum):
     ACTIVE = "active"
     CONNECTED = "connected"
     ANONYMOUS = "anonymous"
+
+
+class Action(StrEnum):
+    """Actions that can be performed on resources"""
+
+    # Universal actions
+    READ = "read"
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
+
+    # Resource-specific actions
+    APPROVE = "approve"  # proposals
+    REJECT = "reject"  # proposals
+    SCHEDULE = "schedule"  # sessions
+    PUBLISH = "publish"  # events
+    MANAGE = "manage"  # general management
+    MANAGE_PERMISSIONS = "manage_permissions"  # grant/revoke permissions
+
+    # Wildcard - can do anything
+    ALL = "*"
+
+
+class ResourceType(StrEnum):
+    """Types of resources that can have permissions"""
+
+    SPHERE = "sphere"
+    EVENT = "event"
+    PROPOSAL = "proposal"
+    CATEGORY = "category"
+    SESSION = "session"
+    SPACE = "space"
+    VENUE = "venue"
+
+    # Wildcard
+    ALL = "*"
+
+
+# Registry of which actions apply to which resources
+ACTION_APPLICABLE_TO: dict[Action, list[ResourceType]] = {
+    Action.READ: [ResourceType.ALL],
+    Action.CREATE: [
+        ResourceType.EVENT,
+        ResourceType.PROPOSAL,
+        ResourceType.CATEGORY,
+        ResourceType.SESSION,
+        ResourceType.SPACE,
+    ],
+    Action.UPDATE: [
+        ResourceType.EVENT,
+        ResourceType.PROPOSAL,
+        ResourceType.CATEGORY,
+        ResourceType.SESSION,
+        ResourceType.SPACE,
+        ResourceType.VENUE,
+    ],
+    Action.DELETE: [
+        ResourceType.EVENT,
+        ResourceType.PROPOSAL,
+        ResourceType.CATEGORY,
+        ResourceType.SESSION,
+        ResourceType.SPACE,
+    ],
+    Action.APPROVE: [ResourceType.PROPOSAL],
+    Action.REJECT: [ResourceType.PROPOSAL],
+    Action.SCHEDULE: [ResourceType.SESSION, ResourceType.EVENT],
+    Action.PUBLISH: [ResourceType.EVENT],
+    Action.MANAGE: [ResourceType.ALL],
+    Action.MANAGE_PERMISSIONS: [ResourceType.SPHERE],
+    Action.ALL: [ResourceType.ALL],
+}
 
 
 class UserDTO(BaseModel):
@@ -167,11 +274,44 @@ class EventDTO(BaseModel):
     end_time: datetime
     name: str
     pk: int
-    proposal_end_time: datetime
-    proposal_start_time: datetime
+    proposal_end_time: datetime | None
+    proposal_start_time: datetime | None
     publication_time: datetime | None
     slug: str
     start_time: datetime
+
+
+class RoleDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    sphere_id: int
+    name: str
+    description: str
+    is_system: bool
+
+
+class RolePermissionDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    role_id: int
+    action: Action
+    resource_type: ResourceType
+
+
+class UserPermissionDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    user_id: int
+    sphere_id: int
+    action: Action
+    resource_type: ResourceType
+    resource_id: int
+    granted_from_role_id: int | None
+    granted_by_id: int | None
+    granted_at: datetime
 
 
 class UserData(TypedDict, total=False):
@@ -229,6 +369,7 @@ class ProposalRepositoryProtocol(Protocol):
 
 class SessionRepositoryProtocol(Protocol):
     def create(self, session_data: SessionData, tag_ids: Iterable[int]) -> int: ...
+    def read(self, pk: int) -> SessionDTO: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):
@@ -243,6 +384,46 @@ class ConnectedUserRepositoryProtocol(Protocol):
     def update(
         self, manager_slug: str, user_slug: str, user_data: UserData
     ) -> None: ...
+
+
+class EventRepositoryProtocol(Protocol):
+    def create(self, event_data: EventData) -> EventDTO: ...
+    def read(self, event_id: int) -> EventDTO: ...
+    def update(self, event_id: int, event_data: EventData) -> EventDTO: ...
+    def list_by_sphere(self, sphere_id: int) -> list[EventDTO]: ...
+    def delete(self, event_id: int) -> None: ...
+
+
+class RoleRepositoryProtocol(Protocol):
+    def create(self, role_data: RoleData) -> RoleDTO: ...
+    def read(self, role_id: int) -> RoleDTO: ...
+    def update(self, role_id: int, role_data: RoleData) -> RoleDTO: ...
+    def list_by_sphere(self, sphere_id: int) -> list[RoleDTO]: ...
+    def delete(self, role_id: int) -> None: ...
+    def add_permission(
+        self, role_id: int, action: Action, resource_type: ResourceType
+    ) -> None: ...
+    def remove_permission(
+        self, role_id: int, action: Action, resource_type: ResourceType
+    ) -> None: ...
+    def get_permissions(self, role_id: int) -> list[RolePermissionDTO]: ...
+
+
+class UserPermissionRepositoryProtocol(Protocol):
+    def grant(self, permission_data: UserPermissionData) -> UserPermissionDTO: ...
+    def revoke(self, permission_id: int) -> None: ...
+    def has_permission(
+        self,
+        user_id: int,
+        sphere_id: int,
+        action: Action,
+        resource_type: ResourceType,
+        resource_id: int,
+    ) -> bool: ...
+    def list_user_permissions(
+        self, user_id: int, sphere_id: int
+    ) -> list[UserPermissionDTO]: ...
+    def has_any_permission_in_sphere(self, user_id: int, sphere_id: int) -> bool: ...
 
 
 class UnitOfWorkProtocol(Protocol):
@@ -264,6 +445,10 @@ class UnitOfWorkProtocol(Protocol):
     def sessions(self) -> SessionRepositoryProtocol: ...
     @property
     def spheres(self) -> SphereRepositoryProtocol: ...
+    @property
+    def roles(self) -> RoleRepositoryProtocol: ...
+    @property
+    def user_permissions(self) -> UserPermissionRepositoryProtocol: ...
 
 
 class RootRequestProtocol(Protocol):

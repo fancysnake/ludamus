@@ -2,17 +2,33 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from ludamus.adapters.db.django.models import (
+    AgendaItem,
+    Event,
+    Proposal,
+    Session,
+    Space,
+    Sphere,
+    Tag,
+    TimeSlot,
+    User,
+)
+from ludamus.pacts import UserType
+
 if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import (
         AgendaItem,
         Event,
         Proposal,
+        Role,
+        RolePermission,
         Session,
         Space,
         Sphere,
         Tag,
         TimeSlot,
         User,
+        UserPermission,
     )
     from ludamus.pacts import UserType
 
@@ -42,3 +58,8 @@ class Storage:  # pylint: disable=too-many-instance-attributes
     users: dict[UserType, dict[str, User]] = field(
         default_factory=lambda: defaultdict(dict)
     )
+    roles: dict[int, Role] = field(default_factory=dict)
+    role_permissions: dict[int, list[RolePermission]] = field(default_factory=dict)
+    user_permissions: dict[tuple[int, int], list[UserPermission]] = field(
+        default_factory=dict
+    )  # (user_id, sphere_id) -> permissions
