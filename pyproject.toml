@@ -47,7 +47,7 @@ pylint = "^4.0.3"
 pytest = "^9.0.1"
 pytest-cov = "^7.0.0"
 pytest-django = "^4.11.1"
-ruff = "^0.14.0"
+ruff = "^0.14.7"
 types-authlib = "^1.5.0.20250516"
 pytest-freezeblaster = "^2.0.4"
 
