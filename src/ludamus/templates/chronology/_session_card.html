@@ -83,7 +83,7 @@
                 <div class="d-flex gap-1 flex-column">
                     <!-- Primary enrollment action -->
                     {% if not ended and data.session.is_enrollment_available and not data.should_show_as_inactive %}
-                        {% if request.user_repository.user.is_authenticated %}
+                        {% if request.user.is_authenticated %}
                             <!-- Authenticated user -->
                             {% if data.user_enrolled or data.user_waiting %}
                                 <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
@@ -92,7 +92,7 @@
                                     {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
-                                {% if request.user_repository.user.user_type == 'connected' or request.user_repository.user.user_type == 'active' %}
+                                {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
                                     <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                        class="btn btn-success btn-sm"
                                        onclick="event.stopPropagation();">
