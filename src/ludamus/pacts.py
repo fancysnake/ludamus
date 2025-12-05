@@ -185,12 +185,13 @@ class Action(StrEnum):
 class ResourceType(StrEnum):
     """Types of resources that can have permissions"""
 
-    SPHERE = "sphere"
+    CATEGORY = "category"
     EVENT = "event"
     PROPOSAL = "proposal"
-    CATEGORY = "category"
+    ROLE = "role"
     SESSION = "session"
     SPACE = "space"
+    SPHERE = "sphere"
     VENUE = "venue"
 
     # Wildcard
@@ -278,6 +279,7 @@ class EventDTO(BaseModel):
     proposal_start_time: datetime | None
     publication_time: datetime | None
     slug: str
+    sphere_id: int
     start_time: datetime
 
 
@@ -365,11 +367,13 @@ class ProposalRepositoryProtocol(Protocol):
     def read_time_slots(self, proposal_id: int) -> list[TimeSlotDTO]: ...
     def read(self, pk: int) -> ProposalDTO: ...
     def update(self, proposal_dto: ProposalDTO) -> None: ...
+    def get_sphere_id(self, proposal_id: int) -> int: ...
 
 
 class SessionRepositoryProtocol(Protocol):
     def create(self, session_data: SessionData, tag_ids: Iterable[int]) -> int: ...
     def read(self, pk: int) -> SessionDTO: ...
+    def get_sphere_id(self, session_id: int) -> int: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):
@@ -392,6 +396,7 @@ class EventRepositoryProtocol(Protocol):
     def update(self, event_id: int, event_data: EventData) -> EventDTO: ...
     def list_by_sphere(self, sphere_id: int) -> list[EventDTO]: ...
     def delete(self, event_id: int) -> None: ...
+    def get_sphere_id(self, event_id: int) -> int: ...
 
 
 class RoleRepositoryProtocol(Protocol):
@@ -449,6 +454,8 @@ class UnitOfWorkProtocol(Protocol):
     def roles(self) -> RoleRepositoryProtocol: ...
     @property
     def user_permissions(self) -> UserPermissionRepositoryProtocol: ...
+    @property
+    def events(self) -> EventRepositoryProtocol: ...
 
 
 class RootRequestProtocol(Protocol):

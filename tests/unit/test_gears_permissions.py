@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
+from django.core.exceptions import PermissionDenied
 
 from ludamus.gears import (
     AuthorizationService,
@@ -26,44 +27,36 @@ class TestGetSphereIdForResource:
         )
         uow.assert_not_called()
 
-    def test_event_returns_event_pk(self):
+    def test_event_returns_sphere_id(self):
         uow = Mock()
-        event_id = 100
-        event = Mock(pk=event_id)
-        uow.proposals.read_event.return_value = event
+        sphere_id = 100
+        uow.events.get_sphere_id.return_value = sphere_id
 
-        sphere_id = get_sphere_id_for_resource(uow, ResourceType.EVENT, 42)
+        result = get_sphere_id_for_resource(uow, ResourceType.EVENT, 42)
 
-        assert sphere_id == event_id
-        uow.proposals.read_event.assert_called_once_with(42)
+        assert result == sphere_id
+        uow.events.get_sphere_id.assert_called_once_with(42)
 
-    def test_proposal_navigates_to_sphere(self):
+    def test_proposal_returns_sphere_id(self):
         uow = Mock()
         proposal_id = 10
-        proposal = Mock(pk=proposal_id)
-        event = Mock(pk=20)
         sphere_id = 30
-        sphere = Mock(pk=sphere_id)
-        uow.proposals.read.return_value = proposal
-        uow.proposals.read_event.return_value = event
-        uow.spheres.read.return_value = sphere
+        uow.proposals.get_sphere_id.return_value = sphere_id
 
-        assert (
-            get_sphere_id_for_resource(uow, ResourceType.PROPOSAL, proposal_id)
-            == sphere_id
-        )
-        uow.proposals.read.assert_called_once_with(proposal_id)
-        uow.proposals.read_event.assert_called_once_with(proposal_id)
-        uow.spheres.read.assert_called_once_with(20)
+        result = get_sphere_id_for_resource(uow, ResourceType.PROPOSAL, proposal_id)
 
-    def test_session_reads_sphere_id(self):
+        assert result == sphere_id
+        uow.proposals.get_sphere_id.assert_called_once_with(proposal_id)
+
+    def test_session_returns_sphere_id(self):
         uow = Mock()
         sphere_id = 50
-        session = Mock(sphere_id=sphere_id)
-        uow.sessions.read.return_value = session
+        uow.sessions.get_sphere_id.return_value = sphere_id
 
-        assert get_sphere_id_for_resource(uow, ResourceType.SESSION, 42) == sphere_id
-        uow.sessions.read.assert_called_once_with(42)
+        result = get_sphere_id_for_resource(uow, ResourceType.SESSION, 42)
+
+        assert result == sphere_id
+        uow.sessions.get_sphere_id.assert_called_once_with(42)
 
     def test_unknown_resource_type_raises_value_error(self):
         uow = Mock()
@@ -75,7 +68,7 @@ class TestPermissionCheckRegistry:
 
     def test_register_decorator_adds_check(self):
         # Clear registry for this test
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
 
         @PermissionCheckRegistry.register(Action.READ, ResourceType.PROPOSAL)
         def test_check(uow, user_id, resource_type, resource_id):  # noqa: ARG001
@@ -84,10 +77,10 @@ class TestPermissionCheckRegistry:
         checks = PermissionCheckRegistry.get_checks(Action.READ, ResourceType.PROPOSAL)
         assert test_check in checks
         # Cleanup
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
 
     def test_get_checks_includes_wildcards(self):
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
 
         @PermissionCheckRegistry.register(Action.READ, ResourceType.PROPOSAL)
         def exact_check(uow, user_id, resource_type, resource_id):  # noqa: ARG001
@@ -112,7 +105,7 @@ class TestPermissionCheckRegistry:
         assert wildcard_resource in checks
         assert double_wildcard in checks
         # Cleanup
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
 
 
 class TestAuthorizationService:
@@ -150,24 +143,27 @@ class TestAuthorizationService:
         uow.spheres.is_manager.assert_called_once_with(10, "testuser")
 
     def test_can_checks_derived_permissions(self, context, uow):
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
+        res_id = 42
 
         @PermissionCheckRegistry.register(Action.READ, ResourceType.PROPOSAL)
-        def derived_check(check_uow, user_id, resource_type, resource_id):
-            return user_id == 1 and resource_id == 42
+        def derived_check(
+            check_uow, user_id, resource_type, resource_id  # noqa: ARG001
+        ):
+            return user_id == 1 and resource_id == res_id
 
         uow.user_permissions.has_permission.return_value = False
         uow.spheres.is_manager.return_value = False
         auth = AuthorizationService(context, uow)
 
-        assert auth.can(Action.READ, ResourceType.PROPOSAL, 42) is True
+        assert auth.can(Action.READ, ResourceType.PROPOSAL, res_id) is True
         # Cleanup
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
 
     def test_can_returns_false_when_no_permission(self, context, uow):
         uow.user_permissions.has_permission.return_value = False
         uow.spheres.is_manager.return_value = False
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
 
         auth = AuthorizationService(context, uow)
 
@@ -181,11 +177,9 @@ class TestAuthorizationService:
             auth.can(Action.APPROVE, ResourceType.SPHERE, 42)
 
     def test_require_raises_permission_denied(self, context, uow):
-        from django.core.exceptions import PermissionDenied
-
         uow.user_permissions.has_permission.return_value = False
         uow.spheres.is_manager.return_value = False
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
 
         auth = AuthorizationService(context, uow)
 
@@ -206,6 +200,8 @@ class TestAuthorizationService:
         assert auth.has_any_permission_in_sphere() is True
 
     def test_has_any_permission_in_sphere_checks_permissions(self, context, uow):
+        user = Mock(is_superuser=False, is_staff=False)
+        uow.active_users.read.return_value = user
         uow.spheres.is_manager.return_value = False
         uow.user_permissions.has_any_permission_in_sphere.return_value = True
         auth = AuthorizationService(context, uow)
@@ -232,11 +228,9 @@ class TestRoleAssignmentService:
         return Mock()
 
     def test_assign_role_requires_manage_permissions(self, context, uow):
-        from django.core.exceptions import PermissionDenied
-
         uow.user_permissions.has_permission.return_value = False
         uow.spheres.is_manager.return_value = False
-        PermissionCheckRegistry._registry.clear()
+        PermissionCheckRegistry.clear()
 
         service = RoleAssignmentService(context, uow)
 
@@ -265,7 +259,8 @@ class TestRoleAssignmentService:
         uow.roles.get_permissions.assert_called_once_with(5)
 
         # Verify grant was called twice with correct data
-        assert uow.user_permissions.grant.call_count == 2
+        expected_call_count = 2
+        assert uow.user_permissions.grant.call_count == expected_call_count
 
         call1 = uow.user_permissions.grant.call_args_list[0][0][0]
         assert call1 == UserPermissionData(

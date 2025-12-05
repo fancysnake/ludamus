@@ -62,8 +62,8 @@ class UnitOfWork(UnitOfWorkProtocol):
 
     @cached_property
     def roles(self) -> repositories.RoleRepository:
-        return repositories.RoleRepository(self._storage)
+        return repositories.RoleRepository()
 
     @cached_property
     def user_permissions(self) -> repositories.UserPermissionRepository:
-        return repositories.UserPermissionRepository(self._storage)
+        return repositories.UserPermissionRepository()

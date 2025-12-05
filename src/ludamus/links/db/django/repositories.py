@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from django.db import transaction
+
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Event,
@@ -215,11 +217,16 @@ class ProposalRepository(ProposalRepositoryProtocol):
 
         return TimeSlotDTO.model_validate(time_slot)
 
+    def get_sphere_id(self, proposal_id: int) -> int:
+        event = self.read_event(proposal_id)
+        return event.sphere_id
+
 
 class SessionRepository(SessionRepositoryProtocol):
     def __init__(self, storage: Storage) -> None:
         self._storage = storage
 
+    @transaction.atomic
     def create(self, session_data: SessionData, tag_ids: Iterable[int]) -> int:
         session = Session.objects.create(**session_data)
 
@@ -234,6 +241,10 @@ class SessionRepository(SessionRepositoryProtocol):
             session = Session.objects.get(pk=pk)
             self._storage.sessions[pk] = session
         return SessionDTO.model_validate(session)
+
+    def get_sphere_id(self, session_id: int) -> int:
+        session = self.read(session_id)
+        return session.sphere_id
 
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):
@@ -293,6 +304,7 @@ class ConnectedUserRepository(ConnectedUserRepositoryProtocol):
             collection[connected_user.slug] = connected_user
         return connected_user
 
+    @transaction.atomic
     def update(self, manager_slug: str, user_slug: str, user_data: UserData) -> None:
         collection = self._storage.connected_users_by_user[manager_slug]
         self._read_user(manager_slug, user_slug)  # Ensure user is in storage
@@ -349,26 +361,27 @@ class EventRepository(EventRepositoryProtocol):
         event.delete()
         self._storage.events.pop(event_id, None)
 
+    def get_sphere_id(self, event_id: int) -> int:
+        event = self.read(event_id)
+        return event.sphere_id
+
 
 class RoleRepository(RoleRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
-    def create(self, role_data: RoleData) -> RoleDTO:
+    @staticmethod
+    def create(role_data: RoleData) -> RoleDTO:
         role = Role.objects.create(**role_data)
-        self._storage.roles[role.id] = role
         return RoleDTO.model_validate(role)
 
-    def read(self, role_id: int) -> RoleDTO:
-        if not (role := self._storage.roles.get(role_id)):
-            try:
-                role = Role.objects.get(id=role_id)
-            except Role.DoesNotExist as exception:
-                raise NotFoundError from exception
-            self._storage.roles[role_id] = role
+    @staticmethod
+    def read(role_id: int) -> RoleDTO:
+        try:
+            role = Role.objects.get(id=role_id)
+        except Role.DoesNotExist as exception:
+            raise NotFoundError from exception
         return RoleDTO.model_validate(role)
 
-    def update(self, role_id: int, role_data: RoleData) -> RoleDTO:
+    @staticmethod
+    def update(role_id: int, role_data: RoleData) -> RoleDTO:
         role = Role.objects.get(id=role_id)
         if role.is_system:
             raise ValueError("Cannot update system role")
@@ -380,55 +393,45 @@ class RoleRepository(RoleRepositoryProtocol):
             role.description = role_data["description"]
 
         role.save()
-        self._storage.roles[role_id] = role
         return RoleDTO.model_validate(role)
 
-    def list_by_sphere(self, sphere_id: int) -> list[RoleDTO]:
+    @staticmethod
+    def list_by_sphere(sphere_id: int) -> list[RoleDTO]:
         roles = Role.objects.filter(sphere_id=sphere_id)
-        for role in roles:
-            self._storage.roles[role.id] = role
         return [RoleDTO.model_validate(role) for role in roles]
 
-    def delete(self, role_id: int) -> None:
+    @staticmethod
+    def delete(role_id: int) -> None:
         role = Role.objects.get(id=role_id)
         if role.is_system:
             raise ValueError("Cannot delete system role")
         role.delete()
-        self._storage.roles.pop(role_id, None)
-        self._storage.role_permissions.pop(role_id, None)
 
+    @staticmethod
     def add_permission(
-        self, role_id: int, action: Action, resource_type: ResourceType
+        role_id: int, action: Action, resource_type: ResourceType
     ) -> None:
         RolePermission.objects.create(
             role_id=role_id, action=action, resource_type=resource_type
         )
-        # Invalidate cache
-        self._storage.role_permissions.pop(role_id, None)
 
+    @staticmethod
     def remove_permission(
-        self, role_id: int, action: Action, resource_type: ResourceType
+        role_id: int, action: Action, resource_type: ResourceType
     ) -> None:
         RolePermission.objects.filter(
             role_id=role_id, action=action, resource_type=resource_type
         ).delete()
-        self._storage.role_permissions.pop(role_id, None)
 
-    def get_permissions(self, role_id: int) -> list[RolePermissionDTO]:
-        if role_id not in self._storage.role_permissions:
-            perms = list(RolePermission.objects.filter(role_id=role_id))
-            self._storage.role_permissions[role_id] = perms
-        return [
-            RolePermissionDTO.model_validate(p)
-            for p in self._storage.role_permissions[role_id]
-        ]
+    @staticmethod
+    def get_permissions(role_id: int) -> list[RolePermissionDTO]:
+        perms = RolePermission.objects.filter(role_id=role_id)
+        return [RolePermissionDTO.model_validate(p) for p in perms]
 
 
 class UserPermissionRepository(UserPermissionRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
-    def grant(self, permission_data: UserPermissionData) -> UserPermissionDTO:
+    @staticmethod
+    def grant(permission_data: UserPermissionData) -> UserPermissionDTO:
         # Separate lookup keys from defaults
         user_id = permission_data["user_id"]
         sphere_id = permission_data["sphere_id"]
@@ -450,15 +453,12 @@ class UserPermissionRepository(UserPermissionRepositoryProtocol):
             resource_id=resource_id,
             defaults=defaults,
         )
-        # Invalidate cache
-        self._storage.user_permissions.pop((user_id, sphere_id), None)
         return UserPermissionDTO.model_validate(perm)
 
-    def revoke(self, permission_id: int) -> None:
+    @staticmethod
+    def revoke(permission_id: int) -> None:
         perm = UserPermission.objects.get(id=permission_id)
-        user_id, sphere_id = perm.user_id, perm.sphere_id
         perm.delete()
-        self._storage.user_permissions.pop((user_id, sphere_id), None)
 
     @staticmethod
     def has_permission(
@@ -476,19 +476,18 @@ class UserPermissionRepository(UserPermissionRepositoryProtocol):
             resource_id=resource_id,
         ).exists()
 
-    def list_user_permissions(
-        self, user_id: int, sphere_id: int
-    ) -> list[UserPermissionDTO]:
-        cache_key = (user_id, sphere_id)
-        if cache_key not in self._storage.user_permissions:
-            perms = list(
-                UserPermission.objects.filter(user_id=user_id, sphere_id=sphere_id)
-            )
-            self._storage.user_permissions[cache_key] = perms
-        return [
-            UserPermissionDTO.model_validate(p)
-            for p in self._storage.user_permissions[cache_key]
-        ]
+    @staticmethod
+    def list_user_permissions(user_id: int, sphere_id: int) -> list[UserPermissionDTO]:
+        perms = UserPermission.objects.filter(user_id=user_id, sphere_id=sphere_id)
+        return [UserPermissionDTO.model_validate(p) for p in perms]
+
+    @staticmethod
+    def list_by_sphere(sphere_id: int) -> list[UserPermissionDTO]:
+        """Get all user permissions in a sphere."""
+        perms = UserPermission.objects.filter(sphere_id=sphere_id).select_related(
+            "user", "granted_by", "granted_from_role"
+        )
+        return [UserPermissionDTO.model_validate(p) for p in perms]
 
     @staticmethod
     def has_any_permission_in_sphere(user_id: int, sphere_id: int) -> bool:

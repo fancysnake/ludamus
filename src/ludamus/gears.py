@@ -117,18 +117,11 @@ def get_sphere_id_for_resource(
     if resource_type == ResourceType.SPHERE:
         return resource_id
     if resource_type == ResourceType.EVENT:
-        event = uow.proposals.read_event(resource_id)
-        return event.pk  # Events are top-level, return event_id as sphere_id
+        return uow.events.get_sphere_id(resource_id)
     if resource_type == ResourceType.PROPOSAL:
-        proposal = uow.proposals.read(resource_id)
-        # Proposals belong to events which belong to spheres
-        event = uow.proposals.read_event(proposal.pk)
-        sphere = uow.spheres.read(event.pk)
-        return sphere.pk
+        return uow.proposals.get_sphere_id(resource_id)
     if resource_type == ResourceType.SESSION:
-        # Sessions have sphere_id directly via Session.sphere FK
-        session = uow.sessions.read(resource_id)
-        return session.sphere_id
+        return uow.sessions.get_sphere_id(resource_id)
     # Add other resource types as needed
     msg = f"Unknown resource type: {resource_type}"
     raise ValueError(msg)
@@ -171,6 +164,10 @@ class PermissionCheckRegistry:
         checks.extend(cls._registry[Action.ALL][ResourceType.ALL])
 
         return checks
+
+    @classmethod
+    def clear(cls) -> None:
+        cls._registry.clear()
 
 
 # =============================================================================
@@ -225,6 +222,11 @@ class AuthorizationService:
             if ResourceType.ALL not in applicable and resource_type not in applicable:
                 msg = f"Action {action} not applicable to {resource_type}"
                 raise ValueError(msg)
+
+        # 0. Check superuser/staff status (they can do anything)
+        user = self._uow.active_users.read(self._context.current_user_slug)
+        if user.is_superuser or user.is_staff:
+            return True
 
         # 1. Check direct permission
         if self._uow.user_permissions.has_permission(
