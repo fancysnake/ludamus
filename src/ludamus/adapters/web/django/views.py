@@ -333,6 +333,20 @@ class ProfilePageView(
         return super().get_context_data(**kwargs)
 
     def form_valid(self, form: UserForm) -> HttpResponse:
+        # Check if email is being changed and if it already exists
+        email = form.user_data.get("email", "").strip()
+        if email and self.request.uow.active_users.email_exists(
+            email, exclude_slug=self.request.context.current_user_slug
+        ):
+            form.add_error(
+                "email",
+                _(
+                    "This email address is already in use. "
+                    "Please use a different email address."
+                ),
+            )
+            return self.form_invalid(form)
+
         self.request.uow.active_users.update(
             self.request.context.current_user_slug, form.user_data
         )

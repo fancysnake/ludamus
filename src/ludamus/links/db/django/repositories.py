@@ -102,6 +102,17 @@ class UserRepository(UserRepositoryProtocol):
         user = User.objects.get(slug=user_slug)
         self._collection[user_slug] = user
 
+    @staticmethod
+    def email_exists(email: str, exclude_slug: str | None = None) -> bool:
+        if not email:
+            return False
+
+        query = User.objects.filter(email__iexact=email)
+        if exclude_slug:
+            query = query.exclude(slug=exclude_slug)
+
+        return query.exists()
+
 
 class ProposalRepository(ProposalRepositoryProtocol):
     def __init__(self, storage: Storage) -> None:
