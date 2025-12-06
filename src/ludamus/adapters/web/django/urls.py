@@ -84,6 +84,7 @@ chronology_urls = [
 
 urlpatterns = [
     path("", views.IndexPageView.as_view(), name="index"),
+    path("design/", views.DesignPageView.as_view(), name="design"),
     path(
         "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
