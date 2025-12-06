@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -48,6 +48,8 @@ class BaseUserForm(forms.Form):
     def user_data(self) -> UserData:
         cleaned_data = self.cleaned_data or {}
         user_data = UserData()
+        if "discord_username" in cleaned_data:
+            user_data["discord_username"] = cleaned_data["discord_username"]
         if "email" in cleaned_data:
             user_data["email"] = cleaned_data["email"]
         if "name" in cleaned_data:
@@ -64,6 +66,12 @@ class BaseUserForm(forms.Form):
 class UserForm(BaseUserForm):
     user_type = forms.CharField(initial=UserType.ACTIVE, widget=forms.HiddenInput())
     email = forms.EmailField(label=_("email address"), required=False)
+    discord_username = forms.CharField(
+        label=_("Discord username"),
+        required=False,
+        max_length=150,
+        help_text=_("Your Discord username for session coordination"),
+    )
 
 
 class ConnectedUserForm(BaseUserForm):
@@ -656,3 +664,19 @@ def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
     form_attrs = {"space": space_field, "time_slot": time_slot_field, "clean": clean}
 
     return type("ProposalAcceptanceForm", (forms.Form,), form_attrs)
+
+
+class ThemeSelectionForm(forms.Form):
+    THEME_CHOICES: ClassVar = [
+        ("cold-steel", _("Cold Steel (Default)")),
+        ("cyberpunk", _("Cyberpunk")),
+        ("green-forest", _("Green Forest")),
+        ("dragons-lair", _("Dragon's Lair")),
+        ("outer-space", _("Outer Space")),
+    ]
+
+    theme = forms.ChoiceField(
+        choices=THEME_CHOICES,
+        label=_("Theme"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )

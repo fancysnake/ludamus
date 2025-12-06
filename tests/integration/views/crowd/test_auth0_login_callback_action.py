@@ -7,6 +7,7 @@ from unittest.mock import patch
 from django.contrib import messages
 from django.core.cache import cache
 from django.urls import reverse
+from django.utils.text import slugify
 
 from ludamus.adapters.db.django.models import User
 from tests.integration.utils import assert_response
@@ -114,9 +115,10 @@ class TestAuth0LoginCallbackActionView:
         self, authorize_access_token_mock, client, complete_user_factory, faker
     ):
         authorize_access_token_mock.return_value = {"userinfo": {"sub": faker.uuid4()}}
-        complete_user_factory(
-            username=f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"]}'
+        username = (
+            f'auth0|{authorize_access_token_mock.return_value["userinfo"]["sub"]}'
         )
+        complete_user_factory(username=username, slug=slugify(username))
         state_token = self._setup_valid_state()
 
         response = client.get(self.URL, {"state": state_token})
@@ -199,7 +201,8 @@ class TestAuth0LoginCallbackActionView:
         sub_id = faker.uuid4()
         authorize_access_token_mock.return_value = {"userinfo": {"sub": sub_id}}
 
-        complete_user_factory(username=f"auth0|{sub_id}")
+        username = f"auth0|{sub_id}"
+        complete_user_factory(username=username, slug=slugify(username))
 
         state_token = self._setup_valid_state()
 

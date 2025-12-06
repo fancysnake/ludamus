@@ -98,7 +98,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "ludamus.adapters.web.django.middlewares.RootMiddleware",
+    "ludamus.binds.RepositoryInjectionMiddleware",
+    "ludamus.adapters.web.django.middlewares.RequestContextMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "ludamus.adapters.web.django.middlewares.RedirectErrorMiddleware",
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
@@ -136,7 +137,7 @@ WSGI_APPLICATION = "ludamus.deploy.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 TESTING = os.getenv("TESTING", "")
-DATABASES: dict[str, dict[str, Any]] = (
+DATABASES: dict[str, dict[str, Any]] = (  # pylint: disable=invalid-name
     {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
     if TESTING
     else {
@@ -264,7 +265,7 @@ else:
 
 # Production Database Settings
 if env("USE_POSTGRES"):
-    DATABASES = {
+    DATABASES = {  # pylint: disable=invalid-name
         "default": {
             "ATOMIC_REQUESTS": True,
             "ENGINE": "django.db.backends.postgresql",

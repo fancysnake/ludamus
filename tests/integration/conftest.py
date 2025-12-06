@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.contrib.sites.models import Site
 from factory import Faker, LazyAttribute, SubFactory
 from factory.django import DjangoModelFactory
@@ -202,7 +203,10 @@ def staff_client(client, staff_user):
 @pytest.fixture(name="active_user")
 def active_user_fixture():
     return UserFactory(
-        username="testuser", email="testuser@example.com", name="Test User"
+        username="testuser",
+        email="testuser@example.com",
+        name="Test User",
+        password=make_password(None),
     )
 
 
@@ -213,6 +217,7 @@ def connected_user(active_user):
         email="connected@example.com",
         user_type="connected",
         manager=active_user,
+        password=make_password(None),
     )
 
 

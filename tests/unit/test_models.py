@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from ludamus.adapters.db.django.models import (
+    DEFAULT_NAME,
     AgendaItem,
     DomainEnrollmentConfig,
     EnrollmentConfig,
@@ -66,7 +67,7 @@ class TestEvent:
 
     def test_display_location_fallback(self, faker):
         name = faker.word()
-        assert Event(name=name).display_location == ""
+        assert Event(name=name).display_location == name
 
     def test_display_location_label(self, faker):
         name = faker.word()
@@ -80,17 +81,6 @@ class TestSpace:
         pk = faker.random_int(min=1)
 
         assert str(Space(name=name, id=pk)) == f"{name} ({pk})"
-
-
-class TestEvent:
-    def test_display_location_fallback(self, faker):
-        name = faker.word()
-        assert Event(name=name).display_location == name
-
-    def test_display_location_label(self, faker):
-        name = faker.word()
-        label = faker.word()
-        assert Event(name=name, location_label=label).display_location == label
 
 
 class TestTimeSlot:
@@ -190,3 +180,15 @@ class TestSessionParticipation:
             )
             == f"{username} confirmed on {title}"
         )
+
+
+class TestUser:
+    def test_get_full_name_no_name(self):
+        user = User()
+
+        assert user.get_full_name() == DEFAULT_NAME
+
+    def test_get_full_name(self, faker):
+        user = User(name=faker.name())
+
+        assert user.get_full_name() == user.name

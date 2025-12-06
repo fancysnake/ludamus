@@ -1,14 +1,17 @@
 from django.conf import settings
 from django.http import HttpRequest
 
-from ludamus.pacts import RootDAORequestProtocol, SiteDTO, SphereDTO
+from ludamus.pacts import RootRequestProtocol, SiteDTO, SphereDTO
 
 
-def sites(request: RootDAORequestProtocol) -> dict[str, SiteDTO | SphereDTO]:
+def sites(request: RootRequestProtocol) -> dict[str, SiteDTO | SphereDTO]:
+    sphere_repository = request.uow.spheres
+    root_sphere = sphere_repository.read(request.context.root_sphere_id)
+    current_sphere = sphere_repository.read(request.context.current_sphere_id)
     return {
-        "root_site": request.root_dao.root_site,
-        "current_site": request.root_dao.current_site,
-        "current_sphere": request.root_dao.current_sphere,
+        "root_site": sphere_repository.read_site(root_sphere.pk),
+        "current_site": sphere_repository.read_site(current_sphere.pk),
+        "current_sphere": current_sphere,
     }
 
 

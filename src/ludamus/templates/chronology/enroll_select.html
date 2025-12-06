@@ -86,7 +86,7 @@
                                             <tr>
                                                 <td>
                                                     <div class="d-flex align-items-center">
-                                                        {% if user_data.user == request.user %}
+                                                        {% if user_data.user.pk == request.user.pk %}
                                                             {% bs_icon 'person-circle' %}
                                                             <span class="ms-2">{% translate "Myself" %} ({{ user.name }})</span>
                                                         {% else %}

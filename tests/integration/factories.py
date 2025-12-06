@@ -1,4 +1,5 @@
 import factory
+from django.contrib.auth.hashers import make_password
 from factory.django import DjangoModelFactory
 from faker import Faker
 
@@ -14,15 +15,17 @@ class CompleteUserFactory(DjangoModelFactory):
 
     email = factory.Faker("email")
     name = factory.Faker("name")
-    username = factory.Faker("uuid4")
+    password = factory.LazyFunction(lambda: make_password(None))
     user_type = UserType.ACTIVE
+    username = factory.Faker("uuid4")
 
 
 class AnonymousUserFactory(DjangoModelFactory):
     class Meta:
         model = User
 
+    is_active = False
+    password = factory.LazyFunction(lambda: make_password(None))
+    slug = factory.LazyFunction(lambda: f"code_{faker.word()}")
     user_type = UserType.ANONYMOUS
     username = factory.Faker("uuid4")
-    is_active = False
-    slug = factory.LazyFunction(lambda: f"code_{faker.word()}")
