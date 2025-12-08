@@ -18,4 +18,3 @@ class TestDesignPageView:
             context_data={"view": ANY},
             template_name=["design.html"],
         )
-
