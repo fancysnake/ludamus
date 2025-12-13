@@ -239,6 +239,9 @@ ignore = [
 [tool.ruff.lint.flake8-pytest-style]
 parametrize-values-type = "tuple"
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
 [tool.importlinter]
 root_package = "ludamus"
 
