@@ -3,7 +3,6 @@ import path from 'node:path';
 import type { FullConfig } from '@playwright/test';
 
 const repoRoot = path.resolve(__dirname, '..', '..');
-const scriptPath = path.join('tests', 'e2e', 'scripts', 'bootstrap_data.py');
 
 const baseEnv = {
   ...process.env,
@@ -19,16 +18,10 @@ const run = (command: string) =>
   });
 
 export default async function globalSetup(_config: FullConfig) {
-  const useDocker = process.env.CI !== 'true';
-
-  if (useDocker) {
-    run(
-      'docker compose run --rm -T web sh -c "cd src && django-admin migrate --noinput && django-admin createcachetable && python /app/tests/e2e/scripts/bootstrap_data.py"',
-    );
+  if (process.env.E2E_SKIP_SETUP === 'true') {
+    console.log('Skipping E2E setup (E2E_SKIP_SETUP=true)');
     return;
   }
 
-  run('poetry run django-admin migrate --noinput');
-  run('poetry run django-admin createcachetable');
-  run(`poetry run python ${scriptPath}`);
+  run('poetry run poe e2e-setup');
 }
