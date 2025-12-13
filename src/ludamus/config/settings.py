@@ -137,17 +137,10 @@ WSGI_APPLICATION = "ludamus.deploy.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-TESTING = os.getenv("TESTING", "")
-DATABASES: dict[str, dict[str, Any]] = (  # pylint: disable=invalid-name
-    {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
-    if TESTING
-    else {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": str(BASE_DIR / "dev.sqlite3"),
-        }
-    }
-)
+LOCAL_DB_FILE = os.getenv("LOCAL_DB_FILE", ":memory:")
+DATABASES: dict[str, dict[str, Any]] = {  # pylint: disable=invalid-name
+    "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": LOCAL_DB_FILE}
+}
 
 
 # Password validation

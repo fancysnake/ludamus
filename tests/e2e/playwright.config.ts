@@ -24,19 +24,16 @@ const loadEnv = (filePath: string) => {
   }
 };
 
+// Load .env first (local dev), then .env.ci as fallback (CI)
+// loadEnv skips already-set variables, so .env.ci takes precedence
+loadEnv(path.join(repoRoot, '.env.ci'));
 loadEnv(path.join(repoRoot, '.env'));
-// We do not load .env.ci here. It's not meant for our end-to-end tests.
 
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:8000`;
-
-const WEB_COMMAND = process.env.CI
-  ? 'poetry run sh -c "django-admin migrate --noinput && django-admin createcachetable && django-admin downloadvendor && python tests/e2e/scripts/bootstrap_data.py && django-admin runserver --insecure 0.0.0.0:8000"'
-  : 'docker compose up';
 
 export default defineConfig({
   testDir: './tests',
   outputDir: 'test-results',
-  globalSetup: './global-setup.ts',
   /* Timeout per test */
   timeout: 120 * 1000,
   expect: {
@@ -73,18 +70,18 @@ export default defineConfig({
     },
     {
       name: 'webkit',
-      use: { ...devices['iPhone 14 Pro'] },
+      use: { ...devices['Desktop Safari'] },
     },
   ],
   webServer: {
-    command: WEB_COMMAND,
+    command: 'poetry run poe e2e-setup && poetry run poe e2e-start',
     url: BASE_URL,
     env: {
       ...process.env,
       DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE!,
       PYTHONPATH: process.env.PYTHONPATH!,
     },
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: process.env.E2E_REUSE_SERVER === 'true',
     timeout: 180 * 1000,
     stdout: 'pipe',
     stderr: 'pipe',
