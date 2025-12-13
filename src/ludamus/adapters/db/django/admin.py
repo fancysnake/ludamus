@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from django.contrib import admin
 
@@ -19,6 +18,9 @@ from ludamus.adapters.db.django.models import (
     User,
     UserEnrollmentConfig,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 @admin.register(AgendaItem)

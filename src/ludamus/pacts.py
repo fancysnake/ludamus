@@ -1,11 +1,13 @@
-from collections.abc import Iterable
-from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from contextlib import AbstractContextManager
 
 
 class NotFoundError(Exception): ...

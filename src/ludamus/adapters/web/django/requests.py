@@ -1,7 +1,10 @@
+from typing import TYPE_CHECKING
+
 from django.http import HttpRequest
 
-from ludamus.links.db.django.uow import UnitOfWork
-from ludamus.pacts import RequestContext
+if TYPE_CHECKING:
+    from ludamus.links.db.django.uow import UnitOfWork
+    from ludamus.pacts import RequestContext
 
 
 class RootRepositoryRequest(HttpRequest):

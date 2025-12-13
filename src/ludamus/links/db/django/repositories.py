@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from ludamus.adapters.db.django.models import (
@@ -10,7 +9,6 @@ from ludamus.adapters.db.django.models import (
     Sphere,
     TimeSlot,
 )
-from ludamus.links.db.django.storage import Storage
 from ludamus.pacts import (
     AgendaItemData,
     AgendaItemRepositoryProtocol,
@@ -33,7 +31,10 @@ from ludamus.pacts import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from ludamus.adapters.db.django.models import User
+    from ludamus.links.db.django.storage import Storage
 else:
     from django.contrib.auth import get_user_model
 
