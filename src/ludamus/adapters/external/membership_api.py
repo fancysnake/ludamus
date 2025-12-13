@@ -48,7 +48,7 @@ class MembershipApiClient:
         except requests.RequestException:
             logger.exception("Failed to fetch membership for %s", email)
             return None
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             logger.exception("Invalid response format for %s", email)
             return None
         except Exception:

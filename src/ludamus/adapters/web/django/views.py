@@ -1,12 +1,11 @@
 import json
 from collections import defaultdict
-from collections.abc import Generator
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
@@ -18,7 +17,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
-from django.db.models.query import QuerySet
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -70,6 +68,11 @@ from .forms import (
     create_session_proposal_form,
     get_tag_data_from_form,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from django.db.models.query import QuerySet
 
 MINIMUM_ALLOWED_USER_AGE = 16
 CACHE_TIMEOUT = 600  # 10 minutes
@@ -172,7 +175,7 @@ class Auth0LoginCallbackActionView(RedirectView):
                 )
                 return self.request.build_absolute_uri(reverse("web:index"))
 
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             messages.error(self.request, _("Invalid authentication state"))
             return self.request.build_absolute_uri(reverse("web:index"))
 
@@ -211,7 +214,7 @@ class Auth0LoginCallbackActionView(RedirectView):
 
         try:
             return f'auth0|{token["userinfo"]["sub"]}'
-        except (KeyError, TypeError):
+        except KeyError, TypeError:
             raise RedirectError(
                 reverse("web:index"), error=_("Authentication failed")
             ) from None
@@ -767,7 +770,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             session_site_id = self.request.session.get("anonymous_site_id")
             try:
                 anonymous_user_code = self.request.session["anonymous_user_code"]
-            except (KeyError, ValueError):
+            except KeyError, ValueError:
                 anonymous_user_code = None
             if session_site_id == current_site_id and anonymous_user_code is not None:
                 anonymous_user = None

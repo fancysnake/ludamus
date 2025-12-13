@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from django.conf import settings
 from django.contrib import messages
@@ -7,8 +7,10 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 
 from ludamus.adapters.web.django.exceptions import RedirectError
-from ludamus.adapters.web.django.requests import RootRepositoryRequest
 from ludamus.pacts import AuthenticatedRequestContext, NotFoundError, RequestContext
+
+if TYPE_CHECKING:
+    from ludamus.adapters.web.django.requests import RootRepositoryRequest
 
 
 class _GetResponseCallable(Protocol):

@@ -1,9 +1,12 @@
-from collections.abc import Iterable
-from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.contrib.messages import get_messages
-from django.http import HttpResponse
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from http import HTTPStatus
+
+    from django.http import HttpResponse
 
 
 def _assert_messages(response, expected_messages: list[tuple[int, str]]):

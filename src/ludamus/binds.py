@@ -1,8 +1,11 @@
-from collections.abc import Callable
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from ludamus.links.db.django.uow import UnitOfWork
-from ludamus.pacts import RootRequestProtocol
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ludamus.pacts import RootRequestProtocol
 
 Response = TypeVar("Response")
 

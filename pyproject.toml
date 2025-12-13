@@ -116,7 +116,7 @@ envfile = ".env.dev"
 line-length = 88
 preview = true
 skip-magic-trailing-comma = true
-target-version = ['py34']
+target-version = ['py314']
 
 # CODESPELL
 

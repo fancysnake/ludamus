@@ -469,7 +469,7 @@ def get_tag_data_from_form(
                         category.id,
                     )
                     raise UnsupportedTagCategoryInputTypeError(error_msg)
-            except (TagCategory.DoesNotExist, ValueError):
+            except TagCategory.DoesNotExist, ValueError:
                 continue
     return tag_data
 
