@@ -22,7 +22,7 @@ separation between business logic and infrastructure.
 **Development Server:**
 
 ```bash
-poe start  # Runs on ludamus.local:8000
+poe start  # Runs on localhost:8000
 ```
 
 **Testing:**

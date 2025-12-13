@@ -70,6 +70,7 @@ RUN mkdir -p staticfiles media logs \
 ARG SECRET_KEY
 ARG STATIC_ROOT
 ENV ENV=production
+ENV ROOT_DOMAIN=localhost:8000
 
 # Switch to non-root user
 USER appuser
