@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for development and production
 
 # Base stage with common setup
-FROM python:3.13-slim as base
+FROM python:3.14-slim as base
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

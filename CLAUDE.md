@@ -5,7 +5,7 @@ with code in this repository.
 
 ## Project Overview
 
-Ludamus is a Django-based event management website using Python 3.13.
+Ludamus is a Django-based event management website using Python 3.14.
 The project follows **Clean Architecture** principles with strict
 separation between business logic and infrastructure.
 
@@ -13,7 +13,7 @@ separation between business logic and infrastructure.
 
 ### Environment Setup
 
-- Python version: 3.13
+- Python version: 3.14
 - Package manager: Poetry
 - Task runner: Poe the Poet (configured via `pyproject.toml`)
 
@@ -285,7 +285,7 @@ Defined in `docs/TESTING_STRATEGY.md`:
 
 **Tools in CI/Pre-commit:**
 
-- **black** - Code formatting (line-length: 88, Python 3.13 target)
+- **black** - Code formatting (line-length: 88, Python 3.4 target)
 - **ruff** - Fast linting with ALL rules enabled (see ignores)
 - **mypy** - Strict type checking with django-stubs plugin
 - **pylint** - Additional linting
