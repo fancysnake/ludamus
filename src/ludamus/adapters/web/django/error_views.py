@@ -1,12 +1,9 @@
 import secrets
 from http import HTTPStatus
-from typing import TYPE_CHECKING
 
+from django.http import HttpRequest  # noqa: TC002  # Django
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
-
-if TYPE_CHECKING:
-    from django.http import HttpRequest
 
 
 def custom_404(
