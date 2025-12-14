@@ -91,7 +91,7 @@
                                 <div class="d-flex">
                                     <div class="flex-shrink-0">{% bs_icon 'check-circle' %}</div>
                                     <div class="flex-grow-1 ms-3">
-                                        <strong>{{ anonymous_user.name }}</strong> {% translate "is already enrolled in this session." %}
+                                        <strong>{{ anonymous_user.full_name }}</strong> {% translate "is already enrolled in this session." %}
                                         {% if existing_enrollment.status == "waiting" %}
                                             <br>
                                             <small class="text-muted">{% translate "Status: On waiting list" %}</small>
@@ -115,7 +115,7 @@
                                            class="form-control"
                                            id="name"
                                            name="name"
-                                           value="{{ anonymous_user.name|default:'' }}"
+                                           value="{{ anonymous_user.full_name }}"
                                            required>
                                     <div class="form-text">
                                         {% translate "Your public display name that others will see. This can be a nickname and does not need to be your legal name." %}
@@ -127,7 +127,7 @@
                                 <div class="d-flex">
                                     <div class="flex-shrink-0">{% bs_icon 'info-circle' %}</div>
                                     <div class="flex-grow-1 ms-3">
-                                        {% translate "Click below to enroll" %} <strong>{{ anonymous_user.name }}</strong> {% translate "in this session." %}
+                                        {% translate "Click below to enroll" %} <strong>{{ anonymous_user.full_name }}</strong> {% translate "in this session." %}
                                     </div>
                                 </div>
                             </div>

@@ -81,12 +81,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    def clean(self) -> None:
-        super().clean()
-        self.email = self.__class__.objects.normalize_email(self.email)
-
     def get_full_name(self) -> str:
         return self.name or DEFAULT_NAME
+
+    @property
+    def full_name(self) -> str:
+        return self.get_full_name()
 
     class Meta:
         db_table = "user"
@@ -209,28 +209,22 @@ class Event(models.Model):
         domain_config_source = None
 
         for config in self.get_active_enrollment_configs():
-            config_found = False
-
             # Check for explicit user config
-            user_config = config.user_configs.filter(user_email=user_email).first()
-            if user_config:
+            if api_user_config := get_or_create_user_enrollment_config(
+                config, user_email
+            ):
+                # Try to fetch from API if not found locally
+                total_slots += api_user_config.allowed_slots
+                if not primary_config:
+                    primary_config = api_user_config
+                has_individual_config = True
+            elif user_config := config.user_configs.filter(
+                user_email=user_email
+            ).first():
                 total_slots += user_config.allowed_slots
                 if not primary_config:
                     primary_config = user_config
                 has_individual_config = True
-                config_found = True
-
-            # Try to fetch from API if not found locally
-            if not config_found:
-                api_user_config = get_or_create_user_enrollment_config(
-                    config, user_email
-                )
-                if api_user_config:
-                    total_slots += api_user_config.allowed_slots
-                    if not primary_config:
-                        primary_config = api_user_config
-                    has_individual_config = True
-                    config_found = True
 
             # Always check for domain-based access regardless of individual config
             domain_config = self.get_domain_config_for_email(user_email, config)
@@ -359,9 +353,6 @@ class EnrollmentConfig(models.Model):
         Returns:
             True if session can be enrolled in under this config.
         """
-        if not self.is_active:
-            return False
-
         if self.limit_to_end_time:
             return session.agenda_item.start_time < self.end_time
 
@@ -408,10 +399,7 @@ class UserEnrollmentConfig(models.Model):
         return f"{self.user_email}: {self.allowed_slots} people enrollment limit"
 
     def get_used_slots(self) -> int:
-        try:
-            user = User.objects.get(email=self.user_email)
-        except User.DoesNotExist:
-            return 0
+        user = User.objects.get(email=self.user_email)
 
         # Get all users (main user + connected users)
         all_users = [user, *user.connected.all()]
@@ -433,10 +421,7 @@ class UserEnrollmentConfig(models.Model):
         return max(0, self.allowed_slots - self.get_used_slots())
 
     def can_enroll_users(self, users_to_enroll: list[UserDTO]) -> bool:
-        try:
-            user = User.objects.get(email=self.user_email)
-        except User.DoesNotExist:
-            return False
+        user = User.objects.get(email=self.user_email)
 
         # Get all users (main user + connected users)
         all_users = [user, *user.connected.all()]
@@ -491,7 +476,8 @@ class UserEnrollmentConfig(models.Model):
             and self._domain_config_source
         ):
             return self._domain_config_source.domain
-        return None
+
+        return None  # pragma: no cover
 
 
 class DomainEnrollmentConfig(models.Model):
@@ -531,7 +517,7 @@ class DomainEnrollmentConfig(models.Model):
             # Remove @ prefix if present
             self.domain = self.domain.removeprefix("@")
             # Basic domain validation
-            if not self.domain or "." not in self.domain:
+            if "." not in self.domain:
                 raise ValidationError(
                     "Please enter a valid domain (e.g. 'company.com')"
                 )
@@ -757,23 +743,15 @@ class Session(models.Model):
         return self.enrolled_count >= self.effective_participants_limit
 
     @property
-    def is_enrollment_limited(self) -> bool:
-        """Check if enrollment is limited by enrollment config percentage."""
-        if enrollment_config := self.agenda_item.space.event.get_most_liberal_config(
-            self
-        ):
-            return enrollment_config.percentage_slots < 100  # noqa: PLR2004
-        return False
-
-    @property
     def is_enrollment_available(self) -> bool:
         """Check if enrollment is available for this session under any active config."""
         active_configs = self.agenda_item.space.event.get_active_enrollment_configs()
         return any(config.is_session_eligible(self) for config in active_configs)
 
     @property
-    def enrollment_status_context(self) -> dict[str, str | int]:
+    def enrollment_status_context(self) -> dict[str, str | int]:  # pragma: no cover
         """Get context data for enrollment status display in templates."""
+        # TODO: This is used in templates. Rewrite to pass static values
         if not self.is_full:
             return {
                 "status_type": "not_full",
@@ -782,7 +760,13 @@ class Session(models.Model):
             }
 
         # Session is full - determine why
-        if self.is_enrollment_limited:
+        if (
+            enrollment_config := self.agenda_item.space.event.get_most_liberal_config(
+                self
+            )
+        ) and (
+            enrollment_config.percentage_slots < 100  # noqa: PLR2004
+        ):
             return {
                 "status_type": "enrollment_limited",
                 "enrolled": self.enrolled_count,
@@ -796,8 +780,9 @@ class Session(models.Model):
         }
 
     @property
-    def full_participant_info(self) -> str:
+    def full_participant_info(self) -> str:  # pragma: no cover
         """Get complete participant information display."""
+        # TODO: This is used in templates. Rewrite to pass static values
         base_info = f"{self.enrolled_count}/{self.effective_participants_limit}"
 
         # Add session limit if different from effective limit

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -46,21 +46,7 @@ class BaseUserForm(forms.Form):
 
     @property
     def user_data(self) -> UserData:
-        cleaned_data = self.cleaned_data or {}
-        user_data = UserData()
-        if "discord_username" in cleaned_data:
-            user_data["discord_username"] = cleaned_data["discord_username"]
-        if "email" in cleaned_data:
-            user_data["email"] = cleaned_data["email"]
-        if "name" in cleaned_data:
-            user_data["name"] = cleaned_data["name"]
-        if "slug" in cleaned_data:
-            user_data["slug"] = cleaned_data["slug"]
-        if "user_type" in cleaned_data:
-            user_data["user_type"] = cleaned_data["user_type"]
-        if "username" in cleaned_data:
-            user_data["username"] = cleaned_data["username"]
-        return user_data
+        return cast("UserData", self.cleaned_data)
 
 
 class UserForm(BaseUserForm):
@@ -80,16 +66,14 @@ class ConnectedUserForm(BaseUserForm):
     )
 
 
-class UnsupportedTagCategoryInputTypeError(Exception):
-    """Raised when encountering an unsupported TagCategory input type."""
-
-
 def create_enrollment_form(
-    session: Session, users: Iterable[UserDTO], manager_email: str | None
+    session: Session,
+    current_user: UserDTO,
+    connected_users: Iterable[UserDTO],
+    manager_email: str,
 ) -> type[forms.Form]:
     # Create form class dynamically with pre-generated fields
     form_fields = {}
-    users_list = list(users)
 
     # Create mapping from field names to user names for error display
     field_to_user_name = {}
@@ -109,17 +93,14 @@ def create_enrollment_form(
         if enrollment_config.restrict_to_configured_users:
             # First check if this is a connected user - they use manager's config
             if user.user_type == UserType.CONNECTED:
-                if user.manager_id and manager_email:
-                    manager_config = (
-                        session.agenda_item.space.event.get_user_enrollment_config(
-                            manager_email
-                        )
+                manager_config = (
+                    session.agenda_item.space.event.get_user_enrollment_config(
+                        manager_email
                     )
-                    if (
-                        not manager_config
-                    ):  # Don't check available user slots here - check at form level
-                        return False
-                else:
+                )
+                if (
+                    not manager_config
+                ):  # Don't check available user slots here - check at form level
                     return False
             else:
                 # For regular users, check their own email and config
@@ -159,7 +140,7 @@ def create_enrollment_form(
                         )
                     )
                     if (
-                        manager_config
+                        manager_config and manager_config.allowed_slots
                     ):  # Don't check available user slots here - check at form level
                         return True
                 return False
@@ -171,12 +152,16 @@ def create_enrollment_form(
             user_config = session.agenda_item.space.event.get_user_enrollment_config(
                 user.email
             )
-            return bool(enrollment_config.restrict_to_configured_users and user_config)
+            return bool(
+                enrollment_config.restrict_to_configured_users
+                and user_config
+                and user_config.allowed_slots
+            )
 
         # Otherwise, allow enrollment when config exists
         return True
 
-    for user in users_list:
+    for user in [current_user, *connected_users]:
         current_participation = SessionParticipation.objects.filter(
             session=session, user_id=user.pk
         ).first()
@@ -241,12 +226,7 @@ def create_enrollment_form(
                         )
                     )
                     has_manager_access = False
-                    if (
-                        enrollment_config.restrict_to_configured_users
-                        and not user_config
-                        and user.manager_id
-                        and manager_email
-                    ):
+                    if not user_config and user.manager_id and manager_email:
                         manager_config = (
                             session.agenda_item.space.event.get_user_enrollment_config(
                                 manager_email
@@ -256,26 +236,18 @@ def create_enrollment_form(
                             manager_config
                         )  # Don't check user slots here
 
-                    if (
-                        enrollment_config.restrict_to_configured_users
-                        and not user_config
-                        and not has_manager_access
-                    ):
+                    if not user_config and not has_manager_access:
                         help_text = _("Enrollment access permission required")
                         choices = [("", _("No enrollment options (access required)"))]
                     else:
                         help_text = _("No enrollment options available")
                         choices = [("", _("No change"))]
-            elif not enrollment_config:
-                # No enrollment config means enrollment is simply not available
-                # Keep the original "No change" choice without additional help text
-                choices = [("", _("No change"))]
             else:
                 help_text = _("No enrollment options available")
                 choices = [("", _("No change"))]
 
         # Add to field name mapping
-        field_to_user_name[field_name] = user.name or _("User")
+        field_to_user_name[field_name] = user.full_name
 
         # Create a custom choice field with better error messages
         class UserEnrollmentChoiceField(forms.ChoiceField):
@@ -295,7 +267,7 @@ def create_enrollment_form(
                             # Check if this is a connected user
                             if self.user_obj.user_type == UserType.CONNECTED:
                                 # Connected users use their manager's config
-                                if manager_email is None:
+                                if not manager_email:
                                     raise ValidationError(
                                         _(
                                             "%(user)s cannot enroll: manager "
@@ -355,7 +327,7 @@ def create_enrollment_form(
             user_obj=user,
             choices=choices,
             required=False,
-            label=user.name or _("User"),  # Use user's name as label
+            label=user.full_name,
             help_text=help_text,
             widget=forms.Select(
                 attrs={
@@ -371,12 +343,22 @@ def create_enrollment_form(
             # Count enrollment requests to check user slot limits
             enroll_requests = []
             for field_name, value in cleaned_data.items():
-                if field_name.startswith("user_") and value == "enroll":
-                    user_id = int(field_name.split("_")[1])
-                    # Find the user from users_list
-                    user = next((u for u in users_list if u.pk == user_id), None)
-                    if user:
-                        enroll_requests.append(user)
+                if (
+                    field_name.startswith("user_")
+                    and value == "enroll"
+                    and (
+                        user := next(
+                            (
+                                u
+                                for u in [current_user, *connected_users]
+                                if u.pk == int(field_name.split("_")[1])
+                            ),
+                            None,
+                        )
+                    )
+                ):
+                    # Find the user from users list
+                    enroll_requests.append(user)
 
             # Check if manager has enough user slots for all users being enrolled
             if (
@@ -384,19 +366,13 @@ def create_enrollment_form(
                 and enrollment_config
                 and enrollment_config.restrict_to_configured_users
             ):
-                manager_config = None
-
                 # Find the manager (the user who initiated the request)
                 event = session.agenda_item.space.event
-                for user in users_list:
-                    if (
-                        user.user_type != UserType.CONNECTED
-                    ):  # This is the main user/manager
-                        if user.email:
-                            manager_config = event.get_user_enrollment_config(
-                                user.email
-                            )
-                        break
+                manager_config = (
+                    event.get_user_enrollment_config(current_user.email)
+                    if current_user.email
+                    else None
+                )
 
                 if manager_config and not manager_config.can_enroll_users(
                     enroll_requests
@@ -404,21 +380,23 @@ def create_enrollment_form(
                     used_slots = manager_config.get_used_slots()
                     available_slots = manager_config.get_available_slots()
                     # Add error to first enrollment field using user's name
-                    for field_name, value in cleaned_data.items():
-                        if field_name.startswith("user_") and value == "enroll":
-                            user_name = field_to_user_name.get(field_name, "User")
-                            self.add_error(
-                                field_name,
-                                (
-                                    f"{user_name}: Cannot enroll more users. You have "
-                                    f"already enrolled {used_slots} out of "
-                                    f"{manager_config.allowed_slots} unique people "
-                                    "(each person can enroll in multiple sessions). "
-                                    f"Only {available_slots} slots remaining for "
-                                    "new people."
-                                ),
-                            )
-                            break
+                    user_field = next(
+                        field_name
+                        for field_name, value in cleaned_data.items()
+                        if field_name.startswith("user_") and value == "enroll"
+                    )
+                    user_name = field_to_user_name.get(user_field, "User")
+                    self.add_error(
+                        user_field,
+                        (
+                            f"{user_name}: Cannot enroll more users. You have "
+                            f"already enrolled {used_slots} out of "
+                            f"{manager_config.allowed_slots} unique people "
+                            "(each person can enroll in multiple sessions). "
+                            f"Only {available_slots} slots remaining for "
+                            "new people."
+                        ),
+                    )
                     return cleaned_data
 
         return cleaned_data
@@ -435,42 +413,22 @@ def get_tag_data_from_form(
     tag_data: dict[int, dict[str, list[str] | list[int]]] = {}
     for field_name, value in cleaned_data.items():
         if field_name.startswith("tags_") and value:
-            category_id_str = field_name.split("_")[1]
-            try:
-                category_id = int(category_id_str)
-                category = TagCategory.objects.get(pk=category_id)
-
-                if category.input_type == TagCategory.InputType.SELECT:
+            category_id = int(field_name.split("_")[1])
+            category = TagCategory.objects.get(pk=category_id)
+            match category.input_type:
+                case TagCategory.InputType.SELECT:
                     # value is a list of tag IDs
                     tag_data[category_id] = {
                         "selected_tags": [int(tag_id) for tag_id in value]
                     }
                 # value is a comma-separated string
-                elif category.input_type == TagCategory.InputType.TYPE and isinstance(
-                    value, str
-                ):
+                case TagCategory.InputType.TYPE:
                     tag_names = [
                         name.strip() for name in value.split(",") if name.strip()
                     ]
                     tag_data[category_id] = {"typed_tags": tag_names}
-                else:
-                    # Handle unsupported input type
-                    error_msg = (
-                        f"Unsupported input type '{category.input_type}'"
-                        f" for TagCategory '{category.name}' (id: {category.id})"
-                    )
-                    logger.error(
-                        (
-                            "Unsupported TagCategory input type encountered: %s for "
-                            "category %s (id: %d)"
-                        ),
-                        category.input_type,
-                        category.name,
-                        category.id,
-                    )
-                    raise UnsupportedTagCategoryInputTypeError(error_msg)
-            except TagCategory.DoesNotExist, ValueError:
-                continue
+                case _:  # pragma: no cover
+                    raise ValueError("Unknown input type")
     return tag_data
 
 
@@ -507,12 +465,7 @@ def _get_tags_fields(
                     ),
                     help_text=_("Enter multiple tags separated by commas"),
                 )
-            case _:
-                error_msg = (
-                    f"Unsupported input type '{category.input_type}'"
-                    f" for TagCategory '{category.name}' (id: {category.pk})"
-                )
-                raise UnsupportedTagCategoryInputTypeError(error_msg)
+
     return tag_fields
 
 
