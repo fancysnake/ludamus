@@ -68,6 +68,10 @@ sequence = [
 cmd = "django-admin runserver localhost:8000"
 use_exec = true
 
+[tool.poe.tasks.e2e-mock-auth0]
+cmd = "docker compose -f tests/e2e/docker-compose.yml up"
+use_exec = true
+
 [tool.poe.tasks.e2e]
 cmd = "bun playwright test"
 cwd = "tests/e2e"
@@ -84,7 +88,7 @@ env = { E2E_SKIP_SETUP = "true", E2E_REUSE_SERVER = "true" }
 [tool.poe.tasks.e2e-cdg]
 sequence = [
     { ref = "e2e-setup" },
-    { shell = "django-admin runserver localhost:8000" },
+    { shell = "python tests/e2e/scripts/mock_auth0_server.py --port 9999 & trap 'kill $!' EXIT; django-admin runserver localhost:8000" },
 ]
 
 # BLACK

@@ -245,7 +245,7 @@ def _auth0_logout_url(
     root_domain = request.uow.spheres.read_site(request.context.root_sphere_id).domain
     last_domain = last_domain or root_domain
     redirect_to = redirect_to or reverse("web:index")
-    return f"https://{settings.AUTH0_DOMAIN}/v2/logout?" + urlencode(
+    return f"{settings.AUTH0_ROOT}/v2/logout?" + urlencode(
         {
             "returnTo": (
                 f'{request.scheme}://{root_domain}{reverse("web:crowd:auth0:logout-redirect")}?last_domain={last_domain}&redirect_to={redirect_to}'

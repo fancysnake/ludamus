@@ -73,18 +73,29 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'] },
     },
   ],
-  webServer: {
-    command: 'poetry run poe e2e-setup && poetry run poe e2e-start',
-    url: BASE_URL,
-    env: {
-      ...process.env,
-      DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE!,
-      PYTHONPATH: process.env.PYTHONPATH!,
+  webServer: [
+    {
+      command: 'poetry run poe e2e-mock-auth0',
+      url: 'http://localhost:9999/.well-known/openid-configuration',
+      reuseExistingServer: process.env.E2E_REUSE_SERVER === 'true',
+      timeout: 10 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      cwd: repoRoot,
     },
-    reuseExistingServer: process.env.E2E_REUSE_SERVER === 'true',
-    timeout: 180 * 1000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    cwd: repoRoot,
-  },
+    {
+      command: 'poetry run poe e2e-setup && poetry run poe e2e-start',
+      url: BASE_URL,
+      env: {
+        ...process.env,
+        DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE!,
+        PYTHONPATH: process.env.PYTHONPATH!,
+      },
+      reuseExistingServer: process.env.E2E_REUSE_SERVER === 'true',
+      timeout: 180 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      cwd: repoRoot,
+    },
+  ],
 });
