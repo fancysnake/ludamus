@@ -10,7 +10,12 @@ from ludamus.adapters.web.django.exceptions import RedirectError
 from ludamus.pacts import AuthenticatedRequestContext, NotFoundError, RequestContext
 
 if TYPE_CHECKING:
-    from ludamus.adapters.web.django.requests import RootRepositoryRequest
+    from ludamus.links.db.django.uow import UnitOfWork
+
+
+class RootRepositoryRequest(HttpRequest):
+    context: RequestContext
+    uow: UnitOfWork
 
 
 class _GetResponseCallable(Protocol):

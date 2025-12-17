@@ -36,11 +36,11 @@
             </a>
             <div class="navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    {% if request.user.is_authenticated and request.user.name %}
+                    {% if request.user.is_authenticated and request.user.full_name %}
                         <li class="nav-item">
                             <span class="navbar-text text-light me-3">
                                 {% bs_icon 'person-circle' %}
-                                {{ request.user.name }}
+                                {{ request.user.full_name }}
                             </span>
                         </li>
                     {% endif %}

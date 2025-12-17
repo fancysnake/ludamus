@@ -10,7 +10,8 @@ if TYPE_CHECKING:
     from contextlib import AbstractContextManager
 
 
-class NotFoundError(Exception): ...
+class NotFoundError(Exception):
+    pass
 
 
 class ProposalCategoryDTO(BaseModel):
@@ -130,6 +131,7 @@ class UserDTO(BaseModel):
     date_joined: datetime
     discord_username: str
     email: str
+    full_name: str
     is_active: bool
     is_authenticated: bool
     is_staff: bool
@@ -140,10 +142,6 @@ class UserDTO(BaseModel):
     slug: str
     user_type: UserType
     username: str
-
-    @property
-    def is_incomplete(self) -> bool:
-        return not self.name and not self.email
 
 
 class SiteDTO(BaseModel):

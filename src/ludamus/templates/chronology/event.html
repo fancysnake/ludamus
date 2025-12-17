@@ -606,7 +606,7 @@
                                             {% else %}
                                                 <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
                                             {% endif %}
-                                            <span>{{ request.user.name }}</span>
+                                            <span>{{ request.user.full_name }}</span>
                                             <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
                                         </div>
                                     {% endif %}
@@ -631,16 +631,16 @@
                                                     {% else %}
                                                         <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
                                                     {% endif %}
-                                                    <span>{{ connected_user.name }}</span>
+                                                    <span>{{ connected_user.full_name }}</span>
                                                     <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
                                                 {% endif %}
                                             {% empty %}
                                                 <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
-                                                <span>{{ connected_user.name }}</span>
+                                                <span>{{ connected_user.full_name }}</span>
                                             {% endfor %}
                                             {% if not connected_participation %}
                                                 <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
-                                                <span>{{ connected_user.name }}</span>
+                                                <span>{{ connected_user.full_name }}</span>
                                             {% endif %}
                                         {% endwith %}
                                     </div>
@@ -749,7 +749,7 @@
                                                     <h6>{% bs_icon 'discord' %} {% translate "Host Discord" %}</h6>
                                                     <div class="ms-4">
                                                         <button class="btn btn-sm btn-outline-primary reveal-discord-btn"
-                                                                hx-get="{% url 'web:get-discord' user_slug=host.slug %}"
+                                                                hx-get="{% url 'web:crowd:user-discord-username' user_slug=host.slug %}"
                                                                 hx-swap="outerHTML"
                                                                 hx-trigger="click once">
                                                             {% bs_icon 'discord' %} {% translate "Show Discord" %}
@@ -870,14 +870,14 @@
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
                                                                         {% bs_icon 'person-circle' %}
-                                                                        <span class="ms-2">{{ participation.user.name }}</span>
+                                                                        <span class="ms-2">{{ participation.user.full_name }}</span>
                                                                     </div>
                                                                 </td>
                                                                 <td>
                                                                     {% with user=participation.user %}
                                                                         {% if user and user.slug and user.discord_username %}
                                                                             <button class="btn btn-sm btn-outline-info reveal-discord-btn"
-                                                                                    hx-get="{% url 'web:get-discord' user_slug=user.slug %}"
+                                                                                    hx-get="{% url 'web:crowd:user-discord-username' user_slug=user.slug %}"
                                                                                     hx-swap="outerHTML"
                                                                                     hx-trigger="click once">
                                                                                 {% bs_icon 'discord' size='0.875em' %} {% translate "Show" %}
@@ -920,7 +920,7 @@
                                                             <td>
                                                                 <div class="d-flex align-items-center">
                                                                     {% bs_icon 'clock' %}
-                                                                    <span class="ms-2">{{ participation.user.name }}</span>
+                                                                    <span class="ms-2">{{ participation.user.full_name }}</span>
                                                                 </div>
                                                             </td>
                                                             <td>

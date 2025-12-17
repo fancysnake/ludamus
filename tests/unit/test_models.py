@@ -1,5 +1,8 @@
 from datetime import datetime
 
+import pytest
+from django.core.exceptions import ValidationError
+
 from ludamus.adapters.db.django.models import (
     DEFAULT_NAME,
     AgendaItem,
@@ -57,6 +60,26 @@ class TestDomainEnrollmentConfig:
         assert str(
             DomainEnrollmentConfig(domain=domain, allowed_slots_per_user=slots)
         ) == (f"@{domain}: {slots} people enrollment limit per account")
+
+    def test_clean(self):
+        DomainEnrollmentConfig(
+            enrollment_config=EnrollmentConfig(),
+            domain="example.com",
+            allowed_slots_per_user=1,
+        ).clean()
+
+    def test_clean_empty_domain(self):
+        DomainEnrollmentConfig(
+            enrollment_config=EnrollmentConfig(), domain="", allowed_slots_per_user=1
+        ).clean()
+
+    def test_clean_wrong_domain(self):
+        with pytest.raises(ValidationError):
+            DomainEnrollmentConfig(
+                enrollment_config=EnrollmentConfig(),
+                domain="examplecom",
+                allowed_slots_per_user=1,
+            ).clean()
 
 
 class TestSpace:

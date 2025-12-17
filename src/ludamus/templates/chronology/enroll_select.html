@@ -88,10 +88,10 @@
                                                     <div class="d-flex align-items-center">
                                                         {% if user_data.user.pk == request.user.pk %}
                                                             {% bs_icon 'person-circle' %}
-                                                            <span class="ms-2">{% translate "Myself" %} ({{ user.name }})</span>
+                                                            <span class="ms-2">{% translate "Myself" %} ({{ user.full_name }})</span>
                                                         {% else %}
                                                             {% bs_icon 'person-heart' %}
-                                                            <span class="ms-2">{{ user_data.user.name }}</span>
+                                                            <span class="ms-2">{{ user_data.user.full_name }}</span>
                                                         {% endif %}
                                                     </div>
                                                 </td>
