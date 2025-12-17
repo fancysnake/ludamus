@@ -161,7 +161,7 @@ def create_enrollment_form(
         # Otherwise, allow enrollment when config exists
         return True
 
-    for user in [current_user, *connected_users]:
+    for user in (current_user, *connected_users):
         current_participation = SessionParticipation.objects.filter(
             session=session, user_id=user.pk
         ).first()
@@ -350,7 +350,7 @@ def create_enrollment_form(
                         user := next(
                             (
                                 u
-                                for u in [current_user, *connected_users]
+                                for u in (current_user, *connected_users)
                                 if u.pk == int(field_name.split("_")[1])
                             ),
                             None,

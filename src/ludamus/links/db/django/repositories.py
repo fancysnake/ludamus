@@ -70,8 +70,7 @@ class SphereRepository(SphereRepositoryProtocol):
         return SiteDTO.model_validate(sphere_orm.site)
 
     def is_manager(self, sphere_id: int, user_slug: str) -> bool:
-        managers = self._storage.sphere_managers[sphere_id].values()
-        if not managers:
+        if not self._storage.sphere_managers[sphere_id]:
             for manager in self._storage.spheres[sphere_id].managers.all():
                 self._storage.sphere_managers[sphere_id][manager.slug] = manager
 
@@ -154,8 +153,7 @@ class ProposalRepository(ProposalRepositoryProtocol):
         proposal = self._storage.proposals[proposal_id]
         event_id = proposal.category.event_id
         collection = self._storage.time_slots_by_event[event_id]
-        time_slots = collection.values()
-        if not time_slots:
+        if not (time_slots := collection.values()):
             for time_slot in TimeSlot.objects.filter(event_id=event_id):
                 collection[time_slot.id] = time_slot
 
@@ -165,8 +163,7 @@ class ProposalRepository(ProposalRepositoryProtocol):
         proposal = self._storage.proposals[proposal_id]
         event_id = proposal.category.event_id
         collection = self._storage.spaces_by_event[event_id]
-        spaces = collection.values()
-        if not spaces:
+        if not (spaces := collection.values()):
             for space in Space.objects.filter(event_id=event_id):
                 collection[space.id] = space
 
@@ -175,8 +172,7 @@ class ProposalRepository(ProposalRepositoryProtocol):
     def read_tag_ids(self, proposal_id: int) -> list[int]:
         proposal = self._storage.proposals[proposal_id]
         collection = self._storage.tags_by_proposal[proposal_id]
-        tags = collection.values()
-        if not tags:
+        if not (tags := collection.values()):
             for tag in proposal.tags.all():
                 collection[tag.id] = tag
 
@@ -238,8 +234,7 @@ class ConnectedUserRepository(ConnectedUserRepositoryProtocol):
             self._storage.users[UserType.ACTIVE][user.slug] = user
 
         collection = self._storage.connected_users_by_user[manager_slug]
-        connected_users = collection.values()
-        if not connected_users:
+        if not (connected_users := collection.values()):
             for connected_user in user.connected.all():
                 collection[connected_user.slug] = connected_user
 

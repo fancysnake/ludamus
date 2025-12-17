@@ -227,8 +227,7 @@ class Event(models.Model):
                 has_individual_config = True
 
             # Always check for domain-based access regardless of individual config
-            domain_config = self.get_domain_config_for_email(user_email, config)
-            if domain_config:
+            if domain_config := self.get_domain_config_for_email(user_email, config):
                 total_slots += domain_config.allowed_slots_per_user
                 has_domain_config = True
                 domain_config_source = domain_config
@@ -751,7 +750,8 @@ class Session(models.Model):
     @property
     def enrollment_status_context(self) -> dict[str, str | int]:  # pragma: no cover
         """Get context data for enrollment status display in templates."""
-        # TODO: This is used in templates. Rewrite to pass static values
+        # TODO(@fancysnake): This is used in templates. Rewrite to pass static values
+        # ZAG-16
         if not self.is_full:
             return {
                 "status_type": "not_full",
@@ -782,7 +782,8 @@ class Session(models.Model):
     @property
     def full_participant_info(self) -> str:  # pragma: no cover
         """Get complete participant information display."""
-        # TODO: This is used in templates. Rewrite to pass static values
+        # TODO(@fancysnake): This is used in templates. Rewrite to pass static values
+        # ZAG-16
         base_info = f"{self.enrolled_count}/{self.effective_participants_limit}"
 
         # Add session limit if different from effective limit
