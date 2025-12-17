@@ -11,8 +11,9 @@ Response = TypeVar("Response")
 
 
 class RepositoryInjectionMiddleware[Response]:
-    """
-    This is weird. It's a Django middleware, but it's out of the django framework
+    """This is weird.
+
+    It's a Django middleware, but it's out of the django framework
     code because there's no better way to inject dependencies to django views.
     Pretend you didn't see it and proceed with your work ;)
     """

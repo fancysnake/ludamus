@@ -142,8 +142,7 @@ class Auth0LoginCallbackActionView(RedirectView):
         redirect_to = super().get_redirect_url(*args, **kwargs)
 
         # Validate state parameter
-        state_token = self.request.GET.get("state")
-        if not state_token:
+        if not (state_token := self.request.GET.get("state")):
             messages.error(
                 self.request,
                 _("Invalid authentication request: missing state parameter"),
@@ -152,9 +151,8 @@ class Auth0LoginCallbackActionView(RedirectView):
 
         # Retrieve and validate state data
         cache_key = f"oauth_state:{state_token}"
-        state_data_json = cache.get(cache_key)
 
-        if not state_data_json:
+        if not (state_data_json := cache.get(cache_key)):
             messages.error(
                 self.request, _("Authentication session expired. Please try again.")
             )
@@ -1095,12 +1093,12 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
     def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
         enrollment_requests = []
-        for user in [
+        for user in (
             self.request.uow.active_users.read(self.request.context.current_user_slug),
             *self.request.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
-        ]:
+        ):
             # Skip inactive users
             if not user.is_active:
                 continue
@@ -1219,7 +1217,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         enrollments.users_by_status[_status_by_choice[req.choice]].append(req.name)
 
     def _send_message(self, enrollments: Enrollments) -> None:
-        for users, message in [
+        for users, message in (
             (
                 enrollments.users_by_status[SessionParticipationStatus.CONFIRMED],
                 _("Enrolled: {}"),
@@ -1233,7 +1231,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 enrollments.skipped_users,
                 _("Skipped (already enrolled or conflicts): {}"),
             ),
-        ]:
+        ):
             if users:
                 messages.success(self.request, message.format(", ".join(users)))
 
@@ -1691,8 +1689,7 @@ class SessionEnrollmentAnonymousPageView(View):
             return redirect("web:index")
 
         # Get anonymous user from session
-        anonymous_user_code = request.session.get("anonymous_user_code")
-        if not anonymous_user_code:
+        if not (anonymous_user_code := request.session.get("anonymous_user_code")):
             messages.error(request, _("Anonymous session expired."))
             return redirect("web:index")
 
@@ -1752,8 +1749,7 @@ class SessionEnrollmentAnonymousPageView(View):
             return redirect("web:index")
 
         # Get anonymous user
-        anonymous_user_code = request.session.get("anonymous_user_code")
-        if not anonymous_user_code:
+        if not (anonymous_user_code := request.session.get("anonymous_user_code")):
             messages.error(request, _("Anonymous session expired."))
             return redirect("web:index")
 
@@ -1767,9 +1763,7 @@ class SessionEnrollmentAnonymousPageView(View):
             return redirect("web:index")
 
         # Update user data if provided
-        name = request.POST.get("name", "").strip()
-
-        if name:
+        if name := request.POST.get("name", "").strip():
             anonymous_user.name = name
 
         # Validate required fields
@@ -1782,9 +1776,7 @@ class SessionEnrollmentAnonymousPageView(View):
         user_repository.update(anonymous_user.slug, UserData(name=name))
 
         # Check for cancellation request
-        action = request.POST.get("action", "enroll")
-
-        if action == "cancel":
+        if request.POST.get("action", "enroll") == "cancel":
             # Cancel enrollment
             try:
                 enrollment = SessionParticipation.objects.get(
@@ -1856,7 +1848,7 @@ class SessionEnrollmentAnonymousPageView(View):
 
 
 class AnonymousLoadActionView(View):
-    """Handle entering an anonymous code to load a previous session"""
+    """Handle entering an anonymous code to load a previous session."""
 
     @staticmethod
     def post(request: RootRequest) -> HttpResponse:
@@ -1864,9 +1856,7 @@ class AnonymousLoadActionView(View):
         if request.context.current_user_slug:
             return redirect("web:index")
 
-        code = request.POST.get("code", "").strip()
-
-        if not code:
+        if not (code := request.POST.get("code", "").strip()):
             messages.error(request, _("Please enter a code."))
             # Try to redirect back to the referring event
             referer = request.META.get("HTTP_REFERER", "")
