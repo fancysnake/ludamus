@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludamus Backoffice - Kategorie programu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        .sidebar-panel { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
+                <p class="text-gray-400 text-sm">Backoffice</p>
+            </div>
+
+            <div class="px-4 mb-6">
+                <label class="text-xs text-gray-500 uppercase tracking-wider">Wydarzenie</label>
+                <select class="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option>Kapitularz 2025</option>
+                    <option>Kapitularz 2024</option>
+                </select>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <a href="index.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Panel główny
+                </a>
+                <a href="proposals.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Zgłoszenia
+                </a>
+                <a href="timetable.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Harmonogram
+                </a>
+                <a href="venues.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Lokalizacje
+                </a>
+                <a href="hosts.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Twórcy programu
+                </a>
+                <a href="categories.html" class="flex items-center px-4 py-3 text-white bg-gray-800 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    Kategorie programu
+                </a>
+                <a href="changelog.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Historia zmian
+                </a>
+                <a href="door-cards.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/>
+                    </svg>
+                    Karty na drzwi
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-gray-800">
+                    <p class="px-4 text-xs text-gray-500 uppercase tracking-wider mb-2">Ustawienia</p>
+                    <a href="organizers.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                        </svg>
+                        Organizatorzy
+                    </a>
+                    <a href="settings.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Ustawienia wydarzenia
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Sync (Konwencik)
+                    </a>
+                </div>
+            </nav>
+
+            <div class="absolute bottom-0 w-64 p-4 border-t border-gray-800">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <span class="text-white font-medium">MK</span>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">Marek Kowalski</p>
+                        <p class="text-xs text-gray-400">Koordynator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <header class="bg-white border-b border-gray-200 px-4 lg:px-8 py-4 sticky top-0 z-10">
+                <div class="flex items-center justify-between">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Kategorie programu</h2>
+                        <p class="text-gray-500">Konfiguracja formularzy zgłoszeń dla różnych typów sesji</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            Dodaj kategorię
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-4 lg:p-8">
+                <!-- Info Banner -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-blue-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <h4 class="font-medium text-blue-900">Jak działają kategorie?</h4>
+                            <p class="text-sm text-blue-700 mt-1">Każda kategoria definiuje osobny formularz zgłoszeniowy. Możesz skonfigurować różne pola, limity uczestników i terminy dla każdego typu sesji (np. sesje RPG, warsztaty, prelekcje).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Category 1: RPG Sessions -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900">Sesja RPG</h3>
+                                        <p class="text-sm text-gray-500">312 zgłoszeń &bull; 285 zaakceptowanych</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">Aktywna</span>
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Pola formularza:</h4>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Tytuł sesji</span>
+                                    <span class="text-xs text-gray-500">Tekst, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Opis</span>
+                                    <span class="text-xs text-gray-500">Tekst długi, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">System RPG</span>
+                                    <span class="text-xs text-gray-500">Lista wyboru, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Limit graczy</span>
+                                    <span class="text-xs text-gray-500">Liczba (2-8), wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Czas trwania</span>
+                                    <span class="text-xs text-gray-500">Wybór (2h/3h/4h), wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Wymagania wiekowe</span>
+                                    <span class="text-xs text-gray-500">Wybór, opcjonalne</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Preferowane terminy</span>
+                                    <span class="text-xs text-gray-500">Wielokrotny wybór, wymagane</span>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-gray-100">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">Przyjmowanie zgłoszeń:</span>
+                                        <p class="font-medium text-gray-900">1 mar - 30 kwi 2025</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Limit uczestników:</span>
+                                        <p class="font-medium text-gray-900">2-8 osób</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 2: Workshops -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900">Warsztat</h3>
+                                        <p class="text-sm text-gray-500">156 zgłoszeń &bull; 142 zaakceptowanych</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">Aktywna</span>
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Pola formularza:</h4>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Tytuł warsztatu</span>
+                                    <span class="text-xs text-gray-500">Tekst, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Opis</span>
+                                    <span class="text-xs text-gray-500">Tekst długi, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Kategoria warsztatu</span>
+                                    <span class="text-xs text-gray-500">Lista wyboru, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Limit uczestników</span>
+                                    <span class="text-xs text-gray-500">Liczba (5-20), wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Potrzebne materiały</span>
+                                    <span class="text-xs text-gray-500">Tekst, opcjonalne</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Koszt materiałów</span>
+                                    <span class="text-xs text-gray-500">Liczba (PLN), opcjonalne</span>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-gray-100">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">Przyjmowanie zgłoszeń:</span>
+                                        <p class="font-medium text-gray-900">1 mar - 15 maj 2025</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Limit uczestników:</span>
+                                        <p class="font-medium text-gray-900">5-20 osób</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 3: Talks/Panels -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900">Prelekcja / Panel</h3>
+                                        <p class="text-sm text-gray-500">89 zgłoszeń &bull; 78 zaakceptowanych</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">Aktywna</span>
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Pola formularza:</h4>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Tytuł</span>
+                                    <span class="text-xs text-gray-500">Tekst, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Streszczenie</span>
+                                    <span class="text-xs text-gray-500">Tekst długi, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Typ (prelekcja/panel)</span>
+                                    <span class="text-xs text-gray-500">Wybór, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Paneliści (jeśli panel)</span>
+                                    <span class="text-xs text-gray-500">Tekst, opcjonalne</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Wymagania techniczne</span>
+                                    <span class="text-xs text-gray-500">Wielokrotny wybór, opcjonalne</span>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-gray-100">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">Przyjmowanie zgłoszeń:</span>
+                                        <p class="font-medium text-gray-900">1 mar - 1 cze 2025</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Widownia:</span>
+                                        <p class="font-medium text-gray-900">20-200 osób</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 4: Board Games -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-yellow-50 to-orange-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
+                                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900">Gra planszowa</h3>
+                                        <p class="text-sm text-gray-500">55 zgłoszeń &bull; 48 zaakceptowanych</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm rounded-full">Zamknięta</span>
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Pola formularza:</h4>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Nazwa gry</span>
+                                    <span class="text-xs text-gray-500">Tekst, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Opis sesji</span>
+                                    <span class="text-xs text-gray-500">Tekst długi, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Liczba graczy</span>
+                                    <span class="text-xs text-gray-500">Zakres (2-6), wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Czas rozgrywki</span>
+                                    <span class="text-xs text-gray-500">Wybór, wymagane</span>
+                                </div>
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-700">Zapewniam własny egzemplarz</span>
+                                    <span class="text-xs text-gray-500">Tak/Nie, wymagane</span>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-gray-100">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">Przyjmowanie zgłoszeń:</span>
+                                        <p class="font-medium text-red-600">Zakończone 30 kwi</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Limit graczy:</span>
+                                        <p class="font-medium text-gray-900">2-6 osób</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add New Category Card -->
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition cursor-pointer min-h-[400px]">
+                        <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <span class="font-medium">Dodaj nową kategorię</span>
+                        <span class="text-sm mt-1">np. LARP, turniej, pokaz</span>
+                    </div>
+                </div>
+
+                <!-- Tag Categories Section -->
+                <div class="mt-12">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900">Kategorie tagów</h3>
+                            <p class="text-gray-500">Tagi wspólne dla wszystkich typów sesji</p>
+                        </div>
+                        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                            Dodaj kategorię tagów
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="font-medium text-gray-900">System RPG</h4>
+                                <span class="text-xs text-gray-500">24 tagi</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">D&D 5e</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Zew Cthulhu</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Warhammer</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Cyberpunk</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Vampire</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">+19 więcej</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="font-medium text-gray-900">Gatunek</h4>
+                                <span class="text-xs text-gray-500">12 tagów</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Fantasy</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Horror</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Sci-Fi</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Steampunk</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">+8 więcej</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="font-medium text-gray-900">Poziom trudności</h4>
+                                <span class="text-xs text-gray-500">3 tagi</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Dla początkujących</span>
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">Średniozaawansowany</span>
+                                <span class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Dla weteranów</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+    }
+</script>
+</body>
+</html>

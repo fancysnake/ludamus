@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludamus Backoffice - Karty na drzwi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        .sidebar-panel { transition: transform 0.3s ease-in-out; }
+    </style>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-break { page-break-after: always; }
+            body { background: white !important; }
+            .door-card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0 no-print">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
+                <p class="text-gray-400 text-sm">Backoffice</p>
+            </div>
+
+            <div class="px-4 mb-6">
+                <label class="text-xs text-gray-500 uppercase tracking-wider">Wydarzenie</label>
+                <select class="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option>Kapitularz 2025</option>
+                    <option>Kapitularz 2024</option>
+                </select>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <a href="index.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Panel główny
+                </a>
+                <a href="proposals.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Zgłoszenia
+                    <span class="ml-auto bg-yellow-500 text-xs px-2 py-0.5 rounded-full text-gray-900 font-medium">127</span>
+                </a>
+                <a href="timetable.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Harmonogram
+                    <span class="ml-auto bg-red-500 text-xs px-2 py-0.5 rounded-full text-white font-medium">3</span>
+                </a>
+                <a href="venues.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Lokalizacje
+                </a>
+                <a href="hosts.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Twórcy programu
+                </a>
+                <a href="categories.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    Kategorie programu
+                </a>
+                <a href="changelog.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Historia zmian
+                </a>
+                <a href="door-cards.html" class="flex items-center px-4 py-3 text-white bg-gray-800 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/>
+                    </svg>
+                    Karty na drzwi
+                </a>
+
+            </nav>
+
+            <div class="absolute bottom-0 w-64 p-4 border-t border-gray-800">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <span class="text-white font-medium">MK</span>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">Marek Kowalski</p>
+                        <p class="text-xs text-gray-400">Koordynator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <header class="bg-white border-b border-gray-200 px-4 lg:px-8 py-4 sticky top-0 z-10 no-print">
+                <div class="flex items-center justify-between">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Karty na drzwi</h2>
+                        <p class="text-gray-500">Drukuj harmonogramy sesji dla drzwi sal</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="window.print()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/>
+                            </svg>
+                            Drukuj karty
+                        </button>
+                        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            Pobierz PDF
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-4 lg:p-8">
+                <!-- Filters -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8 no-print">
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 block mb-1">Dzień</label>
+                            <select class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option>Wszystkie dni</option>
+                                <option>Piątek, 14 czerwca</option>
+                                <option selected>Sobota, 15 czerwca</option>
+                                <option>Niedziela, 16 czerwca</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 block mb-1">Lokalizacja</label>
+                            <select class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option>Wszystkie lokalizacje</option>
+                                <option selected>Budynek Główny</option>
+                                <option>Hala RPG</option>
+                                <option>Centrum Warsztatów</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 block mb-1">Sala</label>
+                            <select class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option>Wszystkie sale</option>
+                                <option>Aula Główna</option>
+                                <option selected>Sala Konferencyjna A</option>
+                                <option>Sala Konferencyjna B</option>
+                                <option>Sala Warsztatowa 1</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 block mb-1">Rozmiar karty</label>
+                            <select class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option selected>A4 (cała strona)</option>
+                                <option>A5 (pół strony)</option>
+                                <option>A6 (ćwierć strony)</option>
+                            </select>
+                        </div>
+                        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                            Zastosuj filtry
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preview Info -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 no-print">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="text-blue-800">Wyświetlanie <strong>8 sesji</strong> dla <strong>Sali Konferencyjnej A</strong> w <strong>sobotę, 15 czerwca</strong>. Każda karta zostanie wydrukowana na osobnej stronie.</span>
+                    </div>
+                </div>
+
+                <!-- Door Cards Preview -->
+                <div class="space-y-8">
+                    <!-- Card 1 -->
+                    <div class="door-card bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden max-w-3xl mx-auto">
+                        <!-- Header -->
+                        <div class="bg-gradient-to-r from-primary to-secondary p-6 text-white">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-3xl font-bold">Sala Konferencyjna A</h2>
+                                    <p class="text-white/80">Budynek Główny, Parter</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-4xl font-bold">Sobota</p>
+                                    <p class="text-xl">15 czerwca 2025</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sessions List -->
+                        <div class="p-6">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-200">
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700 w-32">Godzina</th>
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700">Sesja</th>
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700 w-48">Prowadzący</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">10:00</div>
+                                            <div class="text-sm text-gray-500">14:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">D&D: Lost Mine of Phandelver</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-sm rounded-full">RPG</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">6 graczy</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Marcin Nowak</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">14:00</div>
+                                            <div class="text-sm text-gray-500">18:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Cyberpunk RED: Night City Blues</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-sm rounded-full">RPG</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">5 graczy</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Piotr Wiśniewski</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">18:00</div>
+                                            <div class="text-sm text-gray-500">22:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Vampire: The Masquerade - Blood Hunt</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-sm rounded-full">RPG</span>
+                                                <span class="px-2 py-0.5 bg-red-100 text-red-700 text-sm rounded-full">18+</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">6 graczy</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Ewa Pawlak</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="bg-gray-100 px-6 py-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E" alt="Logo" class="w-10 h-10">
+                                <div>
+                                    <div class="font-bold text-gray-900">Kapitularz 2025</div>
+                                    <div class="text-sm text-gray-500">14-16 czerwca 2025</div>
+                                </div>
+                            </div>
+                            <div class="text-right text-sm text-gray-500">
+                                <div>Pojemność sali: 50 miejsc</div>
+                                <div>Pytania? Punkt informacyjny, Budynek Główny</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page break indicator -->
+                    <div class="no-print flex items-center justify-center py-4">
+                        <div class="border-t-2 border-dashed border-gray-300 flex-1"></div>
+                        <span class="px-4 text-gray-400 text-sm">Podział strony</span>
+                        <div class="border-t-2 border-dashed border-gray-300 flex-1"></div>
+                    </div>
+
+                    <!-- Card 2 - Conference Room B -->
+                    <div class="door-card bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden max-w-3xl mx-auto print-break">
+                        <div class="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-white">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-3xl font-bold">Sala Konferencyjna B</h2>
+                                    <p class="text-white/80">Budynek Główny, Parter</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-4xl font-bold">Sobota</p>
+                                    <p class="text-xl">15 czerwca 2025</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-200">
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700 w-32">Godzina</th>
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700">Sesja</th>
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700 w-48">Prowadzący</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">10:00</div>
+                                            <div class="text-sm text-gray-500">13:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Call of Cthulhu: The Haunting</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-sm rounded-full">RPG</span>
+                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-sm rounded-full">Horror</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">5 graczy</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Piotr Wiśniewski</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">14:00</div>
+                                            <div class="text-sm text-gray-500">17:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Blades in the Dark: Score Night</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-sm rounded-full">RPG</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">4 graczy</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Karol Mazurek</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">18:00</div>
+                                            <div class="text-sm text-gray-500">22:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Pathfinder 2e: Beginner Box</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-sm rounded-full">RPG</span>
+                                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-sm rounded-full">Dla początkujących</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">6 graczy</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Magda Lewandowska</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="bg-gray-100 px-6 py-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E" alt="Logo" class="w-10 h-10">
+                                <div>
+                                    <div class="font-bold text-gray-900">Kapitularz 2025</div>
+                                    <div class="text-sm text-gray-500">14-16 czerwca 2025</div>
+                                </div>
+                            </div>
+                            <div class="text-right text-sm text-gray-500">
+                                <div>Pojemność sali: 50 miejsc</div>
+                                <div>Pytania? Punkt informacyjny, Budynek Główny</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 - Workshop Room -->
+                    <div class="no-print flex items-center justify-center py-4">
+                        <div class="border-t-2 border-dashed border-gray-300 flex-1"></div>
+                        <span class="px-4 text-gray-400 text-sm">Podział strony</span>
+                        <div class="border-t-2 border-dashed border-gray-300 flex-1"></div>
+                    </div>
+
+                    <div class="door-card bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden max-w-3xl mx-auto print-break">
+                        <div class="bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-3xl font-bold">Sala Warsztatowa 1</h2>
+                                    <p class="text-white/80">Budynek Główny, Parter</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-4xl font-bold">Sobota</p>
+                                    <p class="text-xl">15 czerwca 2025</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-200">
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700 w-32">Godzina</th>
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700">Sesja</th>
+                                        <th class="text-left py-3 text-lg font-bold text-gray-700 w-48">Prowadzący</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">10:00</div>
+                                            <div class="text-sm text-gray-500">12:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Malowanie figurek dla początkujących</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-sm rounded-full">Warsztat</span>
+                                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-sm rounded-full">Dla początkujących</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">12 miejsc</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Anna Kowalczyk</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">12:00</div>
+                                            <div class="text-sm text-gray-500">14:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Skórnictwo: Woreczek na kości</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-sm rounded-full">Warsztat</span>
+                                                <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-sm rounded-full">Materiały w cenie</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">8 miejsc</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Jan Kowalski</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">14:00</div>
+                                            <div class="text-sm text-gray-500">16:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Tworzenie kości z żywicy</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-sm rounded-full">Warsztat</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">10 miejsc</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Anna Kowalczyk</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-4">
+                                            <div class="text-2xl font-bold text-gray-900">16:00</div>
+                                            <div class="text-sm text-gray-500">18:00</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="text-xl font-semibold text-gray-900">Podstawy budowy terenów</div>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-sm rounded-full">Warsztat</span>
+                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded-full">10 miejsc</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 text-lg text-gray-700">Michał Borowski</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="bg-gray-100 px-6 py-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E" alt="Logo" class="w-10 h-10">
+                                <div>
+                                    <div class="font-bold text-gray-900">Kapitularz 2025</div>
+                                    <div class="text-sm text-gray-500">14-16 czerwca 2025</div>
+                                </div>
+                            </div>
+                            <div class="text-right text-sm text-gray-500">
+                                <div>Pojemność sali: 20 miejsc</div>
+                                <div>Pytania? Punkt informacyjny, Budynek Główny</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-8 flex items-center justify-center gap-4 no-print">
+                    <button class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Poprzednia</button>
+                    <span class="text-gray-600">Strona 1 z 8</span>
+                    <button class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Następna</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

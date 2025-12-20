@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludamus Backoffice - Harmonogram</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .session-card { cursor: grab; }
+        .session-card:active { cursor: grabbing; }
+        .conflict-pulse { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+        .sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        .sidebar-panel { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
+                <p class="text-gray-400 text-sm">Backoffice</p>
+            </div>
+
+            <div class="px-4 mb-6">
+                <label class="text-xs text-gray-500 uppercase tracking-wider">Wydarzenie</label>
+                <select class="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option>Kapitularz 2025</option>
+                    <option>Kapitularz 2024</option>
+                </select>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <a href="index.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Panel główny
+                </a>
+                <a href="proposals.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Zgłoszenia
+                </a>
+                <a href="timetable.html" class="flex items-center px-4 py-3 text-white bg-gray-800 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Harmonogram
+                    <span class="ml-auto bg-red-500 text-xs px-2 py-0.5 rounded-full text-white font-medium">3</span>
+                </a>
+                <a href="venues.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Lokalizacje
+                </a>
+                <a href="hosts.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Twórcy programu
+                </a>
+                <a href="categories.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    Kategorie programu
+                </a>
+                <a href="changelog.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Historia zmian
+                </a>
+                <a href="door-cards.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/>
+                    </svg>
+                    Karty na drzwi
+                </a>
+
+            </nav>
+
+            <div class="absolute bottom-0 w-64 p-4 border-t border-gray-800">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <span class="text-white font-medium">MK</span>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">Marek Kowalski</p>
+                        <p class="text-xs text-gray-400">Koordynator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <header class="bg-white border-b border-gray-200 px-4 lg:px-8 py-4 sticky top-0 z-10">
+                <div class="flex items-center justify-between gap-3">
+                    <!-- Mobile menu button -->
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-xl lg:text-2xl font-bold text-gray-900 truncate">Kreator harmonogramu</h2>
+                        <p class="text-gray-500 text-sm hidden sm:block">Przeciągnij i upuść sesje aby je zaplanować</p>
+                    </div>
+                    <div class="flex items-center space-x-2 lg:space-x-3 flex-shrink-0">
+                        <!-- Conflict Warning -->
+                        <div class="flex items-center px-2 lg:px-4 py-1.5 lg:py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 lg:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <span class="font-medium hidden lg:inline">3 konflikty</span>
+                            <span class="font-medium lg:hidden">3</span>
+                        </div>
+                        <button class="p-2 lg:px-4 lg:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4 lg:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                            </svg>
+                            <span class="hidden lg:inline">Eksportuj</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Day Tabs -->
+                <div class="flex gap-2 mt-4 overflow-x-auto pb-1 -mb-1">
+                    <button class="px-3 lg:px-6 py-1.5 lg:py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm whitespace-nowrap">
+                        Pt. 14.06
+                    </button>
+                    <button class="px-3 lg:px-6 py-1.5 lg:py-2 bg-primary text-white rounded-lg text-sm whitespace-nowrap">
+                        Sob. 15.06
+                    </button>
+                    <button class="px-3 lg:px-6 py-1.5 lg:py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm whitespace-nowrap">
+                        Niedz. 16.06
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex flex-col xl:flex-row">
+                <!-- Timetable Grid -->
+                <div class="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-auto">
+                    <!-- Venue Filter -->
+                    <div class="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                        <span class="text-sm font-medium text-gray-700">Lokalizacja:</span>
+                        <select class="border border-gray-300 rounded-lg px-3 lg:px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary flex-1 sm:flex-initial">
+                            <option>Wszystkie lokalizacje</option>
+                            <option selected>Budynek Główny - Parter</option>
+                            <option>Budynek Główny - I piętro</option>
+                            <option>Hala RPG</option>
+                            <option>Centrum Warsztatów</option>
+                        </select>
+                        <span class="text-sm text-gray-500 hidden sm:inline">Pokazuje 8 sal</span>
+                    </div>
+
+                    <!-- Grid -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-200">
+                                        <th class="sticky left-0 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 z-10">Godzina</th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aula Główna<br><span class="text-gray-400 font-normal normal-case">200 miejsc</span></th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Sala Konf. A<br><span class="text-gray-400 font-normal normal-case">50 miejsc</span></th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Sala Konf. B<br><span class="text-gray-400 font-normal normal-case">50 miejsc</span></th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Warsztat 1<br><span class="text-gray-400 font-normal normal-case">20 miejsc</span></th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Warsztat 2<br><span class="text-gray-400 font-normal normal-case">20 miejsc</span></th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Sala Seminaryjna<br><span class="text-gray-400 font-normal normal-case">30 miejsc</span></th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Sala Spotkań<br><span class="text-gray-400 font-normal normal-case">15 miejsc</span></th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Studio<br><span class="text-gray-400 font-normal normal-case">12 miejsc</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <!-- 10:00 -->
+                                    <tr class="divide-x divide-gray-100">
+                                        <td class="sticky left-0 bg-white px-4 py-2 text-sm font-medium text-gray-900 border-r border-gray-200 z-10">10:00</td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-blue-100 border-l-4 border-blue-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-blue-900 truncate">Ceremonia otwarcia</div>
+                                                <div class="text-xs text-blue-700 truncate">Organizatorzy</div>
+                                                <div class="text-xs text-blue-600 mt-1">10:00 - 11:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-green-100 border-l-4 border-green-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-green-900 truncate">D&D: Lost Mine</div>
+                                                <div class="text-xs text-green-700 truncate">Marcin N.</div>
+                                                <div class="text-xs text-green-600 mt-1">10:00 - 14:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <!-- CONFLICT! -->
+                                            <div class="session-card bg-red-100 border-l-4 border-red-500 rounded p-2 h-full conflict-pulse relative">
+                                                <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full flex items-center">
+                                                    <svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/>
+                                                    </svg>
+                                                    Konflikt
+                                                </div>
+                                                <div class="text-xs font-medium text-red-900 truncate">CoC: Haunting</div>
+                                                <div class="text-xs text-red-700 truncate">Piotr W.</div>
+                                                <div class="text-xs text-red-600 mt-1">10:00 - 13:00</div>
+                                                <div class="text-xs text-red-800 font-medium mt-1">Konflikt prowadzącego!</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-purple-100 border-l-4 border-purple-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-purple-900 truncate">Malowanie figurek</div>
+                                                <div class="text-xs text-purple-700 truncate">Anna K.</div>
+                                                <div class="text-xs text-purple-600 mt-1">10:00 - 12:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer">
+                                            <div class="h-full flex items-center justify-center text-gray-400">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                                </svg>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-yellow-100 border-l-4 border-yellow-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-yellow-900 truncate">Projektowanie gier</div>
+                                                <div class="text-xs text-yellow-700 truncate">Dr. Malinowska</div>
+                                                <div class="text-xs text-yellow-600 mt-1">10:00 - 11:30</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                    </tr>
+
+                                    <!-- 12:00 -->
+                                    <tr class="divide-x divide-gray-100">
+                                        <td class="sticky left-0 bg-white px-4 py-2 text-sm font-medium text-gray-900 border-r border-gray-200 z-10">12:00</td>
+                                        <td class="p-1 h-24 align-top">
+                                            <div class="session-card bg-blue-100 border-l-4 border-blue-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-blue-900 truncate">Literatura fantasy</div>
+                                                <div class="text-xs text-blue-700 truncate">Dr. Ewa M.</div>
+                                                <div class="text-xs text-blue-600 mt-1">12:00 - 13:30</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top text-xs text-gray-400 text-center pt-8">
+                                            (sesja trwa)
+                                        </td>
+                                        <td class="p-1 h-24 align-top text-xs text-gray-400 text-center pt-8">
+                                            (sesja trwa)
+                                        </td>
+                                        <td class="p-1 h-24 align-top">
+                                            <div class="session-card bg-purple-100 border-l-4 border-purple-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-purple-900 truncate">Skornictwo</div>
+                                                <div class="text-xs text-purple-700 truncate">Jan K.</div>
+                                                <div class="text-xs text-purple-600 mt-1">12:00 - 14:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top">
+                                            <div class="session-card bg-green-100 border-l-4 border-green-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-green-900 truncate">Warhammer Kill Team</div>
+                                                <div class="text-xs text-green-700 truncate">Tomasz N.</div>
+                                                <div class="text-xs text-green-600 mt-1">12:00 - 15:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top">
+                                            <!-- CONFLICT - Room double booked -->
+                                            <div class="session-card bg-red-100 border-l-4 border-red-500 rounded p-2 h-full conflict-pulse relative">
+                                                <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">2</div>
+                                                <div class="text-xs font-medium text-red-900 truncate">Panel RPG</div>
+                                                <div class="text-xs text-red-700 truncate">Różni</div>
+                                                <div class="text-xs text-red-600 mt-1">12:00 - 13:00</div>
+                                                <div class="text-xs text-red-800 font-medium mt-1">Podwójna rezerwacja!</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top">
+                                            <div class="session-card bg-yellow-100 border-l-4 border-yellow-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-yellow-900 truncate">Wprowadzenie do cosplayu</div>
+                                                <div class="text-xs text-yellow-700 truncate">Maria S.</div>
+                                                <div class="text-xs text-yellow-600 mt-1">12:00 - 14:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                    </tr>
+
+                                    <!-- 14:00 -->
+                                    <tr class="divide-x divide-gray-100">
+                                        <td class="sticky left-0 bg-white px-4 py-2 text-sm font-medium text-gray-900 border-r border-gray-200 z-10">14:00</td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-blue-100 border-l-4 border-blue-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-blue-900 truncate">Worldbuilding 101</div>
+                                                <div class="text-xs text-blue-700 truncate">Adam W.</div>
+                                                <div class="text-xs text-blue-600 mt-1">14:00 - 15:30</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-green-100 border-l-4 border-green-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-green-900 truncate">Cyberpunk RED</div>
+                                                <div class="text-xs text-green-700 truncate">Piotr W.</div>
+                                                <div class="text-xs text-green-600 mt-1">14:00 - 18:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-green-100 border-l-4 border-green-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-green-900 truncate">Blades in the Dark</div>
+                                                <div class="text-xs text-green-700 truncate">Karol M.</div>
+                                                <div class="text-xs text-green-600 mt-1">14:00 - 17:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-purple-100 border-l-4 border-purple-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-purple-900 truncate">Tworzenie kości</div>
+                                                <div class="text-xs text-purple-700 truncate">Anna K.</div>
+                                                <div class="text-xs text-purple-600 mt-1">14:00 - 16:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 text-xs text-gray-400 text-center pt-8">
+                                            (sesja trwa)
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <!-- CONFLICT - Host has another session -->
+                                            <div class="session-card bg-red-100 border-l-4 border-red-500 rounded p-2 h-full conflict-pulse relative">
+                                                <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full flex items-center">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="text-xs font-medium text-red-900 truncate">Panel horroru</div>
+                                                <div class="text-xs text-red-700 truncate">Piotr W.</div>
+                                                <div class="text-xs text-red-600 mt-1">14:00 - 15:00</div>
+                                                <div class="text-xs text-red-800 font-medium mt-1">Prowadzący @ Cyberpunk!</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-yellow-100 border-l-4 border-yellow-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-yellow-900 truncate">Nagranie podcastu</div>
+                                                <div class="text-xs text-yellow-700 truncate">Różni</div>
+                                                <div class="text-xs text-yellow-600 mt-1">14:00 - 16:00</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 16:00 -->
+                                    <tr class="divide-x divide-gray-100">
+                                        <td class="sticky left-0 bg-white px-4 py-2 text-sm font-medium text-gray-900 border-r border-gray-200 z-10">16:00</td>
+                                        <td class="p-1 h-24 align-top">
+                                            <div class="session-card bg-blue-100 border-l-4 border-blue-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-blue-900 truncate">Wykład Gościa Honorowego</div>
+                                                <div class="text-xs text-blue-700 truncate">R.A. Salvatore</div>
+                                                <div class="text-xs text-blue-600 mt-1">16:00 - 17:30</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top text-xs text-gray-400 text-center pt-8">
+                                            (sesja trwa)
+                                        </td>
+                                        <td class="p-1 h-24 align-top text-xs text-gray-400 text-center pt-8">
+                                            (sesja trwa)
+                                        </td>
+                                        <td class="p-1 h-24 align-top">
+                                            <div class="session-card bg-purple-100 border-l-4 border-purple-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-purple-900 truncate">Budowa terenów</div>
+                                                <div class="text-xs text-purple-700 truncate">Michal B.</div>
+                                                <div class="text-xs text-purple-600 mt-1">16:00 - 18:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top">
+                                            <div class="session-card bg-green-100 border-l-4 border-green-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-green-900 truncate">Mork Borg</div>
+                                                <div class="text-xs text-green-700 truncate">Filip Z.</div>
+                                                <div class="text-xs text-green-600 mt-1">16:00 - 19:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top">
+                                            <div class="session-card bg-yellow-100 border-l-4 border-yellow-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-yellow-900 truncate">Q&A o projektowaniu gier</div>
+                                                <div class="text-xs text-yellow-700 truncate">Panel</div>
+                                                <div class="text-xs text-yellow-600 mt-1">16:00 - 17:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                        <td class="p-1 h-24 align-top border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                    </tr>
+
+                                    <!-- 18:00 -->
+                                    <tr class="divide-x divide-gray-100">
+                                        <td class="sticky left-0 bg-white px-4 py-2 text-sm font-medium text-gray-900 border-r border-gray-200 z-10">18:00</td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-indigo-100 border-l-4 border-indigo-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-indigo-900 truncate">Konkurs kostiumów</div>
+                                                <div class="text-xs text-indigo-700 truncate">Różni</div>
+                                                <div class="text-xs text-indigo-600 mt-1">18:00 - 20:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50">
+                                            <div class="session-card bg-green-100 border-l-4 border-green-500 rounded p-2 h-full">
+                                                <div class="text-xs font-medium text-green-900 truncate">Vampire: Masquerade</div>
+                                                <div class="text-xs text-green-700 truncate">Ewa P.</div>
+                                                <div class="text-xs text-green-600 mt-1">18:00 - 22:00</div>
+                                            </div>
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 text-xs text-gray-400 text-center pt-8">
+                                            (sesja trwa)
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 text-xs text-gray-400 text-center pt-8">
+                                            (sesja trwa)
+                                        </td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                        <td class="p-1 h-24 align-top bg-gray-50/50 border border-dashed border-gray-300 hover:bg-primary/5 transition cursor-pointer"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="mt-4 flex items-center gap-6 text-sm text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-green-100 border-l-4 border-green-500 rounded"></div>
+                            <span>Sesja RPG</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-purple-100 border-l-4 border-purple-500 rounded"></div>
+                            <span>Warsztat</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-blue-100 border-l-4 border-blue-500 rounded"></div>
+                            <span>Prelekcja/Panel</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-yellow-100 border-l-4 border-yellow-500 rounded"></div>
+                            <span>Inne</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-red-100 border-l-4 border-red-500 rounded"></div>
+                            <span class="text-red-600 font-medium">Konflikt</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unassigned Proposals Sidebar -->
+                <div class="w-full xl:w-80 border-t xl:border-t-0 xl:border-l border-gray-200 bg-white p-3 sm:p-4 lg:p-6 xl:overflow-y-auto xl:max-h-[calc(100vh-180px)] xl:sticky xl:top-[180px]">
+                    <div class="flex items-center justify-between mb-4">
+                        <button onclick="document.getElementById('unassignedContent').classList.toggle('hidden')" class="xl:hidden flex items-center">
+                            <h3 class="font-semibold text-gray-900">Nieprzypisane</h3>
+                            <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <h3 class="font-semibold text-gray-900 hidden xl:block">Nieprzypisane</h3>
+                        <span class="text-sm text-gray-500">73 sesje</span>
+                    </div>
+                    <div id="unassignedContent" class="hidden xl:block">
+
+                    <!-- Search -->
+                    <div class="relative mb-4">
+                        <input type="text" placeholder="Szukaj..." class="w-full border border-gray-300 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+
+                    <!-- Filter by category -->
+                    <div class="flex gap-2 mb-4 flex-wrap">
+                        <button class="px-3 py-1 bg-primary text-white text-xs rounded-full">Wszystkie</button>
+                        <button class="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full hover:bg-gray-200">RPG</button>
+                        <button class="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full hover:bg-gray-200">Warsztat</button>
+                        <button class="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full hover:bg-gray-200">Prelekcja</button>
+                    </div>
+
+                    <!-- Unassigned Sessions List -->
+                    <div class="space-y-3">
+                        <div class="session-card bg-green-50 border border-green-200 rounded-lg p-3 hover:shadow-md transition cursor-grab">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">RPG</span>
+                                <span class="text-xs text-gray-400">4h</span>
+                            </div>
+                            <div class="font-medium text-sm text-gray-900 mb-1">Curse of Strahd One-Shot</div>
+                            <div class="text-xs text-gray-500">Tomasz Nowicki</div>
+                            <div class="text-xs text-gray-400 mt-1">Preferuje: Sob. popołudnie</div>
+                        </div>
+
+                        <div class="session-card bg-purple-50 border border-purple-200 rounded-lg p-3 hover:shadow-md transition cursor-grab">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Warsztat</span>
+                                <span class="text-xs text-gray-400">2h</span>
+                            </div>
+                            <div class="font-medium text-sm text-gray-900 mb-1">Foam Sword Making</div>
+                            <div class="text-xs text-gray-500">Kasia Mazur</div>
+                            <div class="text-xs text-gray-400 mt-1">Preferuje: Dowolnie</div>
+                        </div>
+
+                        <div class="session-card bg-blue-50 border border-blue-200 rounded-lg p-3 hover:shadow-md transition cursor-grab">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Prelekcja</span>
+                                <span class="text-xs text-gray-400">1.5h</span>
+                            </div>
+                            <div class="font-medium text-sm text-gray-900 mb-1">Writing TTRPG Adventures</div>
+                            <div class="text-xs text-gray-500">Pawel Kowalski</div>
+                            <div class="text-xs text-gray-400 mt-1">Preferuje: Niedz. rano</div>
+                        </div>
+
+                        <div class="session-card bg-green-50 border border-green-200 rounded-lg p-3 hover:shadow-md transition cursor-grab">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">RPG</span>
+                                <span class="text-xs text-gray-400">3h</span>
+                            </div>
+                            <div class="font-medium text-sm text-gray-900 mb-1">Pathfinder: Beginner Box</div>
+                            <div class="text-xs text-gray-500">Magda Lewandowska</div>
+                            <div class="text-xs text-gray-400 mt-1">Preferuje: Sob. dowolnie</div>
+                        </div>
+
+                        <div class="session-card bg-yellow-50 border border-yellow-200 rounded-lg p-3 hover:shadow-md transition cursor-grab">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Gra planszowa</span>
+                                <span class="text-xs text-gray-400">2h</span>
+                            </div>
+                            <div class="font-medium text-sm text-gray-900 mb-1">Gloomhaven Demo</div>
+                            <div class="text-xs text-gray-500">Robert Jankowski</div>
+                            <div class="text-xs text-gray-400 mt-1">Preferuje: Pt. wieczór</div>
+                        </div>
+
+                        <div class="text-center py-4">
+                            <button class="text-primary text-sm hover:underline">Pokaż więcej (pozostało 68)</button>
+                        </div>
+                    </div>
+                    </div><!-- end unassignedContent -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludamus Backoffice - Ustawienia Sfery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        .sidebar-panel { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0 overflow-y-auto">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
+                <p class="text-gray-400 text-sm">Backoffice</p>
+            </div>
+
+            <!-- Sphere Selector -->
+            <div class="px-4 mb-6">
+                <label class="text-xs text-gray-500 uppercase tracking-wider">Sfera</label>
+                <select class="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option>Kapitularz</option>
+                    <option>Inne Wydarzenie</option>
+                </select>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <!-- Sphere Level Section -->
+                <div class="mb-4">
+                    <p class="px-4 text-xs text-gray-500 uppercase tracking-wider mb-2">Ustawienia sfery</p>
+                    <a href="sphere-settings.html" class="flex items-center px-4 py-3 text-white bg-gray-800 rounded-lg">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Ogólne
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                        </svg>
+                        Administratorzy sfery
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                        </svg>
+                        Szablony i motywy
+                    </a>
+                </div>
+
+                <div class="border-t border-gray-800 pt-4">
+                    <p class="px-4 text-xs text-gray-500 uppercase tracking-wider mb-2">Zarządzanie wydarzeniami</p>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Lista wydarzeń
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Dodaj wydarzenie
+                    </a>
+                </div>
+
+                <!-- Event Level Section (when event selected) -->
+                <div class="border-t border-gray-800 pt-4 mt-4">
+                    <div class="px-4 mb-2">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider">Kapitularz 2025</p>
+                        <p class="text-xs text-gray-400 mt-0.5">14-16 czerwca 2025</p>
+                    </div>
+
+                    <a href="index.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        Panel główny
+                    </a>
+                    <a href="proposals.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Zgłoszenia
+                        <span class="ml-auto bg-yellow-500 text-xs px-2 py-0.5 rounded-full text-gray-900 font-medium">127</span>
+                    </a>
+                    <a href="timetable.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Harmonogram
+                        <span class="ml-auto bg-red-500 text-xs px-2 py-0.5 rounded-full text-white font-medium">3</span>
+                    </a>
+                    <a href="venues.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        Lokalizacje
+                    </a>
+                    <a href="hosts.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Twórcy programu
+                        <span class="ml-auto text-xs text-gray-500">312</span>
+                    </a>
+                    <a href="categories.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                        </svg>
+                        Kategorie programu
+                    </a>
+                    <a href="settings.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Ustawienia wydarzenia
+                    </a>
+                </div>
+            </nav>
+
+            <div class="absolute bottom-0 w-64 p-4 border-t border-gray-800 bg-gray-900">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-medium">MK</span>
+                    </div>
+                    <div class="ml-3 min-w-0">
+                        <p class="text-sm font-medium truncate">Marek Kowalski</p>
+                        <p class="text-xs text-gray-400 truncate">Admin sfery</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-3 sm:px-4 lg:px-8 py-3 sm:py-4 sticky top-0 z-10">
+                <div class="flex items-center justify-between gap-4">
+                    <!-- Mobile menu button -->
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-xl lg:text-2xl font-bold text-gray-900 truncate">Ustawienia sfery</h2>
+                        <p class="text-gray-500 text-sm lg:text-base truncate">Kapitularz</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-3 sm:p-4 lg:p-8">
+                <!-- Sphere Settings Form -->
+                <div class="max-w-4xl">
+                    <!-- Basic Info -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                        <div class="px-4 sm:px-6 py-4 border-b border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-900">Podstawowe informacje</h3>
+                            <p class="text-sm text-gray-500 mt-1">Ogólne ustawienia dotyczące całej sfery wydarzeń</p>
+                        </div>
+                        <div class="p-4 sm:p-6 space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nazwa sfery</label>
+                                <input type="text" value="Kapitularz" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <p class="text-xs text-gray-500 mt-1">Nazwa wyświetlana w całym systemie i dla uczestników</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Slug URL</label>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-500 text-sm">ludamus.pl/</span>
+                                    <input type="text" value="kapitularz" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Przyjazny adres URL dla sfery (tylko małe litery, cyfry i myślniki)</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Opis sfery</label>
+                                <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Krótki opis sfery wydarzeń...">Cykl konwentów RPG i gier planszowych organizowanych w Polsce od 2010 roku.</textarea>
+                                <p class="text-xs text-gray-500 mt-1">Wyświetlany na stronie głównej i w metadanych</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact & Branding -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                        <div class="px-4 sm:px-6 py-4 border-b border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-900">Kontakt i branding</h3>
+                        </div>
+                        <div class="p-4 sm:p-6 space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">E-mail kontaktowy</label>
+                                <input type="email" value="kontakt@kapitularz.pl" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Logo sfery</label>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">
+                                            Wybierz plik
+                                        </button>
+                                        <p class="text-xs text-gray-500 mt-2">Rekomendowany rozmiar: 512x512px, format PNG lub SVG</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Kolor główny</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" value="#6366f1" class="w-12 h-12 rounded-lg border border-gray-300 cursor-pointer">
+                                    <input type="text" value="#6366f1" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm">
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Kolor przewodni używany w interfejsie i materiałach</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Default Settings for New Events -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                        <div class="px-4 sm:px-6 py-4 border-b border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-900">Domyślne ustawienia wydarzeń</h3>
+                            <p class="text-sm text-gray-500 mt-1">Wartości domyślne dla nowo tworzonych wydarzeń</p>
+                        </div>
+                        <div class="p-4 sm:p-6 space-y-6">
+                            <div class="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-gray-900">Publiczny widok harmonogramu</p>
+                                    <p class="text-sm text-gray-500">Czy harmonogram ma być domyślnie widoczny publicznie</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                </label>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-gray-900">Wymagane potwierdzenia od twórców</p>
+                                    <p class="text-sm text-gray-500">Czy domyślnie wymagać potwierdzeń uczestnictwa</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                </label>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Domyślny czas trwania sesji</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    <option>2 godziny</option>
+                                    <option>3 godziny</option>
+                                    <option selected>4 godziny</option>
+                                    <option>5 godzin</option>
+                                    <option>6 godzin</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col sm:flex-row gap-3 justify-end">
+                        <button class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">
+                            Anuluj
+                        </button>
+                        <button class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium">
+                            Zapisz zmiany
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

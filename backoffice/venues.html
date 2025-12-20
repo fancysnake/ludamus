@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludamus Backoffice - Lokalizacje</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        .sidebar-panel { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
+                <p class="text-gray-400 text-sm">Backoffice</p>
+            </div>
+
+            <div class="px-4 mb-6">
+                <label class="text-xs text-gray-500 uppercase tracking-wider">Wydarzenie</label>
+                <select class="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option>Kapitularz 2025</option>
+                    <option>Kapitularz 2024</option>
+                    <option>Kapitularz 2023</option>
+                </select>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <a href="index.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Panel główny
+                </a>
+                <a href="proposals.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Zgłoszenia
+                </a>
+                <a href="timetable.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Harmonogram
+                </a>
+                <a href="venues.html" class="flex items-center px-4 py-3 text-white bg-gray-800 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Lokalizacje
+                </a>
+                <a href="hosts.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Twórcy programu
+                    <span class="ml-auto text-xs text-gray-500">312</span>
+                </a>
+                <a href="categories.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    Kategorie programu
+                </a>
+                <a href="changelog.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Historia zmian
+                </a>
+                <a href="door-cards.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/>
+                    </svg>
+                    Karty na drzwi
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-gray-800">
+                    <p class="px-4 text-xs text-gray-500 uppercase tracking-wider mb-2">Ustawienia</p>
+                    <a href="organizers.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                        </svg>
+                        Organizatorzy
+                    </a>
+                    <a href="settings.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Ustawienia wydarzenia
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Sync (Konwencik)
+                    </a>
+                </div>
+            </nav>
+
+            <div class="absolute bottom-0 w-64 p-4 border-t border-gray-800">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <span class="text-white font-medium">MK</span>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">Marek Kowalski</p>
+                        <p class="text-xs text-gray-400">Koordynator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <header class="bg-white border-b border-gray-200 px-4 lg:px-8 py-4 sticky top-0 z-10">
+                <div class="flex items-center justify-between gap-3">
+                    <!-- Mobile menu button -->
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-xl lg:text-2xl font-bold text-gray-900 truncate">Lokalizacje</h2>
+                        <p class="text-gray-500 text-sm hidden sm:block truncate">Zarządzaj lokalizacjami i salami</p>
+                    </div>
+                    <div class="flex items-center space-x-2 lg:space-x-3 flex-shrink-0">
+                        <button class="p-2 lg:px-4 lg:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center">
+                            <svg class="w-4 h-4 lg:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            <span class="hidden lg:inline">Klonuj</span>
+                        </button>
+                        <button class="p-2 lg:px-4 lg:py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+                            <svg class="w-4 h-4 lg:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            <span class="hidden lg:inline">Dodaj</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-3 sm:p-4 lg:p-8">
+                <!-- Clone Modal (shown as example) -->
+                <div class="mb-6 lg:mb-8 bg-blue-50 border border-blue-200 rounded-xl p-4 lg:p-6">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 lg:w-6 lg:h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium text-blue-900 text-sm lg:text-base">Sklonować lokalizacje z poprzedniego wydarzenia?</h4>
+                            <p class="text-xs lg:text-sm text-blue-700 mt-1">Sklonuj konfigurację z Kapitularz 2024 (3 lokalizacje, 62 sale).</p>
+                            <div class="mt-3 lg:mt-4 flex flex-wrap gap-2 lg:gap-3">
+                                <button class="px-3 lg:px-4 py-1.5 lg:py-2 bg-blue-600 text-white text-xs lg:text-sm rounded-lg hover:bg-blue-700">Klonuj</button>
+                                <button class="px-3 lg:px-4 py-1.5 lg:py-2 text-blue-700 text-xs lg:text-sm hover:underline">Od nowa</button>
+                            </div>
+                        </div>
+                        <button class="text-blue-400 hover:text-blue-600 ml-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Venues Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+                    <!-- Venue 1: Main Building -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Budynek Główny</h3>
+                                    <p class="text-sm text-gray-500">ul. Wielka 15, Łódź</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex gap-4 text-sm">
+                                <span class="text-gray-600"><strong>3</strong> piętra</span>
+                                <span class="text-gray-600"><strong>24</strong> sale</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 space-y-3">
+                            <!-- Floor 0 -->
+                            <div class="border border-gray-200 rounded-lg">
+                                <button class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                        <span class="font-medium text-gray-900">Parter</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">8 sal</span>
+                                </button>
+                                <div class="border-t border-gray-200 p-3 space-y-2">
+                                    <div class="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-700">Aula Główna</span>
+                                        <span class="text-xs text-gray-400">200 miejsc</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-700">Sala Konferencyjna A</span>
+                                        <span class="text-xs text-gray-400">50 miejsc</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-700">Sala Konferencyjna B</span>
+                                        <span class="text-xs text-gray-400">50 miejsc</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-700">Sala Warsztatowa 1</span>
+                                        <span class="text-xs text-gray-400">20 miejsc</span>
+                                    </div>
+                                    <button class="w-full text-sm text-gray-500 hover:text-primary py-1">+ 4 więcej sal</button>
+                                </div>
+                            </div>
+
+                            <!-- Floor 1 -->
+                            <div class="border border-gray-200 rounded-lg">
+                                <button class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition">
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                        <span class="font-medium text-gray-900">Pierwsze piętro</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">10 sal</span>
+                                </button>
+                            </div>
+
+                            <!-- Floor 2 -->
+                            <div class="border border-gray-200 rounded-lg">
+                                <button class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition">
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                        <span class="font-medium text-gray-900">Drugie piętro</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">6 sal</span>
+                                </button>
+                            </div>
+
+                            <button class="w-full flex items-center justify-center p-3 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary hover:text-primary transition">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                                Dodaj piętro
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Venue 2: RPG Hall -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Hala RPG</h3>
+                                    <p class="text-sm text-gray-500">ul. Wielka 17, Łódź</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex gap-4 text-sm">
+                                <span class="text-gray-600"><strong>2</strong> piętra</span>
+                                <span class="text-gray-600"><strong>28</strong> sal</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 space-y-3">
+                            <div class="border border-gray-200 rounded-lg">
+                                <button class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition">
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                        <span class="font-medium text-gray-900">Strefa stołów RPG</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">20 stołów</span>
+                                </button>
+                            </div>
+
+                            <div class="border border-gray-200 rounded-lg">
+                                <button class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition">
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                        <span class="font-medium text-gray-900">Sale LARP</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">8 sal</span>
+                                </button>
+                            </div>
+
+                            <button class="w-full flex items-center justify-center p-3 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary hover:text-primary transition">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                                Dodaj piętro
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Venue 3: Workshop Center -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Centrum Warsztatów</h3>
+                                    <p class="text-sm text-gray-500">ul. Mała 5, Łódź</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex gap-4 text-sm">
+                                <span class="text-gray-600"><strong>1</strong> piętro</span>
+                                <span class="text-gray-600"><strong>10</strong> sal</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 space-y-3">
+                            <div class="border border-gray-200 rounded-lg">
+                                <button class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                        <span class="font-medium text-gray-900">Sale warsztatowe</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">10 sal</span>
+                                </button>
+                                <div class="border-t border-gray-200 p-3 space-y-2">
+                                    <div class="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-700">Sala Rękodzieła A</span>
+                                        <span class="text-xs text-gray-400">12 miejsc</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-700">Sala Rękodzieła B</span>
+                                        <span class="text-xs text-gray-400">12 miejsc</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-700">Pracownia Malarska</span>
+                                        <span class="text-xs text-gray-400">8 miejsc</span>
+                                    </div>
+                                    <button class="w-full text-sm text-gray-500 hover:text-primary py-1">+ 7 więcej sal</button>
+                                </div>
+                            </div>
+
+                            <button class="w-full flex items-center justify-center p-3 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary hover:text-primary transition">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                                Dodaj piętro
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add New Venue Card -->
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition cursor-pointer min-h-[300px]">
+                        <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <span class="font-medium">Dodaj nową lokalizację</span>
+                        <span class="text-sm mt-1">lub sklonuj z poprzedniego wydarzenia</span>
+                    </div>
+                </div>
+
+                <!-- Room Summary -->
+                <div class="mt-6 lg:mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:p-6">
+                    <h3 class="text-base lg:text-lg font-semibold text-gray-900 mb-4">Podsumowanie sal</h3>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                        <div>
+                            <p class="text-3xl font-bold text-gray-900">62</p>
+                            <p class="text-sm text-gray-500">Wszystkie sale</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-gray-900">3 420</p>
+                            <p class="text-sm text-gray-500">Całkowita pojemność</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-green-600">58</p>
+                            <p class="text-sm text-gray-500">Sale w użyciu</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-yellow-600">4</p>
+                            <p class="text-sm text-gray-500">Nieprzypisane sale</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludamus Backoffice - Historia zmian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        .sidebar-panel { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
+                <p class="text-gray-400 text-sm">Backoffice</p>
+            </div>
+
+            <div class="px-4 mb-6">
+                <label class="text-xs text-gray-500 uppercase tracking-wider">Wydarzenie</label>
+                <select class="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option>Kapitularz 2025</option>
+                    <option>Kapitularz 2024</option>
+                    <option>Kapitularz 2023</option>
+                </select>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <a href="index.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Panel główny
+                </a>
+                <a href="proposals.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Zgłoszenia
+                    <span class="ml-auto bg-yellow-500 text-xs px-2 py-0.5 rounded-full text-gray-900 font-medium">127</span>
+                </a>
+                <a href="timetable.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Harmonogram
+                    <span class="ml-auto bg-red-500 text-xs px-2 py-0.5 rounded-full text-white font-medium">3</span>
+                </a>
+                <a href="venues.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Lokalizacje
+                </a>
+                <a href="hosts.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Twórcy programu
+                    <span class="ml-auto text-xs text-gray-500">312</span>
+                </a>
+                <a href="categories.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    Kategorie programu
+                </a>
+                <a href="changelog.html" class="flex items-center px-4 py-3 text-white bg-gray-800 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Historia zmian
+                </a>
+                <a href="door-cards.html" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/>
+                    </svg>
+                    Karty na drzwi
+                </a>
+
+            </nav>
+
+            <div class="absolute bottom-0 w-64 p-4 border-t border-gray-800">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <span class="text-white font-medium">MK</span>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">Marek Kowalski</p>
+                        <p class="text-xs text-gray-400">Koordynator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <header class="bg-white border-b border-gray-200 px-4 lg:px-8 py-4 sticky top-0 z-10">
+                <div class="flex items-center justify-between">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Historia zmian</h2>
+                        <p class="text-gray-500">Śledź wszystkie zmiany w harmonogramie dla ogłoszeń marketingowych</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                            </svg>
+                            Eksportuj dla marketingu
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-4 lg:p-8">
+                <!-- Filters -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 block mb-1">Zakres dat</label>
+                            <div class="flex gap-2">
+                                <input type="date" value="2025-06-01" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <span class="text-gray-400 self-center">do</span>
+                                <input type="date" value="2025-06-14" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 block mb-1">Typ zmiany</label>
+                            <select class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option>Wszystkie zmiany</option>
+                                <option>Zmiana godziny</option>
+                                <option>Zmiana sali</option>
+                                <option>Dodanie sesji</option>
+                                <option>Anulowanie sesji</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 block mb-1">Zmienione przez</label>
+                            <select class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option>Wszyscy organizatorzy</option>
+                                <option>Marek Kowalski</option>
+                                <option>Anna Nowak</option>
+                                <option>System</option>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-sm font-medium text-gray-700 block mb-1">Szukaj</label>
+                            <input type="text" placeholder="Szukaj po tytule sesji lub prowadzącym..." class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-center">
+                        <p class="text-3xl font-bold text-gray-900">47</p>
+                        <p class="text-sm text-gray-500">Wszystkie zmiany</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-center">
+                        <p class="text-3xl font-bold text-blue-600">18</p>
+                        <p class="text-sm text-gray-500">Zmiany godzin</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-center">
+                        <p class="text-3xl font-bold text-purple-600">12</p>
+                        <p class="text-sm text-gray-500">Zmiany sal</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-center">
+                        <p class="text-3xl font-bold text-red-600">5</p>
+                        <p class="text-sm text-gray-500">Anulowania</p>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100">
+                        <h3 class="font-semibold text-gray-900">Ostatnie zmiany</h3>
+                    </div>
+
+                    <div class="divide-y divide-gray-100">
+                        <!-- Today -->
+                        <div class="px-6 py-3 bg-gray-50">
+                            <span class="text-sm font-medium text-gray-700">Dzisiaj, 10 czerwca 2025</span>
+                        </div>
+
+                        <!-- Change 1: Time changed -->
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <h4 class="font-medium text-gray-900">Zmiana godziny</h4>
+                                        <span class="text-sm text-gray-500">2 godziny temu</span>
+                                    </div>
+                                    <p class="text-gray-700 mb-2">
+                                        <strong>D&D: Klątwa Strahda One-Shot</strong> prowadzący Tomasz Nowicki
+                                    </p>
+                                    <div class="flex items-center gap-4 text-sm">
+                                        <div class="flex items-center text-gray-500">
+                                            <span class="line-through">Sob 14:00 - 18:00</span>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                        </svg>
+                                        <div class="flex items-center text-blue-600 font-medium">
+                                            <span>Sob 16:00 - 20:00</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Zmienił:</span>
+                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">Marek Kowalski</span>
+                                        <span class="text-xs text-gray-400">|</span>
+                                        <span class="text-xs text-gray-500">Powód: Prośba prowadzącego</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change 2: Room changed -->
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <h4 class="font-medium text-gray-900">Zmiana sali</h4>
+                                        <span class="text-sm text-gray-500">4 godziny temu</span>
+                                    </div>
+                                    <p class="text-gray-700 mb-2">
+                                        <strong>Warsztat malowania figurek</strong> prowadząca Anna Kowalczyk
+                                    </p>
+                                    <div class="flex items-center gap-4 text-sm">
+                                        <div class="flex items-center text-gray-500">
+                                            <span class="line-through">Sala Warsztatowa 1</span>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                        </svg>
+                                        <div class="flex items-center text-purple-600 font-medium">
+                                            <span>Sala Rękodzieła A (większa pojemność)</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Zmieniła:</span>
+                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">Anna Nowak</span>
+                                        <span class="text-xs text-gray-400">|</span>
+                                        <span class="text-xs text-gray-500">Powód: Więcej uczestników niż oczekiwano</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change 3: Session cancelled -->
+                        <div class="p-6 hover:bg-gray-50 transition bg-red-50/30">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <h4 class="font-medium text-red-900">Sesja anulowana</h4>
+                                        <span class="text-sm text-gray-500">6 godzin temu</span>
+                                    </div>
+                                    <p class="text-gray-700 mb-2">
+                                        <strong>Zaawansowane taktyki D&D</strong> prowadzący Krzysztof Maj
+                                    </p>
+                                    <div class="text-sm text-gray-600">
+                                        Była zaplanowana: Sobota 10:00 - 12:00 w Sali Konf. A
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Zmienił:</span>
+                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">Marek Kowalski</span>
+                                        <span class="text-xs text-gray-400">|</span>
+                                        <span class="text-xs text-red-600">Powód: Choroba prowadzącego</span>
+                                    </div>
+                                    <div class="mt-2 p-2 bg-red-100 rounded text-xs text-red-800">
+                                        <strong>Wymagana akcja marketingowa:</strong> Ogłoś anulowanie zapisanym uczestnikom
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Yesterday -->
+                        <div class="px-6 py-3 bg-gray-50">
+                            <span class="text-sm font-medium text-gray-700">Wczoraj, 9 czerwca 2025</span>
+                        </div>
+
+                        <!-- Change 4: Session added -->
+                        <div class="p-6 hover:bg-gray-50 transition bg-green-50/30">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <h4 class="font-medium text-green-900">Dodano sesję</h4>
+                                        <span class="text-sm text-gray-500">Wczoraj o 14:30</span>
+                                    </div>
+                                    <p class="text-gray-700 mb-2">
+                                        <strong>Zew Cthulhu: Nawiedzony Dom</strong> prowadzący Piotr Wiśniewski
+                                    </p>
+                                    <div class="text-sm text-gray-600">
+                                        Zaplanowana: Sobota 10:00 - 13:00 w Sali Konf. B
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Dodał:</span>
+                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">Marek Kowalski</span>
+                                    </div>
+                                    <div class="mt-2 p-2 bg-green-100 rounded text-xs text-green-800">
+                                        <strong>Okazja marketingowa:</strong> Nowa sesja horrorowa RPG dostępna!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change 5: Time and room changed -->
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <h4 class="font-medium text-gray-900">Zmiana godziny i sali</h4>
+                                        <span class="text-sm text-gray-500">Wczoraj o 11:15</span>
+                                    </div>
+                                    <p class="text-gray-700 mb-2">
+                                        <strong>Panel o projektowaniu gier planszowych</strong> prowadząca Dr Ewa Malinowska
+                                    </p>
+                                    <div class="space-y-1 text-sm">
+                                        <div class="flex items-center gap-4">
+                                            <span class="text-gray-500 w-16">Godzina:</span>
+                                            <span class="line-through text-gray-400">Pt 16:00</span>
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                            </svg>
+                                            <span class="text-blue-600 font-medium">Sob 10:00</span>
+                                        </div>
+                                        <div class="flex items-center gap-4">
+                                            <span class="text-gray-500 w-16">Sala:</span>
+                                            <span class="line-through text-gray-400">Sala Seminaryjna</span>
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                            </svg>
+                                            <span class="text-purple-600 font-medium">Aula Główna</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Zmieniła:</span>
+                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">Anna Nowak</span>
+                                        <span class="text-xs text-gray-400">|</span>
+                                        <span class="text-xs text-gray-500">Powód: Oczekiwana większa frekwencja</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Load more -->
+                        <div class="p-6 text-center">
+                            <button class="text-primary hover:underline text-sm">Pokaż więcej zmian (pozostało 42)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
