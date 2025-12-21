@@ -293,11 +293,6 @@ class Auth0LogoutRedirectActionView(RedirectView):
         return redirect_url
 
 
-class DesignPageView(TemplateView):
-    request: RootRequest
-    template_name = "design.html"
-
-
 class IndexPageView(TemplateView):
     request: RootRequest
     template_name = "index.html"

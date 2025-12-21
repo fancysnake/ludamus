@@ -1,4 +1,5 @@
 from django.urls import URLPattern, URLResolver, include, path
+from django.views.generic.base import TemplateView
 
 from . import views
 
@@ -84,7 +85,7 @@ chronology_urls = [
 
 urlpatterns = [
     path("", views.IndexPageView.as_view(), name="index"),
-    path("design/", views.DesignPageView.as_view(), name="design"),
+    path("design/", TemplateView.as_view(template_name="design.html"), name="design"),
     path(
         "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
