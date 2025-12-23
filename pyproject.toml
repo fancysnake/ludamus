@@ -73,7 +73,7 @@ djlint-format = "djlint . --reformat --format-css --format-js --profile=django"
 mypy = "mypy ."
 pylint = "pylint ."
 ruff = "ruff check ."
-ruff-fix = "ruff check --fix  ."
+ruff-fix = "ruff check --fix ."
 # Django
 dj = "django-admin"
 # Tests
