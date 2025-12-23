@@ -234,6 +234,7 @@ ignore = [
 "*/migrations/**.py" = ["ANN", "ARG001", "E501", "RUF012"]
 "tests/**.py" = [
     "ANN",     # flake8-annotations
+    "INP001",  # implicit namespace package
     "PLR0913", # too-many-arguments
     "PLR0917", # too-many-positional-arguments
     "S",       # bandit
