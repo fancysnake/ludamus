@@ -73,7 +73,7 @@ djlint-format = "djlint src --reformat --format-css --format-js --profile=django
 mypy = "mypy ."
 pylint = "pylint ."
 ruff = "ruff check ."
-ruff-fix = "ruff check --fix  ."
+ruff-fix = "ruff check --fix ."
 # Django
 dj = "django-admin"
 # Tests
@@ -136,6 +136,11 @@ show_missing = true
 skip_covered = true
 exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
 precision = 2
+
+# DJLINT
+
+[tool.djlint]
+ignore = "H021"
 
 # DEPTRY
 
