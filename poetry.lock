@@ -1964,14 +1964,14 @@ telegram = ["requests"]
 
 [[package]]
 name = "types-authlib"
-version = "1.6.6.20251214"
+version = "1.6.6.20251220"
 description = "Typing stubs for Authlib"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types_authlib-1.6.6.20251214-py3-none-any.whl", hash = "sha256:778e352a486198a3999641bf1e311b04b6883e68a74cfb828518abf200fb0f7f"},
-    {file = "types_authlib-1.6.6.20251214.tar.gz", hash = "sha256:79bf244e6f8d45ddb428bd42f14b105f43fd79c097fe14c89f7a3fdfc7eb8c8c"},
+    {file = "types_authlib-1.6.6.20251220-py3-none-any.whl", hash = "sha256:dd1d545fe4c498686c0285d59dc950d87d977d294fc430617c91e0a11f6f4f2b"},
+    {file = "types_authlib-1.6.6.20251220.tar.gz", hash = "sha256:a2369f23732fe88d5087ed720864f40d0319c19e8411d85a4930e31018996f90"},
 ]
 
 [package.dependencies]
@@ -2077,4 +2077,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14.0,<3.15"
-content-hash = "0363758ce5684d50564d0d9850c470f5962bba55b9b09ecbef3ee325b810a3d1"
+content-hash = "4b04102f6359844613fb2c2c6fe5b8d27832da211c22688e44292dbb356dad58"
