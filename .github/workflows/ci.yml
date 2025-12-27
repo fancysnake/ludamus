@@ -70,8 +70,6 @@ jobs:
         uses: abatilo/actions-poetry@v3
 
       - run: poetry install
-      - name: Download vendor dependencies
-        run: poetry run poe dj downloadvendor
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
