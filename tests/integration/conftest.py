@@ -307,3 +307,19 @@ def sphere_fixture(settings, transactional_db):  # noqa: ARG001
         domain=settings.ROOT_DOMAIN, defaults={"name": settings.ROOT_DOMAIN}
     )
     return SphereFactory(site=site, name=site.name)
+
+
+@pytest.fixture
+def faker():
+    from faker import Faker as FakerLib  # noqa: PLC0415
+
+    fake = FakerLib()
+    # Wrap date_time methods to always include UTC timezone
+    original_date_time_between = fake.date_time_between
+
+    def date_time_between_tz(*args, **kwargs):
+        kwargs.setdefault("tzinfo", UTC)
+        return original_date_time_between(*args, **kwargs)
+
+    fake.date_time_between = date_time_between_tz
+    return fake
