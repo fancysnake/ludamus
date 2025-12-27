@@ -29,6 +29,7 @@ services:
         cd src &&
         django-admin migrate &&
         django-admin createcachetable &&
+        django-admin downloadvendor &&
         django-admin runserver 0.0.0.0:8000
       "
     volumes:

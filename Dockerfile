@@ -79,7 +79,8 @@ WORKDIR /app/src
 # Compile translation messages
 RUN django-admin compilemessages
 
-# Collect static files (requires SECRET_KEY to be set)
+# Download vendor dependencies and collect static files (requires SECRET_KEY to be set)
+RUN django-admin downloadvendor
 RUN django-admin collectstatic --noinput
 
 # Create cache table for production

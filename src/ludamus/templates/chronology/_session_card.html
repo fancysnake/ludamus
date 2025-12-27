@@ -21,15 +21,14 @@
             <!-- Session Metadata -->
             <div class="mb-2">
                 <small class="text-muted d-block mb-1">
-                    {% load bootstrap_icons %}
-                    {% bs_icon 'person-circle' %} {{ data.session.presenter_name|default:data.session.presenter_name }}
+                    <i class="bi bi-person-circle"></i> {{ data.session.presenter_name|default:data.session.presenter_name }}
                 </small>
                 <small class="text-muted d-block mb-1">
                     {% if data.session.agenda_item.space %}
-                        {% bs_icon 'geo-alt' %} {{ data.session.agenda_item.space.name }}
+                        <i class="bi bi-geo-alt"></i> {{ data.session.agenda_item.space.name }}
                     {% else %}
                         {% load i18n %}
-                        {% bs_icon 'geo-alt' %} {% translate "TBA" %}
+                        <i class="bi bi-geo-alt"></i> {% translate "TBA" %}
                     {% endif %}
                 </small>
             </div>
@@ -51,12 +50,12 @@
                     {% if data.session.min_age > 0 %}
                         <span class="badge bg-light text-dark me-1 mb-1"
                               title="Minimum age: {{ data.session.min_age }} years">
-                            {% bs_icon 'shield-check' %}
+                            <i class="bi bi-shield-check"></i>
                             {{ data.session.min_age }}+
                         </span>
                     {% else %}
                         <span class="badge bg-light text-dark me-1 mb-1" title="All ages welcome">
-                            {% bs_icon 'shield-check' %}
+                            <i class="bi bi-shield-check"></i>
                             {% translate "All ages" %}
                         </span>
                     {% endif %}
@@ -89,20 +88,20 @@
                                 <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                    class="btn btn-warning btn-sm"
                                    onclick="event.stopPropagation();">
-                                    {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
+                                    <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
                                 {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
                                     <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                        class="btn btn-success btn-sm"
                                        onclick="event.stopPropagation();">
-                                        {% bs_icon 'person-plus' %} {% translate "Enroll Now" %}
+                                        <i class="bi bi-person-plus"></i> {% translate "Enroll Now" %}
                                     </a>
                                 {% else %}
                                     <button class="btn btn-outline-secondary btn-sm"
                                             disabled
                                             title="{% translate "Only connected users can enroll" %}">
-                                        {% bs_icon 'person-plus' %} {% translate "Enroll" %}
+                                        <i class="bi bi-person-plus"></i> {% translate "Enroll" %}
                                     </button>
                                 {% endif %}
                             {% endif %}
@@ -112,13 +111,13 @@
                                 <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
                                    class="btn btn-warning btn-sm"
                                    onclick="event.stopPropagation();">
-                                    {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
+                                    <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
                                 <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
                                    class="btn btn-success btn-sm"
                                    onclick="event.stopPropagation();">
-                                    {% bs_icon 'person-plus' %} {% translate "Enroll Anonymously" %}
+                                    <i class="bi bi-person-plus"></i> {% translate "Enroll Anonymously" %}
                                 </a>
                             {% endif %}
                         {% else %}
@@ -126,17 +125,17 @@
                             <a href="{% url 'web:crowd:login-required' %}?next={% url 'web:chronology:event' slug=event.slug %}"
                                class="btn btn-primary btn-sm"
                                onclick="event.stopPropagation();">
-                                {% bs_icon 'box-arrow-in-right' %} {% translate "Login to Enroll" %}
+                                <i class="bi bi-box-arrow-in-right"></i> {% translate "Login to Enroll" %}
                             </a>
                         {% endif %}
                     {% else %}
                         <button class="btn btn-outline-secondary btn-sm" disabled>
                             {% if ended %}
-                                {% bs_icon 'check-circle' %} {% translate "Session Ended" %}
+                                <i class="bi bi-check-circle"></i> {% translate "Session Ended" %}
                             {% elif data.should_show_as_inactive %}
-                                {% bs_icon 'clock' %} {% translate "In Progress" %}
+                                <i class="bi bi-clock"></i> {% translate "In Progress" %}
                             {% else %}
-                                {% bs_icon 'lock' %} {% translate "Not Available" %}
+                                <i class="bi bi-lock"></i> {% translate "Not Available" %}
                             {% endif %}
                         </button>
                     {% endif %}

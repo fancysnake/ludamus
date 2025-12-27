@@ -200,3 +200,4 @@ src/ludamus/static/icon_cache/
 
 .beads/
 worktrees/
+**/static/vendor/*
