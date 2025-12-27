@@ -43,7 +43,7 @@ from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
 )
-from ludamus.gears import AcceptProposalService, AnonymousEnrollmentService
+from ludamus.mills import AcceptProposalService, AnonymousEnrollmentService
 from ludamus.pacts import (
     AuthenticatedRequestContext,
     NotFoundError,

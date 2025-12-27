@@ -76,10 +76,10 @@ point inward toward business logic.
 **Layer Structure (from inner to outer):**
 
 - **pacts** - Protocols/interfaces (DTOs and Protocol classes)
-- **gears** - Domain logic / business services - depends only on `pacts`
+- **mills** - Domain logic / business services - depends only on `pacts`
 - **links** - Outbound adapters (repositories) - depends on `pacts`
 - **gates** - Inbound adapters (views, API handlers) - depends on `pacts`
-- **specs** - Settings/configuration - depends on `pacts`
+- **norms** - Settings/configuration - depends on `pacts`
 - **binds** - Entrypoints & dependency injection - can use all layers
 
 ### Current File Structure (Transitional)
@@ -87,7 +87,7 @@ point inward toward business logic.
 ```text
 src/ludamus/
 ├── pacts.py                    # DTOs, Protocols, RequestContext
-├── gears.py                    # Business logic services
+├── mills.py                    # Business logic services
 ├── binds.py                    # DI middleware (injects UoW into request)
 ├── links/
 │   └── db/
@@ -95,7 +95,7 @@ src/ludamus/
 │           ├── storage.py      # Identity Map (@dataclass with dicts)
 │           ├── repositories.py # Repository implementations
 │           └── uow.py          # Unit of Work (aggregates repos)
-├── adapters/                   # (migrating to gates/, specs/)
+├── adapters/                   # (migrating to gates/, norms/)
 │   ├── db/django/              # Django models, admin, migrations
 │   └── web/django/             # Views, forms, URLs, middlewares
 ├── config/                     # Django settings
@@ -191,10 +191,10 @@ proposal = self.request.uow.proposals.read(proposal_id)
 
 The `importlinter` configuration enforces these rules (see `pyproject.toml`):
 
-- `specs`, `pacts`, `gears` cannot import from `links` or `gates`
-- `links` cannot import from `gates`, `gears`, or `specs`
-- `gates` cannot import from `links` or `specs`
-- `gears` cannot import from `gates`, `links`, or `specs`
+- `norms`, `pacts`, `mills` cannot import from `links` or `gates`
+- `links` cannot import from `gates`, `mills`, or `norms`
+- `gates` cannot import from `links` or `norms`
+- `mills` cannot import from `gates`, `links`, or `norms`
 
 Run `lint-imports` to verify compliance.
 
@@ -266,7 +266,7 @@ Defined in `docs/TESTING_STRATEGY.md`:
 
 ### Testing by Layer
 
-**Testing Gears (Business Logic):**
+**Testing Mills (Business Logic):**
 
 - Pure Python tests, no Django required
 - Fast, no database
@@ -382,7 +382,7 @@ src/ludamus/
 │   └── web/django/       # Views, forms, URLs (MOVING to gates/)
 ├── links/
 │   └── dao.py            # Old DAO file (REPLACED by repositories)
-└── config/               # Django settings (MOVING to specs/)
+└── config/               # Django settings (MOVING to norms/)
 ```
 
 **Target Structure:**
@@ -390,11 +390,11 @@ src/ludamus/
 ```text
 src/ludamus/
 ├── pacts.py              # Protocols, DTOs
-├── gears.py              # Business logic
+├── mills.py              # Business logic
 ├── binds.py              # DI / middleware
 ├── links/db/django/      # Repositories, Storage, UoW
 ├── gates/web/            # Views, forms (future)
-├── specs/                # Configuration (future)
+├── norms/                # Configuration (future)
 └── adapters/db/django/   # Models only (Django-specific)
 ```
 
@@ -408,5 +408,5 @@ src/ludamus/
 ### What's Remaining
 
 - Move views from `adapters/web/django/` to `gates/web/`
-- Move settings to `specs/`
-- Extract business logic from views to `gears`
+- Move settings to `norms/`
+- Extract business logic from views to `mills`
