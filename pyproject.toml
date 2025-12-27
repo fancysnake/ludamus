@@ -54,6 +54,7 @@ pytest-factoryboy = "^2.8.1"
 responses = "^0.25.8"
 
 # BLACK
+pre-commit = "^4.5.1"
 
 [tool.black]
 line-length = 88

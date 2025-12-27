@@ -49,7 +49,3 @@ repos:
     rev: v1.36.4
     hooks:
       - id: djlint-django
-  - repo: https://github.com/fpgmaas/deptry.git
-    rev: "0.24.0"
-    hooks:
-      - id: deptry
