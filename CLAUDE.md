@@ -14,23 +14,35 @@ separation between business logic and infrastructure.
 ### Environment Setup
 
 - Python version: 3.14
+- Version manager: mise (manages Python version + virtualenv + tasks)
 - Package manager: Poetry
-- Task runner: Poe the Poet (configured via `pyproject.toml`)
+
+**First-time setup:**
+
+```bash
+# Install mise (https://mise.jdx.dev)
+curl https://mise.run | sh
+
+# Install Python and create virtualenv
+mise install
+
+# Install dependencies
+poetry install
+```
 
 ### Common Commands
 
 **Development Server:**
 
 ```bash
-poe start  # Runs on ludamus.local:8000
+mise run start  # Runs on ludamus.local:8000
 ```
 
 **Testing:**
 
 ```bash
-poe test        # Run all tests with template variable checking
-poe newtest     # Run unit and integration tests with coverage
-poe unittest    # Run only unit tests
+mise run test        # Run all tests with template variable checking
+mise run unittest    # Run only unit tests
 pytest tests/unit                           # Unit tests only
 pytest tests/integration                    # Integration tests only
 pytest tests/integration/views/test_foo.py  # Single test file
@@ -39,30 +51,30 @@ pytest tests/integration/views/test_foo.py  # Single test file
 **Code Quality:**
 
 ```bash
-poe check     # Format and lint (black, ruff, codespell, mypy, djlint, pylint)
-poe prcheck   # Pre-commit checks (without formatting)
+mise run check     # Format and lint (black, ruff, codespell, mypy, djlint, pylint)
+mise run prcheck   # Pre-commit checks (without formatting)
 ```
 
 **Individual Tools:**
 
 ```bash
-poe black         # Format code
-poe ruff-fix      # Fix linting issues
-poe mypy          # Type checking
-poe pylint        # Linting
-poe djlint-format # Format Django templates
+mise run black         # Format code
+mise run ruff-fix      # Fix linting issues
+mise run mypy          # Type checking
+mise run pylint        # Linting
+mise run djlint-format # Format Django templates
 ```
 
 **Django Management:**
 
 ```bash
-poe dj <command>  # Alias for django-admin
+mise run dj <command>  # Alias for django-admin
 ```
 
 **Dependency Management:**
 
 ```bash
-poe update  # Update pre-commit, pip, poetry, and all dependencies
+mise run update  # Update pre-commit, pip, poetry, and all dependencies
 ```
 
 ## Architecture

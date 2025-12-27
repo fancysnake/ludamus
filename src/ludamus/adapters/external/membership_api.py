@@ -1,13 +1,17 @@
 """External API integration for membership lookup."""
 
+from __future__ import annotations
+
 import logging
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 import requests
 from django.conf import settings
 from django.utils import timezone
 
-from ludamus.adapters.db.django.models import EnrollmentConfig, UserEnrollmentConfig
+if TYPE_CHECKING:
+    from ludamus.adapters.db.django.models import EnrollmentConfig, UserEnrollmentConfig
 
 logger = logging.getLogger(__name__)
 
@@ -145,6 +149,10 @@ def _create_user_config_from_api(
     user_email: str,
     api_client: MembershipApiClient,
 ) -> UserEnrollmentConfig | None:
+    from ludamus.adapters.db.django.models import (  # noqa: PLC0415
+        UserEnrollmentConfig as UserEnrollmentConfigModel,
+    )
+
     try:
         membership_count = api_client.fetch_membership_count(user_email)
     except MembershipAPIError:
@@ -154,7 +162,7 @@ def _create_user_config_from_api(
 
     if membership_count == 0:
         # User has no membership - create config with 0 slots and mark as API-fetched
-        user_config = UserEnrollmentConfig.objects.create(
+        user_config = UserEnrollmentConfigModel.objects.create(
             enrollment_config=enrollment_config,
             user_email=user_email,
             allowed_slots=0,
@@ -166,7 +174,7 @@ def _create_user_config_from_api(
 
     # User has membership - create config with slots based on membership count
     # You can customize this logic based on your business rules
-    user_config = UserEnrollmentConfig.objects.create(
+    user_config = UserEnrollmentConfigModel.objects.create(
         enrollment_config=enrollment_config,
         user_email=user_email,
         allowed_slots=membership_count,
