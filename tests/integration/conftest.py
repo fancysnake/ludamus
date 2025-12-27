@@ -309,8 +309,8 @@ def sphere_fixture(settings, transactional_db):  # noqa: ARG001
     return SphereFactory(site=site, name=site.name)
 
 
-@pytest.fixture
-def faker():
+@pytest.fixture(name="faker")
+def faker_fixture():
     from faker import Faker as FakerLib  # noqa: PLC0415
 
     fake = FakerLib()
