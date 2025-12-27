@@ -41,7 +41,6 @@ factory-boy = "^3.3.3"
 faker = "^39.0.0"
 freezegun = "^1.5.2"
 mypy = "^1.16.0"
-poethepoet = "^0.38.0"
 pylint = "^4.0.3"
 pytest = "^9.0.1"
 pytest-cov = "^7.0.0"
@@ -50,61 +49,9 @@ ruff = "^0.14.0"
 types-authlib = "^1.5.0.20250516"
 pytest-freezeblaster = "^2.0.4"
 
-# POE
 types-requests = "^2.32.4.20250809"
 pytest-factoryboy = "^2.8.1"
 responses = "^0.25.8"
-
-[tool.poe]
-envfile = ".env.ci"
-
-[tool.poe.env]
-PYTHONPATH = "src"
-DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
-
-[tool.poe.tasks]
-# Tools
-black = "black ."
-black-check = "black --check ."
-codespell = "codespell src tests/unit tests/integration"
-deptry = "deptry ."
-djlint = "djlint src --profile=django"
-djlint-format = "djlint src --reformat --format-css --format-js --profile=django"
-mypy = "mypy ."
-pylint = "pylint ."
-ruff = "ruff check ."
-ruff-fix = "ruff check --fix  ."
-# Django
-dj = "django-admin"
-# Tests
-unittest = "pytest tests/unit --cov=tests.unit --cov=ludamus --fail-on-template-vars"
-# Series
-check = [
-    "black",
-    "ruff-fix",
-    "codespell",
-    "mypy",
-    "djlint",
-    "djlint-format",
-    "pylint",
-]
-prcheck = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint"]
-update = [
-    { cmd = "pre-commit autoupdate" },
-    { cmd = "pip install -U pip" },
-    { cmd = "pip install -U poetry" },
-    { cmd = "poetry update" },
-    { cmd = "deptry ." },
-    { cmd = "poetry show -o" },
-]
-
-[tool.poe.tasks.test]
-cmd = "pytest tests tests/integration tests/unit --fail-on-template-vars"
-envfile = ".testenv"
-
-[tool.poe.tasks.start]
-cmd = "django-admin runserver ludamus.local:8000"
-envfile = ".env.dev"
 
 # BLACK
 

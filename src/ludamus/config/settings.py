@@ -342,7 +342,7 @@ MEMBERSHIP_API_CHECK_INTERVAL = int(
 )  # minutes
 
 # Vendor Dependencies Configuration
-# Download with: poe dj downloadvendor
+# Download with: mise dj downloadvendor
 # SHA-384 hashes use base64 encoding (SRI format)
 VENDOR_DEPENDENCIES: list[dict[str, str]] = [
     {
