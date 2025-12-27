@@ -6,9 +6,28 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Event webapp">
+        <meta name="description"
+              content="{% block meta_description %}Event webapp{% endblock meta_description %}">
         <meta name="keywords"
               content="events, conferences, workshops, seminars, meetups, registration, enrollment, sessions, networking, professional development, tech events, design workshops, free events">
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ request.build_absolute_uri }}">
+        <meta property="og:title"
+              content="{% block og_title %}{{ current_sphere.name }}{% endblock og_title %}">
+        <meta property="og:description"
+              content="{% block og_description %}Event webapp{% endblock og_description %}">
+        <meta property="og:image"
+              content="{% block og_image %}https://zagrajmy.net/static/logo.png{% endblock og_image %}">
+        <meta property="og:site_name" content="{{ current_sphere.name }}">
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title"
+              content="{% block twitter_title %}{{ current_sphere.name }}{% endblock twitter_title %}">
+        <meta name="twitter:description"
+              content="{% block twitter_description %}Event webapp{% endblock twitter_description %}">
+        <meta name="twitter:image"
+              content="{% block twitter_image %}https://zagrajmy.net/static/logo.png{% endblock twitter_image %}">
         <title>
             {% block title %}
             {% endblock title %}

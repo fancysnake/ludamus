@@ -5,6 +5,21 @@
 {% block title %}
     {{ event.name }}
 {% endblock title %}
+{% block og_title %}
+    {{ event.name }}
+{% endblock og_title %}
+{% block twitter_title %}
+    {{ event.name }}
+{% endblock twitter_title %}
+{% block meta_description %}
+    {{ event.description|truncatewords:30 }}
+{% endblock meta_description %}
+{% block og_description %}
+    {{ event.description|truncatewords:30 }}
+{% endblock og_description %}
+{% block twitter_description %}
+    {{ event.description|truncatewords:30 }}
+{% endblock twitter_description %}
 {% block header %}
     {{ event.name }}
 {% endblock header %}
