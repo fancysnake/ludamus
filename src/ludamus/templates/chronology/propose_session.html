@@ -108,9 +108,7 @@
                                 {% for category in tag_categories %}
                                     <div class="mb-3">
                                         <label for="tags_{{ category.id }}" class="form-label fw-normal">
-                                            {% if category.icon %}
-                                                {% bs_icon category.icon %}
-                                            {% endif %}
+                                            {% if category.icon %}<i class="bi bi-{{ category.icon }}"></i>{% endif %}
                                             {{ category.name }}
                                         </label>
                                         {% if category.input_type == 'select' %}

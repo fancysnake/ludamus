@@ -63,9 +63,7 @@
                         {% for tag in data.filterable_tags|slice:":2" %}
                             <span class="badge bg-light text-dark me-1 mb-1 filterable-tag"
                                   title="{{ tag.name }}">
-                                {% if tag.category.icon %}
-                                    {% bs_icon tag.category.icon %}
-                                {% endif %}
+                                {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
                                 {{ tag.name }}
                             </span>
                         {% endfor %}

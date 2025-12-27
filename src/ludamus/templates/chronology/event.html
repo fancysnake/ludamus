@@ -540,9 +540,7 @@
                                         <p>
                                             {% for tag in proposal.tags.all %}
                                                 <span class="badge bg-secondary me-1 modal-tag" title="{{ tag.name }}">
-                                                    {% if tag.category.icon %}
-                                                        {% bs_icon tag.category.icon %}
-                                                    {% endif %}
+                                                    {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
                                                     {{ tag.name }}
                                                 </span>
                                             {% endfor %}
@@ -819,9 +817,7 @@
                                                 {% for tag in data.session.tags.all %}
                                                     <span class="badge bg-secondary me-1 mb-1 session-detail-tag"
                                                           title="{{ tag.name }} ({{ tag.category.name }})">
-                                                        {% if tag.category.icon %}
-                                                            {% bs_icon tag.category.icon %}
-                                                        {% endif %}
+                                                        {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
                                                         {{ tag.name }}
                                                     </span>
                                                 {% endfor %}
