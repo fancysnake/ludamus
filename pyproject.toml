@@ -256,9 +256,9 @@ convention = "pep257"
 root_package = "ludamus"
 
 [[tool.importlinter.contracts]]
-name = "gates not in gears"
+name = "gates not in mills"
 type = "forbidden"
-source_modules = ["ludamus.gears"]
+source_modules = ["ludamus.mills"]
 forbidden_modules = ["ludamus.gates"]
 
 [[tool.importlinter.contracts]]
@@ -274,10 +274,10 @@ source_modules = ["ludamus.pacts"]
 forbidden_modules = ["ludamus.gates"]
 
 [[tool.importlinter.contracts]]
-name = "gears not in specs"
+name = "mills not in norms"
 type = "forbidden"
-source_modules = ["ludamus.specs"]
-forbidden_modules = ["ludamus.gears"]
+source_modules = ["ludamus.norms"]
+forbidden_modules = ["ludamus.mills"]
 
 [[tool.importlinter.contracts]]
 name = "links not in gates"
@@ -286,9 +286,9 @@ source_modules = ["ludamus.gates"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
-name = "links not in gears"
+name = "links not in mills"
 type = "forbidden"
-source_modules = ["ludamus.gears"]
+source_modules = ["ludamus.mills"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
@@ -298,31 +298,31 @@ source_modules = ["ludamus.pacts"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
-name = "links not in specs"
+name = "links not in norms"
 type = "forbidden"
-source_modules = ["ludamus.specs"]
+source_modules = ["ludamus.norms"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
-name = "specs not in gates"
+name = "norms not in gates"
 type = "forbidden"
 source_modules = ["ludamus.gates"]
-forbidden_modules = ["ludamus.specs"]
+forbidden_modules = ["ludamus.norms"]
 
 [[tool.importlinter.contracts]]
-name = "specs not in gears"
+name = "norms not in mills"
 type = "forbidden"
-source_modules = ["ludamus.gears"]
-forbidden_modules = ["ludamus.specs"]
+source_modules = ["ludamus.mills"]
+forbidden_modules = ["ludamus.norms"]
 
 [[tool.importlinter.contracts]]
-name = "specs not in links"
+name = "norms not in links"
 type = "forbidden"
 source_modules = ["ludamus.links"]
-forbidden_modules = ["ludamus.specs"]
+forbidden_modules = ["ludamus.norms"]
 
 [[tool.importlinter.contracts]]
-name = "specs not in pacts"
+name = "norms not in pacts"
 type = "forbidden"
 source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.specs"]
+forbidden_modules = ["ludamus.norms"]
