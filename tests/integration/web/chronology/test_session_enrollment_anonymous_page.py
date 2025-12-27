@@ -47,7 +47,7 @@ class TestSessionEnrollmentAnonymousPageView:
     def test_get_different_site(self, agenda_item, client, method):
         session = client.session
         session["anonymous_enrollment_active"] = True
-        session["anonymous_site_id"] = 123
+        session["anonymous_site_id"] = agenda_item.session.sphere.site_id + 1000
         session.save()
 
         response = getattr(client, method)(self.get_url(agenda_item.session.id))

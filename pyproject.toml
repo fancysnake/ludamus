@@ -23,7 +23,6 @@ package-mode = false
 authlib = "~1.6.0"
 django = "~6.0.0"
 django-bootstrap5 = "~25.3.0"
-django-bootstrap-icons = "~0.9.0"
 gunicorn = "^23.0.0"
 django-environ = "^0.12.0"
 psycopg = "^3.2.9"
@@ -118,7 +117,7 @@ target-version = ['py314']
 # CODESPELL
 
 [tool.codespell]
-skip = 'node_modules,tests/e2e,*.po,*.lock'
+skip = 'node_modules,tests/e2e,*.po,*.lock,vendor'
 
 # COVERAGE
 
@@ -144,13 +143,7 @@ precision = 2
 known_first_party = ["ludamus"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = [
-    "django-bootstrap5",
-    "django-bootstrap-icons",
-    "gunicorn",
-    "psycopg",
-    "django-extensions",
-]
+DEP002 = ["django-bootstrap5", "gunicorn", "psycopg", "django-extensions"]
 DEP004 = ["debug_toolbar"]
 
 # MYPY

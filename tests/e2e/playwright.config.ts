@@ -30,7 +30,7 @@ loadEnv(path.join(repoRoot, '.env'));
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:8000`;
 
 const WEB_COMMAND = process.env.CI
-  ? 'poetry run sh -c "django-admin migrate --noinput && django-admin createcachetable && python tests/e2e/scripts/bootstrap_data.py && django-admin runserver 0.0.0.0:8000"'
+  ? 'poetry run sh -c "django-admin migrate --noinput && django-admin createcachetable && django-admin downloadvendor && python tests/e2e/scripts/bootstrap_data.py && django-admin runserver --insecure 0.0.0.0:8000"'
   : 'docker compose up';
 
 export default defineConfig({

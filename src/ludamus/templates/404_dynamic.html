@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% load bootstrap_icons %}
 {% block title %}
     {% translate "Page Not Found" %} - 404
 {% endblock title %}
@@ -14,7 +13,9 @@
                 <div class="error-template py-5">
                     <h1 class="display-1 text-muted">{{ error_code }}</h1>
                     <div class="mb-4">
-                        <p class="fs-1">{% bs_icon icon size='3em' %}</p>
+                        <p class="fs-1">
+                            <i class="bi bi-{{ icon }}"></i>
+                        </p>
                     </div>
                     <h2>{{ title }}</h2>
                     <div class="error-details mb-4">
@@ -25,9 +26,9 @@
                         </p>
                     </div>
                     <div class="error-actions">
-                        <a href="{% url 'web:index' %}" class="btn btn-primary">{% bs_icon 'house' %} {% translate "Go to Home" %}</a>
+                        <a href="{% url 'web:index' %}" class="btn btn-primary"><i class="bi bi-house"></i> {% translate "Go to Home" %}</a>
                         <button onclick="history.back()" class="btn btn-secondary">
-                            {% bs_icon 'arrow-left' %} {% translate "Go Back" %}
+                            <i class="bi bi-arrow-left"></i> {% translate "Go Back" %}
                         </button>
                     </div>
                 </div>
