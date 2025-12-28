@@ -939,6 +939,25 @@ testing = ["coverage", "eventlet", "gevent", "pytest", "pytest-cov"]
 tornado = ["tornado (>=0.2)"]
 
 [[package]]
+name = "heroicons"
+version = "2.13.0"
+description = "Use heroicons in your Django and Jinja templates."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "heroicons-2.13.0-py3-none-any.whl", hash = "sha256:682e3a61ede41cd9b78644977f2988d444ffb02626fe66cccd296d9fc3f4e465"},
+    {file = "heroicons-2.13.0.tar.gz", hash = "sha256:c49d919ee3fa19c79bbfc7c111b4849fe8fc3640e4904dfdc538ff592e18b452"},
+]
+
+[package.dependencies]
+django = {version = ">=2.2", optional = true, markers = "extra == \"django\""}
+
+[package.extras]
+django = ["django (>=2.2)"]
+jinja = ["jinja2 (>=2.8)"]
+
+[[package]]
 name = "identify"
 version = "2.6.15"
 description = "File identification library for Python"
@@ -2149,4 +2168,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14.0,<3.15"
-content-hash = "664e8fde3e0d527c08e40a78befcf484c2ca2197ed0e7391c053f6663b2b01e8"
+content-hash = "bb504594244d378fcf3fa7c729fe56ed8654e408fe1295c39dbd2afa6843bc9a"

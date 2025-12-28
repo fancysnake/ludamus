@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     # Third Party
     "django_bootstrap5",
     "django_extensions",
+    "heroicons",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
     "ludamus.adapters.db.django.apps.DBMainConfig",
@@ -193,7 +194,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Auth
 
 AUTH_USER_MODEL = "db_main.User"
-LOGIN_URL = "/crowd/user/login"
+LOGIN_URL = "/crowd/login-required/"
 
 # Sites
 
@@ -398,6 +399,12 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
         ),
         "filename": "fonts/bootstrap-icons.woff",
         "sha384": "IYfD9pNP/nesQsPyYtTdGCb4uhEWUmNF8GxaCvqcJFH+Of3c1b0VbH6hdHUonDSC",
+    },
+    {
+        "name": "tailwind",
+        "url": "https://cdn.tailwindcss.com",
+        "filename": "tailwind.min.js",
+        "sha384": "igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K",
     },
 ]
 

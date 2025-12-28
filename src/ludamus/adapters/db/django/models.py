@@ -88,6 +88,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     def full_name(self) -> str:
         return self.get_full_name()
 
+    @property
+    def initials(self) -> str:
+        """Return user initials (first letter of each word in name)."""
+        name = self.name or self.username or ""
+        return "".join(word[0].upper() for word in name.split() if word)[:2] or "?"
+
     class Meta:
         db_table = "user"
         verbose_name = _("user")
