@@ -53,61 +53,6 @@ types-requests = "^2.32.4.20250809"
 pytest-factoryboy = "^2.8.1"
 responses = "^0.25.8"
 
-[tool.poe]
-envfile = ".env.ci"
-
-[tool.poe.env]
-PYTHONPATH = "src"
-DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
-
-[tool.poe.tasks]
-# Tools
-black = "black ."
-black-check = "black --check ."
-codespell = "codespell src tests/unit tests/integration"
-deptry = "deptry ."
-djlint = "djlint . --profile=django"
-djlint-format = "djlint . --reformat --format-css --format-js --profile=django"
-mypy = "mypy ."
-pylint = "pylint ."
-ruff = "ruff check ."
-ruff-fix = "ruff check --fix ."
-# Django
-dj = "django-admin"
-# Tests
-unittest = "pytest tests/unit --cov=tests.unit --cov=ludamus --fail-on-template-vars"
-# Series
-check = [
-    "black",
-    "ruff-fix",
-    "codespell",
-    "mypy",
-    "djlint",
-    "djlint-format",
-    "pylint",
-]
-prcheck = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint"]
-update = [
-    { cmd = "pre-commit autoupdate" },
-    { cmd = "pip install -U pip" },
-    { cmd = "pip install -U poetry" },
-    { cmd = "poetry update" },
-    { cmd = "deptry ." },
-    { cmd = "poetry show -o" },
-]
-
-[tool.poe.tasks.test]
-cmd = "pytest tests --fail-on-template-vars"
-envfile = ".testenv"
-
-[tool.poe.tasks.newtest]
-cmd = "pytest -vxx tests/integration/web tests/unit --cov=ludamus"
-envfile = ".testenv"
-
-[tool.poe.tasks.start]
-cmd = "django-admin runserver ludamus.local:8000"
-envfile = ".env.dev"
-
 # BLACK
 pre-commit = "^4.5.1"
 
