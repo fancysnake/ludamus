@@ -1,15 +1,33 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
-{% load bootstrap_icons %}
 {% load static %}
 {% get_current_language as LANGUAGE_CODE %}
 <html lang="{{ LANGUAGE_CODE }}">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Event webapp">
+        <meta name="description"
+              content="{% block meta_description %}Event webapp{% endblock meta_description %}">
         <meta name="keywords"
               content="events, conferences, workshops, seminars, meetups, registration, enrollment, sessions, networking, professional development, tech events, design workshops, free events">
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ request.build_absolute_uri }}">
+        <meta property="og:title"
+              content="{% block og_title %}{{ current_sphere.name }}{% endblock og_title %}">
+        <meta property="og:description"
+              content="{% block og_description %}Event webapp{% endblock og_description %}">
+        <meta property="og:image"
+              content="{% block og_image %}https://zagrajmy.net/static/logo.png{% endblock og_image %}">
+        <meta property="og:site_name" content="{{ current_sphere.name }}">
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title"
+              content="{% block twitter_title %}{{ current_sphere.name }}{% endblock twitter_title %}">
+        <meta name="twitter:description"
+              content="{% block twitter_description %}Event webapp{% endblock twitter_description %}">
+        <meta name="twitter:image"
+              content="{% block twitter_image %}https://zagrajmy.net/static/logo.png{% endblock twitter_image %}">
         <title>
             {% block title %}
             {% endblock title %}
@@ -18,7 +36,8 @@
         <link rel="shortcut icon"
               type="image/x-icon"
               href="{% static 'favicon.ico' %}">
-        {% bootstrap_css %}
+        <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+        <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons.min.css' %}">
         <link rel="stylesheet" href="{% static 'css/common.css' %}">
         {% if request.session.theme %}
             <link rel="stylesheet"
@@ -26,21 +45,20 @@
         {% else %}
             <link rel="stylesheet" href="{% static 'css/themes/cold-steel.css' %}">
         {% endif %}
-        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     </head>
     <body>
         <nav class="navbar navbar-expand navbar-dark bg-primary">
             <a class="navbar-brand fw-bold"
                href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}">
-                {% bs_icon 'people' %} {{ current_sphere.name }}
+                <i class="bi bi-people"></i> {{ current_sphere.name }}
             </a>
             <div class="navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    {% if request.user.is_authenticated and request.user.name %}
+                    {% if request.user.is_authenticated and request.user.full_name %}
                         <li class="nav-item">
                             <span class="navbar-text text-light me-3">
-                                {% bs_icon 'person-circle' %}
-                                {{ request.user.name }}
+                                <i class="bi bi-person-circle"></i>
+                                {{ request.user.full_name }}
                             </span>
                         </li>
                     {% endif %}
@@ -48,14 +66,14 @@
                         <li class="nav-item">
                             <a class="btn btn-outline-light me-2"
                                href="{% url 'web:crowd:profile' %}">
-                                {% bs_icon 'person-gear' %} {% translate "Edit Profile" %}
+                                <i class="bi bi-person-gear"></i> {% translate "Edit Profile" %}
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-light me-2"" href="{% url 'web:crowd:auth0:logout' %}"> {% bs_icon 'person-gear' %} {% translate "Logout" %} </a> </li>
+                            <a class="btn btn-light me-2"" href="{% url 'web:crowd:auth0:logout' %}"> <i class="bi bi-person-gear"></i> {% translate "Logout" %} </a> </li>
                     {% else %}
                         <li class="nav-item"> <a class="btn btn-light me-2"" href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}">
-                            {% bs_icon 'box-arrow-in-right' %} {% translate "Login" %}
+                            <i class="bi bi-box-arrow-in-right"></i> {% translate "Login" %}
                         </a>
                     </li>
                 {% endif %}
@@ -67,7 +85,7 @@
             {% for message in messages %}
                 {% if message.tags == 'error' %}
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        {% bs_icon 'exclamation-triangle-fill' %}
+                        <i class="bi bi-exclamation-triangle-fill"></i>
                         {{ message }}
                         <button type="button"
                                 class="btn-close"
@@ -76,7 +94,7 @@
                     </div>
                 {% elif message.tags == 'warning' %}
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        {% bs_icon 'exclamation-triangle' %}
+                        <i class="bi bi-exclamation-triangle"></i>
                         {{ message }}
                         <button type="button"
                                 class="btn-close"
@@ -85,7 +103,7 @@
                     </div>
                 {% elif message.tags == 'success' %}
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        {% bs_icon 'check-circle-fill' %}
+                        <i class="bi bi-check-circle-fill"></i>
                         {{ message }}
                         <button type="button"
                                 class="btn-close"
@@ -94,7 +112,7 @@
                     </div>
                 {% elif message.tags == 'info' %}
                     <div class="alert alert-info alert-dismissible fade show" role="alert">
-                        {% bs_icon 'info-circle-fill' %}
+                        <i class="bi bi-info-circle-fill"></i>
                         {{ message }}
                         <button type="button"
                                 class="btn-close"
@@ -104,7 +122,7 @@
                 {% else %}
                     <div class="alert alert-secondary alert-dismissible fade show"
                          role="alert">
-                        {% bs_icon 'chat-dots' %}
+                        <i class="bi bi-chat-dots"></i>
                         {{ message }}
                         <button type="button"
                                 class="btn-close"
@@ -183,6 +201,8 @@
             </div>
         </div>
     </footer>
-    {% bootstrap_javascript %}
+    <script src="{% static 'vendor/popper.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'vendor/htmx.min.js' %}"></script>
 </body>
 </html>

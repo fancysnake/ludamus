@@ -22,10 +22,9 @@
             <!-- Session Metadata (condensed) -->
             <div class="mb-1">
                 <small class="text-muted d-block">
-                    {% load bootstrap_icons %}
-                    {% bs_icon 'person-circle' %} {{ data.session.presenter_name|default:data.session.presenter_name }}
+                    <i class="bi bi-person-circle"></i> {{ data.session.presenter_name|default:data.session.presenter_name }}
                     {% if data.session.agenda_item.space %}
-                        | {% bs_icon 'geo-alt' %} {{ data.session.agenda_item.space.name }}
+                        | <i class="bi bi-geo-alt"></i> {{ data.session.agenda_item.space.name }}
                     {% endif %}
                 </small>
             </div>
@@ -33,13 +32,13 @@
             <div class="mt-auto d-flex justify-content-between align-items-center">
                 <small class="text-muted">
                     {% if ended %}
-                        {% bs_icon 'check-circle' %} {% translate "Completed" %}
+                        <i class="bi bi-check-circle"></i> {% translate "Completed" %}
                     {% elif not data.session.is_enrollment_available %}
-                        {% bs_icon 'clock' %} {% translate "Not Yet Available" %}
+                        <i class="bi bi-clock"></i> {% translate "Not Yet Available" %}
                     {% endif %}
                 </small>
                 <small>
-                    {% bs_icon 'people' %} {{ data.session.enrolled_count }}
+                    <i class="bi bi-people"></i> {{ data.session.enrolled_count }}
                     {% if data.session.waiting_count > 0 %}<span class="text-warning">+{{ data.session.waiting_count }}</span>{% endif %}
                 </small>
             </div>

@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load django_bootstrap5 %}
-{% load bootstrap_icons %}
 {% block title %}
     {% translate "Anonymous Enrollment" %} - {{ session.title }}
 {% endblock title %}
@@ -17,7 +16,9 @@
             <!-- Anonymous Code Display -->
             <div class="alert alert-info mb-4" role="alert">
                 <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">{% bs_icon 'key' %}</div>
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-key"></i>
+                    </div>
                     <div class="flex-grow-1 ms-3">
                         <h6 class="mb-1">{% translate "Your Anonymous Code" %}</h6>
                         <p class="mb-0">
@@ -30,7 +31,9 @@
             <!-- Session Details Card -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">{% bs_icon 'calendar-event' %} {{ session.title }}</h5>
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-event"></i> {{ session.title }}
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -77,9 +80,9 @@
                 <div class="card-header {% if is_enrolled %}bg-warning{% else %}bg-success{% endif %} text-white">
                     <h5 class="mb-0">
                         {% if is_enrolled %}
-                            {% bs_icon 'gear' %} {% translate "Manage Enrollment" %}
+                            <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
                         {% else %}
-                            {% bs_icon 'person-plus' %} {% translate "Enroll in Session" %}
+                            <i class="bi bi-person-plus"></i> {% translate "Enroll in Session" %}
                         {% endif %}
                     </h5>
                 </div>
@@ -89,9 +92,11 @@
                         {% if is_enrolled %}
                             <div class="alert alert-success" role="alert">
                                 <div class="d-flex">
-                                    <div class="flex-shrink-0">{% bs_icon 'check-circle' %}</div>
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-check-circle"></i>
+                                    </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <strong>{{ anonymous_user.name }}</strong> {% translate "is already enrolled in this session." %}
+                                        <strong>{{ anonymous_user.full_name }}</strong> {% translate "is already enrolled in this session." %}
                                         {% if existing_enrollment.status == "waiting" %}
                                             <br>
                                             <small class="text-muted">{% translate "Status: On waiting list" %}</small>
@@ -102,7 +107,9 @@
                         {% elif needs_user_data %}
                             <div class="alert alert-warning" role="alert">
                                 <div class="d-flex">
-                                    <div class="flex-shrink-0">{% bs_icon 'exclamation-triangle' %}</div>
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </div>
                                     <div class="flex-grow-1 ms-3">{% translate "Please provide your name to complete the enrollment." %}</div>
                                 </div>
                             </div>
@@ -115,7 +122,7 @@
                                            class="form-control"
                                            id="name"
                                            name="name"
-                                           value="{{ anonymous_user.name|default:'' }}"
+                                           value="{{ anonymous_user.full_name }}"
                                            required>
                                     <div class="form-text">
                                         {% translate "Your public display name that others will see. This can be a nickname and does not need to be your legal name." %}
@@ -125,9 +132,11 @@
                         {% else %}
                             <div class="alert alert-info" role="alert">
                                 <div class="d-flex">
-                                    <div class="flex-shrink-0">{% bs_icon 'info-circle' %}</div>
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-info-circle"></i>
+                                    </div>
                                     <div class="flex-grow-1 ms-3">
-                                        {% translate "Click below to enroll" %} <strong>{{ anonymous_user.name }}</strong> {% translate "in this session." %}
+                                        {% translate "Click below to enroll" %} <strong>{{ anonymous_user.full_name }}</strong> {% translate "in this session." %}
                                     </div>
                                 </div>
                             </div>
@@ -135,15 +144,15 @@
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'web:chronology:event' slug=event.slug %}"
                                class="btn btn-outline-secondary">
-                                {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
+                                <i class="bi bi-arrow-left"></i> {% translate "Back to Event" %}
                             </a>
                             {% if is_enrolled %}
                                 <button type="submit" name="action" value="cancel" class="btn btn-danger">
-                                    {% bs_icon 'person-dash' %} {% translate "Cancel Enrollment" %}
+                                    <i class="bi bi-person-dash"></i> {% translate "Cancel Enrollment" %}
                                 </button>
                             {% else %}
                                 <button type="submit" name="action" value="enroll" class="btn btn-success">
-                                    {% bs_icon 'person-plus' %}
+                                    <i class="bi bi-person-plus"></i>
                                     {% if needs_user_data %}
                                         {% translate "Complete Enrollment" %}
                                     {% else %}

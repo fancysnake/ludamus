@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load django_bootstrap5 %}
-{% load bootstrap_icons %}
 {% block title %}
     {% translate "Accept Proposal" %} - {{ proposal.title }}
 {% endblock title %}
@@ -17,7 +16,9 @@
             <!-- Proposal Details Card -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">{% bs_icon 'lightbulb' %} {{ proposal.title }}</h5>
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightbulb"></i> {{ proposal.title }}
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -35,9 +36,7 @@
                                 <p>
                                     {% for tag in proposal.tags.all %}
                                         <span class="badge bg-light text-dark me-1">
-                                            {% if tag.category.icon %}
-                                                {% bs_icon tag.category.icon %}
-                                            {% endif %}
+                                            {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
                                             {{ tag.name }}
                                         </span>
                                     {% endfor %}
@@ -70,7 +69,9 @@
             <!-- Assignment Form Card -->
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">{% bs_icon 'calendar-check' %} {% translate "Assign to Schedule" %}</h5>
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-check"></i> {% translate "Assign to Schedule" %}
+                    </h5>
                 </div>
                 <div class="card-body">
                     <form method="post"
@@ -78,7 +79,7 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="space" class="form-label">
-                                {% bs_icon 'geo-alt' %} {% translate "Space" %} <span class="text-danger">*</span>
+                                <i class="bi bi-geo-alt"></i> {% translate "Space" %} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select" id="space" name="space" required>
                                 <option value="">{% translate "Select a space..." %}</option>
@@ -87,7 +88,7 @@
                         </div>
                         <div class="mb-4">
                             <label for="time_slot" class="form-label">
-                                {% bs_icon 'clock' %} {% translate "Time Slot" %} <span class="text-danger">*</span>
+                                <i class="bi bi-clock"></i> {% translate "Time Slot" %} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select" id="time_slot" name="time_slot" required>
                                 <option value="">{% translate "Select a time slot..." %}</option>
@@ -106,13 +107,13 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <button type="submit" class="btn btn-success w-100">
-                                    {% bs_icon 'check-lg' %} {% translate "Accept and Add to Agenda" %}
+                                    <i class="bi bi-check-lg"></i> {% translate "Accept and Add to Agenda" %}
                                 </button>
                             </div>
                             <div class="col-md-6">
                                 <a href="{% url 'web:chronology:event' slug=event.slug %}"
                                    class="btn btn-outline-secondary w-100">
-                                    {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
+                                    <i class="bi bi-arrow-left"></i> {% translate "Back to Event" %}
                                 </a>
                             </div>
                         </div>

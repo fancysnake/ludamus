@@ -9,7 +9,7 @@ authors = [
 ]
 license = { text = "BSD-3-Clause license" }
 readme = "README.md"
-requires-python = ">=3.13.0,<3.14"
+requires-python = ">=3.14.0,<3.15"
 dynamic = ['dependencies']
 
 [build-system]
@@ -21,9 +21,8 @@ package-mode = false
 
 [tool.poetry.dependencies]
 authlib = "~1.6.0"
-django = "~5.2.2"
+django = "~6.0.0"
 django-bootstrap5 = "~25.3.0"
-django-bootstrap-icons = "~0.9.0"
 gunicorn = "^23.0.0"
 django-environ = "^0.12.0"
 psycopg = "^3.2.9"
@@ -39,10 +38,9 @@ django-debug-toolbar = "^6.0.0"
 django-stubs = "^5.2.0"
 djlint = "^1.36.4"
 factory-boy = "^3.3.3"
-faker = "^38.2.0"
+faker = "^39.0.0"
 freezegun = "^1.5.2"
 mypy = "^1.16.0"
-poethepoet = "^0.38.0"
 pylint = "^4.0.3"
 pytest = "^9.0.1"
 pytest-cov = "^7.0.0"
@@ -51,9 +49,9 @@ ruff = "^0.14.0"
 types-authlib = "^1.5.0.20250516"
 pytest-freezeblaster = "^2.0.4"
 
-# POE
 types-requests = "^2.32.4.20250809"
 pytest-factoryboy = "^2.8.1"
+responses = "^0.25.8"
 
 [tool.poe]
 envfile = ".env.ci"
@@ -103,7 +101,7 @@ cmd = "pytest tests --fail-on-template-vars"
 envfile = ".testenv"
 
 [tool.poe.tasks.newtest]
-cmd = "pytest -vxx tests/integration/views tests/unit --cov=ludamus"
+cmd = "pytest -vxx tests/integration/web tests/unit --cov=ludamus"
 envfile = ".testenv"
 
 [tool.poe.tasks.start]
@@ -111,17 +109,18 @@ cmd = "django-admin runserver ludamus.local:8000"
 envfile = ".env.dev"
 
 # BLACK
+pre-commit = "^4.5.1"
 
 [tool.black]
 line-length = 88
 preview = true
 skip-magic-trailing-comma = true
-target-version = ['py313']
+target-version = ['py314']
 
 # CODESPELL
 
 [tool.codespell]
-skip = 'node_modules,tests/e2e,*.po,*.lock'
+skip = 'node_modules,tests/e2e,*.po,*.lock,vendor'
 
 # COVERAGE
 
@@ -152,13 +151,7 @@ ignore = "H021"
 known_first_party = ["ludamus"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = [
-    "django-bootstrap5",
-    "django-bootstrap-icons",
-    "gunicorn",
-    "psycopg",
-    "django-extensions",
-]
+DEP002 = ["django-bootstrap5", "gunicorn", "psycopg", "django-extensions"]
 DEP004 = ["debug_toolbar"]
 
 # MYPY
@@ -177,7 +170,7 @@ disallow_untyped_calls = true
 disallow_untyped_decorators = true
 disallow_untyped_defs = true
 exclude = ["migrations/.*.py", "tests/.*.py"]
-python_version = "3.13"
+python_version = "3.14"
 plugins = ["mypy_django_plugin.main"]
 warn_incomplete_stub = true
 warn_no_return = true
@@ -214,11 +207,13 @@ preview = true
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
+    # Unused
     "COM",
     "CPY",
-    "D",
-    "PLR0911",
+    "D1",
+    "FIX",
+    # Left to fix
+    "PLR0911", # Too many return statements
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
     "C901",    # Too complex
@@ -226,12 +221,15 @@ ignore = [
     "PLR1702", # Too many nested blocks
     "EM101",   # Exception must not use a string literal, assign to variable first
     "TRY003",  # Avoid specifying long messages outside the exception class
-    "TD",
-    "FIX",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"*/migrations/**.py" = ["ANN", "ARG001", "E501", "RUF012"]
+"*/migrations/**.py" = [
+    "ANN",    # flake8-annotations
+    "ARG001", # Unused arguments
+    "E501",   # Line too long
+    "RUF012", # ClassVar
+]
 "tests/**.py" = [
     "ANN",     # flake8-annotations
     "INP001",  # implicit namespace package
@@ -239,19 +237,30 @@ ignore = [
     "PLR0917", # too-many-positional-arguments
     "S",       # bandit
     "PLR0904", # Too many public methods
-    "PLR6301",
+    "PLR6301", # Method could be a function
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
 parametrize-values-type = "tuple"
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+# IMPORT LINTER
+
 [tool.importlinter]
 root_package = "ludamus"
 
 [[tool.importlinter.contracts]]
-name = "gates not in gears"
+name = "gates not in mills"
 type = "forbidden"
-source_modules = ["ludamus.gears"]
+source_modules = ["ludamus.mills"]
 forbidden_modules = ["ludamus.gates"]
 
 [[tool.importlinter.contracts]]
@@ -267,10 +276,10 @@ source_modules = ["ludamus.pacts"]
 forbidden_modules = ["ludamus.gates"]
 
 [[tool.importlinter.contracts]]
-name = "gears not in specs"
+name = "mills not in norms"
 type = "forbidden"
-source_modules = ["ludamus.specs"]
-forbidden_modules = ["ludamus.gears"]
+source_modules = ["ludamus.norms"]
+forbidden_modules = ["ludamus.mills"]
 
 [[tool.importlinter.contracts]]
 name = "links not in gates"
@@ -279,9 +288,9 @@ source_modules = ["ludamus.gates"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
-name = "links not in gears"
+name = "links not in mills"
 type = "forbidden"
-source_modules = ["ludamus.gears"]
+source_modules = ["ludamus.mills"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
@@ -291,31 +300,31 @@ source_modules = ["ludamus.pacts"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
-name = "links not in specs"
+name = "links not in norms"
 type = "forbidden"
-source_modules = ["ludamus.specs"]
+source_modules = ["ludamus.norms"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
-name = "specs not in gates"
+name = "norms not in gates"
 type = "forbidden"
 source_modules = ["ludamus.gates"]
-forbidden_modules = ["ludamus.specs"]
+forbidden_modules = ["ludamus.norms"]
 
 [[tool.importlinter.contracts]]
-name = "specs not in gears"
+name = "norms not in mills"
 type = "forbidden"
-source_modules = ["ludamus.gears"]
-forbidden_modules = ["ludamus.specs"]
+source_modules = ["ludamus.mills"]
+forbidden_modules = ["ludamus.norms"]
 
 [[tool.importlinter.contracts]]
-name = "specs not in links"
+name = "norms not in links"
 type = "forbidden"
 source_modules = ["ludamus.links"]
-forbidden_modules = ["ludamus.specs"]
+forbidden_modules = ["ludamus.norms"]
 
 [[tool.importlinter.contracts]]
-name = "specs not in pacts"
+name = "norms not in pacts"
 type = "forbidden"
 source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.specs"]
+forbidden_modules = ["ludamus.norms"]

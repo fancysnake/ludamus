@@ -1,7 +1,7 @@
 import secrets
 from http import HTTPStatus
 
-from django.http import HttpRequest
+from django.http import HttpRequest  # noqa: TC002  # Django
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
 

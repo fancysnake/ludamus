@@ -1,18 +1,20 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from ludamus.adapters.db.django.models import (
-    AgendaItem,
-    Event,
-    Proposal,
-    Session,
-    Space,
-    Sphere,
-    Tag,
-    TimeSlot,
-    User,
-)
-from ludamus.pacts import UserType
+if TYPE_CHECKING:
+    from ludamus.adapters.db.django.models import (
+        AgendaItem,
+        Event,
+        Proposal,
+        Session,
+        Space,
+        Sphere,
+        Tag,
+        TimeSlot,
+        User,
+    )
+    from ludamus.pacts import UserType
 
 
 @dataclass

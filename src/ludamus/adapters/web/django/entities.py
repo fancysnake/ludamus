@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from ludamus.adapters.db.django.models import Session, Tag
-from ludamus.pacts import UserDTO
+if TYPE_CHECKING:
+    from ludamus.adapters.db.django.models import Session, Tag
+    from ludamus.pacts import UserDTO
 
 
 @dataclass

@@ -1,0 +1,103 @@
+[tools]
+python = "3.14"
+poetry = { version="latest", pyproject="{{ config_root }}/pyproject.toml" }
+
+[env]
+# Mise creates and activates this virtualenv automatically
+_.python.venv = { path = ".venv", create = true }
+
+# Common environment variables
+PYTHONPATH = "src"
+DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
+DEBUG = "true"
+USE_POSTGRES = "false"
+SECRET_KEY = "dev-secret-key-12345"
+ROOT_DOMAIN = "ludamus.local:8000"
+ALLOWED_HOSTS = ".ludamus.local"
+
+[tasks.p]
+run = "poetry"
+
+# Code quality tools
+[tasks.black]
+run = "black src tests"
+
+[tasks.black-check]
+run = "black --check src tests"
+
+[tasks.codespell]
+run = "codespell src tests/unit tests/integration"
+
+[tasks.deptry]
+run = "deptry src tests"
+
+[tasks.djlint]
+run = "djlint src --profile=django"
+
+[tasks.djlint-format]
+run = "djlint src --reformat --format-css --format-js --profile=django"
+
+[tasks.mypy]
+run = "mypy src"
+
+[tasks.pylint]
+run = "pylint src tests"
+
+[tasks.ruff]
+run = "ruff check src tests"
+
+[tasks.ruff-fix]
+run = "ruff check --fix src tests"
+
+# Django commands
+[tasks.dj]
+run = "django-admin"
+
+# Base test task with test environment
+# Child tasks call this via "mise run" to inherit env vars
+[tasks._pytest]
+description = "Base pytest runner with test env (internal)"
+run = "pytest"
+env.ROOT_DOMAIN = "testserver"
+env.ALLOWED_HOSTS = ".testserver"
+env.TESTING = "true"
+env.AUTH0_CLIENT_ID = "test_auth0_client_id"
+env.AUTH0_CLIENT_SECRET = "test_auth0_client_secret"
+env.AUTH0_DOMAIN = "auth0.example.com"
+
+[tasks.unittest]
+description = "Run unit tests"
+run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-template-vars"
+
+[tasks.test]
+description = "Run all tests"
+run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
+
+# Dev server
+[tasks.start]
+run = "django-admin runserver ludamus.local:8000"
+
+# Composite tasks
+[tasks.check]
+depends = [
+    "black",
+    "ruff-fix",
+    "codespell",
+    "mypy",
+    "djlint",
+    "djlint-format",
+    "pylint",
+]
+
+[tasks.prcheck]
+depends = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint"]
+
+[tasks.update]
+run = """
+pre-commit autoupdate
+pip install -U pip
+pip install -U poetry
+poetry update
+deptry .
+poetry show -o
+"""

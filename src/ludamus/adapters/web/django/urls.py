@@ -42,6 +42,11 @@ crowd_urls: list[URLPattern | URLResolver] = [
         views.ProfileConnectedUserDeleteActionView.as_view(),
         name="profile-connected-users-delete",
     ),
+    path(
+        "user/<slug:user_slug>/parts/discord-username",
+        views.UserDiscordUsernameComponentView.as_view(),
+        name="user-discord-username",
+    ),
 ]
 
 chronology_urls = [
@@ -93,6 +98,4 @@ urlpatterns = [
     path(
         "theme/do/select", views.ThemeSelectionActionView.as_view(), name="theme-select"
     ),
-    # Discord username endpoint
-    path("discord/<slug:user_slug>/", views.get_discord_username, name="get-discord"),
 ]

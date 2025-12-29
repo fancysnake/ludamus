@@ -5,7 +5,7 @@ with code in this repository.
 
 ## Project Overview
 
-Ludamus is a Django-based event management website using Python 3.13.
+Ludamus is a Django-based event management website using Python 3.14.
 The project follows **Clean Architecture** principles with strict
 separation between business logic and infrastructure.
 
@@ -13,24 +13,36 @@ separation between business logic and infrastructure.
 
 ### Environment Setup
 
-- Python version: 3.13
+- Python version: 3.14
+- Version manager: mise (manages Python version + virtualenv + tasks)
 - Package manager: Poetry
-- Task runner: Poe the Poet (configured via `pyproject.toml`)
+
+**First-time setup:**
+
+```bash
+# Install mise (https://mise.jdx.dev)
+curl https://mise.run | sh
+
+# Install Python and create virtualenv
+mise install
+
+# Install dependencies
+poetry install
+```
 
 ### Common Commands
 
 **Development Server:**
 
 ```bash
-poe start  # Runs on ludamus.local:8000
+mise run start  # Runs on ludamus.local:8000
 ```
 
 **Testing:**
 
 ```bash
-poe test        # Run all tests with template variable checking
-poe newtest     # Run unit and integration tests with coverage
-poe unittest    # Run only unit tests
+mise run test        # Run all tests with template variable checking
+mise run unittest    # Run only unit tests
 pytest tests/unit                           # Unit tests only
 pytest tests/integration                    # Integration tests only
 pytest tests/integration/views/test_foo.py  # Single test file
@@ -39,30 +51,30 @@ pytest tests/integration/views/test_foo.py  # Single test file
 **Code Quality:**
 
 ```bash
-poe check     # Format and lint (black, ruff, codespell, mypy, djlint, pylint)
-poe prcheck   # Pre-commit checks (without formatting)
+mise run check     # Format and lint (black, ruff, codespell, mypy, djlint, pylint)
+mise run prcheck   # Pre-commit checks (without formatting)
 ```
 
 **Individual Tools:**
 
 ```bash
-poe black         # Format code
-poe ruff-fix      # Fix linting issues
-poe mypy          # Type checking
-poe pylint        # Linting
-poe djlint-format # Format Django templates
+mise run black         # Format code
+mise run ruff-fix      # Fix linting issues
+mise run mypy          # Type checking
+mise run pylint        # Linting
+mise run djlint-format # Format Django templates
 ```
 
 **Django Management:**
 
 ```bash
-poe dj <command>  # Alias for django-admin
+mise run dj <command>  # Alias for django-admin
 ```
 
 **Dependency Management:**
 
 ```bash
-poe update  # Update pre-commit, pip, poetry, and all dependencies
+mise run update  # Update pre-commit, pip, poetry, and all dependencies
 ```
 
 ## Architecture
@@ -76,10 +88,10 @@ point inward toward business logic.
 **Layer Structure (from inner to outer):**
 
 - **pacts** - Protocols/interfaces (DTOs and Protocol classes)
-- **gears** - Domain logic / business services - depends only on `pacts`
+- **mills** - Domain logic / business services - depends only on `pacts`
 - **links** - Outbound adapters (repositories) - depends on `pacts`
 - **gates** - Inbound adapters (views, API handlers) - depends on `pacts`
-- **specs** - Settings/configuration - depends on `pacts`
+- **norms** - Settings/configuration - depends on `pacts`
 - **binds** - Entrypoints & dependency injection - can use all layers
 
 ### Current File Structure (Transitional)
@@ -87,7 +99,7 @@ point inward toward business logic.
 ```text
 src/ludamus/
 ├── pacts.py                    # DTOs, Protocols, RequestContext
-├── gears.py                    # Business logic services
+├── mills.py                    # Business logic services
 ├── binds.py                    # DI middleware (injects UoW into request)
 ├── links/
 │   └── db/
@@ -95,7 +107,7 @@ src/ludamus/
 │           ├── storage.py      # Identity Map (@dataclass with dicts)
 │           ├── repositories.py # Repository implementations
 │           └── uow.py          # Unit of Work (aggregates repos)
-├── adapters/                   # (migrating to gates/, specs/)
+├── adapters/                   # (migrating to gates/, norms/)
 │   ├── db/django/              # Django models, admin, migrations
 │   └── web/django/             # Views, forms, URLs, middlewares
 ├── config/                     # Django settings
@@ -191,10 +203,10 @@ proposal = self.request.uow.proposals.read(proposal_id)
 
 The `importlinter` configuration enforces these rules (see `pyproject.toml`):
 
-- `specs`, `pacts`, `gears` cannot import from `links` or `gates`
-- `links` cannot import from `gates`, `gears`, or `specs`
-- `gates` cannot import from `links` or `specs`
-- `gears` cannot import from `gates`, `links`, or `specs`
+- `norms`, `pacts`, `mills` cannot import from `links` or `gates`
+- `links` cannot import from `gates`, `mills`, or `norms`
+- `gates` cannot import from `links` or `norms`
+- `mills` cannot import from `gates`, `links`, or `norms`
 
 Run `lint-imports` to verify compliance.
 
@@ -266,7 +278,7 @@ Defined in `docs/TESTING_STRATEGY.md`:
 
 ### Testing by Layer
 
-**Testing Gears (Business Logic):**
+**Testing Mills (Business Logic):**
 
 - Pure Python tests, no Django required
 - Fast, no database
@@ -285,7 +297,7 @@ Defined in `docs/TESTING_STRATEGY.md`:
 
 **Tools in CI/Pre-commit:**
 
-- **black** - Code formatting (line-length: 88, Python 3.13 target)
+- **black** - Code formatting (line-length: 88, Python 3.14 target)
 - **ruff** - Fast linting with ALL rules enabled (see ignores)
 - **mypy** - Strict type checking with django-stubs plugin
 - **pylint** - Additional linting
@@ -382,7 +394,7 @@ src/ludamus/
 │   └── web/django/       # Views, forms, URLs (MOVING to gates/)
 ├── links/
 │   └── dao.py            # Old DAO file (REPLACED by repositories)
-└── config/               # Django settings (MOVING to specs/)
+└── config/               # Django settings (MOVING to norms/)
 ```
 
 **Target Structure:**
@@ -390,11 +402,11 @@ src/ludamus/
 ```text
 src/ludamus/
 ├── pacts.py              # Protocols, DTOs
-├── gears.py              # Business logic
+├── mills.py              # Business logic
 ├── binds.py              # DI / middleware
 ├── links/db/django/      # Repositories, Storage, UoW
 ├── gates/web/            # Views, forms (future)
-├── specs/                # Configuration (future)
+├── norms/                # Configuration (future)
 └── adapters/db/django/   # Models only (Django-specific)
 ```
 
@@ -408,5 +420,5 @@ src/ludamus/
 ### What's Remaining
 
 - Move views from `adapters/web/django/` to `gates/web/`
-- Move settings to `specs/`
-- Extract business logic from views to `gears`
+- Move settings to `norms/`
+- Extract business logic from views to `mills`

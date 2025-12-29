@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load django_bootstrap5 %}
-{% load bootstrap_icons %}
 {% block title %}
     {% translate "Edit profile" %}
 {% endblock title %}
@@ -13,13 +12,13 @@
                     <ul class="nav nav-tabs card-header-tabs">
                         <li class="nav-item">
                             <a class="nav-link active" href="{% url 'web:crowd:profile' %}">
-                                {% bs_icon 'person' %}
+                                <i class="bi bi-person"></i>
                                 {% translate "Personal Information" %}
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'web:crowd:profile-connected-users' %}">
-                                {% bs_icon 'people' %}
+                                <i class="bi bi-people"></i>
                                 {% translate "Connected users" %}
                             </a>
                         </li>
@@ -28,7 +27,7 @@
                 <div class="card-body">
                     {% if user.confirmed_participations_count > 0 %}
                         <div class="alert alert-info mb-3">
-                            {% bs_icon 'calendar-check' %}
+                            <i class="bi bi-calendar-check"></i>
                             {% blocktranslate count counter=user.confirmed_participations_count %}
                                 You have {{ counter }} confirmed session participation.
                             {% plural %}

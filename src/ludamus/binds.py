@@ -1,15 +1,19 @@
-from collections.abc import Callable
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from ludamus.links.db.django.uow import UnitOfWork
-from ludamus.pacts import RootRequestProtocol
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ludamus.pacts import RootRequestProtocol
 
 Response = TypeVar("Response")
 
 
 class RepositoryInjectionMiddleware[Response]:
-    """
-    This is weird. It's a Django middleware, but it's out of the django framework
+    """This is weird.
+
+    It's a Django middleware, but it's out of the django framework
     code because there's no better way to inject dependencies to django views.
     Pretend you didn't see it and proceed with your work ;)
     """

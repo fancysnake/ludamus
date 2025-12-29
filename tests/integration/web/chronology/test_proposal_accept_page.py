@@ -5,7 +5,7 @@ import pytest
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import Session
+from ludamus.adapters.db.django.models import AgendaItem, Session
 from ludamus.pacts import EventDTO, ProposalDTO, SpaceDTO, TimeSlotDTO, UserDTO
 from tests.integration.utils import assert_response
 
@@ -198,4 +198,41 @@ class TestProposalAcceptPageView:
                 )
             ],
             url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
+        )
+
+    def test_post_ok_conflict(
+        self, staff_user, event, proposal, space, staff_client, time_slot
+    ):
+        session = Session.objects.create(
+            title="Other Session",
+            sphere=event.sphere,
+            slug="other-session",
+            presenter_name=staff_user.name,
+            participants_limit=10,
+        )
+        AgendaItem.objects.create(
+            session=session,
+            space=space,
+            start_time=time_slot.start_time,
+            end_time=time_slot.end_time,
+        )
+
+        response = staff_client.post(
+            self._get_url(proposal.id),
+            data={"space": space.id, "time_slot": time_slot.id},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "event": EventDTO.model_validate(event),
+                "form": ANY,
+                "proposal": ProposalDTO.model_validate(proposal),
+                "host": UserDTO.model_validate(proposal.host),
+                "spaces": [SpaceDTO.model_validate(space)],
+                "time_slots": [TimeSlotDTO.model_validate(time_slot)],
+                "proposal_host": UserDTO.model_validate(proposal.host),
+            },
+            template_name="chronology/accept_proposal.html",
         )

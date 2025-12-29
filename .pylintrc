@@ -118,7 +118,7 @@ prefer-stubs=no
 
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.
-py-version=3.13
+py-version=3.14
 
 # Discover python modules and packages in the file system subtree.
 recursive=no
@@ -450,42 +450,30 @@ confidence=HIGH,
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=consider-using-assignment-expr,
-        too-many-lines, # REMOVE
-        too-many-return-statements, # REMOVE
-        # too-many-statements, # REMOVE
-        too-many-locals, # REMOVE
-        too-many-nested-blocks, # REMOVE
-        consider-using-tuple,
-        too-many-branches, # REMOVE
-        too-many-try-statements, # REMOVE
-        magic-value-comparison,
-        too-complex,
-        line-too-long,
-        too-many-ancestors, # REMOVE
-        invalid-str-returned,
-        missing-module-docstring,
-        too-few-public-methods,
-        missing-function-docstring,
-        missing-class-docstring,
-        no-member,
-        too-many-arguments, # REMOVE
-        too-many-positional-arguments, # REMOVE
-        too-many-statements, # REMOVE
-        unsubscriptable-object,
-        duplicate-code, # REMOVE
-        confusing-consecutive-elif, # REMOVE
-        broad-exception-caught, # REMOVE
-        simplify-boolean-expression, # REMOVE
-        docstring-first-line-empty,
-        attribute-defined-outside-init,
-        # Handled by ruff
-        unused-argument,
-        protected-access,
-        import-outside-toplevel,
+disable=import-outside-toplevel,
+        simplify-boolean-expression,
+        confusing-consecutive-elif,
         too-many-public-methods,
+        too-many-branches,
+        too-many-lines,
+        too-many-locals,
+        too-many-try-statements,
+        too-complex,
+        too-many-ancestors,
+        too-many-return-statements,
+        unused-argument,
+        invalid-str-returned,
+        line-too-long,
+        duplicate-code,
+        protected-access,
         no-self-use,
-        fixme
+        magic-value-comparison,
+        too-many-positional-arguments,
+        too-many-arguments,
+        too-few-public-methods,
+        too-many-statements,
+        no-member,
+        missing-docstring,
 
 
 # Enable the message, report, category or checker with the given id(s). You can
