@@ -1,7 +1,11 @@
-from django.conf import settings
-from django.http import HttpRequest
+from typing import TYPE_CHECKING
 
-from ludamus.pacts import RootRequestProtocol, SiteDTO, SphereDTO
+from django.conf import settings
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+
+    from ludamus.pacts import RootRequestProtocol, SiteDTO, SphereDTO
 
 
 def sites(request: RootRequestProtocol) -> dict[str, SiteDTO | SphereDTO]:

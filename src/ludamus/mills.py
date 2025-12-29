@@ -1,5 +1,5 @@
-from collections.abc import Callable
 from secrets import token_urlsafe
+from typing import TYPE_CHECKING
 
 from ludamus.pacts import (
     AgendaItemData,
@@ -12,6 +12,9 @@ from ludamus.pacts import (
     UserRepositoryProtocol,
     UserType,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class AnonymousEnrollmentService:

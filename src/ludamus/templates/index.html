@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% load bootstrap_icons %}
 {% load date_tags %}
 {% block title %}
     {% translate "Events" %}
@@ -26,7 +25,7 @@
                                     </div>
                                     {% if event.description %}<p class="card-text text-muted">{{ event.description }}</p>{% endif %}
                                     <div class="d-flex align-items-center text-muted">
-                                        {% bs_icon 'calendar3' %}
+                                        <i class="bi bi-calendar3"></i>
                                         <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
                                     </div>
                                 </div>
@@ -46,7 +45,7 @@
                                     <h5 class="card-title mb-3">{{ event.name }}</h5>
                                     {% if event.description %}<p class="card-text text-muted">{{ event.description }}</p>{% endif %}
                                     <div class="d-flex align-items-center text-muted">
-                                        {% bs_icon 'calendar3' %}
+                                        <i class="bi bi-calendar3"></i>
                                         <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
                                     </div>
                                 </div>
@@ -58,7 +57,9 @@
         {% else %}
             <div class="text-center py-5">
                 <div class="text-muted">
-                    <p class="fs-1 mb-3">{% bs_icon 'calendar-x' size='3em' %}</p>
+                    <p class="fs-1 mb-3">
+                        <i class="bi bi-calendar-x"></i>
+                    </p>
                     <p class="fs-5 mb-2">{% translate "No events available" %}</p>
                     <p>{% translate "There are currently no events scheduled. Please check back later!" %}</p>
                 </div>

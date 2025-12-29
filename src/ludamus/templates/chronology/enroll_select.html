@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load django_bootstrap5 %}
-{% load bootstrap_icons %}
 {% block title %}
     {% translate "Enroll in Session" %} - {{ session.title }}
 {% endblock title %}
@@ -17,7 +16,9 @@
             <!-- Session Details Card -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">{% bs_icon 'calendar-event' %} {{ session.title }}</h5>
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-event"></i> {{ session.title }}
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -62,14 +63,18 @@
             <!-- Enrollment Form Card -->
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">{% bs_icon 'person-plus' %} {% translate "Enrollment Options" %}</h5>
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-plus"></i> {% translate "Enrollment Options" %}
+                    </h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
                         <!-- User Enrollment Options -->
                         <div class="mb-3">
-                            <label class="form-label">{% bs_icon 'people' %} {% translate "Select enrollment options for each user" %}</label>
+                            <label class="form-label">
+                                <i class="bi bi-people"></i> {% translate "Select enrollment options for each user" %}
+                            </label>
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead class="table-light">
@@ -87,11 +92,11 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         {% if user_data.user.pk == request.user.pk %}
-                                                            {% bs_icon 'person-circle' %}
-                                                            <span class="ms-2">{% translate "Myself" %} ({{ user.name }})</span>
+                                                            <i class="bi bi-person-circle"></i>
+                                                            <span class="ms-2">{% translate "Myself" %} ({{ user.full_name }})</span>
                                                         {% else %}
-                                                            {% bs_icon 'person-heart' %}
-                                                            <span class="ms-2">{{ user_data.user.name }}</span>
+                                                            <i class="bi bi-person-heart"></i>
+                                                            <span class="ms-2">{{ user_data.user.full_name }}</span>
                                                         {% endif %}
                                                     </div>
                                                 </td>
@@ -115,7 +120,9 @@
                                                                        name="user_{{ user_data.user.pk }}"
                                                                        id="user_{{ user_data.user.pk }}_enroll"
                                                                        value="enroll">
-                                                                <label class="form-check-label" for="user_{{ user_data.user.pk }}_enroll">{% bs_icon 'check-circle' %}</label>
+                                                                <label class="form-check-label" for="user_{{ user_data.user.pk }}_enroll">
+                                                                    <i class="bi bi-check-circle"></i>
+                                                                </label>
                                                             </div>
                                                         {% else %}
                                                             <span class="text-muted">{% translate "Time conflict" %}</span>
@@ -132,7 +139,9 @@
                                                                    name="user_{{ user_data.user.pk }}"
                                                                    id="user_{{ user_data.user.pk }}_waitlist"
                                                                    value="waitlist">
-                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_waitlist">{% bs_icon 'clock' %}</label>
+                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_waitlist">
+                                                                <i class="bi bi-clock"></i>
+                                                            </label>
                                                         </div>
                                                     {% else %}
                                                         <span class="text-muted">-</span>
@@ -146,7 +155,9 @@
                                                                    name="user_{{ user_data.user.pk }}"
                                                                    id="user_{{ user_data.user.pk }}_cancel"
                                                                    value="cancel">
-                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_cancel">{% bs_icon 'x-circle' %}</label>
+                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_cancel">
+                                                                <i class="bi bi-x-circle"></i>
+                                                            </label>
                                                         </div>
                                                     {% else %}
                                                         <span class="text-muted">-</span>
@@ -167,7 +178,7 @@
                             </div>
                             <div class="alert alert-info mt-3">
                                 <small>
-                                    {% bs_icon 'info-circle' %}
+                                    <i class="bi bi-info-circle"></i>
                                     <strong>{% translate "Session capacity" %}:</strong> {{ session.enrolled_count }}/{{ session.effective_participants_limit }} {% translate "enrolled" %}
                                     {% if session.waiting_count > 0 %}
                                         (+{{ session.waiting_count }} {% translate "waiting" %})
@@ -178,13 +189,13 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <button type="submit" class="btn btn-success w-100">
-                                    {% bs_icon 'person-plus' %} {% translate "Enroll Selected Users" %}
+                                    <i class="bi bi-person-plus"></i> {% translate "Enroll Selected Users" %}
                                 </button>
                             </div>
                             <div class="col-md-6">
                                 <a href="{% url 'web:chronology:event' slug=event.slug %}"
                                    class="btn btn-outline-secondary w-100">
-                                    {% bs_icon 'arrow-left' %} {% translate "Back to Event" %}
+                                    <i class="bi bi-arrow-left"></i> {% translate "Back to Event" %}
                                 </a>
                             </div>
                         </div>

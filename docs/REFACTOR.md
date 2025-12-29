@@ -5,9 +5,11 @@ to achieve satisfying level of code quality.
 
 ## Layers
 
-- binds - entrypoints
-- gates - inbound adapters (to be used in binds only)
-- gears - domain logic (to be used in binds only)
-- links - outbound adapters (to be used in binds only)
-- pacts - ports/protocols
-- specs - settings (to be used in binds only)
+I'm using my own idea for clean architecture code layout I called PLUMBING
+
+- Pacts - ports/protocols
+- Links - outbound adapters (to be used in binds only)
+- Mills - domain logic (to be used in binds only)
+- Binds - entrypoints
+- Norms - settings (to be used in binds only)
+- Gates - inbound adapters (to be used in binds only)

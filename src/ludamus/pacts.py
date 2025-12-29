@@ -1,14 +1,17 @@
-from collections.abc import Iterable
-from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from contextlib import AbstractContextManager
 
-class NotFoundError(Exception): ...
+
+class NotFoundError(Exception):
+    pass
 
 
 class ProposalCategoryDTO(BaseModel):
@@ -128,6 +131,7 @@ class UserDTO(BaseModel):
     date_joined: datetime
     discord_username: str
     email: str
+    full_name: str
     is_active: bool
     is_authenticated: bool
     is_staff: bool
@@ -138,10 +142,6 @@ class UserDTO(BaseModel):
     slug: str
     user_type: UserType
     username: str
-
-    @property
-    def is_incomplete(self) -> bool:
-        return not self.name and not self.email
 
 
 class SiteDTO(BaseModel):
@@ -249,7 +249,7 @@ class UnitOfWorkProtocol(Protocol):
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
     @staticmethod
-    def login_user(request: Any, user_slug: str) -> None: ...
+    def login_user(request: Any, user_slug: str) -> None: ...  # noqa: ANN401
     @property
     def active_users(self) -> UserRepositoryProtocol: ...
     @property

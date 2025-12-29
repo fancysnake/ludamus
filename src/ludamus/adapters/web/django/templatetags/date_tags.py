@@ -48,7 +48,7 @@ def _format_date_range(start: datetime, end: datetime) -> str:
 
 
 @register.filter
-def format_datetime_range(start: Any, end: Any) -> str:  # type: ignore[misc]
+def format_datetime_range(start: Any, end: Any) -> str:  # type: ignore[misc]  # noqa: ANN401
     if not isinstance(start, datetime) or not isinstance(end, datetime):
         return ""
 

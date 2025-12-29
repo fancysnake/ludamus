@@ -1,7 +1,10 @@
+from typing import TYPE_CHECKING
+
 from django import template
 from django.utils.translation import gettext as _
 
-from ludamus.adapters.db.django.models import Session
+if TYPE_CHECKING:
+    from ludamus.adapters.db.django.models import Session
 
 register = template.Library()
 

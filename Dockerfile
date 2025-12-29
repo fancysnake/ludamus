@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for development and production
 
 # Base stage with common setup
-FROM python:3.13-slim as base
+FROM python:3.14-slim as base
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -79,7 +79,8 @@ WORKDIR /app/src
 # Compile translation messages
 RUN django-admin compilemessages
 
-# Collect static files (requires SECRET_KEY to be set)
+# Download vendor dependencies and collect static files (requires SECRET_KEY to be set)
+RUN django-admin downloadvendor
 RUN django-admin collectstatic --noinput
 
 # Create cache table for production

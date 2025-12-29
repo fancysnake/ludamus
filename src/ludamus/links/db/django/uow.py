@@ -1,14 +1,18 @@
-from contextlib import AbstractContextManager
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from django.contrib.auth import login as django_login
 from django.db import transaction
-from django.http import HttpRequest
 
 from ludamus.adapters.db.django.models import User
 from ludamus.links.db.django import repositories
 from ludamus.links.db.django.storage import Storage
 from ludamus.pacts import UnitOfWorkProtocol, UserType
+
+if TYPE_CHECKING:
+    from contextlib import AbstractContextManager
+
+    from django.http import HttpRequest
 
 
 class UnitOfWork(UnitOfWorkProtocol):

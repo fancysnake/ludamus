@@ -11,7 +11,17 @@ Rules:
 
 Yes: classes, functions
 
-No: views, commands
+No: views, commands, repositories
+
+Note: Repositories are exempt from 100% coverage requirement. They contain
+simple, repetitive patterns (check cache → query ORM → cache → return DTO)
+with defensive error handling for data integrity issues that shouldn't occur
+in practice. Testing these edge cases would require either:
+
+- Database tests (violates "no database" rule)
+- ORM mocks (fragile, couples tests to implementation)
+
+Repository code is implicitly tested through view integration tests.
 
 Structure: mimic code
 

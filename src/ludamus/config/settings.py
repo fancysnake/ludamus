@@ -82,11 +82,11 @@ INSTALLED_APPS = [
     "django.contrib.flatpages",
     # Third Party
     "django_bootstrap5",
-    "django_bootstrap_icons",
     "django_extensions",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
     "ludamus.adapters.db.django.apps.DBMainConfig",
+    "ludamus.gates.cli.django.apps.CliGatesConfig",
 ]
 
 MIDDLEWARE = [
@@ -333,10 +333,6 @@ LOGGING = {
     },
 }
 
-# Bootstrap Icons Configuration
-# Configure icon cache to avoid repeated CDN downloads
-BS_ICONS_CACHE = BASE_DIR / "static" / "icon_cache"
-
 # Membership API Configuration
 MEMBERSHIP_API_BASE_URL = os.getenv("MEMBERSHIP_API_BASE_URL", "")
 MEMBERSHIP_API_TOKEN = os.getenv("MEMBERSHIP_API_TOKEN", "")
@@ -344,3 +340,65 @@ MEMBERSHIP_API_TIMEOUT = int(os.getenv("MEMBERSHIP_API_TIMEOUT", "30"))
 MEMBERSHIP_API_CHECK_INTERVAL = int(
     os.getenv("MEMBERSHIP_API_CHECK_INTERVAL", "15")
 )  # minutes
+
+# Vendor Dependencies Configuration
+# Download with: mise dj downloadvendor
+# SHA-384 hashes use base64 encoding (SRI format)
+VENDOR_DEPENDENCIES: list[dict[str, str]] = [
+    {
+        "name": "bootstrap-css",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+        ),
+        "filename": "bootstrap.min.css",
+        "sha384": "rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65",
+    },
+    {
+        "name": "bootstrap-js",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        ),
+        "filename": "bootstrap.bundle.min.js",
+        "sha384": "kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4",
+    },
+    {
+        "name": "popperjs",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+        ),
+        "filename": "popper.min.js",
+        "sha384": "oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3",
+    },
+    {
+        "name": "bootstrap-icons",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+        ),
+        "filename": "bootstrap-icons.min.css",
+        "sha384": "CK2SzKma4jA5H/MXDUU7i1TqZlCFaD4T01vtyDFvPlD97JQyS+IsSh1nI2EFbpyk",
+    },
+    {
+        "name": "htmx",
+        "url": "https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js",
+        "filename": "htmx.min.js",
+        "sha384": "/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz",
+    },
+    {
+        "name": "bootstrap-icons-woff2",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/fonts/bootstrap-icons.woff2"
+        ),
+        "filename": "fonts/bootstrap-icons.woff2",
+        "sha384": "xEoI56EFpIZiDZZKBZxsn3gO3u/FvXtOpHbtkMWmSdfzDw3x9XdVc3i70O9hm4SC",
+    },
+    {
+        "name": "bootstrap-icons-woff",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/fonts/bootstrap-icons.woff"
+        ),
+        "filename": "fonts/bootstrap-icons.woff",
+        "sha384": "IYfD9pNP/nesQsPyYtTdGCb4uhEWUmNF8GxaCvqcJFH+Of3c1b0VbH6hdHUonDSC",
+    },
+]
+
+VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
