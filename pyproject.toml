@@ -85,6 +85,11 @@ skip_covered = true
 exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
 precision = 2
 
+# DJLINT
+
+[tool.djlint]
+ignore = "H021"
+
 # DEPTRY
 
 [tool.deptry]
@@ -172,6 +177,7 @@ ignore = [
 ]
 "tests/**.py" = [
     "ANN",     # flake8-annotations
+    "INP001",  # implicit namespace package
     "PLR0913", # too-many-arguments
     "PLR0917", # too-many-positional-arguments
     "S",       # bandit
