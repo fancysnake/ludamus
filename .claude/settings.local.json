@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mise run test:*)"
+      "Bash(mise run test:*)",
+      "Bash(pytest:*)",
+      "Bash(git stash:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)"
     ]
   }
 }
