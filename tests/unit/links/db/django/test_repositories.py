@@ -9,6 +9,8 @@ from ludamus.links.db.django.repositories import (
 from ludamus.links.db.django.storage import Storage
 from ludamus.pacts import UserType
 
+MOCK_ENTITY_ID = 100
+
 
 class TestSphereRepositoryIsManager:
     """Test cache-hit behavior for is_manager method."""
@@ -74,7 +76,7 @@ class TestProposalRepositoryReadTimeSlots:
             mock_time_slot_model.objects.filter.assert_not_called()
 
         assert len(result) == 1
-        assert result[0].pk == 100
+        assert result[0].pk == MOCK_ENTITY_ID
 
 
 class TestProposalRepositoryReadSpaces:
@@ -106,7 +108,7 @@ class TestProposalRepositoryReadSpaces:
             mock_space_model.objects.filter.assert_not_called()
 
         assert len(result) == 1
-        assert result[0].pk == 100
+        assert result[0].pk == MOCK_ENTITY_ID
 
 
 class TestProposalRepositoryReadTagIds:
