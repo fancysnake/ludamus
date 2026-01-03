@@ -1,9 +1,13 @@
+from datetime import UTC, datetime
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING
 
 from ludamus.pacts import (
     AgendaItemData,
     AuthenticatedRequestContext,
+    EventDTO,
+    EventStatsData,
+    PanelStatsDTO,
     ProposalDTO,
     SessionData,
     UnitOfWorkProtocol,
@@ -15,6 +19,30 @@ from ludamus.pacts import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+def is_proposal_active(event: EventDTO) -> bool:
+    """Check if proposals are currently open for an event.
+
+    Returns:
+        True if current time is within the proposal submission window.
+        False if proposal times are not set.
+    """
+    if event.proposal_start_time is None or event.proposal_end_time is None:
+        return False
+    now = datetime.now(tz=UTC)
+    return event.proposal_start_time <= now <= event.proposal_end_time
+
+
+def get_days_to_event(event: EventDTO) -> int:
+    """Calculate days remaining until the event starts.
+
+    Returns:
+        Number of days until event start, minimum 0.
+    """
+    now = datetime.now(tz=UTC)
+    delta = event.start_time - now
+    return max(0, delta.days)
 
 
 class AnonymousEnrollmentService:
@@ -93,3 +121,33 @@ class AcceptProposalService:
 
             proposal.session_id = session_id
             proposal_repository.update(proposal)
+
+
+class PanelService:
+    """Service for backoffice panel business logic."""
+
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+
+    def get_event_stats(self, event_id: int) -> PanelStatsDTO:
+        """Calculate panel statistics for an event.
+
+        Args:
+            event_id: The event ID to get stats for.
+
+        Returns:
+            PanelStatsDTO with computed statistics.
+        """
+        stats_data: EventStatsData = self._uow.events.get_stats_data(event_id)
+
+        # Business logic: total sessions = pending + scheduled
+        total_sessions = stats_data.pending_proposals + stats_data.scheduled_sessions
+
+        return PanelStatsDTO(
+            total_sessions=total_sessions,
+            scheduled_sessions=stats_data.scheduled_sessions,
+            pending_proposals=stats_data.pending_proposals,
+            hosts_count=len(stats_data.unique_host_ids),
+            rooms_count=stats_data.rooms_count,
+            total_proposals=stats_data.total_proposals,
+        )

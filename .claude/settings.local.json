@@ -1,11 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mise run test:*)",
-      "Bash(pytest:*)",
-      "Bash(git stash:*)",
-      "Bash(mkdir:*)",
-      "Bash(touch:*)"
+      "Bash(mise run check:*)",
+      "Bash(mise run djlint:*)",
+      "Bash(mise run mypy:*)",
+      "Bash(mise run prcheck)",
+      "Bash(mise run ruff-fix:*)",
+      "Bash(mise run test:*)"
     ]
   }
 }

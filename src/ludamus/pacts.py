@@ -167,10 +167,11 @@ class EventDTO(BaseModel):
     end_time: datetime
     name: str
     pk: int
-    proposal_end_time: datetime
-    proposal_start_time: datetime
+    proposal_end_time: datetime | None
+    proposal_start_time: datetime | None
     publication_time: datetime | None
     slug: str
+    sphere_id: int
     start_time: datetime
 
 
@@ -199,6 +200,31 @@ class RequestContext:
 class AuthenticatedRequestContext(RequestContext):
     current_user_slug: str
     current_user_id: int
+
+
+class PanelStatsDTO(BaseModel):
+    """Statistics for the backoffice panel dashboard."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    hosts_count: int = 0
+    pending_proposals: int = 0
+    rooms_count: int = 0
+    scheduled_sessions: int = 0
+    total_proposals: int = 0
+    total_sessions: int = 0
+
+
+class EventStatsData(BaseModel):
+    """Raw statistics data from the repository."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    pending_proposals: int
+    scheduled_sessions: int
+    total_proposals: int
+    unique_host_ids: set[int]
+    rooms_count: int
 
 
 class SphereRepositoryProtocol(Protocol):
@@ -245,6 +271,14 @@ class ConnectedUserRepositoryProtocol(Protocol):
     ) -> None: ...
 
 
+class EventRepositoryProtocol(Protocol):
+    def list_by_sphere(self, sphere_id: int) -> list[EventDTO]: ...
+    def read(self, pk: int) -> EventDTO: ...
+    def read_by_slug(self, slug: str, sphere_id: int) -> EventDTO: ...
+    def get_stats_data(self, event_id: int) -> EventStatsData: ...
+    def update_name(self, event_id: int, name: str) -> None: ...
+
+
 class UnitOfWorkProtocol(Protocol):
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
@@ -258,6 +292,8 @@ class UnitOfWorkProtocol(Protocol):
     def anonymous_users(self) -> UserRepositoryProtocol: ...
     @property
     def connected_users(self) -> ConnectedUserRepositoryProtocol: ...
+    @property
+    def events(self) -> EventRepositoryProtocol: ...
     @property
     def proposals(self) -> ProposalRepositoryProtocol: ...
     @property

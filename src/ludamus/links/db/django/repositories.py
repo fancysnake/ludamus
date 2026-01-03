@@ -14,6 +14,8 @@ from ludamus.pacts import (
     AgendaItemRepositoryProtocol,
     ConnectedUserRepositoryProtocol,
     EventDTO,
+    EventRepositoryProtocol,
+    EventStatsData,
     NotFoundError,
     ProposalDTO,
     ProposalRepositoryProtocol,
@@ -281,3 +283,90 @@ class ConnectedUserRepository(ConnectedUserRepositoryProtocol):
         user = self._read_user(manager_slug, user_slug)
         user.delete()
         del self._storage.connected_users_by_user[manager_slug][user_slug]
+
+
+class EventRepository(EventRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def list_by_sphere(self, sphere_id: int) -> list[EventDTO]:
+        """List all events for a sphere, ordered by start time descending.
+
+        Returns:
+            List of EventDTO objects for the sphere.
+        """
+        events = Event.objects.filter(sphere_id=sphere_id).order_by("-start_time")
+        for event in events:
+            self._storage.events[event.pk] = event
+        return [EventDTO.model_validate(event) for event in events]
+
+    def read(self, pk: int) -> EventDTO:
+        """Read an event by primary key.
+
+        Returns:
+            EventDTO for the requested event.
+
+        Raises:
+            NotFoundError: If the event does not exist.
+        """
+        if not (event := self._storage.events.get(pk)):
+            try:
+                event = Event.objects.get(id=pk)
+            except Event.DoesNotExist as exception:
+                raise NotFoundError from exception
+            self._storage.events[pk] = event
+        return EventDTO.model_validate(event)
+
+    def read_by_slug(self, slug: str, sphere_id: int) -> EventDTO:
+        """Read an event by slug within a sphere.
+
+        Returns:
+            EventDTO for the requested event.
+
+        Raises:
+            NotFoundError: If the event does not exist.
+        """
+        for event in self._storage.events.values():
+            if event.slug == slug and event.sphere_id == sphere_id:
+                return EventDTO.model_validate(event)
+
+        try:
+            event = Event.objects.get(slug=slug, sphere_id=sphere_id)
+        except Event.DoesNotExist as exception:
+            raise NotFoundError from exception
+        self._storage.events[event.pk] = event
+        return EventDTO.model_validate(event)
+
+    def get_stats_data(self, event_id: int) -> EventStatsData:
+        """Get raw statistics data for an event.
+
+        Returns:
+            EventStatsData with raw counts and IDs for business logic processing.
+        """
+        # Ensure event is cached in storage
+        if event_id not in self._storage.events:
+            event = Event.objects.get(id=event_id)
+            self._storage.events[event_id] = event
+
+        proposals = Proposal.objects.filter(category__event_id=event_id)
+        sessions = Session.objects.filter(agenda_item__space__event_id=event_id)
+        spaces = Space.objects.filter(event_id=event_id)
+
+        return EventStatsData(
+            pending_proposals=proposals.filter(session__isnull=True).count(),
+            scheduled_sessions=sessions.count(),
+            total_proposals=proposals.count(),
+            unique_host_ids=set(proposals.values_list("host_id", flat=True)),
+            rooms_count=spaces.count(),
+        )
+
+    def update_name(self, event_id: int, name: str) -> None:
+        if not (event := self._storage.events.get(event_id)):
+            try:
+                event = Event.objects.get(id=event_id)
+            except Event.DoesNotExist as exception:
+                raise NotFoundError from exception
+
+        event.name = name
+        event.save()
+        self._storage.events[event_id] = event

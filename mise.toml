@@ -1,3 +1,7 @@
+[settings]
+# Sequential execution to avoid race conditions in parallel tests
+jobs = 1
+
 [tools]
 python = "3.14"
 poetry = { version="latest", pyproject="{{ config_root }}/pyproject.toml" }

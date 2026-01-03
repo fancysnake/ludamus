@@ -22,6 +22,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path("", include("ludamus.adapters.web.django.urls", namespace="web")),
+    path("panel/", include("ludamus.gates.web.django.urls", namespace="panel")),
     path("admin/", admin.site.urls),
     path("page/", include("django.contrib.flatpages.urls")),
 ]
