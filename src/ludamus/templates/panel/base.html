@@ -97,10 +97,10 @@
                     </a>
                     <div class="flex items-center">
                         <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                            <span class="text-white font-medium">{{ request.user.initials|default:"?" }}</span>
+                            <span class="text-white font-medium">{{ request.user.username|first|upper|default:"?" }}</span>
                         </div>
                         <div class="ml-3 min-w-0">
-                            <p class="text-sm font-medium truncate">{{ request.user.full_name|default:request.user.username }}</p>
+                            <p class="text-sm font-medium truncate">{{ request.user.username }}</p>
                             <p class="text-xs text-gray-400 truncate">{% translate "Organizer" %}</p>
                         </div>
                     </div>
