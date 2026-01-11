@@ -392,6 +392,52 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
 
         return ProposalCategoryDTO.model_validate(category)
 
+    def read_by_slug(self, event_id: int, slug: str) -> ProposalCategoryDTO:
+        for category in self._storage.proposal_categories.values():
+            if category.slug == slug and category.event_id == event_id:
+                return ProposalCategoryDTO.model_validate(category)
+
+        try:
+            category = ProposalCategory.objects.get(event_id=event_id, slug=slug)
+        except ProposalCategory.DoesNotExist as exception:
+            raise NotFoundError from exception
+
+        self._storage.proposal_categories[category.pk] = category
+        return ProposalCategoryDTO.model_validate(category)
+
+    def update(self, pk: int, name: str) -> ProposalCategoryDTO:
+        if not (category := self._storage.proposal_categories.get(pk)):
+            try:
+                category = ProposalCategory.objects.get(id=pk)
+            except ProposalCategory.DoesNotExist as exception:
+                raise NotFoundError from exception
+
+        if category.name != name:
+            base_slug = slugify(name)
+            slug = self._generate_unique_slug(
+                category.event_id, base_slug, exclude_pk=pk
+            )
+            category.name = name
+            category.slug = slug
+            category.save()
+
+        self._storage.proposal_categories[pk] = category
+        return ProposalCategoryDTO.model_validate(category)
+
+    def delete(self, pk: int) -> None:
+        if not (category := self._storage.proposal_categories.get(pk)):
+            try:
+                category = ProposalCategory.objects.get(id=pk)
+            except ProposalCategory.DoesNotExist as exception:
+                raise NotFoundError from exception
+
+        category.delete()
+        self._storage.proposal_categories.pop(pk, None)
+
+    @staticmethod
+    def has_proposals(pk: int) -> bool:
+        return Proposal.objects.filter(category_id=pk).exists()
+
     def list_by_event(self, event_id: int) -> list[ProposalCategoryDTO]:
         categories = ProposalCategory.objects.filter(event_id=event_id).order_by("name")
         for category in categories:
@@ -399,12 +445,19 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         return [ProposalCategoryDTO.model_validate(c) for c in categories]
 
     @staticmethod
-    def _generate_unique_slug(event_id: int, base_slug: str) -> str:
+    def _generate_unique_slug(
+        event_id: int, base_slug: str, exclude_pk: int | None = None
+    ) -> str:
         slug = base_slug
         counter = 2
 
         # pylint: disable-next=while-used
-        while ProposalCategory.objects.filter(event_id=event_id, slug=slug).exists():
+        while True:
+            query = ProposalCategory.objects.filter(event_id=event_id, slug=slug)
+            if exclude_pk:
+                query = query.exclude(pk=exclude_pk)
+            if not query.exists():
+                break
             slug = f"{base_slug}-{counter}"
             counter += 1
 

@@ -20,4 +20,14 @@ urlpatterns = [
         panel.CFPCreatePageView.as_view(),
         name="cfp-create",
     ),
+    path(
+        "event/<slug:event_slug>/cfp/<str:category_slug>/",
+        panel.CFPEditPageView.as_view(),
+        name="cfp-edit",
+    ),
+    path(
+        "event/<slug:event_slug>/cfp/<str:category_slug>/do/delete",
+        panel.CFPDeleteActionView.as_view(),
+        name="cfp-delete",
+    ),
 ]
