@@ -273,7 +273,13 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["category"] = category
-        context["form"] = ProposalCategoryForm(initial={"name": category.name})
+        context["form"] = ProposalCategoryForm(
+            initial={
+                "name": category.name,
+                "start_time": category.start_time,
+                "end_time": category.end_time,
+            }
+        )
         return TemplateResponse(self.request, "panel/cfp-edit.html", context)
 
     def post(
@@ -303,8 +309,14 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             context["form"] = form
             return TemplateResponse(self.request, "panel/cfp-edit.html", context)
 
-        name = form.cleaned_data["name"]
-        self.request.uow.proposal_categories.update(category.pk, name)
+        self.request.uow.proposal_categories.update(
+            category.pk,
+            {
+                "name": form.cleaned_data["name"],
+                "start_time": form.cleaned_data["start_time"],
+                "end_time": form.cleaned_data["end_time"],
+            },
+        )
 
         messages.success(self.request, _("Session type updated successfully."))
         return redirect("panel:cfp", slug=event_slug)

@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from django.contrib import messages
@@ -234,3 +235,82 @@ class TestCFPEditPageView:
             messages=[(messages.ERROR, "Session type not found.")],
             url=f"/panel/event/{event.slug}/cfp/",
         )
+
+    # Time fields tests
+
+    def test_get_form_contains_time_fields_with_initial_values(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        start = datetime(2025, 3, 1, 10, 0, tzinfo=UTC)
+        end = datetime(2025, 4, 30, 23, 59, tzinfo=UTC)
+        category = ProposalCategory.objects.create(
+            event=event,
+            name="RPG Sessions",
+            slug="rpg-sessions",
+            start_time=start,
+            end_time=end,
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        form = response.context["form"]
+        assert form.initial["start_time"] == start
+        assert form.initial["end_time"] == end
+
+    def test_post_updates_time_fields(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                "start_time": "2025-03-01T10:00",
+                "end_time": "2025-04-30T23:59",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.start_time is not None
+        assert category.start_time.date() == datetime(2025, 3, 1, tzinfo=UTC).date()
+        assert category.end_time is not None
+        assert category.end_time.date() == datetime(2025, 4, 30, tzinfo=UTC).date()
+
+    def test_post_clears_time_fields_when_empty(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event,
+            name="RPG Sessions",
+            slug="rpg-sessions",
+            start_time=datetime(2025, 3, 1, 10, 0, tzinfo=UTC),
+            end_time=datetime(2025, 4, 30, 23, 59, tzinfo=UTC),
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={"name": "RPG Sessions", "start_time": "", "end_time": ""},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.start_time is None
+        assert category.end_time is None

@@ -186,6 +186,12 @@ class UserData(TypedDict, total=False):
     username: str
 
 
+class ProposalCategoryData(TypedDict, total=False):
+    name: str
+    start_time: datetime | None
+    end_time: datetime | None
+
+
 @dataclass
 class RequestContext:
     current_site_id: int
@@ -286,7 +292,7 @@ class ProposalCategoryRepositoryProtocol(Protocol):
     def has_proposals(pk: int) -> bool: ...
     def list_by_event(self, event_id: int) -> list[ProposalCategoryDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> ProposalCategoryDTO: ...
-    def update(self, pk: int, name: str) -> ProposalCategoryDTO: ...
+    def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO: ...
 
 
 class UnitOfWorkProtocol(Protocol):

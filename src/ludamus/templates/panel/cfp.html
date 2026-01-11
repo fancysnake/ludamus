@@ -1,6 +1,7 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
 {% load heroicons %}
+{% load cfp_tags %}
 {% block title %}
     {% translate "Call for Proposals" %} - Ludamus Backoffice
 {% endblock title %}
@@ -34,7 +35,7 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {% translate "Slug" %}
+                                {% translate "Submissions" %}
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -46,7 +47,18 @@
                         {% for category in categories %}
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ category.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ category.slug }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% with status=category|cfp_status %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ status.class }}">
+                                            {{ status.label }}
+                                        </span>
+                                        {% if category.start_time or category.end_time %}
+                                            <span class="ml-2">
+                                                {{ category.start_time|date:"d M H:i"|default:"—" }} – {{ category.end_time|date:"d M H:i"|default:"—" }}
+                                            </span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <a href="{% url 'panel:cfp-edit' event_slug=current_event.slug category_slug=category.slug %}"
                                        class="text-primary hover:text-primary/80 mr-4">{% translate "Edit" %}</a>

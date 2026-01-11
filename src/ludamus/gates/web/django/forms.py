@@ -28,3 +28,5 @@ class ProposalCategoryForm(forms.Form):
             "required": _("Category name is required."),
         },
     )
+    start_time = forms.DateTimeField(required=False)
+    end_time = forms.DateTimeField(required=False)

@@ -20,6 +20,7 @@ from ludamus.pacts import (
     EventRepositoryProtocol,
     EventStatsData,
     NotFoundError,
+    ProposalCategoryData,
     ProposalCategoryDTO,
     ProposalCategoryRepositoryProtocol,
     ProposalDTO,
@@ -405,20 +406,34 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         self._storage.proposal_categories[category.pk] = category
         return ProposalCategoryDTO.model_validate(category)
 
-    def update(self, pk: int, name: str) -> ProposalCategoryDTO:
+    def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO:
         if not (category := self._storage.proposal_categories.get(pk)):
             try:
                 category = ProposalCategory.objects.get(id=pk)
             except ProposalCategory.DoesNotExist as exception:
                 raise NotFoundError from exception
 
-        if category.name != name:
+        needs_save = False
+
+        if "name" in data and category.name != data["name"]:
+            name = data["name"]
             base_slug = slugify(name)
             slug = self._generate_unique_slug(
                 category.event_id, base_slug, exclude_pk=pk
             )
             category.name = name
             category.slug = slug
+            needs_save = True
+
+        if "start_time" in data and category.start_time != data["start_time"]:
+            category.start_time = data["start_time"]
+            needs_save = True
+
+        if "end_time" in data and category.end_time != data["end_time"]:
+            category.end_time = data["end_time"]
+            needs_save = True
+
+        if needs_save:
             category.save()
 
         self._storage.proposal_categories[pk] = category

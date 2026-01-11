@@ -1,7 +1,9 @@
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from django.contrib import messages
 from django.urls import reverse
+from freezegun import freeze_time
 
 from ludamus.adapters.db.django.models import ProposalCategory
 from tests.integration.utils import assert_response
@@ -83,3 +85,98 @@ class TestCFPPageView:
 
         assert response.status_code == HTTPStatus.OK
         assert response.context["categories"] == []
+
+    # Status badge tests
+
+    def test_shows_not_set_status_when_no_times(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert b"Not set" in response.content
+
+    @freeze_time("2025-06-15 12:00:00")
+    def test_shows_closed_status_when_past(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        ProposalCategory.objects.create(
+            event=event,
+            name="RPG",
+            slug="rpg",
+            start_time=datetime(2025, 5, 1, tzinfo=UTC),
+            end_time=datetime(2025, 5, 31, tzinfo=UTC),
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert b"Closed" in response.content
+
+    @freeze_time("2025-04-15 12:00:00")
+    def test_shows_upcoming_status_when_future(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        ProposalCategory.objects.create(
+            event=event,
+            name="RPG",
+            slug="rpg",
+            start_time=datetime(2025, 5, 1, tzinfo=UTC),
+            end_time=datetime(2025, 5, 31, tzinfo=UTC),
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert b"Upcoming" in response.content
+
+    @freeze_time("2025-05-15 12:00:00")
+    def test_shows_active_status_when_open(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        ProposalCategory.objects.create(
+            event=event,
+            name="RPG",
+            slug="rpg",
+            start_time=datetime(2025, 5, 1, tzinfo=UTC),
+            end_time=datetime(2025, 5, 31, tzinfo=UTC),
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert b"Active" in response.content
+
+    @freeze_time("2025-05-15 12:00:00")
+    def test_shows_active_status_when_only_start_time(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        ProposalCategory.objects.create(
+            event=event,
+            name="RPG",
+            slug="rpg",
+            start_time=datetime(2025, 5, 1, tzinfo=UTC),
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert b"Active" in response.content
+
+    @freeze_time("2025-05-15 12:00:00")
+    def test_shows_not_set_status_when_only_end_time_in_future(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        ProposalCategory.objects.create(
+            event=event,
+            name="RPG",
+            slug="rpg",
+            end_time=datetime(2025, 5, 31, tzinfo=UTC),
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert b"Not set" in response.content
