@@ -7,6 +7,7 @@ if TYPE_CHECKING:
         AgendaItem,
         Event,
         Proposal,
+        ProposalCategory,
         Session,
         Space,
         Sphere,
@@ -24,6 +25,7 @@ class Storage:  # pylint: disable=too-many-instance-attributes
         default_factory=lambda: defaultdict(dict)
     )
     events: dict[int, Event] = field(default_factory=dict)
+    proposal_categories: dict[int, ProposalCategory] = field(default_factory=dict)
     proposals: dict[int, Proposal] = field(default_factory=dict)
     sessions: dict[int, Session] = field(default_factory=dict)
     spaces_by_event: dict[int, dict[int, Space]] = field(

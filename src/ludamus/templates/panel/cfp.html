@@ -1,0 +1,63 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% block title %}
+    {% translate "Call for Proposals" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "Call for Proposals" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Session Types" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:cfp-create' slug=current_event.slug %}"
+           class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+            {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+            {% translate "New Session Type" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        {% if categories %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% translate "Name" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% translate "Slug" %}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for category in categories %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ category.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ category.slug }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+                <p class="text-gray-500">
+                    {% translate "No session types yet. Add a session type to allow hosts to submit proposals." %}
+                </p>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <p class="text-gray-500">{% translate "No events available. Create an event to get started." %}</p>
+        </div>
+    {% endif %}
+{% endblock content %}

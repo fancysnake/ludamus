@@ -1,9 +1,12 @@
 from typing import TYPE_CHECKING
 
+from django.utils.text import slugify
+
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Event,
     Proposal,
+    ProposalCategory,
     Session,
     Space,
     Sphere,
@@ -17,6 +20,8 @@ from ludamus.pacts import (
     EventRepositoryProtocol,
     EventStatsData,
     NotFoundError,
+    ProposalCategoryDTO,
+    ProposalCategoryRepositoryProtocol,
     ProposalDTO,
     ProposalRepositoryProtocol,
     SessionData,
@@ -370,3 +375,37 @@ class EventRepository(EventRepositoryProtocol):
         event.name = name
         event.save()
         self._storage.events[event_id] = event
+
+
+class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(self, event_id: int, name: str) -> ProposalCategoryDTO:
+        base_slug = slugify(name)
+        slug = self._generate_unique_slug(event_id, base_slug)
+
+        category = ProposalCategory.objects.create(
+            event_id=event_id, name=name, slug=slug
+        )
+        self._storage.proposal_categories[category.pk] = category
+
+        return ProposalCategoryDTO.model_validate(category)
+
+    def list_by_event(self, event_id: int) -> list[ProposalCategoryDTO]:
+        categories = ProposalCategory.objects.filter(event_id=event_id).order_by("name")
+        for category in categories:
+            self._storage.proposal_categories[category.pk] = category
+        return [ProposalCategoryDTO.model_validate(c) for c in categories]
+
+    @staticmethod
+    def _generate_unique_slug(event_id: int, base_slug: str) -> str:
+        slug = base_slug
+        counter = 2
+
+        # pylint: disable-next=while-used
+        while ProposalCategory.objects.filter(event_id=event_id, slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug

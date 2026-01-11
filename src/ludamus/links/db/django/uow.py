@@ -49,6 +49,10 @@ class UnitOfWork(UnitOfWorkProtocol):
         return repositories.EventRepository(self._storage)
 
     @cached_property
+    def proposal_categories(self) -> repositories.ProposalCategoryRepository:
+        return repositories.ProposalCategoryRepository(self._storage)
+
+    @cached_property
     def proposals(self) -> repositories.ProposalRepository:
         return repositories.ProposalRepository(self._storage)
 

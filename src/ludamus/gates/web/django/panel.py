@@ -10,7 +10,7 @@ from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
 
-from ludamus.gates.web.django.forms import EventSettingsForm
+from ludamus.gates.web.django.forms import EventSettingsForm, ProposalCategoryForm
 from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
 from ludamus.pacts import NotFoundError
 
@@ -180,3 +180,67 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Event settings saved successfully."))
         return redirect("panel:event-settings", slug=slug)
+
+
+class CFPPageView(PanelAccessMixin, EventContextMixin, View):
+    """List call for proposals categories for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display CFP categories list.
+
+        Returns:
+            TemplateResponse with the categories list or redirect if not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        context["categories"] = self.request.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
+        return TemplateResponse(self.request, "panel/cfp.html", context)
+
+
+class CFPCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    """Create a new CFP category for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display the CFP category creation form.
+
+        Returns:
+            TemplateResponse with the form or redirect if event not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        context["form"] = ProposalCategoryForm()
+        return TemplateResponse(self.request, "panel/cfp-create.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Handle CFP category creation.
+
+        Returns:
+            Redirect response to CFP list on success, or form with errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        form = ProposalCategoryForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "cfp"
+            context["form"] = form
+            return TemplateResponse(self.request, "panel/cfp-create.html", context)
+
+        name = form.cleaned_data["name"]
+        self.request.uow.proposal_categories.create(current_event.pk, name)
+
+        messages.success(self.request, _("Category created successfully."))
+        return redirect("panel:cfp", slug=slug)
