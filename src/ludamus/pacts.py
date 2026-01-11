@@ -192,6 +192,13 @@ class ProposalCategoryData(TypedDict, total=False):
     end_time: datetime | None
 
 
+class CategoryStats(TypedDict):
+    """Statistics for a proposal category."""
+
+    proposals_count: int
+    accepted_count: int
+
+
 @dataclass
 class RequestContext:
     current_site_id: int
@@ -288,6 +295,8 @@ class EventRepositoryProtocol(Protocol):
 class ProposalCategoryRepositoryProtocol(Protocol):
     def create(self, event_id: int, name: str) -> ProposalCategoryDTO: ...
     def delete(self, pk: int) -> None: ...
+    @staticmethod
+    def get_category_stats(event_id: int) -> dict[int, CategoryStats]: ...
     @staticmethod
     def has_proposals(pk: int) -> bool: ...
     def list_by_event(self, event_id: int) -> list[ProposalCategoryDTO]: ...

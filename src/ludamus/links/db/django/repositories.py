@@ -15,6 +15,7 @@ from ludamus.adapters.db.django.models import (
 from ludamus.pacts import (
     AgendaItemData,
     AgendaItemRepositoryProtocol,
+    CategoryStats,
     ConnectedUserRepositoryProtocol,
     EventDTO,
     EventRepositoryProtocol,
@@ -448,6 +449,31 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
 
         category.delete()
         self._storage.proposal_categories.pop(pk, None)
+
+    @staticmethod
+    def get_category_stats(event_id: int) -> dict[int, CategoryStats]:
+        """Get proposal statistics for all categories of an event.
+
+        Returns:
+            Dict mapping category ID to CategoryStats with proposals_count
+            and accepted_count (proposals with session assigned).
+        """
+        from django.db.models import Count, Q  # noqa: PLC0415
+
+        categories = ProposalCategory.objects.filter(event_id=event_id).annotate(
+            proposals_count=Count("proposals"),
+            accepted_count=Count(
+                "proposals", filter=Q(proposals__session__isnull=False)
+            ),
+        )
+
+        return {
+            category.pk: CategoryStats(
+                proposals_count=category.proposals_count,
+                accepted_count=category.accepted_count,
+            )
+            for category in categories
+        }
 
     @staticmethod
     def has_proposals(pk: int) -> bool:

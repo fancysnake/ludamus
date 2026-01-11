@@ -36,3 +36,15 @@ def cfp_status(category: Any) -> dict[str, str]:  # type: ignore[misc] # noqa: A
         return {"label": _("Active"), "class": "bg-green-100 text-green-700"}
 
     return {"label": _("Not set"), "class": "bg-gray-100 text-gray-600"}
+
+
+@register.filter
+def get_item(dictionary: dict[Any, Any], key: Any) -> Any:  # type: ignore[misc] # noqa: ANN401
+    """Get an item from a dictionary by key.
+
+    Returns:
+        The value for the key, or None if not found.
+    """
+    if not dictionary:
+        return None
+    return dictionary.get(key)

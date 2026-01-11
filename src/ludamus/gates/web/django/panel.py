@@ -201,6 +201,9 @@ class CFPPageView(PanelAccessMixin, EventContextMixin, View):
         context["categories"] = self.request.uow.proposal_categories.list_by_event(
             current_event.pk
         )
+        context["category_stats"] = (
+            self.request.uow.proposal_categories.get_category_stats(current_event.pk)
+        )
         return TemplateResponse(self.request, "panel/cfp.html", context)
 
 
