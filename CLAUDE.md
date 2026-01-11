@@ -422,3 +422,39 @@ src/ludamus/
 - Move views from `adapters/web/django/` to `gates/web/`
 - Move settings to `norms/`
 - Extract business logic from views to `mills`
+
+## TDD Workflow
+
+When implementing features or fixing bugs, follow this test-driven development
+workflow. Wait for human approval before proceeding to the next phase.
+
+### Phase 1: Plan
+
+1. Understand the requirements, constraints, and edge cases
+2. Propose an implementation plan: approach, components to modify, key decisions
+3. **Wait for human to review and approve the plan**
+
+### Phase 2: Write Tests (Red)
+
+1. Write test cases covering expected behavior, edge cases, and failure modes
+2. **Wait for human to review and approve the tests**
+3. Run tests to confirm they fail (nothing implemented yet)
+
+### Phase 3: Implement (Green)
+
+1. Write minimal implementation to pass the tests
+2. Run tests to verify they pass
+3. **Wait for human to review the implementation**
+
+### Phase 4: Refactor
+
+1. Refactor if needed: clean up, improve structure, address review feedback
+2. Run tests again to ensure nothing broke
+3. **Wait for human to do manual/exploratory testing**
+
+### Principles
+
+- Never skip ahead; wait for approval at each checkpoint
+- Tests define the contract; invest time in getting them right
+- Keep iterations small; break large features into smaller cycles
+- Explain reasoning and decisions at each step

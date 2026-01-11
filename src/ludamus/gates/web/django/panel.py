@@ -10,7 +10,7 @@ from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
 
-from ludamus.gates.web.django.forms import EventSettingsForm
+from ludamus.gates.web.django.forms import EventSettingsForm, ProposalCategoryForm
 from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
 from ludamus.pacts import NotFoundError
 
@@ -180,3 +180,183 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Event settings saved successfully."))
         return redirect("panel:event-settings", slug=slug)
+
+
+class CFPPageView(PanelAccessMixin, EventContextMixin, View):
+    """List call for proposals categories for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display CFP categories list.
+
+        Returns:
+            TemplateResponse with the categories list or redirect if not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        context["categories"] = self.request.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
+        context["category_stats"] = (
+            self.request.uow.proposal_categories.get_category_stats(current_event.pk)
+        )
+        return TemplateResponse(self.request, "panel/cfp.html", context)
+
+
+class CFPCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    """Create a new CFP category for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display the CFP category creation form.
+
+        Returns:
+            TemplateResponse with the form or redirect if event not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        context["form"] = ProposalCategoryForm()
+        return TemplateResponse(self.request, "panel/cfp-create.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Handle CFP category creation.
+
+        Returns:
+            Redirect response to CFP list on success, or form with errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        form = ProposalCategoryForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "cfp"
+            context["form"] = form
+            return TemplateResponse(self.request, "panel/cfp-create.html", context)
+
+        name = form.cleaned_data["name"]
+        self.request.uow.proposal_categories.create(current_event.pk, name)
+
+        messages.success(self.request, _("Category created successfully."))
+        return redirect("panel:cfp", slug=slug)
+
+
+class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
+    """Edit an existing CFP category."""
+
+    request: PanelRequest
+
+    def get(
+        self, _request: PanelRequest, event_slug: str, category_slug: str
+    ) -> HttpResponse:
+        """Display the CFP category edit form.
+
+        Returns:
+            TemplateResponse with the form or redirect if not found.
+        """
+        context, current_event = self.get_event_context(event_slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            category = self.request.uow.proposal_categories.read_by_slug(
+                current_event.pk, category_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Session type not found."))
+            return redirect("panel:cfp", slug=event_slug)
+
+        context["active_nav"] = "cfp"
+        context["category"] = category
+        context["form"] = ProposalCategoryForm(
+            initial={
+                "name": category.name,
+                "start_time": category.start_time,
+                "end_time": category.end_time,
+            }
+        )
+        return TemplateResponse(self.request, "panel/cfp-edit.html", context)
+
+    def post(
+        self, _request: PanelRequest, event_slug: str, category_slug: str
+    ) -> HttpResponse:
+        """Handle CFP category update.
+
+        Returns:
+            Redirect response to CFP list on success, or form with errors.
+        """
+        context, current_event = self.get_event_context(event_slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            category = self.request.uow.proposal_categories.read_by_slug(
+                current_event.pk, category_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Session type not found."))
+            return redirect("panel:cfp", slug=event_slug)
+
+        form = ProposalCategoryForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "cfp"
+            context["category"] = category
+            context["form"] = form
+            return TemplateResponse(self.request, "panel/cfp-edit.html", context)
+
+        self.request.uow.proposal_categories.update(
+            category.pk,
+            {
+                "name": form.cleaned_data["name"],
+                "start_time": form.cleaned_data["start_time"],
+                "end_time": form.cleaned_data["end_time"],
+            },
+        )
+
+        messages.success(self.request, _("Session type updated successfully."))
+        return redirect("panel:cfp", slug=event_slug)
+
+
+class CFPDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+    """Delete a CFP category (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ["post"]  # noqa: RUF012
+
+    def post(
+        self, _request: PanelRequest, event_slug: str, category_slug: str
+    ) -> HttpResponse:
+        """Handle CFP category deletion.
+
+        Returns:
+            Redirect response to CFP list.
+        """
+        _context, current_event = self.get_event_context(event_slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            category = self.request.uow.proposal_categories.read_by_slug(
+                current_event.pk, category_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Session type not found."))
+            return redirect("panel:cfp", slug=event_slug)
+
+        if self.request.uow.proposal_categories.has_proposals(category.pk):
+            messages.error(
+                self.request, _("Cannot delete session type with existing proposals.")
+            )
+            return redirect("panel:cfp", slug=event_slug)
+
+        self.request.uow.proposal_categories.delete(category.pk)
+        messages.success(self.request, _("Session type deleted successfully."))
+        return redirect("panel:cfp", slug=event_slug)

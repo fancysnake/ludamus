@@ -14,4 +14,20 @@ urlpatterns = [
         panel.EventSettingsPageView.as_view(),
         name="event-settings",
     ),
+    path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
+    path(
+        "event/<slug:slug>/cfp/create/",
+        panel.CFPCreatePageView.as_view(),
+        name="cfp-create",
+    ),
+    path(
+        "event/<slug:event_slug>/cfp/<str:category_slug>/",
+        panel.CFPEditPageView.as_view(),
+        name="cfp-edit",
+    ),
+    path(
+        "event/<slug:event_slug>/cfp/<str:category_slug>/do/delete",
+        panel.CFPDeleteActionView.as_view(),
+        name="cfp-delete",
+    ),
 ]

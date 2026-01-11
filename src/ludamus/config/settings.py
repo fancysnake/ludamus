@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     "ludamus.adapters.web.django.apps.WebMainConfig",
     "ludamus.adapters.db.django.apps.DBMainConfig",
     "ludamus.gates.cli.django.apps.CliGatesConfig",
+    "ludamus.gates.web.django.apps.WebGatesConfig",
 ]
 
 MIDDLEWARE = [

@@ -186,6 +186,19 @@ class UserData(TypedDict, total=False):
     username: str
 
 
+class ProposalCategoryData(TypedDict, total=False):
+    name: str
+    start_time: datetime | None
+    end_time: datetime | None
+
+
+class CategoryStats(TypedDict):
+    """Statistics for a proposal category."""
+
+    proposals_count: int
+    accepted_count: int
+
+
 @dataclass
 class RequestContext:
     current_site_id: int
@@ -279,6 +292,18 @@ class EventRepositoryProtocol(Protocol):
     def update_name(self, event_id: int, name: str) -> None: ...
 
 
+class ProposalCategoryRepositoryProtocol(Protocol):
+    def create(self, event_id: int, name: str) -> ProposalCategoryDTO: ...
+    def delete(self, pk: int) -> None: ...
+    @staticmethod
+    def get_category_stats(event_id: int) -> dict[int, CategoryStats]: ...
+    @staticmethod
+    def has_proposals(pk: int) -> bool: ...
+    def list_by_event(self, event_id: int) -> list[ProposalCategoryDTO]: ...
+    def read_by_slug(self, event_id: int, slug: str) -> ProposalCategoryDTO: ...
+    def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO: ...
+
+
 class UnitOfWorkProtocol(Protocol):
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
@@ -294,6 +319,8 @@ class UnitOfWorkProtocol(Protocol):
     def connected_users(self) -> ConnectedUserRepositoryProtocol: ...
     @property
     def events(self) -> EventRepositoryProtocol: ...
+    @property
+    def proposal_categories(self) -> ProposalCategoryRepositoryProtocol: ...
     @property
     def proposals(self) -> ProposalRepositoryProtocol: ...
     @property
