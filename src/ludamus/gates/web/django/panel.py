@@ -1,6 +1,6 @@
 """Backoffice panel views (gates layer)."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, cast  # pylint: disable=unused-import
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -10,7 +10,11 @@ from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
 
-from ludamus.gates.web.django.forms import EventSettingsForm, ProposalCategoryForm
+from ludamus.gates.web.django.forms import (
+    EventSettingsForm,
+    PersonalDataFieldForm,
+    ProposalCategoryForm,
+)
 from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
 from ludamus.pacts import NotFoundError
 
@@ -283,6 +287,12 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "end_time": category.end_time,
             }
         )
+        context["available_fields"] = (
+            self.request.uow.personal_data_fields.list_by_event(current_event.pk)
+        )
+        context["field_requirements"] = (
+            self.request.uow.proposal_categories.get_field_requirements(category.pk)
+        )
         return TemplateResponse(self.request, "panel/cfp-edit.html", context)
 
     def post(
@@ -319,6 +329,16 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "start_time": form.cleaned_data["start_time"],
                 "end_time": form.cleaned_data["end_time"],
             },
+        )
+
+        # Parse and save field requirements
+        field_requirements: dict[int, bool] = {}
+        for key, value in self.request.POST.items():
+            if key.startswith("field_") and value in {"required", "optional"}:
+                field_id = int(key.removeprefix("field_"))
+                field_requirements[field_id] = value == "required"
+        self.request.uow.proposal_categories.set_field_requirements(
+            category.pk, field_requirements
         )
 
         messages.success(self.request, _("Session type updated successfully."))
@@ -360,3 +380,180 @@ class CFPDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         self.request.uow.proposal_categories.delete(category.pk)
         messages.success(self.request, _("Session type deleted successfully."))
         return redirect("panel:cfp", slug=event_slug)
+
+
+class PersonalDataFieldsPageView(PanelAccessMixin, EventContextMixin, View):
+    """List personal data fields for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display personal data fields list.
+
+        Returns:
+            TemplateResponse with the fields list or redirect if not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        context["fields"] = self.request.uow.personal_data_fields.list_by_event(
+            current_event.pk
+        )
+        return TemplateResponse(
+            self.request, "panel/personal-data-fields.html", context
+        )
+
+
+class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    """Create a new personal data field for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display the personal data field creation form.
+
+        Returns:
+            TemplateResponse with the form or redirect if event not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        context["form"] = PersonalDataFieldForm()
+        return TemplateResponse(
+            self.request, "panel/personal-data-field-create.html", context
+        )
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Handle personal data field creation.
+
+        Returns:
+            Redirect response to fields list on success, or form with errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        form = PersonalDataFieldForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "cfp"
+            context["form"] = form
+            return TemplateResponse(
+                self.request, "panel/personal-data-field-create.html", context
+            )
+
+        name = form.cleaned_data["name"]
+        field_type = cast(
+            "Literal['text', 'select']", form.cleaned_data.get("field_type") or "text"
+        )
+        options_text = form.cleaned_data.get("options") or ""
+        options = [o.strip() for o in options_text.split("\n") if o.strip()] or None
+
+        self.request.uow.personal_data_fields.create(
+            current_event.pk, name, field_type, options
+        )
+
+        messages.success(self.request, _("Personal data field created successfully."))
+        return redirect("panel:personal-data-fields", slug=slug)
+
+
+class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
+    """Edit an existing personal data field."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
+        """Display the personal data field edit form.
+
+        Returns:
+            TemplateResponse with the form or redirect if not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            field = self.request.uow.personal_data_fields.read_by_slug(
+                current_event.pk, field_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Personal data field not found."))
+            return redirect("panel:personal-data-fields", slug=slug)
+
+        context["active_nav"] = "cfp"
+        context["field"] = field
+        context["form"] = PersonalDataFieldForm(initial={"name": field.name})
+        return TemplateResponse(
+            self.request, "panel/personal-data-field-edit.html", context
+        )
+
+    def post(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
+        """Handle personal data field update.
+
+        Returns:
+            Redirect response to fields list on success, or form with errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            field = self.request.uow.personal_data_fields.read_by_slug(
+                current_event.pk, field_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Personal data field not found."))
+            return redirect("panel:personal-data-fields", slug=slug)
+
+        form = PersonalDataFieldForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "cfp"
+            context["field"] = field
+            context["form"] = form
+            return TemplateResponse(
+                self.request, "panel/personal-data-field-edit.html", context
+            )
+
+        name = form.cleaned_data["name"]
+        self.request.uow.personal_data_fields.update(field.pk, name)
+
+        messages.success(self.request, _("Personal data field updated successfully."))
+        return redirect("panel:personal-data-fields", slug=slug)
+
+
+class PersonalDataFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+    """Delete a personal data field (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ["post"]  # noqa: RUF012
+
+    def post(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
+        """Handle personal data field deletion.
+
+        Returns:
+            Redirect response to personal data fields list.
+        """
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            field = self.request.uow.personal_data_fields.read_by_slug(
+                current_event.pk, field_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Personal data field not found."))
+            return redirect("panel:personal-data-fields", slug=slug)
+
+        if self.request.uow.personal_data_fields.has_requirements(field.pk):
+            messages.error(
+                self.request, _("Cannot delete field that is used in session types.")
+            )
+            return redirect("panel:personal-data-fields", slug=slug)
+
+        self.request.uow.personal_data_fields.delete(field.pk)
+        messages.success(self.request, _("Personal data field deleted successfully."))
+        return redirect("panel:personal-data-fields", slug=slug)

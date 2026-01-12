@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import (
         AgendaItem,
         Event,
+        PersonalDataField,
         Proposal,
         ProposalCategory,
         Session,
@@ -25,6 +26,7 @@ class Storage:  # pylint: disable=too-many-instance-attributes
         default_factory=lambda: defaultdict(dict)
     )
     events: dict[int, Event] = field(default_factory=dict)
+    personal_data_fields: dict[int, PersonalDataField] = field(default_factory=dict)
     proposal_categories: dict[int, ProposalCategory] = field(default_factory=dict)
     proposals: dict[int, Proposal] = field(default_factory=dict)
     sessions: dict[int, Session] = field(default_factory=dict)

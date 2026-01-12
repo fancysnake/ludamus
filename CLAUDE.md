@@ -43,9 +43,9 @@ mise run start  # Runs on ludamus.local:8000
 ```bash
 mise run test        # Run all tests with template variable checking
 mise run unittest    # Run only unit tests
-pytest tests/unit                           # Unit tests only
-pytest tests/integration                    # Integration tests only
-pytest tests/integration/views/test_foo.py  # Single test file
+mise run tests/unit                           # Unit tests only
+mise run tests/integration                    # Integration tests only
+mise run tests/integration/views/test_foo.py  # Single test file
 ```
 
 **Code Quality:**

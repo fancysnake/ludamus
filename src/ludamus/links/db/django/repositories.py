@@ -1,10 +1,13 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, cast  # pylint: disable=unused-import
 
 from django.utils.text import slugify
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Event,
+    PersonalDataField,
+    PersonalDataFieldOption,
+    PersonalDataFieldRequirement,
     Proposal,
     ProposalCategory,
     Session,
@@ -21,6 +24,9 @@ from ludamus.pacts import (
     EventRepositoryProtocol,
     EventStatsData,
     NotFoundError,
+    PersonalDataFieldDTO,
+    PersonalDataFieldOptionDTO,
+    PersonalDataFieldRepositoryProtocol,
     ProposalCategoryData,
     ProposalCategoryDTO,
     ProposalCategoryRepositoryProtocol,
@@ -486,6 +492,37 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         return [ProposalCategoryDTO.model_validate(c) for c in categories]
 
     @staticmethod
+    def get_field_requirements(category_id: int) -> dict[int, bool]:
+        """Get field requirements for a category.
+
+        Returns:
+            Dict mapping field_id to is_required boolean.
+        """
+        requirements = PersonalDataFieldRequirement.objects.filter(
+            category_id=category_id
+        )
+        return {req.field_id: req.is_required for req in requirements}
+
+    @staticmethod
+    def set_field_requirements(category_id: int, requirements: dict[int, bool]) -> None:
+        """Set field requirements for a category.
+
+        Replaces all existing requirements with the provided ones.
+
+        Args:
+            category_id: The category to set requirements for.
+            requirements: Dict mapping field_id to is_required boolean.
+        """
+        # Delete existing requirements
+        PersonalDataFieldRequirement.objects.filter(category_id=category_id).delete()
+
+        # Create new requirements
+        for field_id, is_required in requirements.items():
+            PersonalDataFieldRequirement.objects.create(
+                category_id=category_id, field_id=field_id, is_required=is_required
+            )
+
+    @staticmethod
     def _generate_unique_slug(
         event_id: int, base_slug: str, exclude_pk: int | None = None
     ) -> str:
@@ -503,3 +540,120 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
             counter += 1
 
         return slug
+
+
+class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(
+        self,
+        event_id: int,
+        name: str,
+        field_type: str = "text",
+        options: list[str] | None = None,
+    ) -> PersonalDataFieldDTO:
+        base_slug = slugify(name)
+        slug = self._generate_unique_slug(event_id, base_slug)
+
+        field = PersonalDataField.objects.create(
+            event_id=event_id, name=name, slug=slug, field_type=field_type
+        )
+        self._storage.personal_data_fields[field.pk] = field
+
+        if field_type == "select" and options:
+            for order, raw_option in enumerate(options):
+                if option_label := raw_option.strip():
+                    PersonalDataFieldOption.objects.create(
+                        field=field, label=option_label, value=option_label, order=order
+                    )
+
+        return self._to_dto(field)
+
+    def delete(self, pk: int) -> None:
+        if field := self._storage.personal_data_fields.pop(pk, None):
+            field.delete()
+        else:
+            PersonalDataField.objects.filter(pk=pk).delete()
+
+    @staticmethod
+    def has_requirements(pk: int) -> bool:
+        """Check if a personal data field is used in any category requirements.
+
+        Returns:
+            True if the field is used in at least one category requirement.
+        """
+        return PersonalDataFieldRequirement.objects.filter(field_id=pk).exists()
+
+    def list_by_event(self, event_id: int) -> list[PersonalDataFieldDTO]:
+        fields = PersonalDataField.objects.filter(event_id=event_id).prefetch_related(
+            "options"
+        )
+        for field in fields:
+            self._storage.personal_data_fields[field.pk] = field
+        return [self._to_dto(f) for f in fields]
+
+    def read_by_slug(self, event_id: int, slug: str) -> PersonalDataFieldDTO:
+        for field in self._storage.personal_data_fields.values():
+            if field.slug == slug and field.event_id == event_id:
+                return self._to_dto(field)
+
+        try:
+            field = PersonalDataField.objects.prefetch_related("options").get(
+                event_id=event_id, slug=slug
+            )
+        except PersonalDataField.DoesNotExist as exc:
+            raise NotFoundError from exc
+
+        self._storage.personal_data_fields[field.pk] = field
+        return self._to_dto(field)
+
+    def update(self, pk: int, name: str) -> PersonalDataFieldDTO:
+        if not (field := self._storage.personal_data_fields.get(pk)):
+            try:
+                field = PersonalDataField.objects.get(pk=pk)
+            except PersonalDataField.DoesNotExist as exc:
+                raise NotFoundError from exc
+
+        base_slug = slugify(name)
+        slug = self._generate_unique_slug(field.event_id, base_slug, exclude_pk=pk)
+
+        field.name = name
+        field.slug = slug
+        field.save()
+        self._storage.personal_data_fields[field.pk] = field
+
+        return self._to_dto(field)
+
+    @staticmethod
+    def _generate_unique_slug(
+        event_id: int, base_slug: str, exclude_pk: int | None = None
+    ) -> str:
+        slug = base_slug
+        counter = 2
+
+        # pylint: disable-next=while-used
+        while True:
+            query = PersonalDataField.objects.filter(event_id=event_id, slug=slug)
+            if exclude_pk:
+                query = query.exclude(pk=exclude_pk)
+            if not query.exists():
+                break
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug
+
+    @staticmethod
+    def _to_dto(field: PersonalDataField) -> PersonalDataFieldDTO:
+        options = [
+            PersonalDataFieldOptionDTO.model_validate(o) for o in field.options.all()
+        ]
+        return PersonalDataFieldDTO(
+            field_type=cast("Literal['text', 'select']", field.field_type),
+            name=field.name,
+            options=options,
+            order=field.order,
+            pk=field.pk,
+            slug=field.slug,
+        )

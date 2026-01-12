@@ -1,5 +1,7 @@
 """Django forms for panel views."""
 
+from typing import ClassVar
+
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
@@ -30,3 +32,26 @@ class ProposalCategoryForm(forms.Form):
     )
     start_time = forms.DateTimeField(required=False)
     end_time = forms.DateTimeField(required=False)
+
+
+class PersonalDataFieldForm(forms.Form):
+    """Form for creating/editing personal data fields."""
+
+    FIELD_TYPE_CHOICES: ClassVar = [("text", _("Text")), ("select", _("Select"))]
+
+    name = forms.CharField(
+        max_length=255,
+        strip=True,
+        error_messages={
+            "max_length": _("Field name is too long (max 255 characters)."),
+            "required": _("Field name is required."),
+        },
+    )
+    field_type = forms.ChoiceField(
+        choices=FIELD_TYPE_CHOICES, initial="text", required=False
+    )
+    options = forms.CharField(
+        required=False,
+        widget=forms.Textarea,
+        help_text=_("One option per line (for Select fields only)."),
+    )

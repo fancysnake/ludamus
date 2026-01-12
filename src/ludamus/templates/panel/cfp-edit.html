@@ -1,6 +1,7 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
 {% load heroicons %}
+{% load cfp_tags %}
 {% block title %}
     {% translate "Edit Session Type" %} - Ludamus Backoffice
 {% endblock title %}
@@ -13,16 +14,22 @@
     {% endif %}
 {% endblock page_subtitle %}
 {% block header_actions %}
-    {% if current_event %}
+    {% if current_event and category %}
         <a href="{% url 'panel:cfp' slug=current_event.slug %}"
-           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition mr-2">
             {% translate "Cancel" %}
         </a>
+        <button type="submit"
+                form="cfp-edit-form"
+                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+            {% heroicon_outline "check" class="w-4 h-4 mr-2" %}
+            {% translate "Save" %}
+        </button>
     {% endif %}
 {% endblock header_actions %}
 {% block content %}
     {% if current_event and category %}
-        <form method="post" class="max-w-2xl">
+        <form method="post" id="cfp-edit-form" class="max-w-2xl">
             {% csrf_token %}
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-6">{% translate "Session Type Details" %}</h3>
@@ -60,14 +67,32 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-6 flex justify-end">
-                    <button type="submit"
-                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-                        {% heroicon_outline "check" class="w-4 h-4 mr-2" %}
-                        {% translate "Save" %}
-                    </button>
-                </div>
             </div>
+            {% if available_fields %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "Host Data Fields" %}</h3>
+                    <p class="text-sm text-gray-500 mb-6">{% translate "Select which personal data fields hosts must provide when submitting to this session type." %}</p>
+                    <div class="space-y-4">
+                        {% for field in available_fields %}
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                                <span class="text-sm font-medium text-gray-700">{{ field.name }}</span>
+                                <select name="field_{{ field.pk }}"
+                                        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="none" {% if field.pk not in field_requirements %}selected{% endif %}>{% translate "Not included" %}</option>
+                                    <option value="required" {% if field_requirements|get_item:field.pk is True %}selected{% endif %}>{% translate "Required" %}</option>
+                                    <option value="optional" {% if field_requirements|get_item:field.pk is False %}selected{% endif %}>{% translate "Optional" %}</option>
+                                </select>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mt-6 text-center">
+                    <p class="text-sm text-gray-500 mb-2">{% translate "No personal data fields defined for this event." %}</p>
+                    <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
+                       class="text-sm text-primary hover:text-primary/80">{% translate "Configure host data fields" %}</a>
+                </div>
+            {% endif %}
         </form>
     {% endif %}
 {% endblock content %}
