@@ -293,6 +293,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["field_requirements"] = (
             self.request.uow.proposal_categories.get_field_requirements(category.pk)
         )
+        context["durations"] = category.durations
         return TemplateResponse(self.request, "panel/cfp-edit.html", context)
 
     def post(
@@ -322,12 +323,17 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             context["form"] = form
             return TemplateResponse(self.request, "panel/cfp-edit.html", context)
 
+        # Parse durations from POST (can be single value or list)
+        durations_raw = self.request.POST.getlist("durations")
+        durations: list[str] = [d for d in durations_raw if d]
+
         self.request.uow.proposal_categories.update(
             category.pk,
             {
                 "name": form.cleaned_data["name"],
                 "start_time": form.cleaned_data["start_time"],
                 "end_time": form.cleaned_data["end_time"],
+                "durations": durations,
             },
         )
 

@@ -861,6 +861,9 @@ class ProposalCategory(models.Model):
     tag_categories = models.ManyToManyField(TagCategory)
     max_participants_limit = models.PositiveIntegerField(default=100)
     min_participants_limit = models.PositiveIntegerField(default=1)
+    durations = models.JSONField(
+        default=list
+    )  # ISO 8601 durations, e.g. ["PT30M", "PT1H"]
 
     class Meta:
         db_table = "proposal_category"

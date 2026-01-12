@@ -52,9 +52,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">{% translate "Options" %}</label>
                             <ul class="bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-700 space-y-1">
-                                {% for option in field.options %}
-                                    <li class="text-sm">{{ option.label }}</li>
-                                {% endfor %}
+                                {% for option in field.options %}<li class="text-sm">{{ option.label }}</li>{% endfor %}
                             </ul>
                         </div>
                     {% endif %}

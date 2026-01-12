@@ -541,3 +541,130 @@ class TestCFPEditPageView:
         assert not PersonalDataFieldRequirement.objects.filter(
             category=category, field=bio_field
         ).exists()
+
+    # Duration configuration tests
+
+    def test_get_includes_durations_in_context(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event,
+            name="RPG Sessions",
+            slug="rpg-sessions",
+            durations=["PT1H", "PT2H", "PT3H"],
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["durations"] == ["PT1H", "PT2H", "PT3H"]
+
+    def test_get_returns_empty_durations_when_none_configured(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["durations"] == []
+
+    def test_post_saves_durations(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={"name": "RPG Sessions", "durations": ["PT30M", "PT1H", "PT2H"]},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.durations == ["PT30M", "PT1H", "PT2H"]
+
+    def test_post_updates_existing_durations(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event,
+            name="RPG Sessions",
+            slug="rpg-sessions",
+            durations=["PT1H", "PT2H"],
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={"name": "RPG Sessions", "durations": ["PT30M", "PT45M"]},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.durations == ["PT30M", "PT45M"]
+
+    def test_post_clears_durations_when_empty(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event,
+            name="RPG Sessions",
+            slug="rpg-sessions",
+            durations=["PT1H", "PT2H"],
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category), data={"name": "RPG Sessions"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.durations == []
+
+    def test_post_saves_single_duration(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                "durations": "PT1H",  # Single value (not list)
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.durations == ["PT1H"]

@@ -38,12 +38,19 @@
                         {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2" for="id_field_type">{% translate "Field Type" %}</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2"
+                               for="id_field_type">{% translate "Field Type" %}</label>
                         <select name="field_type"
                                 id="id_field_type"
                                 class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
-                            <option value="text" {% if form.field_type.value == "text" %}selected{% endif %}>{% translate "Text" %}</option>
-                            <option value="select" {% if form.field_type.value == "select" %}selected{% endif %}>{% translate "Select" %}</option>
+                            <option value="text"
+                                    {% if form.field_type.value == "text" %}selected{% endif %}>
+                                {% translate "Text" %}
+                            </option>
+                            <option value="select"
+                                    {% if form.field_type.value == "select" %}selected{% endif %}>
+                                {% translate "Select" %}
+                            </option>
                         </select>
                     </div>
                     <div id="options-container" class="hidden">
@@ -60,6 +67,7 @@
                     document.addEventListener('DOMContentLoaded', function() {
                         const fieldType = document.getElementById('id_field_type');
                         const optionsContainer = document.getElementById('options-container');
+
                         function toggleOptions() {
                             optionsContainer.classList.toggle('hidden', fieldType.value !== 'select');
                         }

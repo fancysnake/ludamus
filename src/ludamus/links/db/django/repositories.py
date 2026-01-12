@@ -440,6 +440,10 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
             category.end_time = data["end_time"]
             needs_save = True
 
+        if "durations" in data and category.durations != data["durations"]:
+            category.durations = data["durations"]
+            needs_save = True
+
         if needs_save:
             category.save()
 

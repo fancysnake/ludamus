@@ -68,19 +68,141 @@
                     </div>
                 </div>
             </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "Allowed Durations" %}</h3>
+                <p class="text-sm text-gray-500 mb-6">{% translate "Define how long sessions of this type can be." %}</p>
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="number"
+                           id="duration-hours"
+                           min="0"
+                           max="24"
+                           value="1"
+                           class="w-16 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-center">
+                    <span class="text-sm text-gray-500">{% translate "h" %}</span>
+                    <input type="number"
+                           id="duration-minutes"
+                           min="0"
+                           max="59"
+                           value="0"
+                           class="w-16 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-center">
+                    <span class="text-sm text-gray-500">{% translate "min" %}</span>
+                    <button type="button"
+                            id="add-duration-btn"
+                            class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition text-sm flex items-center">
+                        {% heroicon_outline "plus" class="w-4 h-4 mr-1" %}
+                        {% translate "Add" %}
+                    </button>
+                </div>
+                <div id="durations-list" class="space-y-2">
+                    {% for duration in durations %}
+                        <div class="duration-item flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                            <span class="text-sm text-gray-700">{{ duration|format_duration }}</span>
+                            <input type="hidden" name="durations" value="{{ duration }}">
+                            <button type="button"
+                                    class="remove-duration text-gray-400 hover:text-red-500 transition">
+                                {% heroicon_outline "x-mark" class="w-4 h-4" %}
+                            </button>
+                        </div>
+                    {% empty %}
+                        <p id="no-durations-msg" class="text-sm text-gray-400 italic">{% translate "No durations configured yet." %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <script>
+                (function() {
+                    const hoursInput = document.getElementById('duration-hours');
+                    const minutesInput = document.getElementById('duration-minutes');
+                    const addBtn = document.getElementById('add-duration-btn');
+                    const list = document.getElementById('durations-list');
+                    const noMsg = document.getElementById('no-durations-msg');
+
+                    function formatDuration(iso) {
+                        const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+                        if (!match) return iso;
+                        const hours = match[1] ? parseInt(match[1]) : 0;
+                        const mins = match[2] ? parseInt(match[2]) : 0;
+                        if (hours && mins) return hours + 'h ' + mins + 'min';
+                        if (hours) return hours + 'h';
+                        return mins + 'min';
+                    }
+
+                    function toIso(hours, mins) {
+                        let iso = 'PT';
+                        if (hours > 0) iso += hours + 'H';
+                        if (mins > 0) iso += mins + 'M';
+                        return iso === 'PT' ? null : iso;
+                    }
+
+                    function createDurationItem(iso) {
+                        const div = document.createElement('div');
+                        div.className = 'duration-item flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg';
+                        div.innerHTML = `
+                            <span class="text-sm text-gray-700" data-iso="${iso}">${formatDuration(iso)}</span>
+                            <input type="hidden" name="durations" value="${iso}">
+                            <button type="button" class="remove-duration text-gray-400 hover:text-red-500 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        `;
+                        return div;
+                    }
+
+                    addBtn.addEventListener('click', function() {
+                        const hours = parseInt(hoursInput.value) || 0;
+                        const mins = parseInt(minutesInput.value) || 0;
+                        const iso = toIso(hours, mins);
+                        if (!iso) return;
+
+                        // Check for duplicates
+                        const existing = list.querySelectorAll('input[name="durations"]');
+                        for (const input of existing) {
+                            if (input.value === iso) return;
+                        }
+
+                        if (noMsg) noMsg.remove();
+                        list.appendChild(createDurationItem(iso));
+                    });
+
+                    list.addEventListener('click', function(e) {
+                        const btn = e.target.closest('.remove-duration');
+                        if (btn) {
+                            btn.closest('.duration-item').remove();
+                            if (!list.querySelector('.duration-item')) {
+                                const p = document.createElement('p');
+                                p.id = 'no-durations-msg';
+                                p.className = 'text-sm text-gray-400 italic';
+                                p.textContent = 'No durations configured yet.';
+                                list.appendChild(p);
+                            }
+                        }
+                    });
+                })();
+            </script>
             {% if available_fields %}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "Host Data Fields" %}</h3>
-                    <p class="text-sm text-gray-500 mb-6">{% translate "Select which personal data fields hosts must provide when submitting to this session type." %}</p>
+                    <p class="text-sm text-gray-500 mb-6">
+                        {% translate "Select which personal data fields hosts must provide when submitting to this session type." %}
+                    </p>
                     <div class="space-y-4">
                         {% for field in available_fields %}
                             <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                                 <span class="text-sm font-medium text-gray-700">{{ field.name }}</span>
                                 <select name="field_{{ field.pk }}"
                                         class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                                    <option value="none" {% if field.pk not in field_requirements %}selected{% endif %}>{% translate "Not included" %}</option>
-                                    <option value="required" {% if field_requirements|get_item:field.pk is True %}selected{% endif %}>{% translate "Required" %}</option>
-                                    <option value="optional" {% if field_requirements|get_item:field.pk is False %}selected{% endif %}>{% translate "Optional" %}</option>
+                                    <option value="none"
+                                            {% if field.pk not in field_requirements %}selected{% endif %}>
+                                        {% translate "Not included" %}
+                                    </option>
+                                    <option value="required"
+                                            {% if field_requirements|get_item:field.pk is True %}selected{% endif %}>
+                                        {% translate "Required" %}
+                                    </option>
+                                    <option value="optional"
+                                            {% if field_requirements|get_item:field.pk is False %}selected{% endif %}>
+                                        {% translate "Optional" %}
+                                    </option>
                                 </select>
                             </div>
                         {% endfor %}

@@ -17,6 +17,7 @@ class NotFoundError(Exception):
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    durations: list[str]
     end_time: datetime | None
     max_participants_limit: int
     min_participants_limit: int
@@ -187,9 +188,10 @@ class UserData(TypedDict, total=False):
 
 
 class ProposalCategoryData(TypedDict, total=False):
+    durations: list[str]
+    end_time: datetime | None
     name: str
     start_time: datetime | None
-    end_time: datetime | None
 
 
 class CategoryStats(TypedDict):
