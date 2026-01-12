@@ -81,6 +81,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
+    def __str__(self) -> str:
+        return f"{self.name}"
+
     def get_full_name(self) -> str:
         return self.name or DEFAULT_NAME
 

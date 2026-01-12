@@ -180,7 +180,7 @@ class TestSessionParticipation:
         assert (
             str(
                 SessionParticipation(
-                    user=User(username=username),
+                    user=User(name=username),
                     status=SessionParticipationStatus.CONFIRMED,
                     session=Session(title=title),
                 )
