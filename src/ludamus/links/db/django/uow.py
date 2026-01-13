@@ -61,6 +61,10 @@ class UnitOfWork(UnitOfWorkProtocol):
         return repositories.ProposalRepository(self._storage)
 
     @cached_property
+    def session_fields(self) -> repositories.SessionFieldRepository:
+        return repositories.SessionFieldRepository(self._storage)
+
+    @cached_property
     def sessions(self) -> repositories.SessionRepository:
         return repositories.SessionRepository(self._storage)
 

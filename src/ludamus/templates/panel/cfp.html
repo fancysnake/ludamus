@@ -20,6 +20,11 @@
             {% heroicon_outline "identification" class="w-4 h-4 mr-2" %}
             {% translate "Host Data Fields" %}
         </a>
+        <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
+           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center mr-2">
+            {% heroicon_outline "tag" class="w-4 h-4 mr-2" %}
+            {% translate "Session Fields" %}
+        </a>
         <a href="{% url 'panel:cfp-create' slug=current_event.slug %}"
            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
             {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}

@@ -1,0 +1,215 @@
+from http import HTTPStatus
+
+from django.contrib import messages
+from django.urls import reverse
+
+from ludamus.adapters.db.django.models import SessionField
+from tests.integration.utils import assert_response
+
+PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+class TestSessionFieldEditPageView:
+    """Tests for /panel/event/<slug>/cfp/session-fields/<field_slug>/edit/ page."""
+
+    @staticmethod
+    def get_url(event, field):
+        return reverse(
+            "panel:session-field-edit",
+            kwargs={"slug": event.slug, "field_slug": field.slug},
+        )
+
+    # GET tests
+
+    def test_get_redirects_anonymous_user_to_login(self, client, event):
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        response = client.get(self.get_url(event, field))
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert "/crowd/login-required/" in response.url
+
+    def test_get_redirects_non_manager_user(self, authenticated_client, event):
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        response = authenticated_client.get(self.get_url(event, field))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, PERMISSION_ERROR)],
+            url="/",
+        )
+
+    def test_get_ok_for_sphere_manager(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        response = authenticated_client.get(self.get_url(event, field))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "panel/session-field-edit.html"
+        assert response.context["current_event"].pk == event.pk
+        assert response.context["active_nav"] == "cfp"
+        assert response.context["field"].pk == field.pk
+        assert "form" in response.context
+
+    def test_get_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        url = reverse(
+            "panel:session-field-edit",
+            kwargs={"slug": "nonexistent", "field_slug": field.slug},
+        )
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
+        )
+
+    def test_get_redirects_on_invalid_field_slug(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:session-field-edit",
+            kwargs={"slug": event.slug, "field_slug": "nonexistent"},
+        )
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Session field not found.")],
+            url=f"/panel/event/{event.slug}/cfp/session-fields/",
+        )
+
+    # POST tests
+
+    def test_post_redirects_anonymous_user_to_login(self, client, event):
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        response = client.post(self.get_url(event, field), data={"name": "Difficulty"})
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert "/crowd/login-required/" in response.url
+
+    def test_post_redirects_non_manager_user(self, authenticated_client, event):
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        response = authenticated_client.post(
+            self.get_url(event, field), data={"name": "Difficulty"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, PERMISSION_ERROR)],
+            url="/",
+        )
+
+    def test_post_updates_field_name(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        response = authenticated_client.post(
+            self.get_url(event, field), data={"name": "RPG System"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session field updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/session-fields/",
+        )
+        field.refresh_from_db()
+        assert field.name == "RPG System"
+
+    def test_post_updates_slug_on_name_change(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        authenticated_client.post(
+            self.get_url(event, field), data={"name": "RPG System"}
+        )
+
+        field.refresh_from_db()
+        assert field.slug == "rpg-system"
+
+    def test_post_generates_unique_slug_on_collision(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        SessionField.objects.create(event=event, name="Difficulty", slug="difficulty")
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        authenticated_client.post(
+            self.get_url(event, field), data={"name": "Difficulty"}
+        )
+
+        field.refresh_from_db()
+        assert field.slug == "difficulty-2"
+
+    def test_post_error_on_empty_name_rerenders_form(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        response = authenticated_client.post(self.get_url(event, field), data={})
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "panel/session-field-edit.html"
+        assert response.context["form"].errors
+        field.refresh_from_db()
+        assert field.name == "Genre"  # Name unchanged
+
+    def test_post_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        url = reverse(
+            "panel:session-field-edit",
+            kwargs={"slug": "nonexistent", "field_slug": field.slug},
+        )
+
+        response = authenticated_client.post(url, data={"name": "Difficulty"})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
+        )
+
+    def test_post_redirects_on_invalid_field_slug(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:session-field-edit",
+            kwargs={"slug": event.slug, "field_slug": "nonexistent"},
+        )
+
+        response = authenticated_client.post(url, data={"name": "Difficulty"})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Session field not found.")],
+            url=f"/panel/event/{event.slug}/cfp/session-fields/",
+        )

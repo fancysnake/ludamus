@@ -183,14 +183,20 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "Host Data Fields" %}</h3>
                     <p class="text-sm text-gray-500 mb-6">
-                        {% translate "Select which personal data fields hosts must provide when submitting to this session type." %}
+                        {% translate "Select which personal data fields hosts must provide. Drag to reorder." %}
                     </p>
-                    <div class="space-y-4">
+                    <input type="hidden" name="field_order" id="field-order" value="{{ field_order|join:',' }}">
+                    <div id="host-fields-list" class="space-y-2">
                         {% for field in available_fields %}
-                            <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                                <span class="text-sm font-medium text-gray-700">{{ field.name }}</span>
+                            <div class="field-item flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg cursor-move"
+                                 draggable="true"
+                                 data-field-id="{{ field.pk }}">
+                                <span class="drag-handle text-gray-400">
+                                    {% heroicon_outline "bars-3" class="w-4 h-4" %}
+                                </span>
+                                <span class="text-sm font-medium text-gray-700 flex-1">{{ field.name }}</span>
                                 <select name="field_{{ field.pk }}"
-                                        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                        class="field-select border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                                     <option value="none"
                                             {% if field.pk not in field_requirements %}selected{% endif %}>
                                         {% translate "Not included" %}
@@ -215,6 +221,111 @@
                        class="text-sm text-primary hover:text-primary/80">{% translate "Configure host data fields" %}</a>
                 </div>
             {% endif %}
+            {% if available_session_fields %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "Session Fields" %}</h3>
+                    <p class="text-sm text-gray-500 mb-6">
+                        {% translate "Select which session fields hosts must provide. Drag to reorder." %}
+                    </p>
+                    <input type="hidden" name="session_field_order" id="session-field-order" value="{{ session_field_order|join:',' }}">
+                    <div id="session-fields-list" class="space-y-2">
+                        {% for field in available_session_fields %}
+                            <div class="field-item flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg cursor-move"
+                                 draggable="true"
+                                 data-field-id="{{ field.pk }}">
+                                <span class="drag-handle text-gray-400">
+                                    {% heroicon_outline "bars-3" class="w-4 h-4" %}
+                                </span>
+                                <span class="text-sm font-medium text-gray-700 flex-1">{{ field.name }}</span>
+                                <select name="session_field_{{ field.pk }}"
+                                        class="field-select border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="none"
+                                            {% if field.pk not in session_field_requirements %}selected{% endif %}>
+                                        {% translate "Not included" %}
+                                    </option>
+                                    <option value="required"
+                                            {% if session_field_requirements|get_item:field.pk is True %}selected{% endif %}>
+                                        {% translate "Required" %}
+                                    </option>
+                                    <option value="optional"
+                                            {% if session_field_requirements|get_item:field.pk is False %}selected{% endif %}>
+                                        {% translate "Optional" %}
+                                    </option>
+                                </select>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mt-6 text-center">
+                    <p class="text-sm text-gray-500 mb-2">{% translate "No session fields defined for this event." %}</p>
+                    <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
+                       class="text-sm text-primary hover:text-primary/80">{% translate "Configure session fields" %}</a>
+                </div>
+            {% endif %}
+            <script>
+                (function() {
+                    function setupSortable(listId, orderInputId) {
+                        const list = document.getElementById(listId);
+                        const orderInput = document.getElementById(orderInputId);
+                        if (!list || !orderInput) return;
+
+                        let draggedItem = null;
+
+                        function updateOrder() {
+                            const items = list.querySelectorAll('.field-item');
+                            const includedIds = [];
+                            items.forEach(item => {
+                                const select = item.querySelector('.field-select');
+                                if (select && select.value !== 'none') {
+                                    includedIds.push(item.dataset.fieldId);
+                                }
+                            });
+                            orderInput.value = includedIds.join(',');
+                        }
+
+                        list.addEventListener('dragstart', e => {
+                            if (e.target.classList.contains('field-item')) {
+                                draggedItem = e.target;
+                                e.target.style.opacity = '0.5';
+                            }
+                        });
+
+                        list.addEventListener('dragend', e => {
+                            if (e.target.classList.contains('field-item')) {
+                                e.target.style.opacity = '1';
+                                draggedItem = null;
+                                updateOrder();
+                            }
+                        });
+
+                        list.addEventListener('dragover', e => {
+                            e.preventDefault();
+                            const target = e.target.closest('.field-item');
+                            if (target && target !== draggedItem) {
+                                const rect = target.getBoundingClientRect();
+                                const midY = rect.top + rect.height / 2;
+                                if (e.clientY < midY) {
+                                    target.parentNode.insertBefore(draggedItem, target);
+                                } else {
+                                    target.parentNode.insertBefore(draggedItem, target.nextSibling);
+                                }
+                            }
+                        });
+
+                        list.addEventListener('change', e => {
+                            if (e.target.classList.contains('field-select')) {
+                                updateOrder();
+                            }
+                        });
+
+                        updateOrder();
+                    }
+
+                    setupSortable('host-fields-list', 'field-order');
+                    setupSortable('session-fields-list', 'session-field-order');
+                })();
+            </script>
         </form>
     {% endif %}
 {% endblock content %}

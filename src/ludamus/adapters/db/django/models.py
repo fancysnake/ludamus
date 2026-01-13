@@ -1010,6 +1010,7 @@ class PersonalDataFieldRequirement(models.Model):
         related_name="category_requirements",
     )
     is_required = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = "personal_data_field_requirement"
@@ -1052,3 +1053,79 @@ class HostPersonalData(models.Model):
     def __str__(self) -> str:
         value_preview = str(self.value)[:50]
         return f"{self.field.name}: {value_preview}"
+
+
+class SessionFieldType(models.TextChoices):
+    TEXT = "text", "Text"
+    SELECT = "select", "Select"
+
+
+class SessionField(models.Model):
+    """Defines a session field for an event (e.g., RPG System, Genre)."""
+
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="session_fields"
+    )
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    field_type = models.CharField(
+        max_length=20, choices=SessionFieldType.choices, default=SessionFieldType.TEXT
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "session_field"
+        ordering: ClassVar = ["order", "name"]
+        constraints = (
+            models.UniqueConstraint(
+                fields=("event", "slug"), name="session_field_unique_slug_per_event"
+            ),
+        )
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class SessionFieldOption(models.Model):
+    """An option for a select-type session field."""
+
+    field = models.ForeignKey(
+        SessionField, on_delete=models.CASCADE, related_name="options"
+    )
+    label = models.CharField(max_length=255)
+    value = models.CharField(max_length=255)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "session_field_option"
+        ordering: ClassVar = ["order", "label"]
+
+    def __str__(self) -> str:
+        return self.label
+
+
+class SessionFieldRequirement(models.Model):
+    """Specifies which session fields are required for a proposal category."""
+
+    category = models.ForeignKey(
+        ProposalCategory,
+        on_delete=models.CASCADE,
+        related_name="session_field_requirements",
+    )
+    field = models.ForeignKey(
+        SessionField, on_delete=models.CASCADE, related_name="category_requirements"
+    )
+    is_required = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "session_field_requirement"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("category", "field"), name="unique_session_field_per_category"
+            ),
+        )
+
+    def __str__(self) -> str:
+        req = "required" if self.is_required else "optional"
+        return f"{self.field.name} ({req}) for {self.category.name}"

@@ -41,6 +41,26 @@ urlpatterns = [
         name="personal-data-field-delete",
     ),
     path(
+        "event/<slug:slug>/cfp/session-fields/",
+        panel.SessionFieldsPageView.as_view(),
+        name="session-fields",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/create/",
+        panel.SessionFieldCreatePageView.as_view(),
+        name="session-field-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/<str:field_slug>/edit/",
+        panel.SessionFieldEditPageView.as_view(),
+        name="session-field-edit",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/<str:field_slug>/do/delete",
+        panel.SessionFieldDeleteActionView.as_view(),
+        name="session-field-delete",
+    ),
+    path(
         "event/<slug:event_slug>/cfp/<str:category_slug>/",
         panel.CFPEditPageView.as_view(),
         name="cfp-edit",

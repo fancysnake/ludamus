@@ -8,6 +8,8 @@ from ludamus.adapters.db.django.models import (
     PersonalDataField,
     PersonalDataFieldRequirement,
     ProposalCategory,
+    SessionField,
+    SessionFieldRequirement,
 )
 from tests.integration.utils import assert_response
 
@@ -668,3 +670,361 @@ class TestCFPEditPageView:
         )
         category.refresh_from_db()
         assert category.durations == ["PT1H"]
+
+    # Session field requirements tests
+
+    def test_get_includes_available_session_fields_in_context(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        SessionField.objects.create(event=event, name="Genre", slug="genre")
+        SessionField.objects.create(event=event, name="Difficulty", slug="difficulty")
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        available_session_fields = response.context["available_session_fields"]
+        assert len(available_session_fields) == 1 + 1  # Genre + Difficulty
+        assert available_session_fields[0].name == "Difficulty"
+        assert available_session_fields[1].name == "Genre"
+
+    def test_get_includes_session_field_requirements_in_context(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+        difficulty_field = SessionField.objects.create(
+            event=event, name="Difficulty", slug="difficulty"
+        )
+        SessionFieldRequirement.objects.create(
+            category=category, field=genre_field, is_required=True
+        )
+        SessionFieldRequirement.objects.create(
+            category=category, field=difficulty_field, is_required=False
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        session_field_requirements = response.context["session_field_requirements"]
+        assert session_field_requirements[genre_field.pk] is True
+        assert session_field_requirements[difficulty_field.pk] is False
+
+    def test_get_returns_empty_session_field_requirements_when_none_configured(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        SessionField.objects.create(event=event, name="Genre", slug="genre")
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["session_field_requirements"] == {}
+
+    def test_post_saves_session_field_requirement_as_required(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                f"session_field_{genre_field.pk}": "required",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        requirement = SessionFieldRequirement.objects.get(
+            category=category, field=genre_field
+        )
+        assert requirement.is_required is True
+
+    def test_post_saves_session_field_requirement_as_optional(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                f"session_field_{genre_field.pk}": "optional",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        requirement = SessionFieldRequirement.objects.get(
+            category=category, field=genre_field
+        )
+        assert requirement.is_required is False
+
+    def test_post_removes_session_field_requirement_when_set_to_none(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+        SessionFieldRequirement.objects.create(
+            category=category, field=genre_field, is_required=True
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={"name": "RPG Sessions", f"session_field_{genre_field.pk}": "none"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        assert not SessionFieldRequirement.objects.filter(
+            category=category, field=genre_field
+        ).exists()
+
+    def test_post_saves_multiple_session_field_requirements(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+        difficulty_field = SessionField.objects.create(
+            event=event, name="Difficulty", slug="difficulty"
+        )
+        system_field = SessionField.objects.create(
+            event=event, name="System", slug="system"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                f"session_field_{genre_field.pk}": "required",
+                f"session_field_{difficulty_field.pk}": "optional",
+                f"session_field_{system_field.pk}": "none",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        assert (
+            SessionFieldRequirement.objects.filter(category=category).count()
+            == 1 + 1  # genre + difficulty (system is "none")
+        )
+        genre_req = SessionFieldRequirement.objects.get(
+            category=category, field=genre_field
+        )
+        difficulty_req = SessionFieldRequirement.objects.get(
+            category=category, field=difficulty_field
+        )
+        assert genre_req.is_required is True
+        assert difficulty_req.is_required is False
+        assert not SessionFieldRequirement.objects.filter(
+            category=category, field=system_field
+        ).exists()
+
+    # Field ordering tests
+
+    def test_get_includes_field_order_in_context(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        email_field = PersonalDataField.objects.create(
+            event=event, name="Email", slug="email"
+        )
+        phone_field = PersonalDataField.objects.create(
+            event=event, name="Phone", slug="phone"
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=category, field=email_field, is_required=True, order=1
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=category, field=phone_field, is_required=False, order=0
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        # Order should be [phone, email] based on order field
+        field_order = response.context["field_order"]
+        assert field_order == [phone_field.pk, email_field.pk]
+
+    def test_get_returns_empty_field_order_when_none_configured(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["field_order"] == []
+
+    def test_post_saves_field_order(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        email_field = PersonalDataField.objects.create(
+            event=event, name="Email", slug="email"
+        )
+        phone_field = PersonalDataField.objects.create(
+            event=event, name="Phone", slug="phone"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                f"field_{email_field.pk}": "required",
+                f"field_{phone_field.pk}": "optional",
+                "field_order": f"{phone_field.pk},{email_field.pk}",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        email_req = PersonalDataFieldRequirement.objects.get(
+            category=category, field=email_field
+        )
+        phone_req = PersonalDataFieldRequirement.objects.get(
+            category=category, field=phone_field
+        )
+        assert phone_req.order == 0
+        assert email_req.order == 1
+
+    def test_get_includes_session_field_order_in_context(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+        difficulty_field = SessionField.objects.create(
+            event=event, name="Difficulty", slug="difficulty"
+        )
+        SessionFieldRequirement.objects.create(
+            category=category, field=genre_field, is_required=True, order=1
+        )
+        SessionFieldRequirement.objects.create(
+            category=category, field=difficulty_field, is_required=False, order=0
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        session_field_order = response.context["session_field_order"]
+        assert session_field_order == [difficulty_field.pk, genre_field.pk]
+
+    def test_get_returns_empty_session_field_order_when_none_configured(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["session_field_order"] == []
+
+    def test_post_saves_session_field_order(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+        difficulty_field = SessionField.objects.create(
+            event=event, name="Difficulty", slug="difficulty"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                f"session_field_{genre_field.pk}": "required",
+                f"session_field_{difficulty_field.pk}": "optional",
+                "session_field_order": f"{difficulty_field.pk},{genre_field.pk}",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        genre_req = SessionFieldRequirement.objects.get(
+            category=category, field=genre_field
+        )
+        difficulty_req = SessionFieldRequirement.objects.get(
+            category=category, field=difficulty_field
+        )
+        assert difficulty_req.order == 0
+        assert genre_req.order == 1

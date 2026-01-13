@@ -11,6 +11,9 @@ from ludamus.adapters.db.django.models import (
     Proposal,
     ProposalCategory,
     Session,
+    SessionField,
+    SessionFieldOption,
+    SessionFieldRequirement,
     Space,
     Sphere,
     TimeSlot,
@@ -33,6 +36,9 @@ from ludamus.pacts import (
     ProposalDTO,
     ProposalRepositoryProtocol,
     SessionData,
+    SessionFieldDTO,
+    SessionFieldOptionDTO,
+    SessionFieldRepositoryProtocol,
     SessionRepositoryProtocol,
     SiteDTO,
     SpaceDTO,
@@ -508,7 +514,21 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         return {req.field_id: req.is_required for req in requirements}
 
     @staticmethod
-    def set_field_requirements(category_id: int, requirements: dict[int, bool]) -> None:
+    def get_field_order(category_id: int) -> list[int]:
+        """Get ordered list of field IDs for a category.
+
+        Returns:
+            List of field IDs ordered by their order field.
+        """
+        requirements = PersonalDataFieldRequirement.objects.filter(
+            category_id=category_id
+        ).order_by("order")
+        return [req.field_id for req in requirements]
+
+    @staticmethod
+    def set_field_requirements(
+        category_id: int, requirements: dict[int, bool], order: list[int] | None = None
+    ) -> None:
         """Set field requirements for a category.
 
         Replaces all existing requirements with the provided ones.
@@ -516,14 +536,71 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         Args:
             category_id: The category to set requirements for.
             requirements: Dict mapping field_id to is_required boolean.
+            order: Optional list of field IDs defining the order.
         """
         # Delete existing requirements
         PersonalDataFieldRequirement.objects.filter(category_id=category_id).delete()
 
+        # Build order mapping
+        order_map = {fid: idx for idx, fid in enumerate(order or [])}
+
         # Create new requirements
         for field_id, is_required in requirements.items():
             PersonalDataFieldRequirement.objects.create(
-                category_id=category_id, field_id=field_id, is_required=is_required
+                category_id=category_id,
+                field_id=field_id,
+                is_required=is_required,
+                order=order_map.get(field_id, 0),
+            )
+
+    @staticmethod
+    def get_session_field_requirements(category_id: int) -> dict[int, bool]:
+        """Get session field requirements for a category.
+
+        Returns:
+            Dict mapping field_id to is_required boolean.
+        """
+        requirements = SessionFieldRequirement.objects.filter(category_id=category_id)
+        return {req.field_id: req.is_required for req in requirements}
+
+    @staticmethod
+    def get_session_field_order(category_id: int) -> list[int]:
+        """Get ordered list of session field IDs for a category.
+
+        Returns:
+            List of field IDs ordered by their order field.
+        """
+        requirements = SessionFieldRequirement.objects.filter(
+            category_id=category_id
+        ).order_by("order")
+        return [req.field_id for req in requirements]
+
+    @staticmethod
+    def set_session_field_requirements(
+        category_id: int, requirements: dict[int, bool], order: list[int] | None = None
+    ) -> None:
+        """Set session field requirements for a category.
+
+        Replaces all existing requirements with the provided ones.
+
+        Args:
+            category_id: The category to set requirements for.
+            requirements: Dict mapping field_id to is_required boolean.
+            order: Optional list of field IDs defining the order.
+        """
+        # Delete existing requirements
+        SessionFieldRequirement.objects.filter(category_id=category_id).delete()
+
+        # Build order mapping
+        order_map = {fid: idx for idx, fid in enumerate(order or [])}
+
+        # Create new requirements
+        for field_id, is_required in requirements.items():
+            SessionFieldRequirement.objects.create(
+                category_id=category_id,
+                field_id=field_id,
+                is_required=is_required,
+                order=order_map.get(field_id, 0),
             )
 
     @staticmethod
@@ -654,6 +731,121 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
             PersonalDataFieldOptionDTO.model_validate(o) for o in field.options.all()
         ]
         return PersonalDataFieldDTO(
+            field_type=cast("Literal['text', 'select']", field.field_type),
+            name=field.name,
+            options=options,
+            order=field.order,
+            pk=field.pk,
+            slug=field.slug,
+        )
+
+
+class SessionFieldRepository(SessionFieldRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(
+        self,
+        event_id: int,
+        name: str,
+        field_type: str = "text",
+        options: list[str] | None = None,
+    ) -> SessionFieldDTO:
+        base_slug = slugify(name)
+        slug = self._generate_unique_slug(event_id, base_slug)
+
+        field = SessionField.objects.create(
+            event_id=event_id, name=name, slug=slug, field_type=field_type
+        )
+        self._storage.session_fields[field.pk] = field
+
+        if field_type == "select" and options:
+            for order, raw_option in enumerate(options):
+                if option_label := raw_option.strip():
+                    SessionFieldOption.objects.create(
+                        field=field, label=option_label, value=option_label, order=order
+                    )
+
+        return self._to_dto(field)
+
+    def delete(self, pk: int) -> None:
+        if field := self._storage.session_fields.pop(pk, None):
+            field.delete()
+        else:
+            SessionField.objects.filter(pk=pk).delete()
+
+    @staticmethod
+    def has_requirements(pk: int) -> bool:
+        """Check if a session field is used in any category requirements.
+
+        Returns:
+            True if the field is used in at least one category requirement.
+        """
+        return SessionFieldRequirement.objects.filter(field_id=pk).exists()
+
+    def list_by_event(self, event_id: int) -> list[SessionFieldDTO]:
+        fields = SessionField.objects.filter(event_id=event_id).prefetch_related(
+            "options"
+        )
+        for field in fields:
+            self._storage.session_fields[field.pk] = field
+        return [self._to_dto(f) for f in fields]
+
+    def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO:
+        for field in self._storage.session_fields.values():
+            if field.slug == slug and field.event_id == event_id:
+                return self._to_dto(field)
+
+        try:
+            field = SessionField.objects.prefetch_related("options").get(
+                event_id=event_id, slug=slug
+            )
+        except SessionField.DoesNotExist as exc:
+            raise NotFoundError from exc
+
+        self._storage.session_fields[field.pk] = field
+        return self._to_dto(field)
+
+    def update(self, pk: int, name: str) -> SessionFieldDTO:
+        if not (field := self._storage.session_fields.get(pk)):
+            try:
+                field = SessionField.objects.get(pk=pk)
+            except SessionField.DoesNotExist as exc:
+                raise NotFoundError from exc
+
+        base_slug = slugify(name)
+        slug = self._generate_unique_slug(field.event_id, base_slug, exclude_pk=pk)
+
+        field.name = name
+        field.slug = slug
+        field.save()
+        self._storage.session_fields[field.pk] = field
+
+        return self._to_dto(field)
+
+    @staticmethod
+    def _generate_unique_slug(
+        event_id: int, base_slug: str, exclude_pk: int | None = None
+    ) -> str:
+        slug = base_slug
+        counter = 2
+
+        # pylint: disable-next=while-used
+        while True:
+            query = SessionField.objects.filter(event_id=event_id, slug=slug)
+            if exclude_pk:
+                query = query.exclude(pk=exclude_pk)
+            if not query.exists():
+                break
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug
+
+    @staticmethod
+    def _to_dto(field: SessionField) -> SessionFieldDTO:
+        options = [SessionFieldOptionDTO.model_validate(o) for o in field.options.all()]
+        return SessionFieldDTO(
             field_type=cast("Literal['text', 'select']", field.field_type),
             name=field.name,
             options=options,

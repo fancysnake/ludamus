@@ -10,6 +10,7 @@ if TYPE_CHECKING:
         Proposal,
         ProposalCategory,
         Session,
+        SessionField,
         Space,
         Sphere,
         Tag,
@@ -29,6 +30,7 @@ class Storage:  # pylint: disable=too-many-instance-attributes
     personal_data_fields: dict[int, PersonalDataField] = field(default_factory=dict)
     proposal_categories: dict[int, ProposalCategory] = field(default_factory=dict)
     proposals: dict[int, Proposal] = field(default_factory=dict)
+    session_fields: dict[int, SessionField] = field(default_factory=dict)
     sessions: dict[int, Session] = field(default_factory=dict)
     spaces_by_event: dict[int, dict[int, Space]] = field(
         default_factory=lambda: defaultdict(dict)
