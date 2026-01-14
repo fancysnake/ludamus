@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
@@ -25,11 +26,13 @@ class TestPersonalDataFieldEditPageView:
         field = PersonalDataField.objects.create(
             event=event, name="Email", slug="email"
         )
+        url = self.get_url(event, field)
 
-        response = client.get(self.get_url(event, field))
+        response = client.get(url)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_get_redirects_non_manager_user(self, authenticated_client, event):
         field = PersonalDataField.objects.create(
@@ -55,12 +58,24 @@ class TestPersonalDataFieldEditPageView:
 
         response = authenticated_client.get(self.get_url(event, field))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/personal-data-field-edit.html"
+        context_field = response.context["field"]
+        assert context_field.pk == field.pk
+        assert context_field.name == "Email"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/personal-data-field-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "field": context_field,
+                "form": ANY,
+            },
+        )
         assert response.context["current_event"].pk == event.pk
-        assert response.context["active_nav"] == "cfp"
-        assert response.context["field"].pk == field.pk
-        assert "form" in response.context
 
     def test_get_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere, event
@@ -107,11 +122,13 @@ class TestPersonalDataFieldEditPageView:
         field = PersonalDataField.objects.create(
             event=event, name="Email", slug="email"
         )
+        url = self.get_url(event, field)
 
-        response = client.post(self.get_url(event, field), data={"name": "Phone"})
+        response = client.post(url, data={"name": "Phone"})
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         field = PersonalDataField.objects.create(
@@ -189,9 +206,22 @@ class TestPersonalDataFieldEditPageView:
 
         response = authenticated_client.post(self.get_url(event, field), data={})
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/personal-data-field-edit.html"
         assert response.context["form"].errors
+        context_field = response.context["field"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/personal-data-field-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "field": context_field,
+                "form": ANY,
+            },
+        )
         field.refresh_from_db()
         assert field.name == "Email"  # Name unchanged
 

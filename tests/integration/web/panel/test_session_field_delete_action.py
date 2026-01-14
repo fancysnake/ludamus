@@ -25,11 +25,13 @@ class TestSessionFieldDeleteActionView:
 
     def test_post_redirects_anonymous_user_to_login(self, client, event):
         field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        url = self.get_url(event, field)
 
-        response = client.post(self.get_url(event, field))
+        response = client.post(url)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         field = SessionField.objects.create(event=event, name="Genre", slug="genre")

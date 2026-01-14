@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from http import HTTPStatus
+from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
@@ -32,11 +33,13 @@ class TestCFPEditPageView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
+        url = self.get_url(event, category)
 
-        response = client.get(self.get_url(event, category))
+        response = client.get(url)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_get_redirects_non_manager_user(self, authenticated_client, event):
         category = ProposalCategory.objects.create(
@@ -62,12 +65,30 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/cfp-edit.html"
+        context_category = response.context["category"]
+        assert context_category.pk == category.pk
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
         assert response.context["current_event"].pk == event.pk
-        assert response.context["active_nav"] == "cfp"
-        assert response.context["category"].pk == category.pk
-        assert "form" in response.context
 
     def test_get_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
@@ -111,13 +132,13 @@ class TestCFPEditPageView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
+        url = self.get_url(event, category)
 
-        response = client.post(
-            self.get_url(event, category), data={"name": "Workshops"}
+        response = client.post(url, data={"name": "Workshops"})
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
         )
-
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         category = ProposalCategory.objects.create(
@@ -200,9 +221,23 @@ class TestCFPEditPageView:
 
         response = authenticated_client.post(self.get_url(event, category), data={})
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/cfp-edit.html"
+        context_category = response.context["category"]
+        is_proposal_active = response.context["is_proposal_active"]
         assert response.context["form"].errors
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": is_proposal_active,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+            },
+        )
         category.refresh_from_db()
         assert category.name == "RPG Sessions"
 
@@ -260,10 +295,31 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
+        context_category = response.context["category"]
         form = response.context["form"]
         assert form.initial["start_time"] == start
         assert form.initial["end_time"] == end
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": form,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_post_updates_time_fields(
         self, authenticated_client, active_user, sphere, event
@@ -335,11 +391,32 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
+        context_category = response.context["category"]
         available_fields = response.context["available_fields"]
         assert len(available_fields) == 1 + 1  # Email + Phone
         assert available_fields[0].name == "Email"
         assert available_fields[1].name == "Phone"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": available_fields,
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_get_includes_field_requirements_in_context(
         self, authenticated_client, active_user, sphere, event
@@ -363,10 +440,33 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
+        context_category = response.context["category"]
+        available_fields = response.context["available_fields"]
         field_requirements = response.context["field_requirements"]
+        field_order = response.context["field_order"]
         assert field_requirements[email_field.pk] is True
         assert field_requirements[phone_field.pk] is False
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": available_fields,
+                "field_requirements": field_requirements,
+                "field_order": field_order,
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_get_returns_empty_field_requirements_when_none_configured(
         self, authenticated_client, active_user, sphere, event
@@ -379,8 +479,29 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["field_requirements"] == {}
+        context_category = response.context["category"]
+        available_fields = response.context["available_fields"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": available_fields,
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_post_saves_field_requirement_as_required(
         self, authenticated_client, active_user, sphere, event
@@ -559,8 +680,30 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["durations"] == ["PT1H", "PT2H", "PT3H"]
+        context_category = response.context["category"]
+        durations = response.context["durations"]
+        assert durations == ["PT1H", "PT2H", "PT3H"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": durations,
+            },
+        )
 
     def test_get_returns_empty_durations_when_none_configured(
         self, authenticated_client, active_user, sphere, event
@@ -572,8 +715,28 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["durations"] == []
+        context_category = response.context["category"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_post_saves_durations(
         self, authenticated_client, active_user, sphere, event
@@ -685,11 +848,32 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
+        context_category = response.context["category"]
         available_session_fields = response.context["available_session_fields"]
         assert len(available_session_fields) == 1 + 1  # Genre + Difficulty
         assert available_session_fields[0].name == "Difficulty"
         assert available_session_fields[1].name == "Genre"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": available_session_fields,
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_get_includes_session_field_requirements_in_context(
         self, authenticated_client, active_user, sphere, event
@@ -713,10 +897,33 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
+        context_category = response.context["category"]
+        available_session_fields = response.context["available_session_fields"]
         session_field_requirements = response.context["session_field_requirements"]
+        session_field_order = response.context["session_field_order"]
         assert session_field_requirements[genre_field.pk] is True
         assert session_field_requirements[difficulty_field.pk] is False
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": available_session_fields,
+                "session_field_requirements": session_field_requirements,
+                "session_field_order": session_field_order,
+                "durations": [],
+            },
+        )
 
     def test_get_returns_empty_session_field_requirements_when_none_configured(
         self, authenticated_client, active_user, sphere, event
@@ -729,8 +936,29 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["session_field_requirements"] == {}
+        context_category = response.context["category"]
+        available_session_fields = response.context["available_session_fields"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": available_session_fields,
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_post_saves_session_field_requirement_as_required(
         self, authenticated_client, active_user, sphere, event
@@ -894,10 +1122,60 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
-        # Order should be [phone, email] based on order field
+        context_category = response.context["category"]
+        available_fields = response.context["available_fields"]
+        field_requirements = response.context["field_requirements"]
         field_order = response.context["field_order"]
+        # Order should be [phone, email] based on order field
         assert field_order == [phone_field.pk, email_field.pk]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": available_fields,
+                "field_requirements": field_requirements,
+                "field_order": field_order,
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
+
+    def test_get_places_new_fields_after_ordered_fields(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        """New fields not in saved order should appear after ordered fields."""
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        email_field = PersonalDataField.objects.create(
+            event=event, name="Email", slug="email"
+        )
+        phone_field = PersonalDataField.objects.create(
+            event=event, name="Phone", slug="phone"
+        )
+        # Only email has a saved order requirement
+        PersonalDataFieldRequirement.objects.create(
+            category=category, field=email_field, is_required=True, order=0
+        )
+        # Phone is available but NOT in order (simulates new field added)
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        # Email should be first (has order), Phone should be after
+        available_fields = response.context["available_fields"]
+        assert available_fields[0].pk == email_field.pk
+        assert available_fields[1].pk == phone_field.pk
 
     def test_get_returns_empty_field_order_when_none_configured(
         self, authenticated_client, active_user, sphere, event
@@ -909,8 +1187,28 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["field_order"] == []
+        context_category = response.context["category"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_post_saves_field_order(
         self, authenticated_client, active_user, sphere, event
@@ -973,9 +1271,59 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
+        context_category = response.context["category"]
+        available_session_fields = response.context["available_session_fields"]
+        session_field_requirements = response.context["session_field_requirements"]
         session_field_order = response.context["session_field_order"]
         assert session_field_order == [difficulty_field.pk, genre_field.pk]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": available_session_fields,
+                "session_field_requirements": session_field_requirements,
+                "session_field_order": session_field_order,
+                "durations": [],
+            },
+        )
+
+    def test_get_places_new_session_fields_after_ordered_fields(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        """New session fields not in saved order should appear after ordered fields."""
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+        difficulty_field = SessionField.objects.create(
+            event=event, name="Difficulty", slug="difficulty"
+        )
+        # Only genre has a saved order requirement
+        SessionFieldRequirement.objects.create(
+            category=category, field=genre_field, is_required=True, order=0
+        )
+        # Difficulty is available but NOT in order (simulates new field added)
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        # Genre should be first (has order), Difficulty should be after
+        available_session_fields = response.context["available_session_fields"]
+        assert available_session_fields[0].pk == genre_field.pk
+        assert available_session_fields[1].pk == difficulty_field.pk
 
     def test_get_returns_empty_session_field_order_when_none_configured(
         self, authenticated_client, active_user, sphere, event
@@ -987,8 +1335,28 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["session_field_order"] == []
+        context_category = response.context["category"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "category": context_category,
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+            },
+        )
 
     def test_post_saves_session_field_order(
         self, authenticated_client, active_user, sphere, event

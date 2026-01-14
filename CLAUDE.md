@@ -458,3 +458,32 @@ workflow. Wait for human approval before proceeding to the next phase.
 - Tests define the contract; invest time in getting them right
 - Keep iterations small; break large features into smaller cycles
 - Explain reasoning and decisions at each step
+
+## Integration Test Assertions
+
+- Always use assert_response utility for view tests - never manual
+  status/template assertions
+- Include complete context_data dictionary with ALL keys the view returns - the
+  utility does exact equality matching
+
+### Use of ANY (from unittest.mock)
+
+- Reserve ANY for objects hard to compare: forms, views
+- Don't use ANY for: empty lists [], empty dicts {}, booleans, simple values
+
+### Login Redirect Pattern
+
+- Use exact URL match: url=f"/crowd/login-required/?next={url}"
+- Never use substring matching like assert "/crowd/login-required/"
+  in response.url
+
+### Magic Numbers in Tests
+
+- Use 1 + 1 pattern instead of literal 2, 3, etc. for count assertions
+- Add comment explaining the count: assert len(fields) == 1 + 1  # Email + Phone
+
+### Context Data Verification
+
+- Views must send DTOs or dataclasses to templates, never Django models
+- Tests should verify this by checking context values have expected DTO
+  attributes

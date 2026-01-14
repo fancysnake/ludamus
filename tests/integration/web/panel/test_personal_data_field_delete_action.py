@@ -27,11 +27,13 @@ class TestPersonalDataFieldDeleteActionView:
         field = PersonalDataField.objects.create(
             event=event, name="Email", slug="email"
         )
+        url = self.get_url(event, field)
 
-        response = client.post(self.get_url(event, field))
+        response = client.post(url)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         field = PersonalDataField.objects.create(

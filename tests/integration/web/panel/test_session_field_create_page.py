@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
@@ -19,10 +20,13 @@ class TestSessionFieldCreatePageView:
     # GET tests
 
     def test_get_redirects_anonymous_user_to_login(self, client, event):
-        response = client.get(self.get_url(event))
+        url = self.get_url(event)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_get_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.get(self.get_url(event))
@@ -41,11 +45,20 @@ class TestSessionFieldCreatePageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/session-field-create.html"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/session-field-create.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "form": ANY,
+            },
+        )
         assert response.context["current_event"].pk == event.pk
-        assert response.context["active_nav"] == "cfp"
-        assert "form" in response.context
 
     def test_get_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
@@ -65,10 +78,13 @@ class TestSessionFieldCreatePageView:
     # POST tests
 
     def test_post_redirects_anonymous_user_to_login(self, client, event):
-        response = client.post(self.get_url(event), data={"name": "RPG System"})
+        url = self.get_url(event)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        response = client.post(url, data={"name": "RPG System"})
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.post(
@@ -129,9 +145,20 @@ class TestSessionFieldCreatePageView:
 
         response = authenticated_client.post(self.get_url(event), data={})
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/session-field-create.html"
         assert response.context["form"].errors
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/session-field-create.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "form": ANY,
+            },
+        )
         assert not SessionField.objects.filter(event=event).exists()
 
     def test_post_redirects_on_invalid_event_slug(

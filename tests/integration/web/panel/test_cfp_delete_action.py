@@ -23,11 +23,13 @@ class TestCFPDeleteActionView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
+        url = self.get_url(event, category)
 
-        response = client.post(self.get_url(event, category))
+        response = client.post(url)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         category = ProposalCategory.objects.create(
@@ -132,4 +134,4 @@ class TestCFPDeleteActionView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.status_code == HTTPStatus.METHOD_NOT_ALLOWED
+        assert_response(response, HTTPStatus.METHOD_NOT_ALLOWED)

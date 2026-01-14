@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
@@ -17,10 +18,13 @@ class TestSessionFieldsPageView:
         return reverse("panel:session-fields", kwargs={"slug": event.slug})
 
     def test_get_redirects_anonymous_user_to_login(self, client, event):
-        response = client.get(self.get_url(event))
+        url = self.get_url(event)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_get_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.get(self.get_url(event))
@@ -39,10 +43,20 @@ class TestSessionFieldsPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/session-fields.html"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/session-fields.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "fields": [],
+            },
+        )
         assert response.context["current_event"].pk == event.pk
-        assert response.context["active_nav"] == "cfp"
 
     def test_get_returns_fields_in_context(
         self, authenticated_client, active_user, sphere, event
@@ -53,11 +67,24 @@ class TestSessionFieldsPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
+        # Verify fields are DTOs, not Django models
         fields = response.context["fields"]
         assert len(fields) == 1 + 1  # RPG System + Genre
         assert fields[0].name == "Genre"  # Alphabetically first
         assert fields[1].name == "RPG System"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/session-fields.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "fields": fields,
+            },
+        )
 
     def test_get_returns_empty_list_when_no_fields(
         self, authenticated_client, active_user, sphere, event
@@ -66,8 +93,19 @@ class TestSessionFieldsPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["fields"] == []
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/session-fields.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "fields": [],
+            },
+        )
 
     def test_get_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
@@ -104,3 +142,16 @@ class TestSessionFieldsPageView:
         assert fields[0].name == "Difficulty"
         assert fields[1].name == "RPG System"
         assert fields[2].name == "Genre"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/session-fields.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "fields": fields,
+            },
+        )

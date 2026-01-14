@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 from django.contrib import messages
@@ -18,10 +18,13 @@ class TestEventSettingsPageViewGet:
         return reverse("panel:event-settings", kwargs={"slug": event.slug})
 
     def test_redirects_anonymous_user_to_login(self, client, event):
-        response = client.get(self.get_url(event))
+        url = self.get_url(event)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.get(self.get_url(event))
@@ -40,12 +43,20 @@ class TestEventSettingsPageViewGet:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/settings.html"
-        assert response.context["current_event"].pk == event.pk
-        assert response.context["active_nav"] == "settings"
-        assert response.context["days_to_event"] is not None
-        assert "stats" in response.context
+        is_proposal_active = response.context["is_proposal_active"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/settings.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": is_proposal_active,
+                "stats": ANY,
+                "active_nav": "settings",
+                "days_to_event": ANY,
+            },
+        )
 
     def test_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
@@ -71,8 +82,20 @@ class TestEventSettingsPageViewGet:
 
         response = authenticated_client.get(self.get_url(event2))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["current_event"].pk == event2.pk
+        is_proposal_active = response.context["is_proposal_active"]
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/settings.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": is_proposal_active,
+                "stats": ANY,
+                "active_nav": "settings",
+                "days_to_event": ANY,
+            },
+        )
 
 
 class TestEventSettingsPageViewPost:
@@ -81,10 +104,13 @@ class TestEventSettingsPageViewPost:
         return reverse("panel:event-settings", kwargs={"slug": event.slug})
 
     def test_redirects_anonymous_user(self, client, event):
-        response = client.post(self.get_url(event), data={"name": "New Name"})
+        url = self.get_url(event)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        response = client.post(url, data={"name": "New Name"})
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.post(

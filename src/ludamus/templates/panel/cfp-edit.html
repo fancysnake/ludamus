@@ -185,15 +185,16 @@
                     <p class="text-sm text-gray-500 mb-6">
                         {% translate "Select which personal data fields hosts must provide. Drag to reorder." %}
                     </p>
-                    <input type="hidden" name="field_order" id="field-order" value="{{ field_order|join:',' }}">
+                    <input type="hidden"
+                           name="field_order"
+                           id="field-order"
+                           value="{{ field_order|join:',' }}">
                     <div id="host-fields-list" class="space-y-2">
                         {% for field in available_fields %}
                             <div class="field-item flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg cursor-move"
                                  draggable="true"
                                  data-field-id="{{ field.pk }}">
-                                <span class="drag-handle text-gray-400">
-                                    {% heroicon_outline "bars-3" class="w-4 h-4" %}
-                                </span>
+                                <span class="drag-handle text-gray-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
                                 <span class="text-sm font-medium text-gray-700 flex-1">{{ field.name }}</span>
                                 <select name="field_{{ field.pk }}"
                                         class="field-select border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
@@ -227,15 +228,16 @@
                     <p class="text-sm text-gray-500 mb-6">
                         {% translate "Select which session fields hosts must provide. Drag to reorder." %}
                     </p>
-                    <input type="hidden" name="session_field_order" id="session-field-order" value="{{ session_field_order|join:',' }}">
+                    <input type="hidden"
+                           name="session_field_order"
+                           id="session-field-order"
+                           value="{{ session_field_order|join:',' }}">
                     <div id="session-fields-list" class="space-y-2">
                         {% for field in available_session_fields %}
                             <div class="field-item flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg cursor-move"
                                  draggable="true"
                                  data-field-id="{{ field.pk }}">
-                                <span class="drag-handle text-gray-400">
-                                    {% heroicon_outline "bars-3" class="w-4 h-4" %}
-                                </span>
+                                <span class="drag-handle text-gray-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
                                 <span class="text-sm font-medium text-gray-700 flex-1">{{ field.name }}</span>
                                 <select name="session_field_{{ field.pk }}"
                                         class="field-select border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">

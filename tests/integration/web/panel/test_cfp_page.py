@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from http import HTTPStatus
+from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
@@ -19,10 +20,13 @@ class TestCFPPageView:
         return reverse("panel:cfp", kwargs={"slug": event.slug})
 
     def test_redirects_anonymous_user_to_login(self, client, event):
-        response = client.get(self.get_url(event))
+        url = self.get_url(event)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.get(self.get_url(event))
@@ -41,10 +45,20 @@ class TestCFPPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/cfp.html"
-        assert response.context["current_event"].pk == event.pk
-        assert response.context["active_nav"] == "cfp"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "categories": [],
+                "category_stats": {},
+            },
+        )
 
     def test_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
@@ -70,11 +84,25 @@ class TestCFPPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
+        # Verify categories are DTOs, not Django models
         categories = response.context["categories"]
         assert len(categories) == 1 + 1  # RPG Sessions + Workshops
         assert categories[0].name == "RPG Sessions"
         assert categories[1].name == "Workshops"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "categories": categories,
+                "category_stats": ANY,
+            },
+        )
 
     def test_returns_empty_categories_when_none_exist(
         self, authenticated_client, active_user, sphere, event
@@ -83,8 +111,20 @@ class TestCFPPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["categories"] == []
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "categories": [],
+                "category_stats": {},
+            },
+        )
 
     # Status badge tests
 
@@ -191,7 +231,22 @@ class TestCFPPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
+        categories = response.context["categories"]
+        assert len(categories) == 1
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "categories": categories,
+                "category_stats": ANY,
+            },
+        )
         assert b"0 / 0" in response.content
 
     def test_shows_proposal_stats(
@@ -219,7 +274,22 @@ class TestCFPPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
+        categories = response.context["categories"]
+        assert len(categories) == 1
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "categories": categories,
+                "category_stats": ANY,
+            },
+        )
         # Should show "1 / 3" (1 accepted out of 3 total)
         assert b"1 / 3" in response.content
 
@@ -259,7 +329,22 @@ class TestCFPPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
+        categories = response.context["categories"]
+        assert len(categories) == 1 + 1  # RPG + Workshops
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp.html",
+            context_data={
+                "current_event": ANY,
+                "events": ANY,
+                "is_proposal_active": False,
+                "stats": ANY,
+                "active_nav": "cfp",
+                "categories": categories,
+                "category_stats": ANY,
+            },
+        )
         # Should show "1 / 2" for RPG and "0 / 1" for Workshops
         assert b"1 / 2" in response.content
         assert b"0 / 1" in response.content

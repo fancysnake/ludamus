@@ -16,6 +16,9 @@ from ludamus.adapters.db.django.models import (
     Proposal,
     ProposalCategory,
     Session,
+    SessionField,
+    SessionFieldOption,
+    SessionFieldRequirement,
     SessionParticipation,
     SessionParticipationStatus,
     Space,
@@ -286,3 +289,43 @@ class TestHostPersonalData:
         data = HostPersonalData(field=PersonalDataField(name=field_name), value=value)
 
         assert str(data) == f"{field_name}: {'x' * 50}"
+
+
+class TestSessionField:
+    def test_str(self, faker):
+        name = faker.word()
+
+        assert str(SessionField(name=name)) == name
+
+
+class TestSessionFieldOption:
+    def test_str(self, faker):
+        label = faker.word()
+
+        assert str(SessionFieldOption(label=label)) == label
+
+
+class TestSessionFieldRequirement:
+    def test_str_required(self, faker):
+        field_name = faker.word()
+        category_name = faker.word()
+
+        requirement = SessionFieldRequirement(
+            field=SessionField(name=field_name),
+            category=ProposalCategory(name=category_name),
+            is_required=True,
+        )
+
+        assert str(requirement) == f"{field_name} (required) for {category_name}"
+
+    def test_str_optional(self, faker):
+        field_name = faker.word()
+        category_name = faker.word()
+
+        requirement = SessionFieldRequirement(
+            field=SessionField(name=field_name),
+            category=ProposalCategory(name=category_name),
+            is_required=False,
+        )
+
+        assert str(requirement) == f"{field_name} (optional) for {category_name}"
