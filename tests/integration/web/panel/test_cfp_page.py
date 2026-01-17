@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
 from freezegun import freeze_time
 
 from ludamus.adapters.db.django.models import Proposal, ProposalCategory, Session
+from ludamus.pacts import EventDTO, ProposalCategoryDTO
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -50,10 +50,17 @@ class TestCFPPageView:
             HTTPStatus.OK,
             template_name="panel/cfp.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
                 "categories": [],
                 "category_stats": {},
@@ -79,28 +86,58 @@ class TestCFPPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        ProposalCategory.objects.create(event=event, name="RPG Sessions", slug="rpg")
-        ProposalCategory.objects.create(event=event, name="Workshops", slug="workshops")
+        cat1 = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg"
+        )
+        cat2 = ProposalCategory.objects.create(
+            event=event, name="Workshops", slug="workshops"
+        )
 
         response = authenticated_client.get(self.get_url(event))
 
-        # Verify categories are DTOs, not Django models
-        categories = response.context["categories"]
-        assert len(categories) == 1 + 1  # RPG Sessions + Workshops
-        assert categories[0].name == "RPG Sessions"
-        assert categories[1].name == "Workshops"
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "categories": categories,
-                "category_stats": ANY,
+                "categories": [
+                    ProposalCategoryDTO(
+                        pk=cat1.pk,
+                        name="RPG Sessions",
+                        slug="rpg",
+                        start_time=None,
+                        end_time=None,
+                        min_participants_limit=1,
+                        max_participants_limit=100,
+                        durations=[],
+                    ),
+                    ProposalCategoryDTO(
+                        pk=cat2.pk,
+                        name="Workshops",
+                        slug="workshops",
+                        start_time=None,
+                        end_time=None,
+                        min_participants_limit=1,
+                        max_participants_limit=100,
+                        durations=[],
+                    ),
+                ],
+                "category_stats": {
+                    cat1.pk: {"proposals_count": 0, "accepted_count": 0},
+                    cat2.pk: {"proposals_count": 0, "accepted_count": 0},
+                },
             },
         )
 
@@ -116,10 +153,17 @@ class TestCFPPageView:
             HTTPStatus.OK,
             template_name="panel/cfp.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
                 "categories": [],
                 "category_stats": {},
@@ -227,24 +271,42 @@ class TestCFPPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
+        category = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
 
         response = authenticated_client.get(self.get_url(event))
 
-        categories = response.context["categories"]
-        assert len(categories) == 1
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "categories": categories,
-                "category_stats": ANY,
+                "categories": [
+                    ProposalCategoryDTO(
+                        pk=category.pk,
+                        name="RPG",
+                        slug="rpg",
+                        start_time=None,
+                        end_time=None,
+                        min_participants_limit=1,
+                        max_participants_limit=100,
+                        durations=[],
+                    )
+                ],
+                "category_stats": {
+                    category.pk: {"proposals_count": 0, "accepted_count": 0}
+                },
             },
         )
         assert b"0 / 0" in response.content
@@ -274,20 +336,38 @@ class TestCFPPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        categories = response.context["categories"]
-        assert len(categories) == 1
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 1,
+                    "pending_proposals": 1 + 1,  # 2 pending
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 1 + 1 + 1,  # 3 total
+                    "total_sessions": 1 + 1,  # pending + scheduled
+                },
                 "active_nav": "cfp",
-                "categories": categories,
-                "category_stats": ANY,
+                "categories": [
+                    ProposalCategoryDTO(
+                        pk=category.pk,
+                        name="RPG",
+                        slug="rpg",
+                        start_time=None,
+                        end_time=None,
+                        min_participants_limit=1,
+                        max_participants_limit=100,
+                        durations=[],
+                    )
+                ],
+                "category_stats": {
+                    category.pk: {"proposals_count": 1 + 1 + 1, "accepted_count": 1}
+                },
             },
         )
         # Should show "1 / 3" (1 accepted out of 3 total)
@@ -329,20 +409,49 @@ class TestCFPPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        categories = response.context["categories"]
-        assert len(categories) == 1 + 1  # RPG + Workshops
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 1,
+                    "pending_proposals": 1 + 1,  # 2 pending (RPG 1 + Workshop 1)
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 1 + 1 + 1,  # 3 total
+                    "total_sessions": 1 + 1,  # pending + scheduled
+                },
                 "active_nav": "cfp",
-                "categories": categories,
-                "category_stats": ANY,
+                "categories": [
+                    ProposalCategoryDTO(
+                        pk=category1.pk,
+                        name="RPG",
+                        slug="rpg",
+                        start_time=None,
+                        end_time=None,
+                        min_participants_limit=1,
+                        max_participants_limit=100,
+                        durations=[],
+                    ),
+                    ProposalCategoryDTO(
+                        pk=category2.pk,
+                        name="Workshops",
+                        slug="workshops",
+                        start_time=None,
+                        end_time=None,
+                        min_participants_limit=1,
+                        max_participants_limit=100,
+                        durations=[],
+                    ),
+                ],
+                "category_stats": {
+                    category1.pk: {"proposals_count": 1 + 1, "accepted_count": 1},
+                    category2.pk: {"proposals_count": 1, "accepted_count": 0},
+                },
             },
         )
         # Should show "1 / 2" for RPG and "0 / 1" for Workshops

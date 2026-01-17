@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
@@ -101,7 +100,14 @@ class TestEventIndexPageView:
                 "current_event": current_event,
                 "events": events,
                 "is_proposal_active": is_proposal_active,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "index",
             },
         )
@@ -126,7 +132,14 @@ class TestEventIndexPageView:
                 "current_event": current_event,
                 "events": events,
                 "is_proposal_active": is_proposal_active,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "index",
             },
         )
@@ -195,7 +208,14 @@ class TestEventIndexPageView:
                 "current_event": current_event,
                 "events": events,
                 "is_proposal_active": is_proposal_active,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "index",
             },
         )

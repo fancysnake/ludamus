@@ -1,10 +1,10 @@
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import PersonalDataField
+from ludamus.pacts import EventDTO
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -48,10 +48,17 @@ class TestPersonalDataFieldsPageView:
             HTTPStatus.OK,
             template_name="panel/personal-data-fields.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
                 "fields": [],
             },
@@ -76,10 +83,17 @@ class TestPersonalDataFieldsPageView:
             HTTPStatus.OK,
             template_name="panel/personal-data-fields.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
                 "fields": fields,
             },
@@ -97,10 +111,17 @@ class TestPersonalDataFieldsPageView:
             HTTPStatus.OK,
             template_name="panel/personal-data-fields.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
                 "fields": [],
             },
@@ -146,10 +167,17 @@ class TestPersonalDataFieldsPageView:
             HTTPStatus.OK,
             template_name="panel/personal-data-fields.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
                 "fields": fields,
             },

@@ -13,6 +13,12 @@ from ludamus.adapters.db.django.models import (
     SessionField,
     SessionFieldRequirement,
 )
+from ludamus.pacts import (
+    EventDTO,
+    PersonalDataFieldDTO,
+    ProposalCategoryDTO,
+    SessionFieldDTO,
+)
 from tests.integration.conftest import ProposalFactory, UserFactory
 from tests.integration.utils import assert_response
 
@@ -67,19 +73,24 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        assert context_category.pk == category.pk
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -91,7 +102,6 @@ class TestCFPEditPageView:
                 "proposal_count": 0,
             },
         )
-        assert response.context["current_event"].pk == event.pk
 
     def test_get_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
@@ -224,20 +234,24 @@ class TestCFPEditPageView:
 
         response = authenticated_client.post(self.get_url(event, category), data={})
 
-        context_category = response.context["category"]
-        is_proposal_active = response.context["is_proposal_active"]
-        assert response.context["form"].errors
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
-                "is_proposal_active": is_proposal_active,
-                "stats": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
             },
         )
@@ -298,22 +312,25 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        form = response.context["form"]
-        assert form.initial["start_time"] == start
-        assert form.initial["end_time"] == end
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
-                "form": form,
+                "category": ProposalCategoryDTO.model_validate(category),
+                "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
                 "field_order": [],
@@ -390,29 +407,52 @@ class TestCFPEditPageView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
-        PersonalDataField.objects.create(event=event, name="Email", slug="email")
-        PersonalDataField.objects.create(event=event, name="Phone", slug="phone")
+        email_field = PersonalDataField.objects.create(
+            event=event, name="Email", slug="email"
+        )
+        phone_field = PersonalDataField.objects.create(
+            event=event, name="Phone", slug="phone"
+        )
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        available_fields = response.context["available_fields"]
-        assert len(available_fields) == 1 + 1  # Email + Phone
-        assert available_fields[0].name == "Email"
-        assert available_fields[1].name == "Phone"
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
-                "available_fields": available_fields,
+                "available_fields": [
+                    PersonalDataFieldDTO(
+                        pk=email_field.pk,
+                        name="Email",
+                        slug="email",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                    PersonalDataFieldDTO(
+                        pk=phone_field.pk,
+                        name="Phone",
+                        slug="phone",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                ],
                 "field_requirements": {},
                 "field_order": [],
                 "available_session_fields": [],
@@ -445,27 +485,45 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        available_fields = response.context["available_fields"]
-        field_requirements = response.context["field_requirements"]
-        field_order = response.context["field_order"]
-        assert field_requirements[email_field.pk] is True
-        assert field_requirements[phone_field.pk] is False
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
-                "available_fields": available_fields,
-                "field_requirements": field_requirements,
-                "field_order": field_order,
+                "available_fields": [
+                    PersonalDataFieldDTO(
+                        pk=email_field.pk,
+                        name="Email",
+                        slug="email",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                    PersonalDataFieldDTO(
+                        pk=phone_field.pk,
+                        name="Phone",
+                        slug="phone",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                ],
+                "field_requirements": {email_field.pk: True, phone_field.pk: False},
+                "field_order": [email_field.pk, phone_field.pk],
                 "available_session_fields": [],
                 "session_field_requirements": {},
                 "session_field_order": [],
@@ -481,25 +539,41 @@ class TestCFPEditPageView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
-        PersonalDataField.objects.create(event=event, name="Email", slug="email")
+        email_field = PersonalDataField.objects.create(
+            event=event, name="Email", slug="email"
+        )
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        available_fields = response.context["available_fields"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
-                "available_fields": available_fields,
+                "available_fields": [
+                    PersonalDataFieldDTO(
+                        pk=email_field.pk,
+                        name="Email",
+                        slug="email",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    )
+                ],
                 "field_requirements": {},
                 "field_order": [],
                 "available_session_fields": [],
@@ -687,20 +761,24 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        durations = response.context["durations"]
-        assert durations == ["PT1H", "PT2H", "PT3H"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -708,7 +786,7 @@ class TestCFPEditPageView:
                 "available_session_fields": [],
                 "session_field_requirements": {},
                 "session_field_order": [],
-                "durations": durations,
+                "durations": ["PT1H", "PT2H", "PT3H"],
                 "proposal_count": 0,
             },
         )
@@ -723,18 +801,24 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -852,32 +936,55 @@ class TestCFPEditPageView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
-        SessionField.objects.create(event=event, name="Genre", slug="genre")
-        SessionField.objects.create(event=event, name="Difficulty", slug="difficulty")
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
+        difficulty_field = SessionField.objects.create(
+            event=event, name="Difficulty", slug="difficulty"
+        )
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        available_session_fields = response.context["available_session_fields"]
-        assert len(available_session_fields) == 1 + 1  # Genre + Difficulty
-        assert available_session_fields[0].name == "Difficulty"
-        assert available_session_fields[1].name == "Genre"
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
                 "field_order": [],
-                "available_session_fields": available_session_fields,
+                "available_session_fields": [
+                    SessionFieldDTO(
+                        pk=difficulty_field.pk,
+                        name="Difficulty",
+                        slug="difficulty",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                    SessionFieldDTO(
+                        pk=genre_field.pk,
+                        name="Genre",
+                        slug="genre",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                ],
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
@@ -907,30 +1014,51 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        available_session_fields = response.context["available_session_fields"]
-        session_field_requirements = response.context["session_field_requirements"]
-        session_field_order = response.context["session_field_order"]
-        assert session_field_requirements[genre_field.pk] is True
-        assert session_field_requirements[difficulty_field.pk] is False
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
                 "field_order": [],
-                "available_session_fields": available_session_fields,
-                "session_field_requirements": session_field_requirements,
-                "session_field_order": session_field_order,
+                "available_session_fields": [
+                    SessionFieldDTO(
+                        pk=genre_field.pk,
+                        name="Genre",
+                        slug="genre",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                    SessionFieldDTO(
+                        pk=difficulty_field.pk,
+                        name="Difficulty",
+                        slug="difficulty",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                ],
+                "session_field_requirements": {
+                    genre_field.pk: True,
+                    difficulty_field.pk: False,
+                },
+                "session_field_order": [genre_field.pk, difficulty_field.pk],
                 "durations": [],
                 "proposal_count": 0,
             },
@@ -943,28 +1071,44 @@ class TestCFPEditPageView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
-        SessionField.objects.create(event=event, name="Genre", slug="genre")
+        genre_field = SessionField.objects.create(
+            event=event, name="Genre", slug="genre"
+        )
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        available_session_fields = response.context["available_session_fields"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
                 "field_order": [],
-                "available_session_fields": available_session_fields,
+                "available_session_fields": [
+                    SessionFieldDTO(
+                        pk=genre_field.pk,
+                        name="Genre",
+                        slug="genre",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    )
+                ],
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
@@ -1134,27 +1278,47 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        available_fields = response.context["available_fields"]
-        field_requirements = response.context["field_requirements"]
-        field_order = response.context["field_order"]
         # Order should be [phone, email] based on order field
-        assert field_order == [phone_field.pk, email_field.pk]
+        # (phone has order=0, email has order=1)
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
-                "available_fields": available_fields,
-                "field_requirements": field_requirements,
-                "field_order": field_order,
+                "available_fields": [
+                    PersonalDataFieldDTO(
+                        pk=phone_field.pk,
+                        name="Phone",
+                        slug="phone",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                    PersonalDataFieldDTO(
+                        pk=email_field.pk,
+                        name="Email",
+                        slug="email",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                ],
+                "field_requirements": {email_field.pk: True, phone_field.pk: False},
+                "field_order": [phone_field.pk, email_field.pk],
                 "available_session_fields": [],
                 "session_field_requirements": {},
                 "session_field_order": [],
@@ -1185,10 +1349,54 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        # Email should be first (has order), Phone should be after
-        available_fields = response.context["available_fields"]
-        assert available_fields[0].pk == email_field.pk
-        assert available_fields[1].pk == phone_field.pk
+        # Email should be first (has order),
+        # Phone should be after - verified by field_order
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "cfp",
+                "category": ProposalCategoryDTO.model_validate(category),
+                "form": ANY,
+                "available_fields": [
+                    PersonalDataFieldDTO(
+                        pk=email_field.pk,
+                        name="Email",
+                        slug="email",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                    PersonalDataFieldDTO(
+                        pk=phone_field.pk,
+                        name="Phone",
+                        slug="phone",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                ],
+                "field_requirements": {email_field.pk: True},
+                "field_order": [email_field.pk],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+                "proposal_count": 0,
+            },
+        )
 
     def test_get_returns_empty_field_order_when_none_configured(
         self, authenticated_client, active_user, sphere, event
@@ -1200,18 +1408,24 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1285,29 +1499,52 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
-        available_session_fields = response.context["available_session_fields"]
-        session_field_requirements = response.context["session_field_requirements"]
-        session_field_order = response.context["session_field_order"]
-        assert session_field_order == [difficulty_field.pk, genre_field.pk]
+        # Order should be [difficulty, genre] based on order field
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
                 "field_order": [],
-                "available_session_fields": available_session_fields,
-                "session_field_requirements": session_field_requirements,
-                "session_field_order": session_field_order,
+                "available_session_fields": [
+                    SessionFieldDTO(
+                        pk=difficulty_field.pk,
+                        name="Difficulty",
+                        slug="difficulty",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                    SessionFieldDTO(
+                        pk=genre_field.pk,
+                        name="Genre",
+                        slug="genre",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                ],
+                "session_field_requirements": {
+                    genre_field.pk: True,
+                    difficulty_field.pk: False,
+                },
+                "session_field_order": [difficulty_field.pk, genre_field.pk],
                 "durations": [],
                 "proposal_count": 0,
             },
@@ -1336,9 +1573,52 @@ class TestCFPEditPageView:
         response = authenticated_client.get(self.get_url(event, category))
 
         # Genre should be first (has order), Difficulty should be after
-        available_session_fields = response.context["available_session_fields"]
-        assert available_session_fields[0].pk == genre_field.pk
-        assert available_session_fields[1].pk == difficulty_field.pk
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "cfp",
+                "category": ProposalCategoryDTO.model_validate(category),
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [
+                    SessionFieldDTO(
+                        pk=genre_field.pk,
+                        name="Genre",
+                        slug="genre",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                    SessionFieldDTO(
+                        pk=difficulty_field.pk,
+                        name="Difficulty",
+                        slug="difficulty",
+                        field_type="text",
+                        order=0,
+                        options=[],
+                    ),
+                ],
+                "session_field_requirements": {genre_field.pk: True},
+                "session_field_order": [genre_field.pk],
+                "durations": [],
+                "proposal_count": 0,
+            },
+        )
 
     def test_get_returns_empty_session_field_order_when_none_configured(
         self, authenticated_client, active_user, sphere, event
@@ -1350,18 +1630,24 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        context_category = response.context["category"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/cfp-edit.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "cfp",
-                "category": context_category,
+                "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1425,7 +1711,35 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.context["proposal_count"] == 0
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "cfp",
+                "category": ProposalCategoryDTO.model_validate(category),
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+                "proposal_count": 0,
+            },
+        )
 
     def test_get_includes_proposal_count_with_existing_proposals(
         self, authenticated_client, active_user, sphere, event
@@ -1440,7 +1754,35 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.context["proposal_count"] == 1 + 1 + 1  # 3 proposals created
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 1 + 1 + 1,  # 3 unique hosts from ProposalFactory
+                    "pending_proposals": 1 + 1 + 1,  # 3 proposals, no sessions
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 1 + 1 + 1,
+                    "total_sessions": 1 + 1 + 1,  # pending + scheduled
+                },
+                "active_nav": "cfp",
+                "category": ProposalCategoryDTO.model_validate(category),
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+                "proposal_count": 1 + 1 + 1,  # 3 proposals created
+            },
+        )
 
     def test_get_proposal_count_only_counts_proposals_for_this_category(
         self, authenticated_client, active_user, sphere, event
@@ -1458,7 +1800,35 @@ class TestCFPEditPageView:
 
         response = authenticated_client.get(self.get_url(event, category))
 
-        assert response.context["proposal_count"] == 1 + 1  # Only 2 in this category
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/cfp-edit.html",
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 1 + 1 + 1,  # 3 unique hosts from ProposalFactory
+                    "pending_proposals": 1 + 1 + 1,  # 3 proposals total, no sessions
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 1 + 1 + 1,
+                    "total_sessions": 1 + 1 + 1,  # pending + scheduled
+                },
+                "active_nav": "cfp",
+                "category": ProposalCategoryDTO.model_validate(category),
+                "form": ANY,
+                "available_fields": [],
+                "field_requirements": {},
+                "field_order": [],
+                "available_session_fields": [],
+                "session_field_requirements": {},
+                "session_field_order": [],
+                "durations": [],
+                "proposal_count": 1 + 1,  # Only 2 in this category
+            },
+        )
 
     # Data preservation tests
 

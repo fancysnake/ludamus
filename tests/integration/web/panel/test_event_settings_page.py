@@ -1,11 +1,11 @@
 from http import HTTPStatus
-from unittest.mock import ANY, patch
+from unittest.mock import patch
 
 import pytest
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.pacts import NotFoundError
+from ludamus.pacts import EventDTO, NotFoundError
 from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
 
@@ -44,17 +44,25 @@ class TestEventSettingsPageViewGet:
         response = authenticated_client.get(self.get_url(event))
 
         is_proposal_active = response.context["is_proposal_active"]
+        days_to_event = response.context["days_to_event"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/settings.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": is_proposal_active,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "settings",
-                "days_to_event": ANY,
+                "days_to_event": days_to_event,
             },
         )
 
@@ -83,17 +91,26 @@ class TestEventSettingsPageViewGet:
         response = authenticated_client.get(self.get_url(event2))
 
         is_proposal_active = response.context["is_proposal_active"]
+        days_to_event = response.context["days_to_event"]
+        events = response.context["events"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/settings.html",
             context_data={
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": EventDTO.model_validate(event2),
+                "events": events,
                 "is_proposal_active": is_proposal_active,
-                "stats": ANY,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "active_nav": "settings",
-                "days_to_event": ANY,
+                "days_to_event": days_to_event,
             },
         )
 

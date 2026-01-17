@@ -25,9 +25,10 @@ class TestAuth0LoginActionView:
         cache_key = (
             f"oauth_state:{oauth_mock.auth0.authorize_redirect.call_args[1]['state']}"
         )
-        assert json.loads(cache.get(cache_key)) == {
+        cached_data = json.loads(cache.get(cache_key))
+        assert cached_data == {
             "redirect_to": None,
-            "created_at": ANY,
+            "created_at": cached_data["created_at"],
             "csrf_token": "",
         }
 

@@ -704,7 +704,7 @@ class TestEventPageView:
                         should_show_as_inactive=False,
                     )
                 ],
-                "user_enrollment_config": ANY,
+                "user_enrollment_config": combined_config,
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -876,7 +876,7 @@ class TestEventPageView:
                         should_show_as_inactive=False,
                     )
                 ],
-                "user_enrollment_config": ANY,
+                "user_enrollment_config": virtual_config,
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -967,7 +967,7 @@ class TestEventPageView:
                         should_show_as_inactive=False,
                     )
                 ],
-                "user_enrollment_config": ANY,
+                "user_enrollment_config": combined_config,
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
