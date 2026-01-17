@@ -84,7 +84,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <a href="{% url 'panel:cfp-edit' event_slug=current_event.slug category_slug=category.slug %}"
-                                       class="text-primary hover:text-primary/80 mr-4">{% translate "Edit" %}</a>
+                                       class="text-primary hover:text-primary/80 mr-4">{% translate "Configure" %}</a>
                                     <form method="post"
                                           action="{% url 'panel:cfp-delete' event_slug=current_event.slug category_slug=category.slug %}"
                                           class="inline"

@@ -6,12 +6,14 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
+    HostPersonalData,
     PersonalDataField,
     PersonalDataFieldRequirement,
     ProposalCategory,
     SessionField,
     SessionFieldRequirement,
 )
+from tests.integration.conftest import ProposalFactory, UserFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -86,6 +88,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
         assert response.context["current_event"].pk == event.pk
@@ -318,6 +321,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -415,6 +419,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -465,6 +470,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -500,6 +506,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -702,6 +709,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": durations,
+                "proposal_count": 0,
             },
         )
 
@@ -735,6 +743,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -872,6 +881,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -922,6 +932,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": session_field_requirements,
                 "session_field_order": session_field_order,
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -957,6 +968,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -1147,6 +1159,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -1207,6 +1220,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -1295,6 +1309,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": session_field_requirements,
                 "session_field_order": session_field_order,
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -1355,6 +1370,7 @@ class TestCFPEditPageView:
                 "session_field_requirements": {},
                 "session_field_order": [],
                 "durations": [],
+                "proposal_count": 0,
             },
         )
 
@@ -1396,3 +1412,123 @@ class TestCFPEditPageView:
         )
         assert difficulty_req.order == 0
         assert genre_req.order == 1
+
+    # Proposal count tests
+
+    def test_get_includes_proposal_count_zero_when_no_proposals(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.context["proposal_count"] == 0
+
+    def test_get_includes_proposal_count_with_existing_proposals(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        ProposalFactory.create(category=category)
+        ProposalFactory.create(category=category)
+        ProposalFactory.create(category=category)
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.context["proposal_count"] == 1 + 1 + 1  # 3 proposals created
+
+    def test_get_proposal_count_only_counts_proposals_for_this_category(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        other_category = ProposalCategory.objects.create(
+            event=event, name="Workshops", slug="workshops"
+        )
+        ProposalFactory.create(category=category)
+        ProposalFactory.create(category=category)
+        ProposalFactory.create(category=other_category)  # Different category
+
+        response = authenticated_client.get(self.get_url(event, category))
+
+        assert response.context["proposal_count"] == 1 + 1  # Only 2 in this category
+
+    # Data preservation tests
+
+    def test_post_removing_field_requirement_preserves_existing_personal_data(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        """When a field requirement is removed, existing host data should be kept."""
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        email_field = PersonalDataField.objects.create(
+            event=event, name="Email", field_type="text"
+        )
+        # Setup: field is required and a host has filled in data
+        PersonalDataFieldRequirement.objects.create(
+            category=category, field=email_field, is_required=True
+        )
+        host = UserFactory.create()
+        HostPersonalData.objects.create(
+            user=host, event=event, field=email_field, value="host@example.com"
+        )
+        ProposalFactory.create(category=category, host=host)
+
+        # Action: remove the field requirement (don't include it in POST)
+        authenticated_client.post(
+            self.get_url(event, category),
+            data={"name": "RPG Sessions"},  # No field_* entries
+        )
+
+        # Assert: requirement is gone but data is preserved
+        assert not PersonalDataFieldRequirement.objects.filter(
+            category=category, field=email_field
+        ).exists()
+        assert HostPersonalData.objects.filter(
+            user=host, event=event, field=email_field, value="host@example.com"
+        ).exists()
+
+    def test_post_adding_field_requirement_does_not_create_data_for_existing_proposals(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        """Adding field requirement doesn't create data for existing proposals."""
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+        email_field = PersonalDataField.objects.create(
+            event=event, name="Email", field_type="text"
+        )
+        # Setup: existing proposal without the field requirement
+        host = UserFactory.create()
+        ProposalFactory.create(category=category, host=host)
+        assert not HostPersonalData.objects.filter(
+            user=host, event=event, field=email_field
+        ).exists()
+
+        # Action: add a new field requirement
+        authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                f"field_{email_field.pk}": "required",
+                "field_order": str(email_field.pk),
+            },
+        )
+
+        # Assert: requirement exists but no data was auto-created for existing host
+        assert PersonalDataFieldRequirement.objects.filter(
+            category=category, field=email_field, is_required=True
+        ).exists()
+        assert not HostPersonalData.objects.filter(
+            user=host, event=event, field=email_field
+        ).exists()

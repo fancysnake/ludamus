@@ -248,9 +248,14 @@ class CFPCreatePageView(PanelAccessMixin, EventContextMixin, View):
             return TemplateResponse(self.request, "panel/cfp-create.html", context)
 
         name = form.cleaned_data["name"]
-        self.request.uow.proposal_categories.create(current_event.pk, name)
+        category = self.request.uow.proposal_categories.create(current_event.pk, name)
 
-        messages.success(self.request, _("Category created successfully."))
+        messages.success(self.request, _("Session type created successfully."))
+
+        if self.request.POST.get("action") == "create_and_configure":
+            return redirect(
+                "panel:cfp-edit", event_slug=slug, category_slug=category.slug
+            )
         return redirect("panel:cfp", slug=slug)
 
 
@@ -334,6 +339,9 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["session_field_requirements"] = session_field_requirements
         context["session_field_order"] = session_field_order
         context["durations"] = category.durations
+        context["proposal_count"] = self.request.uow.proposals.count_by_category(
+            category.pk
+        )
         return TemplateResponse(self.request, "panel/cfp-edit.html", context)
 
     def post(

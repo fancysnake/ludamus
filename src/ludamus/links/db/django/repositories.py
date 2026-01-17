@@ -217,6 +217,10 @@ class ProposalRepository(ProposalRepositoryProtocol):
 
         return TimeSlotDTO.model_validate(time_slot)
 
+    @staticmethod
+    def count_by_category(category_id: int) -> int:
+        return Proposal.objects.filter(category_id=category_id).count()
+
 
 class SessionRepository(SessionRepositoryProtocol):
     def __init__(self, storage: Storage) -> None:

@@ -9,7 +9,8 @@
       "Bash(mise run test:*)",
       "Bash(mise run black:*)",
       "Bash(mise run _pytest:*)",
-      "Bash(mise run dj migrate:*)"
+      "Bash(mise run dj migrate:*)",
+      "Bash(mise run dj compilemessages:*)"
     ]
   }
 }
