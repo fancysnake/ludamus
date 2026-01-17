@@ -263,3 +263,37 @@ class TestPersonalDataFieldEditPageView:
             messages=[(messages.ERROR, "Personal data field not found.")],
             url=f"/panel/event/{event.slug}/cfp/personal-data/",
         )
+
+    def test_get_returns_field_with_is_multiple_attribute(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Languages",
+            slug="languages",
+            field_type="select",
+            is_multiple=True,
+        )
+
+        response = authenticated_client.get(self.get_url(event, field))
+
+        context_field = response.context["field"]
+        assert context_field.is_multiple is True
+
+    def test_get_returns_field_with_allow_custom_attribute(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Country",
+            slug="country",
+            field_type="select",
+            allow_custom=True,
+        )
+
+        response = authenticated_client.get(self.get_url(event, field))
+
+        context_field = response.context["field"]
+        assert context_field.allow_custom is True

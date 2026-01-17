@@ -631,18 +631,30 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
     def __init__(self, storage: Storage) -> None:
         self._storage = storage
 
-    def create(
+    def create(  # noqa: PLR0913
         self,
         event_id: int,
         name: str,
         field_type: str = "text",
         options: list[str] | None = None,
+        *,
+        is_multiple: bool = False,
+        allow_custom: bool = False,
     ) -> PersonalDataFieldDTO:
         base_slug = slugify(name)
         slug = self._generate_unique_slug(event_id, base_slug)
 
+        # is_multiple and allow_custom only apply to select fields
+        actual_is_multiple = is_multiple if field_type == "select" else False
+        actual_allow_custom = allow_custom if field_type == "select" else False
+
         field = PersonalDataField.objects.create(
-            event_id=event_id, name=name, slug=slug, field_type=field_type
+            event_id=event_id,
+            name=name,
+            slug=slug,
+            field_type=field_type,
+            is_multiple=actual_is_multiple,
+            allow_custom=actual_allow_custom,
         )
         self._storage.personal_data_fields[field.pk] = field
 
@@ -735,7 +747,9 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
             PersonalDataFieldOptionDTO.model_validate(o) for o in field.options.all()
         ]
         return PersonalDataFieldDTO(
+            allow_custom=field.allow_custom,
             field_type=cast("Literal['text', 'select']", field.field_type),
+            is_multiple=field.is_multiple,
             name=field.name,
             options=options,
             order=field.order,
@@ -748,18 +762,30 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
     def __init__(self, storage: Storage) -> None:
         self._storage = storage
 
-    def create(
+    def create(  # noqa: PLR0913
         self,
         event_id: int,
         name: str,
         field_type: str = "text",
         options: list[str] | None = None,
+        *,
+        is_multiple: bool = False,
+        allow_custom: bool = False,
     ) -> SessionFieldDTO:
         base_slug = slugify(name)
         slug = self._generate_unique_slug(event_id, base_slug)
 
+        # is_multiple and allow_custom only apply to select fields
+        actual_is_multiple = is_multiple if field_type == "select" else False
+        actual_allow_custom = allow_custom if field_type == "select" else False
+
         field = SessionField.objects.create(
-            event_id=event_id, name=name, slug=slug, field_type=field_type
+            event_id=event_id,
+            name=name,
+            slug=slug,
+            field_type=field_type,
+            is_multiple=actual_is_multiple,
+            allow_custom=actual_allow_custom,
         )
         self._storage.session_fields[field.pk] = field
 
@@ -850,7 +876,9 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
     def _to_dto(field: SessionField) -> SessionFieldDTO:
         options = [SessionFieldOptionDTO.model_validate(o) for o in field.options.all()]
         return SessionFieldDTO(
+            allow_custom=field.allow_custom,
             field_type=cast("Literal['text', 'select']", field.field_type),
+            is_multiple=field.is_multiple,
             name=field.name,
             options=options,
             order=field.order,

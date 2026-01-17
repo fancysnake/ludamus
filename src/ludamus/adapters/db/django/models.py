@@ -965,6 +965,8 @@ class PersonalDataField(models.Model):
         choices=PersonalDataFieldType.choices,
         default=PersonalDataFieldType.TEXT,
     )
+    is_multiple = models.BooleanField(default=False)
+    allow_custom = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -1074,6 +1076,8 @@ class SessionField(models.Model):
     field_type = models.CharField(
         max_length=20, choices=SessionFieldType.choices, default=SessionFieldType.TEXT
     )
+    is_multiple = models.BooleanField(default=False)
+    allow_custom = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:

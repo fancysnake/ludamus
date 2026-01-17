@@ -55,6 +55,16 @@ class PersonalDataFieldForm(forms.Form):
         widget=forms.Textarea,
         help_text=_("One option per line (for Select fields only)."),
     )
+    is_multiple = forms.BooleanField(
+        required=False,
+        initial=False,
+        help_text=_("Allow selecting multiple options (for Select fields only)."),
+    )
+    allow_custom = forms.BooleanField(
+        required=False,
+        initial=False,
+        help_text=_("Allow entering custom values (for Select fields only)."),
+    )
 
 
 class SessionFieldForm(forms.Form):
@@ -77,4 +87,14 @@ class SessionFieldForm(forms.Form):
         required=False,
         widget=forms.Textarea,
         help_text=_("One option per line (for Select fields only)."),
+    )
+    is_multiple = forms.BooleanField(
+        required=False,
+        initial=False,
+        help_text=_("Allow selecting multiple options (for Select fields only)."),
+    )
+    allow_custom = forms.BooleanField(
+        required=False,
+        initial=False,
+        help_text=_("Allow entering custom values (for Select fields only)."),
     )

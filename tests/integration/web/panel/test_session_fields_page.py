@@ -155,3 +155,56 @@ class TestSessionFieldsPageView:
                 "fields": fields,
             },
         )
+
+    def test_get_returns_field_with_is_multiple_attribute(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        SessionField.objects.create(
+            event=event, name="Tags", slug="tags", field_type="select", is_multiple=True
+        )
+        SessionField.objects.create(
+            event=event,
+            name="Difficulty",
+            slug="difficulty",
+            field_type="select",
+            is_multiple=False,
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        fields = response.context["fields"]
+        assert len(fields) == 1 + 1  # Tags + Difficulty
+        # Fields should have is_multiple attribute in DTO
+        difficulty_field = next(f for f in fields if f.name == "Difficulty")
+        tags_field = next(f for f in fields if f.name == "Tags")
+        assert difficulty_field.is_multiple is False
+        assert tags_field.is_multiple is True
+
+    def test_get_returns_field_with_allow_custom_attribute(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        SessionField.objects.create(
+            event=event,
+            name="Genre",
+            slug="genre",
+            field_type="select",
+            allow_custom=True,
+        )
+        SessionField.objects.create(
+            event=event,
+            name="Difficulty",
+            slug="difficulty",
+            field_type="select",
+            allow_custom=False,
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        fields = response.context["fields"]
+        assert len(fields) == 1 + 1  # Genre + Difficulty
+        genre_field = next(f for f in fields if f.name == "Genre")
+        difficulty_field = next(f for f in fields if f.name == "Difficulty")
+        assert genre_field.allow_custom is True
+        assert difficulty_field.allow_custom is False

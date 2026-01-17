@@ -61,6 +61,24 @@
                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                                   placeholder="{% translate "One option per line" %}">{{ form.options.value|default:'' }}</textarea>
                         <p class="mt-1 text-sm text-gray-500">{% translate "Enter one option per line (for Select fields only)." %}</p>
+                        <div class="mt-4 space-y-3">
+                            <label class="flex items-center">
+                                <input type="checkbox"
+                                       name="is_multiple"
+                                       id="id_is_multiple"
+                                       {% if form.is_multiple.value %}checked{% endif %}
+                                       class="rounded border-gray-300 text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm text-gray-700">{% translate "Allow multiple selections" %}</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox"
+                                       name="allow_custom"
+                                       id="id_allow_custom"
+                                       {% if form.allow_custom.value %}checked{% endif %}
+                                       class="rounded border-gray-300 text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm text-gray-700">{% translate "Allow custom values" %}</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <script>

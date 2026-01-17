@@ -521,9 +521,16 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
         )
         options_text = form.cleaned_data.get("options") or ""
         options = [o.strip() for o in options_text.split("\n") if o.strip()] or None
+        is_multiple = form.cleaned_data.get("is_multiple") or False
+        allow_custom = form.cleaned_data.get("allow_custom") or False
 
         self.request.uow.personal_data_fields.create(
-            current_event.pk, name, field_type, options
+            current_event.pk,
+            name,
+            field_type,
+            options,
+            is_multiple=is_multiple,
+            allow_custom=allow_custom,
         )
 
         messages.success(self.request, _("Personal data field created successfully."))
@@ -696,9 +703,16 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
         )
         options_text = form.cleaned_data.get("options") or ""
         options = [o.strip() for o in options_text.split("\n") if o.strip()] or None
+        is_multiple = form.cleaned_data.get("is_multiple") or False
+        allow_custom = form.cleaned_data.get("allow_custom") or False
 
         self.request.uow.session_fields.create(
-            current_event.pk, name, field_type, options
+            current_event.pk,
+            name,
+            field_type,
+            options,
+            is_multiple=is_multiple,
+            allow_custom=allow_custom,
         )
 
         messages.success(self.request, _("Session field created successfully."))

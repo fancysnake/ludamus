@@ -217,7 +217,9 @@ class PersonalDataFieldDTO(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    allow_custom: bool = False
     field_type: Literal["text", "select"]
+    is_multiple: bool = False
     name: str
     options: list[PersonalDataFieldOptionDTO] = []
     order: int
@@ -241,7 +243,9 @@ class SessionFieldDTO(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    allow_custom: bool = False
     field_type: Literal["text", "select"]
+    is_multiple: bool = False
     name: str
     options: list[SessionFieldOptionDTO] = []
     order: int
@@ -373,12 +377,15 @@ class ProposalCategoryRepositoryProtocol(Protocol):
 
 
 class PersonalDataFieldRepositoryProtocol(Protocol):
-    def create(
+    def create(  # noqa: PLR0913
         self,
         event_id: int,
         name: str,
         field_type: Literal["text", "select"] = "text",
         options: list[str] | None = None,
+        *,
+        is_multiple: bool = False,
+        allow_custom: bool = False,
     ) -> PersonalDataFieldDTO: ...
     def delete(self, pk: int) -> None: ...
     @staticmethod
@@ -389,12 +396,15 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
 
 
 class SessionFieldRepositoryProtocol(Protocol):
-    def create(
+    def create(  # noqa: PLR0913
         self,
         event_id: int,
         name: str,
         field_type: Literal["text", "select"] = "text",
         options: list[str] | None = None,
+        *,
+        is_multiple: bool = False,
+        allow_custom: bool = False,
     ) -> SessionFieldDTO: ...
     def delete(self, pk: int) -> None: ...
     @staticmethod

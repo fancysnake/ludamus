@@ -69,6 +69,16 @@
                                     {% if field.field_type == "select" %}
                                         {% translate "Select" %}
                                         <span class="text-gray-400">({{ field.options|length }})</span>
+                                        {% if field.is_multiple %}
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                {% translate "Multiple" %}
+                                            </span>
+                                        {% endif %}
+                                        {% if field.allow_custom %}
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                {% translate "Custom" %}
+                                            </span>
+                                        {% endif %}
                                     {% else %}
                                         {% translate "Text" %}
                                     {% endif %}

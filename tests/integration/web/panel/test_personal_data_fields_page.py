@@ -154,3 +154,60 @@ class TestPersonalDataFieldsPageView:
                 "fields": fields,
             },
         )
+
+    def test_get_returns_field_with_is_multiple_attribute(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        PersonalDataField.objects.create(
+            event=event,
+            name="Languages",
+            slug="languages",
+            field_type="select",
+            is_multiple=True,
+        )
+        PersonalDataField.objects.create(
+            event=event,
+            name="Country",
+            slug="country",
+            field_type="select",
+            is_multiple=False,
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        fields = response.context["fields"]
+        assert len(fields) == 1 + 1  # Languages + Country
+        # Fields should have is_multiple attribute in DTO
+        country_field = next(f for f in fields if f.name == "Country")
+        languages_field = next(f for f in fields if f.name == "Languages")
+        assert country_field.is_multiple is False
+        assert languages_field.is_multiple is True
+
+    def test_get_returns_field_with_allow_custom_attribute(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        PersonalDataField.objects.create(
+            event=event,
+            name="Country",
+            slug="country",
+            field_type="select",
+            allow_custom=True,
+        )
+        PersonalDataField.objects.create(
+            event=event,
+            name="City",
+            slug="city",
+            field_type="select",
+            allow_custom=False,
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        fields = response.context["fields"]
+        assert len(fields) == 1 + 1  # Country + City
+        country_field = next(f for f in fields if f.name == "Country")
+        city_field = next(f for f in fields if f.name == "City")
+        assert country_field.allow_custom is True
+        assert city_field.allow_custom is False

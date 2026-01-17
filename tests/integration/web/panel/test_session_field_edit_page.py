@@ -243,3 +243,33 @@ class TestSessionFieldEditPageView:
             messages=[(messages.ERROR, "Session field not found.")],
             url=f"/panel/event/{event.slug}/cfp/session-fields/",
         )
+
+    def test_get_returns_field_with_is_multiple_attribute(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(
+            event=event, name="Tags", slug="tags", field_type="select", is_multiple=True
+        )
+
+        response = authenticated_client.get(self.get_url(event, field))
+
+        context_field = response.context["field"]
+        assert context_field.is_multiple is True
+
+    def test_get_returns_field_with_allow_custom_attribute(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(
+            event=event,
+            name="Genre",
+            slug="genre",
+            field_type="select",
+            allow_custom=True,
+        )
+
+        response = authenticated_client.get(self.get_url(event, field))
+
+        context_field = response.context["field"]
+        assert context_field.allow_custom is True

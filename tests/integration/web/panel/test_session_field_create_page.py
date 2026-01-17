@@ -222,3 +222,103 @@ class TestSessionFieldCreatePageView:
         field = SessionField.objects.get(event=event)
         assert field.field_type == "text"
         assert field.options.count() == 0
+
+    def test_post_creates_field_with_is_multiple_false_by_default(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={
+                "name": "Difficulty",
+                "field_type": "select",
+                "options": "Easy\nHard",
+            },
+        )
+
+        field = SessionField.objects.get(event=event)
+        assert field.is_multiple is False
+
+    def test_post_creates_select_field_with_is_multiple_true(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={
+                "name": "Tags",
+                "field_type": "select",
+                "options": "Action\nAdventure\nHorror",
+                "is_multiple": True,
+            },
+        )
+
+        field = SessionField.objects.get(event=event)
+        assert field.field_type == "select"
+        assert field.is_multiple is True
+
+    def test_post_ignores_is_multiple_for_text_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={"name": "Notes", "field_type": "text", "is_multiple": True},
+        )
+
+        field = SessionField.objects.get(event=event)
+        assert field.field_type == "text"
+        assert field.is_multiple is False
+
+    def test_post_creates_field_with_allow_custom_false_by_default(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={
+                "name": "Difficulty",
+                "field_type": "select",
+                "options": "Easy\nHard",
+            },
+        )
+
+        field = SessionField.objects.get(event=event)
+        assert field.allow_custom is False
+
+    def test_post_creates_select_field_with_allow_custom_true(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={
+                "name": "Genre",
+                "field_type": "select",
+                "options": "Action\nAdventure",
+                "allow_custom": True,
+            },
+        )
+
+        field = SessionField.objects.get(event=event)
+        assert field.field_type == "select"
+        assert field.allow_custom is True
+
+    def test_post_ignores_allow_custom_for_text_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={"name": "Notes", "field_type": "text", "allow_custom": True},
+        )
+
+        field = SessionField.objects.get(event=event)
+        assert field.field_type == "text"
+        assert field.allow_custom is False
