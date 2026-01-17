@@ -171,6 +171,48 @@ class PanelService:
         self._uow.session_fields.delete(field_pk)
         return True
 
+    def delete_venue(self, venue_pk: int) -> bool:
+        """Delete a venue if it has no scheduled sessions.
+
+        Args:
+            venue_pk: The venue primary key.
+
+        Returns:
+            True if deleted, False if venue has sessions.
+        """
+        if self._uow.venues.has_sessions(venue_pk):
+            return False
+        self._uow.venues.delete(venue_pk)
+        return True
+
+    def delete_area(self, area_pk: int) -> bool:
+        """Delete an area if it has no scheduled sessions in any space.
+
+        Args:
+            area_pk: The area primary key.
+
+        Returns:
+            True if deleted, False if area has sessions.
+        """
+        if self._uow.areas.has_sessions(area_pk):
+            return False
+        self._uow.areas.delete(area_pk)
+        return True
+
+    def delete_space(self, space_pk: int) -> bool:
+        """Delete a space if it has no scheduled sessions.
+
+        Args:
+            space_pk: The space primary key.
+
+        Returns:
+            True if deleted, False if space has sessions.
+        """
+        if self._uow.spaces.has_sessions(space_pk):
+            return False
+        self._uow.spaces.delete(space_pk)
+        return True
+
     def get_event_stats(self, event_id: int) -> PanelStatsDTO:
         """Calculate panel statistics for an event.
 
