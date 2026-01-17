@@ -129,6 +129,48 @@ class PanelService:
     def __init__(self, uow: UnitOfWorkProtocol) -> None:
         self._uow = uow
 
+    def delete_category(self, category_pk: int) -> bool:
+        """Delete a proposal category if it has no proposals.
+
+        Args:
+            category_pk: The category primary key.
+
+        Returns:
+            True if deleted, False if category has proposals.
+        """
+        if self._uow.proposal_categories.has_proposals(category_pk):
+            return False
+        self._uow.proposal_categories.delete(category_pk)
+        return True
+
+    def delete_personal_data_field(self, field_pk: int) -> bool:
+        """Delete a personal data field if not used by session types.
+
+        Args:
+            field_pk: The field primary key.
+
+        Returns:
+            True if deleted, False if field has requirements.
+        """
+        if self._uow.personal_data_fields.has_requirements(field_pk):
+            return False
+        self._uow.personal_data_fields.delete(field_pk)
+        return True
+
+    def delete_session_field(self, field_pk: int) -> bool:
+        """Delete a session field if not used by session types.
+
+        Args:
+            field_pk: The field primary key.
+
+        Returns:
+            True if deleted, False if field has requirements.
+        """
+        if self._uow.session_fields.has_requirements(field_pk):
+            return False
+        self._uow.session_fields.delete(field_pk)
+        return True
+
     def get_event_stats(self, event_id: int) -> PanelStatsDTO:
         """Calculate panel statistics for an event.
 
