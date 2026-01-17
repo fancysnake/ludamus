@@ -30,3 +30,8 @@ def _fail_on_missing_template_variables():
 @pytest.fixture
 def time_zone(settings):
     return zoneinfo.ZoneInfo(settings.TIME_ZONE)
+
+
+@pytest.fixture(autouse=True)
+def english_language(settings):
+    settings.LANGUAGE_CODE = "en"
