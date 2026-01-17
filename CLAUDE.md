@@ -49,7 +49,8 @@ Strict rules:
 - Use `assert_response` utility for view tests, never manual assertions
 - NEVER modify, create, or delete configuration files without explicit
   per-case approval.
-- NEVER add ignore comments or directives without explicit per-case approval.
+- NEVER add noqa/type ignore/pylint comments or directives without explicit
+  per-case approval.
 
 ## Details
 

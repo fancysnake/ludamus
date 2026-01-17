@@ -244,16 +244,16 @@
                     {% if hour_data %}
                         <!-- Filter Controls -->
                         <div class="row mb-2">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                                     <input type="text"
                                            class="form-control"
                                            id="sessionFilter"
-                                           placeholder="{% translate "Filter sessions by title or host..." %}">
+                                           placeholder="{% translate "Filter by title or host..." %}">
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <select class="form-select form-select-sm" id="statusFilter">
                                     <option value="">{% translate "All statuses" %}</option>
                                     <option value="available">{% translate "Available spots" %}</option>
@@ -263,6 +263,12 @@
                                     <option value="ended">{% translate "Ended" %}</option>
                                     <option value="my-enrolled">{% translate "I am enrolled" %}</option>
                                     <option value="my-waiting">{% translate "I am waiting" %}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select form-select-sm" id="venueFilter">
+                                    <option value="">{% translate "All venues" %}</option>
+                                    <!-- Options will be populated by JavaScript from session data -->
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -789,8 +795,12 @@
                                             <i class="bi bi-geo-alt"></i> {% translate "Location" %}
                                         </h6>
                                         <p class="ms-4">
-                                            {% if data.space %}
-                                                {{ data.space.name }}
+                                            {% if data.loc.space %}
+                                                {% if data.loc.area %}
+                                                    {{ data.loc.venue.name }} ›
+                                                    {{ data.loc.area.name }} ›
+                                                {% endif %}
+                                                {{ data.loc.space.name }}
                                             {% else %}
                                                 <span class="text-muted">{% translate "To be announced" %}</span>
                                             {% endif %}
@@ -1072,11 +1082,33 @@
 
             const sessionFilter = document.getElementById('sessionFilter');
             const statusFilter = document.getElementById('statusFilter');
+            const venueFilter = document.getElementById('venueFilter');
             const minAgeFilter = document.getElementById('minAgeFilter');
             const maxAgeFilter = document.getElementById('maxAgeFilter');
             const clearFilters = document.getElementById('clearFilters');
             const sessionCards = document.querySelectorAll('.session-card');
             const tagFilters = {};
+
+            // Populate venue filter dropdown from session data
+            const venueMap = new Map(); // slug -> name
+            sessionCards.forEach(card => {
+                const venueSlug = card.dataset.venue;
+                if (venueSlug && !venueMap.has(venueSlug)) {
+                    // Extract venue name from the card's location text
+                    const locationText = card.querySelector('.bi-geo-alt')?.parentElement?.textContent || '';
+                    const venueName = locationText.split('›')[0]?.trim() || venueSlug;
+                    venueMap.set(venueSlug, venueName);
+                }
+            });
+            // Sort by name and add options
+            Array.from(venueMap.entries())
+                .sort((a, b) => a[1].localeCompare(b[1]))
+                .forEach(([slug, name]) => {
+                    const option = document.createElement('option');
+                    option.value = slug;
+                    option.textContent = name;
+                    venueFilter.appendChild(option);
+                });
 
             // Get tag filter elements created by Django template
             const tagFilterElements = document.querySelectorAll('.tag-filter');
@@ -1116,6 +1148,7 @@
             function filterSessions() {
                 const searchText = sessionFilter.value.toLowerCase();
                 const statusValue = statusFilter.value;
+                const venueValue = venueFilter.value;
                 const minAgeValue = minAgeFilter.value;
                 const maxAgeValue = maxAgeFilter.value;
 
@@ -1167,6 +1200,11 @@
                                 show = show && card.dataset.userWaiting === 'true';
                                 break;
                         }
+                    }
+
+                    // Venue filter
+                    if (venueValue) {
+                        show = show && card.dataset.venue === venueValue;
                     }
 
                     // Age range filter
@@ -1263,6 +1301,7 @@
             function clearAllFilters() {
                 sessionFilter.value = '';
                 statusFilter.value = '';
+                venueFilter.value = '';
                 minAgeFilter.value = '';
                 maxAgeFilter.value = '';
                 Object.keys(tagFilters).forEach(categorySlug => {
@@ -1286,6 +1325,7 @@
             // Add event listeners
             sessionFilter.addEventListener('input', filterSessions);
             statusFilter.addEventListener('change', filterSessions);
+            venueFilter.addEventListener('change', filterSessions);
             minAgeFilter.addEventListener('input', filterSessions);
             maxAgeFilter.addEventListener('input', filterSessions);
             clearFilters.addEventListener('click', clearAllFilters);

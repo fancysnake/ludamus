@@ -10,6 +10,7 @@ from pytest_factoryboy import register
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    Area,
     EnrollmentConfig,
     Event,
     Proposal,
@@ -22,6 +23,7 @@ from ludamus.adapters.db.django.models import (
     Tag,
     TagCategory,
     TimeSlot,
+    Venue,
 )
 from tests.integration.factories import AnonymousUserFactory, CompleteUserFactory
 
@@ -95,6 +97,26 @@ class EnrollmentConfigFactory(DjangoModelFactory):
     percentage_slots = 100
 
 
+class VenueFactory(DjangoModelFactory):
+    class Meta:
+        model = Venue
+
+    name = Faker("company")
+    slug = Faker("slug")
+    event = SubFactory(EventFactory)
+    order = 0
+
+
+class AreaFactory(DjangoModelFactory):
+    class Meta:
+        model = Area
+
+    name = Faker("word")
+    slug = Faker("slug")
+    venue = SubFactory(VenueFactory)
+    order = 0
+
+
 class SpaceFactory(DjangoModelFactory):
     class Meta:
         model = Space
@@ -102,6 +124,7 @@ class SpaceFactory(DjangoModelFactory):
     name = Faker("word")
     slug = Faker("slug")
     event = SubFactory(EventFactory)
+    area = SubFactory(AreaFactory)
 
 
 class TimeSlotFactory(DjangoModelFactory):
@@ -257,9 +280,19 @@ def enrollment_config_fixture(event):
     )
 
 
+@pytest.fixture(name="venue")
+def venue_fixture(event):
+    return VenueFactory(event=event, name="Main Venue")
+
+
+@pytest.fixture(name="area")
+def area_fixture(venue):
+    return AreaFactory(venue=venue, name="Main Area")
+
+
 @pytest.fixture(name="space")
-def space_fixture(event):
-    return SpaceFactory(event=event)
+def space_fixture(event, area):
+    return SpaceFactory(event=event, area=area)
 
 
 @pytest.fixture
@@ -294,11 +327,6 @@ def proposal(proposal_category, active_user):
 @pytest.fixture
 def agenda_item(session, space):
     return AgendaItemFactory(session=session, space=space)
-
-
-@pytest.fixture(autouse=True)
-def english_language(settings):
-    settings.LANGUAGE_CODE = "en"
 
 
 @pytest.fixture(autouse=True, name="sphere")

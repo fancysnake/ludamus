@@ -81,10 +81,7 @@
                             <label for="space" class="form-label">
                                 <i class="bi bi-geo-alt"></i> {% translate "Space" %} <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select" id="space" name="space" required>
-                                <option value="">{% translate "Select a space..." %}</option>
-                                {% for space in spaces %}<option value="{{ space.pk }}">{{ space.name }}</option>{% endfor %}
-                            </select>
+                            {{ form.space }}
                         </div>
                         <div class="mb-4">
                             <label for="time_slot" class="form-label">

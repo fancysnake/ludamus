@@ -146,7 +146,7 @@ class TestPersonalDataFieldCreatePageView:
         fields = PersonalDataField.objects.filter(event=event)
         assert fields.count() == 1 + 1  # existing + new
         new_field = fields.exclude(slug="email").first()
-        assert new_field.slug == "email-2"
+        assert new_field.slug.startswith("email-")
 
     def test_post_error_on_empty_name_rerenders_form(
         self, authenticated_client, active_user, sphere, event

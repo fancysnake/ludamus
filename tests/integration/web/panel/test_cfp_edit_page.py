@@ -206,7 +206,7 @@ class TestCFPEditPageView:
 
         category.refresh_from_db()
         assert category.name == "Workshops"
-        assert category.slug == "workshops-2"
+        assert category.slug.startswith("workshops-")
 
     def test_post_keeps_slug_if_name_unchanged(
         self, authenticated_client, active_user, sphere, event

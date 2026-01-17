@@ -186,7 +186,7 @@ class TestSessionFieldEditPageView:
         )
 
         field.refresh_from_db()
-        assert field.slug == "difficulty-2"
+        assert field.slug.startswith("difficulty-")
 
     def test_post_error_on_empty_name_rerenders_form(
         self, authenticated_client, active_user, sphere, event

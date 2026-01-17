@@ -13,6 +13,7 @@
          data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
+         data-venue="{% if data.loc.area %}{{ data.loc.venue.slug }}{% endif %}"
          style="cursor: pointer"
          data-bs-toggle="modal"
          data-bs-target="#sessionDetailModal{{ data.session.pk }}">
@@ -23,8 +24,15 @@
             <div class="mb-1">
                 <small class="text-muted d-block">
                     <i class="bi bi-person-circle"></i> {{ data.session.presenter_name|default:data.session.presenter_name }}
-                    {% if data.space %}| <i class="bi bi-geo-alt"></i> {{ data.space.name }}{% endif %}
-                </small>data.space
+                    {% if data.loc.space %}
+                        | <i class="bi bi-geo-alt"></i>
+                        {% if data.loc.area %}
+                            {{ data.loc.venue.name }} ›
+                            {{ data.loc.area.name }} ›
+                        {% endif %}
+                        {{ data.loc.space.name }}
+                    {% endif %}
+                </small>
             </div>
             <!-- Status indicator -->
             <div class="mt-auto d-flex justify-content-between align-items-center">

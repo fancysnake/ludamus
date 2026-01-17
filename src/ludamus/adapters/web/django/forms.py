@@ -480,12 +480,45 @@ def create_session_proposal_form(
 
 
 def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
-    space_field = forms.ModelChoiceField(
-        queryset=Space.objects.filter(event_id=event.pk).order_by("name"),
+    # Query spaces with related area and venue for proper grouping
+    spaces = (
+        Space.objects.filter(event_id=event.pk)
+        .select_related("area__venue")
+        .order_by(
+            "area__venue__order",
+            "area__venue__name",
+            "area__order",
+            "area__name",
+            "order",
+            "name",
+        )
+    )
+
+    # Build grouped choices: {(venue_name, area_name): [(space_id, space_name), ...]}
+    grouped_choices: dict[str, list[tuple[int, str]]] = {}
+    for space in spaces:
+        # Areas always have venues (venue FK is required), so we only need to check
+        # if space has an area or not
+        group_label = (
+            f"{space.area.venue.name} > {space.area.name}"
+            if space.area
+            else _("Unassigned")
+        )
+        if group_label not in grouped_choices:
+            grouped_choices[group_label] = []
+        grouped_choices[group_label].append((space.id, space.name))
+
+    # Convert to choices format with optgroups
+    choices: list[tuple[str, str] | tuple[str, list[tuple[int, str]]]] = [
+        ("", _("Select a space..."))
+    ]
+    choices.extend(list(grouped_choices.items()))
+
+    space_field = forms.ChoiceField(
+        choices=choices,
         label=_("Space"),
         widget=forms.Select(attrs={"class": "form-select"}),
         help_text=_("Select the space where this session will take place"),
-        empty_label=_("Select a space..."),
         required=True,
     )
 
@@ -498,9 +531,17 @@ def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
         required=True,
     )
 
+    def clean_space(self: forms.Form) -> Space:
+        if not (space_id := self.cleaned_data.get("space")):
+            raise ValidationError(_("This field is required."))
+        try:
+            return Space.objects.get(pk=int(space_id), event_id=event.pk)
+        except (Space.DoesNotExist, ValueError) as e:
+            raise ValidationError(_("Invalid space selection.")) from e
+
     def clean(self: forms.Form) -> dict[str, Any] | None:
         if (cleaned_data := super(forms.Form, self).clean()) and Session.objects.filter(
-            agenda_item__space=cleaned_data["space"],
+            agenda_item__space=cleaned_data.get("space"),
             agenda_item__start_time=cleaned_data["time_slot"].start_time,
             agenda_item__end_time=cleaned_data["time_slot"].end_time,
         ).exists():
@@ -509,6 +550,11 @@ def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
             )
         return cleaned_data
 
-    form_attrs = {"space": space_field, "time_slot": time_slot_field, "clean": clean}
+    form_attrs = {
+        "space": space_field,
+        "time_slot": time_slot_field,
+        "clean_space": clean_space,
+        "clean": clean,
+    }
 
     return type("ProposalAcceptanceForm", (forms.Form,), form_attrs)

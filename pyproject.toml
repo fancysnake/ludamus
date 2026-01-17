@@ -42,6 +42,7 @@ djlint = "^1.36.4"
 factory-boy = "^3.3.3"
 faker = "^40.1.0"
 freezegun = "^1.5.2"
+ipython = "^9.9.0"
 mypy = "^1.16.0"
 pip-audit = "^2.10.0"
 pre-commit = "^4.5.1"
@@ -165,6 +166,7 @@ ignore = [
     "CPY",
     "D1",
     "FIX",
+    "TD003",
     # Left to fix
     "PLR0911", # Too many return statements
     "PLR0912", # Too many branches

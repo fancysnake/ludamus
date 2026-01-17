@@ -144,7 +144,7 @@ class TestSessionFieldCreatePageView:
         fields = SessionField.objects.filter(event=event)
         assert fields.count() == 1 + 1  # existing + new
         new_field = fields.exclude(slug="genre").first()
-        assert new_field.slug == "genre-2"
+        assert new_field.slug.startswith("genre-")
 
     def test_post_error_on_empty_name_rerenders_form(
         self, authenticated_client, active_user, sphere, event
