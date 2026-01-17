@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
 
@@ -17,6 +17,7 @@ class NotFoundError(Exception):
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    durations: list[str]
     end_time: datetime | None
     max_participants_limit: int
     min_participants_limit: int
@@ -186,6 +187,68 @@ class UserData(TypedDict, total=False):
     username: str
 
 
+class ProposalCategoryData(TypedDict, total=False):
+    durations: list[str]
+    end_time: datetime | None
+    name: str
+    start_time: datetime | None
+
+
+class CategoryStats(TypedDict):
+    """Statistics for a proposal category."""
+
+    proposals_count: int
+    accepted_count: int
+
+
+class PersonalDataFieldOptionDTO(BaseModel):
+    """An option for a select-type personal data field."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    label: str
+    order: int
+    pk: int
+    value: str
+
+
+class PersonalDataFieldDTO(BaseModel):
+    """Personal data field definition for an event."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    field_type: Literal["text", "select"]
+    name: str
+    options: list[PersonalDataFieldOptionDTO] = []
+    order: int
+    pk: int
+    slug: str
+
+
+class SessionFieldOptionDTO(BaseModel):
+    """An option for a select-type session field."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    label: str
+    order: int
+    pk: int
+    value: str
+
+
+class SessionFieldDTO(BaseModel):
+    """Session field definition for an event."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    field_type: Literal["text", "select"]
+    name: str
+    options: list[SessionFieldOptionDTO] = []
+    order: int
+    pk: int
+    slug: str
+
+
 @dataclass
 class RequestContext:
     current_site_id: int
@@ -251,6 +314,8 @@ class ProposalRepositoryProtocol(Protocol):
     def read_time_slots(self, proposal_id: int) -> list[TimeSlotDTO]: ...
     def read(self, pk: int) -> ProposalDTO: ...
     def update(self, proposal_dto: ProposalDTO) -> None: ...
+    @staticmethod
+    def count_by_category(category_id: int) -> int: ...
 
 
 class SessionRepositoryProtocol(Protocol):
@@ -279,6 +344,66 @@ class EventRepositoryProtocol(Protocol):
     def update_name(self, event_id: int, name: str) -> None: ...
 
 
+class ProposalCategoryRepositoryProtocol(Protocol):
+    def create(self, event_id: int, name: str) -> ProposalCategoryDTO: ...
+    def delete(self, pk: int) -> None: ...
+    @staticmethod
+    def get_category_stats(event_id: int) -> dict[int, CategoryStats]: ...
+    @staticmethod
+    def get_field_order(category_id: int) -> list[int]: ...
+    @staticmethod
+    def get_field_requirements(category_id: int) -> dict[int, bool]: ...
+    @staticmethod
+    def get_session_field_order(category_id: int) -> list[int]: ...
+    @staticmethod
+    def get_session_field_requirements(category_id: int) -> dict[int, bool]: ...
+    @staticmethod
+    def has_proposals(pk: int) -> bool: ...
+    def list_by_event(self, event_id: int) -> list[ProposalCategoryDTO]: ...
+    def read_by_slug(self, event_id: int, slug: str) -> ProposalCategoryDTO: ...
+    @staticmethod
+    def set_field_requirements(
+        category_id: int, requirements: dict[int, bool], order: list[int] | None = None
+    ) -> None: ...
+    @staticmethod
+    def set_session_field_requirements(
+        category_id: int, requirements: dict[int, bool], order: list[int] | None = None
+    ) -> None: ...
+    def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO: ...
+
+
+class PersonalDataFieldRepositoryProtocol(Protocol):
+    def create(
+        self,
+        event_id: int,
+        name: str,
+        field_type: Literal["text", "select"] = "text",
+        options: list[str] | None = None,
+    ) -> PersonalDataFieldDTO: ...
+    def delete(self, pk: int) -> None: ...
+    @staticmethod
+    def has_requirements(pk: int) -> bool: ...
+    def list_by_event(self, event_id: int) -> list[PersonalDataFieldDTO]: ...
+    def read_by_slug(self, event_id: int, slug: str) -> PersonalDataFieldDTO: ...
+    def update(self, pk: int, name: str) -> PersonalDataFieldDTO: ...
+
+
+class SessionFieldRepositoryProtocol(Protocol):
+    def create(
+        self,
+        event_id: int,
+        name: str,
+        field_type: Literal["text", "select"] = "text",
+        options: list[str] | None = None,
+    ) -> SessionFieldDTO: ...
+    def delete(self, pk: int) -> None: ...
+    @staticmethod
+    def has_requirements(pk: int) -> bool: ...
+    def list_by_event(self, event_id: int) -> list[SessionFieldDTO]: ...
+    def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO: ...
+    def update(self, pk: int, name: str) -> SessionFieldDTO: ...
+
+
 class UnitOfWorkProtocol(Protocol):
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
@@ -294,6 +419,12 @@ class UnitOfWorkProtocol(Protocol):
     def connected_users(self) -> ConnectedUserRepositoryProtocol: ...
     @property
     def events(self) -> EventRepositoryProtocol: ...
+    @property
+    def personal_data_fields(self) -> PersonalDataFieldRepositoryProtocol: ...
+    @property
+    def proposal_categories(self) -> ProposalCategoryRepositoryProtocol: ...
+    @property
+    def session_fields(self) -> SessionFieldRepositoryProtocol: ...
     @property
     def proposals(self) -> ProposalRepositoryProtocol: ...
     @property

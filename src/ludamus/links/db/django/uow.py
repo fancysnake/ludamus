@@ -49,8 +49,20 @@ class UnitOfWork(UnitOfWorkProtocol):
         return repositories.EventRepository(self._storage)
 
     @cached_property
+    def personal_data_fields(self) -> repositories.PersonalDataFieldRepository:
+        return repositories.PersonalDataFieldRepository(self._storage)
+
+    @cached_property
+    def proposal_categories(self) -> repositories.ProposalCategoryRepository:
+        return repositories.ProposalCategoryRepository(self._storage)
+
+    @cached_property
     def proposals(self) -> repositories.ProposalRepository:
         return repositories.ProposalRepository(self._storage)
+
+    @cached_property
+    def session_fields(self) -> repositories.SessionFieldRepository:
+        return repositories.SessionFieldRepository(self._storage)
 
     @cached_property
     def sessions(self) -> repositories.SessionRepository:

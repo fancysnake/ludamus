@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
@@ -17,8 +18,9 @@ class TestPanelIndexRedirectView:
     def test_redirects_anonymous_user_to_login(self, client):
         response = client.get(self.URL)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={self.URL}"
+        )
 
     def test_redirects_non_manager_user(self, authenticated_client):
         response = authenticated_client.get(self.URL)
@@ -62,10 +64,13 @@ class TestEventIndexPageView:
         return reverse("panel:event-index", kwargs={"slug": event.slug})
 
     def test_redirects_anonymous_user_to_login(self, client, event):
-        response = client.get(self.get_url(event))
+        url = self.get_url(event)
 
-        assert response.status_code == HTTPStatus.FOUND
-        assert "/crowd/login-required/" in response.url
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
 
     def test_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.get(self.get_url(event))
@@ -84,10 +89,22 @@ class TestEventIndexPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "panel/index.html"
-        assert response.context["current_event"].pk == event.pk
-        assert response.context["active_nav"] == "index"
+        current_event = response.context["current_event"]
+        events = response.context["events"]
+        is_proposal_active = response.context["is_proposal_active"]
+        assert current_event.pk == event.pk
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/index.html",
+            context_data={
+                "current_event": current_event,
+                "events": events,
+                "is_proposal_active": is_proposal_active,
+                "stats": ANY,
+                "active_nav": "index",
+            },
+        )
 
     def test_shows_events_for_sphere(
         self, authenticated_client, active_user, sphere, event
@@ -96,10 +113,23 @@ class TestEventIndexPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
-        assert len(response.context["events"]) == 1
-        assert response.context["events"][0].pk == event.pk
-        assert response.context["current_event"].pk == event.pk
+        current_event = response.context["current_event"]
+        events = response.context["events"]
+        is_proposal_active = response.context["is_proposal_active"]
+        assert len(events) == 1
+        assert events[0].pk == event.pk
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/index.html",
+            context_data={
+                "current_event": current_event,
+                "events": events,
+                "is_proposal_active": is_proposal_active,
+                "stats": ANY,
+                "active_nav": "index",
+            },
+        )
 
     def test_shows_stats_for_current_event(
         self, authenticated_client, active_user, sphere, event
@@ -108,13 +138,27 @@ class TestEventIndexPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        assert response.status_code == HTTPStatus.OK
+        current_event = response.context["current_event"]
+        events = response.context["events"]
+        is_proposal_active = response.context["is_proposal_active"]
         stats = response.context["stats"]
         assert "total_sessions" in stats
         assert "pending_proposals" in stats
         assert "scheduled_sessions" in stats
         assert "hosts_count" in stats
         assert "rooms_count" in stats
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/index.html",
+            context_data={
+                "current_event": current_event,
+                "events": events,
+                "is_proposal_active": is_proposal_active,
+                "stats": stats,
+                "active_nav": "index",
+            },
+        )
 
     def test_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
@@ -139,5 +183,19 @@ class TestEventIndexPageView:
 
         response = authenticated_client.get(self.get_url(event2))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["current_event"].pk == event2.pk
+        current_event = response.context["current_event"]
+        events = response.context["events"]
+        is_proposal_active = response.context["is_proposal_active"]
+        assert current_event.pk == event2.pk
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/index.html",
+            context_data={
+                "current_event": current_event,
+                "events": events,
+                "is_proposal_active": is_proposal_active,
+                "stats": ANY,
+                "active_nav": "index",
+            },
+        )

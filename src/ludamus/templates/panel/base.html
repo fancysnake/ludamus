@@ -54,7 +54,7 @@
                    class="sidebar-panel w-64 bg-gray-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0 overflow-y-auto">
                 <div class="p-6">
                     <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
-                    <p class="text-gray-400 text-sm">Backoffice</p>
+                    <p class="text-gray-400 text-sm">{% translate "Backoffice" %}</p>
                 </div>
                 <!-- Event Selector -->
                 {% if events %}
@@ -78,6 +78,11 @@
                            class="flex items-center px-4 py-3 {% if active_nav == 'index' %}text-white bg-gray-800{% else %}text-gray-300 hover:bg-gray-800{% endif %} rounded-lg transition">
                             {% heroicon_outline "home" class="w-5 h-5 mr-3" %}
                             {% translate "Dashboard" %}
+                        </a>
+                        <a href="{% url 'panel:cfp' slug=current_event.slug %}"
+                           class="flex items-center px-4 py-3 {% if active_nav == 'cfp' %}text-white bg-gray-800{% else %}text-gray-300 hover:bg-gray-800{% endif %} rounded-lg transition">
+                            {% heroicon_outline "rectangle-stack" class="w-5 h-5 mr-3" %}
+                            {% translate "Call for Proposals" %}
                         </a>
                         <div class="pt-4 mt-4 border-t border-gray-800">
                             <p class="px-4 text-xs text-gray-500 uppercase tracking-wider mb-2">{% translate "Settings" %}</p>

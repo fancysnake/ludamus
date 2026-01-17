@@ -1,0 +1,70 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% block title %}
+    {% translate "Edit Personal Data Field" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "Edit Personal Data Field" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Host Information" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
+           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+            {% translate "Cancel" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event and field %}
+        <form method="post" class="max-w-2xl">
+            {% csrf_token %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6">{% translate "Field Details" %}</h3>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2" for="id_name">{% translate "Name" %}</label>
+                        <input type="text"
+                               name="name"
+                               id="id_name"
+                               value="{{ form.name.value|default:'' }}"
+                               class="w-full border {% if form.name.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                               placeholder="{% translate "e.g., Email, Phone, Bio" %}">
+                        {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{% translate "Field Type" %}</label>
+                        <div class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-gray-600">
+                            {% if field.field_type == "select" %}
+                                {% translate "Select" %}
+                            {% else %}
+                                {% translate "Text" %}
+                            {% endif %}
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">{% translate "Field type cannot be changed after creation." %}</p>
+                    </div>
+                    {% if field.field_type == "select" and field.options %}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{% translate "Options" %}</label>
+                            <ul class="bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-700 space-y-1">
+                                {% for option in field.options %}<li class="text-sm">{{ option.label }}</li>{% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button type="submit"
+                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+                        {% heroicon_outline "check" class="w-4 h-4 mr-2" %}
+                        {% translate "Save" %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+{% endblock content %}

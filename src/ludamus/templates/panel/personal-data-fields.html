@@ -1,0 +1,102 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% block title %}
+    {% translate "Personal Data Fields" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "Personal Data Fields" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Host Information" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:cfp' slug=current_event.slug %}"
+           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center mr-2">
+            {% heroicon_outline "arrow-left" class="w-4 h-4 mr-2" %}
+            {% translate "Back to CFP" %}
+        </a>
+        <a href="{% url 'panel:personal-data-field-create' slug=current_event.slug %}"
+           class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+            {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+            {% translate "New Field" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% heroicon_outline "information-circle" class="w-5 h-5" %}</span>
+                <div>
+                    <p class="text-sm font-medium text-blue-800">{% translate "What are Host Data Fields?" %}</p>
+                    <p class="text-sm text-blue-700 mt-1">
+                        {% translate "Host data fields collect contact and personal information from session hosts when they submit proposals. Examples: email address, phone number, Discord username. This data is shared across all session types for the event - each host fills it once." %}
+                    </p>
+                    <p class="text-sm text-blue-700 mt-2">
+                        {% translate "After creating fields here, configure which ones are required or optional in each session type's settings." %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% if fields %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% translate "Name" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% translate "Type" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% translate "Actions" %}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for field in fields %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ field.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if field.field_type == "select" %}
+                                        {% translate "Select" %}
+                                        <span class="text-gray-400">({{ field.options|length }})</span>
+                                    {% else %}
+                                        {% translate "Text" %}
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'panel:personal-data-field-edit' slug=current_event.slug field_slug=field.slug %}"
+                                       class="text-primary hover:text-primary/80 mr-4">{% translate "Edit" %}</a>
+                                    <form method="post"
+                                          action="{% url 'panel:personal-data-field-delete' slug=current_event.slug field_slug=field.slug %}"
+                                          class="inline"
+                                          onsubmit="return confirm('{% translate "Are you sure you want to delete this field?" %}');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-red-600 hover:text-red-800">{% translate "Delete" %}</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+                <p class="text-gray-500">{% translate "No personal data fields defined. Add fields to collect host information." %}</p>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <p class="text-gray-500">{% translate "No events available. Create an event to get started." %}</p>
+        </div>
+    {% endif %}
+{% endblock content %}

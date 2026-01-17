@@ -14,4 +14,60 @@ urlpatterns = [
         panel.EventSettingsPageView.as_view(),
         name="event-settings",
     ),
+    path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
+    path(
+        "event/<slug:slug>/cfp/create/",
+        panel.CFPCreatePageView.as_view(),
+        name="cfp-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/personal-data/",
+        panel.PersonalDataFieldsPageView.as_view(),
+        name="personal-data-fields",
+    ),
+    path(
+        "event/<slug:slug>/cfp/personal-data/create/",
+        panel.PersonalDataFieldCreatePageView.as_view(),
+        name="personal-data-field-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/personal-data/<str:field_slug>/edit/",
+        panel.PersonalDataFieldEditPageView.as_view(),
+        name="personal-data-field-edit",
+    ),
+    path(
+        "event/<slug:slug>/cfp/personal-data/<str:field_slug>/do/delete",
+        panel.PersonalDataFieldDeleteActionView.as_view(),
+        name="personal-data-field-delete",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/",
+        panel.SessionFieldsPageView.as_view(),
+        name="session-fields",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/create/",
+        panel.SessionFieldCreatePageView.as_view(),
+        name="session-field-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/<str:field_slug>/edit/",
+        panel.SessionFieldEditPageView.as_view(),
+        name="session-field-edit",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/<str:field_slug>/do/delete",
+        panel.SessionFieldDeleteActionView.as_view(),
+        name="session-field-delete",
+    ),
+    path(
+        "event/<slug:event_slug>/cfp/<str:category_slug>/",
+        panel.CFPEditPageView.as_view(),
+        name="cfp-edit",
+    ),
+    path(
+        "event/<slug:event_slug>/cfp/<str:category_slug>/do/delete",
+        panel.CFPDeleteActionView.as_view(),
+        name="cfp-delete",
+    ),
 ]

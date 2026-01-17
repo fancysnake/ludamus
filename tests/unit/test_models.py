@@ -9,9 +9,16 @@ from ludamus.adapters.db.django.models import (
     DomainEnrollmentConfig,
     EnrollmentConfig,
     Event,
+    HostPersonalData,
+    PersonalDataField,
+    PersonalDataFieldOption,
+    PersonalDataFieldRequirement,
     Proposal,
     ProposalCategory,
     Session,
+    SessionField,
+    SessionFieldOption,
+    SessionFieldRequirement,
     SessionParticipation,
     SessionParticipationStatus,
     Space,
@@ -224,3 +231,101 @@ class TestUser:
         user = User(name="", username="")
 
         assert user.initials == "?"
+
+
+class TestPersonalDataField:
+    def test_str(self, faker):
+        name = faker.word()
+
+        assert str(PersonalDataField(name=name)) == name
+
+
+class TestPersonalDataFieldOption:
+    def test_str(self, faker):
+        label = faker.word()
+
+        assert str(PersonalDataFieldOption(label=label)) == label
+
+
+class TestPersonalDataFieldRequirement:
+    def test_str_required(self, faker):
+        field_name = faker.word()
+        category_name = faker.word()
+
+        requirement = PersonalDataFieldRequirement(
+            field=PersonalDataField(name=field_name),
+            category=ProposalCategory(name=category_name),
+            is_required=True,
+        )
+
+        assert str(requirement) == f"{field_name} (required) for {category_name}"
+
+    def test_str_optional(self, faker):
+        field_name = faker.word()
+        category_name = faker.word()
+
+        requirement = PersonalDataFieldRequirement(
+            field=PersonalDataField(name=field_name),
+            category=ProposalCategory(name=category_name),
+            is_required=False,
+        )
+
+        assert str(requirement) == f"{field_name} (optional) for {category_name}"
+
+
+class TestHostPersonalData:
+    def test_str(self, faker):
+        field_name = faker.word()
+        value = faker.sentence()
+
+        data = HostPersonalData(field=PersonalDataField(name=field_name), value=value)
+
+        assert str(data) == f"{field_name}: {value[:50]}"
+
+    def test_str_truncates_long_value(self, faker):
+        field_name = faker.word()
+        value = "x" * 100
+
+        data = HostPersonalData(field=PersonalDataField(name=field_name), value=value)
+
+        assert str(data) == f"{field_name}: {'x' * 50}"
+
+
+class TestSessionField:
+    def test_str(self, faker):
+        name = faker.word()
+
+        assert str(SessionField(name=name)) == name
+
+
+class TestSessionFieldOption:
+    def test_str(self, faker):
+        label = faker.word()
+
+        assert str(SessionFieldOption(label=label)) == label
+
+
+class TestSessionFieldRequirement:
+    def test_str_required(self, faker):
+        field_name = faker.word()
+        category_name = faker.word()
+
+        requirement = SessionFieldRequirement(
+            field=SessionField(name=field_name),
+            category=ProposalCategory(name=category_name),
+            is_required=True,
+        )
+
+        assert str(requirement) == f"{field_name} (required) for {category_name}"
+
+    def test_str_optional(self, faker):
+        field_name = faker.word()
+        category_name = faker.word()
+
+        requirement = SessionFieldRequirement(
+            field=SessionField(name=field_name),
+            category=ProposalCategory(name=category_name),
+            is_required=False,
+        )
+
+        assert str(requirement) == f"{field_name} (optional) for {category_name}"
