@@ -116,6 +116,24 @@ class TestCFPCreatePageView:
             event=event, name="RPG Sessions"
         ).exists()
 
+    def test_post_with_create_and_configure_redirects_to_edit_page(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            data={"name": "RPG Sessions", "action": "create_and_configure"},
+        )
+
+        category = ProposalCategory.objects.get(event=event, name="RPG Sessions")
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type created successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/{category.slug}/",
+        )
+
     def test_post_generates_slug_from_name(
         self, authenticated_client, active_user, sphere, event
     ):
