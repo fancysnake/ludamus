@@ -1,8 +1,10 @@
 import re
+from datetime import datetime
 from typing import Any
 
 from django import template
 from django.utils import timezone
+from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
 register = template.Library()
@@ -77,3 +79,56 @@ def format_duration(iso_duration: str) -> str:
     if minutes:
         return f"{minutes}min"
     return iso_duration
+
+
+@register.filter
+def format_timeslot(slot: Any) -> str:  # type: ignore[misc] # noqa: ANN401
+    """Format a time slot for display, indicating if it spans to the next day.
+
+    Args:
+        slot: TimeSlotDTO with start_time and end_time attributes
+
+    Returns:
+        Formatted time range (e.g., "10:00 - 12:00" or "16:00 - 10:00 (+1)")
+    """
+    start = getattr(slot, "start_time", None)
+    end = getattr(slot, "end_time", None)
+
+    if not start or not end:
+        return ""
+
+    # Convert to local time for display
+    start_local = timezone.localtime(start)
+    end_local = timezone.localtime(end)
+
+    start_str = start_local.strftime("%H:%M")
+    end_str = end_local.strftime("%H:%M")
+
+    # Check if the slot spans to the next day (using local dates)
+    if end_local.date() > start_local.date():
+        days_diff = (end_local.date() - start_local.date()).days
+        return f"{start_str} - {end_str} (+{days_diff})"
+
+    return f"{start_str} - {end_str}"
+
+
+@register.filter
+def parse_date(date_string: str, format_string: str = "l, j F") -> str:
+    """Parse a date string (YYYY-MM-DD) and format it.
+
+    Args:
+        date_string: Date string in YYYY-MM-DD format
+        format_string: Django date format string
+            (default: "l, j F" = "Monday, 15 January")
+
+    Returns:
+        Formatted date string, or the original string if parsing fails.
+    """
+    if not date_string:
+        return ""
+
+    try:
+        date_obj = datetime.strptime(date_string, "%Y-%m-%d")  # noqa: DTZ007
+        return date_format(date_obj, format_string)
+    except ValueError, TypeError:
+        return date_string

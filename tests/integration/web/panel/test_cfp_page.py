@@ -122,6 +122,7 @@ class TestCFPPageView:
                         min_participants_limit=1,
                         max_participants_limit=100,
                         durations=[],
+                        time_slot_ids=[],
                     ),
                     ProposalCategoryDTO(
                         pk=cat2.pk,
@@ -132,6 +133,7 @@ class TestCFPPageView:
                         min_participants_limit=1,
                         max_participants_limit=100,
                         durations=[],
+                        time_slot_ids=[],
                     ),
                 ],
                 "category_stats": {
@@ -302,6 +304,7 @@ class TestCFPPageView:
                         min_participants_limit=1,
                         max_participants_limit=100,
                         durations=[],
+                        time_slot_ids=[],
                     )
                 ],
                 "category_stats": {
@@ -363,6 +366,7 @@ class TestCFPPageView:
                         min_participants_limit=1,
                         max_participants_limit=100,
                         durations=[],
+                        time_slot_ids=[],
                     )
                 ],
                 "category_stats": {
@@ -436,6 +440,7 @@ class TestCFPPageView:
                         min_participants_limit=1,
                         max_participants_limit=100,
                         durations=[],
+                        time_slot_ids=[],
                     ),
                     ProposalCategoryDTO(
                         pk=category2.pk,
@@ -446,6 +451,7 @@ class TestCFPPageView:
                         min_participants_limit=1,
                         max_participants_limit=100,
                         durations=[],
+                        time_slot_ids=[],
                     ),
                 ],
                 "category_stats": {

@@ -862,6 +862,7 @@ class ProposalCategory(models.Model):
     end_time = models.DateTimeField(blank=True, null=True)
     # Settings
     tag_categories = models.ManyToManyField(TagCategory)
+    time_slots = models.ManyToManyField(TimeSlot, blank=True)
     max_participants_limit = models.PositiveIntegerField(default=100)
     min_participants_limit = models.PositiveIntegerField(default=1)
     durations = models.JSONField(

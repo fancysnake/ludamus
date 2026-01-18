@@ -1,0 +1,168 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% load cfp_tags %}
+{% block title %}
+    {% translate "Time Slots" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "Time Slots" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Host Availability" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:cfp' slug=current_event.slug %}"
+           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center">
+            {% heroicon_outline "arrow-left" class="w-4 h-4 mr-2" %}
+            {% translate "Back to CFP" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        <!-- Modal Container -->
+        <div id="modal-container"></div>
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% heroicon_outline "information-circle" class="w-5 h-5" %}</span>
+                <div>
+                    <p class="text-sm font-medium text-blue-800">{% translate "What are Time Slots?" %}</p>
+                    <p class="text-sm text-blue-700 mt-1">
+                        {% translate "Time slots define when hosts are available to run their sessions. When submitting proposals, hosts select which time slots work for them. This data is shared across all session types for the event." %}
+                    </p>
+                    <p class="text-sm text-blue-700 mt-2">
+                        {% translate "After creating time slots here, configure which ones are available in each session type's settings." %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% if slots_by_date %}
+            <!-- Day navigation -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    {% if has_prev %}
+                        <a href="?page={{ current_page|add:'-1' }}"
+                           class="px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition flex items-center text-sm">
+                            {% heroicon_outline "chevron-left" class="w-4 h-4 mr-1" %}
+                            {% translate "Previous" %}
+                        </a>
+                    {% else %}
+                        <span class="px-3 py-2 bg-gray-100 border border-gray-100 rounded-lg text-gray-400 flex items-center text-sm cursor-not-allowed">
+                            {% heroicon_outline "chevron-left" class="w-4 h-4 mr-1" %}
+                            {% translate "Previous" %}
+                        </span>
+                    {% endif %}
+                    {% if has_next %}
+                        <a href="?page={{ current_page|add:'1' }}"
+                           class="px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition flex items-center text-sm">
+                            {% translate "Next" %}
+                            {% heroicon_outline "chevron-right" class="w-4 h-4 ml-1" %}
+                        </a>
+                    {% else %}
+                        <span class="px-3 py-2 bg-gray-100 border border-gray-100 rounded-lg text-gray-400 flex items-center text-sm cursor-not-allowed">
+                            {% translate "Next" %}
+                            {% heroicon_outline "chevron-right" class="w-4 h-4 ml-1" %}
+                        </span>
+                    {% endif %}
+                </div>
+                <span class="text-sm text-gray-500">
+                    {% blocktranslate with total=event_days|length %}{{ total }} days{% endblocktranslate %}
+                </span>
+            </div>
+            <!-- Day columns -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {% for date, slots in slots_by_date.items %}
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900">{{ date }}</h3>
+                            <button type="button"
+                                    hx-get="{% url 'panel:timeslot-create-modal' slug=current_event.slug %}?date={{ date }}"
+                                    hx-target="#modal-container"
+                                    hx-swap="innerHTML"
+                                    class="p-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition"
+                                    title="{% translate "Add time slot" %}">
+                                {# djlint:off H008 #}
+                                {% heroicon_outline "plus" class="w-4 h-4" %}
+                            </button>
+                        </div>
+                        <div class="p-4 space-y-2 min-h-[100px]">
+                            {% for slot in slots %}
+                                <button type="button"
+                                        hx-get="{% url 'panel:timeslot-edit-modal' slug=current_event.slug pk=slot.pk %}"
+                                        hx-target="#modal-container"
+                                        hx-swap="innerHTML"
+                                        class="w-full text-left px-3 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition group">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-900">{{ slot|format_timeslot }}</span>
+                                        <span class="text-gray-400 group-hover:text-primary">{% heroicon_outline "pencil" class="w-4 h-4" %}</span>
+                                    </div>
+                                </button>
+                            {% empty %}
+                                <div class="text-center py-4">
+                                    <p class="text-sm text-gray-400 italic">{% translate "No time slots" %}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Orphaned time slots (outside event dates) -->
+            {% if orphaned_slots %}
+                <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <div class="flex items-start gap-3 mb-4">
+                        <span class="text-amber-600 flex-shrink-0 mt-0.5">{% heroicon_outline "exclamation-triangle" class="w-5 h-5" %}</span>
+                        <div>
+                            <p class="text-sm font-medium text-amber-800">{% translate "Time Slots Outside Event Dates" %}</p>
+                            <p class="text-sm text-amber-700 mt-1">
+                                {% translate "These time slots are outside the event's start and end dates. They won't be available for selection." %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {% for slot in orphaned_slots %}
+                            <button type="button"
+                                    hx-get="{% url 'panel:timeslot-edit-modal' slug=current_event.slug pk=slot.pk %}"
+                                    hx-target="#modal-container"
+                                    hx-swap="innerHTML"
+                                    class="text-left px-3 py-2 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg transition group">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <span class="text-sm font-medium text-amber-900">{{ slot|format_timeslot }}</span>
+                                        <span class="text-xs text-amber-700 ml-2">{{ slot.start_time|date:"d M Y" }}</span>
+                                    </div>
+                                    <span class="text-amber-500 group-hover:text-amber-700">{% heroicon_outline "pencil" class="w-4 h-4" %}</span>
+                                </div>
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+                <div class="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    {% heroicon_outline "clock" class="w-6 h-6 text-gray-400" %}
+                </div>
+                <p class="text-gray-500 mb-2">{% translate "No time slots defined yet." %}</p>
+                <p class="text-sm text-gray-400 mb-4">
+                    {% translate "Set up your event start and end dates to see the day columns, or create a time slot manually." %}
+                </p>
+                <button type="button"
+                        hx-get="{% url 'panel:timeslot-create-modal' slug=current_event.slug %}"
+                        hx-target="#modal-container"
+                        hx-swap="innerHTML"
+                        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition inline-flex items-center">
+                    {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+                    {% translate "Create First Time Slot" %}
+                </button>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <p class="text-gray-500">{% translate "No events available. Create an event to get started." %}</p>
+        </div>
+    {% endif %}
+{% endblock content %}

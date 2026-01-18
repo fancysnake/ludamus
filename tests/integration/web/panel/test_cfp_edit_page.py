@@ -90,7 +90,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -100,6 +100,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -251,7 +253,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
             },
         )
@@ -329,7 +331,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -339,6 +341,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -433,7 +437,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [
                     PersonalDataFieldDTO(
@@ -460,6 +464,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -502,7 +508,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [
                     PersonalDataFieldDTO(
@@ -529,6 +535,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -562,7 +570,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [
                     PersonalDataFieldDTO(
@@ -581,6 +589,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -778,7 +788,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -788,6 +798,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": ["PT1H", "PT2H", "PT3H"],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -818,7 +830,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -828,6 +840,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -962,7 +976,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -989,6 +1003,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1031,7 +1047,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1061,6 +1077,8 @@ class TestCFPEditPageView:
                 "session_field_order": [genre_field.pk, difficulty_field.pk],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1094,7 +1112,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1113,6 +1131,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1297,7 +1317,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [
                     PersonalDataFieldDTO(
@@ -1324,6 +1344,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1368,7 +1390,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [
                     PersonalDataFieldDTO(
@@ -1395,6 +1417,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1425,7 +1449,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1435,6 +1459,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1517,7 +1543,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1547,6 +1573,8 @@ class TestCFPEditPageView:
                 "session_field_order": [difficulty_field.pk, genre_field.pk],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1590,7 +1618,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1617,6 +1645,8 @@ class TestCFPEditPageView:
                 "session_field_order": [genre_field.pk],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1647,7 +1677,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1657,6 +1687,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1728,7 +1760,7 @@ class TestCFPEditPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1738,6 +1770,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1771,7 +1805,7 @@ class TestCFPEditPageView:
                     "total_sessions": 1 + 1 + 1,  # pending + scheduled
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1781,6 +1815,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 1 + 1 + 1,  # 3 proposals created
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 
@@ -1817,7 +1853,7 @@ class TestCFPEditPageView:
                     "total_sessions": 1 + 1 + 1,  # pending + scheduled
                 },
                 "active_nav": "cfp",
-                "category": ProposalCategoryDTO.model_validate(category),
+                "category": ProposalCategoryDTO.from_model(category),
                 "form": ANY,
                 "available_fields": [],
                 "field_requirements": {},
@@ -1827,6 +1863,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 1 + 1,  # Only 2 in this category
+                "available_time_slots": [],
+                "selected_time_slot_ids": [],
             },
         )
 

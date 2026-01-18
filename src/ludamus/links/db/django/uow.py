@@ -71,3 +71,7 @@ class UnitOfWork(UnitOfWorkProtocol):
     @cached_property
     def spheres(self) -> repositories.SphereRepository:
         return repositories.SphereRepository(self._storage)
+
+    @cached_property
+    def time_slots(self) -> repositories.TimeSlotRepository:
+        return repositories.TimeSlotRepository(self._storage)

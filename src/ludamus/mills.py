@@ -171,6 +171,20 @@ class PanelService:
         self._uow.session_fields.delete(field_pk)
         return True
 
+    def delete_time_slot(self, time_slot_pk: int) -> bool:
+        """Delete a time slot if not used by proposals.
+
+        Args:
+            time_slot_pk: The time slot primary key.
+
+        Returns:
+            True if deleted, False if time slot is used by proposals.
+        """
+        if self._uow.time_slots.is_used_by_proposals(time_slot_pk):
+            return False
+        self._uow.time_slots.delete(time_slot_pk)
+        return True
+
     def get_event_stats(self, event_id: int) -> PanelStatsDTO:
         """Calculate panel statistics for an event.
 
