@@ -4,6 +4,7 @@ from django.utils.text import slugify
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    Area,
     Event,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -17,10 +18,13 @@ from ludamus.adapters.db.django.models import (
     Space,
     Sphere,
     TimeSlot,
+    Venue,
 )
 from ludamus.pacts import (
     AgendaItemData,
     AgendaItemRepositoryProtocol,
+    AreaDTO,
+    AreaRepositoryProtocol,
     CategoryStats,
     ConnectedUserRepositoryProtocol,
     EventDTO,
@@ -42,6 +46,7 @@ from ludamus.pacts import (
     SessionRepositoryProtocol,
     SiteDTO,
     SpaceDTO,
+    SpaceRepositoryProtocol,
     SphereDTO,
     SphereRepositoryProtocol,
     TimeSlotDTO,
@@ -49,6 +54,8 @@ from ludamus.pacts import (
     UserDTO,
     UserRepositoryProtocol,
     UserType,
+    VenueDTO,
+    VenueRepositoryProtocol,
 )
 
 if TYPE_CHECKING:
@@ -393,6 +400,679 @@ class EventRepository(EventRepositoryProtocol):
         event.name = name
         event.save()
         self._storage.events[event_id] = event
+
+
+class VenueRepository(VenueRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(self, event_id: int, name: str, address: str = "") -> VenueDTO:
+        """Create a new venue for an event.
+
+        Args:
+            event_id: The event to create the venue for.
+            name: The venue name.
+            address: The venue address (optional).
+
+        Returns:
+            VenueDTO of the created venue.
+        """
+        base_slug = slugify(name)
+        slug = self._generate_unique_slug(event_id, base_slug)
+
+        venue = Venue.objects.create(
+            event_id=event_id, name=name, slug=slug, address=address
+        )
+        self._storage.venues_by_event[event_id][venue.pk] = venue
+
+        return VenueDTO.model_validate(venue)
+
+    def delete(self, pk: int) -> None:
+        """Delete a venue.
+
+        Args:
+            pk: The venue primary key.
+        """
+        try:
+            venue = Venue.objects.get(pk=pk)
+        except Venue.DoesNotExist:
+            return
+
+        event_id = venue.event_id
+        venue.delete()
+
+        # Remove from storage cache
+        self._storage.venues_by_event[event_id].pop(pk, None)
+
+    @staticmethod
+    def has_sessions(pk: int) -> bool:
+        """Check if any space in any area of the venue has scheduled sessions.
+
+        Args:
+            pk: The venue primary key.
+
+        Returns:
+            True if any space in the venue has sessions, False otherwise.
+        """
+        return AgendaItem.objects.filter(space__area__venue_id=pk).exists()
+
+    def list_by_event(self, event_pk: int) -> list[VenueDTO]:
+        """List all venues for an event, ordered by order then name.
+
+        Returns:
+            List of VenueDTO objects for the event.
+        """
+        if not (collection := self._storage.venues_by_event[event_pk]):
+            venues = Venue.objects.filter(event_id=event_pk)
+            for venue in venues:
+                collection[venue.pk] = venue
+
+        return [VenueDTO.model_validate(venue) for venue in collection.values()]
+
+    def read_by_slug(self, event_pk: int, slug: str) -> VenueDTO:
+        """Read a venue by slug.
+
+        Args:
+            event_pk: The event primary key.
+            slug: The venue slug.
+
+        Returns:
+            VenueDTO of the venue.
+
+        Raises:
+            NotFoundError: If the venue is not found.
+        """
+        # Check storage first
+        for venue in self._storage.venues_by_event[event_pk].values():
+            if venue.slug == slug:
+                return VenueDTO.model_validate(venue)
+
+        # Query database
+        try:
+            venue = Venue.objects.get(event_id=event_pk, slug=slug)
+        except Venue.DoesNotExist as err:
+            msg = f"Venue with slug '{slug}' not found"
+            raise NotFoundError(msg) from err
+
+        self._storage.venues_by_event[event_pk][venue.pk] = venue
+        return VenueDTO.model_validate(venue)
+
+    def reorder(self, event_id: int, venue_pks: list[int]) -> None:
+        """Reorder venues for an event.
+
+        Args:
+            event_id: The event primary key.
+            venue_pks: List of venue PKs in the desired order.
+        """
+        # Filter to only venues belonging to this event
+        venues = Venue.objects.filter(event_id=event_id, pk__in=venue_pks)
+        venue_map = {v.pk: v for v in venues}
+
+        # Filter venue_pks to only include valid venues for this event
+        valid_pks = [pk for pk in venue_pks if pk in venue_map]
+
+        # Update order based on position in the filtered list
+        for order, pk in enumerate(valid_pks):
+            venue = venue_map[pk]
+            if venue.order != order:
+                venue.order = order
+                venue.save(update_fields=["order"])
+                # Update storage cache
+                self._storage.venues_by_event[event_id][pk] = venue
+
+    def update(self, pk: int, name: str, address: str = "") -> VenueDTO:
+        """Update a venue.
+
+        Args:
+            pk: The venue primary key.
+            name: The new venue name.
+            address: The new venue address.
+
+        Returns:
+            VenueDTO of the updated venue.
+
+        Raises:
+            NotFoundError: If the venue is not found.
+        """
+        try:
+            venue = Venue.objects.get(pk=pk)
+        except Venue.DoesNotExist as err:
+            msg = f"Venue with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+
+        needs_save = False
+
+        if venue.name != name:
+            base_slug = slugify(name)
+            slug = self._generate_unique_slug(venue.event_id, base_slug, exclude_pk=pk)
+            venue.name = name
+            venue.slug = slug
+            needs_save = True
+
+        if venue.address != address:
+            venue.address = address
+            needs_save = True
+
+        if needs_save:
+            venue.save()
+            self._storage.venues_by_event[venue.event_id][venue.pk] = venue
+
+        return VenueDTO.model_validate(venue)
+
+    @staticmethod
+    def _generate_unique_slug(
+        event_id: int, base_slug: str, exclude_pk: int | None = None
+    ) -> str:
+        slug = base_slug
+        counter = 2
+
+        # pylint: disable-next=while-used
+        while True:
+            query = Venue.objects.filter(event_id=event_id, slug=slug)
+            if exclude_pk:
+                query = query.exclude(pk=exclude_pk)
+            if not query.exists():
+                break
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug
+
+    def duplicate(self, pk: int, new_name: str) -> VenueDTO:
+        """Duplicate a venue within the same event.
+
+        Copies the venue with all its areas and spaces.
+
+        Args:
+            pk: The venue primary key to duplicate.
+            new_name: The name for the new venue.
+
+        Returns:
+            VenueDTO of the new venue.
+
+        Raises:
+            NotFoundError: If the venue is not found.
+        """
+        try:
+            venue = Venue.objects.get(pk=pk)
+        except Venue.DoesNotExist as err:
+            msg = f"Venue with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+
+        # Create new venue
+        base_slug = slugify(new_name)
+        new_slug = self._generate_unique_slug(venue.event_id, base_slug)
+
+        new_venue = Venue.objects.create(
+            event_id=venue.event_id, name=new_name, slug=new_slug, address=venue.address
+        )
+        self._storage.venues_by_event[venue.event_id][new_venue.pk] = new_venue
+
+        # Copy areas and their spaces
+        areas = Area.objects.filter(venue_id=pk).order_by("order")
+        for area in areas:
+            area_slug = AreaRepository._generate_unique_slug(  # noqa: SLF001
+                new_venue.pk, area.slug
+            )
+            new_area = Area.objects.create(
+                event_id=area.event_id,
+                venue_id=new_venue.pk,
+                name=area.name,
+                slug=area_slug,
+                description=area.description,
+                order=area.order,
+            )
+
+            # Copy spaces for this area
+            spaces = Space.objects.filter(area_id=area.pk).order_by("order")
+            for space in spaces:
+                space_slug = SpaceRepository._generate_unique_slug(  # noqa: SLF001
+                    new_area.pk, space.slug
+                )
+                Space.objects.create(
+                    event_id=space.event_id,
+                    area_id=new_area.pk,
+                    name=space.name,
+                    slug=space_slug,
+                    capacity=space.capacity,
+                    order=space.order,
+                )
+
+        return VenueDTO.model_validate(new_venue)
+
+    def copy_to_event(self, pk: int, target_event_id: int) -> VenueDTO:
+        """Copy a venue to another event.
+
+        Copies the venue with all its areas and spaces.
+
+        Args:
+            pk: The venue primary key to copy.
+            target_event_id: The target event ID.
+
+        Returns:
+            VenueDTO of the new venue.
+
+        Raises:
+            NotFoundError: If the venue is not found.
+        """
+        try:
+            venue = Venue.objects.get(pk=pk)
+        except Venue.DoesNotExist as err:
+            msg = f"Venue with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+
+        # Create new venue in target event
+        base_slug = slugify(venue.name)
+        new_slug = self._generate_unique_slug(target_event_id, base_slug)
+
+        new_venue = Venue.objects.create(
+            event_id=target_event_id,
+            name=venue.name,
+            slug=new_slug,
+            address=venue.address,
+        )
+        self._storage.venues_by_event[target_event_id][new_venue.pk] = new_venue
+
+        # Copy areas and their spaces
+        areas = Area.objects.filter(venue_id=pk).order_by("order")
+        for area in areas:
+            area_slug = AreaRepository._generate_unique_slug(  # noqa: SLF001
+                new_venue.pk, area.slug
+            )
+            new_area = Area.objects.create(
+                event_id=target_event_id,
+                venue_id=new_venue.pk,
+                name=area.name,
+                slug=area_slug,
+                description=area.description,
+                order=area.order,
+            )
+
+            # Copy spaces for this area
+            spaces = Space.objects.filter(area_id=area.pk).order_by("order")
+            for space in spaces:
+                space_slug = SpaceRepository._generate_unique_slug(  # noqa: SLF001
+                    new_area.pk, space.slug
+                )
+                Space.objects.create(
+                    event_id=target_event_id,
+                    area_id=new_area.pk,
+                    name=space.name,
+                    slug=space_slug,
+                    capacity=space.capacity,
+                    order=space.order,
+                )
+
+        return VenueDTO.model_validate(new_venue)
+
+
+class AreaRepository(AreaRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(
+        self, event_id: int, venue_id: int, name: str, description: str = ""
+    ) -> AreaDTO:
+        """Create a new area for a venue.
+
+        Args:
+            event_id: The event to create the area for.
+            venue_id: The venue to create the area for.
+            name: The area name.
+            description: The area description (optional).
+
+        Returns:
+            AreaDTO of the created area.
+        """
+        base_slug = slugify(name)
+        slug = self._generate_unique_slug(venue_id, base_slug)
+
+        area = Area.objects.create(
+            event_id=event_id,
+            venue_id=venue_id,
+            name=name,
+            slug=slug,
+            description=description,
+        )
+        self._storage.areas_by_venue[venue_id][area.pk] = area
+
+        return AreaDTO.model_validate(area)
+
+    def delete(self, pk: int) -> None:
+        """Delete an area.
+
+        Args:
+            pk: The area primary key.
+        """
+        try:
+            area = Area.objects.get(pk=pk)
+        except Area.DoesNotExist:
+            return
+
+        venue_id = area.venue_id
+        area.delete()
+
+        # Remove from storage cache
+        self._storage.areas_by_venue[venue_id].pop(pk, None)
+
+    @staticmethod
+    def has_sessions(pk: int) -> bool:
+        """Check if any space in the area has scheduled sessions.
+
+        Args:
+            pk: The area primary key.
+
+        Returns:
+            True if any space in the area has sessions, False otherwise.
+        """
+        return AgendaItem.objects.filter(space__area_id=pk).exists()
+
+    def list_by_venue(self, venue_pk: int) -> list[AreaDTO]:
+        """List all areas for a venue, ordered by order then name.
+
+        Returns:
+            List of AreaDTO objects for the venue.
+        """
+        if not (collection := self._storage.areas_by_venue[venue_pk]):
+            areas = Area.objects.filter(venue_id=venue_pk)
+            for area in areas:
+                collection[area.pk] = area
+
+        return [AreaDTO.model_validate(area) for area in collection.values()]
+
+    def read_by_slug(self, venue_pk: int, slug: str) -> AreaDTO:
+        """Read an area by slug.
+
+        Args:
+            venue_pk: The venue primary key.
+            slug: The area slug.
+
+        Returns:
+            AreaDTO of the area.
+
+        Raises:
+            NotFoundError: If the area is not found.
+        """
+        # Check storage first
+        for area in self._storage.areas_by_venue[venue_pk].values():
+            if area.slug == slug:
+                return AreaDTO.model_validate(area)
+
+        # Query database
+        try:
+            area = Area.objects.get(venue_id=venue_pk, slug=slug)
+        except Area.DoesNotExist as err:
+            msg = f"Area with slug '{slug}' not found"
+            raise NotFoundError(msg) from err
+
+        self._storage.areas_by_venue[venue_pk][area.pk] = area
+        return AreaDTO.model_validate(area)
+
+    def reorder(self, venue_id: int, area_pks: list[int]) -> None:
+        """Reorder areas for a venue.
+
+        Args:
+            venue_id: The venue primary key.
+            area_pks: List of area PKs in the desired order.
+        """
+        # Filter to only areas belonging to this venue
+        areas = Area.objects.filter(venue_id=venue_id, pk__in=area_pks)
+        area_map = {a.pk: a for a in areas}
+
+        # Filter area_pks to only include valid areas for this venue
+        valid_pks = [pk for pk in area_pks if pk in area_map]
+
+        # Update order based on position in the filtered list
+        for order, pk in enumerate(valid_pks):
+            area = area_map[pk]
+            if area.order != order:
+                area.order = order
+                area.save(update_fields=["order"])
+                # Update storage cache
+                self._storage.areas_by_venue[venue_id][pk] = area
+
+    def update(self, pk: int, name: str, description: str = "") -> AreaDTO:
+        """Update an area.
+
+        Args:
+            pk: The area primary key.
+            name: The new area name.
+            description: The new area description.
+
+        Returns:
+            AreaDTO of the updated area.
+
+        Raises:
+            NotFoundError: If the area is not found.
+        """
+        try:
+            area = Area.objects.get(pk=pk)
+        except Area.DoesNotExist as err:
+            msg = f"Area with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+
+        needs_save = False
+
+        if area.name != name:
+            base_slug = slugify(name)
+            slug = self._generate_unique_slug(area.venue_id, base_slug, exclude_pk=pk)
+            area.name = name
+            area.slug = slug
+            needs_save = True
+
+        if area.description != description:
+            area.description = description
+            needs_save = True
+
+        if needs_save:
+            area.save()
+            self._storage.areas_by_venue[area.venue_id][area.pk] = area
+
+        return AreaDTO.model_validate(area)
+
+    @staticmethod
+    def _generate_unique_slug(
+        venue_id: int, base_slug: str, exclude_pk: int | None = None
+    ) -> str:
+        slug = base_slug
+        counter = 2
+
+        # pylint: disable-next=while-used
+        while True:
+            query = Area.objects.filter(venue_id=venue_id, slug=slug)
+            if exclude_pk:
+                query = query.exclude(pk=exclude_pk)
+            if not query.exists():
+                break
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug
+
+
+class SpaceRepository(SpaceRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(
+        self, event_id: int, area_id: int, name: str, capacity: int | None = None
+    ) -> SpaceDTO:
+        """Create a new space for an area.
+
+        Args:
+            event_id: The event to create the space for.
+            area_id: The area to create the space for.
+            name: The space name.
+            capacity: The space capacity (optional).
+
+        Returns:
+            SpaceDTO of the created space.
+        """
+        base_slug = slugify(name)
+        slug = self._generate_unique_slug(area_id, base_slug)
+
+        space = Space.objects.create(
+            event_id=event_id, area_id=area_id, name=name, slug=slug, capacity=capacity
+        )
+        self._storage.spaces_by_area[area_id][space.pk] = space
+
+        return SpaceDTO.model_validate(space)
+
+    def delete(self, pk: int) -> None:
+        """Delete a space.
+
+        Args:
+            pk: The space primary key.
+        """
+        try:
+            space = Space.objects.get(pk=pk)
+        except Space.DoesNotExist:
+            return
+
+        area_id = space.area_id
+        space.delete()
+
+        # Remove from storage cache
+        if area_id:
+            self._storage.spaces_by_area[area_id].pop(pk, None)
+
+    @staticmethod
+    def has_sessions(pk: int) -> bool:
+        """Check if a space has any scheduled sessions.
+
+        Args:
+            pk: The space primary key.
+
+        Returns:
+            True if the space has sessions, False otherwise.
+        """
+        return AgendaItem.objects.filter(space_id=pk).exists()
+
+    def list_by_area(self, area_pk: int) -> list[SpaceDTO]:
+        """List all spaces for an area, ordered by order then name.
+
+        Returns:
+            List of SpaceDTO objects for the area.
+        """
+        if not (collection := self._storage.spaces_by_area[area_pk]):
+            spaces = Space.objects.filter(area_id=area_pk)
+            for space in spaces:
+                collection[space.pk] = space
+
+        return [SpaceDTO.model_validate(space) for space in collection.values()]
+
+    def read_by_slug(self, area_pk: int, slug: str) -> SpaceDTO:
+        """Read a space by slug.
+
+        Args:
+            area_pk: The area primary key.
+            slug: The space slug.
+
+        Returns:
+            SpaceDTO of the space.
+
+        Raises:
+            NotFoundError: If the space is not found.
+        """
+        # Check storage first
+        for space in self._storage.spaces_by_area[area_pk].values():
+            if space.slug == slug:
+                return SpaceDTO.model_validate(space)
+
+        # Query database
+        try:
+            space = Space.objects.get(area_id=area_pk, slug=slug)
+        except Space.DoesNotExist as err:
+            msg = f"Space with slug '{slug}' not found"
+            raise NotFoundError(msg) from err
+
+        self._storage.spaces_by_area[area_pk][space.pk] = space
+        return SpaceDTO.model_validate(space)
+
+    def reorder(self, area_id: int, space_pks: list[int]) -> None:
+        """Reorder spaces for an area.
+
+        Args:
+            area_id: The area primary key.
+            space_pks: List of space PKs in the desired order.
+        """
+        # Filter to only spaces belonging to this area
+        spaces = Space.objects.filter(area_id=area_id, pk__in=space_pks)
+        space_map = {s.pk: s for s in spaces}
+
+        # Filter space_pks to only include valid spaces for this area
+        valid_pks = [pk for pk in space_pks if pk in space_map]
+
+        # Update order based on position in the filtered list
+        for order, pk in enumerate(valid_pks):
+            space = space_map[pk]
+            if space.order != order:
+                space.order = order
+                space.save(update_fields=["order"])
+                # Update storage cache
+                self._storage.spaces_by_area[area_id][pk] = space
+
+    def update(self, pk: int, name: str, capacity: int | None = None) -> SpaceDTO:
+        """Update a space.
+
+        Args:
+            pk: The space primary key.
+            name: The new space name.
+            capacity: The new space capacity.
+
+        Returns:
+            SpaceDTO of the updated space.
+
+        Raises:
+            NotFoundError: If the space is not found.
+        """
+        try:
+            space = Space.objects.get(pk=pk)
+        except Space.DoesNotExist as err:
+            msg = f"Space with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+
+        needs_save = False
+
+        if space.name != name:
+            base_slug = slugify(name)
+            if space.area_id is None:
+                msg = f"Space with pk '{pk}' has no area"
+                raise NotFoundError(msg)
+            slug = self._generate_unique_slug(space.area_id, base_slug, exclude_pk=pk)
+            space.name = name
+            space.slug = slug
+            needs_save = True
+
+        if space.capacity != capacity:
+            space.capacity = capacity
+            needs_save = True
+
+        if needs_save:
+            space.save()
+            if space.area_id:
+                self._storage.spaces_by_area[space.area_id][space.pk] = space
+
+        return SpaceDTO.model_validate(space)
+
+    @staticmethod
+    def _generate_unique_slug(
+        area_id: int, base_slug: str, exclude_pk: int | None = None
+    ) -> str:
+        slug = base_slug
+        counter = 2
+
+        # pylint: disable-next=while-used
+        while True:
+            query = Space.objects.filter(area_id=area_id, slug=slug)
+            if exclude_pk:
+                query = query.exclude(pk=exclude_pk)
+            if not query.exists():
+                break
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug
 
 
 class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):

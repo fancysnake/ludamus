@@ -13,6 +13,7 @@
          data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
+         data-venue="{% if data.session.agenda_item.space.area %}{{ data.session.agenda_item.space.area.venue.slug }}{% endif %}"
          style="cursor: pointer"
          data-bs-toggle="modal"
          data-bs-target="#sessionDetailModal{{ data.session.id }}">
@@ -24,7 +25,12 @@
                 <small class="text-muted d-block">
                     <i class="bi bi-person-circle"></i> {{ data.session.presenter_name|default:data.session.presenter_name }}
                     {% if data.session.agenda_item.space %}
-                        | <i class="bi bi-geo-alt"></i> {{ data.session.agenda_item.space.name }}
+                        | <i class="bi bi-geo-alt"></i>
+                        {% if data.session.agenda_item.space.area %}
+                            {{ data.session.agenda_item.space.area.venue.name }} ›
+                            {{ data.session.agenda_item.space.area.name }} ›
+                        {% endif %}
+                        {{ data.session.agenda_item.space.name }}
                     {% endif %}
                 </small>
             </div>
