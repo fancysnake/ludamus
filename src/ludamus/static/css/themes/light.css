@@ -1,0 +1,135 @@
+/* Light Theme for Ludamus - Steel Design */
+
+:root {
+    /* Background colors */
+    --theme-bg: #f8fafc;
+    --theme-bg-secondary: #ffffff;
+    --theme-bg-tertiary: #f1f5f9;
+    --theme-bg-accent: #f8fafc;
+
+    /* Text colors */
+    --theme-text: #1e293b;
+    --theme-text-secondary: #475569;
+    --theme-text-muted: #94a3b8;
+    --theme-text-inverse: #ffffff;
+
+    /* Border colors */
+    --theme-border: #e2e8f0;
+    --theme-border-light: #f1f5f9;
+    --theme-border-focus: #64748b;
+
+    /* Primary colors - Bronze/Amber */
+    --theme-primary: #d97706;
+    --theme-primary-hover: #b45309;
+    --theme-primary-light: #fef3c7;
+    --theme-primary-dark: #92400e;
+
+    /* Secondary colors - Steel */
+    --theme-secondary: #64748b;
+    --theme-secondary-hover: #475569;
+    --theme-secondary-light: #f1f5f9;
+
+    /* Status colors */
+    --theme-success: #059669;
+    --theme-success-hover: #047857;
+    --theme-success-light: #d1fae5;
+    --theme-success-bg: #ecfdf5;
+    --theme-success-text: #065f46;
+
+    --theme-warning: #d97706;
+    --theme-warning-hover: #b45309;
+    --theme-warning-light: #fef3c7;
+    --theme-warning-bg: #fffbeb;
+    --theme-warning-text: #92400e;
+
+    --theme-danger: #dc2626;
+    --theme-danger-hover: #b91c1c;
+    --theme-danger-light: #fee2e2;
+    --theme-danger-bg: #fef2f2;
+    --theme-danger-text: #991b1b;
+
+    --theme-info: #3b82f6;
+    --theme-info-hover: #2563eb;
+    --theme-info-light: #dbeafe;
+    --theme-info-bg: #eff6ff;
+    --theme-info-text: #1e40af;
+
+    /* Shadows */
+    --theme-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+    --theme-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* Ring (focus) */
+    --theme-ring: rgba(100, 116, 139, 0.5);
+
+    /* Overlay */
+    --theme-overlay: rgba(15, 23, 42, 0.6);
+
+    /* Accent line (bronze gradient) */
+    --theme-accent-gradient: linear-gradient(90deg, #d97706, #f59e0b, #d97706);
+}
+
+/* Base styles */
+body {
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--theme-bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--theme-border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--theme-text-muted);
+}
+
+/* Selection styling */
+::selection {
+    background-color: var(--theme-primary-light);
+    color: var(--theme-primary-dark);
+}
+
+/* Focus outline */
+*:focus-visible {
+    outline: 2px solid var(--theme-border-focus);
+    outline-offset: 2px;
+}
+
+/* Link styling */
+a {
+    color: var(--theme-primary);
+}
+
+a:hover {
+    color: var(--theme-primary-hover);
+}
+
+/* Smooth transitions */
+*,
+*::before,
+*::after {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+/* Disable transitions for reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+    }
+}

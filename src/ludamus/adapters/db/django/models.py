@@ -617,7 +617,7 @@ class TagCategory(models.Model):
     icon = models.CharField(
         max_length=50,
         blank=True,
-        help_text="Bootstrap icon name (e.g., 'tag', 'star', 'heart')",
+        help_text="Heroicon name (e.g., 'tag', 'star', 'heart')",
     )
     input_type = models.CharField(
         max_length=10, choices=InputType.choices, default=InputType.SELECT

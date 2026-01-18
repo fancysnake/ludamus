@@ -1,30 +1,39 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load django_bootstrap5 %}
+{% load heroicons %}
 {% block title %}
     {% translate "Login Required" %}
 {% endblock title %}
+{% block header_section %}
+{% endblock header_section %}
 {% block body %}
-    <div>
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5 text-center mt-5 pt-5">
-                <div class="mb-5">
-                    <span class="text-primary"><i class="bi bi-shield-lock"></i></span>
-                </div>
-                <h1 class="display-5 mb-4">{% translate "Login Required" %}</h1>
-                <p class="lead text-muted mb-5">{% translate "You need to be logged in to access this page." %}</p>
-                <div class="d-grid gap-2 col-8 mx-auto mb-5">
-                    <a href="{% url 'web:crowd:auth0:login' %}{% if next %}?next={{ next }}{% endif %}"
-                       class="btn btn-primary btn-lg py-3">
-                        <i class="bi bi-box-arrow-in-right"></i> {% translate "Log In" %}
-                    </a>
-                </div>
-                <p>
-                    <a href="{% url 'web:index' %}" class="text-muted text-decoration-none">
-                        <i class="bi bi-arrow-left"></i> {% translate "Back to Home" %}
-                    </a>
-                </p>
+    <div class="flex justify-center">
+        <div class="w-full max-w-md text-center mt-12 pt-8">
+            <div class="mb-8">
+                <span style="color: var(--theme-primary);">{% heroicon_outline "shield-check" class="w-16 h-16 mx-auto" %}</span>
             </div>
+            <h1 class="text-3xl sm:text-4xl font-bold mb-4"
+                style="color: var(--theme-text)">{% translate "Login Required" %}</h1>
+            <p class="text-lg mb-8" style="color: var(--theme-text-muted);">
+                {% translate "You need to be logged in to access this page." %}
+            </p>
+            <div class="max-w-xs mx-auto mb-8">
+                <a href="{% url 'web:crowd:auth0:login' %}{% if next %}?next={{ next }}{% endif %}"
+                   class="flex items-center justify-center w-full px-6 py-3 text-lg font-medium rounded transition"
+                   style="background-color: var(--theme-primary);
+                          color: var(--theme-text-inverse)">
+                    {% heroicon_outline "arrow-left-on-rectangle" class="w-5 h-5 mr-2" %}
+                    {% translate "Log In" %}
+                </a>
+            </div>
+            <p>
+                <a href="{% url 'web:index' %}"
+                   class="inline-flex items-center text-sm transition hover:underline"
+                   style="color: var(--theme-text-muted)">
+                    {% heroicon_outline "arrow-left" class="w-4 h-4 mr-1" %}
+                    {% translate "Back to Home" %}
+                </a>
+            </p>
         </div>
     </div>
 {% endblock body %}

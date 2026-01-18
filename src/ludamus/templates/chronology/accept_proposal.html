@@ -1,124 +1,152 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load django_bootstrap5 %}
+{% load heroicons %}
+{% load tailwind_forms %}
 {% block title %}
     {% translate "Accept Proposal" %} - {{ proposal.title }}
 {% endblock title %}
 {% block header %}
     {% translate "Accept Proposal" %}
 {% endblock header %}
-{% block description %}
+{% block description_text %}
     {% translate "Select space and time slot for" %} {{ proposal.title }}
-{% endblock description %}
+{% endblock description_text %}
 {% block body %}
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Proposal Details Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-lightbulb"></i> {{ proposal.title }}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>{% translate "Host" %}</h6>
-                            <p>{{ proposal_host.name }}</p>
-                            <h6>{% translate "Participants Limit" %}</h6>
-                            <p>{{ proposal.participants_limit }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>{% translate "Submitted" %}</h6>
-                            <p>{{ proposal.creation_time|date:"M j, Y G:i" }}</p>
-                            {% if proposal.tags.exists %}
-                                <h6>{% translate "Tags" %}</h6>
-                                <p>
-                                    {% for tag in proposal.tags.all %}
-                                        <span class="badge bg-light text-dark me-1">
-                                            {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
-                                            {{ tag.name }}
-                                        </span>
-                                    {% endfor %}
-                                </p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% if proposal.description %}
-                        <h6>{% translate "Description" %}</h6>
-                        <p>{{ proposal.description }}</p>
-                    {% endif %}
-                    {% if proposal.requirements %}
-                        <h6>{% translate "Requirements" %}</h6>
-                        <p>{{ proposal.requirements }}</p>
-                    {% endif %}
-                    {% if proposal.needs %}
-                        <h6>{% translate "Special Needs" %}</h6>
-                        <p>{{ proposal.needs }}</p>
-                    {% endif %}
-                    {% if proposal.time_slots.exists %}
-                        <h6>{% translate "Preferred Time Slots" %}</h6>
-                        <div class="small">
-                            {% for slot in proposal.time_slots.all %}
-                                <span class="badge bg-secondary me-1">{{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}</span>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
+    <div class="max-w-3xl mx-auto">
+        <!-- Proposal Details Card -->
+        <div class="rounded-lg card-shadow overflow-hidden mb-6"
+             style="background-color: var(--theme-bg-secondary)">
+            <div class="px-4 py-3 flex items-center"
+                 style="background-color: var(--theme-info);
+                        color: var(--theme-text-inverse)">
+                {% heroicon_outline "light-bulb" class="w-5 h-5 mr-2" %}
+                <h2 class="font-semibold">{{ proposal.title }}</h2>
             </div>
-            <!-- Assignment Form Card -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calendar-check"></i> {% translate "Assign to Schedule" %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="post"
-                          action="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="space" class="form-label">
-                                <i class="bi bi-geo-alt"></i> {% translate "Space" %} <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select" id="space" name="space" required>
-                                <option value="">{% translate "Select a space..." %}</option>
-                                {% for space in spaces %}<option value="{{ space.pk }}">{{ space.name }}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label for="time_slot" class="form-label">
-                                <i class="bi bi-clock"></i> {% translate "Time Slot" %} <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select" id="time_slot" name="time_slot" required>
-                                <option value="">{% translate "Select a time slot..." %}</option>
-                                {% for slot in time_slots %}
-                                    <option value="{{ slot.pk }}"
-                                            {% if slot in proposal.time_slots.all %}class="fw-bold text-primary"{% endif %}>
-                                        {{ slot.start_time|date:"l, M j - G:i" }} - {{ slot.end_time|date:"G:i" }}
-                                        {% if slot in proposal.time_slots.all %}
-                                            ({% translate "Preferred" %})
-                                        {% endif %}
-                                    </option>
+            <div class="p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Host" %}</h4>
+                        <p class="text-sm" style="color: var(--theme-text-secondary);">{{ proposal_host.name }}</p>
+                        <h4 class="text-sm font-semibold mt-3 mb-1"
+                            style="color: var(--theme-text)">{% translate "Participants Limit" %}</h4>
+                        <p class="text-sm" style="color: var(--theme-text-secondary);">{{ proposal.participants_limit }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Submitted" %}</h4>
+                        <p class="text-sm" style="color: var(--theme-text-secondary);">{{ proposal.creation_time|date:"M j, Y G:i" }}</p>
+                        {% if proposal.tags.exists %}
+                            <h4 class="text-sm font-semibold mt-3 mb-1"
+                                style="color: var(--theme-text)">{% translate "Tags" %}</h4>
+                            <div class="flex flex-wrap gap-1">
+                                {% for tag in proposal.tags.all %}
+                                    <span class="px-2 py-0.5 text-xs rounded"
+                                          style="background-color: var(--theme-bg-tertiary);
+                                                 color: var(--theme-text-secondary)">{{ tag.name }}</span>
                                 {% endfor %}
-                            </select>
-                            <div class="form-text">{% translate "Preferred time slots are highlighted in bold." %}</div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <button type="submit" class="btn btn-success w-100">
-                                    <i class="bi bi-check-lg"></i> {% translate "Accept and Add to Agenda" %}
-                                </button>
                             </div>
-                            <div class="col-md-6">
-                                <a href="{% url 'web:chronology:event' slug=event.slug %}"
-                                   class="btn btn-outline-secondary w-100">
-                                    <i class="bi bi-arrow-left"></i> {% translate "Back to Event" %}
-                                </a>
-                            </div>
-                        </div>
-                    </form>
+                        {% endif %}
+                    </div>
                 </div>
+                {% if proposal.description %}
+                    <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Description" %}</h4>
+                    <p class="text-sm mb-3" style="color: var(--theme-text-secondary);">{{ proposal.description }}</p>
+                {% endif %}
+                {% if proposal.requirements %}
+                    <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Requirements" %}</h4>
+                    <p class="text-sm mb-3" style="color: var(--theme-text-secondary);">{{ proposal.requirements }}</p>
+                {% endif %}
+                {% if proposal.needs %}
+                    <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Special Needs" %}</h4>
+                    <p class="text-sm mb-3" style="color: var(--theme-text-secondary);">{{ proposal.needs }}</p>
+                {% endif %}
+                {% if proposal.time_slots.exists %}
+                    <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Preferred Time Slots" %}</h4>
+                    <div class="flex flex-wrap gap-1">
+                        {% for slot in proposal.time_slots.all %}
+                            <span class="px-2 py-0.5 text-xs rounded"
+                                  style="background-color: var(--theme-secondary);
+                                         color: var(--theme-text-inverse)">
+                                {{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Assignment Form Card -->
+        <div class="rounded-lg card-shadow overflow-hidden"
+             style="background-color: var(--theme-bg-secondary)">
+            <div class="px-4 py-3 flex items-center"
+                 style="background-color: var(--theme-success);
+                        color: var(--theme-text-inverse)">
+                {% heroicon_outline "calendar" class="w-5 h-5 mr-2" %}
+                <h2 class="font-semibold">{% translate "Assign to Schedule" %}</h2>
+            </div>
+            <div class="p-6">
+                <form method="post"
+                      action="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}">
+                    {% csrf_token %}
+                    <!-- Space -->
+                    <div class="mb-4">
+                        <label for="space"
+                               class="block text-sm font-medium mb-1"
+                               style="color: var(--theme-text-secondary)">
+                            {% heroicon_outline "map-pin" class="w-4 h-4 inline mr-1" %}
+                            {% translate "Space" %}
+                            <span style="color: var(--theme-danger);">*</span>
+                        </label>
+                        {% tw_field form.space %}
+                    </div>
+                    <!-- Time Slot -->
+                    <div class="mb-6">
+                        <label for="time_slot"
+                               class="block text-sm font-medium mb-1"
+                               style="color: var(--theme-text-secondary)">
+                            {% heroicon_outline "clock" class="w-4 h-4 inline mr-1" %}
+                            {% translate "Time Slot" %}
+                            <span style="color: var(--theme-danger);">*</span>
+                        </label>
+                        <select class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                                style="background-color: var(--theme-bg-secondary);
+                                       border-color: var(--theme-border);
+                                       color: var(--theme-text)"
+                                id="time_slot"
+                                name="time_slot"
+                                required>
+                            <option value="">{% translate "Select a time slot..." %}</option>
+                            {% for slot in time_slots %}
+                                <option value="{{ slot.pk }}"
+                                        {% if slot in proposal.time_slots.all %}style="font-weight: bold;"{% endif %}>
+                                    {{ slot.start_time|date:"l, M j - G:i" }} - {{ slot.end_time|date:"G:i" }}
+                                    {% if slot in proposal.time_slots.all %}
+                                        ({% translate "Preferred" %})
+                                    {% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-xs mt-1" style="color: var(--theme-text-muted);">
+                            {% translate "Preferred time slots are highlighted in bold." %}
+                        </p>
+                    </div>
+                    <!-- Buttons -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="submit"
+                                class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded transition"
+                                style="background-color: var(--theme-success);
+                                       color: var(--theme-text-inverse)">
+                            {% heroicon_outline "check" class="w-4 h-4 mr-2" %}
+                            {% translate "Accept and Add to Agenda" %}
+                        </button>
+                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                           class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded transition"
+                           style="background-color: var(--theme-bg-tertiary);
+                                  border: 1px solid var(--theme-border);
+                                  color: var(--theme-text)">
+                            {% heroicon_outline "arrow-left" class="w-4 h-4 mr-2" %}
+                            {% translate "Back to Event" %}
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

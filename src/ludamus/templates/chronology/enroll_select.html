@@ -1,206 +1,243 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load django_bootstrap5 %}
+{% load heroicons %}
 {% block title %}
     {% translate "Enroll in Session" %} - {{ session.title }}
 {% endblock title %}
 {% block header %}
     {% translate "Enroll in Session" %}
 {% endblock header %}
-{% block description %}
+{% block description_text %}
     {% translate "Select who to enroll in" %} {{ session.title }}
-{% endblock description %}
+{% endblock description_text %}
 {% block body %}
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <!-- Session Details Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calendar-event"></i> {{ session.title }}
-                    </h5>
+    <div class="max-w-4xl mx-auto">
+        <!-- Session Details Card -->
+        <div class="rounded-lg card-shadow overflow-hidden mb-6"
+             style="background-color: var(--theme-bg-secondary)">
+            <div class="px-4 py-3 flex items-center"
+                 style="background-color: var(--theme-primary);
+                        color: var(--theme-text-inverse)">
+                {% heroicon_outline "calendar" class="w-5 h-5 mr-2" %}
+                <h2 class="font-semibold">{{ session.title }}</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Host" %}</h4>
+                        <p class="text-sm" style="color: var(--theme-text-secondary);">{{ session.presenter_name }}</p>
+                        <h4 class="text-sm font-semibold mt-3 mb-1"
+                            style="color: var(--theme-text)">{% translate "Participants" %}</h4>
+                        <p class="text-sm" style="color: var(--theme-text-secondary);">
+                            {{ session.enrolled_count }}/{{ session.effective_participants_limit }}
+                            {% if session.waiting_count > 0 %}
+                                (+{{ session.waiting_count }} {% translate "waiting" %})
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Time" %}</h4>
+                        <p class="text-sm" style="color: var(--theme-text-secondary);">
+                            {{ session.agenda_item.start_time|date:"l, F j, Y" }}
+                            <br>
+                            <span style="color: var(--theme-text-muted);">
+                                {{ session.agenda_item.start_time|date:"G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}
+                            </span>
+                        </p>
+                        {% if session.agenda_item.space %}
+                            <h4 class="text-sm font-semibold mt-3 mb-1"
+                                style="color: var(--theme-text)">{% translate "Space" %}</h4>
+                            <p class="text-sm" style="color: var(--theme-text-secondary);">{{ session.agenda_item.space.name }}</p>
+                        {% endif %}
+                        <h4 class="text-sm font-semibold mt-3 mb-1"
+                            style="color: var(--theme-text)">{% translate "Minimum Age" %}</h4>
+                        <p class="text-sm">
+                            {% if session.min_age > 0 %}
+                                <span class="px-2 py-0.5 text-xs rounded"
+                                      style="background-color: var(--theme-info);
+                                             color: var(--theme-text-inverse)">
+                                    {{ session.min_age }}+ {% translate "years" %}
+                                </span>
+                            {% else %}
+                                <span style="color: var(--theme-text-muted);">{% translate "All ages welcome" %}</span>
+                            {% endif %}
+                        </p>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>{% translate "Host" %}</h6>
-                            <p>{{ session.presenter_name }}</p>
-                            <h6>{% translate "Participants" %}</h6>
-                            <p>
-                                {{ session.enrolled_count }}/{{ session.effective_participants_limit }}
+                {% if session.description %}
+                    <div class="mt-4">
+                        <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text);">{% translate "Description" %}</h4>
+                        <p class="text-sm" style="color: var(--theme-text-secondary);">{{ session.description }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Enrollment Form Card -->
+        <div class="rounded-lg card-shadow overflow-hidden"
+             style="background-color: var(--theme-bg-secondary)">
+            <div class="px-4 py-3 flex items-center"
+                 style="background-color: var(--theme-success);
+                        color: var(--theme-text-inverse)">
+                {% heroicon_outline "user-plus" class="w-5 h-5 mr-2" %}
+                <h2 class="font-semibold">{% translate "Enrollment Options" %}</h2>
+            </div>
+            <div class="p-6">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="flex items-center text-sm font-medium mb-3"
+                               style="color: var(--theme-text-secondary)">
+                            {% heroicon_outline "users" class="w-4 h-4 mr-2" %}
+                            {% translate "Select enrollment options for each user" %}
+                        </label>
+                        <!-- Users Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr style="background-color: var(--theme-bg-tertiary);">
+                                        <th class="px-3 py-2 text-left font-medium"
+                                            style="color: var(--theme-text)">{% translate "User" %}</th>
+                                        <th class="px-3 py-2 text-left font-medium"
+                                            style="color: var(--theme-text)">{% translate "Current Status" %}</th>
+                                        <th class="px-3 py-2 text-center font-medium"
+                                            style="color: var(--theme-text)">{% translate "Enroll" %}</th>
+                                        <th class="px-3 py-2 text-center font-medium"
+                                            style="color: var(--theme-text)">{% translate "Join Waiting List" %}</th>
+                                        <th class="px-3 py-2 text-center font-medium"
+                                            style="color: var(--theme-text)">{% translate "Cancel" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user_data in user_data %}
+                                        <tr class="border-b" style="border-color: var(--theme-border);">
+                                            <td class="px-3 py-3">
+                                                <div class="flex items-center">
+                                                    {% if user_data.user.pk == request.user.pk %}
+                                                        <span style="color: var(--theme-text-muted);">{% heroicon_outline "user-circle" class="w-4 h-4 mr-2" %}</span>
+                                                        <span style="color: var(--theme-text);">{% translate "Myself" %} ({{ user.full_name }})</span>
+                                                    {% else %}
+                                                        <span style="color: var(--theme-text-muted);">{% heroicon_outline "heart" class="w-4 h-4 mr-2" %}</span>
+                                                        <span style="color: var(--theme-text);">{{ user_data.user.full_name }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-3">
+                                                {% if user_data.user_enrolled %}
+                                                    <span class="px-2 py-0.5 text-xs rounded"
+                                                          style="background-color: var(--theme-success);
+                                                                 color: var(--theme-text-inverse)">
+                                                        {% translate "Already Enrolled" %}
+                                                    </span>
+                                                {% elif user_data.user_waiting %}
+                                                    <span class="px-2 py-0.5 text-xs rounded"
+                                                          style="background-color: var(--theme-warning);
+                                                                 color: var(--theme-text-inverse)">
+                                                        {% translate "On Waiting List" %}
+                                                    </span>
+                                                {% elif user_data.has_time_conflict %}
+                                                    <span class="px-2 py-0.5 text-xs rounded"
+                                                          style="background-color: var(--theme-danger);
+                                                                 color: var(--theme-text-inverse)">
+                                                        {% translate "Time Conflict" %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="px-2 py-0.5 text-xs rounded"
+                                                          style="background-color: var(--theme-bg-tertiary);
+                                                                 color: var(--theme-text-secondary)">
+                                                        {% translate "Available" %}
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-3 py-3 text-center">
+                                                {% if not user_data.user_enrolled and not user_data.user_waiting %}
+                                                    {% if not user_data.has_time_conflict %}
+                                                        <input type="radio"
+                                                               name="user_{{ user_data.user.pk }}"
+                                                               id="user_{{ user_data.user.pk }}_enroll"
+                                                               value="enroll"
+                                                               class="w-4 h-4"
+                                                               style="accent-color: var(--theme-success)">
+                                                    {% else %}
+                                                        <span class="text-xs" style="color: var(--theme-text-muted);">{% translate "Time conflict" %}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span style="color: var(--theme-text-muted);">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-3 py-3 text-center">
+                                                {% if not user_data.user_enrolled and not user_data.user_waiting %}
+                                                    <input type="radio"
+                                                           name="user_{{ user_data.user.pk }}"
+                                                           id="user_{{ user_data.user.pk }}_waitlist"
+                                                           value="waitlist"
+                                                           class="w-4 h-4"
+                                                           style="accent-color: var(--theme-warning)">
+                                                {% else %}
+                                                    <span style="color: var(--theme-text-muted);">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-3 py-3 text-center">
+                                                {% if user_data.user_enrolled or user_data.user_waiting %}
+                                                    <input type="radio"
+                                                           name="user_{{ user_data.user.pk }}"
+                                                           id="user_{{ user_data.user.pk }}_cancel"
+                                                           value="cancel"
+                                                           class="w-4 h-4"
+                                                           style="accent-color: var(--theme-danger)">
+                                                {% else %}
+                                                    <span style="color: var(--theme-text-muted);">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    {% if user_data|length == 1 %}
+                                        <tr>
+                                            <td colspan="5"
+                                                class="px-3 py-4 text-center text-sm"
+                                                style="color: var(--theme-text-muted)">
+                                                {% translate "No connected users available. You can add connected users in your" %}
+                                                <a href="{% url 'web:crowd:profile-connected-users' %}"
+                                                   style="color: var(--theme-primary)">{% translate "profile settings" %}</a>.
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Capacity Info -->
+                        <div class="flex items-start p-3 rounded mt-4"
+                             style="background-color: var(--theme-info-bg);
+                                    border: 1px solid var(--theme-info-light);
+                                    color: var(--theme-info-text)">
+                            {% heroicon_outline "information-circle" class="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" %}
+                            <small>
+                                <strong>{% translate "Session capacity" %}:</strong>
+                                {{ session.enrolled_count }}/{{ session.effective_participants_limit }} {% translate "enrolled" %}
                                 {% if session.waiting_count > 0 %}
                                     (+{{ session.waiting_count }} {% translate "waiting" %})
                                 {% endif %}
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>{% translate "Time" %}</h6>
-                            <p>
-                                {{ session.agenda_item.start_time|date:"l, F j, Y" }}
-                                <br>
-                                <small class="text-muted">{{ session.agenda_item.start_time|date:"G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}</small>
-                            </p>
-                            {% if session.agenda_item.space %}
-                                <h6>{% translate "Space" %}</h6>
-                                <p>{{ session.agenda_item.space.name }}</p>
-                            {% endif %}
-                            <h6>{% translate "Minimum Age" %}</h6>
-                            <p>
-                                {% if session.min_age > 0 %}
-                                    <span class="badge bg-info text-dark">{{ session.min_age }}+ {% translate "years" %}</span>
-                                {% else %}
-                                    <span class="text-muted">{% translate "All ages welcome" %}</span>
-                                {% endif %}
-                            </p>
+                            </small>
                         </div>
                     </div>
-                    {% if session.description %}
-                        <h6>{% translate "Description" %}</h6>
-                        <p>{{ session.description }}</p>
-                    {% endif %}
-                </div>
-            </div>
-            <!-- Enrollment Form Card -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-person-plus"></i> {% translate "Enrollment Options" %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <!-- User Enrollment Options -->
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="bi bi-people"></i> {% translate "Select enrollment options for each user" %}
-                            </label>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>{% translate "User" %}</th>
-                                            <th>{% translate "Current Status" %}</th>
-                                            <th>{% translate "Enroll" %}</th>
-                                            <th>{% translate "Join Waiting List" %}</th>
-                                            <th>{% translate "Cancel" %}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for user_data in user_data %}
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        {% if user_data.user.pk == request.user.pk %}
-                                                            <i class="bi bi-person-circle"></i>
-                                                            <span class="ms-2">{% translate "Myself" %} ({{ user.full_name }})</span>
-                                                        {% else %}
-                                                            <i class="bi bi-person-heart"></i>
-                                                            <span class="ms-2">{{ user_data.user.full_name }}</span>
-                                                        {% endif %}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    {% if user_data.user_enrolled %}
-                                                        <span class="badge bg-success">{% translate "Already Enrolled" %}</span>
-                                                    {% elif user_data.user_waiting %}
-                                                        <span class="badge bg-warning text-dark">{% translate "On Waiting List" %}</span>
-                                                    {% elif user_data.has_time_conflict %}
-                                                        <span class="badge bg-danger">{% translate "Time Conflict" %}</span>
-                                                    {% else %}
-                                                        <span class="badge bg-light text-dark">{% translate "Available" %}</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if not user_data.user_enrolled and not user_data.user_waiting %}
-                                                        {% if not user_data.has_time_conflict %}
-                                                            <div class="form-check">
-                                                                <input class="form-check-input"
-                                                                       type="radio"
-                                                                       name="user_{{ user_data.user.pk }}"
-                                                                       id="user_{{ user_data.user.pk }}_enroll"
-                                                                       value="enroll">
-                                                                <label class="form-check-label" for="user_{{ user_data.user.pk }}_enroll">
-                                                                    <i class="bi bi-check-circle"></i>
-                                                                </label>
-                                                            </div>
-                                                        {% else %}
-                                                            <span class="text-muted">{% translate "Time conflict" %}</span>
-                                                        {% endif %}
-                                                    {% else %}
-                                                        <span class="text-muted">-</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if not user_data.user_enrolled and not user_data.user_waiting %}
-                                                        <div class="form-check">
-                                                            <input class="form-check-input"
-                                                                   type="radio"
-                                                                   name="user_{{ user_data.user.pk }}"
-                                                                   id="user_{{ user_data.user.pk }}_waitlist"
-                                                                   value="waitlist">
-                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_waitlist">
-                                                                <i class="bi bi-clock"></i>
-                                                            </label>
-                                                        </div>
-                                                    {% else %}
-                                                        <span class="text-muted">-</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if user_data.user_enrolled or user_data.user_waiting %}
-                                                        <div class="form-check">
-                                                            <input class="form-check-input"
-                                                                   type="radio"
-                                                                   name="user_{{ user_data.user.pk }}"
-                                                                   id="user_{{ user_data.user.pk }}_cancel"
-                                                                   value="cancel">
-                                                            <label class="form-check-label" for="user_{{ user_data.user.pk }}_cancel">
-                                                                <i class="bi bi-x-circle"></i>
-                                                            </label>
-                                                        </div>
-                                                    {% else %}
-                                                        <span class="text-muted">-</span>
-                                                    {% endif %}
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                        {% if user_data|length == 1 %}
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted">
-                                                    {% translate "No connected users available. You can add connected users in your" %}
-                                                    <a href="{% url 'web:crowd:profile-connected-users' %}">{% translate "profile settings" %}</a>.
-                                                </td>
-                                            </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="alert alert-info mt-3">
-                                <small>
-                                    <i class="bi bi-info-circle"></i>
-                                    <strong>{% translate "Session capacity" %}:</strong> {{ session.enrolled_count }}/{{ session.effective_participants_limit }} {% translate "enrolled" %}
-                                    {% if session.waiting_count > 0 %}
-                                        (+{{ session.waiting_count }} {% translate "waiting" %})
-                                    {% endif %}
-                                </small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <button type="submit" class="btn btn-success w-100">
-                                    <i class="bi bi-person-plus"></i> {% translate "Enroll Selected Users" %}
-                                </button>
-                            </div>
-                            <div class="col-md-6">
-                                <a href="{% url 'web:chronology:event' slug=event.slug %}"
-                                   class="btn btn-outline-secondary w-100">
-                                    <i class="bi bi-arrow-left"></i> {% translate "Back to Event" %}
-                                </a>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+                    <!-- Buttons -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="submit"
+                                class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded transition"
+                                style="background-color: var(--theme-success);
+                                       color: var(--theme-text-inverse)">
+                            {% heroicon_outline "user-plus" class="w-4 h-4 mr-2" %}
+                            {% translate "Enroll Selected Users" %}
+                        </button>
+                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                           class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded transition"
+                           style="background-color: var(--theme-bg-tertiary);
+                                  border: 1px solid var(--theme-border);
+                                  color: var(--theme-text)">
+                            {% heroicon_outline "arrow-left" class="w-4 h-4 mr-2" %}
+                            {% translate "Back to Event" %}
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

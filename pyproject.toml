@@ -22,7 +22,6 @@ package-mode = false
 [tool.poetry.dependencies]
 authlib = "~1.6.0"
 django = "~6.0.0"
-django-bootstrap5 = "~26.1.0"
 gunicorn = "^23.0.0"
 django-environ = "^0.12.0"
 psycopg = "^3.2.9"
@@ -89,7 +88,7 @@ precision = 2
 # DJLINT
 
 [tool.djlint]
-ignore = "H021,H037"
+ignore = "H021,H031,H037"
 
 # DEPTRY
 
@@ -98,7 +97,6 @@ known_first_party = ["ludamus"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = [
-    "django-bootstrap5",
     "django-extensions",
     "gunicorn",
     "heroicons",

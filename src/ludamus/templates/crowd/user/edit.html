@@ -1,46 +1,56 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load django_bootstrap5 %}
+{% load heroicons %}
+{% load tailwind_forms %}
 {% block title %}
     {% translate "Edit profile" %}
 {% endblock title %}
+{% block header_section %}
+{% endblock header_section %}
 {% block body %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <ul class="nav nav-tabs card-header-tabs">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="{% url 'web:crowd:profile' %}">
-                                <i class="bi bi-person"></i>
-                                {% translate "Personal Information" %}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'web:crowd:profile-connected-users' %}">
-                                <i class="bi bi-people"></i>
-                                {% translate "Connected users" %}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    {% if user.confirmed_participations_count > 0 %}
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-calendar-check"></i>
+    <div class="max-w-3xl mx-auto">
+        <div class="rounded-lg card-shadow card-accent overflow-hidden"
+             style="background-color: var(--theme-bg-secondary)">
+            <!-- Tab Navigation -->
+            <div class="border-b" style="border-color: var(--theme-border);">
+                <nav class="flex -mb-px">
+                    <a href="{% url 'web:crowd:profile' %}"
+                       class="flex items-center px-4 py-3 text-sm font-medium border-b-2 transition"
+                       style="border-color: var(--theme-primary);
+                              color: var(--theme-primary)">
+                        {% heroicon_outline "user" class="w-4 h-4 mr-2" %}
+                        {% translate "Personal Information" %}
+                    </a>
+                    <a href="{% url 'web:crowd:profile-connected-users' %}"
+                       class="flex items-center px-4 py-3 text-sm font-medium border-b-2 border-transparent transition hover:border-gray-300"
+                       style="color: var(--theme-text-muted)">
+                        {% heroicon_outline "users" class="w-4 h-4 mr-2" %}
+                        {% translate "Connected users" %}
+                    </a>
+                </nav>
+            </div>
+            <!-- Tab Content -->
+            <div class="p-6">
+                {% if user.confirmed_participations_count > 0 %}
+                    <div class="flex items-start p-4 rounded mb-4"
+                         style="background-color: var(--theme-info-bg);
+                                border: 1px solid var(--theme-info-light);
+                                color: var(--theme-info-text)">
+                        {% heroicon_outline "calendar" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                        <p class="text-sm">
                             {% blocktranslate count counter=user.confirmed_participations_count %}
                                 You have {{ counter }} confirmed session participation.
                             {% plural %}
                                 You have {{ counter }} confirmed session participations.
                             {% endblocktranslate %}
-                        </div>
-                    {% endif %}
-                    <form action="{% url 'web:crowd:profile' %}" method="post">
-                        {% csrf_token %}
-                        {% bootstrap_form form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}
-                        {% bootstrap_button button_type="submit" content="OK" %}
-                    </form>
-                </div>
+                        </p>
+                    </div>
+                {% endif %}
+                <form action="{% url 'web:crowd:profile' %}" method="post">
+                    {% csrf_token %}
+                    {% tw_form form layout="horizontal" %}
+                    <div class="mt-6">{% tw_button "OK" %}</div>
+                </form>
             </div>
         </div>
     </div>

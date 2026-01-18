@@ -1,0 +1,341 @@
+{% load i18n %}
+{% load static %}
+{% load heroicons %}
+{% get_current_language as LANGUAGE_CODE %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description"
+              content="{% block meta_description %}Event webapp{% endblock meta_description %}">
+        <meta name="keywords"
+              content="events, conferences, workshops, seminars, meetups, registration, enrollment, sessions, networking, professional development, tech events, design workshops, free events">
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ request.build_absolute_uri }}">
+        <meta property="og:title"
+              content="{% block og_title %}{{ current_sphere.name }}{% endblock og_title %}">
+        <meta property="og:description"
+              content="{% block og_description %}Event webapp{% endblock og_description %}">
+        <meta property="og:image"
+              content="{% block og_image %}https://zagrajmy.net/static/logo.png{% endblock og_image %}">
+        <meta property="og:site_name" content="{{ current_sphere.name }}">
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title"
+              content="{% block twitter_title %}{{ current_sphere.name }}{% endblock twitter_title %}">
+        <meta name="twitter:description"
+              content="{% block twitter_description %}Event webapp{% endblock twitter_description %}">
+        <meta name="twitter:image"
+              content="{% block twitter_image %}https://zagrajmy.net/static/logo.png{% endblock twitter_image %}">
+        <title>
+            {% block title %}
+                {{ current_sphere.name }}
+            {% endblock title %}
+        </title>
+        <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+        <link rel="shortcut icon"
+              type="image/x-icon"
+              href="{% static 'favicon.ico' %}">
+        <!-- Tailwind CSS -->
+        <script src="{% static 'vendor/tailwind.min.js' %}"></script>
+        <!-- Theme CSS -->
+        {% if request.session.theme %}
+            <link rel="stylesheet"
+                  href="{% static 'css/themes/'|add:request.session.theme|add:'.css' %}">
+        {% else %}
+            <link rel="stylesheet" href="{% static 'css/themes/light.css' %}">
+        {% endif %}
+        <!-- Google Fonts - Outfit -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap"
+              rel="stylesheet">
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            // Steel palette
+                            steel: {
+                                50: '#f8fafc',
+                                100: '#f1f5f9',
+                                200: '#e2e8f0',
+                                300: '#cbd5e1',
+                                400: '#94a3b8',
+                                500: '#64748b',
+                                600: '#475569',
+                                700: '#334155',
+                                800: '#1e293b',
+                                900: '#0f172a',
+                            },
+                            // Bronze/amber accents
+                            bronze: {
+                                light: '#fef3c7',
+                                DEFAULT: '#d97706',
+                                dark: '#b45309',
+                            },
+                            // Accent colors
+                            accent: {
+                                blue: '#3b82f6',
+                                teal: '#0d9488',
+                                green: '#059669',
+                                red: '#dc2626',
+                            }
+                        },
+                        fontFamily: {
+                            'sans': ['Outfit', 'system-ui', 'sans-serif'],
+                        }
+                    }
+                }
+            }
+        </script>
+        <style>
+            /* Card accent line */
+            .card-accent {
+                position: relative;
+            }
+
+            .card-accent::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: var(--theme-accent-gradient, linear-gradient(90deg, #d97706, #f59e0b, #d97706));
+            }
+
+            /* Card shadow */
+            .card-shadow {
+                box-shadow: var(--theme-shadow, 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06));
+            }
+
+            .card-shadow:hover {
+                box-shadow: var(--theme-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05));
+            }
+
+            /* Corner mark decoration */
+            .corner-mark {
+                position: relative;
+            }
+
+            .corner-mark::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 12px;
+                height: 12px;
+                border-left: 2px solid #d97706;
+                border-top: 2px solid #d97706;
+            }
+
+            .corner-mark::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 12px;
+                height: 12px;
+                border-right: 2px solid #d97706;
+                border-bottom: 2px solid #d97706;
+            }
+        </style>
+        {% block extra_head %}
+        {% endblock extra_head %}
+    </head>
+    <body class="min-h-screen font-sans antialiased"
+          style="background-color: var(--theme-bg);
+                 color: var(--theme-text)">
+        <!-- Navbar -->
+        <nav class="sticky top-0 z-50 border-b"
+             style="background-color: var(--theme-bg-secondary);
+                    border-color: var(--theme-border)">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-14">
+                    <div class="flex items-center">
+                        <a href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}"
+                           class="flex items-center space-x-2">
+                            <!-- Geometric logo -->
+                            <div class="w-8 h-8 bg-steel-800 flex items-center justify-center"
+                                 style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)">
+                                <div class="w-4 h-4 bg-bronze"
+                                     style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)">
+                                </div>
+                            </div>
+                            <span class="text-xl font-semibold tracking-tight hidden sm:inline">
+                                <span class="text-steel-800">{{ current_sphere.name }}</span>
+                            </span>
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        {% if request.user.is_authenticated %}
+                            {% if request.user.full_name %}
+                                <div class="hidden sm:flex items-center text-sm"
+                                     style="color: var(--theme-text-secondary)">
+                                    <div class="w-8 h-8 rounded bg-steel-700 flex items-center justify-center mr-2">
+                                        <span class="text-white text-xs font-medium">{{ request.user.full_name|slice:":2"|upper }}</span>
+                                    </div>
+                                    <span class="hidden md:inline">{{ request.user.full_name }}</span>
+                                </div>
+                                <!-- Mobile user avatar -->
+                                <div class="sm:hidden w-8 h-8 rounded bg-steel-700 flex items-center justify-center">
+                                    <span class="text-white text-xs font-medium">{{ request.user.full_name|slice:":2"|upper }}</span>
+                                </div>
+                            {% endif %}
+                            {% if is_sphere_manager %}
+                                <a href="{% url 'panel:index' %}"
+                                   class="hidden sm:inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition"
+                                   style="color: var(--theme-text-secondary);
+                                          border: 1px solid var(--theme-border)">
+                                    {% heroicon_outline "squares-2x2" class="w-4 h-4 mr-1" %}
+                                    {% translate "Panel" %}
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'web:crowd:profile' %}"
+                               class="hidden sm:inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition"
+                               style="color: var(--theme-text-secondary)">
+                                {% heroicon_outline "user-circle" class="w-4 h-4 mr-1" %}
+                                {% translate "Profile" %}
+                            </a>
+                            <a href="{% url 'web:crowd:auth0:logout' %}"
+                               class="px-2 sm:px-3 py-1.5 text-sm font-medium rounded transition"
+                               style="color: var(--theme-text-secondary)">
+                                <span class="hidden sm:inline">{% translate "Logout" %}</span>
+                                <span class="sm:hidden">{% heroicon_outline "arrow-right-on-rectangle" class="w-5 h-5" %}</span>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}"
+                               class="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-bronze hover:bg-bronze-dark text-white rounded transition">
+                                {% heroicon_outline "arrow-left-on-rectangle" class="w-4 h-4 mr-1" %}
+                                {% translate "Login" %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- Flash Messages -->
+        {% if messages %}
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-2">
+                {% for message in messages %}
+                    <div class="p-4 rounded-lg flex items-start {% if message.tags == 'error' %}border{% elif message.tags == 'warning' %}border{% elif message.tags == 'success' %}border{% elif message.tags == 'info' %}border{% else %}border{% endif %}"
+                         style="{% if message.tags == 'error' %}background-color: var(--theme-danger-bg);
+                                border-color: var(--theme-danger-light);
+                                color: var(--theme-danger-text);
+                                {% elif message.tags == 'warning' %}background-color: var(--theme-warning-bg);
+                                border-color: var(--theme-warning-light);
+                                color: var(--theme-warning-text);
+                                {% elif message.tags == 'success' %}background-color: var(--theme-success-bg);
+                                border-color: var(--theme-success-light);
+                                color: var(--theme-success-text);
+                                {% elif message.tags == 'info' %}background-color: var(--theme-info-bg);
+                                border-color: var(--theme-info-light);
+                                color: var(--theme-info-text);
+                                {% else %}background-color: var(--theme-bg-tertiary);
+                                border-color: var(--theme-border);
+                                color: var(--theme-text-secondary);
+                                {% endif %}">
+                        {% if message.tags == 'error' %}
+                            {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                        {% elif message.tags == 'warning' %}
+                            {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                        {% elif message.tags == 'success' %}
+                            {% heroicon_outline "check-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                        {% elif message.tags == 'info' %}
+                            {% heroicon_outline "information-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                        {% else %}
+                            {% heroicon_outline "chat-bubble-left-ellipsis" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                        {% endif %}
+                        <span class="text-sm">{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Page Header -->
+            {% block header_section %}
+                <div class="mb-6 text-center">
+                    <h1 class="text-2xl sm:text-3xl font-bold"
+                        style="color: var(--theme-text)">
+                        {% block header %}
+                        {% endblock header %}
+                    </h1>
+                    {% block description %}
+                        <p class="mt-2 text-sm sm:text-base"
+                           style="color: var(--theme-text-muted)">
+                            {% block description_text %}
+                            {% endblock description_text %}
+                        </p>
+                    {% endblock description %}
+                </div>
+            {% endblock header_section %}
+            {% block body %}
+            {% endblock body %}
+        </main>
+        <!-- Footer -->
+        <footer class="border-t py-6 mt-8"
+                style="background-color: var(--theme-bg-secondary);
+                       border-color: var(--theme-border)">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm"
+                     style="color: var(--theme-text-muted)">
+                    <p>
+                        © 2025 Radosław Ganczarek.
+                        <a href="https://github.com/fancysnake/ludamus"
+                           class="hover:underline"
+                           style="color: var(--theme-primary)">Source code</a>
+                        available under BSD-3-Clause license.
+                    </p>
+                    <div class="flex items-center gap-4">
+                        <form method="post"
+                              action="{% url 'web:theme-select' %}"
+                              class="flex items-center gap-2">
+                            {% csrf_token %}
+                            <label for="theme-select" class="text-sm">{% translate "Theme:" %}</label>
+                            <select name="theme"
+                                    id="theme-select"
+                                    class="px-2 py-1 text-sm rounded focus:outline-none"
+                                    style="background-color: var(--theme-bg);
+                                           border: 1px solid var(--theme-border);
+                                           color: var(--theme-text)"
+                                    onchange="this.form.submit()">
+                                <option value="light"
+                                        {% if request.session.theme == "light" or not request.session.theme %}selected{% endif %}>
+                                    {% translate "Light" %}
+                                </option>
+                                <option value="dark"
+                                        {% if request.session.theme == "dark" %}selected{% endif %}>
+                                    {% translate "Dark" %}
+                                </option>
+                                <option value="solarized"
+                                        {% if request.session.theme == "solarized" %}selected{% endif %}>
+                                    {% translate "Solarized" %}
+                                </option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+                <div class="mt-4 flex flex-wrap justify-center md:justify-end gap-4 text-sm"
+                     style="color: var(--theme-text-muted)">
+                    <a href="mailto:{{ SUPPORT_EMAIL }}"
+                       class="hover:underline"
+                       style="color: var(--theme-primary)">{% translate "Contact" %}</a>
+                    <a href="{% url 'django.contrib.flatpages.views.flatpage' url='/privacy-policy/' %}"
+                       class="hover:underline"
+                       style="color: var(--theme-primary)">{% translate "Privacy Policy" %}</a>
+                    <a href="{% url 'django.contrib.flatpages.views.flatpage' url='/terms-of-service/' %}"
+                       class="hover:underline"
+                       style="color: var(--theme-primary)">{% translate "Terms of Service" %}</a>
+                </div>
+            </div>
+        </footer>
+        <!-- Scripts -->
+        <script src="{% static 'vendor/htmx.min.js' %}"></script>
+        {% block extra_scripts %}
+        {% endblock extra_scripts %}
+    </body>
+</html>

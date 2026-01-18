@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load django_bootstrap5 %}
+{% load heroicons %}
 {% load enrollment_tags %}
 {% block title %}
     {{ event.name }}
@@ -28,52 +28,87 @@
 {% endblock description %}
 {% block body %}
     <!-- Event Information Card -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calendar-event"></i>
-                        {% translate "Event Information" %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-muted">{% translate "Start Time" %}</h6>
-                            <p class="mb-3">
-                                <i class="bi bi-calendar3"></i> {{ event.start_time|date:"l, F j, Y" }}
-                                <br>
-                                <small class="text-muted"><i class="bi bi-clock"></i> {{ event.start_time|date:"G:i" }}</small>
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-muted">{% translate "End Time" %}</h6>
-                            <p class="mb-3">
-                                <i class="bi bi-calendar3"></i> {{ event.end_time|date:"l, F j, Y" }}
-                                <br>
-                                <small class="text-muted"><i class="bi bi-clock"></i> {{ event.end_time|date:"G:i" }}</small>
-                            </p>
-                        </div>
+    <div class="mb-6">
+        <div class="rounded-lg card-shadow overflow-hidden"
+             style="background-color: var(--theme-bg-secondary)">
+            <div class="px-4 py-3 flex items-center"
+                 style="background-color: var(--theme-primary);
+                        color: var(--theme-text-inverse)">
+                {% heroicon_outline "calendar" class="w-5 h-5 mr-2" %}
+                <h5 class="font-semibold">{% translate "Event Information" %}</h5>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h6 class="text-sm font-semibold mb-1"
+                            style="color: var(--theme-text-muted)">{% translate "Start Time" %}</h6>
+                        <p class="mb-3" style="color: var(--theme-text);">
+                            {% heroicon_mini "calendar-days" class="w-4 h-4 inline mr-1" %}
+                            {{ event.start_time|date:"l, F j, Y" }}
+                            <br>
+                            <small style="color: var(--theme-text-muted);">
+                                {% heroicon_mini "clock" class="w-4 h-4 inline mr-1" %}
+                                {{ event.start_time|date:"G:i" }}
+                            </small>
+                        </p>
                     </div>
-                    <!-- Event Status -->
-                    <div class="row">
-                        <div class="col-12">
-                            <h6 class="text-muted">{% translate "Status" %}</h6>
-                            {% if event.is_live %}
-                                <span class="badge bg-success fs-6"><i class="bi bi-broadcast"></i> {% translate "LIVE" %}</span>
-                            {% elif event.is_ended %}
-                                <span class="badge bg-secondary fs-6"><i class="bi bi-check-circle"></i> {% translate "COMPLETED" %}</span>
-                            {% else %}
-                                <span class="badge bg-info fs-6"><i class="bi bi-clock-history"></i> {% translate "UPCOMING" %}</span>
-                            {% endif %}
-                            {% if event.get_active_enrollment_configs %}
-                                <span class="badge bg-success fs-6 ms-2"><i class="bi bi-person-plus"></i> {% translate "Enrollment Open" %}</span>
-                            {% endif %}
-                            {% if event.is_proposal_active %}
-                                <span class="badge bg-warning fs-6 ms-2"><i class="bi bi-lightbulb"></i> {% translate "Proposals Open" %}</span>
-                            {% endif %}
-                        </div>
+                    <div>
+                        <h6 class="text-sm font-semibold mb-1"
+                            style="color: var(--theme-text-muted)">{% translate "End Time" %}</h6>
+                        <p class="mb-3" style="color: var(--theme-text);">
+                            {% heroicon_mini "calendar-days" class="w-4 h-4 inline mr-1" %}
+                            {{ event.end_time|date:"l, F j, Y" }}
+                            <br>
+                            <small style="color: var(--theme-text-muted);">
+                                {% heroicon_mini "clock" class="w-4 h-4 inline mr-1" %}
+                                {{ event.end_time|date:"G:i" }}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+                <!-- Event Status -->
+                <div>
+                    <h6 class="text-sm font-semibold mb-2"
+                        style="color: var(--theme-text-muted)">{% translate "Status" %}</h6>
+                    <div class="flex flex-wrap gap-2">
+                        {% if event.is_live %}
+                            <span class="px-3 py-1 text-sm font-medium rounded inline-flex items-center"
+                                  style="background-color: var(--theme-success);
+                                         color: var(--theme-text-inverse)">
+                                {% heroicon_mini "signal" class="w-4 h-4 mr-1" %}
+                                {% translate "LIVE" %}
+                            </span>
+                        {% elif event.is_ended %}
+                            <span class="px-3 py-1 text-sm font-medium rounded inline-flex items-center"
+                                  style="background-color: var(--theme-secondary);
+                                         color: var(--theme-text-inverse)">
+                                {% heroicon_mini "check-circle" class="w-4 h-4 mr-1" %}
+                                {% translate "COMPLETED" %}
+                            </span>
+                        {% else %}
+                            <span class="px-3 py-1 text-sm font-medium rounded inline-flex items-center"
+                                  style="background-color: var(--theme-info);
+                                         color: var(--theme-text-inverse)">
+                                {% heroicon_mini "clock" class="w-4 h-4 mr-1" %}
+                                {% translate "UPCOMING" %}
+                            </span>
+                        {% endif %}
+                        {% if event.get_active_enrollment_configs %}
+                            <span class="px-3 py-1 text-sm font-medium rounded inline-flex items-center"
+                                  style="background-color: var(--theme-success);
+                                         color: var(--theme-text-inverse)">
+                                {% heroicon_mini "user-plus" class="w-4 h-4 mr-1" %}
+                                {% translate "Enrollment Open" %}
+                            </span>
+                        {% endif %}
+                        {% if event.is_proposal_active %}
+                            <span class="px-3 py-1 text-sm font-medium rounded inline-flex items-center"
+                                  style="background-color: var(--theme-warning);
+                                         color: var(--theme-text-inverse)">
+                                {% heroicon_mini "light-bulb" class="w-4 h-4 mr-1" %}
+                                {% translate "Proposals Open" %}
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -82,144 +117,167 @@
     <!-- Enrollment Banner -->
     {% for enrollment_config in event.get_active_enrollment_configs %}
         {% if enrollment_config.banner_text %}
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="alert alert-info" role="alert">
-                        <div class="d-flex">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-info-circle-fill"></i>
-                            </div>
-                            <div class="flex-grow-1 ms-3">{{ enrollment_config.banner_text|linebreaks }}</div>
-                        </div>
-                    </div>
+            <div class="mb-6">
+                <div class="flex items-start p-4 rounded"
+                     style="background-color: var(--theme-info-bg);
+                            border: 1px solid var(--theme-info-light);
+                            color: var(--theme-info-text)">
+                    {% heroicon_outline "information-circle" class="w-6 h-6 mr-3 flex-shrink-0" %}
+                    <div>{{ enrollment_config.banner_text|linebreaks }}</div>
                 </div>
             </div>
         {% endif %}
     {% endfor %}
     <!-- Enrollment Passes Info (for authenticated users) -->
     {% if request.user.is_authenticated and event.get_active_enrollment_configs and enrollment_requires_slots %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-success" role="alert">
-                    <div class="d-flex">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-key-fill"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="alert-heading mb-2">{% translate "Your Enrollment Access" %}</h6>
-                            {% if user_enrollment_config %}
-                                <p class="mb-1">
-                                    {% with total=user_enrollment_config.allowed_slots %}
-                                        {% blocktranslate %}
-                                            You can enroll up to {{ total }} people (multiple enrollments allowed per person).
-                                        {% endblocktranslate %}
-                                    {% endwith %}
-                                </p>
-                                {% if user_enrollment_config.is_combined_access %}
-                                    <small class="text-muted">
-                                        {% if user_enrollment_config.has_individual_access and user_enrollment_config.has_domain_access %}
-                                            {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
-                                                Combined access: Individual enrollment passes + domain access (@{{ domain }}).
-                                            {% endblocktranslate %}
-                                        {% elif user_enrollment_config.has_domain_access %}
-                                            {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
-                                                Domain-based access: Users from @{{ domain }} have enrollment access.
-                                            {% endblocktranslate %}
-                                        {% else %}
-                                            {% translate "Each person can be enrolled in multiple sessions." %}
-                                        {% endif %}
-                                    </small>
-                                {% elif user_enrollment_config.is_domain_based %}
-                                    <small class="text-muted">
-                                        {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
-                                            Domain-based access: Users from @{{ domain }} have enrollment access.
-                                        {% endblocktranslate %}
-                                    </small>
+        <div class="mb-6">
+            <div class="flex items-start p-4 rounded"
+                 style="background-color: var(--theme-success-bg);
+                        border: 1px solid var(--theme-success-light);
+                        color: var(--theme-success-text)">
+                {% heroicon_outline "key" class="w-6 h-6 mr-3 flex-shrink-0" %}
+                <div>
+                    <h6 class="font-semibold mb-2">{% translate "Your Enrollment Access" %}</h6>
+                    {% if user_enrollment_config %}
+                        <p class="mb-1">
+                            {% with total=user_enrollment_config.allowed_slots %}
+                                {% blocktranslate %}
+                                    You can enroll up to {{ total }} people (multiple enrollments allowed per person).
+                                {% endblocktranslate %}
+                            {% endwith %}
+                        </p>
+                        {% if user_enrollment_config.is_combined_access %}
+                            <small style="color: var(--theme-text-muted);">
+                                {% if user_enrollment_config.has_individual_access and user_enrollment_config.has_domain_access %}
+                                    {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                        Combined access: Individual enrollment passes + domain access (@{{ domain }}).
+                                    {% endblocktranslate %}
+                                {% elif user_enrollment_config.has_domain_access %}
+                                    {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                        Domain-based access: Users from @{{ domain }} have enrollment access.
+                                    {% endblocktranslate %}
                                 {% else %}
-                                    <small class="text-muted">{% translate "Each person can be enrolled in multiple sessions." %}</small>
+                                    {% translate "Each person can be enrolled in multiple sessions." %}
                                 {% endif %}
-                            {% elif request.user.user_type == 'connected' %}
-                                <p class="mb-1">{% translate "You may be able to enroll using your manager's enrollment passes." %}</p>
-                                <small class="text-muted">{% translate "Contact your manager for enrollment assistance." %}</small>
-                            {% elif request.user.is_authenticated %}
-                                <p class="mb-1">{% translate "You don't have any enrollment passes." %}</p>
-                                <small class="text-muted">{% translate "You can enroll when general enrollment opens." %}</small>
-                            {% else %}
-                                <p class="mb-1">{% translate "Login to check your enrollment options." %}</p>
-                                <small class="text-muted">{% translate "You may have enrollment passes available after logging in." %}</small>
-                            {% endif %}
-                        </div>
-                    </div>
+                            </small>
+                        {% elif user_enrollment_config.is_domain_based %}
+                            <small style="color: var(--theme-text-muted);">
+                                {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                    Domain-based access: Users from @{{ domain }} have enrollment access.
+                                {% endblocktranslate %}
+                            </small>
+                        {% else %}
+                            <small style="color: var(--theme-text-muted);">{% translate "Each person can be enrolled in multiple sessions." %}</small>
+                        {% endif %}
+                    {% elif request.user.user_type == 'connected' %}
+                        <p class="mb-1">{% translate "You may be able to enroll using your manager's enrollment passes." %}</p>
+                        <small style="color: var(--theme-text-muted);">{% translate "Contact your manager for enrollment assistance." %}</small>
+                    {% elif request.user.is_authenticated %}
+                        <p class="mb-1">{% translate "You don't have any enrollment passes." %}</p>
+                        <small style="color: var(--theme-text-muted);">{% translate "You can enroll when general enrollment opens." %}</small>
+                    {% else %}
+                        <p class="mb-1">{% translate "Login to check your enrollment options." %}</p>
+                        <small style="color: var(--theme-text-muted);">{% translate "You may have enrollment passes available after logging in." %}</small>
+                    {% endif %}
                 </div>
             </div>
         </div>
     {% endif %}
     <!-- Anonymous Mode Banner -->
     {% if request.session.anonymous_enrollment_active and not request.user.is_authenticated %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-warning" role="alert">
-                    <div class="d-flex">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-incognito"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="alert-heading mb-2">{% translate "Anonymous Mode Active" %}</h6>
-                            <p class="mb-2">
-                                {% translate "Your Anonymous Code" %}: <strong class="fs-5">{{ anonymous_code }}</strong>
-                                <br>
-                                <small class="text-muted">{% translate "Save this code to manage your enrollment later" %}</small>
-                            </p>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button type="button"
-                                        class="btn btn-outline-secondary"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#anonymousCodeModal">
-                                    <i class="bi bi-key"></i> {% translate "Enter Different Code" %}
-                                </button>
-                                <a href="{% url 'web:chronology:anonymous-reset' %}"
-                                   class="btn btn-outline-primary">
-                                    <i class="bi bi-check-circle"></i> {% translate "Finish" %}
-                                </a>
-                            </div>
-                        </div>
+        <div class="mb-6">
+            <div class="flex items-start p-4 rounded"
+                 style="background-color: var(--theme-warning-bg);
+                        border: 1px solid var(--theme-warning-light);
+                        color: var(--theme-warning-text)">
+                {% heroicon_outline "eye-slash" class="w-6 h-6 mr-3 flex-shrink-0" %}
+                <div class="flex-grow">
+                    <h6 class="font-semibold mb-2">{% translate "Anonymous Mode Active" %}</h6>
+                    <p class="mb-2">
+                        {% translate "Your Anonymous Code" %}: <strong class="text-lg">{{ anonymous_code }}</strong>
+                        <br>
+                        <small style="color: var(--theme-text-muted);">{% translate "Save this code to manage your enrollment later" %}</small>
+                    </p>
+                    <div class="flex gap-2">
+                        <button type="button"
+                                onclick="openModal('anonymousCodeModal')"
+                                class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded transition"
+                                style="background-color: var(--theme-bg-tertiary);
+                                       border: 1px solid var(--theme-border);
+                                       color: var(--theme-text)">
+                            {% heroicon_mini "key" class="w-4 h-4 mr-1" %}
+                            {% translate "Enter Different Code" %}
+                        </button>
+                        <a href="{% url 'web:chronology:anonymous-reset' %}"
+                           class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded transition"
+                           style="background-color: var(--theme-primary);
+                                  color: var(--theme-text-inverse)">
+                            {% heroicon_mini "check-circle" class="w-4 h-4 mr-1" %}
+                            {% translate "Finish" %}
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
         <!-- Anonymous Code Entry Modal -->
-        <div class="modal fade"
-             id="anonymousCodeModal"
-             tabindex="-1"
+        <div id="anonymousCodeModal"
+             class="fixed inset-0 z-50 hidden overflow-y-auto"
              aria-labelledby="anonymousCodeModalLabel"
              aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="anonymousCodeModalLabel">{% translate "Enter Different Code" %}</h5>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="fixed inset-0 bg-black/50 transition-opacity"
+                     onclick="closeModal('anonymousCodeModal')"></div>
+                <div class="relative rounded-lg shadow-xl max-w-md w-full"
+                     style="background-color: var(--theme-bg-secondary)">
+                    <div class="flex items-center justify-between px-4 py-3"
+                         style="border-bottom: 1px solid var(--theme-border)">
+                        <h5 class="font-semibold"
+                            id="anonymousCodeModalLabel"
+                            style="color: var(--theme-text)">{% translate "Enter Different Code" %}</h5>
                         <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                                onclick="closeModal('anonymousCodeModal')"
+                                class="p-1 rounded hover:opacity-80"
+                                style="color: var(--theme-text-muted)">
+                            {% heroicon_mini "x-mark" class="w-5 h-5" %}
+                        </button>
                     </div>
                     <form method="post" action="{% url 'web:chronology:anonymous-load' %}">
-                        <div class="modal-body">
+                        <div class="p-4">
                             {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="modalCode" class="form-label">{% translate "Anonymous Code" %}</label>
+                            <div class="mb-4">
+                                <label for="modalCode"
+                                       class="block text-sm font-medium mb-1"
+                                       style="color: var(--theme-text-secondary)">
+                                    {% translate "Anonymous Code" %}
+                                </label>
                                 <input type="text"
-                                       class="form-control"
+                                       class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                                       style="background-color: var(--theme-bg-secondary);
+                                              border-color: var(--theme-border);
+                                              color: var(--theme-text)"
                                        id="modalCode"
                                        name="code"
                                        placeholder="{% translate "Enter your code" %}"
                                        required
                                        maxlength="6">
-                                <div class="form-text">{% translate "This will replace your current anonymous session" %}</div>
+                                <p class="text-xs mt-1" style="color: var(--theme-text-muted);">
+                                    {% translate "This will replace your current anonymous session" %}
+                                </p>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
-                            <button type="submit" class="btn btn-primary">{% translate "Switch to This Code" %}</button>
+                        <div class="flex justify-end gap-2 px-4 py-3"
+                             style="border-top: 1px solid var(--theme-border)">
+                            <button type="button"
+                                    onclick="closeModal('anonymousCodeModal')"
+                                    class="px-4 py-2 text-sm font-medium rounded transition"
+                                    style="background-color: var(--theme-bg-tertiary);
+                                           color: var(--theme-text)">{% translate "Cancel" %}</button>
+                            <button type="submit"
+                                    class="px-4 py-2 text-sm font-medium rounded transition"
+                                    style="background-color: var(--theme-primary);
+                                           color: var(--theme-text-inverse)">
+                                {% translate "Switch to This Code" %}
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -227,612 +285,632 @@
         </div>
     {% endif %}
     <!-- Sessions by Time Slot -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calendar-week"></i>
-                        {% translate "Sessions by Time Slot" %}
-                        <span class="badge bg-primary ms-2">{{ sessions|length }}</span>
-                    </h5>
-                    {% if event.is_proposal_active %}
-                        <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
-                           class="btn btn-warning btn-sm"><i class="bi bi-plus-lg"></i> {% translate "Propose Session" %}</a>
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    {% if hour_data %}
-                        <!-- Filter Controls -->
-                        <div class="row mb-2">
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="sessionFilter"
-                                           placeholder="{% translate "Filter sessions by title or host..." %}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select form-select-sm" id="statusFilter">
-                                    <option value="">{% translate "All statuses" %}</option>
-                                    <option value="available">{% translate "Available spots" %}</option>
-                                    <option value="full">{% translate "Full" %}</option>
-                                    <option value="in-progress">{% translate "In progress" %}</option>
-                                    <option value="unavailable">{% translate "Enrollment unavailable" %}</option>
-                                    <option value="ended">{% translate "Ended" %}</option>
-                                    <option value="my-enrolled">{% translate "I am enrolled" %}</option>
-                                    <option value="my-waiting">{% translate "I am waiting" %}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="row g-1">
-                                    <div class="col-6">
-                                        <input type="number"
-                                               class="form-control form-control-sm"
-                                               id="minAgeFilter"
-                                               placeholder="{% translate "Min age" %}"
-                                               min="0"
-                                               max="99">
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="number"
-                                               class="form-control form-control-sm"
-                                               id="maxAgeFilter"
-                                               placeholder="{% translate "Max age" %}"
-                                               min="0"
-                                               max="99">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button"
-                                        class="btn btn-outline-secondary btn-sm w-100"
-                                        id="clearFilters">
-                                    <i class="bi bi-x-circle"></i> {% translate "Clear" %}
-                                </button>
+    <div class="mb-6">
+        <div class="rounded-lg card-shadow overflow-hidden"
+             style="background-color: var(--theme-bg-secondary)">
+            <div class="px-4 py-3 flex justify-between items-center"
+                 style="background-color: var(--theme-bg-tertiary)">
+                <h5 class="font-semibold flex items-center"
+                    style="color: var(--theme-text)">
+                    {% heroicon_outline "calendar-days" class="w-5 h-5 mr-2" %}
+                    {% translate "Sessions by Time Slot" %}
+                    <span class="ml-2 px-2 py-0.5 text-xs rounded"
+                          style="background-color: var(--theme-primary);
+                                 color: var(--theme-text-inverse)">{{ sessions|length }}</span>
+                </h5>
+                {% if event.is_proposal_active %}
+                    <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
+                       class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded transition"
+                       style="background-color: var(--theme-warning);
+                              color: var(--theme-text-inverse)">
+                        {% heroicon_mini "plus" class="w-4 h-4 mr-1" %}
+                        {% translate "Propose Session" %}
+                    </a>
+                {% endif %}
+            </div>
+            <div class="p-4">
+                {% if hour_data %}
+                    <!-- Filter Controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2">
+                        <div class="md:col-span-2">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3"
+                                      style="color: var(--theme-text-muted)">
+                                    {% heroicon_mini "magnifying-glass" class="w-4 h-4" %}
+                                </span>
+                                <input type="text"
+                                       class="w-full pl-9 pr-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                                       style="background-color: var(--theme-bg-secondary);
+                                              border-color: var(--theme-border);
+                                              color: var(--theme-text)"
+                                       id="sessionFilter"
+                                       placeholder="{% translate "Filter by title or host..." %}">
                             </div>
                         </div>
-                        <!-- Tag Filters Row -->
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <div id="tagFilters" class="d-flex flex-wrap gap-2">
-                                    {% for category in filterable_tag_categories %}
-                                        <div class="flex-shrink-0 tag-filter-container">
-                                            <select class="form-select form-select-sm tag-filter"
-                                                    data-category="{{ category.name|slugify }}"
-                                                    id="tagFilter_{{ category.name|slugify }}">
-                                                <option value="">{% translate "All" %} {{ category.name }}</option>
-                                                <!-- Options will be populated by JavaScript from actual session tags -->
-                                            </select>
-                                        </div>
-                                    {% empty %}
-                                        <small class="text-muted">No tag filters configured</small>
-                                    {% endfor %}
+                        <div>
+                            <select class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                                    style="background-color: var(--theme-bg-secondary);
+                                           border-color: var(--theme-border);
+                                           color: var(--theme-text)"
+                                    id="statusFilter">
+                                <option value="">{% translate "All statuses" %}</option>
+                                <option value="available">{% translate "Available spots" %}</option>
+                                <option value="full">{% translate "Full" %}</option>
+                                <option value="in-progress">{% translate "In progress" %}</option>
+                                <option value="unavailable">{% translate "Enrollment unavailable" %}</option>
+                                <option value="ended">{% translate "Ended" %}</option>
+                                <option value="my-enrolled">{% translate "I am enrolled" %}</option>
+                                <option value="my-waiting">{% translate "I am waiting" %}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                                    style="background-color: var(--theme-bg-secondary);
+                                           border-color: var(--theme-border);
+                                           color: var(--theme-text)"
+                                    id="spaceFilter">
+                                <option value="">{% translate "All spaces" %}</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1">
+                            <input type="number"
+                                   class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                                   style="background-color: var(--theme-bg-secondary);
+                                          border-color: var(--theme-border);
+                                          color: var(--theme-text)"
+                                   id="minAgeFilter"
+                                   placeholder="{% translate "Min age" %}"
+                                   min="0"
+                                   max="99">
+                            <input type="number"
+                                   class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                                   style="background-color: var(--theme-bg-secondary);
+                                          border-color: var(--theme-border);
+                                          color: var(--theme-text)"
+                                   id="maxAgeFilter"
+                                   placeholder="{% translate "Max age" %}"
+                                   min="0"
+                                   max="99">
+                        </div>
+                        <div>
+                            <button type="button"
+                                    class="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded transition"
+                                    style="background-color: var(--theme-bg-tertiary);
+                                           border: 1px solid var(--theme-border);
+                                           color: var(--theme-text)"
+                                    id="clearFilters">
+                                {% heroicon_mini "x-circle" class="w-4 h-4 mr-1" %}
+                                {% translate "Clear" %}
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Tag Filters Row -->
+                    <div class="mb-4">
+                        <div id="tagFilters" class="flex flex-wrap gap-2">
+                            {% for category in filterable_tag_categories %}
+                                <div class="tag-filter-container"
+                                     style="min-width: 150px;
+                                            max-width: 200px">
+                                    <select class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1 tag-filter"
+                                            style="background-color: var(--theme-bg-secondary);
+                                                   border-color: var(--theme-border);
+                                                   color: var(--theme-text)"
+                                            data-category="{{ category.name|slugify }}"
+                                            id="tagFilter_{{ category.name|slugify }}">
+                                        <option value="">{% translate "All" %} {{ category.name }}</option>
+                                    </select>
                                 </div>
+                            {% empty %}
+                                <small style="color: var(--theme-text-muted)">{% translate "No tag filters configured" %}</small>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- Ended Sessions -->
+                    {% for hour, sessions in ended_hour_data.items %}
+                        <div class="mb-4 time-slot-section p-4 rounded"
+                             data-time-slot="ended-{{ forloop.counter }}"
+                             style="background-color: var(--theme-bg-tertiary)">
+                            <!-- Time Slot Header -->
+                            <div class="flex justify-between items-center mb-3 p-3 rounded"
+                                 style="background-color: var(--theme-bg-secondary)">
+                                <div>
+                                    <h6 class="font-medium mb-1 flex items-center"
+                                        style="color: var(--theme-text-muted)">
+                                        {% heroicon_mini "clock" class="w-4 h-4 mr-1" %}
+                                        {{ hour|date:"l, F j" }} - {{ hour|time:"H:i" }}
+                                        <small class="ml-2" style="color: var(--theme-text-secondary)">({% translate "Completed" %})</small>
+                                    </h6>
+                                    <small style="color: var(--theme-text-muted)">
+                                        {{ sessions|length }} {% translate "session" %}{{ sessions|length|pluralize }}
+                                    </small>
+                                </div>
+                            </div>
+                            <!-- Sessions in this time slot -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                                {% for data in sessions %}
+                                    <div class="col-12">{% include "chronology/_session_card_condensed.html" with data=data ended=True %}</div>
+                                {% endfor %}
                             </div>
                         </div>
-                        <!-- All Sessions in Chronological Order -->
-                        {% comment %} Process each time slot in chronological order {% endcomment %}
-                        {% comment %} Ended Sessions {% endcomment %}
-                        {% for hour, sessions in ended_hour_data.items %}
-                            <div class="mb-4 time-slot-section {% cycle 'bg-light' 'bg-white' %}"
-                                 data-time-slot="ended-{{ forloop.counter }}">
-                                <!-- Time Slot Header -->
-                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
-                                    <div>
-                                        <h6 class="mb-1 text-muted">
-                                            <i class="bi bi-clock"></i>
-                                            {{ hour|date:"l, F j" }} - {{ hour|time:"H:i" }}
-                                            <small class="text-secondary">({% translate "Completed" %})</small>
-                                        </h6>
-                                        <small class="text-muted">{{ sessions|length }} session{{ sessions|length|pluralize }}</small>
-                                    </div>
+                    {% endfor %}
+                    <!-- Current & Upcoming Sessions -->
+                    {% for hour, sessions in current_hour_data.items %}
+                        <div class="mb-4 time-slot-section p-4 rounded"
+                             data-time-slot="current-{{ forloop.counter }}"
+                             style="background-color: {% cycle 'var(--theme-bg-tertiary)' 'var(--theme-bg-secondary)' %}">
+                            <!-- Time Slot Header -->
+                            <div class="flex justify-between items-center mb-3 p-3 rounded"
+                                 style="background-color: var(--theme-bg-secondary)">
+                                <div>
+                                    <h6 class="font-medium mb-1 flex items-center"
+                                        style="color: var(--theme-text)">
+                                        {% heroicon_mini "clock" class="w-4 h-4 mr-1" %}
+                                        {{ hour|date:"l, F j" }} - {{ hour|time:"H:i" }}
+                                    </h6>
+                                    <small style="color: var(--theme-text-muted)">
+                                        {{ sessions|length }} {% translate "session" %}{{ sessions|length|pluralize }}
+                                    </small>
                                 </div>
-                                <!-- Sessions in this time slot -->
-                                <div class="row g-3">
-                                    {% for data in sessions %}
-                                        {% include "chronology/_session_card_condensed.html" with data=data ended=True %}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                        {% comment %} Current & Upcoming Sessions {% endcomment %}
-                        {% for hour, sessions in current_hour_data.items %}
-                            <div class="mb-4 time-slot-section {% cycle 'bg-light' 'bg-white' %}"
-                                 data-time-slot="current-{{ forloop.counter }}">
-                                <!-- Time Slot Header -->
-                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
-                                    <div>
-                                        <h6 class="mb-1">
-                                            <i class="bi bi-clock"></i>
-                                            {{ hour|date:"l, F j" }} - {{ hour|time:"H:i" }}
-                                        </h6>
-                                        <small class="text-muted">{{ sessions|length }} session{{ sessions|length|pluralize }}</small>
-                                    </div>
-                                    {% if event.is_proposal_active %}
-                                        <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
-                                           class="btn btn-outline-warning btn-sm">
-                                            <i class="bi bi-plus-circle"></i> {% translate "Propose Session" %}
-                                        </a>
-                                    {% endif %}
-                                </div>
-                                <!-- Sessions in this time slot -->
-                                {% if sessions %}
-                                    <div class="row g-3">
-                                        {% for data in sessions %}
-                                            {% include "chronology/_session_card.html" with data=data ended=False %}
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <div class="text-center py-3">
-                                        <small class="text-muted">
-                                            {% translate "No sessions scheduled for this time slot" %}
-                                            {% if event.is_proposal_active %}
-                                                - <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}">{% translate "be the first to propose!" %}</a>
-                                            {% endif %}
-                                        </small>
-                                    </div>
+                                {% if event.is_proposal_active %}
+                                    <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
+                                       class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded transition"
+                                       style="background-color: var(--theme-bg-tertiary);
+                                              border: 1px solid var(--theme-warning);
+                                              color: var(--theme-warning)">
+                                        {% heroicon_mini "plus-circle" class="w-4 h-4 mr-1" %}
+                                        {% translate "Propose Session" %}
+                                    </a>
                                 {% endif %}
                             </div>
-                        {% endfor %}
-                        {% comment %} Future Unavailable Sessions {% endcomment %}
-                        {% for hour, sessions in future_unavailable_hour_data.items %}
-                            <div class="mb-4 time-slot-section {% cycle 'bg-light' 'bg-white' %}"
-                                 data-time-slot="future-{{ forloop.counter }}">
-                                <!-- Time Slot Header -->
-                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
-                                    <div>
-                                        <h6 class="mb-1 text-warning">
-                                            <i class="bi bi-clock"></i>
-                                            {{ hour|date:"l, F j" }} - {{ hour|time:"H:i" }}
-                                            <small class="text-warning">({% translate "Not Yet Available" %})</small>
-                                        </h6>
-                                        <small class="text-muted">{{ sessions|length }} session{{ sessions|length|pluralize }}</small>
-                                    </div>
-                                </div>
-                                <!-- Sessions in this time slot -->
-                                <div class="row g-3">
+                            <!-- Sessions in this time slot -->
+                            {% if sessions %}
+                                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                                     {% for data in sessions %}
-                                        {% include "chronology/_session_card_condensed.html" with data=data ended=False %}
+                                        <div class="col-12">{% include "chronology/_session_card.html" with data=data ended=False %}</div>
                                     {% endfor %}
                                 </div>
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <small style="color: var(--theme-text-muted)">
+                                        {% translate "No sessions scheduled for this time slot" %}
+                                        {% if event.is_proposal_active %}
+                                            - <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
+    style="color: var(--theme-primary)">{% translate "be the first to propose!" %}</a>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <!-- Future Unavailable Sessions -->
+                    {% for hour, sessions in future_unavailable_hour_data.items %}
+                        <div class="mb-4 time-slot-section p-4 rounded"
+                             data-time-slot="future-{{ forloop.counter }}"
+                             style="background-color: var(--theme-bg-tertiary)">
+                            <!-- Time Slot Header -->
+                            <div class="flex justify-between items-center mb-3 p-3 rounded"
+                                 style="background-color: var(--theme-bg-secondary)">
+                                <div>
+                                    <h6 class="font-medium mb-1 flex items-center"
+                                        style="color: var(--theme-warning)">
+                                        {% heroicon_mini "clock" class="w-4 h-4 mr-1" %}
+                                        {{ hour|date:"l, F j" }} - {{ hour|time:"H:i" }}
+                                        <small class="ml-2">({% translate "Not Yet Available" %})</small>
+                                    </h6>
+                                    <small style="color: var(--theme-text-muted)">
+                                        {{ sessions|length }} {% translate "session" %}{{ sessions|length|pluralize }}
+                                    </small>
+                                </div>
                             </div>
-                        {% endfor %}
-                        {% if not ended_hour_data and not current_hour_data and not future_unavailable_hour_data %}
-                            <div class="text-center py-5">
-                                <i class="bi bi-calendar-x"></i>
-                                <h5 class="text-muted mt-3">{% translate "No sessions or time slots available yet" %}</h5>
-                                <p class="text-muted">
-                                    {% if event.is_proposal_active %}
-                                        {% translate "Be the first to propose a session!" %}
-                                    {% else %}
-                                        {% translate "Sessions will be announced soon." %}
-                                    {% endif %}
-                                </p>
+                            <!-- Sessions in this time slot -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                                {% for data in sessions %}
+                                    <div class="col-12">{% include "chronology/_session_card_condensed.html" with data=data ended=False %}</div>
+                                {% endfor %}
                             </div>
-                        {% endif %}
+                        </div>
+                    {% endfor %}
+                    {% if not ended_hour_data and not current_hour_data and not future_unavailable_hour_data %}
+                        <div class="text-center py-12">
+                            <span style="color: var(--theme-text-muted)">{% heroicon_outline "calendar-days" class="w-12 h-12 mx-auto" %}</span>
+                            <h5 class="mt-3 font-medium" style="color: var(--theme-text-muted)">
+                                {% translate "No sessions or time slots available yet" %}
+                            </h5>
+                            <p style="color: var(--theme-text-muted)">
+                                {% if event.is_proposal_active %}
+                                    {% translate "Be the first to propose a session!" %}
+                                {% else %}
+                                    {% translate "Sessions will be announced soon." %}
+                                {% endif %}
+                            </p>
+                        </div>
                     {% endif %}
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>
-    <!-- Add this section after the Sessions List card in event_detail.html -->
     <!-- Proposals Section (Superuser Only) -->
     {% if user.is_superuser and event.is_proposal_active %}
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card shadow-sm border-warning">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">
-                            <i class="bi bi-clipboard-check"></i>
-                            {% translate "Pending Proposals" %}
-                            <span class="badge bg-dark ms-2">{{ proposals|length }}</span>
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        {% if proposals %}
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th scope="col">{% translate "Proposal" %}</th>
-                                            <th scope="col">{% translate "Host" %}</th>
-                                            <th scope="col">{% translate "Submitted" %}</th>
-                                            <th scope="col">{% translate "Preferred Times" %}</th>
-                                            <th scope="col">{% translate "Participants" %}</th>
-                                            <th scope="col">{% translate "Action" %}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for proposal in proposals %}
-                                            <tr>
-                                                <td>
-                                                    <div>
-                                                        <strong>{{ proposal.title }}</strong>
-                                                        {% if proposal.description %}
-                                                            <br>
-                                                            <small class="text-muted">{{ proposal.description|truncatechars:100 }}</small>
-                                                        {% endif %}
-                                                        {% if proposal.tags.exists %}
-                                                            <br>
-                                                            {% for tag in proposal.tags.all %}
-                                                                <span class="badge bg-light text-dark me-1 proposal-tag"
-                                                                      title="{{ tag.name }}">{{ tag.name }}</span>
-                                                            {% endfor %}
-                                                        {% endif %}
-                                                        {% if proposal.needs %}
-                                                            <br>
-                                                            <small class="text-info"><i class="bi bi-info-circle"></i> {{ proposal.needs|truncatechars:50 }}</small>
-                                                        {% endif %}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="bi bi-person-circle"></i>
-                                                        <span class="ms-2">{{ proposal.host.name }}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="text-nowrap">
-                                                        <small class="text-muted">{{ proposal.creation_time|date:"M j" }}</small>
+        <div class="mb-6">
+            <div class="rounded-lg card-shadow overflow-hidden"
+                 style="background-color: var(--theme-bg-secondary);
+                        border: 2px solid var(--theme-warning)">
+                <div class="px-4 py-3 flex items-center"
+                     style="background-color: var(--theme-warning);
+                            color: var(--theme-text-inverse)">
+                    {% heroicon_outline "clipboard-document-check" class="w-5 h-5 mr-2" %}
+                    <h5 class="font-semibold">
+                        {% translate "Pending Proposals" %}
+                        <span class="ml-2 px-2 py-0.5 text-xs rounded"
+                              style="background-color: var(--theme-bg);
+                                     color: var(--theme-text)">{{ proposals|length }}</span>
+                    </h5>
+                </div>
+                <div class="p-0">
+                    {% if proposals %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead style="background-color: var(--theme-bg-tertiary)">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-medium"
+                                            style="color: var(--theme-text)">{% translate "Proposal" %}</th>
+                                        <th class="px-4 py-3 text-left font-medium"
+                                            style="color: var(--theme-text)">{% translate "Host" %}</th>
+                                        <th class="px-4 py-3 text-left font-medium"
+                                            style="color: var(--theme-text)">{% translate "Submitted" %}</th>
+                                        <th class="px-4 py-3 text-left font-medium"
+                                            style="color: var(--theme-text)">{% translate "Preferred Times" %}</th>
+                                        <th class="px-4 py-3 text-left font-medium"
+                                            style="color: var(--theme-text)">{% translate "Participants" %}</th>
+                                        <th class="px-4 py-3 text-left font-medium"
+                                            style="color: var(--theme-text)">{% translate "Action" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for proposal in proposals %}
+                                        <tr style="border-bottom: 1px solid var(--theme-border)">
+                                            <td class="px-4 py-3">
+                                                <div>
+                                                    <strong style="color: var(--theme-text)">{{ proposal.title }}</strong>
+                                                    {% if proposal.description %}
                                                         <br>
-                                                        {{ proposal.creation_time|date:"G:i" }}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    {% if proposal.time_slots.exists %}
-                                                        <div class="small">
-                                                            {% for slot in proposal.time_slots.all|slice:":2" %}
-                                                                <div class="text-nowrap">{{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}</div>
-                                                            {% endfor %}
-                                                            {% if proposal.time_slots.count > 2 %}
-                                                                <small class="text-muted">+{{ proposal.time_slots.count|add:"-2" }} more</small>
-                                                            {% endif %}
-                                                        </div>
-                                                    {% else %}
-                                                        <span class="text-muted">{% translate "Flexible" %}</span>
+                                                        <small style="color: var(--theme-text-muted)">{{ proposal.description|truncatechars:100 }}</small>
                                                     {% endif %}
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-secondary text-white">{{ proposal.participants_limit }}</span>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group-vertical" role="group">
-                                                        <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}"
-                                                           class="btn btn-success btn-sm">
-                                                            <i class="bi bi-check-lg"></i> {% translate "Accept" %}
-                                                        </a>
-                                                        <button type="button"
-                                                                class="btn btn-outline-secondary btn-sm mt-1"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#proposalModal{{ proposal.pk }}">
-                                                            <i class="bi bi-eye"></i> {% translate "Review" %}
-                                                        </button>
+                                                    {% if proposal.tags.exists %}
+                                                        <br>
+                                                        {% for tag in proposal.tags.all %}
+                                                            <span class="px-2 py-0.5 text-xs rounded mr-1 proposal-tag"
+                                                                  style="background-color: var(--theme-bg-tertiary);
+                                                                         color: var(--theme-text-secondary)"
+                                                                  title="{{ tag.name }}">{{ tag.name }}</span>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                    {% if proposal.needs %}
+                                                        <br>
+                                                        <small style="color: var(--theme-info)">
+                                                            {% heroicon_mini "information-circle" class="w-3 h-3 inline" %}
+                                                            {{ proposal.needs|truncatechars:50 }}
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center" style="color: var(--theme-text)">
+                                                    {% heroicon_mini "user-circle" class="w-4 h-4 mr-1" %}
+                                                    {{ proposal.host.name }}
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <small style="color: var(--theme-text-muted)">{{ proposal.creation_time|date:"M j" }}</small>
+                                                <br>
+                                                <span style="color: var(--theme-text)">{{ proposal.creation_time|date:"G:i" }}</span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                {% if proposal.time_slots.exists %}
+                                                    <div class="text-sm">
+                                                        {% for slot in proposal.time_slots.all|slice:":2" %}
+                                                            <div class="whitespace-nowrap" style="color: var(--theme-text)">
+                                                                {{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}
+                                                            </div>
+                                                        {% endfor %}
+                                                        {% if proposal.time_slots.count > 2 %}
+                                                            <small style="color: var(--theme-text-muted)">+{{ proposal.time_slots.count|add:"-2" }} {% translate "more" %}</small>
+                                                        {% endif %}
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="text-center py-4">
-                                <i class="bi bi-clipboard-x"></i>
-                                <h6 class="text-muted mt-3">{% translate "No pending proposals" %}</h6>
-                                <p class="text-muted small">{% translate "All proposals have been reviewed." %}</p>
-                            </div>
-                        {% endif %}
-                    </div>
+                                                {% else %}
+                                                    <span style="color: var(--theme-text-muted)">{% translate "Flexible" %}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-0.5 text-xs rounded"
+                                                      style="background-color: var(--theme-secondary);
+                                                             color: var(--theme-text-inverse)">
+                                                    {{ proposal.participants_limit }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex flex-col gap-1">
+                                                    <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}"
+                                                       class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded transition"
+                                                       style="background-color: var(--theme-success);
+                                                              color: var(--theme-text-inverse)">
+                                                        {% heroicon_mini "check" class="w-4 h-4 mr-1" %}
+                                                        {% translate "Accept" %}
+                                                    </a>
+                                                    <button type="button"
+                                                            onclick="openModal('proposalModal{{ proposal.pk }}')"
+                                                            class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded transition"
+                                                            style="background-color: var(--theme-bg-tertiary);
+                                                                   border: 1px solid var(--theme-border);
+                                                                   color: var(--theme-text)">
+                                                        {% heroicon_mini "eye" class="w-4 h-4 mr-1" %}
+                                                        {% translate "Review" %}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <span style="color: var(--theme-text-muted)">{% heroicon_outline "clipboard-document" class="w-10 h-10 mx-auto" %}</span>
+                            <h6 class="mt-3 font-medium" style="color: var(--theme-text-muted)">{% translate "No pending proposals" %}</h6>
+                            <p class="text-sm" style="color: var(--theme-text-muted)">{% translate "All proposals have been reviewed." %}</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
         <!-- Proposal Review Modals -->
         {% for proposal in proposals %}
-            <div class="modal fade"
-                 id="proposalModal{{ proposal.pk }}"
-                 tabindex="-1"
+            <div id="proposalModal{{ proposal.pk }}"
+                 class="fixed inset-0 z-50 hidden overflow-y-auto"
                  aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">{{ proposal.title }}</h5>
+                <div class="flex items-center justify-center min-h-screen p-4">
+                    <div class="fixed inset-0 bg-black/50 transition-opacity"
+                         onclick="closeModal('proposalModal{{ proposal.pk }}')"></div>
+                    <div class="relative rounded-lg shadow-xl max-w-2xl w-full"
+                         style="background-color: var(--theme-bg-secondary)">
+                        <div class="flex items-center justify-between px-4 py-3"
+                             style="border-bottom: 1px solid var(--theme-border)">
+                            <h5 class="font-semibold" style="color: var(--theme-text)">{{ proposal.title }}</h5>
                             <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
+                                    onclick="closeModal('proposalModal{{ proposal.pk }}')"
+                                    class="p-1 rounded hover:opacity-80"
+                                    style="color: var(--theme-text-muted)">
+                                {% heroicon_mini "x-mark" class="w-5 h-5" %}
+                            </button>
                         </div>
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6>{% translate "Host" %}</h6>
-                                    <p>{{ proposal.host.name|default:proposal.host.name }}</p>
-                                    <h6>{% translate "Participants Limit" %}</h6>
-                                    <p>{{ proposal.participants_limit }}</p>
+                        <div class="p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h6 class="font-semibold mb-1" style="color: var(--theme-text)">{% translate "Host" %}</h6>
+                                    <p style="color: var(--theme-text-secondary)">{{ proposal.host.name|default:proposal.host.name }}</p>
+                                    <h6 class="font-semibold mt-3 mb-1" style="color: var(--theme-text)">{% translate "Participants Limit" %}</h6>
+                                    <p style="color: var(--theme-text-secondary)">{{ proposal.participants_limit }}</p>
                                     {% if proposal.tags.exists %}
-                                        <h6>{% translate "Tags" %}</h6>
-                                        <p>
+                                        <h6 class="font-semibold mt-3 mb-1" style="color: var(--theme-text)">{% translate "Tags" %}</h6>
+                                        <div class="flex flex-wrap gap-1">
                                             {% for tag in proposal.tags.all %}
-                                                <span class="badge bg-secondary me-1 modal-tag" title="{{ tag.name }}">
-                                                    {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
-                                                    {{ tag.name }}
-                                                </span>
+                                                <span class="px-2 py-0.5 text-xs rounded modal-tag"
+                                                      style="background-color: var(--theme-secondary);
+                                                             color: var(--theme-text-inverse)"
+                                                      title="{{ tag.name }}">{{ tag.name }}</span>
                                             {% endfor %}
-                                        </p>
+                                        </div>
                                     {% endif %}
                                 </div>
-                                <div class="col-md-6">
-                                    <h6>{% translate "Submitted" %}</h6>
-                                    <p>{{ proposal.creation_time|date:"F j, Y G:i" }}</p>
+                                <div>
+                                    <h6 class="font-semibold mb-1" style="color: var(--theme-text)">{% translate "Submitted" %}</h6>
+                                    <p style="color: var(--theme-text-secondary)">{{ proposal.creation_time|date:"F j, Y G:i" }}</p>
                                     {% if proposal.time_slots.exists %}
-                                        <h6>{% translate "Preferred Time Slots" %}</h6>
-                                        {% for slot in proposal.time_slots.all %}<div class="small">{{ slot }}</div>{% endfor %}
+                                        <h6 class="font-semibold mt-3 mb-1" style="color: var(--theme-text)">{% translate "Preferred Time Slots" %}</h6>
+                                        {% for slot in proposal.time_slots.all %}
+                                            <div class="text-sm" style="color: var(--theme-text-secondary)">{{ slot }}</div>
+                                        {% endfor %}
                                     {% endif %}
                                 </div>
                             </div>
                             {% if proposal.description %}
-                                <h6>{% translate "Description" %}</h6>
-                                <p>{{ proposal.description }}</p>
+                                <h6 class="font-semibold mt-4 mb-1" style="color: var(--theme-text)">{% translate "Description" %}</h6>
+                                <p style="color: var(--theme-text-secondary)">{{ proposal.description }}</p>
                             {% endif %}
                             {% if proposal.requirements %}
-                                <h6>{% translate "Requirements" %}</h6>
-                                <p>{{ proposal.requirements }}</p>
+                                <h6 class="font-semibold mt-4 mb-1" style="color: var(--theme-text)">{% translate "Requirements" %}</h6>
+                                <p style="color: var(--theme-text-secondary)">{{ proposal.requirements }}</p>
                             {% endif %}
                             {% if proposal.needs %}
-                                <h6>{% translate "Special Needs" %}</h6>
-                                <p>{{ proposal.needs }}</p>
+                                <h6 class="font-semibold mt-4 mb-1" style="color: var(--theme-text)">{% translate "Special Needs" %}</h6>
+                                <p style="color: var(--theme-text-secondary)">{{ proposal.needs }}</p>
                             {% endif %}
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
+                        <div class="flex justify-end gap-2 px-4 py-3"
+                             style="border-top: 1px solid var(--theme-border)">
+                            <button type="button"
+                                    onclick="closeModal('proposalModal{{ proposal.pk }}')"
+                                    class="px-4 py-2 text-sm font-medium rounded transition"
+                                    style="background-color: var(--theme-bg-tertiary);
+                                           color: var(--theme-text)">{% translate "Close" %}</button>
                             <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}"
-                               class="btn btn-success"><i class="bi bi-check-lg"></i> {% translate "Accept Proposal" %}</a>
+                               class="inline-flex items-center px-4 py-2 text-sm font-medium rounded transition"
+                               style="background-color: var(--theme-success);
+                                      color: var(--theme-text-inverse)">
+                                {% heroicon_mini "check" class="w-4 h-4 mr-1" %}
+                                {% translate "Accept Proposal" %}
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         {% endfor %}
     {% endif %}
-    <!-- Status Modals -->
+    <!-- Session Detail Modals -->
     {% for data in sessions %}
-        <div class="modal fade"
-             id="statusModal{{ data.session.id }}"
-             tabindex="-1"
-             data-bs-backdrop="true"
-             aria-labelledby="statusModalLabel{{ data.session.id }}"
-             aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="statusModalLabel{{ data.session.id }}">
-                            <i class="bi bi-info-circle"></i> {% translate "Enrollment Status" %} - {{ data.session.title }}
-                        </h5>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Your enrollment status -->
-                        <div class="mb-3">
-                            <h6>{% translate "Your Status" %}</h6>
-                            {% with user_participation=data.session.session_participations.all|dictsort:"creation_time" %}
-                                {% for participation in user_participation %}
-                                    {% if participation.user.pk == request.user.pk %}
-                                        <div class="d-flex align-items-center">
-                                            {% if participation.status == 'confirmed' %}
-                                                <span class="badge bg-success me-2">{% translate "Enrolled" %}</span>
-                                            {% else %}
-                                                <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
-                                            {% endif %}
-                                            <span>{{ request.user.full_name }}</span>
-                                            <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
-                                        </div>
-                                    {% endif %}
-                                {% empty %}
-                                    <div class="text-muted">
-                                        <em>{% translate "Not enrolled" %}</em>
-                                    </div>
-                                {% endfor %}
-                            {% endwith %}
-                        </div>
-                        <!-- Connected users enrollment status -->
-                        {% if request.user.connected.exists %}
-                            <div class="mb-3">
-                                <h6>{% translate "Connected Users Status" %}</h6>
-                                {% for connected_user in request.user.connected.all %}
-                                    <div class="d-flex align-items-center mb-2">
-                                        {% with connected_participation=data.session.session_participations.all|dictsort:"creation_time" %}
-                                            {% for participation in connected_participation %}
-                                                {% if participation.user == connected_user %}
-                                                    {% if participation.status == 'confirmed' %}
-                                                        <span class="badge bg-success me-2">{% translate "Enrolled" %}</span>
-                                                    {% else %}
-                                                        <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
-                                                    {% endif %}
-                                                    <span>{{ connected_user.full_name }}</span>
-                                                    <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
-                                                {% endif %}
-                                            {% empty %}
-                                                <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
-                                                <span>{{ connected_user.full_name }}</span>
-                                            {% endfor %}
-                                            {% if not connected_participation %}
-                                                <span class="text-muted me-2">{% translate "Not enrolled" %}</span>
-                                                <span>{{ connected_user.full_name }}</span>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        <!-- Session Information -->
-                        <div class="border-top pt-3">
-                            <h6>{% translate "Session Information" %}</h6>
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <small class="text-muted">{% translate "Participants" %}:</small>
-                                    <br>
-                                    {{ data.session.full_participant_info }}
-                                    {% if data.session.is_full %}
-                                        <br>
-                                        <small class="text-danger">{% enrollment_status_text data.session %}</small>
-                                    {% endif %}
-                                </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">{% translate "Time" %}:</small>
-                                    <br>
-                                    {{ data.session.agenda_item.start_time|date:"M j, G:i" }} - {{ data.session.agenda_item.end_time|date:"G:i" }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                        {% if data.session.is_enrollment_available and not user_enrolled and not user_waiting %}
-                            {% if request.session.anonymous_enrollment_active and not request.user.is_authenticated %}
-                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
-                                   class="btn btn-success"><i class="bi bi-person-plus"></i> {% translate "Enroll Anonymously" %}</a>
-                            {% elif request.user.user_type == 'connected' or request.user.user_type == 'active' %}
-                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
-                                   class="btn btn-success"><i class="bi bi-person-plus"></i> {% translate "Enroll" %}</a>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endfor %}
-    <!-- Removed Participant Modals - now merged with Session Detail Modals -->
-    <!-- Session Detail Modals (merged with participant list) -->
-    {% for data in sessions %}
-        <div class="modal fade"
-             id="sessionDetailModal{{ data.session.id }}"
-             tabindex="-1"
+        <div id="sessionDetailModal{{ data.session.id }}"
+             class="fixed inset-0 z-50 hidden overflow-y-auto"
              aria-labelledby="sessionDetailModalLabel{{ data.session.id }}"
              aria-hidden="true">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="sessionDetailModalLabel{{ data.session.id }}">{{ data.session.title }}</h5>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="fixed inset-0 bg-black/50 transition-opacity"
+                     onclick="closeModal('sessionDetailModal{{ data.session.id }}')"></div>
+                <div class="relative rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                     style="background-color: var(--theme-bg-secondary)">
+                    <div class="flex items-center justify-between px-4 py-3 sticky top-0"
+                         style="background-color: var(--theme-bg-secondary);
+                                border-bottom: 1px solid var(--theme-border)">
+                        <h5 class="font-semibold"
+                            id="sessionDetailModalLabel{{ data.session.id }}"
+                            style="color: var(--theme-text)">{{ data.session.title }}</h5>
                         <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                                onclick="closeModal('sessionDetailModal{{ data.session.id }}')"
+                                class="p-1 rounded hover:opacity-80"
+                                style="color: var(--theme-text-muted)">
+                            {% heroicon_mini "x-mark" class="w-5 h-5" %}
+                        </button>
                     </div>
-                    <div class="modal-body">
-                        <!-- Session Information Tab -->
-                        <ul class="nav nav-tabs mb-3" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active"
-                                        id="info-tab-{{ data.session.id }}"
-                                        data-bs-toggle="tab"
-                                        data-bs-target="#info-{{ data.session.id }}"
-                                        type="button"
-                                        role="tab"
-                                        aria-controls="info-{{ data.session.id }}"
-                                        aria-selected="true">
-                                    <i class="bi bi-info-circle"></i> {% translate "Information" %}
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link"
-                                        id="participants-tab-{{ data.session.id }}"
-                                        data-bs-toggle="tab"
-                                        data-bs-target="#participants-{{ data.session.id }}"
-                                        type="button"
-                                        role="tab"
-                                        aria-controls="participants-{{ data.session.id }}"
-                                        aria-selected="false">
-                                    <i class="bi bi-people"></i> {% translate "Participants" %}
-                                    <span class="badge bg-primary ms-1">{{ data.session.enrolled_count }}</span>
-                                    {% if data.session.waiting_count > 0 %}
-                                        <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }}</span>
-                                    {% endif %}
-                                </button>
-                            </li>
-                        </ul>
-                        <div class="tab-content">
+                    <div class="p-4">
+                        <!-- Tab Navigation -->
+                        <div class="flex border-b mb-4" style="border-color: var(--theme-border)">
+                            <button class="modal-tab px-4 py-2 text-sm font-medium -mb-px active"
+                                    onclick="switchModalTab(this, 'info-{{ data.session.id }}')"
+                                    style="color: var(--theme-primary);
+                                           border-bottom: 2px solid var(--theme-primary)">
+                                {% heroicon_mini "information-circle" class="w-4 h-4 inline mr-1" %}
+                                {% translate "Information" %}
+                            </button>
+                            <button class="modal-tab px-4 py-2 text-sm font-medium -mb-px"
+                                    onclick="switchModalTab(this, 'participants-{{ data.session.id }}')"
+                                    style="color: var(--theme-text-muted);
+                                           border-bottom: 2px solid transparent">
+                                {% heroicon_mini "users" class="w-4 h-4 inline mr-1" %}
+                                {% translate "Participants" %}
+                                <span class="ml-1 px-1.5 py-0.5 text-xs rounded"
+                                      style="background-color: var(--theme-primary);
+                                             color: var(--theme-text-inverse)">{{ data.session.enrolled_count }}</span>
+                                {% if data.session.waiting_count > 0 %}
+                                    <span class="ml-1 px-1.5 py-0.5 text-xs rounded"
+                                          style="background-color: var(--theme-warning);
+                                                 color: var(--theme-text-inverse)">+{{ data.session.waiting_count }}</span>
+                                {% endif %}
+                            </button>
+                        </div>
+                        <!-- Tab Content -->
+                        <div class="modal-tab-content">
                             <!-- Information Tab -->
-                            <div class="tab-pane fade show active"
-                                 id="info-{{ data.session.id }}"
-                                 role="tabpanel"
-                                 aria-labelledby="info-tab-{{ data.session.id }}">
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <h6>
-                                            <i class="bi bi-person-circle"></i> {% translate "Host" %}
+                            <div id="info-{{ data.session.id }}" class="modal-tab-pane">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <h6 class="font-semibold mb-1 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "user-circle" class="w-4 h-4 mr-1" %}
+                                            {% translate "Host" %}
                                         </h6>
-                                        <p class="ms-4">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
+                                        <p class="ml-5 mb-3" style="color: var(--theme-text-secondary)">
+                                            {{ data.session.presenter_name|default:data.session.presenter_name }}
+                                        </p>
                                         {% if data.session.proposal %}
                                             {% with host=data.session.proposal.host %}
                                                 {% if host and host.slug and host.discord_username %}
-                                                    <h6>
-                                                        <i class="bi bi-discord"></i> {% translate "Host Discord" %}
+                                                    <h6 class="font-semibold mb-1 flex items-center"
+                                                        style="color: var(--theme-text)">
+                                                        {% heroicon_mini "chat-bubble-left-right" class="w-4 h-4 mr-1" %}
+                                                        {% translate "Host Discord" %}
                                                     </h6>
-                                                    <div class="ms-4">
-                                                        <button class="btn btn-sm btn-outline-primary reveal-discord-btn"
+                                                    <div class="ml-5 mb-3">
+                                                        <button class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded transition reveal-discord-btn"
+                                                                style="background-color: var(--theme-bg-tertiary);
+                                                                       border: 1px solid var(--theme-primary);
+                                                                       color: var(--theme-primary)"
                                                                 hx-get="{% url 'web:crowd:user-discord-username' user_slug=host.slug %}"
                                                                 hx-swap="outerHTML"
                                                                 hx-trigger="click once">
-                                                            <i class="bi bi-discord"></i> {% translate "Show Discord" %}
+                                                            {% heroicon_mini "chat-bubble-left-right" class="w-4 h-4 mr-1" %}
+                                                            {% translate "Show Discord" %}
                                                         </button>
                                                     </div>
                                                 {% endif %}
                                             {% endwith %}
                                         {% endif %}
-                                        <h6>
-                                            <i class="bi bi-clock"></i> {% translate "Time" %}
+                                        <h6 class="font-semibold mb-1 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "clock" class="w-4 h-4 mr-1" %}
+                                            {% translate "Time" %}
                                         </h6>
-                                        <p class="ms-4">
+                                        <p class="ml-5 mb-3" style="color: var(--theme-text-secondary)">
                                             {{ data.session.agenda_item.start_time|date:"l, F j, Y" }}
                                             <br>
                                             {{ data.session.agenda_item.start_time|time:"G:i" }} - {{ data.session.agenda_item.end_time|time:"G:i" }}
                                         </p>
-                                        <h6>
-                                            <i class="bi bi-geo-alt"></i> {% translate "Location" %}
+                                        <h6 class="font-semibold mb-1 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "map-pin" class="w-4 h-4 mr-1" %}
+                                            {% translate "Location" %}
                                         </h6>
-                                        <p class="ms-4">
+                                        <p class="ml-5" style="color: var(--theme-text-secondary)">
                                             {% if data.session.agenda_item.space %}
                                                 {{ data.session.agenda_item.space.name }}
                                             {% else %}
-                                                <span class="text-muted">{% translate "To be announced" %}</span>
+                                                <span style="color: var(--theme-text-muted)">{% translate "To be announced" %}</span>
                                             {% endif %}
                                         </p>
                                     </div>
-                                    <div class="col-md-6">
-                                        <h6>
-                                            <i class="bi bi-people"></i> {% translate "Capacity" %}
+                                    <div>
+                                        <h6 class="font-semibold mb-1 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "users" class="w-4 h-4 mr-1" %}
+                                            {% translate "Capacity" %}
                                         </h6>
-                                        <p class="ms-4">
-                                            <span class="badge bg-primary">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
+                                        <p class="ml-5 mb-3">
+                                            <span class="px-2 py-0.5 text-xs rounded"
+                                                  style="background-color: var(--theme-primary);
+                                                         color: var(--theme-text-inverse)">
+                                                {{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}
+                                            </span>
                                             {% if data.session.waiting_count > 0 %}
-                                                <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
+                                                <span class="ml-1 px-2 py-0.5 text-xs rounded"
+                                                      style="background-color: var(--theme-warning);
+                                                             color: var(--theme-text-inverse)">
+                                                    +{{ data.session.waiting_count }} {% translate "waiting" %}
+                                                </span>
                                             {% endif %}
                                             {% if data.session.is_full %}
-                                                <span class="badge bg-danger ms-1">{% translate "Full" %}</span>
+                                                <span class="ml-1 px-2 py-0.5 text-xs rounded"
+                                                      style="background-color: var(--theme-danger);
+                                                             color: var(--theme-text-inverse)">
+                                                    {% translate "Full" %}
+                                                </span>
                                             {% endif %}
                                         </p>
-                                        <h6>
-                                            <i class="bi bi-shield-check"></i> {% translate "Minimum Age" %}
+                                        <h6 class="font-semibold mb-1 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "shield-check" class="w-4 h-4 mr-1" %}
+                                            {% translate "Minimum Age" %}
                                         </h6>
-                                        <p class="ms-4">
+                                        <p class="ml-5 mb-3">
                                             {% if data.session.min_age > 0 %}
-                                                <span class="badge bg-info text-dark">{{ data.session.min_age }}+ {% translate "years" %}</span>
+                                                <span class="px-2 py-0.5 text-xs rounded"
+                                                      style="background-color: var(--theme-info);
+                                                             color: var(--theme-text-inverse)">
+                                                    {{ data.session.min_age }}+ {% translate "years" %}
+                                                </span>
                                             {% else %}
-                                                <span class="text-muted">{% translate "All ages welcome" %}</span>
+                                                <span style="color: var(--theme-text-muted)">{% translate "All ages welcome" %}</span>
                                             {% endif %}
                                         </p>
                                         {% if data.session.tags.exists %}
-                                            <h6>
-                                                <i class="bi bi-tags"></i> {% translate "Tags" %}
+                                            <h6 class="font-semibold mb-1 flex items-center"
+                                                style="color: var(--theme-text)">
+                                                {% heroicon_mini "tag" class="w-4 h-4 mr-1" %}
+                                                {% translate "Tags" %}
                                             </h6>
-                                            <div class="ms-4">
+                                            <div class="ml-5 flex flex-wrap gap-1">
                                                 {% for tag in data.session.tags.all %}
-                                                    <span class="badge bg-secondary me-1 mb-1 session-detail-tag"
+                                                    <span class="px-2 py-0.5 text-xs rounded session-detail-tag"
+                                                          style="background-color: var(--theme-secondary);
+                                                                 color: var(--theme-text-inverse)"
                                                           title="{{ tag.name }} ({{ tag.category.name }})">
-                                                        {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
                                                         {{ tag.name }}
                                                     </span>
                                                 {% endfor %}
@@ -841,42 +919,54 @@
                                     </div>
                                 </div>
                                 {% if data.session.description %}
-                                    <div class="border-top pt-3">
-                                        <h6>
-                                            <i class="bi bi-card-text"></i> {% translate "Description" %}
+                                    <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
+                                        <h6 class="font-semibold mb-1 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "document-text" class="w-4 h-4 mr-1" %}
+                                            {% translate "Description" %}
                                         </h6>
-                                        <p class="ms-4">{{ data.session.description|linebreaks }}</p>
+                                        <div class="ml-5" style="color: var(--theme-text-secondary)">{{ data.session.description|linebreaks }}</div>
                                     </div>
                                 {% endif %}
                                 {% if data.session.requirements %}
-                                    <div class="border-top pt-3">
-                                        <h6>
-                                            <i class="bi bi-check-square"></i> {% translate "Requirements" %}
+                                    <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
+                                        <h6 class="font-semibold mb-1 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "check-badge" class="w-4 h-4 mr-1" %}
+                                            {% translate "Requirements" %}
                                         </h6>
-                                        <p class="ms-4">{{ data.session.requirements|linebreaks }}</p>
+                                        <div class="ml-5" style="color: var(--theme-text-secondary)">{{ data.session.requirements|linebreaks }}</div>
                                     </div>
                                 {% endif %}
                                 <!-- Enrollment Status for Authenticated Users -->
                                 {% if request.user.is_authenticated %}
-                                    <div class="border-top pt-3">
-                                        <h6>
-                                            <i class="bi bi-person-check"></i> {% translate "Your Enrollment Status" %}
+                                    <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
+                                        <h6 class="font-semibold mb-2 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "user-circle" class="w-4 h-4 mr-1" %}
+                                            {% translate "Your Enrollment Status" %}
                                         </h6>
-                                        <div class="ms-4">
+                                        <div class="ml-5">
                                             {% if data.user_enrolled %}
-                                                <div class="alert alert-success d-inline-flex align-items-center"
-                                                     role="alert">
-                                                    <i class="bi bi-check-circle-fill"></i> <span class="ms-2">{% translate "You are enrolled in this session" %}</span>
+                                                <div class="inline-flex items-center p-3 rounded"
+                                                     style="background-color: var(--theme-success-bg);
+                                                            color: var(--theme-success-text)">
+                                                    {% heroicon_mini "check-circle" class="w-5 h-5 mr-2" %}
+                                                    {% translate "You are enrolled in this session" %}
                                                 </div>
                                             {% elif data.user_waiting %}
-                                                <div class="alert alert-warning d-inline-flex align-items-center"
-                                                     role="alert">
-                                                    <i class="bi bi-clock-fill"></i> <span class="ms-2">{% translate "You are on the waiting list" %}</span>
+                                                <div class="inline-flex items-center p-3 rounded"
+                                                     style="background-color: var(--theme-warning-bg);
+                                                            color: var(--theme-warning-text)">
+                                                    {% heroicon_mini "clock" class="w-5 h-5 mr-2" %}
+                                                    {% translate "You are on the waiting list" %}
                                                 </div>
                                             {% else %}
-                                                <div class="alert alert-info d-inline-flex align-items-center"
-                                                     role="alert">
-                                                    <i class="bi bi-info-circle-fill"></i> <span class="ms-2">{% translate "You are not enrolled in this session" %}</span>
+                                                <div class="inline-flex items-center p-3 rounded"
+                                                     style="background-color: var(--theme-info-bg);
+                                                            color: var(--theme-info-text)">
+                                                    {% heroicon_mini "information-circle" class="w-5 h-5 mr-2" %}
+                                                    {% translate "You are not enrolled in this session" %}
                                                 </div>
                                             {% endif %}
                                         </div>
@@ -884,53 +974,64 @@
                                 {% endif %}
                             </div>
                             <!-- Participants Tab -->
-                            <div class="tab-pane fade"
-                                 id="participants-{{ data.session.id }}"
-                                 role="tabpanel"
-                                 aria-labelledby="participants-tab-{{ data.session.id }}">
+                            <div id="participants-{{ data.session.id }}" class="modal-tab-pane hidden">
                                 <!-- Enrolled Participants -->
                                 {% with confirmed_participants=data.session.session_participations.all|dictsort:"creation_time" %}
                                     {% if confirmed_participants %}
-                                        <h6>
-                                            <i class="bi bi-check-circle"></i> {% translate "Enrolled Participants" %}
+                                        <h6 class="font-semibold mb-2 flex items-center"
+                                            style="color: var(--theme-text)">
+                                            {% heroicon_mini "check-circle" class="w-4 h-4 mr-1" %}
+                                            {% translate "Enrolled Participants" %}
                                         </h6>
-                                        <div class="table-responsive mb-4">
-                                            <table class="table table-sm">
-                                                <thead>
+                                        <div class="overflow-x-auto mb-4">
+                                            <table class="w-full text-sm">
+                                                <thead style="background-color: var(--theme-bg-tertiary)">
                                                     <tr>
-                                                        <th>{% translate "Name" %}</th>
-                                                        <th>
-                                                            <i class="bi bi-discord"></i> {% translate "Discord" %}
+                                                        <th class="px-3 py-2 text-left font-medium"
+                                                            style="color: var(--theme-text)">
+                                                            {% translate "Name" %}
                                                         </th>
-                                                        <th>{% translate "Enrolled" %}</th>
+                                                        <th class="px-3 py-2 text-left font-medium"
+                                                            style="color: var(--theme-text)">
+                                                            {% heroicon_mini "chat-bubble-left-right" class="w-4 h-4 inline" %}
+                                                            {% translate "Discord" %}
+                                                        </th>
+                                                        <th class="px-3 py-2 text-left font-medium"
+                                                            style="color: var(--theme-text)">
+                                                            {% translate "Enrolled" %}
+                                                        </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {% for participation in confirmed_participants %}
                                                         {% if participation.status == 'confirmed' %}
-                                                            <tr>
-                                                                <td>
-                                                                    <div class="d-flex align-items-center">
-                                                                        <i class="bi bi-person-circle"></i>
-                                                                        <span class="ms-2">{{ participation.user.full_name }}</span>
+                                                            <tr style="border-bottom: 1px solid var(--theme-border)">
+                                                                <td class="px-3 py-2">
+                                                                    <div class="flex items-center" style="color: var(--theme-text)">
+                                                                        {% heroicon_mini "user-circle" class="w-4 h-4 mr-2" %}
+                                                                        {{ participation.user.full_name }}
                                                                     </div>
                                                                 </td>
-                                                                <td>
+                                                                <td class="px-3 py-2">
                                                                     {% with user=participation.user %}
                                                                         {% if user and user.slug and user.discord_username %}
-                                                                            <button class="btn btn-sm btn-outline-info reveal-discord-btn"
+                                                                            <button class="inline-flex items-center px-2 py-1 text-xs font-medium rounded transition reveal-discord-btn"
+                                                                                    style="background-color: var(--theme-bg-tertiary);
+                                                                                           border: 1px solid var(--theme-info);
+                                                                                           color: var(--theme-info)"
                                                                                     hx-get="{% url 'web:crowd:user-discord-username' user_slug=user.slug %}"
                                                                                     hx-swap="outerHTML"
                                                                                     hx-trigger="click once">
-                                                                                <i class="bi bi-discord"></i> {% translate "Show" %}
+                                                                                {% heroicon_mini "chat-bubble-left-right" class="w-3 h-3 mr-1" %}
+                                                                                {% translate "Show" %}
                                                                             </button>
                                                                         {% else %}
-                                                                            <span class="text-muted">—</span>
+                                                                            <span style="color: var(--theme-text-muted)">—</span>
                                                                         {% endif %}
                                                                     {% endwith %}
                                                                 </td>
-                                                                <td>
-                                                                    <small class="text-muted">{{ participation.creation_time|date:"M j, G:i" }}</small>
+                                                                <td class="px-3 py-2">
+                                                                    <small style="color: var(--theme-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</small>
                                                                 </td>
                                                             </tr>
                                                         {% endif %}
@@ -941,34 +1042,44 @@
                                     {% endif %}
                                 {% endwith %}
                                 <!-- Waiting List -->
-                                <h6>
-                                    <i class="bi bi-clock"></i> {% translate "Waiting List" %}
+                                <h6 class="font-semibold mb-2 flex items-center"
+                                    style="color: var(--theme-text)">
+                                    {% heroicon_mini "clock" class="w-4 h-4 mr-1" %}
+                                    {% translate "Waiting List" %}
                                 </h6>
                                 {% if data.session.waiting_count > 0 %}
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm">
+                                            <thead style="background-color: var(--theme-bg-tertiary)">
                                                 <tr>
-                                                    <th>{% translate "Position" %}</th>
-                                                    <th>{% translate "Name" %}</th>
-                                                    <th>{% translate "Added" %}</th>
+                                                    <th class="px-3 py-2 text-left font-medium"
+                                                        style="color: var(--theme-text)">
+                                                        {% translate "Position" %}
+                                                    </th>
+                                                    <th class="px-3 py-2 text-left font-medium"
+                                                        style="color: var(--theme-text)">{% translate "Name" %}</th>
+                                                    <th class="px-3 py-2 text-left font-medium"
+                                                        style="color: var(--theme-text)">{% translate "Added" %}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {% for participation in data.session.session_participations.all|dictsort:"creation_time" %}
                                                     {% if participation.status == 'waiting' %}
-                                                        <tr class="waiting-list-row">
-                                                            <td>
-                                                                <span class="badge bg-warning text-dark waiting-position"></span>
+                                                        <tr class="waiting-list-row"
+                                                            style="border-bottom: 1px solid var(--theme-border)">
+                                                            <td class="px-3 py-2">
+                                                                <span class="px-2 py-0.5 text-xs rounded waiting-position"
+                                                                      style="background-color: var(--theme-warning);
+                                                                             color: var(--theme-text-inverse)"></span>
                                                             </td>
-                                                            <td>
-                                                                <div class="d-flex align-items-center">
-                                                                    <i class="bi bi-clock"></i>
-                                                                    <span class="ms-2">{{ participation.user.full_name }}</span>
+                                                            <td class="px-3 py-2">
+                                                                <div class="flex items-center" style="color: var(--theme-text)">
+                                                                    {% heroicon_mini "clock" class="w-4 h-4 mr-2" %}
+                                                                    {{ participation.user.full_name }}
                                                                 </div>
                                                             </td>
-                                                            <td>
-                                                                <small class="text-muted">{{ participation.creation_time|date:"M j, G:i" }}</small>
+                                                            <td class="px-3 py-2">
+                                                                <small style="color: var(--theme-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</small>
                                                             </td>
                                                         </tr>
                                                     {% endif %}
@@ -977,51 +1088,72 @@
                                         </table>
                                     </div>
                                 {% else %}
-                                    <div class="text-center text-muted py-3">
+                                    <div class="text-center py-4" style="color: var(--theme-text-muted)">
                                         <p>{% translate "No one on the waiting list." %}</p>
                                     </div>
                                 {% endif %}
                                 {% if not data.session.session_participations.exists %}
-                                    <div class="text-center text-muted py-4">
+                                    <div class="text-center py-6" style="color: var(--theme-text-muted)">
                                         <p>{% translate "No participants enrolled yet." %}</p>
                                     </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
+                    <div class="flex justify-end gap-2 px-4 py-3 sticky bottom-0"
+                         style="background-color: var(--theme-bg-secondary);
+                                border-top: 1px solid var(--theme-border)">
+                        <button type="button"
+                                onclick="closeModal('sessionDetailModal{{ data.session.id }}')"
+                                class="px-4 py-2 text-sm font-medium rounded transition"
+                                style="background-color: var(--theme-bg-tertiary);
+                                       color: var(--theme-text)">{% translate "Close" %}</button>
                         {% if data.session.is_enrollment_available %}
                             {% if request.user.is_authenticated %}
                                 {% if data.user_enrolled or data.user_waiting %}
                                     <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
-                                       class="btn btn-warning">
-                                        <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
+                                       class="inline-flex items-center px-4 py-2 text-sm font-medium rounded transition"
+                                       style="background-color: var(--theme-warning);
+                                              color: var(--theme-text-inverse)">
+                                        {% heroicon_mini "cog-6-tooth" class="w-4 h-4 mr-1" %}
+                                        {% translate "Manage Enrollment" %}
                                     </a>
                                 {% else %}
                                     {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
                                         <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
-                                           class="btn btn-success">
-                                            <i class="bi bi-person-plus"></i> {% translate "Enroll Now" %}
+                                           class="inline-flex items-center px-4 py-2 text-sm font-medium rounded transition"
+                                           style="background-color: var(--theme-success);
+                                                  color: var(--theme-text-inverse)">
+                                            {% heroicon_mini "user-plus" class="w-4 h-4 mr-1" %}
+                                            {% translate "Enroll Now" %}
                                         </a>
                                     {% endif %}
                                 {% endif %}
                             {% elif request.session.anonymous_enrollment_active %}
                                 {% if data.user_enrolled or data.user_waiting %}
                                     <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
-                                       class="btn btn-warning">
-                                        <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
+                                       class="inline-flex items-center px-4 py-2 text-sm font-medium rounded transition"
+                                       style="background-color: var(--theme-warning);
+                                              color: var(--theme-text-inverse)">
+                                        {% heroicon_mini "cog-6-tooth" class="w-4 h-4 mr-1" %}
+                                        {% translate "Manage Enrollment" %}
                                     </a>
                                 {% else %}
                                     <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
-                                       class="btn btn-success">
-                                        <i class="bi bi-person-plus"></i> {% translate "Enroll Anonymously" %}
+                                       class="inline-flex items-center px-4 py-2 text-sm font-medium rounded transition"
+                                       style="background-color: var(--theme-success);
+                                              color: var(--theme-text-inverse)">
+                                        {% heroicon_mini "user-plus" class="w-4 h-4 mr-1" %}
+                                        {% translate "Enroll Anonymously" %}
                                     </a>
                                 {% endif %}
                             {% else %}
                                 <a href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}"
-                                   class="btn btn-primary">
-                                    <i class="bi bi-box-arrow-in-right"></i> {% translate "Login to Enroll" %}
+                                   class="inline-flex items-center px-4 py-2 text-sm font-medium rounded transition"
+                                   style="background-color: var(--theme-primary);
+                                          color: var(--theme-text-inverse)">
+                                    {% heroicon_mini "arrow-right-on-rectangle" class="w-4 h-4 mr-1" %}
+                                    {% translate "Login to Enroll" %}
                                 </a>
                             {% endif %}
                         {% endif %}
@@ -1031,14 +1163,76 @@
         </div>
     {% endfor %}
     <!-- Back to Events List -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <a href="{% url 'web:index' %}" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left"></i> {% translate "Back to Events" %}
-            </a>
-        </div>
+    <div class="mt-6">
+        <a href="{% url 'web:index' %}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium rounded transition"
+           style="background-color: var(--theme-bg-tertiary);
+                  border: 1px solid var(--theme-primary);
+                  color: var(--theme-primary)">
+            {% heroicon_mini "arrow-left" class="w-4 h-4 mr-2" %}
+            {% translate "Back to Events" %}
+        </a>
     </div>
     <script>
+        // Modal functions
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function openSessionModal(sessionId) {
+            openModal('sessionDetailModal' + sessionId);
+        }
+
+        // Tab switching for modals
+        function switchModalTab(button, tabId) {
+            // Find the tab navigation container and then its sibling tab content
+            const tabNav = button.closest('.flex.border-b');
+            if (!tabNav) return;
+            const modalContent = tabNav.parentElement;
+            if (!modalContent) return;
+
+            // Update tab buttons
+            tabNav.querySelectorAll('.modal-tab').forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.color = 'var(--theme-text-muted)';
+                tab.style.borderBottom = '2px solid transparent';
+            });
+            button.classList.add('active');
+            button.style.color = 'var(--theme-primary)';
+            button.style.borderBottom = '2px solid var(--theme-primary)';
+
+            // Update tab panes
+            modalContent.querySelectorAll('.modal-tab-pane').forEach(pane => {
+                pane.classList.add('hidden');
+            });
+            const targetPane = document.getElementById(tabId);
+            if (targetPane) {
+                targetPane.classList.remove('hidden');
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.fixed.inset-0:not(.hidden)').forEach(modal => {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                });
+            }
+        });
+
         // Event delegation for copy Discord buttons (works with htmx-loaded content)
         document.addEventListener('click', function(e) {
             const button = e.target.closest('.copy-discord');
@@ -1049,39 +1243,58 @@
 
             navigator.clipboard.writeText(text).then(() => {
                 const originalHTML = button.innerHTML;
-                const originalClasses = button.className;
+                const originalStyle = button.style.cssText;
 
                 button.innerHTML = '✓';
-                button.className = 'btn btn-sm btn-success p-1 copy-discord';
+                button.style.backgroundColor = 'var(--theme-success)';
+                button.style.color = 'var(--theme-text-inverse)';
 
                 setTimeout(() => {
                     button.innerHTML = originalHTML;
-                    button.className = originalClasses;
+                    button.style.cssText = originalStyle;
                 }, 2000);
             }).catch(err => {
                 console.error('Copy failed:', err);
-                const originalClasses = button.className;
-                button.className = 'btn btn-sm btn-danger p-1 copy-discord';
+                button.style.backgroundColor = 'var(--theme-danger)';
+                button.style.color = 'var(--theme-text-inverse)';
                 setTimeout(() => {
-                    button.className = originalClasses;
+                    button.style.backgroundColor = '';
+                    button.style.color = '';
                 }, 2000);
             });
         });
-        document.addEventListener('DOMContentLoaded', function() {
-            // Prevent enrollment buttons from triggering card click
-            document.querySelectorAll('.session-card .btn').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-            });
 
+        document.addEventListener('DOMContentLoaded', function() {
             const sessionFilter = document.getElementById('sessionFilter');
             const statusFilter = document.getElementById('statusFilter');
             const minAgeFilter = document.getElementById('minAgeFilter');
             const maxAgeFilter = document.getElementById('maxAgeFilter');
-            const clearFilters = document.getElementById('clearFilters');
+            const clearFiltersBtn = document.getElementById('clearFilters');
             const sessionCards = document.querySelectorAll('.session-card');
             const tagFilters = {};
+
+            // Populate space filter dropdown from session data
+            const spaceMap = new Map();
+            sessionCards.forEach(card => {
+                const spaceSlug = card.dataset.space;
+                if (spaceSlug && !spaceMap.has(spaceSlug)) {
+                    // Extract space name from the card's location text
+                    const locationEl = card.querySelector('[class*="map-pin"]')?.parentElement;
+                    const locationText = locationEl?.textContent || '';
+                    const spaceName = locationText.split('›')[0]?.trim() || spaceSlug;
+                    spaceMap.set(spaceSlug, spaceName);
+                }
+            });
+
+            // Sort by name and add options
+            Array.from(spaceMap.entries())
+                .sort((a, b) => a[1].localeCompare(b[1]))
+                .forEach(([slug, name]) => {
+                    const option = document.createElement('option');
+                    option.value = slug;
+                    option.textContent = name;
+                    spaceFilter.appendChild(option);
+                });
 
             // Get tag filter elements created by Django template
             const tagFilterElements = document.querySelectorAll('.tag-filter');
@@ -1124,7 +1337,6 @@
                 const minAgeValue = minAgeFilter.value;
                 const maxAgeValue = maxAgeFilter.value;
 
-
                 // Get all active tag filters
                 const activeTagFilters = {};
                 Object.keys(tagFilters).forEach(categorySlug => {
@@ -1134,16 +1346,13 @@
                     }
                 });
 
-                let hiddenCount = 0;
-                let totalCount = 0;
                 sessionCards.forEach(card => {
-                    totalCount++;
                     let show = true;
 
                     // Text filter (title or host)
                     if (searchText) {
                         const title = card.dataset.title;
-                        const host = card.dataset.host;
+                        const host = card.dataset.host?.toLowerCase() || '';
                         show = show && (title.includes(searchText) || host.includes(searchText));
                     }
 
@@ -1177,46 +1386,26 @@
                     // Age range filter
                     if (minAgeValue || maxAgeValue) {
                         const sessionMinAge = parseInt(card.dataset.minAge) || 0;
-
-                        // If min age filter is set, session min_age must be >= filter min age
                         if (minAgeValue) {
-                            const filterMinAge = parseInt(minAgeValue);
-                            show = show && sessionMinAge >= filterMinAge;
+                            show = show && sessionMinAge >= parseInt(minAgeValue);
                         }
-
-                        // If max age filter is set, session min_age must be <= filter max age
                         if (maxAgeValue) {
-                            const filterMaxAge = parseInt(maxAgeValue);
-                            show = show && sessionMinAge <= filterMaxAge;
+                            show = show && sessionMinAge <= parseInt(maxAgeValue);
                         }
                     }
 
-                    // Tag filters - check all active category filters
+                    // Tag filters
                     if (Object.keys(activeTagFilters).length > 0) {
                         const cardTagCategories = card.dataset.tagCategories;
                         let matchesAllFilters = true;
 
                         Object.keys(activeTagFilters).forEach(categorySlug => {
                             const requiredTag = activeTagFilters[categorySlug];
-
-
-                            // Try both category-based and simple tag-based matching
                             const categoryPattern = new RegExp(`${categorySlug}[^:]*:${requiredTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
                             const simpleTagPattern = new RegExp(`\\b${requiredTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
 
                             const matchesCategory = categoryPattern.test(cardTagCategories);
                             const matchesSimpleTag = simpleTagPattern.test(card.dataset.tags);
-
-                            // Debug the regex matching
-                            if (card.dataset.title === 'bestie nowego świata') {
-                                console.log('Regex debug:', {
-                                    categoryPattern: categoryPattern.source,
-                                    simpleTagPattern: simpleTagPattern.source,
-                                    matchesCategory,
-                                    matchesSimpleTag,
-                                    testString: cardTagCategories
-                                });
-                            }
 
                             if (!matchesCategory && !matchesSimpleTag) {
                                 matchesAllFilters = false;
@@ -1226,23 +1415,6 @@
                         show = show && matchesAllFilters;
                     }
 
-                    // Debug the final show/hide decision
-                    if (card.dataset.title === 'bestie nowego świata') {
-                        console.log('Final decision for Bestie:', {
-                            show,
-                            searchText,
-                            statusValue,
-                            hasActiveTagFilters: Object.keys(activeTagFilters).length > 0,
-                            activeTagFilters,
-                            minAgeValue,
-                            maxAgeValue
-                        });
-                    }
-
-                    if (!show) {
-                        hiddenCount++;
-                    }
-
                     // Show/hide card container
                     const cardContainer = card.closest('.col-12');
                     if (cardContainer) {
@@ -1250,19 +1422,14 @@
                     }
                 });
 
-
-                // Hide empty time slot sections and update section headers
+                // Hide empty time slot sections
                 document.querySelectorAll('.time-slot-section').forEach(section => {
-                    const cardGrid = section.querySelector('.row.g-3');
+                    const cardGrid = section.querySelector('.grid');
                     if (cardGrid) {
                         const visibleCards = cardGrid.querySelectorAll('.col-12:not([style*="display: none"])');
-                        const sectionVisible = visibleCards.length > 0;
-                        section.style.display = sectionVisible ? '' : 'none';
-
+                        section.style.display = visibleCards.length > 0 ? '' : 'none';
                     }
                 });
-
-                // No longer need complex section visibility management since we simplified the layout
             }
 
             function clearAllFilters() {
@@ -1275,9 +1442,6 @@
                 });
 
                 // Reset all visibility
-                document.querySelectorAll('.mb-4').forEach(section => {
-                    section.style.display = '';
-                });
                 document.querySelectorAll('.time-slot-section').forEach(section => {
                     section.style.display = '';
                 });
@@ -1289,14 +1453,15 @@
             }
 
             // Add event listeners
-            sessionFilter.addEventListener('input', filterSessions);
-            statusFilter.addEventListener('change', filterSessions);
-            minAgeFilter.addEventListener('input', filterSessions);
-            maxAgeFilter.addEventListener('input', filterSessions);
-            clearFilters.addEventListener('click', clearAllFilters);
+            if (sessionFilter) sessionFilter.addEventListener('input', filterSessions);
+            if (statusFilter) statusFilter.addEventListener('change', filterSessions);
+            if (spaceFilter) spaceFilter.addEventListener('change', filterSessions);
+            if (minAgeFilter) minAgeFilter.addEventListener('input', filterSessions);
+            if (maxAgeFilter) maxAgeFilter.addEventListener('input', filterSessions);
+            if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearAllFilters);
 
             // Number waiting list positions
-            document.querySelectorAll('.tab-pane').forEach(tabPane => {
+            document.querySelectorAll('.modal-tab-pane').forEach(tabPane => {
                 let position = 1;
                 tabPane.querySelectorAll('.waiting-list-row .waiting-position').forEach(badge => {
                     badge.textContent = position++;
@@ -1312,21 +1477,10 @@
 
         .session-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
 
-        /* Ensure backdrop shows for status modals */
-        .modal-backdrop.show {
-            display: block !important;
-            opacity: 0.5 !important;
-        }
-
-        /* Tag styling to replace inline styles */
-        .tag-container {
-            max-height: 1.5em;
-            overflow: hidden;
-        }
-
+        /* Tag styling */
         .filterable-tag,
         .proposal-tag,
         .modal-tag,
@@ -1340,61 +1494,17 @@
 
         /* Tag filter container styling */
         .tag-filter-container {
-            width: 18vw;
+            flex: 1;
         }
 
-        .tag-filter-container .tag-filter {
-            width: 100%;
+        /* Future unavailable sessions */
+        .time-slot-section[data-time-slot*="future"] .session-card {
+            border-left: 3px solid var(--theme-warning);
         }
 
-        /* Styles for collapsible sections */
-        .collapse-icon {
-            transition: transform 0.3s ease;
-        }
-
-        button[aria-expanded="true"] .collapse-icon {
-            transform: rotate(180deg);
-        }
-
-        /* Hover effects for collapse buttons */
-        .btn-link:hover {
-            text-decoration: none !important;
-            opacity: 0.8;
-        }
-
-        /* Style ended sessions with reduced opacity */
+        /* Ended sessions reduced opacity */
         .time-slot-section[data-time-slot*="ended"] {
             opacity: 0.8;
-        }
-
-        /* Style future unavailable sessions with warning border */
-        .time-slot-section[data-time-slot*="future"] .session-card {
-            border-left: 3px solid #ffc107;
-        }
-
-        /* Alternating background colors for time slot sections */
-        .time-slot-section.bg-light {
-            background-color: #f8f5ff !important;
-            /* Very light purple */
-            padding: 1rem;
-            border-radius: 0.5rem;
-        }
-
-        .time-slot-section.bg-light .bg-light.rounded {
-            background-color: #e8e0ff !important;
-            /* Slightly darker purple for header */
-        }
-
-        .time-slot-section.bg-white {
-            background-color: #f0f8ff !important;
-            /* Very light blue */
-            padding: 1rem;
-            border-radius: 0.5rem;
-        }
-
-        .time-slot-section.bg-white .bg-light.rounded {
-            background-color: #e0f0ff !important;
-            /* Slightly darker blue for header */
         }
     </style>
 {% endblock body %}

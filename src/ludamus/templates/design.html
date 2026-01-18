@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
 {% block title %}
     {% translate "Design" %}
@@ -10,90 +10,263 @@
     {% translate "UI components without application logic." %}
 {% endblock description %}
 {% block body %}
-    <div class="container-xxl d-flex flex-column gap-4">
-        <section class="d-flex flex-column gap-3">
-            <h2 class="h4 mb-0">{% translate "Buttons" %}</h2>
-            <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-primary">{% translate "Primary" %}</button>
-                <button type="button" class="btn btn-outline-primary">{% translate "Outline" %}</button>
-                <button type="button" class="btn btn-secondary">{% translate "Secondary" %}</button>
-                <button type="button" class="btn btn-light text-body">{% translate "Light" %}</button>
-                <button type="button" class="btn btn-link">{% translate "Link" %}</button>
-                <button type="button" class="btn btn-danger">{% translate "Danger" %}</button>
+    <div class="flex flex-col gap-8">
+        <!-- Buttons Section -->
+        <section class="flex flex-col gap-3">
+            <h2 class="text-xl font-semibold" style="color: var(--theme-text)">{% translate "Buttons" %}</h2>
+            <div class="flex flex-wrap gap-2">
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition"
+                        style="background-color: var(--theme-primary);
+                               color: var(--theme-text-inverse)">{% translate "Primary" %}</button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition"
+                        style="background-color: transparent;
+                               border: 1px solid var(--theme-primary);
+                               color: var(--theme-primary)">{% translate "Outline" %}</button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition"
+                        style="background-color: var(--theme-secondary);
+                               color: var(--theme-text-inverse)">{% translate "Secondary" %}</button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition"
+                        style="background-color: var(--theme-bg-tertiary);
+                               border: 1px solid var(--theme-border);
+                               color: var(--theme-text)">{% translate "Light" %}</button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition underline"
+                        style="background-color: transparent;
+                               color: var(--theme-primary)">{% translate "Link" %}</button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition"
+                        style="background-color: var(--theme-danger);
+                               color: var(--theme-text-inverse)">{% translate "Danger" %}</button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition"
+                        style="background-color: var(--theme-success);
+                               color: var(--theme-text-inverse)">{% translate "Success" %}</button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition"
+                        style="background-color: var(--theme-warning);
+                               color: var(--theme-text-inverse)">{% translate "Warning" %}</button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-medium rounded transition"
+                        style="background-color: var(--theme-info);
+                               color: var(--theme-text-inverse)">{% translate "Info" %}</button>
             </div>
         </section>
-        <section class="d-flex flex-column gap-3">
-            <h2 class="h4 mb-0">{% translate "Cards" %}</h2>
-            <div class="d-flex flex-wrap gap-3">
-                <div class="card shadow-sm" style="max-width: 360px;">
-                    <div class="card-body d-flex flex-column gap-2">
-                        <span class="text-uppercase text-muted small">{% translate "Component" %}</span>
-                        <h3 class="h5 mb-0">{% translate "Sample card" %}</h3>
-                        <p class="mb-0 text-muted">{% translate "Use this layout for reference when styling new UI blocks." %}</p>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-primary" type="button">{% translate "Primary action" %}</button>
-                            <button class="btn btn-outline-secondary" type="button">{% translate "Ghost" %}</button>
+        <!-- Cards Section -->
+        <section class="flex flex-col gap-3">
+            <h2 class="text-xl font-semibold" style="color: var(--theme-text)">{% translate "Cards" %}</h2>
+            <div class="flex flex-wrap gap-4">
+                <div class="rounded-lg card-shadow overflow-hidden max-w-sm"
+                     style="background-color: var(--theme-bg-secondary)">
+                    <div class="p-4 flex flex-col gap-3">
+                        <span class="uppercase text-xs font-medium tracking-wide"
+                              style="color: var(--theme-text-muted)">{% translate "Component" %}</span>
+                        <h3 class="text-lg font-semibold" style="color: var(--theme-text)">{% translate "Sample card" %}</h3>
+                        <p style="color: var(--theme-text-secondary)">
+                            {% translate "Use this layout for reference when styling new UI blocks." %}
+                        </p>
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 text-sm font-medium rounded transition"
+                                    style="background-color: var(--theme-primary);
+                                           color: var(--theme-text-inverse)"
+                                    type="button">{% translate "Primary action" %}</button>
+                            <button class="px-4 py-2 text-sm font-medium rounded transition"
+                                    style="background-color: transparent;
+                                           border: 1px solid var(--theme-border);
+                                           color: var(--theme-text)"
+                                    type="button">{% translate "Ghost" %}</button>
                         </div>
                     </div>
                 </div>
-                <div class="card shadow-sm" style="max-width: 360px;">
-                    <div class="card-body d-flex flex-column gap-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h3 class="h5 mb-0">{% translate "Stateful block" %}</h3>
-                            <span class="badge text-bg-success">{% translate "Ready" %}</span>
+                <div class="rounded-lg card-shadow overflow-hidden max-w-sm"
+                     style="background-color: var(--theme-bg-secondary)">
+                    <div class="p-4 flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold" style="color: var(--theme-text)">{% translate "Stateful block" %}</h3>
+                            <span class="px-2 py-0.5 text-xs rounded"
+                                  style="background-color: var(--theme-success);
+                                         color: var(--theme-text-inverse)">{% translate "Ready" %}</span>
                         </div>
-                        <p class="mb-0 text-muted">{% translate "Pair badges with compact headlines to highlight status." %}</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="fw-semibold">{% translate "Label" %}</span>
-                            <span class="text-muted">{% translate "Value" %}</span>
+                        <p style="color: var(--theme-text-secondary)">
+                            {% translate "Pair badges with compact headlines to highlight status." %}
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold" style="color: var(--theme-text)">{% translate "Label" %}</span>
+                            <span style="color: var(--theme-text-muted)">{% translate "Value" %}</span>
                         </div>
+                    </div>
+                </div>
+                <div class="rounded-lg card-shadow card-accent overflow-hidden max-w-sm"
+                     style="background-color: var(--theme-bg-secondary)">
+                    <div class="p-4 flex flex-col gap-3">
+                        <h3 class="text-lg font-semibold" style="color: var(--theme-text)">{% translate "Accented card" %}</h3>
+                        <p style="color: var(--theme-text-secondary)">{% translate "Cards with accent border for emphasis." %}</p>
                     </div>
                 </div>
             </div>
         </section>
-        <section class="d-flex flex-column gap-3">
-            <h2 class="h4 mb-0">{% translate "Form controls" %}</h2>
-            <form class="d-flex flex-column gap-3" action="#" method="post">
-                <div class="d-flex flex-column gap-2">
-                    <label class="form-label fw-semibold" for="design-input-text">{% translate "Text field" %}</label>
+        <!-- Alerts Section -->
+        <section class="flex flex-col gap-3">
+            <h2 class="text-xl font-semibold" style="color: var(--theme-text)">{% translate "Alerts" %}</h2>
+            <div class="flex flex-col gap-3">
+                <div class="flex items-start p-4 rounded"
+                     style="background-color: var(--theme-success-bg);
+                            border: 1px solid var(--theme-success-light);
+                            color: var(--theme-success-text)">
+                    <p>{% translate "Success alert message." %}</p>
+                </div>
+                <div class="flex items-start p-4 rounded"
+                     style="background-color: var(--theme-warning-bg);
+                            border: 1px solid var(--theme-warning-light);
+                            color: var(--theme-warning-text)">
+                    <p>{% translate "Warning alert message." %}</p>
+                </div>
+                <div class="flex items-start p-4 rounded"
+                     style="background-color: var(--theme-danger-bg);
+                            border: 1px solid var(--theme-danger-light);
+                            color: var(--theme-danger-text)">
+                    <p>{% translate "Danger alert message." %}</p>
+                </div>
+                <div class="flex items-start p-4 rounded"
+                     style="background-color: var(--theme-info-bg);
+                            border: 1px solid var(--theme-info-light);
+                            color: var(--theme-info-text)">
+                    <p>{% translate "Info alert message." %}</p>
+                </div>
+            </div>
+        </section>
+        <!-- Form Controls Section -->
+        <section class="flex flex-col gap-3">
+            <h2 class="text-xl font-semibold" style="color: var(--theme-text)">{% translate "Form controls" %}</h2>
+            <form class="flex flex-col gap-4 max-w-md" action="#" method="post">
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-semibold"
+                           style="color: var(--theme-text-secondary)"
+                           for="design-input-text">{% translate "Text field" %}</label>
                     <input id="design-input-text"
                            name="design-input-text"
-                           class="form-control"
+                           class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                           style="background-color: var(--theme-bg-secondary);
+                                  border-color: var(--theme-border);
+                                  color: var(--theme-text)"
                            type="text"
-                           placeholder="{% translate "Placeholder" %}"
-                           disabled>
+                           placeholder="{% translate "Placeholder" %}">
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <input class="form-check-input"
+                <div class="flex items-center gap-2">
+                    <input class="w-4 h-4"
+                           style="accent-color: var(--theme-primary)"
                            type="checkbox"
                            value=""
                            id="design-checkbox"
-                           disabled
                            checked>
-                    <label class="form-check-label" for="design-checkbox">{% translate "Checkbox" %}</label>
+                    <label class="text-sm"
+                           style="color: var(--theme-text)"
+                           for="design-checkbox">{% translate "Checkbox" %}</label>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <input class="form-check-input"
+                <div class="flex items-center gap-2">
+                    <input class="w-4 h-4"
+                           style="accent-color: var(--theme-primary)"
                            type="radio"
                            name="design-radio"
                            id="design-radio-a"
-                           disabled
                            checked>
-                    <label class="form-check-label" for="design-radio-a">{% translate "Radio A" %}</label>
+                    <label class="text-sm" style="color: var(--theme-text)" for="design-radio-a">{% translate "Radio A" %}</label>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <input class="form-check-input"
+                <div class="flex items-center gap-2">
+                    <input class="w-4 h-4"
+                           style="accent-color: var(--theme-primary)"
                            type="radio"
                            name="design-radio"
-                           id="design-radio-b"
-                           disabled>
-                    <label class="form-check-label" for="design-radio-b">{% translate "Radio B" %}</label>
+                           id="design-radio-b">
+                    <label class="text-sm" style="color: var(--theme-text)" for="design-radio-b">{% translate "Radio B" %}</label>
                 </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-primary" type="button">{% translate "Submit" %}</button>
-                    <button class="btn btn-outline-secondary" type="button">{% translate "Cancel" %}</button>
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-semibold"
+                           style="color: var(--theme-text-secondary)"
+                           for="design-select">{% translate "Select" %}</label>
+                    <select id="design-select"
+                            name="design-select"
+                            class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                            style="background-color: var(--theme-bg-secondary);
+                                   border-color: var(--theme-border);
+                                   color: var(--theme-text)">
+                        <option value="">{% translate "Select an option..." %}</option>
+                        <option value="1">{% translate "Option 1" %}</option>
+                        <option value="2">{% translate "Option 2" %}</option>
+                        <option value="3">{% translate "Option 3" %}</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-semibold"
+                           style="color: var(--theme-text-secondary)"
+                           for="design-textarea">{% translate "Textarea" %}</label>
+                    <textarea id="design-textarea"
+                              name="design-textarea"
+                              class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                              style="background-color: var(--theme-bg-secondary);
+                                     border-color: var(--theme-border);
+                                     color: var(--theme-text)"
+                              rows="3"
+                              placeholder="{% translate 'Enter text...' %}"></textarea>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 text-sm font-medium rounded transition"
+                            style="background-color: var(--theme-primary);
+                                   color: var(--theme-text-inverse)"
+                            type="button">{% translate "Submit" %}</button>
+                    <button class="px-4 py-2 text-sm font-medium rounded transition"
+                            style="background-color: transparent;
+                                   border: 1px solid var(--theme-border);
+                                   color: var(--theme-text)"
+                            type="button">{% translate "Cancel" %}</button>
                 </div>
             </form>
+        </section>
+        <!-- Badges Section -->
+        <section class="flex flex-col gap-3">
+            <h2 class="text-xl font-semibold" style="color: var(--theme-text)">{% translate "Badges" %}</h2>
+            <div class="flex flex-wrap gap-2">
+                <span class="px-2 py-0.5 text-xs rounded"
+                      style="background-color: var(--theme-primary);
+                             color: var(--theme-text-inverse)">{% translate "Primary" %}</span>
+                <span class="px-2 py-0.5 text-xs rounded"
+                      style="background-color: var(--theme-secondary);
+                             color: var(--theme-text-inverse)">{% translate "Secondary" %}</span>
+                <span class="px-2 py-0.5 text-xs rounded"
+                      style="background-color: var(--theme-success);
+                             color: var(--theme-text-inverse)">{% translate "Success" %}</span>
+                <span class="px-2 py-0.5 text-xs rounded"
+                      style="background-color: var(--theme-warning);
+                             color: var(--theme-text-inverse)">{% translate "Warning" %}</span>
+                <span class="px-2 py-0.5 text-xs rounded"
+                      style="background-color: var(--theme-danger);
+                             color: var(--theme-text-inverse)">{% translate "Danger" %}</span>
+                <span class="px-2 py-0.5 text-xs rounded"
+                      style="background-color: var(--theme-info);
+                             color: var(--theme-text-inverse)">{% translate "Info" %}</span>
+                <span class="px-2 py-0.5 text-xs rounded"
+                      style="background-color: var(--theme-bg-tertiary);
+                             color: var(--theme-text-secondary)">{% translate "Light" %}</span>
+            </div>
+        </section>
+        <!-- Typography Section -->
+        <section class="flex flex-col gap-3">
+            <h2 class="text-xl font-semibold" style="color: var(--theme-text)">{% translate "Typography" %}</h2>
+            <div class="flex flex-col gap-2">
+                <h1 class="text-3xl font-bold" style="color: var(--theme-text)">{% translate "Heading 1" %}</h1>
+                <h2 class="text-2xl font-bold" style="color: var(--theme-text)">{% translate "Heading 2" %}</h2>
+                <h3 class="text-xl font-semibold" style="color: var(--theme-text)">{% translate "Heading 3" %}</h3>
+                <h4 class="text-lg font-semibold" style="color: var(--theme-text)">{% translate "Heading 4" %}</h4>
+                <h5 class="text-base font-semibold" style="color: var(--theme-text)">{% translate "Heading 5" %}</h5>
+                <h6 class="text-sm font-semibold" style="color: var(--theme-text)">{% translate "Heading 6" %}</h6>
+                <p style="color: var(--theme-text)">{% translate "Body text with normal weight." %}</p>
+                <p style="color: var(--theme-text-secondary)">{% translate "Secondary text with muted color." %}</p>
+                <p style="color: var(--theme-text-muted)">{% translate "Muted text for less emphasis." %}</p>
+                <small style="color: var(--theme-text-muted)">{% translate "Small text for footnotes." %}</small>
+            </div>
         </section>
     </div>
 {% endblock body %}
