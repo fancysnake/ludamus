@@ -25,6 +25,26 @@ class ProposalCategoryDTO(BaseModel):
     pk: int
     slug: str
     start_time: datetime | None
+    time_slot_ids: list[int]
+
+    @classmethod
+    def from_model(cls, category: Any) -> ProposalCategoryDTO:  # noqa: ANN401
+        """Create DTO from ProposalCategory model with time_slot_ids populated.
+
+        Returns:
+            ProposalCategoryDTO with all fields populated from the model.
+        """
+        return cls(
+            durations=category.durations,
+            end_time=category.end_time,
+            max_participants_limit=category.max_participants_limit,
+            min_participants_limit=category.min_participants_limit,
+            name=category.name,
+            pk=category.pk,
+            slug=category.slug,
+            start_time=category.start_time,
+            time_slot_ids=list(category.time_slots.values_list("id", flat=True)),
+        )
 
 
 class ProposalDTO(BaseModel):
@@ -192,6 +212,7 @@ class ProposalCategoryData(TypedDict, total=False):
     end_time: datetime | None
     name: str
     start_time: datetime | None
+    time_slot_ids: list[int]
 
 
 class CategoryStats(TypedDict):
@@ -414,6 +435,20 @@ class SessionFieldRepositoryProtocol(Protocol):
     def update(self, pk: int, name: str) -> SessionFieldDTO: ...
 
 
+class TimeSlotRepositoryProtocol(Protocol):
+    def create(
+        self, event_id: int, start_time: datetime, end_time: datetime
+    ) -> TimeSlotDTO: ...
+    def read(self, pk: int) -> TimeSlotDTO: ...
+    def update(
+        self, pk: int, start_time: datetime, end_time: datetime
+    ) -> TimeSlotDTO: ...
+    def delete(self, pk: int) -> None: ...
+    def list_by_event(self, event_id: int) -> list[TimeSlotDTO]: ...
+    @staticmethod
+    def is_used_by_proposals(pk: int) -> bool: ...
+
+
 class UnitOfWorkProtocol(Protocol):
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
@@ -441,6 +476,8 @@ class UnitOfWorkProtocol(Protocol):
     def sessions(self) -> SessionRepositoryProtocol: ...
     @property
     def spheres(self) -> SphereRepositoryProtocol: ...
+    @property
+    def time_slots(self) -> TimeSlotRepositoryProtocol: ...
 
 
 class RootRequestProtocol(Protocol):

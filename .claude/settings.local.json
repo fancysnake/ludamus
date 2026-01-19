@@ -11,7 +11,8 @@
       "Bash(mise run _pytest:*)",
       "Bash(mise run dj migrate:*)",
       "Bash(mise run dj compilemessages:*)",
-      "Bash(mise run ruff-check:*)"
+      "Bash(mise run ruff-check:*)",
+      "Bash(mise run dj:*)"
     ]
   }
 }

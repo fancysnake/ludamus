@@ -15,16 +15,33 @@
 {% endblock page_subtitle %}
 {% block header_actions %}
     {% if current_event %}
-        <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
-           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center mr-2">
-            {% heroicon_outline "identification" class="w-4 h-4 mr-2" %}
-            {% translate "Host Data Fields" %}
-        </a>
-        <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
-           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center mr-2">
-            {% heroicon_outline "tag" class="w-4 h-4 mr-2" %}
-            {% translate "Session Fields" %}
-        </a>
+        <div class="relative">
+            <button type="button"
+                    id="configure-fields-btn"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center mr-2">
+                {% heroicon_outline "cog-6-tooth" class="w-4 h-4 mr-2" %}
+                {% translate "Configure Fields" %}
+                {% heroicon_outline "chevron-down" class="w-4 h-4 ml-1" %}
+            </button>
+            <div id="configure-fields-menu"
+                 class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
+                <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
+                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    {% heroicon_outline "identification" class="w-4 h-4 mr-3 text-gray-400" %}
+                    {% translate "Host Data Fields" %}
+                </a>
+                <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
+                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    {% heroicon_outline "tag" class="w-4 h-4 mr-3 text-gray-400" %}
+                    {% translate "Session Fields" %}
+                </a>
+                <a href="{% url 'panel:timeslots' slug=current_event.slug %}"
+                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    {% heroicon_outline "clock" class="w-4 h-4 mr-3 text-gray-400" %}
+                    {% translate "Time Slots" %}
+                </a>
+            </div>
+        </div>
         <a href="{% url 'panel:cfp-create' slug=current_event.slug %}"
            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
             {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
@@ -111,3 +128,23 @@
         </div>
     {% endif %}
 {% endblock content %}
+{% block extra_scripts %}
+    <script>
+        (function() {
+            const btn = document.getElementById('configure-fields-btn');
+            const menu = document.getElementById('configure-fields-menu');
+            if (!btn || !menu) return;
+
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+        })();
+    </script>
+{% endblock extra_scripts %}

@@ -84,6 +84,34 @@ class TestPanelService:
         assert result.total_sessions == 0
 
 
+class TestPanelServiceDeleteTimeSlot:
+    @pytest.fixture
+    def mock_uow(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def panel_service(self, mock_uow):
+        return PanelService(mock_uow)
+
+    def test_returns_false_when_time_slot_is_used(self, panel_service, mock_uow):
+        mock_uow.time_slots.is_used_by_proposals.return_value = True
+
+        result = panel_service.delete_time_slot(time_slot_pk=42)
+
+        assert result is False
+        mock_uow.time_slots.is_used_by_proposals.assert_called_once_with(42)
+        mock_uow.time_slots.delete.assert_not_called()
+
+    def test_deletes_time_slot_when_not_used(self, panel_service, mock_uow):
+        mock_uow.time_slots.is_used_by_proposals.return_value = False
+
+        result = panel_service.delete_time_slot(time_slot_pk=42)
+
+        assert result is True
+        mock_uow.time_slots.is_used_by_proposals.assert_called_once_with(42)
+        mock_uow.time_slots.delete.assert_called_once_with(42)
+
+
 class TestIsProposalActive:
     @pytest.fixture
     def base_event_data(self):

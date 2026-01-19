@@ -61,6 +61,27 @@ urlpatterns = [
         name="session-field-delete",
     ),
     path(
+        "event/<slug:slug>/cfp/timeslots/",
+        panel.TimeSlotsPageView.as_view(),
+        name="timeslots",
+    ),
+    path(
+        "event/<slug:slug>/cfp/timeslots/parts/create-modal",
+        panel.TimeSlotCreateModalComponentView.as_view(),
+        name="timeslot-create-modal",
+    ),
+    path(
+        "event/<slug:slug>/cfp/timeslots/<int:pk>/parts/edit-modal",
+        panel.TimeSlotEditModalComponentView.as_view(),
+        name="timeslot-edit-modal",
+    ),
+    path(
+        "event/<slug:slug>/cfp/timeslots/<int:pk>/do/delete",
+        panel.TimeSlotDeleteActionView.as_view(),
+        name="timeslot-delete",
+    ),
+    # NOTE: These must be last as <str:category_slug> matches any string
+    path(
         "event/<slug:event_slug>/cfp/<str:category_slug>/",
         panel.CFPEditPageView.as_view(),
         name="cfp-edit",

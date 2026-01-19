@@ -1,9 +1,12 @@
 """Django forms for panel views."""
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class EventSettingsForm(forms.Form):
@@ -98,3 +101,61 @@ class SessionFieldForm(forms.Form):
         initial=False,
         help_text=_("Allow entering custom values (for Select fields only)."),
     )
+
+
+class TimeSlotForm(forms.Form):
+    """Form for creating/editing time slots."""
+
+    start_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        error_messages={
+            "required": _("Start time is required."),
+            "invalid": _("Invalid start time format."),
+        },
+    )
+    end_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        error_messages={
+            "required": _("End time is required."),
+            "invalid": _("Invalid end time format."),
+        },
+    )
+
+    def __init__(
+        self,
+        *args: Any,
+        event_start_time: datetime | None = None,
+        event_end_time: datetime | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.event_start_time = event_start_time
+        self.event_end_time = event_end_time
+
+    def clean(self) -> dict[str, object]:
+        """Validate that start time is before end time and within event bounds.
+
+        Returns:
+            Cleaned data dictionary.
+
+        Raises:
+            ValidationError: If validation fails.
+        """
+        cleaned_data = super().clean() or {}
+        start_time = cleaned_data.get("start_time")
+        end_time = cleaned_data.get("end_time")
+
+        if start_time and end_time and start_time >= end_time:
+            raise forms.ValidationError(_("Start time must be before end time."))
+
+        # Validate against event bounds if they exist
+        if self.event_start_time and start_time and start_time < self.event_start_time:
+            raise forms.ValidationError(
+                _("Time slot cannot start before the event start time.")
+            )
+        if self.event_end_time and end_time and end_time > self.event_end_time:
+            raise forms.ValidationError(
+                _("Time slot cannot end after the event end time.")
+            )
+
+        return cleaned_data

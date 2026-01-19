@@ -1319,9 +1319,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
                 "min_participants_limit": proposal_category.min_participants_limit,
                 "max_participants_limit": proposal_category.max_participants_limit,
                 "form": create_session_proposal_form(
-                    proposal_category=ProposalCategoryDTO.model_validate(
-                        proposal_category
-                    ),
+                    proposal_category=ProposalCategoryDTO.from_model(proposal_category),
                     tag_categories=[
                         TagCategoryDTO.model_validate(tc)
                         for tc in proposal_category.tag_categories.all()
@@ -1351,7 +1349,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
     ) -> HttpResponse:
         # Initialize form with POST data
         form_class = create_session_proposal_form(
-            proposal_category=ProposalCategoryDTO.model_validate(proposal_category),
+            proposal_category=ProposalCategoryDTO.from_model(proposal_category),
             tag_categories=[
                 TagCategoryDTO.model_validate(tc)
                 for tc in proposal_category.tag_categories.all()

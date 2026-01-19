@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,6 +13,7 @@ from typing import (
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -23,6 +25,7 @@ from ludamus.gates.web.django.forms import (
     PersonalDataFieldForm,
     ProposalCategoryForm,
     SessionFieldForm,
+    TimeSlotForm,
 )
 from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
 from ludamus.pacts import NotFoundError
@@ -30,7 +33,12 @@ from ludamus.pacts import NotFoundError
 if TYPE_CHECKING:
     from django import forms
 
-    from ludamus.pacts import AuthenticatedRequestContext, EventDTO, UnitOfWorkProtocol
+    from ludamus.pacts import (
+        AuthenticatedRequestContext,
+        EventDTO,
+        TimeSlotDTO,
+        UnitOfWorkProtocol,
+    )
 
 
 class _FieldDTO(Protocol):
@@ -445,6 +453,13 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["proposal_count"] = self.request.uow.proposals.count_by_category(
             category.pk
         )
+
+        # Get available time slots for the event
+        available_time_slots = self.request.uow.time_slots.list_by_event(
+            current_event.pk
+        )
+        context["available_time_slots"] = available_time_slots
+        context["selected_time_slot_ids"] = category.time_slot_ids
         return TemplateResponse(self.request, "panel/cfp-edit.html", context)
 
     def post(
@@ -478,6 +493,10 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         durations_raw = self.request.POST.getlist("durations")
         durations: list[str] = [d for d in durations_raw if d]
 
+        # Parse time slot IDs from POST
+        time_slot_ids_raw = self.request.POST.getlist("time_slots")
+        time_slot_ids: list[int] = [int(ts) for ts in time_slot_ids_raw if ts]
+
         self.request.uow.proposal_categories.update(
             category.pk,
             {
@@ -485,6 +504,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "start_time": form.cleaned_data["start_time"],
                 "end_time": form.cleaned_data["end_time"],
                 "durations": durations,
+                "time_slot_ids": time_slot_ids,
             },
         )
 
@@ -929,3 +949,275 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Session field deleted successfully."))
         return redirect("panel:session-fields", slug=slug)
+
+
+class TimeSlotsPageView(PanelAccessMixin, EventContextMixin, View):
+    """List time slots for an event in a calendar view."""
+
+    request: PanelRequest
+    DAYS_PER_PAGE = 3
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display time slots calendar view.
+
+        Returns:
+            TemplateResponse with the time slots or redirect if not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        time_slots = self.request.uow.time_slots.list_by_event(current_event.pk)
+
+        # Generate all event days (from event start to end)
+        event_days: list[str] = []
+        event_days_set: set[str] = set()
+        if current_event.start_time and current_event.end_time:
+            start_day = current_event.start_time.date()
+            end_day = current_event.end_time.date()
+            num_days = (end_day - start_day).days + 1
+            event_days = [
+                (start_day + timedelta(days=i)).strftime("%Y-%m-%d")
+                for i in range(num_days)
+            ]
+            event_days_set = set(event_days)
+
+        # Group time slots by date, separating orphaned slots
+        slots_by_date: dict[str, list[TimeSlotDTO]] = {}
+        orphaned_slots: list[TimeSlotDTO] = []
+        for slot in time_slots:
+            date_key = slot.start_time.strftime("%Y-%m-%d")
+            # Check if slot is outside event bounds
+            is_orphaned = False
+            if current_event.start_time and slot.start_time < current_event.start_time:
+                is_orphaned = True
+            if current_event.end_time and slot.end_time > current_event.end_time:
+                is_orphaned = True
+            if event_days_set and date_key not in event_days_set:
+                is_orphaned = True
+
+            if is_orphaned:
+                orphaned_slots.append(slot)
+            else:
+                if date_key not in slots_by_date:
+                    slots_by_date[date_key] = []
+                slots_by_date[date_key].append(slot)
+        slots_by_date = dict(sorted(slots_by_date.items()))
+
+        # If no event days defined, use days from existing slots
+        if not event_days:
+            event_days = list(slots_by_date.keys())
+
+        # Pagination: show DAYS_PER_PAGE days at a time
+        page = int(self.request.GET.get("page", 0))
+        total_days = len(event_days)
+        max_page = max(0, (total_days - 1) // self.DAYS_PER_PAGE)
+        page = max(0, min(page, max_page))
+
+        start_idx = page * self.DAYS_PER_PAGE
+        end_idx = start_idx + self.DAYS_PER_PAGE
+        visible_days = event_days[start_idx:end_idx]
+
+        # Create paginated slots dict with only visible days (show empty days too)
+        paginated_slots: dict[str, list[TimeSlotDTO]] = {}
+        for day in visible_days:
+            paginated_slots[day] = slots_by_date.get(day, [])
+
+        context["time_slots"] = time_slots
+        context["slots_by_date"] = paginated_slots
+        context["orphaned_slots"] = orphaned_slots
+        context["event_days"] = event_days
+        context["current_page"] = page
+        context["has_prev"] = page > 0
+        context["has_next"] = page < max_page
+        context["form"] = TimeSlotForm()
+        return TemplateResponse(self.request, "panel/timeslots.html", context)
+
+
+class TimeSlotCreateModalComponentView(PanelAccessMixin, EventContextMixin, View):
+    """HTMX modal component for creating time slots."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display the time slot creation modal form.
+
+        Returns:
+            TemplateResponse with the modal form.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return HttpResponse(status=404)
+
+        # Support pre-filling date from query param
+        default_date = self.request.GET.get("date")
+        initial: dict[str, object] = {}
+        if default_date:
+            try:
+                date_obj = datetime.strptime(default_date, "%Y-%m-%d")  # noqa: DTZ007
+                # Default start time: 10:00, end time: 11:00
+                initial["start_time"] = date_obj.replace(hour=10, minute=0)
+                initial["end_time"] = date_obj.replace(hour=11, minute=0)
+            except ValueError:
+                pass
+
+        context["form"] = TimeSlotForm(
+            initial=initial,
+            event_start_time=current_event.start_time,
+            event_end_time=current_event.end_time,
+        )
+        context["default_date"] = default_date
+        return TemplateResponse(
+            self.request, "panel/parts/timeslot-create-modal.html", context
+        )
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Handle time slot creation.
+
+        Returns:
+            On success: Redirect response to time slots page (HTMX will handle).
+            On error: TemplateResponse with the modal form and errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return HttpResponse(status=404)
+
+        form = TimeSlotForm(
+            self.request.POST,
+            event_start_time=current_event.start_time,
+            event_end_time=current_event.end_time,
+        )
+        if not form.is_valid():
+            context["form"] = form
+            return TemplateResponse(
+                self.request, "panel/parts/timeslot-create-modal.html", context
+            )
+
+        try:
+            self.request.uow.time_slots.create(
+                current_event.pk,
+                form.cleaned_data["start_time"],
+                form.cleaned_data["end_time"],
+            )
+        except ValidationError:
+            messages.error(
+                self.request,
+                _("Could not create time slot. It may overlap with existing slots."),
+            )
+            return redirect("panel:timeslots", slug=slug)
+
+        messages.success(self.request, _("Time slot created successfully."))
+        return redirect("panel:timeslots", slug=slug)
+
+
+class TimeSlotEditModalComponentView(PanelAccessMixin, EventContextMixin, View):
+    """HTMX modal component for editing time slots."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, pk: int) -> HttpResponse:
+        """Display the time slot edit modal form.
+
+        Returns:
+            TemplateResponse with the modal form.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return HttpResponse(status=404)
+
+        try:
+            time_slot = self.request.uow.time_slots.read(pk)
+        except NotFoundError:
+            return HttpResponse(status=404)
+
+        context["time_slot"] = time_slot
+        context["form"] = TimeSlotForm(
+            initial={
+                "start_time": time_slot.start_time,
+                "end_time": time_slot.end_time,
+            },
+            event_start_time=current_event.start_time,
+            event_end_time=current_event.end_time,
+        )
+        context["is_used"] = self.request.uow.time_slots.is_used_by_proposals(pk)
+        return TemplateResponse(
+            self.request, "panel/parts/timeslot-edit-modal.html", context
+        )
+
+    def post(self, _request: PanelRequest, slug: str, pk: int) -> HttpResponse:
+        """Handle time slot update.
+
+        Returns:
+            On success: Redirect response to time slots page.
+            On error: TemplateResponse with the modal form and errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return HttpResponse(status=404)
+
+        try:
+            time_slot = self.request.uow.time_slots.read(pk)
+        except NotFoundError:
+            messages.error(self.request, _("Time slot not found."))
+            return redirect("panel:timeslots", slug=slug)
+
+        form = TimeSlotForm(
+            self.request.POST,
+            event_start_time=current_event.start_time,
+            event_end_time=current_event.end_time,
+        )
+        if not form.is_valid():
+            context["time_slot"] = time_slot
+            context["form"] = form
+            context["is_used"] = self.request.uow.time_slots.is_used_by_proposals(pk)
+            return TemplateResponse(
+                self.request, "panel/parts/timeslot-edit-modal.html", context
+            )
+
+        try:
+            self.request.uow.time_slots.update(
+                pk, form.cleaned_data["start_time"], form.cleaned_data["end_time"]
+            )
+        except ValidationError:
+            messages.error(
+                self.request,
+                _("Could not update time slot. It may overlap with existing slots."),
+            )
+            return redirect("panel:timeslots", slug=slug)
+
+        messages.success(self.request, _("Time slot updated successfully."))
+        return redirect("panel:timeslots", slug=slug)
+
+
+class TimeSlotDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+    """Delete a time slot (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ["post"]  # noqa: RUF012
+
+    def post(self, _request: PanelRequest, slug: str, pk: int) -> HttpResponse:
+        """Handle time slot deletion.
+
+        Returns:
+            Redirect response to time slots list.
+        """
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            self.request.uow.time_slots.read(pk)
+        except NotFoundError:
+            messages.error(self.request, _("Time slot not found."))
+            return redirect("panel:timeslots", slug=slug)
+
+        service = PanelService(self.request.uow)
+        if not service.delete_time_slot(pk):
+            messages.error(
+                self.request, _("Cannot delete time slot that is used by proposals.")
+            )
+            return redirect("panel:timeslots", slug=slug)
+
+        messages.success(self.request, _("Time slot deleted successfully."))
+        return redirect("panel:timeslots", slug=slug)

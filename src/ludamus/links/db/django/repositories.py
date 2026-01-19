@@ -45,6 +45,7 @@ from ludamus.pacts import (
     SphereDTO,
     SphereRepositoryProtocol,
     TimeSlotDTO,
+    TimeSlotRepositoryProtocol,
     UserData,
     UserDTO,
     UserRepositoryProtocol,
@@ -53,6 +54,7 @@ from ludamus.pacts import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from datetime import datetime
 
     from ludamus.adapters.db.django.models import User
     from ludamus.links.db.django.storage import Storage
@@ -408,12 +410,12 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         )
         self._storage.proposal_categories[category.pk] = category
 
-        return ProposalCategoryDTO.model_validate(category)
+        return ProposalCategoryDTO.from_model(category)
 
     def read_by_slug(self, event_id: int, slug: str) -> ProposalCategoryDTO:
         for category in self._storage.proposal_categories.values():
             if category.slug == slug and category.event_id == event_id:
-                return ProposalCategoryDTO.model_validate(category)
+                return ProposalCategoryDTO.from_model(category)
 
         try:
             category = ProposalCategory.objects.get(event_id=event_id, slug=slug)
@@ -421,7 +423,7 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
             raise NotFoundError from exception
 
         self._storage.proposal_categories[category.pk] = category
-        return ProposalCategoryDTO.model_validate(category)
+        return ProposalCategoryDTO.from_model(category)
 
     def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO:
         if not (category := self._storage.proposal_categories.get(pk)):
@@ -457,8 +459,11 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         if needs_save:
             category.save()
 
+        if "time_slot_ids" in data:
+            category.time_slots.set(data["time_slot_ids"])
+
         self._storage.proposal_categories[pk] = category
-        return ProposalCategoryDTO.model_validate(category)
+        return ProposalCategoryDTO.from_model(category)
 
     def delete(self, pk: int) -> None:
         if not (category := self._storage.proposal_categories.get(pk)):
@@ -503,7 +508,7 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         categories = ProposalCategory.objects.filter(event_id=event_id).order_by("name")
         for category in categories:
             self._storage.proposal_categories[category.pk] = category
-        return [ProposalCategoryDTO.model_validate(c) for c in categories]
+        return [ProposalCategoryDTO.from_model(c) for c in categories]
 
     @staticmethod
     def get_field_requirements(category_id: int) -> dict[int, bool]:
@@ -885,3 +890,74 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             pk=field.pk,
             slug=field.slug,
         )
+
+
+class TimeSlotRepository(TimeSlotRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(
+        self, event_id: int, start_time: datetime, end_time: datetime
+    ) -> TimeSlotDTO:
+        time_slot = TimeSlot(
+            event_id=event_id, start_time=start_time, end_time=end_time
+        )
+        time_slot.full_clean()
+        time_slot.save()
+        self._storage.time_slots_by_event[event_id][time_slot.pk] = time_slot
+        return TimeSlotDTO.model_validate(time_slot)
+
+    def read(self, pk: int) -> TimeSlotDTO:
+        for event_slots in self._storage.time_slots_by_event.values():
+            if time_slot := event_slots.get(pk):
+                return TimeSlotDTO.model_validate(time_slot)
+
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist as exc:
+            raise NotFoundError from exc
+
+        self._storage.time_slots_by_event[time_slot.event_id][pk] = time_slot
+        return TimeSlotDTO.model_validate(time_slot)
+
+    def update(self, pk: int, start_time: datetime, end_time: datetime) -> TimeSlotDTO:
+        for event_slots in self._storage.time_slots_by_event.values():
+            if time_slot := event_slots.get(pk):
+                break
+        else:
+            try:
+                time_slot = TimeSlot.objects.get(pk=pk)
+            except TimeSlot.DoesNotExist as exc:
+                raise NotFoundError from exc
+
+        time_slot.start_time = start_time
+        time_slot.end_time = end_time
+        time_slot.full_clean()
+        time_slot.save()
+        self._storage.time_slots_by_event[time_slot.event_id][pk] = time_slot
+        return TimeSlotDTO.model_validate(time_slot)
+
+    def delete(self, pk: int) -> None:
+        for event_slots in self._storage.time_slots_by_event.values():
+            if time_slot := event_slots.pop(pk, None):
+                time_slot.delete()
+                return
+
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist as exc:
+            raise NotFoundError from exc
+
+        time_slot.delete()
+
+    def list_by_event(self, event_id: int) -> list[TimeSlotDTO]:
+        if not (collection := self._storage.time_slots_by_event[event_id]):
+            for time_slot in TimeSlot.objects.filter(event_id=event_id).order_by(
+                "start_time"
+            ):
+                collection[time_slot.pk] = time_slot
+        return [TimeSlotDTO.model_validate(ts) for ts in collection.values()]
+
+    @staticmethod
+    def is_used_by_proposals(pk: int) -> bool:
+        return Proposal.objects.filter(time_slots__pk=pk).exists()
