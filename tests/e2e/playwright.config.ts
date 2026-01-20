@@ -27,7 +27,7 @@ const loadEnv = (filePath: string) => {
 loadEnv(path.join(repoRoot, '.env'));
 // We do not load .env.ci here. It's not meant for our end-to-end tests.
 
-const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:8000`;
+const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:8000`;
 
 const WEB_COMMAND = process.env.CI
   ? 'poetry run sh -c "django-admin migrate --noinput && django-admin createcachetable && django-admin downloadvendor && python tests/e2e/scripts/bootstrap_data.py && django-admin runserver --insecure 0.0.0.0:8000"'
