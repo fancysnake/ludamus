@@ -35,7 +35,7 @@ poetry install
 **Development Server:**
 
 ```bash
-mise run start  # Runs on ludamus.local:8000
+mise run start  # Runs on localhost:8000
 ```
 
 **Testing:**

@@ -65,7 +65,7 @@ ALLOWED_HOSTS: list[str] = []
 if allowed_hosts := os.getenv("ALLOWED_HOSTS", ""):
     ALLOWED_HOSTS = [host.strip() for host in allowed_hosts.split(",")]
 elif DEBUG:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
+    ALLOWED_HOSTS = ["localhost", "[::1]"]
 
 SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN", "")
 

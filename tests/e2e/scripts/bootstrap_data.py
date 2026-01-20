@@ -133,7 +133,7 @@ def main() -> None:
 
     sphere_domain = os.environ.get("E2E_SPHERE_DOMAIN") or os.environ.get("E2E_HOST")
     if not sphere_domain:
-        sphere_domain = "127.0.0.1:8000"
+        sphere_domain = "localhost:8000"
     _, sphere = _create_site(sphere_domain, name="E2E Test")
 
     _ensure_spheres_for_all_sites()

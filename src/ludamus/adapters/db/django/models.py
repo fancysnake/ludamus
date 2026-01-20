@@ -82,7 +82,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def __str__(self) -> str:
-        return f"{self.name}"
+        return f"{self.name} <{self.email}>"
 
     def get_full_name(self) -> str:
         return self.name or DEFAULT_NAME
@@ -944,7 +944,7 @@ class SessionParticipation(models.Model):
         db_table = "session_participant"
 
     def __str__(self) -> str:
-        return f"{self.user} {self.status} on {self.session}"
+        return f"{self.user.name} {self.status} on {self.session}"
 
 
 class PersonalDataFieldType(models.TextChoices):

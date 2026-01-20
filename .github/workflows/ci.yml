@@ -48,7 +48,7 @@ jobs:
           cat << EOF > .env
           ENV=test
           SECRET_KEY=test-secret-key-for-ci
-          ALLOWED_HOSTS=localhost,127.0.0.1
+          ALLOWED_HOSTS=localhost
           DB_NAME=ludamus_test
           DB_USER=ludamus_user
           DB_PASSWORD=test_password
@@ -57,7 +57,7 @@ jobs:
           AUTH0_DOMAIN=test.auth0.com
           AUTH0_CLIENT_ID=test_client_id
           AUTH0_CLIENT_SECRET=test_client_secret
-          ROOT_DOMAIN=127.0.0.1:8000
+          ROOT_DOMAIN=localhost:8000
           SUPPORT_EMAIL=test@example.com
           DEBUG=false
           USE_POSTGRES=false
