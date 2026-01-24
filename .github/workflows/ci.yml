@@ -21,8 +21,10 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.14
       - name: Run image
         uses: abatilo/actions-poetry@v3
       - run: mise run p install
@@ -35,10 +37,8 @@ jobs:
 
   playwright:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v6
-
       - uses: actions/setup-python@v5
         with:
           python-version: 3.14
@@ -68,22 +68,14 @@ jobs:
 
       - run: poetry install
       - uses: oven-sh/setup-bun@v2
-
       - name: Install dependencies
         run: bun install
         working-directory: ./tests/e2e
-
-        # per the docs: "caching browser binaries is not recommended,
-        # since the amount of time it takes to restore the cache is
-        # comparable to the time it takes to download the binaries"
       - name: Install Playwright Browsers
         run: bun playwright install --with-deps
         working-directory: ./tests/e2e
-
       - name: Run end-to-end tests
-        run: bun playwright test
-        working-directory: ./tests/e2e
-
+        run: poetry run poe e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:

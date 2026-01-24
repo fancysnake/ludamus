@@ -53,6 +53,43 @@ pytest-freezeblaster = "^2.0.4"
 types-requests = "^2.32.4.20250809"
 pytest-factoryboy = "^2.8.1"
 responses = "^0.25.8"
+pre-commit = "^4.5.0"
+
+# TODO: Move to mise
+[tool.poe.tasks.e2e-setup]
+sequence = [
+    { shell = "[ \"${E2E_FRESH_DB:-true}\" = 'false' ] || rm -f tests/e2e/db.sqlite3" },
+    { cmd = "django-admin migrate --noinput" },
+    { cmd = "django-admin createcachetable" },
+    { cmd = "python tests/e2e/scripts/bootstrap_data.py" },
+]
+
+[tool.poe.tasks.e2e-start]
+cmd = "django-admin runserver localhost:8000"
+use_exec = true
+
+[tool.poe.tasks.e2e-mock-auth0]
+cmd = "docker compose -f tests/e2e/docker-compose.yml up"
+use_exec = true
+
+[tool.poe.tasks.e2e]
+cmd = "bun playwright test"
+cwd = "tests/e2e"
+
+[tool.poe.tasks.local-e2e]
+sequence = [
+    { shell = "coverage run --source=src -m django runserver localhost:8000 --noreload &" },
+    { shell = "cd tests/e2e && bun playwright test --project=chromium --project=firefox" },
+    { shell = """kill $(pgrep -f "coverage run.*django") || true""" },
+    { shell = "coverage report" },
+]
+env = { E2E_SKIP_SETUP = "true", E2E_REUSE_SERVER = "true" }
+
+[tool.poe.tasks.e2e-cdg]
+sequence = [
+    { ref = "e2e-setup" },
+    { shell = "python tests/e2e/scripts/mock_auth0_server.py --port 9999 & trap 'kill $!' EXIT; django-admin runserver localhost:8000" },
+]
 
 # BLACK
 pre-commit = "^4.5.1"
@@ -73,6 +110,7 @@ skip = 'node_modules,tests/e2e,*.po,*.lock,vendor'
 [tool.coverage.run]
 branch = true
 source = ["src", "tests"]
+sigterm = true
 omit = [
     "src/ludamus/config/*",
     "src/ludamus/deploy/*",

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Seed deterministic data for Playwright end-to-end tests."""
+"""Seed deterministic data for Playwright end-to-end tests using factory-boy."""
 
 from __future__ import annotations
 
 import os
 import sys
-from datetime import timedelta
+from datetime import UTC, timedelta
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -20,10 +20,13 @@ import django  # noqa: E402
 
 django.setup()
 
+import factory  # noqa: E402
 from django.conf import settings  # noqa: E402
 from django.contrib.sites.models import Site  # noqa: E402
-from django.core.management import call_command  # noqa: E402
-from django.utils import timezone  # noqa: E402
+from factory.django import DjangoModelFactory  # noqa: E402
+from faker import Faker  # noqa: E402
+
+fake = Faker()
 
 from ludamus.adapters.db.django.models import (  # noqa: E402
     AgendaItem,
@@ -35,156 +38,183 @@ from ludamus.adapters.db.django.models import (  # noqa: E402
 )
 
 
-def _create_site(domain: str, *, name: str) -> tuple[Site, Sphere]:
-    site, _ = Site.objects.get_or_create(domain=domain, defaults={"name": name})
-    # Site has a one-to-one Sphere; look it up by site to avoid unique clashes
-    sphere, _ = Sphere.objects.get_or_create(
-        site=site, defaults={"name": f"{name} Sphere"}
+class SiteFactory(DjangoModelFactory):
+    class Meta:
+        model = Site
+        django_get_or_create = ("domain",)
+
+    domain = factory.Sequence(lambda n: f"site{n}.testserver")
+    name = factory.Faker("company")
+
+
+class SphereFactory(DjangoModelFactory):
+    class Meta:
+        model = Sphere
+        django_get_or_create = ("site",)
+
+    name = factory.LazyAttribute(lambda o: f"{o.site.name} Sphere")
+    site = factory.SubFactory(SiteFactory)
+
+
+class EventFactory(DjangoModelFactory):
+    class Meta:
+        model = Event
+
+    name = factory.Faker("sentence", nb_words=4)
+    slug = factory.Sequence(lambda n: f"event-{n}")
+    description = factory.Faker("text")
+    sphere = factory.SubFactory(SphereFactory)
+    start_time = factory.Faker(
+        "date_time_between", start_date="+1d", end_date="+3d", tzinfo=UTC
     )
-    return site, sphere
-
-
-def _ensure_spheres_for_all_sites() -> None:
-    """Backfill spheres for any sites created outside this script.
-
-    Playwright hits whatever host the web server exposes (often with a port),
-    so we guarantee every Site row has a Sphere to keep RootDAO happy.
-    """
-    for site in Site.objects.filter(sphere__isnull=True):
-        Sphere.objects.create(site=site, name=site.name or site.domain)
-
-
-def _create_event(
-    sphere: Sphere,
-    *,
-    name: str,
-    slug: str,
-    description: str,
-    start_offset: timedelta,
-    duration_hours: int,
-    publication_offset: timedelta,
-    enrollment_banner: str | None = None,
-    allow_anonymous: bool = False,
-) -> Event:
-    now = timezone.now()
-    start = now + start_offset
-    end = start + timedelta(hours=duration_hours)
-    event = Event.objects.create(
-        sphere=sphere,
-        name=name,
-        slug=slug,
-        description=description,
-        start_time=start,
-        end_time=end,
-        publication_time=now - publication_offset,
+    end_time = factory.Faker(
+        "date_time_between", start_date="+4d", end_date="+6d", tzinfo=UTC
+    )
+    publication_time = factory.Faker(
+        "date_time_between", start_date="-10d", end_date="-3d", tzinfo=UTC
     )
 
-    if enrollment_banner:
-        EnrollmentConfig.objects.create(
-            event=event,
-            start_time=now - timedelta(days=1),
-            end_time=now + timedelta(days=7),
-            percentage_slots=100,
-            banner_text=enrollment_banner,
-            allow_anonymous_enrollment=allow_anonymous,
-        )
 
-    return event
+class EnrollmentConfigFactory(DjangoModelFactory):
+    class Meta:
+        model = EnrollmentConfig
 
-
-def _create_session(
-    sphere: Sphere,
-    event: Event,
-    *,
-    title: str,
-    slug: str,
-    presenter: str,
-    description: str,
-    location_name: str,
-    start_offset: timedelta,
-    duration_hours: int,
-) -> Session:
-    space = Space.objects.create(event=event, name=location_name, slug=slug)
-    session = Session.objects.create(
-        sphere=sphere,
-        presenter_name=presenter,
-        title=title,
-        slug=slug,
-        description=description,
-        participants_limit=24,
-        min_age=10,
+    event = factory.SubFactory(EventFactory)
+    start_time = factory.Faker(
+        "date_time_between", start_date="-5d", end_date="-1d", tzinfo=UTC
     )
-    AgendaItem.objects.create(
-        space=space,
-        session=session,
-        session_confirmed=True,
-        start_time=event.start_time + start_offset,
-        end_time=event.start_time + start_offset + timedelta(hours=duration_hours),
+    end_time = factory.Faker(
+        "date_time_between", start_date="+5d", end_date="+10d", tzinfo=UTC
     )
-    return session
+    percentage_slots = 100
+    banner_text = factory.Faker("sentence")
+    allow_anonymous_enrollment = False
+
+
+class SpaceFactory(DjangoModelFactory):
+    class Meta:
+        model = Space
+
+    name = factory.Faker("word")
+    slug = factory.Sequence(lambda n: f"space-{n}")
+    event = factory.SubFactory(EventFactory)
+
+
+class SessionFactory(DjangoModelFactory):
+    class Meta:
+        model = Session
+
+    title = factory.Faker("sentence", nb_words=5)
+    slug = factory.Sequence(lambda n: f"session-{n}")
+    description = factory.Faker("text")
+    presenter_name = factory.Faker("name")
+    participants_limit = factory.Faker("random_int", min=10, max=30)
+    min_age = factory.Faker("random_int", min=0, max=16)
+    sphere = factory.SubFactory(SphereFactory)
+
+
+class AgendaItemFactory(DjangoModelFactory):
+    class Meta:
+        model = AgendaItem
+
+    session = factory.SubFactory(SessionFactory)
+    space = factory.SubFactory(SpaceFactory)
+    session_confirmed = True
+    start_time = factory.Faker(
+        "date_time_between", start_date="+1d", end_date="+2d", tzinfo=UTC
+    )
+    end_time = factory.Faker(
+        "date_time_between", start_date="+2d", end_date="+3d", tzinfo=UTC
+    )
 
 
 def main() -> None:
-    call_command("flush", verbosity=0, interactive=False)
+    # Guard: skip if e2e data already exists (identified by known event slug)
+    if Event.objects.filter(slug="autumn-open").exists():
+        sys.stderr.write("E2E data already exists, skipping bootstrap.\n")
+        return
 
     # Root site used for fallbacks / redirects
     root_domain = os.environ.get("ROOT_DOMAIN", settings.ROOT_DOMAIN)
-    _create_site(root_domain, name="Root Domain")
+    root_site = SiteFactory(domain=root_domain, name="Root Domain")
+    SphereFactory(site=root_site)
 
     sphere_domain = os.environ.get("E2E_SPHERE_DOMAIN") or os.environ.get("E2E_HOST")
     if not sphere_domain:
         sphere_domain = "localhost:8000"
-    _, sphere = _create_site(sphere_domain, name="E2E Test")
+    e2e_site = SiteFactory(domain=sphere_domain, name="E2E Test")
+    sphere = SphereFactory(site=e2e_site)
 
-    _ensure_spheres_for_all_sites()
+    # Backfill spheres for any sites created outside this script
+    for site in Site.objects.filter(sphere__isnull=True):
+        SphereFactory(site=site, name=site.name or site.domain)
 
-    upcoming_event = _create_event(
-        sphere,
+    # Create an upcoming event (1-3 days from now) with enrollment open
+    upcoming_event = EventFactory(
+        sphere=sphere,
         name="Autumn Open Playtest",
         slug="autumn-open",
         description=(
             "A cozy meetup packed with prototypes, mentors, and hands-on demos.\n"
             "Bring dice, meeples, and curiosity!"
         ),
-        start_offset=timedelta(days=1),
-        duration_hours=4,
-        publication_offset=timedelta(days=2),
-        enrollment_banner="Enrollment is open—grab a slot before we fill up!",
-        allow_anonymous=True,
     )
 
-    _create_session(
-        sphere,
-        upcoming_event,
+    EnrollmentConfigFactory(
+        event=upcoming_event,
+        banner_text="Enrollment is open—grab a slot before we fill up!",
+        allow_anonymous_enrollment=True,
+    )
+
+    # Session 1: Mega Strategy Lab
+    space1 = SpaceFactory(
+        event=upcoming_event, name="Main Hall East Wing", slug="mega-strategy"
+    )
+    session1 = SessionFactory(
+        sphere=sphere,
         title="Mega Strategy Lab",
         slug="mega-strategy",
-        presenter="Alex Morgan",
+        presenter_name="Alex Morgan",
         description="Deep dive into asymmetric mechanics and pacing tricks.",
-        location_name="Main Hall East Wing",
-        start_offset=timedelta(hours=1),
-        duration_hours=2,
+        participants_limit=24,
+        min_age=10,
+    )
+    AgendaItemFactory(
+        space=space1,
+        session=session1,
+        start_time=upcoming_event.start_time + timedelta(hours=1),
+        end_time=upcoming_event.start_time + timedelta(hours=3),
     )
 
-    _create_session(
-        sphere,
-        upcoming_event,
+    # Session 2: Cozy Storytellers Circle
+    space2 = SpaceFactory(
+        event=upcoming_event, name="Fireside Alcove", slug="story-circle"
+    )
+    session2 = SessionFactory(
+        sphere=sphere,
         title="Cozy Storytellers Circle",
         slug="story-circle",
-        presenter="Priya Chen",
+        presenter_name="Priya Chen",
         description="Collaborative narrative building with lightweight prompts.",
-        location_name="Fireside Alcove",
-        start_offset=timedelta(hours=2),
-        duration_hours=1,
+        participants_limit=24,
+        min_age=10,
+    )
+    AgendaItemFactory(
+        space=space2,
+        session=session2,
+        start_time=upcoming_event.start_time + timedelta(hours=2),
+        end_time=upcoming_event.start_time + timedelta(hours=3),
     )
 
-    _create_event(
-        sphere,
+    # Create a past event (5-10 days ago)
+    EventFactory(
+        sphere=sphere,
         name="Retro Mini Jam",
         slug="retro-mini-jam",
         description="Weekend jam focused on 8-bit vibes and tactile puzzlers.",
-        start_offset=timedelta(days=-7),
-        duration_hours=6,
-        publication_offset=timedelta(days=8),
+        start_time=fake.date_time_between("-10d", "-9d", tzinfo=UTC),
+        end_time=fake.date_time_between("-9d", "-8d", tzinfo=UTC),
+        publication_time=fake.date_time_between("-15d", "-12d", tzinfo=UTC),
     )
 
 

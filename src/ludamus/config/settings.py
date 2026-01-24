@@ -15,7 +15,7 @@ Environment Variables:
         - ROOT_DOMAIN: Root domain for multi-site support
         - AUTH0_CLIENT_ID: Auth0 client ID
         - AUTH0_CLIENT_SECRET: Auth0 client secret
-        - AUTH0_DOMAIN: Auth0 domain
+        - AUTH0_ROOT: Auth0 root URL (e.g., https://your-tenant.auth0.com)
 
     Production Only (when ENV=production):
         - ALLOWED_HOSTS: Comma-separated list of allowed hosts
@@ -137,17 +137,10 @@ WSGI_APPLICATION = "ludamus.deploy.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-TESTING = os.getenv("TESTING", "")
-DATABASES: dict[str, dict[str, Any]] = (  # pylint: disable=invalid-name
-    {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
-    if TESTING
-    else {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": str(BASE_DIR / "dev.sqlite3"),
-        }
-    }
-)
+LOCAL_DB_FILE = os.getenv("LOCAL_DB_FILE", ":memory:")
+DATABASES: dict[str, dict[str, Any]] = {  # pylint: disable=invalid-name
+    "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": LOCAL_DB_FILE}
+}
 
 
 # Password validation
@@ -205,7 +198,7 @@ ROOT_DOMAIN = os.environ["ROOT_DOMAIN"]
 
 AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
 AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
-AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
+AUTH0_ROOT = os.getenv("AUTH0_ROOT")
 
 # Support
 

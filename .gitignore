@@ -131,8 +131,7 @@ celerybeat.pid
 
 # Environments
 .env
-!.env.example
-!.env.dev
+!.env.*
 .venv
 env/
 venv/
@@ -198,7 +197,7 @@ cython_debug/
 .cursorindexingignore
 
 .vscode
-dev.sqlite3
+dev*.sqlite3
 src/ludamus/static/icon_cache/
 
 .beads/
