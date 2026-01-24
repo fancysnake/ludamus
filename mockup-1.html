@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Night Warsaw - Active Event</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Outfit', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'warm': {
+                            50: '#fdfcfb',
+                            100: '#f7f5f3',
+                            200: '#f0ece8',
+                            300: '#e4ddd6',
+                            400: '#c9bfb3',
+                            500: '#a69a8c',
+                            600: '#7d7164',
+                            700: '#5c534a',
+                            800: '#3d3732',
+                            900: '#252220',
+                        },
+                        'coral': {
+                            50: '#fef5f3',
+                            100: '#ffe5df',
+                            200: '#ffcfc5',
+                            300: '#ffab9a',
+                            400: '#ff7d61',
+                            500: '#f85a3c',
+                            600: '#e53e20',
+                            700: '#c13118',
+                            800: '#9f2c18',
+                            900: '#842a1b',
+                        },
+                        'teal': {
+                            50: '#f0fdfa',
+                            100: '#ccfbef',
+                            200: '#9af5df',
+                            300: '#5fe9cb',
+                            400: '#2dd4b3',
+                            500: '#14b89b',
+                            600: '#0d947e',
+                            700: '#0f7666',
+                            800: '#115e53',
+                            900: '#134e45',
+                        },
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-border {
+            position: relative;
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f85a3c, #14b89b);
+            border-radius: 9999px 9999px 0 0;
+        }
+        .session-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .session-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+        }
+        .tag-pill {
+            transition: all 0.2s ease;
+        }
+        .tag-pill:hover {
+            transform: scale(1.05);
+        }
+        .live-dot {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        /* Modal styles */
+        .modal-backdrop {
+            background: rgba(26, 26, 26, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        .modal-enter {
+            animation: modalEnter 0.3s ease-out;
+        }
+        @keyframes modalEnter {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        /* Session card with background image */
+        .session-card-bg {
+            position: relative;
+            min-height: 320px;
+        }
+        .session-card-bg .card-image {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+        .session-card-bg .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .session-card-bg .card-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(
+                to bottom,
+                rgba(253, 252, 251, 0) 0%,
+                rgba(253, 252, 251, 0.2) 20%,
+                rgba(253, 252, 251, 0.6) 35%,
+                rgba(253, 252, 251, 0.9) 45%,
+                rgba(253, 252, 251, 1) 55%
+            );
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+            mask-image: linear-gradient(
+                to bottom,
+                transparent 0%,
+                black 30%
+            );
+            -webkit-mask-image: linear-gradient(
+                to bottom,
+                transparent 0%,
+                black 30%
+            );
+        }
+        .session-card-bg .card-blur {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            mask-image: linear-gradient(
+                to bottom,
+                transparent 0%,
+                transparent 20%,
+                black 45%
+            );
+            -webkit-mask-image: linear-gradient(
+                to bottom,
+                transparent 0%,
+                transparent 20%,
+                black 45%
+            );
+        }
+        .session-card-bg .card-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        /* Playful blob shapes */
+        .blob {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+        .blob-2 {
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        }
+        .blob-3 {
+            border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased" style="background-color: #f0f1f5">
+
+    <!-- Decorative background blobs -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none" style="z-index: -1">
+        <div class="absolute -top-24 -right-24 w-96 h-96 blob opacity-30"
+             style="background: linear-gradient(135deg, rgba(248, 90, 60, 0.25), transparent)"></div>
+        <div class="absolute top-1/4 -left-32 w-80 h-80 blob-2 opacity-25"
+             style="background: linear-gradient(135deg, rgba(20, 184, 155, 0.2), transparent)"></div>
+        <div class="absolute bottom-1/3 right-1/4 w-72 h-72 blob-3 opacity-20"
+             style="background: linear-gradient(135deg, rgba(248, 90, 60, 0.15), transparent)"></div>
+        <div class="absolute bottom-20 -left-16 w-64 h-64 blob opacity-20"
+             style="background: linear-gradient(135deg, rgba(20, 184, 155, 0.15), transparent)"></div>
+        <div class="absolute top-2/3 right-0 w-48 h-48 blob-2 opacity-15"
+             style="background: linear-gradient(135deg, rgba(201, 191, 179, 0.3), transparent)"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-40 bg-warm-50/90 backdrop-blur-lg border-b border-warm-300/50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <!-- Playful logo -->
+                    <div class="relative">
+                        <div class="w-10 h-10 bg-gradient-to-br from-coral-500 to-coral-500 rounded-xl flex items-center justify-center rotate-3 hover:rotate-6 transition-transform cursor-pointer">
+                            <span class="text-warm-50 font-bold text-lg">L</span>
+                        </div>
+                        <div class="absolute -top-1 -right-1 w-3 h-3 bg-teal-400 rounded-full"></div>
+                    </div>
+                    <span class="text-xl font-bold bg-gradient-to-r from-warm-800 to-warm-600 bg-clip-text text-transparent">
+                        Ludamus
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-warm-200/80 rounded-full">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-coral-400 to-coral-400 flex items-center justify-center">
+                            <span class="text-warm-50 text-sm font-medium">JK</span>
+                        </div>
+                        <span class="text-sm font-medium text-warm-700">Jan Kowalski</span>
+                    </div>
+                    <button class="p-2 hover:bg-warm-200 rounded-xl transition-colors">
+                        <svg class="w-5 h-5 text-warm-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 relative">
+        <!-- Event Header -->
+        <div class="mb-8">
+            <!-- Breadcrumb -->
+            <div class="flex items-center gap-2 text-sm text-warm-500 mb-4">
+                <a href="#" class="hover:text-coral-600 transition-colors">Events</a>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span class="text-warm-700">Game Night Warsaw</span>
+            </div>
+
+            <!-- Hero Card -->
+            <div class="bg-warm-50 rounded-3xl shadow-xl shadow-warm-400/20 overflow-hidden gradient-border">
+                <div class="p-6 sm:p-8">
+                    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                        <div class="flex-1">
+                            <!-- Live badge -->
+                            <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-100 text-teal-700 rounded-full text-sm font-medium mb-4">
+                                <span class="live-dot w-2 h-2 bg-teal-500 rounded-full"></span>
+                                Happening now!
+                            </div>
+
+                            <h1 class="text-3xl sm:text-4xl font-bold text-warm-800 mb-3">
+                                Game Night Warsaw
+                                <span class="inline-block ml-2 float-animation">🎲</span>
+                            </h1>
+
+                            <p class="text-warm-600 text-lg mb-6 max-w-2xl">
+                                Join us for an awesome evening of board games, RPGs, and good vibes!
+                                Whether you're a seasoned gamer or just curious, there's something for everyone.
+                            </p>
+
+                            <!-- Event meta -->
+                            <div class="flex flex-wrap gap-4 text-sm">
+                                <div class="flex items-center gap-2 text-warm-600">
+                                    <div class="w-8 h-8 bg-coral-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-coral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-warm-800">Saturday, Jan 25</div>
+                                        <div class="text-warm-500">4:00 PM - 10:00 PM</div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-2 text-warm-600">
+                                    <div class="w-8 h-8 bg-coral-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-coral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-warm-800">Centrum Kreatywności</div>
+                                        <div class="text-warm-500">ul. Mokotowska 17, Warsaw</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick stats -->
+                        <div class="flex lg:flex-col gap-4 lg:gap-3">
+                            <div class="flex-1 lg:flex-none bg-gradient-to-br from-teal-50 to-teal-100 rounded-2xl p-4 text-center min-w-[120px]">
+                                <div class="text-3xl font-bold text-teal-700">12</div>
+                                <div class="text-sm text-teal-600">Sessions</div>
+                            </div>
+                            <div class="flex-1 lg:flex-none bg-gradient-to-br from-coral-50 to-coral-100 rounded-2xl p-4 text-center min-w-[120px]">
+                                <div class="text-3xl font-bold text-coral-700">47</div>
+                                <div class="text-sm text-coral-600">Players</div>
+                            </div>
+                            <div class="flex-1 lg:flex-none bg-gradient-to-br from-coral-50 to-coral-100 rounded-2xl p-4 text-center min-w-[120px]">
+                                <div class="text-3xl font-bold text-coral-700">8</div>
+                                <div class="text-sm text-coral-600">Open spots</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Enrollments Banner -->
+        <div class="mb-8 bg-gradient-to-r from-coral-400 to-coral-400 rounded-2xl p-[2px]">
+            <div class="bg-warm-50 rounded-2xl p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="w-12 h-12 bg-coral-100 rounded-xl flex items-center justify-center flex-shrwarm-0">
+                        <svg class="w-6 h-6 text-coral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-warm-800">You're signed up for 2 sessions!</h3>
+                        <p class="text-sm text-warm-600">Catan Tournament (5:00 PM) and D&D One-Shot (7:00 PM)</p>
+                    </div>
+                    <a href="#" class="text-sm font-medium text-coral-600 hover:text-coral-700 transition-colors underline underline-offset-2">
+                        View my schedule →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="mb-6 flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+                <div class="relative">
+                    <svg class="w-5 h-5 text-warm-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                        type="text"
+                        placeholder="Search sessions..."
+                        class="w-full pl-10 pr-4 py-3 bg-warm-50 border border-warm-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coral-400/30 focus:border-coral-400 transition-all"
+                    >
+                </div>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <button class="tag-pill px-4 py-2 bg-warm-700 text-warm-50 font-medium rounded-xl text-sm">
+                    All
+                </button>
+                <button class="tag-pill px-4 py-2 bg-warm-50 border border-warm-300 text-warm-600 hover:border-coral-400 hover:text-coral-600 font-medium rounded-xl text-sm transition-colors">
+                    Board Games
+                </button>
+                <button class="tag-pill px-4 py-2 bg-warm-50 border border-warm-300 text-warm-600 hover:border-coral-400 hover:text-coral-600 font-medium rounded-xl text-sm transition-colors">
+                    RPG
+                </button>
+                <button class="tag-pill px-4 py-2 bg-warm-50 border border-warm-300 text-warm-600 hover:border-coral-400 hover:text-coral-600 font-medium rounded-xl text-sm transition-colors">
+                    Card Games
+                </button>
+                <button class="tag-pill px-4 py-2 bg-warm-50 border border-warm-300 text-warm-600 hover:border-coral-400 hover:text-coral-600 font-medium rounded-xl text-sm transition-colors">
+                    Kids Friendly
+                </button>
+            </div>
+        </div>
+
+        <!-- Time Slots -->
+
+        <!-- 4:00 PM Slot -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex items-center gap-2 px-4 py-2 bg-warm-800 text-warm-100 rounded-xl">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-semibold">4:00 PM</span>
+                </div>
+                <div class="h-px flex-1 bg-gradient-to-r from-warm-400 to-transparent"></div>
+                <span class="text-sm text-teal-600 font-medium flex items-center gap-1">
+                    <span class="w-2 h-2 bg-teal-500 rounded-full live-dot"></span>
+                    Now
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Session Card 1 - Enrolled -->
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden border-2 border-coral-400" onclick="openModal()">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=600&h=500&fit=crop" alt="Catan board game">
+                    </div>
+                    <div class="card-blur"></div>
+                    <div class="card-overlay"></div>
+                    <div class="card-content p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="px-2.5 py-1 bg-coral-500 text-white text-xs font-medium rounded-lg shadow-sm">
+                                You're in!
+                            </span>
+                            <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">2h session</span>
+                        </div>
+
+                        <div class="flex-1"></div>
+
+                        <h3 class="font-bold text-lg text-warm-800 mb-2">Catan Tournament</h3>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center ring-2 ring-white">
+                                <span class="text-warm-50 text-xs font-medium">MK</span>
+                            </div>
+                            <span class="text-sm text-warm-700">Hosted by Marek K.</span>
+                        </div>
+
+                        <p class="text-sm text-warm-600 mb-4 line-clamp-2">
+                            Competitive Catan with prizes! Beginners welcome, we'll have practice rounds first.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Board Game</span>
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Strategy</span>
+                            <span class="px-2 py-1 bg-teal-100/90 text-teal-700 text-xs rounded-lg">Beginner OK</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-teal-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-warm-300 border-2 border-white flex items-center justify-center">
+                                        <span class="text-xs text-warm-600">+2</span>
+                                    </div>
+                                </div>
+                                <span class="text-sm text-warm-600">5/6</span>
+                            </div>
+                            <span class="text-sm font-medium text-coral-600">1 spot left</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Card 2 - Full -->
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden opacity-75">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1611371805429-8b5c1b2c34ba?w=600&h=500&fit=crop" alt="Gloomhaven board game">
+                    </div>
+                    <div class="card-blur"></div>
+                    <div class="card-overlay"></div>
+                    <div class="card-content p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="px-2.5 py-1 bg-warm-500 text-white text-xs font-medium rounded-lg shadow-sm">
+                                Full
+                            </span>
+                            <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">3h session</span>
+                        </div>
+
+                        <div class="flex-1"></div>
+
+                        <h3 class="font-bold text-lg text-warm-800 mb-2">Gloomhaven Campaign</h3>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center ring-2 ring-white">
+                                <span class="text-warm-50 text-xs font-medium">AS</span>
+                            </div>
+                            <span class="text-sm text-warm-700">Hosted by Anna S.</span>
+                        </div>
+
+                        <p class="text-sm text-warm-600 mb-4 line-clamp-2">
+                            Continuing our campaign - Session 5. Current players only.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Board Game</span>
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Campaign</span>
+                            <span class="px-2 py-1 bg-coral-100/90 text-coral-700 text-xs rounded-lg">18+</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-teal-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-warm-400 border-2 border-white"></div>
+                                </div>
+                                <span class="text-sm text-warm-600">4/4</span>
+                            </div>
+                            <span class="text-sm font-medium text-warm-500">3 waiting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Card 3 - Available -->
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1566694271453-390536dd1f0d?w=600&h=500&fit=crop" alt="Ticket to Ride">
+                    </div>
+                    <div class="card-blur"></div>
+                    <div class="card-overlay"></div>
+                    <div class="card-content p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="px-2.5 py-1 bg-teal-500 text-white text-xs font-medium rounded-lg shadow-sm">
+                                Open
+                            </span>
+                            <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">1.5h session</span>
+                        </div>
+
+                        <div class="flex-1"></div>
+
+                        <h3 class="font-bold text-lg text-warm-800 mb-2">Ticket to Ride: Europe</h3>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center ring-2 ring-white">
+                                <span class="text-warm-50 text-xs font-medium">PW</span>
+                            </div>
+                            <span class="text-sm text-warm-700">Hosted by Piotr W.</span>
+                        </div>
+
+                        <p class="text-sm text-warm-600 mb-4 line-clamp-2">
+                            Perfect for families! Learn the rules in 5 minutes, fun for everyone.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Board Game</span>
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Family</span>
+                            <span class="px-2 py-1 bg-teal-100/90 text-teal-700 text-xs rounded-lg">8+</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-teal-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                </div>
+                                <span class="text-sm text-warm-600">3/5</span>
+                            </div>
+                            <span class="text-sm font-medium text-teal-600">2 spots left</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5:00 PM Slot -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex items-center gap-2 px-4 py-2 bg-warm-50 border border-warm-300 text-warm-700 rounded-xl">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-semibold">5:00 PM</span>
+                </div>
+                <div class="h-px flex-1 bg-gradient-to-r from-warm-400 to-transparent"></div>
+                <span class="text-sm text-warm-500">Starting in 1h</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Session Card - Available -->
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1642056446264-556457a5bf86?w=600&h=500&fit=crop" alt="Magic: The Gathering cards">
+                    </div>
+                    <div class="card-blur"></div>
+                    <div class="card-overlay"></div>
+                    <div class="card-content p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="px-2.5 py-1 bg-teal-500 text-white text-xs font-medium rounded-lg shadow-sm">
+                                Open
+                            </span>
+                            <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">2h session</span>
+                        </div>
+
+                        <div class="flex-1"></div>
+
+                        <h3 class="font-bold text-lg text-warm-800 mb-2">Magic: The Gathering Draft</h3>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-warm-600 to-warm-700 flex items-center justify-center ring-2 ring-white">
+                                <span class="text-warm-50 text-xs font-medium">TL</span>
+                            </div>
+                            <span class="text-sm text-warm-700">Hosted by Tomek L.</span>
+                        </div>
+
+                        <p class="text-sm text-warm-600 mb-4 line-clamp-2">
+                            Casual draft event! Packs provided, keep what you draft. All skill levels.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Card Game</span>
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">TCG</span>
+                            <span class="px-2 py-1 bg-teal-100/90 text-teal-700 text-xs rounded-lg">Beginner OK</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-teal-400 border-2 border-white"></div>
+                                </div>
+                                <span class="text-sm text-warm-600">3/8</span>
+                            </div>
+                            <span class="text-sm font-medium text-teal-600">5 spots left</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Card - Kids -->
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=600&h=500&fit=crop" alt="Card game fun">
+                    </div>
+                    <div class="card-blur"></div>
+                    <div class="card-overlay"></div>
+                    <div class="card-content p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="px-2.5 py-1 bg-teal-500 text-white text-xs font-medium rounded-lg shadow-sm flex items-center gap-1">
+                                <span>Kids welcome</span>
+                                <span class="text-base">🎈</span>
+                            </span>
+                            <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">1h session</span>
+                        </div>
+
+                        <div class="flex-1"></div>
+
+                        <h3 class="font-bold text-lg text-warm-800 mb-2">Dobble Championship</h3>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center ring-2 ring-white">
+                                <span class="text-warm-50 text-xs font-medium">KN</span>
+                            </div>
+                            <span class="text-sm text-warm-700">Hosted by Kasia N.</span>
+                        </div>
+
+                        <p class="text-sm text-warm-600 mb-4 line-clamp-2">
+                            Fast-paced fun for all ages! Multiple rounds with mini prizes.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Card Game</span>
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Family</span>
+                            <span class="px-2 py-1 bg-teal-100/90 text-teal-700 text-xs rounded-lg">All ages</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-teal-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                </div>
+                                <span class="text-sm text-warm-600">2/10</span>
+                            </div>
+                            <span class="text-sm font-medium text-teal-600">8 spots left</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7:00 PM Slot -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex items-center gap-2 px-4 py-2 bg-warm-50 border border-warm-300 text-warm-700 rounded-xl">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-semibold">7:00 PM</span>
+                </div>
+                <div class="h-px flex-1 bg-gradient-to-r from-warm-400 to-transparent"></div>
+                <span class="text-sm text-warm-500">Starting in 3h</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Session Card - Enrolled RPG -->
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden border-2 border-coral-400">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1569003339405-ea396a5a8a90?w=600&h=500&fit=crop" alt="D&D dice and maps">
+                    </div>
+                    <div class="card-blur"></div>
+                    <div class="card-overlay"></div>
+                    <div class="card-content p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="px-2.5 py-1 bg-coral-500 text-white text-xs font-medium rounded-lg shadow-sm">
+                                You're in!
+                            </span>
+                            <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">3h session</span>
+                        </div>
+
+                        <div class="flex-1"></div>
+
+                        <h3 class="font-bold text-lg text-warm-800 mb-2">D&D One-Shot: The Lost Mine</h3>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center ring-2 ring-white">
+                                <span class="text-warm-50 text-xs font-medium">JZ</span>
+                            </div>
+                            <span class="text-sm text-warm-700">DM: Jakub Z.</span>
+                        </div>
+
+                        <p class="text-sm text-warm-600 mb-4 line-clamp-2">
+                            Classic dungeon crawl! Pre-made characters available. Newbies very welcome!
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-coral-100/90 text-coral-700 text-xs rounded-lg">RPG</span>
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Fantasy</span>
+                            <span class="px-2 py-1 bg-teal-100/90 text-teal-700 text-xs rounded-lg">Beginner OK</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-teal-400 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-warm-400 border-2 border-white"></div>
+                                </div>
+                                <span class="text-sm text-warm-600">4/5</span>
+                            </div>
+                            <span class="text-sm font-medium text-coral-600">1 spot left</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Card - Available -->
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1621570074981-ee6a0145c8b5?w=600&h=500&fit=crop" alt="Wingspan bird game">
+                    </div>
+                    <div class="card-blur"></div>
+                    <div class="card-overlay"></div>
+                    <div class="card-content p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="px-2.5 py-1 bg-teal-500 text-white text-xs font-medium rounded-lg shadow-sm">
+                                Open
+                            </span>
+                            <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">2h session</span>
+                        </div>
+
+                        <div class="flex-1"></div>
+
+                        <h3 class="font-bold text-lg text-warm-800 mb-2">Wingspan Tournament</h3>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center ring-2 ring-white">
+                                <span class="text-warm-50 text-xs font-medium">EM</span>
+                            </div>
+                            <span class="text-sm text-warm-700">Hosted by Ewa M.</span>
+                        </div>
+
+                        <p class="text-sm text-warm-600 mb-4 line-clamp-2">
+                            Beautiful engine-builder about birds! Winner gets a promo pack.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Board Game</span>
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Strategy</span>
+                            <span class="px-2 py-1 bg-teal-100/90 text-teal-700 text-xs rounded-lg">10+</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                </div>
+                                <span class="text-sm text-warm-600">1/5</span>
+                            </div>
+                            <span class="text-sm font-medium text-teal-600">4 spots left</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Card - Horror RPG -->
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&h=500&fit=crop" alt="Mysterious horror atmosphere">
+                    </div>
+                    <div class="card-blur"></div>
+                    <div class="card-overlay"></div>
+                    <div class="card-content p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="px-2.5 py-1 bg-teal-500 text-white text-xs font-medium rounded-lg shadow-sm">
+                                Open
+                            </span>
+                            <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">3h session</span>
+                        </div>
+
+                        <div class="flex-1"></div>
+
+                        <h3 class="font-bold text-lg text-warm-800 mb-2">Call of Cthulhu: Haunted House</h3>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-warm-600 to-warm-700 flex items-center justify-center ring-2 ring-white">
+                                <span class="text-warm-50 text-xs font-medium">RK</span>
+                            </div>
+                            <span class="text-sm text-warm-700">Keeper: Robert K.</span>
+                        </div>
+
+                        <p class="text-sm text-warm-600 mb-4 line-clamp-2">
+                            Atmospheric horror one-shot. Not for the faint of heart! Experienced players preferred.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-coral-100/90 text-coral-700 text-xs rounded-lg">RPG</span>
+                            <span class="px-2 py-1 bg-warm-200/90 text-warm-700 text-xs rounded-lg">Horror</span>
+                            <span class="px-2 py-1 bg-coral-100/90 text-coral-700 text-xs rounded-lg">18+</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-warm-500 border-2 border-white"></div>
+                                    <div class="w-7 h-7 rounded-full bg-coral-400 border-2 border-white"></div>
+                                </div>
+                                <span class="text-sm text-warm-600">2/4</span>
+                            </div>
+                            <span class="text-sm font-medium text-teal-600">2 spots left</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Propose Session CTA -->
+        <div class="mt-12 text-center">
+            <div class="inline-flex flex-col items-center p-8 bg-gradient-to-br from-warm-100 to-warm-50 rounded-3xl border border-warm-300">
+                <div class="w-16 h-16 bg-gradient-to-br from-coral-100 to-coral-100 rounded-2xl flex items-center justify-center mb-4 rotate-3">
+                    <svg class="w-8 h-8 text-coral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-warm-800 mb-2">Want to host a session?</h3>
+                <p class="text-warm-600 mb-4 max-w-md">
+                    Got a game you're dying to play? Propose your own session and find players!
+                </p>
+                <a href="#" class="px-6 py-3 bg-gradient-to-r from-coral-500 to-coral-500 hover:from-coral-600 hover:to-coral-600 text-warm-50 font-semibold rounded-xl transition-all shadow-lg shadow-coral-500/25">
+                    Propose a session
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-16 border-t border-warm-300 bg-warm-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-warm-500">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-coral-500 to-coral-500 rounded-lg flex items-center justify-center">
+                        <span class="text-warm-50 font-bold text-sm">L</span>
+                    </div>
+                    <span>© 2025 Ludamus. Made with</span>
+                    <span class="text-coral-500">♥</span>
+                    <span>in Warsaw</span>
+                </div>
+                <div class="flex gap-6">
+                    <a href="#" class="hover:text-coral-500 transition-colors">Privacy</a>
+                    <a href="#" class="hover:text-coral-500 transition-colors">Terms</a>
+                    <a href="#" class="hover:text-coral-500 transition-colors">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Session Detail Modal -->
+    <div id="sessionModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-backdrop absolute inset-0" onclick="closeModal()"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="modal-enter relative bg-warm-50 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <!-- Modal Cover Image -->
+                <div class="relative h-48 bg-gradient-to-br from-amber-100 to-orange-200 overflow-hidden rounded-t-3xl">
+                    <img src="https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=800&h=400&fit=crop" alt="Catan board game" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                    <button onclick="closeModal()" class="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-xl transition-colors shadow-lg">
+                        <svg class="w-5 h-5 text-warm-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- Modal Header -->
+                <div class="sticky top-0 bg-warm-50 border-b border-warm-300 px-6 py-3 flex items-center gap-3 z-10">
+                    <span class="px-2.5 py-1 bg-coral-100 text-coral-700 text-xs font-medium rounded-lg">
+                        You're in!
+                    </span>
+                    <span class="text-sm text-warm-500">4:00 PM - 6:00 PM</span>
+                </div>
+
+                <!-- Modal Content -->
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-warm-800 mb-2">Catan Tournament</h2>
+
+                    <!-- Host info -->
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center">
+                            <span class="text-warm-50 text-sm font-medium">MK</span>
+                        </div>
+                        <div>
+                            <div class="font-medium text-warm-800">Marek Kowalczyk</div>
+                            <div class="text-sm text-warm-500">Hosted 12 sessions</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-warm-700 mb-2">About this session</h3>
+                        <p class="text-warm-600 leading-relaxed">
+                            Competitive Catan with prizes! Whether you're a seasoned settler or just starting out, you're welcome to join.
+                            We'll have practice rounds first so everyone can warm up. The winner gets a shiny new expansion pack!
+                        </p>
+                        <p class="text-warm-600 leading-relaxed mt-3">
+                            Please arrive 10 minutes early so we can start on time. Snacks and drinks available at the venue.
+                        </p>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <span class="px-3 py-1.5 bg-warm-200 text-warm-600 text-sm rounded-lg">Board Game</span>
+                        <span class="px-3 py-1.5 bg-warm-200 text-warm-600 text-sm rounded-lg">Strategy</span>
+                        <span class="px-3 py-1.5 bg-teal-100 text-teal-700 text-sm rounded-lg">Beginner OK</span>
+                        <span class="px-3 py-1.5 bg-coral-100 text-coral-700 text-sm rounded-lg">🏆 Prizes</span>
+                    </div>
+
+                    <!-- Details grid -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-warm-100 rounded-xl p-4">
+                            <div class="text-sm text-warm-500 mb-1">Location</div>
+                            <div class="font-medium text-warm-800">Table 3, Main Hall</div>
+                        </div>
+                        <div class="bg-warm-100 rounded-xl p-4">
+                            <div class="text-sm text-warm-500 mb-1">Duration</div>
+                            <div class="font-medium text-warm-800">2 hours</div>
+                        </div>
+                        <div class="bg-warm-100 rounded-xl p-4">
+                            <div class="text-sm text-warm-500 mb-1">Age requirement</div>
+                            <div class="font-medium text-warm-800">10+ years</div>
+                        </div>
+                        <div class="bg-warm-100 rounded-xl p-4">
+                            <div class="text-sm text-warm-500 mb-1">Language</div>
+                            <div class="font-medium text-warm-800">Polish / English</div>
+                        </div>
+                    </div>
+
+                    <!-- Participants -->
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-warm-700 mb-3">Players (5/6)</h3>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between p-3 bg-warm-100 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center">
+                                        <span class="text-warm-50 text-xs font-medium">MK</span>
+                                    </div>
+                                    <span class="font-medium text-warm-800">Marek K.</span>
+                                </div>
+                                <span class="text-xs text-coral-600 font-medium">Host</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-coral-50 rounded-xl border border-coral-200">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-coral-400 to-coral-400 flex items-center justify-center">
+                                        <span class="text-warm-50 text-xs font-medium">JK</span>
+                                    </div>
+                                    <span class="font-medium text-warm-800">Jan Kowalski</span>
+                                </div>
+                                <span class="text-xs text-coral-600 font-medium">You</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-warm-100 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center">
+                                        <span class="text-warm-50 text-xs font-medium">AN</span>
+                                    </div>
+                                    <span class="font-medium text-warm-800">Anna N.</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-warm-100 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center">
+                                        <span class="text-warm-50 text-xs font-medium">PW</span>
+                                    </div>
+                                    <span class="font-medium text-warm-800">Piotr W.</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-warm-100 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-warm-500 to-warm-600 flex items-center justify-center">
+                                        <span class="text-warm-50 text-xs font-medium">KL</span>
+                                    </div>
+                                    <span class="font-medium text-warm-800">Kasia L.</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-center p-3 border-2 border-dashed border-warm-300 rounded-xl">
+                                <span class="text-sm text-warm-400">1 spot available</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="sticky bottom-0 bg-warm-50 border-t border-warm-300 px-6 py-4">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button class="flex-1 px-4 py-3 bg-warm-200 hover:bg-warm-300 text-warm-700 font-medium rounded-xl transition-colors">
+                            Leave session
+                        </button>
+                        <button onclick="closeModal()" class="flex-1 px-4 py-3 bg-warm-800 hover:bg-warm-900 text-warm-50 font-medium rounded-xl transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('sessionModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('sessionModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
