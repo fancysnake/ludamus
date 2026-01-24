@@ -95,7 +95,4 @@ urlpatterns = [
         "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
     path("crowd/", include((crowd_urls, "crowd"), namespace="crowd")),
-    path(
-        "theme/do/select", views.ThemeSelectionActionView.as_view(), name="theme-select"
-    ),
 ]

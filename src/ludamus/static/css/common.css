@@ -1,3 +1,11 @@
+:root {
+  --bs-primary: #ea580c;
+  --bs-primary-rgb: 234, 88, 12;
+  --bs-link-color: #000;
+  --bs-link-hover-color: #c2410c;
+  --bs-link-decoration: none;
+}
+
 .main-content,
 .page-footer,
 .navbar {
@@ -23,6 +31,7 @@
 body {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 .page-footer {
@@ -31,4 +40,55 @@ body {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+/* Navbar - neutral with dashed border */
+.navbar.bg-primary {
+  background-color: var(--bs-body-bg, #fff) !important;
+  color: var(--bs-body-color, #1c1917) !important;
+  border-bottom: 1px dashed var(--bs-border-color, #dee2e6);
+}
+
+.navbar.bg-primary .navbar-brand,
+.navbar.bg-primary .nav-link,
+.navbar.bg-primary .navbar-text {
+  color: var(--bs-body-color, #1c1917) !important;
+}
+
+.navbar.bg-primary .btn-light {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: #fff;
+}
+
+.navbar.bg-primary .btn-outline-light {
+  border-color: var(--bs-body-color, #1c1917);
+  color: var(--bs-body-color, #1c1917);
+}
+
+/* Links - black with underline on hover */
+a {
+  color: var(--bs-link-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+
+/* Footer - neutral with dashed border */
+.page-footer {
+  margin-top: 4rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, #1c1917);
+  border-top: 1px dashed var(--bs-border-color, #dee2e6);
+}
+
+.page-footer a {
+  color: var(--bs-body-color, #1c1917);
+}
+
+.page-footer a:hover {
+  color: var(--bs-primary);
 }

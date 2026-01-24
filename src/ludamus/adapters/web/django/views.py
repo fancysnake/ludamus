@@ -61,7 +61,6 @@ from ludamus.pacts import (
 from .exceptions import RedirectError
 from .forms import (
     ConnectedUserForm,
-    ThemeSelectionForm,
     UserForm,
     create_enrollment_form,
     create_proposal_acceptance_form,
@@ -1602,20 +1601,6 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                     "Please create time slots first."
                 ),
             )
-
-
-class ThemeSelectionActionView(View):
-    @staticmethod
-    def post(request: RootRequest) -> HttpResponse:
-        form = ThemeSelectionForm(request.POST)
-        if form.is_valid():
-            theme = form.cleaned_data["theme"]
-            request.session["theme"] = theme
-            # Redirect back to the referring page
-            return redirect(request.META.get("HTTP_REFERER", "/"))
-
-        # If form is invalid, redirect back anyway
-        return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 class EventAnonymousActivateActionView(View):
