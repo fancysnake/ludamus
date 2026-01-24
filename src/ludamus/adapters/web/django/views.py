@@ -293,11 +293,17 @@ class Auth0LogoutRedirectActionView(RedirectView):
 
 
 class IndexPageView(TemplateView):
-    request: RootDAORequest
+    request: RootRequest
 
     def get_template_names(self) -> list[str]:
-        current_domain = self.request.root_dao.current_site.domain.split(":")[0]
-        root_domain = self.request.root_dao.root_site.domain.split(":")[0]
+        current_site = self.request.uow.spheres.read_site(
+            self.request.context.current_sphere_id
+        )
+        root_site = self.request.uow.spheres.read_site(
+            self.request.context.root_sphere_id
+        )
+        current_domain = current_site.domain.split(":")[0]
+        root_domain = root_site.domain.split(":")[0]
         is_root = current_domain == root_domain
         if is_root:
             return ["root/index.html"]
@@ -305,8 +311,14 @@ class IndexPageView(TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        current_domain = self.request.root_dao.current_site.domain.split(":")[0]
-        root_domain = self.request.root_dao.root_site.domain.split(":")[0]
+        current_site = self.request.uow.spheres.read_site(
+            self.request.context.current_sphere_id
+        )
+        root_site = self.request.uow.spheres.read_site(
+            self.request.context.root_sphere_id
+        )
+        current_domain = current_site.domain.split(":")[0]
+        root_domain = root_site.domain.split(":")[0]
         if current_domain == root_domain:
 
             from ludamus.adapters.db.django.models import Sphere
@@ -315,7 +327,7 @@ class IndexPageView(TemplateView):
                 Sphere.objects.filter(
                     site__isnull=False, visibility=Sphere.Visibility.PUBLIC
                 )
-                .exclude(site_id=self.request.root_dao.root_site.pk)
+                .exclude(site_id=root_site.pk)
                 .select_related("site")
             )
             context["spheres"] = [s for s in spheres]
