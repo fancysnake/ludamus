@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Game Night 2025 - Active Event Mockup</title>
+        <!-- Theme initialization - minimal JS only for localStorage persistence -->
+        <script>
+            (function() {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            })();
+        </script>
+        <!-- Tailwind CSS from CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Google Fonts - Nunito -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <script>
+            tailwind.config = {
+                darkMode: ['selector', '[data-theme="dark"]'],
+                theme: {
+                    extend: {
+                        colors: {
+                            coral: {
+                                50: '#fff5f2',
+                                100: '#ffe8e0',
+                                200: '#ffd4c4',
+                                300: '#ffb89e',
+                                400: '#ff9166',
+                                500: '#ff6b35',
+                                600: '#ed5020',
+                                700: '#c43d15',
+                                800: '#9c3316',
+                                900: '#7f2e17',
+                            },
+                            ocean: {
+                                light: '#e0f7ff',
+                                DEFAULT: '#06b6d4',
+                                dark: '#0891b2',
+                            },
+                            forest: {
+                                light: '#dcfce7',
+                                DEFAULT: '#22c55e',
+                                dark: '#16a34a',
+                            },
+                            grape: {
+                                light: '#f3e8ff',
+                                DEFAULT: '#a855f7',
+                                dark: '#9333ea',
+                            },
+                        },
+                        fontFamily: {
+                            'sans': ['Nunito', 'system-ui', 'sans-serif'],
+                        },
+                        borderRadius: {
+                            'playful': '20px',
+                            'playful-sm': '14px',
+                            'playful-lg': '28px',
+                        },
+                    }
+                }
+            }
+        </script>
+        <style>
+            /* Playful blob shapes */
+            .blob {
+                border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            }
+            .blob-2 {
+                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            }
+
+            /* Card with playful corner accent */
+            .card-playful {
+                position: relative;
+                overflow: hidden;
+                transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+            }
+            .card-playful:hover {
+                transform: translateY(-4px) rotate(-0.5deg);
+            }
+
+            /* Live indicator with bouncy animation */
+            .live-bounce {
+                animation: live-bounce 1s ease-in-out infinite;
+            }
+            @keyframes live-bounce {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.3); opacity: 0.7; }
+            }
+
+            /* Wiggle animation for fun elements */
+            .wiggle:hover {
+                animation: wiggle 0.5s ease-in-out;
+            }
+            @keyframes wiggle {
+                0%, 100% { transform: rotate(0deg); }
+                25% { transform: rotate(-3deg); }
+                75% { transform: rotate(3deg); }
+            }
+
+            /* Tag pill with subtle animation */
+            .tag-bouncy {
+                transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+                cursor: pointer;
+            }
+            .tag-bouncy:hover {
+                transform: scale(1.08) translateY(-2px);
+            }
+            .tag-bouncy:active {
+                transform: scale(0.98);
+            }
+
+            /* Progress bar with shine effect */
+            .progress-shine {
+                position: relative;
+                overflow: hidden;
+            }
+            .progress-shine::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                animation: shine 2s ease-in-out infinite;
+            }
+            @keyframes shine {
+                0% { left: -100%; }
+                100% { left: 100%; }
+            }
+
+            /* Floating animation */
+            .float {
+                animation: float 3s ease-in-out infinite;
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-8px); }
+            }
+
+            /* Button with playful press effect */
+            .btn-playful {
+                transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            .btn-playful:hover {
+                transform: translateY(-2px);
+            }
+            .btn-playful:active {
+                transform: translateY(1px) scale(0.98);
+            }
+
+            /* Confetti-style decorative dots */
+            .confetti-dots {
+                background-image: radial-gradient(#ff6b35 1px, transparent 1px),
+                                  radial-gradient(#06b6d4 1px, transparent 1px),
+                                  radial-gradient(#a855f7 1px, transparent 1px);
+                background-size: 40px 40px, 60px 60px, 80px 80px;
+                background-position: 0 0, 20px 20px, 10px 30px;
+                opacity: 0.4;
+            }
+
+            /* === CSS-only Modal === */
+            .modal-toggle {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .modal-backdrop {
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.2s ease, visibility 0.2s ease;
+            }
+            .modal-content {
+                opacity: 0;
+                visibility: hidden;
+                transform: scale(0.95) translateY(10px);
+                transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+            }
+            .modal-toggle:checked ~ .modal-backdrop {
+                opacity: 1;
+                visibility: visible;
+            }
+            .modal-toggle:checked ~ .modal-container .modal-content {
+                opacity: 1;
+                visibility: visible;
+                transform: scale(1) translateY(0);
+            }
+
+            /* === CSS-only Collapsible === */
+            .collapse-toggle {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .collapse-content {
+                display: grid;
+                grid-template-rows: 0fr;
+                opacity: 0;
+                transition: grid-template-rows 0.3s ease, opacity 0.3s ease;
+            }
+            .collapse-content > div {
+                overflow: hidden;
+            }
+            .collapse-toggle:checked ~ .collapse-content {
+                grid-template-rows: 1fr;
+                opacity: 1;
+            }
+            .collapse-toggle:checked ~ .collapse-header .collapse-icon {
+                transform: rotate(180deg);
+            }
+
+            /* === CSS-only Theme Switcher === */
+            .theme-radio {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .theme-label {
+                transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            .theme-radio:checked + .theme-label {
+                background-color: white;
+                color: #0f172a;
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            }
+            [data-theme="dark"] .theme-radio:checked + .theme-label {
+                background-color: #475569;
+                color: white;
+            }
+        </style>
+    </head>
+    <body class="min-h-screen font-sans antialiased bg-sky-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+
+        <!-- Decorative background blobs -->
+        <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+            <div class="absolute -top-20 -right-20 w-96 h-96 blob opacity-40 bg-gradient-to-br from-cyan-500/30 to-transparent"></div>
+            <div class="absolute top-1/3 -left-32 w-80 h-80 blob-2 opacity-30 bg-gradient-to-br from-blue-500/25 to-transparent"></div>
+            <div class="absolute bottom-20 right-1/4 w-64 h-64 blob opacity-20 bg-gradient-to-br from-purple-500/25 to-transparent"></div>
+        </div>
+
+        <!-- Navbar -->
+        <nav class="sticky top-0 z-50 border-b backdrop-blur-md bg-sky-50/90 dark:bg-slate-900/90 border-sky-200 dark:border-slate-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center gap-3">
+                        <!-- Logo -->
+                        <a href="#" class="flex items-center gap-2 group">
+                            <div class="relative">
+                                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                    <span class="text-white font-black text-xl">L</span>
+                                </div>
+                                <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-forest border-2 border-white dark:border-slate-800 flex items-center justify-center">
+                                    <span class="text-white text-[8px]">!</span>
+                                </div>
+                            </div>
+                            <div class="hidden sm:block">
+                                <span class="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                                    Ludamus
+                                </span>
+                                <span class="block text-xs font-medium -mt-1 text-slate-500 dark:text-slate-400">
+                                    Let's play together
+                                </span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Live Activity Pill -->
+                    <div class="hidden md:flex items-center">
+                        <div class="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-dashed border-green-500 bg-gradient-to-br from-green-500/10 to-green-500/5 wiggle cursor-pointer">
+                            <span class="w-2.5 h-2.5 rounded-full bg-forest live-bounce"></span>
+                            <span class="text-sm font-bold text-green-600 dark:text-green-400">12 games happening now!</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <!-- User -->
+                        <div class="flex items-center gap-3">
+                            <div class="hidden sm:block text-right">
+                                <p class="text-sm font-bold text-slate-900 dark:text-white">
+                                    Hey there, John!
+                                </p>
+                                <p class="text-xs font-medium text-coral-500">
+                                    Ready for adventure?
+                                </p>
+                            </div>
+                            <div class="relative group cursor-pointer">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-grape to-grape-dark flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-6">
+                                    <span class="text-white text-sm font-bold">JD</span>
+                                </div>
+                                <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 dark:bg-white text-white dark:text-slate-900">
+                                    Your profile
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+            <!-- Event Hero -->
+            <div class="mb-10">
+                <div class="rounded-playful-lg shadow-lg shadow-slate-200/50 dark:shadow-none overflow-hidden relative bg-gradient-to-br from-white to-sky-50 dark:from-slate-800 dark:to-slate-800/50">
+                    <!-- Decorative confetti pattern -->
+                    <div class="absolute inset-0 confetti-dots pointer-events-none"></div>
+
+                    <div class="p-6 sm:p-8 relative">
+                        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
+                            <div class="flex-1">
+                                <!-- Live Badge -->
+                                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5 btn-playful bg-gradient-to-br from-green-500/20 to-green-500/10 border-2 border-green-500">
+                                    <span class="w-3 h-3 rounded-full bg-forest live-bounce"></span>
+                                    <span class="text-sm font-extrabold text-green-600 dark:text-green-400">We're Live!</span>
+                                </div>
+
+                                <!-- Event Title -->
+                                <h1 class="text-4xl sm:text-5xl font-black mb-4 leading-tight text-slate-900 dark:text-white">
+                                    Game Night 2025
+                                    <span class="inline-block animate-bounce ml-2">🎲</span>
+                                </h1>
+
+                                <!-- Subtitle -->
+                                <p class="text-xl font-semibold mb-2 text-coral-500">
+                                    The biggest gaming party in town!
+                                </p>
+
+                                <!-- Description -->
+                                <p class="text-lg mb-6 max-w-2xl text-slate-600 dark:text-slate-300">
+                                    Jump in and find your next obsession! Board games, epic RPG quests, card battles, and
+                                    the chillest people you'll ever meet. No experience needed, just bring your best vibes.
+                                </p>
+
+                                <!-- Quick Info Tags -->
+                                <div class="flex flex-wrap gap-3">
+                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy bg-sky-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600">
+                                        <svg class="w-5 h-5 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z" clip-rule="evenodd" /></svg>
+                                        Jan 25-26, 2025
+                                    </span>
+                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy bg-sky-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600">
+                                        <svg class="w-5 h-5 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        Community Center
+                                    </span>
+                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy bg-sky-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600">
+                                        <svg class="w-5 h-5 text-grape" fill="currentColor" viewBox="0 0 24 24"><path d="M4.5 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM14.25 8.625a3.375 3.375 0 116.75 0 3.375 3.375 0 01-6.75 0zM1.5 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM17.25 19.128l-.001.144a2.25 2.25 0 01-.233.96 10.088 10.088 0 005.06-1.01.75.75 0 00.42-.643 4.875 4.875 0 00-6.957-4.611 8.586 8.586 0 011.71 5.157v.003z" /></svg>
+                                        248 awesome humans
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Your Status Card -->
+                            <div class="lg:w-80">
+                                <div class="rounded-playful p-5 relative overflow-hidden bg-gradient-to-br from-white to-sky-50 dark:from-slate-700 dark:to-slate-800 border-3 border-coral-500">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-coral-400 to-coral-600 flex items-center justify-center shadow-lg float">
+                                            <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M1.5 6.375c0-1.036.84-1.875 1.875-1.875h17.25c1.035 0 1.875.84 1.875 1.875v3.026a.75.75 0 01-.375.65 2.249 2.249 0 000 3.898.75.75 0 01.375.65v3.026c0 1.035-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 011.5 17.625v-3.026a.75.75 0 01.374-.65 2.249 2.249 0 000-3.898.75.75 0 01-.374-.65V6.375zm15-1.125a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75zm.75 4.5a.75.75 0 00-1.5 0v.75a.75.75 0 001.5 0v-.75zm-.75 3a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0v-.75a.75.75 0 01.75-.75zm.75 4.5a.75.75 0 00-1.5 0V18a.75.75 0 001.5 0v-.75zM6 12a.75.75 0 01.75-.75H12a.75.75 0 010 1.5H6.75A.75.75 0 016 12zm.75 2.25a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z" clip-rule="evenodd" /></svg>
+                                        </div>
+                                        <div>
+                                            <p class="font-extrabold text-lg text-slate-900 dark:text-white">Your Quest Log</p>
+                                            <p class="text-sm font-semibold text-coral-500">3 adventures joined!</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Mini Schedule -->
+                                    <div class="space-y-2 mb-4">
+                                        <div class="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02] cursor-pointer bg-gradient-to-br from-green-500/15 to-green-500/5 border border-green-500">
+                                            <span class="w-3 h-3 rounded-full bg-forest live-bounce"></span>
+                                            <span class="text-sm font-bold flex-1 text-slate-900 dark:text-white">D&D: Lost Mines</span>
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-green-500 text-white">NOW</span>
+                                        </div>
+                                        <div class="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02] cursor-pointer bg-sky-100 dark:bg-slate-600">
+                                            <span class="w-3 h-3 rounded-full bg-coral-500"></span>
+                                            <span class="text-sm font-bold flex-1 text-slate-900 dark:text-white">Catan Tournament</span>
+                                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">3:00 PM</span>
+                                        </div>
+                                    </div>
+
+                                    <a href="#" class="block w-full text-center px-4 py-3 rounded-xl font-bold text-sm btn-playful bg-gradient-to-br from-coral-500 to-coral-600 text-white shadow-lg shadow-coral-500/30">
+                                        See Your Schedule
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Filters -->
+            <div class="mb-8">
+                <div class="flex flex-wrap items-center gap-4">
+                    <!-- Search -->
+                    <div class="relative flex-1 min-w-[200px] max-w-md group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 transition-transform group-focus-within:scale-110 text-slate-400">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                        </span>
+                        <input type="text"
+                               class="w-full pl-12 pr-4 py-3.5 rounded-2xl border-3 focus:outline-none transition-all font-semibold bg-white dark:bg-slate-800 border-sky-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 focus:border-coral-500 focus:ring-2 focus:ring-coral-500/20"
+                               placeholder="Find your next adventure...">
+                    </div>
+
+                    <!-- Filter Pills -->
+                    <div class="flex flex-wrap gap-2">
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-gradient-to-br from-coral-500 to-coral-600 text-white shadow-lg shadow-coral-500/25">
+                            All Games
+                        </button>
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
+                            Board Games
+                        </button>
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
+                            RPGs
+                        </button>
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
+                            Card Games
+                        </button>
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
+                            Tournaments
+                        </button>
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" /></svg>
+                            Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sessions Timeline -->
+            <div class="space-y-10">
+
+                <!-- Time Slot: NOW -->
+                <section>
+                    <div class="flex items-center gap-4 mb-5">
+                        <div class="flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-br from-green-500/20 to-green-500/10">
+                            <span class="w-3 h-3 rounded-full bg-forest live-bounce"></span>
+                            <h2 class="text-xl font-black text-green-600 dark:text-green-400">Happening Now!</h2>
+                        </div>
+                        <div class="flex-1 h-0.5 rounded-full bg-gradient-to-r from-green-500 to-transparent"></div>
+                        <span class="text-sm font-bold px-4 py-1.5 rounded-full bg-green-500 text-white">
+                            12 active
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+                        <!-- Session Card: Available -->
+                        <label for="modal-session" class="rounded-playful shadow-lg shadow-slate-200/50 dark:shadow-none card-playful overflow-hidden cursor-pointer group relative bg-white dark:bg-slate-800 block">
+                            <!-- Background Image -->
+                            <div class="relative h-32 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1594479223177-4f8e95e0c9c5?w=600&h=300&fit=crop"
+                                     alt="D&D session"
+                                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white dark:to-slate-800"></div>
+                                <!-- Status badge -->
+                                <div class="absolute top-3 left-3">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-green-500/95 text-white">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-white live-bounce"></span>
+                                        3 spots open
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-4 -mt-4 relative z-10 bg-gradient-to-b from-transparent via-white to-white dark:via-slate-800 dark:to-slate-800 pt-6">
+                                <!-- Title -->
+                                <h3 class="font-extrabold text-lg leading-tight mb-3 text-slate-900 dark:text-white">
+                                    Dungeons & Dragons: Lost Mines
+                                </h3>
+
+                                <!-- Host -->
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-grape to-grape-dark flex items-center justify-center transition-transform group-hover:rotate-6">
+                                        <span class="text-white text-xs font-bold">MK</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white">Mike Kowalski</p>
+                                        <p class="text-xs font-semibold text-grape">Dungeon Master</p>
+                                    </div>
+                                </div>
+
+                                <!-- Details -->
+                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        Room A12
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
+                                        3h adventure
+                                    </span>
+                                </div>
+
+                                <!-- Participants Progress -->
+                                <div class="mb-3">
+                                    <div class="flex justify-between text-xs font-bold mb-1.5">
+                                        <span class="text-slate-500 dark:text-slate-400">Adventurers</span>
+                                        <span class="text-green-600 dark:text-green-400">3/6 joined</span>
+                                    </div>
+                                    <div class="h-2 rounded-full overflow-hidden bg-sky-100 dark:bg-slate-700">
+                                        <div class="h-full rounded-full progress-shine bg-gradient-to-r from-green-500 to-green-400" style="width: 50%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-grape/15 to-grape/5 text-grape">
+                                        RPG
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-ocean/15 to-ocean/5 text-ocean">
+                                        Fantasy
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                        12+
+                                    </span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Session Card: Full (Waiting List) -->
+                        <label for="modal-session" class="rounded-playful shadow-lg shadow-slate-200/50 dark:shadow-none card-playful overflow-hidden cursor-pointer group relative bg-white dark:bg-slate-800 block">
+                            <!-- Background Image -->
+                            <div class="relative h-32 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=600&h=300&fit=crop"
+                                     alt="Catan board game"
+                                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white dark:to-slate-800"></div>
+                                <!-- Status badge -->
+                                <div class="absolute top-3 left-3">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-coral-500/95 text-white">
+                                        Full - 4 waiting
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-4 -mt-4 relative z-10 bg-gradient-to-b from-transparent via-white to-white dark:via-slate-800 dark:to-slate-800 pt-6">
+                                <!-- Title -->
+                                <h3 class="font-extrabold text-lg leading-tight mb-3 text-slate-900 dark:text-white">
+                                    Settlers of Catan Championship
+                                </h3>
+
+                                <!-- Host -->
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center transition-transform group-hover:rotate-6">
+                                        <span class="text-white text-xs font-bold">AN</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white">Anna Nowak</p>
+                                        <p class="text-xs font-semibold text-pink-500">Tournament Host</p>
+                                    </div>
+                                </div>
+
+                                <!-- Details -->
+                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        Main Hall
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
+                                        2h match
+                                    </span>
+                                </div>
+
+                                <!-- Participants Progress -->
+                                <div class="mb-3">
+                                    <div class="flex justify-between text-xs font-bold mb-1.5">
+                                        <span class="text-slate-500 dark:text-slate-400">Players</span>
+                                        <span class="text-coral-500">8/8 + 4 waiting</span>
+                                    </div>
+                                    <div class="h-2 rounded-full overflow-hidden bg-sky-100 dark:bg-slate-700">
+                                        <div class="h-full rounded-full bg-gradient-to-r from-coral-500 to-coral-400" style="width: 100%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-coral-500/15 to-coral-500/5 text-coral-500">
+                                        Board Game
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-amber-500/15 to-amber-500/5 text-amber-600 dark:text-amber-400">
+                                        Tournament
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                        All ages
+                                    </span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Session Card: You're Enrolled! -->
+                        <label for="modal-session" class="rounded-playful shadow-lg shadow-slate-200/50 dark:shadow-none card-playful overflow-hidden cursor-pointer group relative bg-white dark:bg-slate-800 ring-3 ring-green-500 block">
+                            <!-- Background Image -->
+                            <div class="relative h-32 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1529154166925-574a0236a4f4?w=600&h=300&fit=crop"
+                                     alt="Magic: The Gathering cards"
+                                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white dark:to-slate-800"></div>
+                                <!-- Status badges -->
+                                <div class="absolute top-3 left-3 right-3 flex justify-between items-start">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-green-500/95 text-white">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-white live-bounce"></span>
+                                        In progress
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-white text-emerald-600">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
+                                        You're in!
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-4 -mt-4 relative z-10 bg-gradient-to-b from-transparent via-white to-white dark:via-slate-800 dark:to-slate-800 pt-6">
+                                <!-- Title -->
+                                <h3 class="font-extrabold text-lg leading-tight mb-3 text-slate-900 dark:text-white">
+                                    Magic: The Gathering Draft
+                                </h3>
+
+                                <!-- Host -->
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-ocean to-ocean-dark flex items-center justify-center transition-transform group-hover:rotate-6">
+                                        <span class="text-white text-xs font-bold">PW</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white">Piotr Wisniewski</p>
+                                        <p class="text-xs font-semibold text-ocean">Judge</p>
+                                    </div>
+                                </div>
+
+                                <!-- Details -->
+                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        Room B3
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
+                                        4h session
+                                    </span>
+                                </div>
+
+                                <!-- Participants Progress -->
+                                <div class="mb-3">
+                                    <div class="flex justify-between text-xs font-bold mb-1.5">
+                                        <span class="text-slate-500 dark:text-slate-400">Players</span>
+                                        <span class="text-green-600 dark:text-green-400">8/8 - Full</span>
+                                    </div>
+                                    <div class="h-2 rounded-full overflow-hidden bg-sky-100 dark:bg-slate-700">
+                                        <div class="h-full rounded-full progress-shine bg-gradient-to-r from-green-500 to-green-400" style="width: 100%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-ocean/15 to-ocean/5 text-ocean">
+                                        Card Game
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-amber-500/15 to-amber-500/5 text-amber-600 dark:text-amber-400">
+                                        Tournament
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                        16+
+                                    </span>
+                                </div>
+                            </div>
+                        </label>
+
+                    </div>
+                </section>
+
+                <!-- Time Slot: 3:00 PM -->
+                <section>
+                    <div class="flex items-center gap-4 mb-5">
+                        <div class="flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-br from-coral-500/20 to-coral-500/10">
+                            <span class="w-3 h-3 rounded-full bg-coral-500"></span>
+                            <h2 class="text-xl font-black text-coral-500">3:00 PM</h2>
+                            <span class="text-sm font-semibold text-slate-500 dark:text-slate-400">starts in 45 min</span>
+                        </div>
+                        <div class="flex-1 h-0.5 rounded-full bg-gradient-to-r from-coral-500 to-transparent"></div>
+                        <span class="text-sm font-bold px-4 py-1.5 rounded-full bg-sky-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                            8 sessions
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+                        <!-- Session Card: Beginner Friendly -->
+                        <label for="modal-session" class="rounded-playful shadow-lg shadow-slate-200/50 dark:shadow-none card-playful overflow-hidden cursor-pointer group relative bg-white dark:bg-slate-800 block">
+                            <!-- Background Image -->
+                            <div class="relative h-32 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1596003903640-2b7a264ee8d7?w=600&h=300&fit=crop"
+                                     alt="Wingspan board game with birds"
+                                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white dark:to-slate-800"></div>
+                                <!-- Status badges -->
+                                <div class="absolute top-3 left-3 flex flex-wrap gap-2">
+                                    <span class="inline-block px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-green-500/95 text-white">
+                                        5 spots open
+                                    </span>
+                                    <span class="inline-block px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-grape/95 text-white">
+                                        Newbie-friendly!
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-4 -mt-4 relative z-10 bg-gradient-to-b from-transparent via-white to-white dark:via-slate-800 dark:to-slate-800 pt-6">
+                                <!-- Title -->
+                                <h3 class="font-extrabold text-lg leading-tight mb-3 text-slate-900 dark:text-white">
+                                    Learn to Play: Wingspan
+                                </h3>
+
+                                <!-- Host -->
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center transition-transform group-hover:rotate-6">
+                                        <span class="text-white text-xs font-bold">KL</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white">Kasia Lewandowska</p>
+                                        <p class="text-xs font-semibold text-green-600 dark:text-green-400">Teacher</p>
+                                    </div>
+                                </div>
+
+                                <!-- Details -->
+                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        Learning Zone
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
+                                        1.5h session
+                                    </span>
+                                </div>
+
+                                <!-- Participants Progress -->
+                                <div class="mb-3">
+                                    <div class="flex justify-between text-xs font-bold mb-1.5">
+                                        <span class="text-slate-500 dark:text-slate-400">Learners</span>
+                                        <span class="text-green-600 dark:text-green-400">1/6 joined</span>
+                                    </div>
+                                    <div class="h-2 rounded-full overflow-hidden bg-sky-100 dark:bg-slate-700">
+                                        <div class="h-full rounded-full progress-shine bg-gradient-to-r from-green-500 to-green-400" style="width: 17%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-coral-500/15 to-coral-500/5 text-coral-500">
+                                        Board Game
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-green-500/15 to-green-500/5 text-green-600 dark:text-green-400">
+                                        Nature
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                        All ages
+                                    </span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Propose Session CTA Card -->
+                        <div class="rounded-playful border-3 border-dashed p-8 flex flex-col items-center justify-center text-center group cursor-pointer transition-all hover:border-solid border-coral-500 bg-gradient-to-br from-coral-50 to-coral-500/5 dark:from-coral-500/10 dark:to-coral-500/5">
+                            <div class="w-16 h-16 rounded-2xl mb-4 flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-12 bg-gradient-to-br from-coral-500 to-coral-600">
+                                <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                            </div>
+                            <p class="font-black text-lg mb-1 text-slate-900 dark:text-white">Got a game to share?</p>
+                            <p class="text-sm font-semibold mb-4 text-slate-500 dark:text-slate-400">Be the hero - host a session!</p>
+                            <span class="text-sm font-bold px-4 py-2 rounded-xl btn-playful bg-coral-500 text-white">
+                                Start Hosting
+                            </span>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Time Slot: Past Sessions (Collapsible - CSS only) -->
+                <section class="relative">
+                    <input type="checkbox" id="collapse-past" class="collapse-toggle">
+
+                    <label for="collapse-past" class="collapse-header flex items-center gap-4 w-full text-left cursor-pointer group">
+                        <div class="flex items-center gap-3 px-4 py-2 rounded-full bg-sky-100 dark:bg-slate-700">
+                            <span class="w-3 h-3 rounded-full bg-slate-400 dark:bg-slate-500"></span>
+                            <h2 class="text-lg font-bold text-slate-500 dark:text-slate-400">Earlier Today</h2>
+                        </div>
+                        <div class="flex-1 h-0.5 rounded-full bg-gradient-to-r from-sky-200 dark:from-slate-600 to-transparent"></div>
+                        <span class="text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-2 bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                            6 completed
+                            <svg class="collapse-icon w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        </span>
+                    </label>
+
+                    <div class="collapse-content mt-4">
+                        <div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-60">
+                                <!-- Past Session Card -->
+                                <div class="rounded-playful-sm shadow-sm overflow-hidden bg-white dark:bg-slate-800">
+                                    <div class="p-4">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                                Completed
+                                            </span>
+                                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">10:00 AM</span>
+                                        </div>
+                                        <h3 class="font-bold text-slate-900 dark:text-white">
+                                            Morning Azul Tournament
+                                        </h3>
+                                        <p class="text-sm mt-1 font-medium text-slate-500 dark:text-slate-400">
+                                            Hosted by Jan Kowalczyk - 6/6 players
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+        </main>
+
+        <!-- Floating Action Button -->
+        <div class="fixed bottom-6 right-6 z-40">
+            <button class="w-16 h-16 rounded-2xl shadow-xl flex items-center justify-center transition-all btn-playful group bg-gradient-to-br from-coral-500 to-coral-600 text-white shadow-coral-500/40"
+                    title="Propose a Session">
+                <svg class="w-7 h-7 transition-transform group-hover:rotate-90" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clip-rule="evenodd" /></svg>
+            </button>
+            <!-- Tooltip -->
+            <div class="absolute bottom-full right-0 mb-2 px-3 py-2 rounded-xl text-sm font-bold whitespace-nowrap opacity-0 hover:opacity-100 pointer-events-none bg-slate-900 dark:bg-white text-white dark:text-slate-900">
+                Host a game!
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="border-t py-8 mt-12 bg-white dark:bg-slate-800 border-sky-200 dark:border-slate-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="text-center md:text-left">
+                        <p class="font-bold text-slate-900 dark:text-white">Made with love for gamers everywhere</p>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Now go roll some dice!</p>
+                    </div>
+                    <!-- Theme Switcher - CSS-only with radio inputs -->
+                    <div class="flex items-center gap-1.5 rounded-2xl p-1.5 bg-sky-100 dark:bg-slate-700">
+                        <input type="radio" name="theme" id="theme-light" value="light" class="theme-radio" data-theme-value="light">
+                        <label for="theme-light" class="theme-label flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer text-slate-500 dark:text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                            <span class="hidden sm:inline">Light</span>
+                        </label>
+
+                        <input type="radio" name="theme" id="theme-system" value="system" class="theme-radio" data-theme-value="system" checked>
+                        <label for="theme-system" class="theme-label flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer text-slate-500 dark:text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>
+                            <span class="hidden sm:inline">Auto</span>
+                        </label>
+
+                        <input type="radio" name="theme" id="theme-dark" value="dark" class="theme-radio" data-theme-value="dark">
+                        <label for="theme-dark" class="theme-label flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer text-slate-500 dark:text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                            <span class="hidden sm:inline">Dark</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Session Detail Modal - CSS-only with checkbox -->
+        <input type="checkbox" id="modal-session" class="modal-toggle" aria-hidden="true">
+        <label for="modal-session" class="modal-backdrop fixed inset-0 z-50 bg-black/60 backdrop-blur-sm cursor-pointer" aria-hidden="true"></label>
+        <div class="modal-container fixed inset-0 z-50 overflow-y-auto pointer-events-none">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="modal-content relative w-full max-w-2xl rounded-playful-lg shadow-2xl overflow-hidden pointer-events-auto bg-white dark:bg-slate-800" role="dialog" aria-labelledby="sessionModalTitle" aria-modal="true">
+
+                    <!-- Cover Image -->
+                    <div class="relative h-52 sm:h-64 overflow-hidden bg-gradient-to-br from-slate-800 to-slate-700">
+                        <img src="https://images.unsplash.com/photo-1594479223177-4f8e95e0c9c5?w=800&h=400&fit=crop"
+                             alt="D&D session"
+                             class="absolute inset-0 w-full h-full object-cover"
+                             style="z-index: 1"
+                             loading="lazy"
+                             onerror="this.style.display='none'">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" style="z-index: 2"></div>
+
+                        <!-- Close button -->
+                        <label for="modal-session"
+                               class="absolute top-4 right-4 w-11 h-11 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all btn-playful bg-black/40 text-white cursor-pointer"
+                               style="z-index: 10">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </label>
+
+                        <!-- Status Badge -->
+                        <div class="absolute top-4 left-4" style="z-index: 10">
+                            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold backdrop-blur-sm bg-green-500/90 text-white">
+                                <span class="w-2 h-2 rounded-full bg-white live-bounce"></span>
+                                3 spots open
+                            </span>
+                        </div>
+
+                        <!-- Title Overlay -->
+                        <div class="absolute bottom-4 left-6 right-6" style="z-index: 10">
+                            <h2 id="sessionModalTitle" class="text-2xl sm:text-3xl font-black text-white drop-shadow-lg mb-2">
+                                Dungeons & Dragons: Lost Mines of Phandelver
+                            </h2>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm bg-white/25 text-white">
+                                    RPG
+                                </span>
+                                <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm bg-white/25 text-white">
+                                    Fantasy
+                                </span>
+                                <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm bg-white/25 text-white">
+                                    12+
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6">
+                        <!-- Host Info -->
+                        <div class="flex items-center gap-4 mb-6 p-4 rounded-playful-sm bg-sky-50 dark:bg-slate-700">
+                            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-grape to-grape-dark flex items-center justify-center">
+                                <span class="text-white text-lg font-black">MK</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-lg text-slate-900 dark:text-white">Mike Kowalski</p>
+                                <p class="text-sm font-semibold text-grape">Dungeon Master - 15 sessions hosted</p>
+                            </div>
+                            <button class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all btn-playful bg-white dark:bg-slate-600 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-500">
+                                View Profile
+                            </button>
+                        </div>
+
+                        <!-- Session Details Grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                            <div class="text-center p-4 rounded-xl bg-sky-50 dark:bg-slate-700">
+                                <svg class="w-6 h-6 mx-auto mb-2 text-coral-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z" clip-rule="evenodd" />
+                                </svg>
+                                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Date</p>
+                                <p class="font-bold text-sm text-slate-900 dark:text-white">Jan 25</p>
+                            </div>
+                            <div class="text-center p-4 rounded-xl bg-sky-50 dark:bg-slate-700">
+                                <svg class="w-6 h-6 mx-auto mb-2 text-ocean" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" />
+                                </svg>
+                                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Time</p>
+                                <p class="font-bold text-sm text-slate-900 dark:text-white">2:00 PM</p>
+                            </div>
+                            <div class="text-center p-4 rounded-xl bg-sky-50 dark:bg-slate-700">
+                                <svg class="w-6 h-6 mx-auto mb-2 text-grape" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" />
+                                </svg>
+                                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Duration</p>
+                                <p class="font-bold text-sm text-slate-900 dark:text-white">3 hours</p>
+                            </div>
+                            <div class="text-center p-4 rounded-xl bg-sky-50 dark:bg-slate-700">
+                                <svg class="w-6 h-6 mx-auto mb-2 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                                </svg>
+                                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Location</p>
+                                <p class="font-bold text-sm text-slate-900 dark:text-white">Room A12</p>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-6">
+                            <h3 class="font-bold mb-2 text-slate-900 dark:text-white">What's this adventure about?</h3>
+                            <p class="text-sm leading-relaxed font-medium text-slate-600 dark:text-slate-300">
+                                Embark on an epic quest in the Forgotten Realms! This beginner-friendly campaign takes you through
+                                the mysterious caves of the Lost Mines, where goblins, bugbears, and an ancient evil await. No prior
+                                D&D experience required - I'll guide you through character creation and the basics of gameplay.
+                                Just bring your imagination and get ready to roll some dice!
+                            </p>
+                        </div>
+
+                        <!-- Players -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-slate-900 dark:text-white">Your Party</h3>
+                                <span class="text-sm font-bold text-green-600 dark:text-green-400">3/6 adventurers</span>
+                            </div>
+                            <div class="h-3 rounded-full overflow-hidden mb-4 bg-sky-100 dark:bg-slate-700">
+                                <div class="h-full rounded-full progress-shine bg-gradient-to-r from-green-500 to-green-400" style="width: 50%"></div>
+                            </div>
+                            <div class="flex -space-x-2">
+                                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-ocean to-ocean-dark flex items-center justify-center border-3 border-white dark:border-slate-800">
+                                    <span class="text-white text-xs font-bold">JD</span>
+                                </div>
+                                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center border-3 border-white dark:border-slate-800">
+                                    <span class="text-white text-xs font-bold">AN</span>
+                                </div>
+                                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center border-3 border-white dark:border-slate-800">
+                                    <span class="text-white text-xs font-bold">KW</span>
+                                </div>
+                                <div class="w-11 h-11 rounded-xl flex items-center justify-center border-3 border-dashed border-sky-200 dark:border-slate-600 bg-sky-50 dark:bg-slate-700">
+                                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400">+3</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button class="flex-1 py-4 rounded-xl font-bold text-sm btn-playful bg-gradient-to-br from-green-500 to-green-400 text-white shadow-lg shadow-green-500/30">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                                </svg>
+                                Join This Adventure!
+                            </button>
+                            <button class="px-5 py-4 rounded-xl font-bold text-sm btn-playful bg-sky-100 dark:bg-slate-700 text-slate-900 dark:text-white">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Minimal JS for theme persistence and data-theme attribute -->
+        <script>
+            // Theme persistence - only updates data-theme attribute and localStorage
+            document.querySelectorAll('.theme-radio').forEach(function(radio) {
+                // Set initial checked state from localStorage
+                var savedTheme = localStorage.getItem('theme') || 'system';
+                if (radio.dataset.themeValue === savedTheme) {
+                    radio.checked = true;
+                }
+
+                // Listen for changes
+                radio.addEventListener('change', function() {
+                    var theme = this.dataset.themeValue;
+                    if (theme === 'system') {
+                        localStorage.removeItem('theme');
+                        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                            document.documentElement.setAttribute('data-theme', 'dark');
+                        } else {
+                            document.documentElement.setAttribute('data-theme', 'light');
+                        }
+                    } else {
+                        localStorage.setItem('theme', theme);
+                        document.documentElement.setAttribute('data-theme', theme);
+                    }
+                });
+            });
+
+            // Listen for system preference changes when in system mode
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                if (!localStorage.getItem('theme')) {
+                    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+                }
+            });
+        </script>
+    </body>
+</html>

@@ -487,3 +487,7 @@ workflow. Wait for human approval before proceeding to the next phase.
 - Views must send DTOs or dataclasses to templates, never Django models
 - Tests should verify this by checking context values have expected DTO
   attributes
+
+# Frontend
+
+Avoid using JavaScript to swap classes on HTML elements. Use `aria-` and `data-` attributes and selectors like `input:checked` whenever possible.
