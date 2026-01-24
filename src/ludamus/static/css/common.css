@@ -1,3 +1,11 @@
+:root {
+  --bs-primary: #e5a734;
+  --bs-primary-rgb: 229, 167, 52;
+  --bs-link-color: #000;
+  --bs-link-hover-color: #000;
+  --bs-link-decoration: none;
+}
+
 .main-content,
 .page-footer,
 .navbar {
@@ -32,4 +40,44 @@ body {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+/* Navbar - dark instead of primary blue */
+.navbar.bg-primary {
+  background-color: #1a1a1a !important;
+}
+
+/* Links - black with underline on hover */
+a {
+  color: var(--bs-link-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Card hover effect */
+.card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Footer - dark warm tone */
+.page-footer {
+  background-color: #1c1917 !important;
+  color: #f0e6d2;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.page-footer a {
+  color: #f0e6d2;
+}
+
+.page-footer a:hover {
+  color: #fff;
 }
