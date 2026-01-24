@@ -55,15 +55,30 @@
                     },
                     animation: {
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'modal-enter': 'modalEnter 0.3s ease-out',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-10px) rotate(2deg)' },
+                        },
+                        modalEnter: {
+                            from: { opacity: '0', transform: 'scale(0.95) translateY(10px)' },
+                            to: { opacity: '1', transform: 'scale(1) translateY(0)' },
+                        },
+                    },
+                    borderRadius: {
+                        'blob': '60% 40% 30% 70% / 60% 30% 70% 40%',
+                        'blob-2': '30% 70% 70% 30% / 30% 30% 70% 70%',
+                        'blob-3': '40% 60% 55% 45% / 55% 40% 60% 45%',
                     },
                 }
             }
         }
     </script>
     <style>
-        .gradient-border {
-            position: relative;
-        }
+        /* Gradient border for hero card */
         .gradient-border::before {
             content: '';
             position: absolute;
@@ -74,49 +89,25 @@
             background: linear-gradient(90deg, #f85a3c, #14b89b);
             border-radius: 9999px 9999px 0 0;
         }
+
+        /* Session card hover effect */
         .session-card {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
         }
         .session-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
         }
+
+        /* Tag pill hover */
         .tag-pill {
             transition: all 0.2s ease;
         }
         .tag-pill:hover {
             transform: scale(1.05);
         }
-        .live-dot {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(2deg); }
-        }
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
-        }
-        /* Modal styles */
-        .modal-backdrop {
-            background: rgba(26, 26, 26, 0.5);
-            backdrop-filter: blur(4px);
-        }
-        .modal-enter {
-            animation: modalEnter 0.3s ease-out;
-        }
-        @keyframes modalEnter {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-        /* Session card with background image */
+
+        /* Session card with background image layers */
         .session-card-bg {
             position: relative;
             min-height: 320px;
@@ -143,18 +134,8 @@
                 rgba(253, 252, 251, 0.9) 45%,
                 rgba(253, 252, 251, 1) 55%
             );
-            backdrop-filter: blur(0px);
-            -webkit-backdrop-filter: blur(0px);
-            mask-image: linear-gradient(
-                to bottom,
-                transparent 0%,
-                black 30%
-            );
-            -webkit-mask-image: linear-gradient(
-                to bottom,
-                transparent 0%,
-                black 30%
-            );
+            mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
         }
         .session-card-bg .card-blur {
             position: absolute;
@@ -162,18 +143,8 @@
             z-index: 1;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            mask-image: linear-gradient(
-                to bottom,
-                transparent 0%,
-                transparent 20%,
-                black 45%
-            );
-            -webkit-mask-image: linear-gradient(
-                to bottom,
-                transparent 0%,
-                transparent 20%,
-                black 45%
-            );
+            mask-image: linear-gradient(to bottom, transparent 0%, transparent 20%, black 45%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 20%, black 45%);
         }
         .session-card-bg .card-content {
             position: relative;
@@ -182,32 +153,17 @@
             flex-direction: column;
             height: 100%;
         }
-        /* Playful blob shapes */
-        .blob {
-            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-        }
-        .blob-2 {
-            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-        }
-        .blob-3 {
-            border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%;
-        }
     </style>
 </head>
-<body class="min-h-screen font-sans antialiased" style="background-color: #f0f1f5">
+<body class="min-h-screen font-sans antialiased bg-[#f0f1f5]">
 
     <!-- Decorative background blobs -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none" style="z-index: -1">
-        <div class="absolute -top-24 -right-24 w-96 h-96 blob opacity-30"
-             style="background: linear-gradient(135deg, rgba(248, 90, 60, 0.25), transparent)"></div>
-        <div class="absolute top-1/4 -left-32 w-80 h-80 blob-2 opacity-25"
-             style="background: linear-gradient(135deg, rgba(20, 184, 155, 0.2), transparent)"></div>
-        <div class="absolute bottom-1/3 right-1/4 w-72 h-72 blob-3 opacity-20"
-             style="background: linear-gradient(135deg, rgba(248, 90, 60, 0.15), transparent)"></div>
-        <div class="absolute bottom-20 -left-16 w-64 h-64 blob opacity-20"
-             style="background: linear-gradient(135deg, rgba(20, 184, 155, 0.15), transparent)"></div>
-        <div class="absolute top-2/3 right-0 w-48 h-48 blob-2 opacity-15"
-             style="background: linear-gradient(135deg, rgba(201, 191, 179, 0.3), transparent)"></div>
+    <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div class="absolute -top-24 -right-24 w-96 h-96 rounded-blob opacity-30 bg-gradient-to-br from-coral-500/25 to-transparent"></div>
+        <div class="absolute top-1/4 -left-32 w-80 h-80 rounded-blob-2 opacity-25 bg-gradient-to-br from-teal-500/20 to-transparent"></div>
+        <div class="absolute bottom-1/3 right-1/4 w-72 h-72 rounded-blob-3 opacity-20 bg-gradient-to-br from-coral-500/15 to-transparent"></div>
+        <div class="absolute bottom-20 -left-16 w-64 h-64 rounded-blob opacity-20 bg-gradient-to-br from-teal-500/15 to-transparent"></div>
+        <div class="absolute top-2/3 right-0 w-48 h-48 rounded-blob-2 opacity-15 bg-gradient-to-br from-warm-400/30 to-transparent"></div>
     </div>
 
     <!-- Navbar -->
@@ -257,19 +213,19 @@
             </div>
 
             <!-- Hero Card -->
-            <div class="bg-warm-50 rounded-3xl shadow-xl shadow-warm-400/20 overflow-hidden gradient-border">
+            <div class="relative bg-warm-50 rounded-3xl shadow-xl shadow-warm-400/20 overflow-hidden gradient-border">
                 <div class="p-6 sm:p-8">
                     <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                         <div class="flex-1">
                             <!-- Live badge -->
                             <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-100 text-teal-700 rounded-full text-sm font-medium mb-4">
-                                <span class="live-dot w-2 h-2 bg-teal-500 rounded-full"></span>
+                                <span class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></span>
                                 Happening now!
                             </div>
 
                             <h1 class="text-3xl sm:text-4xl font-bold text-warm-800 mb-3">
                                 Game Night Warsaw
-                                <span class="inline-block ml-2 float-animation">🎲</span>
+                                <span class="inline-block ml-2 animate-float">🎲</span>
                             </h1>
 
                             <p class="text-warm-600 text-lg mb-6 max-w-2xl">
@@ -299,7 +255,7 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <div class="font-medium text-warm-800">Centrum Kreatywności</div>
+                                        <div class="font-medium text-warm-800">Centrum Kreatywnosci</div>
                                         <div class="text-warm-500">ul. Mokotowska 17, Warsaw</div>
                                     </div>
                                 </div>
@@ -330,7 +286,7 @@
         <div class="mb-8 bg-gradient-to-r from-coral-400 to-coral-400 rounded-2xl p-[2px]">
             <div class="bg-warm-50 rounded-2xl p-5">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div class="w-12 h-12 bg-coral-100 rounded-xl flex items-center justify-center flex-shrwarm-0">
+                    <div class="w-12 h-12 bg-coral-100 rounded-xl flex items-center justify-center shrink-0">
                         <svg class="w-6 h-6 text-coral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -340,7 +296,7 @@
                         <p class="text-sm text-warm-600">Catan Tournament (5:00 PM) and D&D One-Shot (7:00 PM)</p>
                     </div>
                     <a href="#" class="text-sm font-medium text-coral-600 hover:text-coral-700 transition-colors underline underline-offset-2">
-                        View my schedule →
+                        View my schedule
                     </a>
                 </div>
             </div>
@@ -392,14 +348,14 @@
                 </div>
                 <div class="h-px flex-1 bg-gradient-to-r from-warm-400 to-transparent"></div>
                 <span class="text-sm text-teal-600 font-medium flex items-center gap-1">
-                    <span class="w-2 h-2 bg-teal-500 rounded-full live-dot"></span>
+                    <span class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></span>
                     Now
                 </span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Session Card 1 - Enrolled -->
-                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden border-2 border-coral-400" onclick="openModal()">
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden border-2 border-coral-400 cursor-pointer" onclick="openModal()">
                     <div class="card-image">
                         <img src="https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=600&h=500&fit=crop" alt="Catan board game">
                     </div>
@@ -503,7 +459,7 @@
                 </div>
 
                 <!-- Session Card 3 - Available -->
-                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden cursor-pointer">
                     <div class="card-image">
                         <img src="https://images.unsplash.com/photo-1566694271453-390536dd1f0d?w=600&h=500&fit=crop" alt="Ticket to Ride">
                     </div>
@@ -569,7 +525,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Session Card - Available -->
-                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden cursor-pointer">
                     <div class="card-image">
                         <img src="https://images.unsplash.com/photo-1642056446264-556457a5bf86?w=600&h=500&fit=crop" alt="Magic: The Gathering cards">
                     </div>
@@ -619,7 +575,7 @@
                 </div>
 
                 <!-- Session Card - Kids -->
-                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden cursor-pointer">
                     <div class="card-image">
                         <img src="https://images.unsplash.com/photo-1606503153255-59d8b8b82176?w=600&h=500&fit=crop" alt="Card game fun">
                     </div>
@@ -629,7 +585,7 @@
                         <div class="flex items-start justify-between mb-3">
                             <span class="px-2.5 py-1 bg-teal-500 text-white text-xs font-medium rounded-lg shadow-sm flex items-center gap-1">
                                 <span>Kids welcome</span>
-                                <span class="text-base">🎈</span>
+                                <span class="text-base">&#127880;</span>
                             </span>
                             <span class="text-xs text-warm-600 bg-white/80 px-2 py-1 rounded-lg">1h session</span>
                         </div>
@@ -685,7 +641,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Session Card - Enrolled RPG -->
-                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden border-2 border-coral-400">
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden border-2 border-coral-400 cursor-pointer">
                     <div class="card-image">
                         <img src="https://images.unsplash.com/photo-1569003339405-ea396a5a8a90?w=600&h=500&fit=crop" alt="D&D dice and maps">
                     </div>
@@ -736,7 +692,7 @@
                 </div>
 
                 <!-- Session Card - Available -->
-                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden cursor-pointer">
                     <div class="card-image">
                         <img src="https://images.unsplash.com/photo-1621570074981-ee6a0145c8b5?w=600&h=500&fit=crop" alt="Wingspan bird game">
                     </div>
@@ -784,7 +740,7 @@
                 </div>
 
                 <!-- Session Card - Horror RPG -->
-                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden">
+                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden cursor-pointer">
                     <div class="card-image">
                         <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&h=500&fit=crop" alt="Mysterious horror atmosphere">
                     </div>
@@ -861,8 +817,8 @@
                     <div class="w-8 h-8 bg-gradient-to-br from-coral-500 to-coral-500 rounded-lg flex items-center justify-center">
                         <span class="text-warm-50 font-bold text-sm">L</span>
                     </div>
-                    <span>© 2025 Ludamus. Made with</span>
-                    <span class="text-coral-500">♥</span>
+                    <span>&#169; 2025 Ludamus. Made with</span>
+                    <span class="text-coral-500">&#9829;</span>
                     <span>in Warsaw</span>
                 </div>
                 <div class="flex gap-6">
@@ -876,9 +832,9 @@
 
     <!-- Session Detail Modal -->
     <div id="sessionModal" class="fixed inset-0 z-50 hidden">
-        <div class="modal-backdrop absolute inset-0" onclick="closeModal()"></div>
+        <div class="absolute inset-0 bg-warm-900/50 backdrop-blur-sm" onclick="closeModal()"></div>
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="modal-enter relative bg-warm-50 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="animate-modal-enter relative bg-warm-50 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <!-- Modal Cover Image -->
                 <div class="relative h-48 bg-gradient-to-br from-amber-100 to-orange-200 overflow-hidden rounded-t-3xl">
                     <img src="https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=800&h=400&fit=crop" alt="Catan board game" class="w-full h-full object-cover">
@@ -929,7 +885,7 @@
                         <span class="px-3 py-1.5 bg-warm-200 text-warm-600 text-sm rounded-lg">Board Game</span>
                         <span class="px-3 py-1.5 bg-warm-200 text-warm-600 text-sm rounded-lg">Strategy</span>
                         <span class="px-3 py-1.5 bg-teal-100 text-teal-700 text-sm rounded-lg">Beginner OK</span>
-                        <span class="px-3 py-1.5 bg-coral-100 text-coral-700 text-sm rounded-lg">🏆 Prizes</span>
+                        <span class="px-3 py-1.5 bg-coral-100 text-coral-700 text-sm rounded-lg">&#127942; Prizes</span>
                     </div>
 
                     <!-- Details grid -->

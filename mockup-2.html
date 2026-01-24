@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,23 +8,30 @@
         <script>
             (function() {
                 var theme = localStorage.getItem('theme');
-                if (theme === 'light' || theme === 'dark') {
-                    document.documentElement.setAttribute('data-theme', theme);
+                if (theme === 'dark') {
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.classList.add('dark');
+                } else if (theme === 'light') {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.classList.add('dark');
                 }
             })();
         </script>
         <!-- Tailwind CSS from CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
-        <!-- Google Fonts - Nunito (friendlier, rounder) -->
+        <!-- Google Fonts - Nunito -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
         <script>
             tailwind.config = {
+                darkMode: 'class',
                 theme: {
                     extend: {
                         colors: {
-                            // Warmer, more playful palette
                             coral: {
                                 50: '#fff5f2',
                                 100: '#ffe8e0',
@@ -36,11 +43,6 @@
                                 700: '#c43d15',
                                 800: '#9c3316',
                                 900: '#7f2e17',
-                            },
-                            sunset: {
-                                light: '#ffecd2',
-                                DEFAULT: '#fcb69f',
-                                dark: '#ff8a65',
                             },
                             ocean: {
                                 light: '#e0f7ff',
@@ -61,46 +63,16 @@
                         fontFamily: {
                             'sans': ['Nunito', 'system-ui', 'sans-serif'],
                         },
+                        borderRadius: {
+                            'playful': '20px',
+                            'playful-sm': '14px',
+                            'playful-lg': '28px',
+                        },
                     }
                 }
             }
         </script>
         <style>
-            /* Theme CSS Variables - light blue tones */
-            :root {
-                --theme-bg: #f0f7ff;
-                --theme-bg-secondary: #ffffff;
-                --theme-bg-tertiary: #e8f4ff;
-                --theme-text: #0f1729;
-                --theme-text-secondary: #334155;
-                --theme-text-muted: #64748b;
-                --theme-border: #d4e5f7;
-                --theme-primary: #ff6b35;
-                --theme-primary-light: #fff5f2;
-                --theme-success: #22c55e;
-                --theme-warning: #f59e0b;
-                --theme-danger: #ef4444;
-                --theme-accent-1: #06b6d4;
-                --theme-accent-2: #a855f7;
-            }
-
-            [data-theme="dark"] {
-                --theme-bg: #0f172a;
-                --theme-bg-secondary: #1e293b;
-                --theme-bg-tertiary: #293548;
-                --theme-text: #f1f5f9;
-                --theme-text-secondary: #cbd5e1;
-                --theme-text-muted: #94a3b8;
-                --theme-border: #3b4a5f;
-                --theme-primary: #ff8a5b;
-                --theme-primary-light: #293548;
-                --theme-success: #4ade80;
-                --theme-warning: #fbbf24;
-                --theme-danger: #f87171;
-                --theme-accent-1: #22d3ee;
-                --theme-accent-2: #c084fc;
-            }
-
             /* Playful blob shapes */
             .blob {
                 border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
@@ -117,33 +89,6 @@
             }
             .card-playful:hover {
                 transform: translateY(-4px) rotate(-0.5deg);
-            }
-            .card-playful::before {
-                content: '';
-                position: absolute;
-                top: -50%;
-                right: -50%;
-                width: 100%;
-                height: 100%;
-                background: radial-gradient(circle, var(--theme-primary-light) 0%, transparent 70%);
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            }
-            .card-playful:hover::before {
-                opacity: 1;
-            }
-
-            /* Fun corner decoration */
-            .corner-fun::after {
-                content: '';
-                position: absolute;
-                top: 0;
-                right: 0;
-                width: 60px;
-                height: 60px;
-                background: linear-gradient(135deg, transparent 50%, var(--theme-primary) 50%);
-                border-radius: 0 16px 0 0;
-                opacity: 0.15;
             }
 
             /* Live indicator with bouncy animation */
@@ -165,19 +110,6 @@
                 75% { transform: rotate(3deg); }
             }
 
-            /* Soft, friendly shadows */
-            .shadow-friendly {
-                box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.05);
-            }
-            .shadow-friendly:hover {
-                box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.08);
-            }
-
-            /* Extra rounded corners - friendlier feel */
-            .rounded-playful { border-radius: 20px; }
-            .rounded-playful-sm { border-radius: 14px; }
-            .rounded-playful-lg { border-radius: 28px; }
-
             /* Tag pill with subtle animation */
             .tag-bouncy {
                 transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -188,14 +120,6 @@
             }
             .tag-bouncy:active {
                 transform: scale(0.98);
-            }
-
-            /* Gradient text for emphasis */
-            .text-gradient {
-                background: linear-gradient(135deg, #ff6b35, #ff8a5b, #ffb89e);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
             }
 
             /* Progress bar with shine effect */
@@ -240,91 +164,74 @@
 
             /* Confetti-style decorative dots */
             .confetti-dots {
-                background-image: radial-gradient(var(--theme-primary) 1px, transparent 1px),
-                                  radial-gradient(var(--theme-accent-1) 1px, transparent 1px),
-                                  radial-gradient(var(--theme-accent-2) 1px, transparent 1px);
+                background-image: radial-gradient(#ff6b35 1px, transparent 1px),
+                                  radial-gradient(#06b6d4 1px, transparent 1px),
+                                  radial-gradient(#a855f7 1px, transparent 1px);
                 background-size: 40px 40px, 60px 60px, 80px 80px;
                 background-position: 0 0, 20px 20px, 10px 30px;
                 opacity: 0.4;
             }
-
-            /* Wavy underline */
-            .underline-wavy {
-                text-decoration: underline;
-                text-decoration-style: wavy;
-                text-decoration-color: var(--theme-primary);
-                text-underline-offset: 4px;
-            }
         </style>
     </head>
-    <body class="min-h-screen font-sans antialiased"
-          style="background-color: var(--theme-bg); color: var(--theme-text)">
+    <body class="min-h-screen font-sans antialiased bg-sky-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
 
         <!-- Decorative background blobs -->
-        <div class="fixed inset-0 overflow-hidden pointer-events-none" style="z-index: -1">
-            <div class="absolute -top-20 -right-20 w-96 h-96 blob opacity-40"
-                 style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), transparent)"></div>
-            <div class="absolute top-1/3 -left-32 w-80 h-80 blob-2 opacity-30"
-                 style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), transparent)"></div>
-            <div class="absolute bottom-20 right-1/4 w-64 h-64 blob opacity-20"
-                 style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), transparent)"></div>
+        <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+            <div class="absolute -top-20 -right-20 w-96 h-96 blob opacity-40 bg-gradient-to-br from-cyan-500/30 to-transparent"></div>
+            <div class="absolute top-1/3 -left-32 w-80 h-80 blob-2 opacity-30 bg-gradient-to-br from-blue-500/25 to-transparent"></div>
+            <div class="absolute bottom-20 right-1/4 w-64 h-64 blob opacity-20 bg-gradient-to-br from-purple-500/25 to-transparent"></div>
         </div>
 
-        <!-- Navbar - Warm & Welcoming -->
-        <nav class="sticky top-0 z-50 border-b backdrop-blur-md"
-             style="background-color: rgba(240, 247, 255, 0.9); border-color: var(--theme-border)">
+        <!-- Navbar -->
+        <nav class="sticky top-0 z-50 border-b backdrop-blur-md bg-sky-50/90 dark:bg-slate-900/90 border-sky-200 dark:border-slate-700">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center gap-3">
-                        <!-- Playful Logo -->
+                        <!-- Logo -->
                         <a href="#" class="flex items-center gap-2 group">
                             <div class="relative">
                                 <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                                     <span class="text-white font-black text-xl">L</span>
                                 </div>
-                                <!-- Playful status dot -->
-                                <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-forest-DEFAULT border-2 flex items-center justify-center" style="border-color: var(--theme-bg-secondary)">
+                                <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-forest border-2 border-white dark:border-slate-800 flex items-center justify-center">
                                     <span class="text-white text-[8px]">!</span>
                                 </div>
                             </div>
                             <div class="hidden sm:block">
-                                <span class="text-xl font-black tracking-tight" style="color: var(--theme-text)">
+                                <span class="text-xl font-black tracking-tight text-slate-900 dark:text-white">
                                     Ludamus
                                 </span>
-                                <span class="block text-xs font-medium -mt-1" style="color: var(--theme-text-muted)">
+                                <span class="block text-xs font-medium -mt-1 text-slate-500 dark:text-slate-400">
                                     Let's play together
                                 </span>
                             </div>
                         </a>
                     </div>
 
-                    <!-- Live Activity Pill - More Engaging -->
+                    <!-- Live Activity Pill -->
                     <div class="hidden md:flex items-center">
-                        <div class="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-dashed wiggle cursor-pointer"
-                             style="border-color: var(--theme-success); background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05))">
-                            <span class="w-2.5 h-2.5 rounded-full bg-forest-DEFAULT live-bounce"></span>
-                            <span class="text-sm font-bold" style="color: var(--theme-success)">12 games happening now!</span>
+                        <div class="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-dashed border-green-500 bg-gradient-to-br from-green-500/10 to-green-500/5 wiggle cursor-pointer">
+                            <span class="w-2.5 h-2.5 rounded-full bg-forest live-bounce"></span>
+                            <span class="text-sm font-bold text-green-600 dark:text-green-400">12 games happening now!</span>
                         </div>
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <!-- User - Friendly Greeting -->
+                        <!-- User -->
                         <div class="flex items-center gap-3">
                             <div class="hidden sm:block text-right">
-                                <p class="text-sm font-bold" style="color: var(--theme-text)">
+                                <p class="text-sm font-bold text-slate-900 dark:text-white">
                                     Hey there, John!
                                 </p>
-                                <p class="text-xs font-medium" style="color: var(--theme-primary)">
+                                <p class="text-xs font-medium text-coral-500">
                                     Ready for adventure?
                                 </p>
                             </div>
                             <div class="relative group cursor-pointer">
-                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-grape-DEFAULT to-grape-dark flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-6">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-grape to-grape-dark flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-6">
                                     <span class="text-white text-sm font-bold">JD</span>
                                 </div>
-                                <!-- Fun hover tooltip -->
-                                <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
-                                     style="background-color: var(--theme-text); color: var(--theme-bg)">
+                                <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 dark:bg-white text-white dark:text-slate-900">
                                     Your profile
                                 </div>
                             </div>
@@ -337,92 +244,83 @@
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-            <!-- Event Hero - Energetic & Fun -->
+            <!-- Event Hero -->
             <div class="mb-10">
-                <div class="rounded-playful-lg shadow-friendly overflow-hidden relative"
-                     style="background: linear-gradient(135deg, var(--theme-bg-secondary) 0%, var(--theme-bg-tertiary) 100%)">
+                <div class="rounded-playful-lg shadow-lg shadow-slate-200/50 dark:shadow-none overflow-hidden relative bg-gradient-to-br from-white to-sky-50 dark:from-slate-800 dark:to-slate-800/50">
                     <!-- Decorative confetti pattern -->
                     <div class="absolute inset-0 confetti-dots pointer-events-none"></div>
 
                     <div class="p-6 sm:p-8 relative">
                         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
                             <div class="flex-1">
-                                <!-- Live Badge - More Exciting -->
-                                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5 btn-playful"
-                                     style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1)); border: 2px solid var(--theme-success)">
-                                    <span class="w-3 h-3 rounded-full bg-forest-DEFAULT live-bounce"></span>
-                                    <span class="text-sm font-extrabold" style="color: var(--theme-success)">We're Live!</span>
+                                <!-- Live Badge -->
+                                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5 btn-playful bg-gradient-to-br from-green-500/20 to-green-500/10 border-2 border-green-500">
+                                    <span class="w-3 h-3 rounded-full bg-forest live-bounce"></span>
+                                    <span class="text-sm font-extrabold text-green-600 dark:text-green-400">We're Live!</span>
                                 </div>
 
-                                <!-- Event Title - Bolder, More Fun -->
-                                <h1 class="text-4xl sm:text-5xl font-black mb-4 leading-tight" style="color: var(--theme-text)">
+                                <!-- Event Title -->
+                                <h1 class="text-4xl sm:text-5xl font-black mb-4 leading-tight text-slate-900 dark:text-white">
                                     Game Night 2025
                                     <span class="inline-block animate-bounce ml-2">🎲</span>
                                 </h1>
 
-                                <!-- Friendly Subtitle -->
-                                <p class="text-xl font-semibold mb-2" style="color: var(--theme-primary)">
+                                <!-- Subtitle -->
+                                <p class="text-xl font-semibold mb-2 text-coral-500">
                                     The biggest gaming party in town!
                                 </p>
 
-                                <!-- Description - Warmer Copy -->
-                                <p class="text-lg mb-6 max-w-2xl" style="color: var(--theme-text-secondary)">
+                                <!-- Description -->
+                                <p class="text-lg mb-6 max-w-2xl text-slate-600 dark:text-slate-300">
                                     Jump in and find your next obsession! Board games, epic RPG quests, card battles, and
                                     the chillest people you'll ever meet. No experience needed, just bring your best vibes.
                                 </p>
 
-                                <!-- Quick Info - More Playful Tags -->
+                                <!-- Quick Info Tags -->
                                 <div class="flex flex-wrap gap-3">
-                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy"
-                                          style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
-                                        <svg class="w-5 h-5" style="color: var(--theme-primary)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z" clip-rule="evenodd" /></svg>
+                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy bg-sky-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600">
+                                        <svg class="w-5 h-5 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z" clip-rule="evenodd" /></svg>
                                         Jan 25-26, 2025
                                     </span>
-                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy"
-                                          style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
-                                        <svg class="w-5 h-5" style="color: var(--theme-accent-1)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy bg-sky-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600">
+                                        <svg class="w-5 h-5 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
                                         Community Center
                                     </span>
-                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy"
-                                          style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
-                                        <svg class="w-5 h-5" style="color: var(--theme-accent-2)" fill="currentColor" viewBox="0 0 24 24"><path d="M4.5 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM14.25 8.625a3.375 3.375 0 116.75 0 3.375 3.375 0 01-6.75 0zM1.5 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM17.25 19.128l-.001.144a2.25 2.25 0 01-.233.96 10.088 10.088 0 005.06-1.01.75.75 0 00.42-.643 4.875 4.875 0 00-6.957-4.611 8.586 8.586 0 011.71 5.157v.003z" /></svg>
+                                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold tag-bouncy bg-sky-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600">
+                                        <svg class="w-5 h-5 text-grape" fill="currentColor" viewBox="0 0 24 24"><path d="M4.5 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM14.25 8.625a3.375 3.375 0 116.75 0 3.375 3.375 0 01-6.75 0zM1.5 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM17.25 19.128l-.001.144a2.25 2.25 0 01-.233.96 10.088 10.088 0 005.06-1.01.75.75 0 00.42-.643 4.875 4.875 0 00-6.957-4.611 8.586 8.586 0 011.71 5.157v.003z" /></svg>
                                         248 awesome humans
                                     </span>
                                 </div>
                             </div>
 
-                            <!-- Your Status Card - More Engaging -->
+                            <!-- Your Status Card -->
                             <div class="lg:w-80">
-                                <div class="rounded-playful p-5 relative overflow-hidden corner-fun"
-                                     style="background: linear-gradient(145deg, var(--theme-bg-secondary), var(--theme-bg-tertiary)); border: 3px solid var(--theme-primary)">
+                                <div class="rounded-playful p-5 relative overflow-hidden bg-gradient-to-br from-white to-sky-50 dark:from-slate-700 dark:to-slate-800 border-3 border-coral-500">
                                     <div class="flex items-center gap-3 mb-4">
                                         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-coral-400 to-coral-600 flex items-center justify-center shadow-lg float">
                                             <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M1.5 6.375c0-1.036.84-1.875 1.875-1.875h17.25c1.035 0 1.875.84 1.875 1.875v3.026a.75.75 0 01-.375.65 2.249 2.249 0 000 3.898.75.75 0 01.375.65v3.026c0 1.035-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 011.5 17.625v-3.026a.75.75 0 01.374-.65 2.249 2.249 0 000-3.898.75.75 0 01-.374-.65V6.375zm15-1.125a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75zm.75 4.5a.75.75 0 00-1.5 0v.75a.75.75 0 001.5 0v-.75zm-.75 3a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0v-.75a.75.75 0 01.75-.75zm.75 4.5a.75.75 0 00-1.5 0V18a.75.75 0 001.5 0v-.75zM6 12a.75.75 0 01.75-.75H12a.75.75 0 010 1.5H6.75A.75.75 0 016 12zm.75 2.25a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z" clip-rule="evenodd" /></svg>
                                         </div>
                                         <div>
-                                            <p class="font-extrabold text-lg" style="color: var(--theme-text)">Your Quest Log</p>
-                                            <p class="text-sm font-semibold" style="color: var(--theme-primary)">3 adventures joined!</p>
+                                            <p class="font-extrabold text-lg text-slate-900 dark:text-white">Your Quest Log</p>
+                                            <p class="text-sm font-semibold text-coral-500">3 adventures joined!</p>
                                         </div>
                                     </div>
 
-                                    <!-- Mini Schedule with Fun Labels -->
+                                    <!-- Mini Schedule -->
                                     <div class="space-y-2 mb-4">
-                                        <div class="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02] cursor-pointer"
-                                             style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05)); border: 1px solid var(--theme-success)">
-                                            <span class="w-3 h-3 rounded-full bg-forest-DEFAULT live-bounce"></span>
-                                            <span class="text-sm font-bold flex-1" style="color: var(--theme-text)">D&D: Lost Mines</span>
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background-color: var(--theme-success); color: white">NOW</span>
+                                        <div class="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02] cursor-pointer bg-gradient-to-br from-green-500/15 to-green-500/5 border border-green-500">
+                                            <span class="w-3 h-3 rounded-full bg-forest live-bounce"></span>
+                                            <span class="text-sm font-bold flex-1 text-slate-900 dark:text-white">D&D: Lost Mines</span>
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-green-500 text-white">NOW</span>
                                         </div>
-                                        <div class="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02] cursor-pointer"
-                                             style="background-color: var(--theme-bg-tertiary)">
-                                            <span class="w-3 h-3 rounded-full" style="background-color: var(--theme-primary)"></span>
-                                            <span class="text-sm font-bold flex-1" style="color: var(--theme-text)">Catan Tournament</span>
-                                            <span class="text-xs font-semibold" style="color: var(--theme-text-muted)">3:00 PM</span>
+                                        <div class="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02] cursor-pointer bg-sky-100 dark:bg-slate-600">
+                                            <span class="w-3 h-3 rounded-full bg-coral-500"></span>
+                                            <span class="text-sm font-bold flex-1 text-slate-900 dark:text-white">Catan Tournament</span>
+                                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">3:00 PM</span>
                                         </div>
                                     </div>
 
-                                    <a href="#" class="block w-full text-center px-4 py-3 rounded-xl font-bold text-sm btn-playful"
-                                       style="background: linear-gradient(135deg, var(--theme-primary), #ff8a5b); color: white; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3)">
+                                    <a href="#" class="block w-full text-center px-4 py-3 rounded-xl font-bold text-sm btn-playful bg-gradient-to-br from-coral-500 to-coral-600 text-white shadow-lg shadow-coral-500/30">
                                         See Your Schedule
                                     </a>
                                 </div>
@@ -432,44 +330,37 @@
                 </div>
             </div>
 
-            <!-- Quick Filters - Fun & Interactive -->
+            <!-- Quick Filters -->
             <div class="mb-8">
                 <div class="flex flex-wrap items-center gap-4">
-                    <!-- Search with Playful Styling -->
+                    <!-- Search -->
                     <div class="relative flex-1 min-w-[200px] max-w-md group">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 transition-transform group-focus-within:scale-110" style="color: var(--theme-text-muted)">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 transition-transform group-focus-within:scale-110 text-slate-400">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
                         </span>
                         <input type="text"
-                               class="w-full pl-12 pr-4 py-3.5 rounded-2xl border-3 focus:outline-none transition-all font-semibold"
-                               style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); border-width: 3px; color: var(--theme-text)"
+                               class="w-full pl-12 pr-4 py-3.5 rounded-2xl border-3 focus:outline-none transition-all font-semibold bg-white dark:bg-slate-800 border-sky-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 focus:border-coral-500 focus:ring-2 focus:ring-coral-500/20"
                                placeholder="Find your next adventure...">
                     </div>
 
-                    <!-- Filter Pills - More Playful -->
+                    <!-- Filter Pills -->
                     <div class="flex flex-wrap gap-2">
-                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy"
-                                style="background: linear-gradient(135deg, var(--theme-primary), #ff8a5b); color: white; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.25)">
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-gradient-to-br from-coral-500 to-coral-600 text-white shadow-lg shadow-coral-500/25">
                             All Games
                         </button>
-                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy"
-                                style="background-color: var(--theme-bg-secondary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
                             Board Games
                         </button>
-                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy"
-                                style="background-color: var(--theme-bg-secondary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
                             RPGs
                         </button>
-                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy"
-                                style="background-color: var(--theme-bg-secondary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
                             Card Games
                         </button>
-                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy"
-                                style="background-color: var(--theme-bg-secondary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
                             Tournaments
                         </button>
-                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy inline-flex items-center gap-1.5"
-                                style="background-color: var(--theme-bg-secondary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all tag-bouncy inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-600 hover:border-coral-500 hover:text-coral-500">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" /></svg>
                             Filters
                         </button>
@@ -483,14 +374,12 @@
                 <!-- Time Slot: NOW -->
                 <section>
                     <div class="flex items-center gap-4 mb-5">
-                        <div class="flex items-center gap-3 px-4 py-2 rounded-full"
-                             style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1))">
-                            <span class="w-3 h-3 rounded-full bg-forest-DEFAULT live-bounce"></span>
-                            <h2 class="text-xl font-black" style="color: var(--theme-success)">Happening Now!</h2>
+                        <div class="flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-br from-green-500/20 to-green-500/10">
+                            <span class="w-3 h-3 rounded-full bg-forest live-bounce"></span>
+                            <h2 class="text-xl font-black text-green-600 dark:text-green-400">Happening Now!</h2>
                         </div>
-                        <div class="flex-1 h-0.5 rounded-full" style="background: linear-gradient(90deg, var(--theme-success), transparent)"></div>
-                        <span class="text-sm font-bold px-4 py-1.5 rounded-full"
-                              style="background-color: var(--theme-success); color: white">
+                        <div class="flex-1 h-0.5 rounded-full bg-gradient-to-r from-green-500 to-transparent"></div>
+                        <span class="text-sm font-bold px-4 py-1.5 rounded-full bg-green-500 text-white">
                             12 active
                         </span>
                     </div>
@@ -498,19 +387,17 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
                         <!-- Session Card: Available -->
-                        <div class="rounded-playful shadow-friendly card-playful overflow-hidden cursor-pointer group relative"
-                             style="background-color: var(--theme-bg-secondary)"
+                        <div class="rounded-playful shadow-lg shadow-slate-200/50 dark:shadow-none card-playful overflow-hidden cursor-pointer group relative bg-white dark:bg-slate-800"
                              onclick="openSessionModal()">
                             <!-- Background Image -->
                             <div class="relative h-32 overflow-hidden">
                                 <img src="https://images.unsplash.com/photo-1594479223177-4f8e95e0c9c5?w=600&h=300&fit=crop"
                                      alt="D&D session"
                                      class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white"></div>
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white dark:to-slate-800"></div>
                                 <!-- Status badge -->
                                 <div class="absolute top-3 left-3">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg"
-                                          style="background-color: rgba(34, 197, 94, 0.95); color: white">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-green-500/95 text-white">
                                         <span class="w-1.5 h-1.5 rounded-full bg-white live-bounce"></span>
                                         3 spots open
                                     </span>
@@ -518,31 +405,31 @@
                             </div>
 
                             <!-- Content -->
-                            <div class="p-4 -mt-4 relative z-10" style="background: linear-gradient(to bottom, transparent, var(--theme-bg-secondary) 16px)">
+                            <div class="p-4 -mt-4 relative z-10 bg-gradient-to-b from-transparent via-white to-white dark:via-slate-800 dark:to-slate-800 pt-6">
                                 <!-- Title -->
-                                <h3 class="font-extrabold text-lg leading-tight mb-3" style="color: var(--theme-text)">
+                                <h3 class="font-extrabold text-lg leading-tight mb-3 text-slate-900 dark:text-white">
                                     Dungeons & Dragons: Lost Mines
                                 </h3>
 
                                 <!-- Host -->
                                 <div class="flex items-center gap-3 mb-3">
-                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-grape-DEFAULT to-grape-dark flex items-center justify-center transition-transform group-hover:rotate-6">
+                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-grape to-grape-dark flex items-center justify-center transition-transform group-hover:rotate-6">
                                         <span class="text-white text-xs font-bold">MK</span>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-bold" style="color: var(--theme-text)">Mike Kowalski</p>
-                                        <p class="text-xs font-semibold" style="color: var(--theme-accent-2)">Dungeon Master</p>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white">Mike Kowalski</p>
+                                        <p class="text-xs font-semibold text-grape">Dungeon Master</p>
                                     </div>
                                 </div>
 
                                 <!-- Details -->
-                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold" style="color: var(--theme-text-muted)">
+                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                                     <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" style="color: var(--theme-accent-1)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        <svg class="w-4 h-4 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
                                         Room A12
                                     </span>
                                     <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" style="color: var(--theme-primary)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
+                                        <svg class="w-4 h-4 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
                                         3h adventure
                                     </span>
                                 </div>
@@ -550,26 +437,23 @@
                                 <!-- Participants Progress -->
                                 <div class="mb-3">
                                     <div class="flex justify-between text-xs font-bold mb-1.5">
-                                        <span style="color: var(--theme-text-muted)">Adventurers</span>
-                                        <span style="color: var(--theme-success)">3/6 joined</span>
+                                        <span class="text-slate-500 dark:text-slate-400">Adventurers</span>
+                                        <span class="text-green-600 dark:text-green-400">3/6 joined</span>
                                     </div>
-                                    <div class="h-2 rounded-full overflow-hidden" style="background-color: var(--theme-bg-tertiary)">
-                                        <div class="h-full rounded-full progress-shine" style="width: 50%; background: linear-gradient(90deg, #22c55e, #4ade80)"></div>
+                                    <div class="h-2 rounded-full overflow-hidden bg-sky-100 dark:bg-slate-700">
+                                        <div class="h-full rounded-full progress-shine bg-gradient-to-r from-green-500 to-green-400" style="width: 50%"></div>
                                     </div>
                                 </div>
 
                                 <!-- Tags -->
                                 <div class="flex flex-wrap gap-1.5">
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy"
-                                          style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(168, 85, 247, 0.05)); color: var(--theme-accent-2)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-grape/15 to-grape/5 text-grape">
                                         RPG
                                     </span>
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy"
-                                          style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.05)); color: var(--theme-accent-1)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-ocean/15 to-ocean/5 text-ocean">
                                         Fantasy
                                     </span>
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
-                                          style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-muted)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                         12+
                                     </span>
                                 </div>
@@ -577,28 +461,26 @@
                         </div>
 
                         <!-- Session Card: Full (Waiting List) -->
-                        <div class="rounded-playful shadow-friendly card-playful overflow-hidden cursor-pointer group relative"
-                             style="background-color: var(--theme-bg-secondary)"
+                        <div class="rounded-playful shadow-lg shadow-slate-200/50 dark:shadow-none card-playful overflow-hidden cursor-pointer group relative bg-white dark:bg-slate-800"
                              onclick="openSessionModal()">
                             <!-- Background Image -->
                             <div class="relative h-32 overflow-hidden">
                                 <img src="https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=600&h=300&fit=crop"
                                      alt="Catan board game"
                                      class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white"></div>
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white dark:to-slate-800"></div>
                                 <!-- Status badge -->
                                 <div class="absolute top-3 left-3">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg"
-                                          style="background-color: rgba(255, 107, 53, 0.95); color: white">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-coral-500/95 text-white">
                                         Full - 4 waiting
                                     </span>
                                 </div>
                             </div>
 
                             <!-- Content -->
-                            <div class="p-4 -mt-4 relative z-10" style="background: linear-gradient(to bottom, transparent, var(--theme-bg-secondary) 16px)">
+                            <div class="p-4 -mt-4 relative z-10 bg-gradient-to-b from-transparent via-white to-white dark:via-slate-800 dark:to-slate-800 pt-6">
                                 <!-- Title -->
-                                <h3 class="font-extrabold text-lg leading-tight mb-3" style="color: var(--theme-text)">
+                                <h3 class="font-extrabold text-lg leading-tight mb-3 text-slate-900 dark:text-white">
                                     Settlers of Catan Championship
                                 </h3>
 
@@ -608,19 +490,19 @@
                                         <span class="text-white text-xs font-bold">AN</span>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-bold" style="color: var(--theme-text)">Anna Nowak</p>
-                                        <p class="text-xs font-semibold" style="color: #ec4899">Tournament Host</p>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white">Anna Nowak</p>
+                                        <p class="text-xs font-semibold text-pink-500">Tournament Host</p>
                                     </div>
                                 </div>
 
                                 <!-- Details -->
-                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold" style="color: var(--theme-text-muted)">
+                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                                     <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" style="color: var(--theme-accent-1)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        <svg class="w-4 h-4 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
                                         Main Hall
                                     </span>
                                     <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" style="color: var(--theme-primary)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
+                                        <svg class="w-4 h-4 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
                                         2h match
                                     </span>
                                 </div>
@@ -628,26 +510,23 @@
                                 <!-- Participants Progress -->
                                 <div class="mb-3">
                                     <div class="flex justify-between text-xs font-bold mb-1.5">
-                                        <span style="color: var(--theme-text-muted)">Players</span>
-                                        <span style="color: var(--theme-primary)">8/8 + 4 waiting</span>
+                                        <span class="text-slate-500 dark:text-slate-400">Players</span>
+                                        <span class="text-coral-500">8/8 + 4 waiting</span>
                                     </div>
-                                    <div class="h-2 rounded-full overflow-hidden" style="background-color: var(--theme-bg-tertiary)">
-                                        <div class="h-full rounded-full" style="width: 100%; background: linear-gradient(90deg, #ff6b35, #ff8a5b)"></div>
+                                    <div class="h-2 rounded-full overflow-hidden bg-sky-100 dark:bg-slate-700">
+                                        <div class="h-full rounded-full bg-gradient-to-r from-coral-500 to-coral-400" style="width: 100%"></div>
                                     </div>
                                 </div>
 
                                 <!-- Tags -->
                                 <div class="flex flex-wrap gap-1.5">
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy"
-                                          style="background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.05)); color: var(--theme-primary)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-coral-500/15 to-coral-500/5 text-coral-500">
                                         Board Game
                                     </span>
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy"
-                                          style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05)); color: var(--theme-warning)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-amber-500/15 to-amber-500/5 text-amber-600 dark:text-amber-400">
                                         Tournament
                                     </span>
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
-                                          style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-muted)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                         All ages
                                     </span>
                                 </div>
@@ -655,19 +534,17 @@
                         </div>
 
                         <!-- Session Card: You're Enrolled! -->
-                        <div class="rounded-playful shadow-friendly card-playful overflow-hidden cursor-pointer group relative"
-                             style="background-color: var(--theme-bg-secondary); border: 3px solid #22c55e"
+                        <div class="rounded-playful shadow-lg shadow-slate-200/50 dark:shadow-none card-playful overflow-hidden cursor-pointer group relative bg-white dark:bg-slate-800 ring-3 ring-green-500"
                              onclick="openSessionModal()">
                             <!-- Background Image -->
                             <div class="relative h-32 overflow-hidden">
                                 <img src="https://images.unsplash.com/photo-1529154166925-574a0236a4f4?w=600&h=300&fit=crop"
                                      alt="Magic: The Gathering cards"
                                      class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white"></div>
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white dark:to-slate-800"></div>
                                 <!-- Status badges -->
                                 <div class="absolute top-3 left-3 right-3 flex justify-between items-start">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg"
-                                          style="background-color: rgba(34, 197, 94, 0.95); color: white">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-green-500/95 text-white">
                                         <span class="w-1.5 h-1.5 rounded-full bg-white live-bounce"></span>
                                         In progress
                                     </span>
@@ -679,31 +556,31 @@
                             </div>
 
                             <!-- Content -->
-                            <div class="p-4 -mt-4 relative z-10" style="background: linear-gradient(to bottom, transparent, var(--theme-bg-secondary) 16px)">
+                            <div class="p-4 -mt-4 relative z-10 bg-gradient-to-b from-transparent via-white to-white dark:via-slate-800 dark:to-slate-800 pt-6">
                                 <!-- Title -->
-                                <h3 class="font-extrabold text-lg leading-tight mb-3" style="color: var(--theme-text)">
+                                <h3 class="font-extrabold text-lg leading-tight mb-3 text-slate-900 dark:text-white">
                                     Magic: The Gathering Draft
                                 </h3>
 
                                 <!-- Host -->
                                 <div class="flex items-center gap-3 mb-3">
-                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-ocean-DEFAULT to-ocean-dark flex items-center justify-center transition-transform group-hover:rotate-6">
+                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-ocean to-ocean-dark flex items-center justify-center transition-transform group-hover:rotate-6">
                                         <span class="text-white text-xs font-bold">PW</span>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-bold" style="color: var(--theme-text)">Piotr Wisniewski</p>
-                                        <p class="text-xs font-semibold" style="color: var(--theme-accent-1)">Judge</p>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white">Piotr Wisniewski</p>
+                                        <p class="text-xs font-semibold text-ocean">Judge</p>
                                     </div>
                                 </div>
 
                                 <!-- Details -->
-                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold" style="color: var(--theme-text-muted)">
+                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                                     <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" style="color: var(--theme-accent-1)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        <svg class="w-4 h-4 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
                                         Room B3
                                     </span>
                                     <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" style="color: var(--theme-primary)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
+                                        <svg class="w-4 h-4 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
                                         4h session
                                     </span>
                                 </div>
@@ -711,26 +588,23 @@
                                 <!-- Participants Progress -->
                                 <div class="mb-3">
                                     <div class="flex justify-between text-xs font-bold mb-1.5">
-                                        <span style="color: var(--theme-text-muted)">Players</span>
-                                        <span style="color: var(--theme-success)">8/8 - Full</span>
+                                        <span class="text-slate-500 dark:text-slate-400">Players</span>
+                                        <span class="text-green-600 dark:text-green-400">8/8 - Full</span>
                                     </div>
-                                    <div class="h-2 rounded-full overflow-hidden" style="background-color: var(--theme-bg-tertiary)">
-                                        <div class="h-full rounded-full progress-shine" style="width: 100%; background: linear-gradient(90deg, #22c55e, #4ade80)"></div>
+                                    <div class="h-2 rounded-full overflow-hidden bg-sky-100 dark:bg-slate-700">
+                                        <div class="h-full rounded-full progress-shine bg-gradient-to-r from-green-500 to-green-400" style="width: 100%"></div>
                                     </div>
                                 </div>
 
                                 <!-- Tags -->
                                 <div class="flex flex-wrap gap-1.5">
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy"
-                                          style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.05)); color: var(--theme-accent-1)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-ocean/15 to-ocean/5 text-ocean">
                                         Card Game
                                     </span>
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy"
-                                          style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05)); color: var(--theme-warning)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-amber-500/15 to-amber-500/5 text-amber-600 dark:text-amber-400">
                                         Tournament
                                     </span>
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
-                                          style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-muted)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                         16+
                                     </span>
                                 </div>
@@ -743,15 +617,13 @@
                 <!-- Time Slot: 3:00 PM -->
                 <section>
                     <div class="flex items-center gap-4 mb-5">
-                        <div class="flex items-center gap-3 px-4 py-2 rounded-full"
-                             style="background: linear-gradient(135deg, rgba(255, 107, 53, 0.2), rgba(255, 107, 53, 0.1))">
-                            <span class="w-3 h-3 rounded-full" style="background-color: var(--theme-primary)"></span>
-                            <h2 class="text-xl font-black" style="color: var(--theme-primary)">3:00 PM</h2>
-                            <span class="text-sm font-semibold" style="color: var(--theme-text-muted)">starts in 45 min</span>
+                        <div class="flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-br from-coral-500/20 to-coral-500/10">
+                            <span class="w-3 h-3 rounded-full bg-coral-500"></span>
+                            <h2 class="text-xl font-black text-coral-500">3:00 PM</h2>
+                            <span class="text-sm font-semibold text-slate-500 dark:text-slate-400">starts in 45 min</span>
                         </div>
-                        <div class="flex-1 h-0.5 rounded-full" style="background: linear-gradient(90deg, var(--theme-primary), transparent)"></div>
-                        <span class="text-sm font-bold px-4 py-1.5 rounded-full"
-                              style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-secondary)">
+                        <div class="flex-1 h-0.5 rounded-full bg-gradient-to-r from-coral-500 to-transparent"></div>
+                        <span class="text-sm font-bold px-4 py-1.5 rounded-full bg-sky-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                             8 sessions
                         </span>
                     </div>
@@ -759,32 +631,29 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
                         <!-- Session Card: Beginner Friendly -->
-                        <div class="rounded-playful shadow-friendly card-playful overflow-hidden cursor-pointer group relative"
-                             style="background-color: var(--theme-bg-secondary)"
+                        <div class="rounded-playful shadow-lg shadow-slate-200/50 dark:shadow-none card-playful overflow-hidden cursor-pointer group relative bg-white dark:bg-slate-800"
                              onclick="openSessionModal()">
                             <!-- Background Image -->
                             <div class="relative h-32 overflow-hidden">
                                 <img src="https://images.unsplash.com/photo-1596003903640-2b7a264ee8d7?w=600&h=300&fit=crop"
                                      alt="Wingspan board game with birds"
                                      class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white"></div>
+                                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white dark:to-slate-800"></div>
                                 <!-- Status badges -->
                                 <div class="absolute top-3 left-3 flex flex-wrap gap-2">
-                                    <span class="inline-block px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg"
-                                          style="background-color: rgba(34, 197, 94, 0.95); color: white">
+                                    <span class="inline-block px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-green-500/95 text-white">
                                         5 spots open
                                     </span>
-                                    <span class="inline-block px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg"
-                                          style="background-color: rgba(168, 85, 247, 0.95); color: white">
+                                    <span class="inline-block px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg bg-grape/95 text-white">
                                         Newbie-friendly!
                                     </span>
                                 </div>
                             </div>
 
                             <!-- Content -->
-                            <div class="p-4 -mt-4 relative z-10" style="background: linear-gradient(to bottom, transparent, var(--theme-bg-secondary) 16px)">
+                            <div class="p-4 -mt-4 relative z-10 bg-gradient-to-b from-transparent via-white to-white dark:via-slate-800 dark:to-slate-800 pt-6">
                                 <!-- Title -->
-                                <h3 class="font-extrabold text-lg leading-tight mb-3" style="color: var(--theme-text)">
+                                <h3 class="font-extrabold text-lg leading-tight mb-3 text-slate-900 dark:text-white">
                                     Learn to Play: Wingspan
                                 </h3>
 
@@ -794,19 +663,19 @@
                                         <span class="text-white text-xs font-bold">KL</span>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-bold" style="color: var(--theme-text)">Kasia Lewandowska</p>
-                                        <p class="text-xs font-semibold" style="color: var(--theme-success)">Teacher</p>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white">Kasia Lewandowska</p>
+                                        <p class="text-xs font-semibold text-green-600 dark:text-green-400">Teacher</p>
                                     </div>
                                 </div>
 
                                 <!-- Details -->
-                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold" style="color: var(--theme-text-muted)">
+                                <div class="flex flex-wrap gap-3 mb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                                     <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" style="color: var(--theme-accent-1)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                        <svg class="w-4 h-4 text-ocean" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
                                         Learning Zone
                                     </span>
                                     <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" style="color: var(--theme-primary)" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
+                                        <svg class="w-4 h-4 text-coral-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" /></svg>
                                         1.5h session
                                     </span>
                                 </div>
@@ -814,43 +683,37 @@
                                 <!-- Participants Progress -->
                                 <div class="mb-3">
                                     <div class="flex justify-between text-xs font-bold mb-1.5">
-                                        <span style="color: var(--theme-text-muted)">Learners</span>
-                                        <span style="color: var(--theme-success)">1/6 joined</span>
+                                        <span class="text-slate-500 dark:text-slate-400">Learners</span>
+                                        <span class="text-green-600 dark:text-green-400">1/6 joined</span>
                                     </div>
-                                    <div class="h-2 rounded-full overflow-hidden" style="background-color: var(--theme-bg-tertiary)">
-                                        <div class="h-full rounded-full progress-shine" style="width: 17%; background: linear-gradient(90deg, #22c55e, #4ade80)"></div>
+                                    <div class="h-2 rounded-full overflow-hidden bg-sky-100 dark:bg-slate-700">
+                                        <div class="h-full rounded-full progress-shine bg-gradient-to-r from-green-500 to-green-400" style="width: 17%"></div>
                                     </div>
                                 </div>
 
                                 <!-- Tags -->
                                 <div class="flex flex-wrap gap-1.5">
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy"
-                                          style="background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.05)); color: var(--theme-primary)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-coral-500/15 to-coral-500/5 text-coral-500">
                                         Board Game
                                     </span>
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy"
-                                          style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05)); color: var(--theme-success)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold tag-bouncy bg-gradient-to-br from-green-500/15 to-green-500/5 text-green-600 dark:text-green-400">
                                         Nature
                                     </span>
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
-                                          style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-muted)">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                         All ages
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Propose Session CTA Card - More Inviting -->
-                        <div class="rounded-playful border-3 border-dashed p-8 flex flex-col items-center justify-center text-center group cursor-pointer transition-all hover:border-solid"
-                             style="border-color: var(--theme-primary); background: linear-gradient(135deg, var(--theme-primary-light), rgba(255, 107, 53, 0.03))">
-                            <div class="w-16 h-16 rounded-2xl mb-4 flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-12"
-                                 style="background: linear-gradient(135deg, var(--theme-primary), #ff8a5b)">
+                        <!-- Propose Session CTA Card -->
+                        <div class="rounded-playful border-3 border-dashed p-8 flex flex-col items-center justify-center text-center group cursor-pointer transition-all hover:border-solid border-coral-500 bg-gradient-to-br from-coral-50 to-coral-500/5 dark:from-coral-500/10 dark:to-coral-500/5">
+                            <div class="w-16 h-16 rounded-2xl mb-4 flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-12 bg-gradient-to-br from-coral-500 to-coral-600">
                                 <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                             </div>
-                            <p class="font-black text-lg mb-1" style="color: var(--theme-text)">Got a game to share?</p>
-                            <p class="text-sm font-semibold mb-4" style="color: var(--theme-text-muted)">Be the hero - host a session!</p>
-                            <span class="text-sm font-bold px-4 py-2 rounded-xl btn-playful"
-                                  style="background-color: var(--theme-primary); color: white">
+                            <p class="font-black text-lg mb-1 text-slate-900 dark:text-white">Got a game to share?</p>
+                            <p class="text-sm font-semibold mb-4 text-slate-500 dark:text-slate-400">Be the hero - host a session!</p>
+                            <span class="text-sm font-bold px-4 py-2 rounded-xl btn-playful bg-coral-500 text-white">
                                 Start Hosting
                             </span>
                         </div>
@@ -861,14 +724,12 @@
                 <!-- Time Slot: Past Sessions (Collapsed) -->
                 <section>
                     <button class="flex items-center gap-4 w-full text-left group" onclick="this.parentElement.querySelector('.past-sessions').classList.toggle('hidden')">
-                        <div class="flex items-center gap-3 px-4 py-2 rounded-full"
-                             style="background-color: var(--theme-bg-tertiary)">
-                            <span class="w-3 h-3 rounded-full" style="background-color: var(--theme-text-muted)"></span>
-                            <h2 class="text-lg font-bold" style="color: var(--theme-text-muted)">Earlier Today</h2>
+                        <div class="flex items-center gap-3 px-4 py-2 rounded-full bg-sky-100 dark:bg-slate-700">
+                            <span class="w-3 h-3 rounded-full bg-slate-400 dark:bg-slate-500"></span>
+                            <h2 class="text-lg font-bold text-slate-500 dark:text-slate-400">Earlier Today</h2>
                         </div>
-                        <div class="flex-1 h-0.5 rounded-full" style="background: linear-gradient(90deg, var(--theme-border), transparent)"></div>
-                        <span class="text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-2"
-                              style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-muted)">
+                        <div class="flex-1 h-0.5 rounded-full bg-gradient-to-r from-sky-200 dark:from-slate-600 to-transparent"></div>
+                        <span class="text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-2 bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                             6 completed
                             <svg class="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                         </span>
@@ -878,20 +739,18 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-60">
 
                             <!-- Past Session Card -->
-                            <div class="rounded-playful-sm shadow-sm overflow-hidden"
-                                 style="background-color: var(--theme-bg-secondary)">
+                            <div class="rounded-playful-sm shadow-sm overflow-hidden bg-white dark:bg-slate-800">
                                 <div class="p-4">
                                     <div class="flex items-center gap-2 mb-2">
-                                        <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold"
-                                              style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-muted)">
+                                        <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                             Completed
                                         </span>
-                                        <span class="text-xs font-semibold" style="color: var(--theme-text-muted)">10:00 AM</span>
+                                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">10:00 AM</span>
                                     </div>
-                                    <h3 class="font-bold" style="color: var(--theme-text)">
+                                    <h3 class="font-bold text-slate-900 dark:text-white">
                                         Morning Azul Tournament
                                     </h3>
-                                    <p class="text-sm mt-1 font-medium" style="color: var(--theme-text-muted)">
+                                    <p class="text-sm mt-1 font-medium text-slate-500 dark:text-slate-400">
                                         Hosted by Jan Kowalczyk - 6/6 players
                                     </p>
                                 </div>
@@ -905,50 +764,43 @@
 
         </main>
 
-        <!-- Floating Action Button - Fun & Inviting -->
+        <!-- Floating Action Button -->
         <div class="fixed bottom-6 right-6 z-40">
-            <button class="w-16 h-16 rounded-2xl shadow-xl flex items-center justify-center transition-all btn-playful group"
-                    style="background: linear-gradient(135deg, var(--theme-primary), #ff8a5b); color: white; box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4)"
+            <button class="w-16 h-16 rounded-2xl shadow-xl flex items-center justify-center transition-all btn-playful group bg-gradient-to-br from-coral-500 to-coral-600 text-white shadow-coral-500/40"
                     title="Propose a Session">
                 <svg class="w-7 h-7 transition-transform group-hover:rotate-90" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clip-rule="evenodd" /></svg>
             </button>
             <!-- Tooltip -->
-            <div class="absolute bottom-full right-0 mb-2 px-3 py-2 rounded-xl text-sm font-bold whitespace-nowrap opacity-0 hover:opacity-100 pointer-events-none"
-                 style="background-color: var(--theme-text); color: var(--theme-bg)">
+            <div class="absolute bottom-full right-0 mb-2 px-3 py-2 rounded-xl text-sm font-bold whitespace-nowrap opacity-0 hover:opacity-100 pointer-events-none bg-slate-900 dark:bg-white text-white dark:text-slate-900">
                 Host a game!
             </div>
         </div>
 
-        <!-- Footer - Friendly & Casual -->
-        <footer class="border-t py-8 mt-12"
-                style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border)">
+        <!-- Footer -->
+        <footer class="border-t py-8 mt-12 bg-white dark:bg-slate-800 border-sky-200 dark:border-slate-700">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-6">
                     <div class="text-center md:text-left">
-                        <p class="font-bold" style="color: var(--theme-text)">Made with love for gamers everywhere</p>
-                        <p class="text-sm font-medium" style="color: var(--theme-text-muted)">Now go roll some dice!</p>
+                        <p class="font-bold text-slate-900 dark:text-white">Made with love for gamers everywhere</p>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Now go roll some dice!</p>
                     </div>
                     <!-- Theme Switcher -->
-                    <div class="flex items-center gap-1.5 rounded-2xl p-1.5"
-                         style="background-color: var(--theme-bg-tertiary)">
+                    <div class="flex items-center gap-1.5 rounded-2xl p-1.5 bg-sky-100 dark:bg-slate-700">
                         <button onclick="setTheme('light')"
                                 data-theme-btn="light"
-                                class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all btn-playful"
-                                style="color: var(--theme-text-muted)">
+                                class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all btn-playful text-slate-500 dark:text-slate-400">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
                             <span class="hidden sm:inline">Light</span>
                         </button>
                         <button onclick="setTheme('system')"
                                 data-theme-btn="system"
-                                class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all btn-playful"
-                                style="color: var(--theme-text-muted)">
+                                class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all btn-playful text-slate-500 dark:text-slate-400">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>
                             <span class="hidden sm:inline">Auto</span>
                         </button>
                         <button onclick="setTheme('dark')"
                                 data-theme-btn="dark"
-                                class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all btn-playful"
-                                style="color: var(--theme-text-muted)">
+                                class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all btn-playful text-slate-500 dark:text-slate-400">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
                             <span class="hidden sm:inline">Dark</span>
                         </button>
@@ -965,11 +817,10 @@
             <!-- Modal Content -->
             <div class="fixed inset-0 overflow-y-auto z-10 pointer-events-none">
                 <div class="flex min-h-full items-center justify-center p-4">
-                    <div class="relative w-full max-w-2xl rounded-playful-lg shadow-2xl overflow-hidden transition-all pointer-events-auto"
-                         style="background-color: var(--theme-bg-secondary)">
+                    <div class="relative w-full max-w-2xl rounded-playful-lg shadow-2xl overflow-hidden transition-all pointer-events-auto bg-white dark:bg-slate-800">
 
                         <!-- Cover Image -->
-                        <div class="relative h-52 sm:h-64 overflow-hidden" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%)">
+                        <div class="relative h-52 sm:h-64 overflow-hidden bg-gradient-to-br from-slate-800 to-slate-700">
                             <img src="https://images.unsplash.com/photo-1594479223177-4f8e95e0c9c5?w=800&h=400&fit=crop"
                                  alt="D&D session"
                                  class="absolute inset-0 w-full h-full object-cover"
@@ -980,8 +831,8 @@
 
                             <!-- Close button -->
                             <button onclick="closeSessionModal()"
-                                    class="absolute top-4 right-4 w-11 h-11 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all btn-playful"
-                                    style="background-color: rgba(0,0,0,0.4); color: white; z-index: 10">
+                                    class="absolute top-4 right-4 w-11 h-11 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all btn-playful bg-black/40 text-white"
+                                    style="z-index: 10">
                                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -989,8 +840,7 @@
 
                             <!-- Status Badge -->
                             <div class="absolute top-4 left-4" style="z-index: 10">
-                                <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold backdrop-blur-sm"
-                                      style="background-color: rgba(34, 197, 94, 0.9); color: white">
+                                <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold backdrop-blur-sm bg-green-500/90 text-white">
                                     <span class="w-2 h-2 rounded-full bg-white live-bounce"></span>
                                     3 spots open
                                 </span>
@@ -1002,16 +852,13 @@
                                     Dungeons & Dragons: Lost Mines of Phandelver
                                 </h2>
                                 <div class="flex flex-wrap gap-2">
-                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm"
-                                          style="background-color: rgba(255,255,255,0.25); color: white">
+                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm bg-white/25 text-white">
                                         RPG
                                     </span>
-                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm"
-                                          style="background-color: rgba(255,255,255,0.25); color: white">
+                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm bg-white/25 text-white">
                                         Fantasy
                                     </span>
-                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm"
-                                          style="background-color: rgba(255,255,255,0.25); color: white">
+                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm bg-white/25 text-white">
                                         12+
                                     </span>
                                 </div>
@@ -1021,56 +868,55 @@
                         <!-- Modal Body -->
                         <div class="p-6">
                             <!-- Host Info -->
-                            <div class="flex items-center gap-4 mb-6 p-4 rounded-playful-sm" style="background-color: var(--theme-bg-tertiary)">
-                                <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-grape-DEFAULT to-grape-dark flex items-center justify-center">
+                            <div class="flex items-center gap-4 mb-6 p-4 rounded-playful-sm bg-sky-50 dark:bg-slate-700">
+                                <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-grape to-grape-dark flex items-center justify-center">
                                     <span class="text-white text-lg font-black">MK</span>
                                 </div>
                                 <div class="flex-1">
-                                    <p class="font-bold text-lg" style="color: var(--theme-text)">Mike Kowalski</p>
-                                    <p class="text-sm font-semibold" style="color: var(--theme-accent-2)">Dungeon Master - 15 sessions hosted</p>
+                                    <p class="font-bold text-lg text-slate-900 dark:text-white">Mike Kowalski</p>
+                                    <p class="text-sm font-semibold text-grape">Dungeon Master - 15 sessions hosted</p>
                                 </div>
-                                <button class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all btn-playful"
-                                        style="background-color: var(--theme-bg-secondary); color: var(--theme-text-secondary); border: 2px solid var(--theme-border)">
+                                <button class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all btn-playful bg-white dark:bg-slate-600 text-slate-600 dark:text-slate-300 border-2 border-sky-200 dark:border-slate-500">
                                     View Profile
                                 </button>
                             </div>
 
                             <!-- Session Details Grid -->
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                                <div class="text-center p-4 rounded-xl" style="background-color: var(--theme-bg-tertiary)">
-                                    <svg class="w-6 h-6 mx-auto mb-2" style="color: var(--theme-primary)" fill="currentColor" viewBox="0 0 24 24">
+                                <div class="text-center p-4 rounded-xl bg-sky-50 dark:bg-slate-700">
+                                    <svg class="w-6 h-6 mx-auto mb-2 text-coral-500" fill="currentColor" viewBox="0 0 24 24">
                                         <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z" clip-rule="evenodd" />
                                     </svg>
-                                    <p class="text-xs font-semibold" style="color: var(--theme-text-muted)">Date</p>
-                                    <p class="font-bold text-sm" style="color: var(--theme-text)">Jan 25</p>
+                                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Date</p>
+                                    <p class="font-bold text-sm text-slate-900 dark:text-white">Jan 25</p>
                                 </div>
-                                <div class="text-center p-4 rounded-xl" style="background-color: var(--theme-bg-tertiary)">
-                                    <svg class="w-6 h-6 mx-auto mb-2" style="color: var(--theme-accent-1)" fill="currentColor" viewBox="0 0 24 24">
+                                <div class="text-center p-4 rounded-xl bg-sky-50 dark:bg-slate-700">
+                                    <svg class="w-6 h-6 mx-auto mb-2 text-ocean" fill="currentColor" viewBox="0 0 24 24">
                                         <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" />
                                     </svg>
-                                    <p class="text-xs font-semibold" style="color: var(--theme-text-muted)">Time</p>
-                                    <p class="font-bold text-sm" style="color: var(--theme-text)">2:00 PM</p>
+                                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Time</p>
+                                    <p class="font-bold text-sm text-slate-900 dark:text-white">2:00 PM</p>
                                 </div>
-                                <div class="text-center p-4 rounded-xl" style="background-color: var(--theme-bg-tertiary)">
-                                    <svg class="w-6 h-6 mx-auto mb-2" style="color: var(--theme-accent-2)" fill="currentColor" viewBox="0 0 24 24">
+                                <div class="text-center p-4 rounded-xl bg-sky-50 dark:bg-slate-700">
+                                    <svg class="w-6 h-6 mx-auto mb-2 text-grape" fill="currentColor" viewBox="0 0 24 24">
                                         <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" />
                                     </svg>
-                                    <p class="text-xs font-semibold" style="color: var(--theme-text-muted)">Duration</p>
-                                    <p class="font-bold text-sm" style="color: var(--theme-text)">3 hours</p>
+                                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Duration</p>
+                                    <p class="font-bold text-sm text-slate-900 dark:text-white">3 hours</p>
                                 </div>
-                                <div class="text-center p-4 rounded-xl" style="background-color: var(--theme-bg-tertiary)">
-                                    <svg class="w-6 h-6 mx-auto mb-2" style="color: var(--theme-success)" fill="currentColor" viewBox="0 0 24 24">
+                                <div class="text-center p-4 rounded-xl bg-sky-50 dark:bg-slate-700">
+                                    <svg class="w-6 h-6 mx-auto mb-2 text-green-500" fill="currentColor" viewBox="0 0 24 24">
                                         <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
                                     </svg>
-                                    <p class="text-xs font-semibold" style="color: var(--theme-text-muted)">Location</p>
-                                    <p class="font-bold text-sm" style="color: var(--theme-text)">Room A12</p>
+                                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Location</p>
+                                    <p class="font-bold text-sm text-slate-900 dark:text-white">Room A12</p>
                                 </div>
                             </div>
 
                             <!-- Description -->
                             <div class="mb-6">
-                                <h3 class="font-bold mb-2" style="color: var(--theme-text)">What's this adventure about?</h3>
-                                <p class="text-sm leading-relaxed font-medium" style="color: var(--theme-text-secondary)">
+                                <h3 class="font-bold mb-2 text-slate-900 dark:text-white">What's this adventure about?</h3>
+                                <p class="text-sm leading-relaxed font-medium text-slate-600 dark:text-slate-300">
                                     Embark on an epic quest in the Forgotten Realms! This beginner-friendly campaign takes you through
                                     the mysterious caves of the Lost Mines, where goblins, bugbears, and an ancient evil await. No prior
                                     D&D experience required - I'll guide you through character creation and the basics of gameplay.
@@ -1081,39 +927,37 @@
                             <!-- Players -->
                             <div class="mb-6">
                                 <div class="flex items-center justify-between mb-3">
-                                    <h3 class="font-bold" style="color: var(--theme-text)">Your Party</h3>
-                                    <span class="text-sm font-bold" style="color: var(--theme-success)">3/6 adventurers</span>
+                                    <h3 class="font-bold text-slate-900 dark:text-white">Your Party</h3>
+                                    <span class="text-sm font-bold text-green-600 dark:text-green-400">3/6 adventurers</span>
                                 </div>
-                                <div class="h-3 rounded-full overflow-hidden mb-4" style="background-color: var(--theme-bg-tertiary)">
-                                    <div class="h-full rounded-full progress-shine" style="width: 50%; background: linear-gradient(90deg, var(--theme-success), #4ade80)"></div>
+                                <div class="h-3 rounded-full overflow-hidden mb-4 bg-sky-100 dark:bg-slate-700">
+                                    <div class="h-full rounded-full progress-shine bg-gradient-to-r from-green-500 to-green-400" style="width: 50%"></div>
                                 </div>
                                 <div class="flex -space-x-2">
-                                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-ocean-DEFAULT to-ocean-dark flex items-center justify-center border-3" style="border-color: var(--theme-bg-secondary)">
+                                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-ocean to-ocean-dark flex items-center justify-center border-3 border-white dark:border-slate-800">
                                         <span class="text-white text-xs font-bold">JD</span>
                                     </div>
-                                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center border-3" style="border-color: var(--theme-bg-secondary)">
+                                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center border-3 border-white dark:border-slate-800">
                                         <span class="text-white text-xs font-bold">AN</span>
                                     </div>
-                                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center border-3" style="border-color: var(--theme-bg-secondary)">
+                                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center border-3 border-white dark:border-slate-800">
                                         <span class="text-white text-xs font-bold">KW</span>
                                     </div>
-                                    <div class="w-11 h-11 rounded-xl flex items-center justify-center border-3 border-dashed" style="border-color: var(--theme-border); background-color: var(--theme-bg-tertiary)">
-                                        <span class="text-xs font-bold" style="color: var(--theme-text-muted)">+3</span>
+                                    <div class="w-11 h-11 rounded-xl flex items-center justify-center border-3 border-dashed border-sky-200 dark:border-slate-600 bg-sky-50 dark:bg-slate-700">
+                                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400">+3</span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Action Buttons -->
                             <div class="flex gap-3">
-                                <button class="flex-1 py-4 rounded-xl font-bold text-sm btn-playful"
-                                        style="background: linear-gradient(135deg, var(--theme-success), #4ade80); color: white; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3)">
+                                <button class="flex-1 py-4 rounded-xl font-bold text-sm btn-playful bg-gradient-to-br from-green-500 to-green-400 text-white shadow-lg shadow-green-500/30">
                                     <svg class="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
                                     </svg>
                                     Join This Adventure!
                                 </button>
-                                <button class="px-5 py-4 rounded-xl font-bold text-sm btn-playful"
-                                        style="background-color: var(--theme-bg-tertiary); color: var(--theme-text)">
+                                <button class="px-5 py-4 rounded-xl font-bold text-sm btn-playful bg-sky-100 dark:bg-slate-700 text-slate-900 dark:text-white">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
                                     </svg>
@@ -1146,12 +990,24 @@
             });
 
             function setTheme(theme) {
+                const root = document.documentElement;
                 if (theme === 'system') {
                     localStorage.removeItem('theme');
-                    document.documentElement.removeAttribute('data-theme');
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        root.classList.remove('light');
+                        root.classList.add('dark');
+                    } else {
+                        root.classList.remove('dark');
+                        root.classList.add('light');
+                    }
+                } else if (theme === 'dark') {
+                    localStorage.setItem('theme', 'dark');
+                    root.classList.remove('light');
+                    root.classList.add('dark');
                 } else {
-                    localStorage.setItem('theme', theme);
-                    document.documentElement.setAttribute('data-theme', theme);
+                    localStorage.setItem('theme', 'light');
+                    root.classList.remove('dark');
+                    root.classList.add('light');
                 }
                 updateThemeButtons();
             }
@@ -1161,16 +1017,21 @@
                 document.querySelectorAll('[data-theme-btn]').forEach(function(btn) {
                     var isActive = btn.dataset.themeBtn === current;
                     if (isActive) {
-                        btn.style.backgroundColor = 'var(--theme-bg-secondary)';
-                        btn.style.color = 'var(--theme-text)';
-                        btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                        btn.classList.add('bg-white', 'dark:bg-slate-600', 'text-slate-900', 'dark:text-white', 'shadow-md');
+                        btn.classList.remove('text-slate-500', 'dark:text-slate-400');
                     } else {
-                        btn.style.backgroundColor = 'transparent';
-                        btn.style.color = 'var(--theme-text-muted)';
-                        btn.style.boxShadow = 'none';
+                        btn.classList.remove('bg-white', 'dark:bg-slate-600', 'text-slate-900', 'dark:text-white', 'shadow-md');
+                        btn.classList.add('text-slate-500', 'dark:text-slate-400');
                     }
                 });
             }
+
+            // Listen for system preference changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                if (!localStorage.getItem('theme')) {
+                    setTheme('system');
+                }
+            });
 
             document.addEventListener('DOMContentLoaded', updateThemeButtons);
         </script>
