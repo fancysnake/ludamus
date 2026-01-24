@@ -89,7 +89,7 @@ precision = 2
 # DJLINT
 
 [tool.djlint]
-ignore = "H021,H037"
+ignore = "H021,H031,H037,D018"
 
 # DEPTRY
 
