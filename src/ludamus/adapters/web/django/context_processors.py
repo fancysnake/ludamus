@@ -31,3 +31,7 @@ def sites(request: RootRepositoryRequest) -> dict[str, Any]:
 
 def support(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
     return {"SUPPORT_EMAIL": settings.SUPPORT_EMAIL}
+
+
+def static_version(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
+    return {"STATIC_VERSION": settings.STATIC_VERSION}

@@ -69,7 +69,9 @@ RUN mkdir -p staticfiles media logs \
 # Accept build args and set as env vars for the build
 ARG SECRET_KEY
 ARG STATIC_ROOT
+ARG GIT_COMMIT_SHA=unknown
 ENV ENV=production
+ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
 
 # Switch to non-root user
 USER appuser

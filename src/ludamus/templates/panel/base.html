@@ -16,8 +16,8 @@
               content="Ludamus backoffice panel for event management">
         <meta name="keywords" content="ludamus, backoffice, events, management">
         <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
-        <script src="{% static 'vendor/tailwind.min.js' %}"></script>
-        <script src="{% static 'vendor/htmx.min.js' %}"></script>
+        <script src="{% static 'vendor/tailwind.min.js' %}?v={{ STATIC_VERSION }}"></script>
+        <script src="{% static 'vendor/htmx.min.js' %}?v={{ STATIC_VERSION }}"></script>
         <script>
             tailwind.config = {
                 theme: {

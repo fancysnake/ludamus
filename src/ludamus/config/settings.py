@@ -122,6 +122,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "ludamus.adapters.web.django.context_processors.sites",
                 "ludamus.adapters.web.django.context_processors.support",
+                "ludamus.adapters.web.django.context_processors.static_version",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
@@ -186,6 +187,9 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 STATIC_URL = "static/"
 
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Cache busting version for static files (set via GIT_COMMIT_SHA env var during build)
+STATIC_VERSION = os.getenv("GIT_COMMIT_SHA", "1")[:8]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
