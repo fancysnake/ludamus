@@ -153,9 +153,30 @@
             flex-direction: column;
             height: 100%;
         }
+
+        /* Modal toggle - CSS-only show/hide */
+        #modalToggle {
+            position: fixed;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #sessionModal {
+            display: none;
+        }
+        #modalToggle:checked ~ #sessionModal {
+            display: flex;
+        }
+        body:has(#modalToggle:checked) {
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="min-h-screen font-sans antialiased bg-[#f0f1f5]">
+
+    <!-- Modal toggle (CSS-only modal control) -->
+    <input type="checkbox" id="modalToggle" aria-hidden="true">
 
     <!-- Decorative background blobs -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
@@ -355,7 +376,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Session Card 1 - Enrolled -->
-                <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden border-2 border-coral-400 cursor-pointer" onclick="openModal()">
+                <label for="modalToggle" class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden border-2 border-coral-400 cursor-pointer block">
                     <div class="card-image">
                         <img src="https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=600&h=500&fit=crop" alt="Catan board game">
                     </div>
@@ -405,7 +426,7 @@
                             <span class="text-sm font-medium text-coral-600">1 spot left</span>
                         </div>
                     </div>
-                </div>
+                </label>
 
                 <!-- Session Card 2 - Full -->
                 <div class="session-card session-card-bg rounded-2xl shadow-lg shadow-warm-400/20 overflow-hidden opacity-75">
@@ -831,19 +852,19 @@
     </footer>
 
     <!-- Session Detail Modal -->
-    <div id="sessionModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-warm-900/50 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div id="sessionModal" class="fixed inset-0 z-50 flex-col items-center justify-center">
+        <label for="modalToggle" class="absolute inset-0 bg-warm-900/50 backdrop-blur-sm cursor-pointer"></label>
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="animate-modal-enter relative bg-warm-50 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <!-- Modal Cover Image -->
                 <div class="relative h-48 bg-gradient-to-br from-amber-100 to-orange-200 overflow-hidden rounded-t-3xl">
                     <img src="https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=800&h=400&fit=crop" alt="Catan board game" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                    <button onclick="closeModal()" class="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-xl transition-colors shadow-lg">
+                    <label for="modalToggle" class="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-xl transition-colors shadow-lg cursor-pointer">
                         <svg class="w-5 h-5 text-warm-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                    </button>
+                    </label>
                 </div>
                 <!-- Modal Header -->
                 <div class="sticky top-0 bg-warm-50 border-b border-warm-300 px-6 py-3 flex items-center gap-3 z-10">
@@ -964,12 +985,12 @@
                 <!-- Modal Footer -->
                 <div class="sticky bottom-0 bg-warm-50 border-t border-warm-300 px-6 py-4">
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <button class="flex-1 px-4 py-3 bg-warm-200 hover:bg-warm-300 text-warm-700 font-medium rounded-xl transition-colors">
+                        <button type="button" class="flex-1 px-4 py-3 bg-warm-200 hover:bg-warm-300 text-warm-700 font-medium rounded-xl transition-colors">
                             Leave session
                         </button>
-                        <button onclick="closeModal()" class="flex-1 px-4 py-3 bg-warm-800 hover:bg-warm-900 text-warm-50 font-medium rounded-xl transition-colors">
+                        <label for="modalToggle" class="flex-1 px-4 py-3 bg-warm-800 hover:bg-warm-900 text-warm-50 font-medium rounded-xl transition-colors cursor-pointer text-center">
                             Close
-                        </button>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -977,20 +998,10 @@
     </div>
 
     <script>
-        function openModal() {
-            document.getElementById('sessionModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal() {
-            document.getElementById('sessionModal').classList.add('hidden');
-            document.body.style.overflow = '';
-        }
-
         // Close modal on escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                closeModal();
+                document.getElementById('modalToggle').checked = false;
             }
         });
     </script>
