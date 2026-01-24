@@ -83,6 +83,7 @@ export default defineConfig({
       ...process.env,
       DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE!,
       PYTHONPATH: process.env.PYTHONPATH!,
+      DEBUG: "false"
     },
     reuseExistingServer: !process.env.CI,
     timeout: 180 * 1000,
