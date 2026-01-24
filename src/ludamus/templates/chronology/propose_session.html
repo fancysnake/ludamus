@@ -184,11 +184,11 @@
                         </p>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-                        <button type="submit" class="btn-primary py-3">
+                        <button type="submit" class="btn btn-primary py-3">
                             {% heroicon_outline "paper-airplane" class="w-5 h-5" %}
                             {% translate "Submit Proposal" %}
                         </button>
-                        <a href="{% url 'web:chronology:event' slug=event.slug %}" class="btn-secondary py-3">
+                        <a href="{% url 'web:chronology:event' slug=event.slug %}" class="btn btn-secondary py-3">
                             {% heroicon_outline "arrow-left" class="w-5 h-5" %}
                             {% translate "Back to Event" %}
                         </a>
