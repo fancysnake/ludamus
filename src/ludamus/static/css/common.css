@@ -1,8 +1,8 @@
 :root {
-  --bs-primary: #e5a734;
-  --bs-primary-rgb: 229, 167, 52;
+  --bs-primary: #ea580c;
+  --bs-primary-rgb: 234, 88, 12;
   --bs-link-color: #000;
-  --bs-link-hover-color: #000;
+  --bs-link-hover-color: #c2410c;
   --bs-link-decoration: none;
 }
 
