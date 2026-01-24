@@ -81,6 +81,48 @@ run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template
 [tasks.start]
 run = "django-admin runserver localhost:8000"
 
+# Tailwind CSS (uses standalone CLI binary)
+[tasks.tw-install]
+description = "Install Tailwind CSS standalone CLI"
+run = """
+if [ ! -f bin/tailwindcss ]; then
+  mkdir -p bin
+  ARCH=$(uname -m)
+  OS=$(uname -s)
+  if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+    ARCH="arm64"
+  else
+    ARCH="x64"
+  fi
+  if [ "$OS" = "Darwin" ]; then
+    OS="macos"
+  else
+    OS="linux"
+  fi
+  echo "Downloading Tailwind CSS for ${OS}-${ARCH}..."
+  curl -sL "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-${OS}-${ARCH}" -o bin/tailwindcss
+  chmod +x bin/tailwindcss
+  echo "Tailwind CSS installed to bin/tailwindcss"
+else
+  echo "Tailwind CSS already installed"
+fi
+"""
+
+[tasks.tw]
+description = "Tailwind CSS watch mode"
+depends = ["tw-install"]
+run = "bin/tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --watch"
+
+[tasks.tw-build]
+description = "Build Tailwind CSS (minified)"
+depends = ["tw-install"]
+run = "bin/tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --minify"
+
+[tasks.dev]
+description = "Start Django + Tailwind watch mode"
+depends = ["tw-install"]
+run = "bin/tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --watch & django-admin runserver localhost:8000"
+
 # Composite tasks
 [tasks.check]
 depends = [

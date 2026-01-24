@@ -55,12 +55,17 @@ CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
 # Production stage without dev dependencies
 FROM base AS prod
 
+# Install Tailwind CLI standalone
+RUN curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
+    -o /usr/local/bin/tailwindcss && chmod +x /usr/local/bin/tailwindcss
+
 # Export only production dependencies
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application code and Tailwind config
 COPY src ./src
+COPY tailwind.config.js ./
 
 # Create necessary directories and set ownership
 RUN mkdir -p staticfiles media logs \
@@ -80,6 +85,10 @@ WORKDIR /app/src
 
 # Compile translation messages
 RUN django-admin compilemessages
+
+# Build Tailwind CSS
+RUN tailwindcss -i src/ludamus/static/css/input.css \
+    -o src/ludamus/static/css/output.css --minify
 
 # Download vendor dependencies and collect static files (requires SECRET_KEY to be set)
 RUN django-admin downloadvendor

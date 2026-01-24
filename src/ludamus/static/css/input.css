@@ -1,0 +1,292 @@
+/* Google Fonts - Outfit (from mockup-1) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+/* Tailwind 4 CSS-first theme configuration */
+@theme {
+  /* Typography */
+  --font-family-sans: "Outfit", system-ui, sans-serif;
+
+  /* Warm palette (cream tones from mockup-1) */
+  --color-warm-50: #fdfcfb;
+  --color-warm-100: #f7f5f3;
+  --color-warm-200: #f0ece8;
+  --color-warm-300: #e4ddd6;
+  --color-warm-400: #c9bfb3;
+  --color-warm-500: #a69a8c;
+  --color-warm-600: #7d7164;
+  --color-warm-700: #5c534a;
+  --color-warm-800: #3d3732;
+  --color-warm-900: #252220;
+
+  /* Coral palette (primary accent from mockup-1) */
+  --color-coral-50: #fef5f3;
+  --color-coral-100: #ffe5df;
+  --color-coral-200: #ffcfc5;
+  --color-coral-300: #ffab9a;
+  --color-coral-400: #ff7d61;
+  --color-coral-500: #f85a3c;
+  --color-coral-600: #e53e20;
+  --color-coral-700: #c13118;
+  --color-coral-800: #9f2c18;
+  --color-coral-900: #842a1b;
+
+  /* Teal palette (secondary from mockup-1) */
+  --color-teal-50: #f0fdfa;
+  --color-teal-100: #ccfbef;
+  --color-teal-200: #9af5df;
+  --color-teal-300: #5fe9cb;
+  --color-teal-400: #2dd4b3;
+  --color-teal-500: #14b89b;
+  --color-teal-600: #0d947e;
+  --color-teal-700: #0f7666;
+  --color-teal-800: #115e53;
+  --color-teal-900: #134e45;
+}
+
+/* CSS variables for theme.css compatibility */
+:root {
+  /* Background colors */
+  --theme-bg: #f0f1f5;
+  --theme-bg-secondary: #fdfcfb;
+  --theme-bg-tertiary: #f7f5f3;
+
+  /* Text colors */
+  --theme-text: #252220;
+  --theme-text-secondary: #5c534a;
+  --theme-text-muted: #7d7164;
+  --theme-text-inverse: #ffffff;
+
+  /* Border colors */
+  --theme-border: #e4ddd6;
+  --theme-border-light: #f0ece8;
+  --theme-border-focus: #f85a3c;
+
+  /* Primary (coral) */
+  --theme-primary: #f85a3c;
+  --theme-primary-hover: #e53e20;
+  --theme-primary-light: #fef5f3;
+
+  /* Secondary (teal) */
+  --theme-secondary: #14b89b;
+  --theme-secondary-hover: #0d947e;
+  --theme-secondary-light: #f0fdfa;
+
+  /* Status colors */
+  --theme-success: #14b89b;
+  --theme-success-light: #f0fdfa;
+  --theme-success-bg: #ccfbef;
+  --theme-success-text: #0f7666;
+
+  --theme-warning: #f59e0b;
+  --theme-warning-light: #fef3c7;
+  --theme-warning-bg: #fffbeb;
+  --theme-warning-text: #92400e;
+
+  --theme-danger: #ef4444;
+  --theme-danger-light: #fee2e2;
+  --theme-danger-bg: #fef2f2;
+  --theme-danger-text: #991b1b;
+
+  --theme-info: #3b82f6;
+  --theme-info-light: #dbeafe;
+  --theme-info-bg: #eff6ff;
+  --theme-info-text: #1e40af;
+
+  /* Shadows */
+  --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --theme-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* Accent gradient (coral) */
+  --theme-accent-gradient: linear-gradient(90deg, #f85a3c, #14b89b);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --theme-bg: #0f172a;
+    --theme-bg-secondary: #1e293b;
+    --theme-bg-tertiary: #334155;
+
+    --theme-text: #f1f5f9;
+    --theme-text-secondary: #cbd5e1;
+    --theme-text-muted: #64748b;
+    --theme-text-inverse: #0f172a;
+
+    --theme-border: #334155;
+    --theme-border-light: #1e293b;
+    --theme-border-focus: #ff7d61;
+
+    --theme-primary: #ff7d61;
+    --theme-primary-hover: #ff9b85;
+    --theme-primary-light: #3d3732;
+
+    --theme-secondary: #2dd4b3;
+    --theme-secondary-hover: #5fe9cb;
+    --theme-secondary-light: #134e45;
+
+    --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Explicit dark mode */
+:root[data-theme="dark"] {
+  --theme-bg: #0f172a;
+  --theme-bg-secondary: #1e293b;
+  --theme-bg-tertiary: #334155;
+
+  --theme-text: #f1f5f9;
+  --theme-text-secondary: #cbd5e1;
+  --theme-text-muted: #64748b;
+  --theme-text-inverse: #0f172a;
+
+  --theme-border: #334155;
+  --theme-border-light: #1e293b;
+  --theme-border-focus: #ff7d61;
+
+  --theme-primary: #ff7d61;
+  --theme-primary-hover: #ff9b85;
+  --theme-primary-light: #3d3732;
+
+  --theme-secondary: #2dd4b3;
+  --theme-secondary-hover: #5fe9cb;
+  --theme-secondary-light: #134e45;
+}
+
+/* Custom components - using CSS properties for Tailwind 4 compatibility */
+
+/* Gradient border decoration (from mockup) */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--theme-accent-gradient);
+  border-radius: 9999px 9999px 0 0;
+}
+
+/* Session card styles (from mockup) */
+.session-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.session-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+}
+
+/* Live indicator pulse */
+.live-dot {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Tag pill hover */
+.tag-pill {
+  transition: all 0.2s ease;
+}
+.tag-pill:hover {
+  transform: scale(1.05);
+}
+
+/* Blob shapes (from mockup) */
+.blob {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+}
+.blob-2 {
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+}
+.blob-3 {
+  border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%;
+}
+
+/* Alert variants */
+.alert {
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border-width: 1px;
+  border-style: solid;
+}
+.alert-success {
+  background-color: var(--theme-success-bg);
+  border-color: var(--theme-success-light);
+  color: var(--theme-success-text);
+}
+.alert-warning {
+  background-color: var(--theme-warning-bg);
+  border-color: var(--theme-warning-light);
+  color: var(--theme-warning-text);
+}
+.alert-error, .alert-danger {
+  background-color: var(--theme-danger-bg);
+  border-color: var(--theme-danger-light);
+  color: var(--theme-danger-text);
+}
+.alert-info {
+  background-color: var(--theme-info-bg);
+  border-color: var(--theme-info-light);
+  color: var(--theme-info-text);
+}
+
+/* Button components */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--theme-primary), 0 0 0 4px var(--theme-bg);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background-color: var(--theme-primary);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--theme-primary-hover);
+}
+.btn-secondary {
+  background-color: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+}
+.btn-secondary:hover {
+  background-color: var(--theme-bg-tertiary);
+}
+.btn-teal {
+  background-color: var(--theme-secondary);
+  color: white;
+}
+.btn-teal:hover {
+  background-color: var(--theme-secondary-hover);
+}
+
+/* Card component */
+.card {
+  border-radius: 1rem;
+  border: 1px solid var(--theme-border);
+  background-color: var(--theme-bg-secondary);
+  box-shadow: var(--theme-shadow);
+}
+.card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--theme-border);
+}
+.card-body {
+  padding: 1.5rem;
+}

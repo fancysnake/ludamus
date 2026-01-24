@@ -204,3 +204,7 @@ src/ludamus/static/icon_cache/
 .beads/
 worktrees/
 **/static/vendor/*
+
+# Tailwind CSS
+src/ludamus/static/css/output.css
+bin/
