@@ -44,9 +44,13 @@
   --color-teal-800: #115e53;
   --color-teal-900: #134e45;
 
-  /* Primary/Secondary aliases for panel compatibility */
-  --color-primary: #f85a3c;  /* coral-500 */
-  --color-secondary: #14b89b;  /* teal-500 */
+  /* Semantic colors (auto-generates text-*, bg-*, etc.) */
+  --color-primary: #f85a3c;
+  --color-secondary: #14b89b;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-success: #14b89b;
+  --color-info: #3b82f6;
 }
 
 /* CSS variables for theme.css compatibility */

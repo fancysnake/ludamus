@@ -16,7 +16,7 @@
         <div class="card gradient-border">
             <div class="px-6 py-4 border-b flex items-center gap-2"
                  style="background-color: var(--theme-warning-bg); border-color: var(--theme-warning-light)">
-                <span style="color: var(--theme-warning)">{% heroicon_outline "light-bulb" class="w-5 h-5" %}</span>
+                {% heroicon_outline "light-bulb" class="w-5 h-5 text-warning" %}
                 <h2 class="font-semibold" style="color: var(--theme-warning-text)">
                     {% if time_slot %}
                         {% translate "Propose Session for Time Slot" %}
