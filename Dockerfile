@@ -64,11 +64,13 @@ FROM base AS prod
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application code and entrypoint
 COPY src ./src
+COPY scripts/entrypoint.sh /app/entrypoint.sh
 
 # Create necessary directories and set ownership
 RUN mkdir -p staticfiles media logs \
+    && chmod +x /app/entrypoint.sh \
     && chown -R appuser:appuser /app
 
 # Accept build args and set as env vars for the build
@@ -105,5 +107,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
-# Production command using gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--worker-class", "sync", "--worker-tmp-dir", "/dev/shm", "--access-logfile", "-", "--error-logfile", "-", "--chdir", "/app/src", "ludamus.edges.wsgi:application"]
+# Run migrations on startup, then start gunicorn
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--worker-class", "sync", "--worker-tmp-dir", "/dev/shm", "--access-logfile", "-", "--error-logfile", "-", "--chdir", "/app/src", "ludamus.deploy.wsgi:application"]
