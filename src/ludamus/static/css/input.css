@@ -53,6 +53,11 @@
   --color-info: #3b82f6;
 }
 
+/* Superellipse corners for smoother rounded rectangles */
+* {
+  corner-shape: superellipse(1.6);
+}
+
 /* CSS variables for theme.css compatibility */
 :root {
   /* Background colors */
