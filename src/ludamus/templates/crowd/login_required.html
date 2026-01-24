@@ -21,17 +21,16 @@
             <p class="text-lg mb-8" style="color: var(--theme-text-muted)">
                 {% translate "You need to be logged in to access this page." %}
             </p>
-            <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <a href="{% url 'web:index' %}"
+                   class="btn btn-secondary">
+                    {% heroicon_outline "arrow-left" class="w-5 h-5" %}
+                    {% translate "Back to Home" %}
+                </a>
                 <a href="{% url 'web:crowd:auth0:login' %}{% if next %}?next={{ next }}{% endif %}"
-                   class="btn-primary w-full text-lg py-3">
+                   class="btn btn-primary">
                     {% heroicon_outline "arrow-right-on-rectangle" class="w-5 h-5" %}
                     {% translate "Log In" %}
-                </a>
-                <a href="{% url 'web:index' %}"
-                   class="inline-flex items-center gap-2 text-sm transition-colors hover:opacity-80"
-                   style="color: var(--theme-text-muted)">
-                    {% heroicon_outline "arrow-left" class="w-4 h-4" %}
-                    {% translate "Back to Home" %}
                 </a>
             </div>
         </div>

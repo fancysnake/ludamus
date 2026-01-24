@@ -268,6 +268,9 @@
 .btn-primary:hover {
   background-color: var(--theme-primary-hover);
 }
+.btn-primary:focus-visible {
+  box-shadow: 0 0 0 2px var(--theme-bg), 0 0 0 4px var(--theme-primary);
+}
 .btn-secondary {
   background-color: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
@@ -297,4 +300,12 @@
 }
 .card-body {
   padding: 1.5rem;
+}
+
+/* Form inputs focus state */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--theme-border-focus) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
