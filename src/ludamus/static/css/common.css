@@ -44,7 +44,7 @@ body {
 
 /* Navbar - dark instead of primary blue */
 .navbar.bg-primary {
-  background-color: #1a1a1a !important;
+  background-color: #292524 !important;
 }
 
 /* Links - black with underline on hover */
@@ -69,8 +69,9 @@ a:hover {
 
 /* Footer - dark warm tone */
 .page-footer {
-  background-color: #1c1917 !important;
-  color: #f0e6d2;
+  margin-top: 4rem;
+  background-color: #292524 !important;
+  color: #e7e5e4;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
