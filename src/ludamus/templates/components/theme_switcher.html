@@ -1,12 +1,15 @@
 {% load i18n %}
-<fieldset class="theme-switcher flex items-center gap-0.5 rounded-lg p-0.5"
+<fieldset class="theme-switcher relative flex items-center gap-0.5 rounded-lg p-0.5"
           style="background-color: var(--theme-bg-tertiary)">
     <legend class="sr-only">{% translate "Select a display theme:" %}</legend>
-    <span class="h-full">
+    <!-- Sliding indicator -->
+    <span class="theme-indicator absolute w-8 h-8 rounded-md transition-transform duration-200 ease-out"
+          style="background-color: var(--theme-bg-secondary); box-shadow: 0 1px 2px rgba(0,0,0,0.05)"></span>
+    <span class="relative h-full z-10">
         <input type="radio" name="theme" value="system" id="theme-system"
                class="sr-only peer" checked>
         <label for="theme-system"
-               class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors peer-checked:bg-[var(--theme-bg-secondary)]"
+               class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors"
                style="color: var(--theme-text-muted)"
                title="{% translate "System theme" %}">
             <span class="sr-only">{% translate "system" %}</span>
@@ -15,11 +18,11 @@
             </svg>
         </label>
     </span>
-    <span class="h-full">
+    <span class="relative h-full z-10">
         <input type="radio" name="theme" value="light" id="theme-light"
                class="sr-only peer">
         <label for="theme-light"
-               class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors peer-checked:bg-[var(--theme-bg-secondary)]"
+               class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors"
                style="color: var(--theme-text-muted)"
                title="{% translate "Light theme" %}">
             <span class="sr-only">{% translate "light" %}</span>
@@ -28,11 +31,11 @@
             </svg>
         </label>
     </span>
-    <span class="h-full">
+    <span class="relative h-full z-10">
         <input type="radio" name="theme" value="dark" id="theme-dark"
                class="sr-only peer">
         <label for="theme-dark"
-               class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors peer-checked:bg-[var(--theme-bg-secondary)]"
+               class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors"
                style="color: var(--theme-text-muted)"
                title="{% translate "Dark theme" %}">
             <span class="sr-only">{% translate "dark" %}</span>
