@@ -114,22 +114,22 @@
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --theme-bg: #0f172a;
-    --theme-bg-secondary: #1e293b;
-    --theme-bg-tertiary: #334155;
+    --theme-bg: #0a0a0a;
+    --theme-bg-secondary: #171717;
+    --theme-bg-tertiary: #262626;
 
-    --theme-text: #f1f5f9;
-    --theme-text-secondary: #cbd5e1;
-    --theme-text-muted: #64748b;
-    --theme-text-inverse: #0f172a;
+    --theme-text: #fafafa;
+    --theme-text-secondary: #d4d4d4;
+    --theme-text-muted: #737373;
+    --theme-text-inverse: #0a0a0a;
 
-    --theme-border: #334155;
-    --theme-border-light: #1e293b;
+    --theme-border: #404040;
+    --theme-border-light: #262626;
     --theme-border-focus: #ff7d61;
 
     --theme-primary: #ff7d61;
     --theme-primary-hover: #ff9b85;
-    --theme-primary-light: #3d3732;
+    --theme-primary-light: #292524;
 
     --theme-secondary: #2dd4b3;
     --theme-secondary-hover: #5fe9cb;
@@ -142,22 +142,22 @@
 
 /* Explicit dark mode */
 :root[data-theme="dark"] {
-  --theme-bg: #0f172a;
-  --theme-bg-secondary: #1e293b;
-  --theme-bg-tertiary: #334155;
+  --theme-bg: #0a0a0a;
+  --theme-bg-secondary: #171717;
+  --theme-bg-tertiary: #262626;
 
-  --theme-text: #f1f5f9;
-  --theme-text-secondary: #cbd5e1;
-  --theme-text-muted: #64748b;
-  --theme-text-inverse: #0f172a;
+  --theme-text: #fafafa;
+  --theme-text-secondary: #d4d4d4;
+  --theme-text-muted: #737373;
+  --theme-text-inverse: #0a0a0a;
 
-  --theme-border: #334155;
-  --theme-border-light: #1e293b;
+  --theme-border: #404040;
+  --theme-border-light: #262626;
   --theme-border-focus: #ff7d61;
 
   --theme-primary: #ff7d61;
   --theme-primary-hover: #ff9b85;
-  --theme-primary-light: #3d3732;
+  --theme-primary-light: #292524;
 
   --theme-secondary: #2dd4b3;
   --theme-secondary-hover: #5fe9cb;
