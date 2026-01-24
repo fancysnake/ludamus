@@ -1,47 +1,60 @@
 {% load i18n %}
-<div class="col-12 col-lg-6 col-xl-4">
-    <div class="card h-100 session-card text-muted opacity-75"
-         data-title="{{ data.session.title|lower }}"
-         data-host="{{ data.session.presenter_name }}"
-         data-tags="{% for tag in data.session.tags.all %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
-         data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
-         data-status="{% if ended %}ended{% elif data.is_ongoing %}in-progress{% elif not data.session.is_enrollment_available %}unavailable{% elif data.session.is_full %}full{% else %}available{% endif %}"
-         data-debug-ended="{{ ended|yesno:'true,false' }}"
-         data-debug-is-ongoing="{{ data.is_ongoing|yesno:'true,false' }}"
-         data-debug-enrollment-available="{{ data.session.is_enrollment_available|yesno:'true,false' }}"
-         data-debug-is-full="{{ data.session.is_full|yesno:'true,false' }}"
-         data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
-         data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
-         data-min-age="{{ data.session.min_age }}"
-         style="cursor: pointer"
-         data-bs-toggle="modal"
-         data-bs-target="#sessionDetailModal{{ data.session.id }}">
-        <div class="card-body d-flex flex-column py-2">
-            <!-- Session Title (smaller) -->
-            <h6 class="card-title mb-1 small">{{ data.session.title }}</h6>
-            <!-- Session Metadata (condensed) -->
-            <div class="mb-1">
-                <small class="text-muted d-block">
-                    <i class="bi bi-person-circle"></i> {{ data.session.presenter_name|default:data.session.presenter_name }}
-                    {% if data.session.agenda_item.space %}
-                        | <i class="bi bi-geo-alt"></i> {{ data.session.agenda_item.space.name }}
-                    {% endif %}
-                </small>
+{% load heroicons %}
+<div class="session-card rounded-lg card-shadow overflow-hidden h-full flex flex-col opacity-60"
+     data-title="{{ data.session.title|lower }}"
+     data-host="{{ data.session.presenter_name }}"
+     data-tags="{% for tag in data.session.tags.all %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
+     data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
+     data-status="{% if ended %}ended{% elif data.is_ongoing %}in-progress{% elif not data.session.is_enrollment_available %}unavailable{% elif data.session.is_full %}full{% else %}available{% endif %}"
+     data-debug-ended="{{ ended|yesno:'true,false' }}"
+     data-debug-is-ongoing="{{ data.is_ongoing|yesno:'true,false' }}"
+     data-debug-enrollment-available="{{ data.session.is_enrollment_available|yesno:'true,false' }}"
+     data-debug-is-full="{{ data.session.is_full|yesno:'true,false' }}"
+     data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
+     data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
+     data-min-age="{{ data.session.min_age }}"
+     data-space="{{ data.session.agenda_item.space.slug }}"
+     style="background-color: var(--theme-bg-secondary);
+            cursor: pointer"
+     onclick="openSessionModal({{ data.session.id }})">
+    <div class="p-3 flex flex-col flex-grow">
+        <!-- Session Title (smaller) -->
+        <h6 class="font-medium text-sm mb-1" style="color: var(--theme-text);">{{ data.session.title }}</h6>
+        <!-- Session Metadata (condensed) -->
+        <div class="mb-1">
+            <div class="flex items-center flex-wrap text-xs gap-x-2"
+                 style="color: var(--theme-text-muted)">
+                <span class="inline-flex items-center">
+                    {% heroicon_mini "user-circle" class="w-3 h-3 mr-1" %}
+                    {{ data.session.presenter_name|default:data.session.presenter_name }}
+                </span>
+                {% if data.session.agenda_item.space %}
+                    <span class="inline-flex items-center">
+                        {% heroicon_mini "map-pin" class="w-3 h-3 mr-1" %}
+                        {{ data.session.agenda_item.space.name }}
+                    </span>
+                {% endif %}
             </div>
-            <!-- Status indicator -->
-            <div class="mt-auto d-flex justify-content-between align-items-center">
-                <small class="text-muted">
-                    {% if ended %}
-                        <i class="bi bi-check-circle"></i> {% translate "Completed" %}
-                    {% elif not data.session.is_enrollment_available %}
-                        <i class="bi bi-clock"></i> {% translate "Not Yet Available" %}
-                    {% endif %}
-                </small>
-                <small>
-                    <i class="bi bi-people"></i> {{ data.session.enrolled_count }}
-                    {% if data.session.waiting_count > 0 %}<span class="text-warning">+{{ data.session.waiting_count }}</span>{% endif %}
-                </small>
-            </div>
+        </div>
+        <!-- Status indicator -->
+        <div class="mt-auto flex justify-between items-center text-xs"
+             style="color: var(--theme-text-muted)">
+            <span class="inline-flex items-center">
+                {% if ended %}
+                    {% heroicon_mini "check-circle" class="w-3 h-3 mr-1" %}
+                    {% translate "Completed" %}
+                {% elif not data.session.is_enrollment_available %}
+                    {% heroicon_mini "clock" class="w-3 h-3 mr-1" %}
+                    {% translate "Not Yet Available" %}
+                {% endif %}
+            </span>
+            <span class="inline-flex items-center">
+                {% heroicon_mini "users" class="w-3 h-3 mr-1" %}
+                {{ data.session.enrolled_count }}
+                {% if data.session.waiting_count > 0 %}
+                    <span class="ml-0.5" style="color: var(--theme-warning);">+{{ data.session.waiting_count }}</span>
+                {% endif %}
+            </span>
         </div>
     </div>
 </div>

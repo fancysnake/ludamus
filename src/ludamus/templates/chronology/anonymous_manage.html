@@ -1,146 +1,175 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load django_bootstrap5 %}
+{% load heroicons %}
 {% block title %}
     {% translate "Manage Anonymous Enrollment" %}
 {% endblock title %}
 {% block header %}
     {% translate "Manage Anonymous Enrollment" %}
 {% endblock header %}
-{% block description %}
+{% block description_text %}
     {% translate "Enter your code to view and manage your enrollments" %}
-{% endblock description %}
+{% endblock description_text %}
 {% block body %}
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            {% if not form_submitted %}
-                <!-- Code Entry Form -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-key"></i> {% translate "Enter Your Code" %}
-                        </h5>
+    <div class="max-w-3xl mx-auto">
+        {% if not form_submitted %}
+            <!-- Code Entry Form -->
+            <div class="rounded-lg card-shadow overflow-hidden"
+                 style="background-color: var(--theme-bg-secondary)">
+                <div class="px-4 py-3 flex items-center"
+                     style="background-color: var(--theme-primary);
+                            color: var(--theme-text-inverse)">
+                    {% heroicon_outline "key" class="w-5 h-5 mr-2" %}
+                    <h2 class="font-semibold">{% translate "Enter Your Code" %}</h2>
+                </div>
+                <div class="p-6">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="code"
+                                   class="block text-sm font-medium mb-1"
+                                   style="color: var(--theme-text-secondary)">
+                                {% translate "Anonymous Enrollment Code" %}
+                            </label>
+                            <input type="text"
+                                   class="w-full px-3 py-2 text-sm rounded border focus:outline-none focus:ring-1"
+                                   style="background-color: var(--theme-bg-secondary);
+                                          border-color: var(--theme-border);
+                                          color: var(--theme-text)"
+                                   id="code"
+                                   name="code"
+                                   placeholder="{% translate "Enter your code" %}"
+                                   required
+                                   maxlength="6">
+                            <p class="text-xs mt-1" style="color: var(--theme-text-muted);">
+                                {% translate "Enter the code you received when you enrolled (e.g., ab3x)" %}
+                            </p>
+                        </div>
+                        <button type="submit"
+                                class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded transition"
+                                style="background-color: var(--theme-primary);
+                                       color: var(--theme-text-inverse)">
+                            {% heroicon_outline "magnifying-glass" class="w-4 h-4 mr-2" %}
+                            {% translate "Find My Enrollments" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <!-- User Found - Show Enrollments -->
+            <div class="flex items-start p-4 rounded mb-6"
+                 style="background-color: var(--theme-success-bg);
+                        border: 1px solid var(--theme-success-light);
+                        color: var(--theme-success-text)">
+                {% heroicon_outline "check-circle" class="w-6 h-6 mr-4 flex-shrink-0" %}
+                <div>
+                    <h3 class="font-semibold mb-1">{% translate "Code found!" %}</h3>
+                    <p class="text-sm">
+                        {% translate "Showing enrollments for" %}: <strong>{{ anonymous_user.full_name }}</strong>
+                        <br>
+                        <small style="color: var(--theme-text-muted);">
+                            {% translate "Code" %}: <code style="background-color: var(--theme-bg-tertiary);
+              padding: 2px 6px;
+              border-radius: 4px">{{ anonymous_code }}</code>
+                        </small>
+                    </p>
+                </div>
+            </div>
+            {% if enrollments %}
+                <!-- Enrollments List -->
+                <div class="rounded-lg card-shadow overflow-hidden mb-6"
+                     style="background-color: var(--theme-bg-secondary)">
+                    <div class="px-4 py-3 flex items-center"
+                         style="background-color: var(--theme-info);
+                                color: var(--theme-text-inverse)">
+                        {% heroicon_outline "calendar" class="w-5 h-5 mr-2" %}
+                        <h2 class="font-semibold">{% translate "Your Enrollments" %}</h2>
                     </div>
-                    <div class="card-body">
-                        <form method="post">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="code" class="form-label">{% translate "Anonymous Enrollment Code" %}</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="code"
-                                       name="code"
-                                       placeholder="{% translate "Enter your code" %}"
-                                       required
-                                       maxlength="6">
-                                <div class="form-text">{% translate "Enter the code you received when you enrolled (e.g., ab3x)" %}</div>
+                    <div class="divide-y" style="border-color: var(--theme-border);">
+                        {% for enrollment in enrollments %}
+                            <div class="p-4">
+                                <div class="flex items-start justify-between mb-2">
+                                    <h3 class="font-semibold" style="color: var(--theme-text);">{{ enrollment.session.title }}</h3>
+                                    {% if enrollment.status == "confirmed" %}
+                                        <span class="px-2 py-0.5 text-xs rounded"
+                                              style="background-color: var(--theme-success);
+                                                     color: var(--theme-text-inverse)">
+                                            {% translate "Enrolled" %}
+                                        </span>
+                                    {% elif enrollment.status == "waiting" %}
+                                        <span class="px-2 py-0.5 text-xs rounded"
+                                              style="background-color: var(--theme-warning);
+                                                     color: var(--theme-text-inverse)">{% translate "Waiting" %}</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-sm mb-1" style="color: var(--theme-text-secondary);">
+                                    <strong>{% translate "Host" %}:</strong> {{ enrollment.session.presenter_name }}
+                                </p>
+                                <p class="text-sm mb-1" style="color: var(--theme-text-secondary);">
+                                    <strong>{% translate "Time" %}:</strong>
+                                    {{ enrollment.session.agenda_item.start_time|date:"l, F j, Y G:i" }} -
+                                    {{ enrollment.session.agenda_item.end_time|date:"G:i" }}
+                                </p>
+                                {% if enrollment.session.agenda_item.space %}
+                                    <p class="text-sm mb-1" style="color: var(--theme-text-secondary);">
+                                        <strong>{% translate "Space" %}:</strong> {{ enrollment.session.agenda_item.space.name }}
+                                    </p>
+                                {% endif %}
+                                <small style="color: var(--theme-text-muted);">
+                                    <strong>{% translate "Event" %}:</strong> {{ enrollment.session.agenda_item.space.event.name }}
+                                </small>
                             </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-search"></i> {% translate "Find My Enrollments" %}
-                                </button>
-                            </div>
-                        </form>
+                        {% endfor %}
                     </div>
                 </div>
             {% else %}
-                <!-- User Found - Show Enrollments -->
-                <div class="alert alert-success mb-4" role="alert">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-check-circle"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="mb-1">{% translate "Code found!" %}</h6>
-                            <p class="mb-0">
-                                {% translate "Showing enrollments for" %}: <strong>{{ anonymous_user.full_name }}</strong>
-                                <br>
-                                <small class="text-muted">{% translate "Code" %}: <code>{{ anonymous_code }}</code></small>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                {% if enrollments %}
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0">
-                                <i class="bi bi-calendar-check"></i> {% translate "Your Enrollments" %}
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="list-group list-group-flush">
-                                {% for enrollment in enrollments %}
-                                    <div class="list-group-item">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h6 class="mb-1">{{ enrollment.session.title }}</h6>
-                                            <small class="text-muted">
-                                                {% if enrollment.status == "confirmed" %}
-                                                    <span class="badge bg-success">{% translate "Enrolled" %}</span>
-                                                {% elif enrollment.status == "waiting" %}
-                                                    <span class="badge bg-warning text-dark">{% translate "Waiting" %}</span>
-                                                {% endif %}
-                                            </small>
-                                        </div>
-                                        <p class="mb-1">
-                                            <strong>{% translate "Host" %}:</strong> {{ enrollment.session.presenter_name }}
-                                        </p>
-                                        <p class="mb-1">
-                                            <strong>{% translate "Time" %}:</strong>
-                                            {{ enrollment.session.agenda_item.start_time|date:"l, F j, Y G:i" }} -
-                                            {{ enrollment.session.agenda_item.end_time|date:"G:i" }}
-                                        </p>
-                                        {% if enrollment.session.agenda_item.space %}
-                                            <p class="mb-1">
-                                                <strong>{% translate "Space" %}:</strong> {{ enrollment.session.agenda_item.space.name }}
-                                            </p>
-                                        {% endif %}
-                                        <small class="text-muted">
-                                            <strong>{% translate "Event" %}:</strong> {{ enrollment.session.agenda_item.space.event.name }}
-                                        </small>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="alert alert-info" role="alert">
-                        <div class="d-flex">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-info-circle"></i>
-                            </div>
-                            <div class="flex-grow-1 ms-3">{% translate "You don't have any enrollments yet." %}</div>
-                        </div>
-                    </div>
-                {% endif %}
-                <!-- Actions -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-secondary text-white">
-                        <h6 class="mb-0">
-                            <i class="bi bi-gear"></i> {% translate "Actions" %}
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                            {% if enrollments %}
-                                <a href="{% url 'web:chronology:event' slug=enrollments.0.session.agenda_item.space.event.slug %}"
-                                   class="btn btn-primary">
-                                    <i class="bi bi-calendar-event"></i> {% translate "View Event" %}
-                                </a>
-                            {% endif %}
-                            <a href="{% url 'web:anonymous-manage' %}"
-                               class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> {% translate "Enter Different Code" %}
-                            </a>
-                        </div>
-                    </div>
+                <!-- No Enrollments -->
+                <div class="flex items-start p-4 rounded mb-6"
+                     style="background-color: var(--theme-info-bg);
+                            border: 1px solid var(--theme-info-light);
+                            color: var(--theme-info-text)">
+                    {% heroicon_outline "information-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                    <p class="text-sm">{% translate "You don't have any enrollments yet." %}</p>
                 </div>
             {% endif %}
-            <!-- Help Section -->
-            <div class="text-center mt-4">
-                <small class="text-muted">
-                    {% translate "Lost your code? Unfortunately, we cannot recover it. You'll need to create a new enrollment." %}
-                </small>
+            <!-- Actions -->
+            <div class="rounded-lg card-shadow overflow-hidden"
+                 style="background-color: var(--theme-bg-secondary)">
+                <div class="px-4 py-3" style="background-color: var(--theme-bg-tertiary);">
+                    <h3 class="flex items-center text-sm font-semibold"
+                        style="color: var(--theme-text)">
+                        {% heroicon_outline "cog-6-tooth" class="w-4 h-4 mr-2" %}
+                        {% translate "Actions" %}
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        {% if enrollments %}
+                            <a href="{% url 'web:chronology:event' slug=enrollments.0.session.agenda_item.space.event.slug %}"
+                               class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded transition"
+                               style="background-color: var(--theme-primary);
+                                      color: var(--theme-text-inverse)">
+                                {% heroicon_outline "calendar" class="w-4 h-4 mr-2" %}
+                                {% translate "View Event" %}
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'web:chronology:anonymous-load' %}"
+                           class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded transition"
+                           style="background-color: var(--theme-bg-tertiary);
+                                  border: 1px solid var(--theme-border);
+                                  color: var(--theme-text)">
+                            {% heroicon_outline "arrow-left" class="w-4 h-4 mr-2" %}
+                            {% translate "Enter Different Code" %}
+                        </a>
+                    </div>
+                </div>
             </div>
+        {% endif %}
+        <!-- Help Section -->
+        <div class="text-center mt-6">
+            <small style="color: var(--theme-text-muted);">
+                {% translate "Lost your code? Unfortunately, we cannot recover it. You'll need to create a new enrollment." %}
+            </small>
         </div>
     </div>
 {% endblock body %}
