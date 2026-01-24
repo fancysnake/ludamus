@@ -57,15 +57,6 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Card hover effect */
-.card {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
 
 /* Footer - dark warm tone */
 .page-footer {
