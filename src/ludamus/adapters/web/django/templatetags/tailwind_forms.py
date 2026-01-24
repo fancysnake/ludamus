@@ -158,13 +158,14 @@ def tw_errors(form: BaseForm) -> str:
 
 
 @register.simple_tag
-def tw_button(
+def tw_button(  # noqa: PLR0913
     text: str,
     *,
     button_type: str = "submit",
     variant: str = "primary",
     size: str = "md",
     full_width: bool = False,
+    disabled: bool = False,
 ) -> str:
     """Render a styled button.
 
@@ -174,6 +175,7 @@ def tw_button(
         variant: 'primary', 'secondary', 'danger', 'success', or 'ghost'
         size: 'sm', 'md', or 'lg'
         full_width: Whether button should be full width
+        disabled: Whether button is disabled
 
     Returns:
         HTML string of the rendered button.
@@ -182,6 +184,7 @@ def tw_button(
         {% tw_button "Submit" %}
         {% tw_button "Cancel" button_type="button" variant="secondary" %}
         {% tw_button "Delete" variant="danger" %}
+        {% tw_button "Disabled" disabled=True %}
     """
     size_classes = {
         "sm": "px-3 py-1.5 text-xs",
@@ -218,9 +221,20 @@ def tw_button(
     if full_width:
         classes.append("w-full")
 
+    if disabled:
+        classes.append("opacity-50 cursor-not-allowed")
+
     class_str = " ".join(classes)
     style_str = variant_styles.get(variant, variant_styles["primary"])
 
+    if disabled:
+        return format_html(
+            '<button type="{}" class="{}" style="{}" disabled>{}</button>',
+            button_type,
+            class_str,
+            style_str,
+            text,
+        )
     return format_html(
         '<button type="{}" class="{}" style="{}">{}</button>',
         button_type,

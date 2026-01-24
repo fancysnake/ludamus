@@ -38,15 +38,19 @@
         <link rel="shortcut icon"
               type="image/x-icon"
               href="{% static 'favicon.ico' %}">
+        <!-- Theme initialization (before CSS to prevent flash) -->
+        <script>
+            (function() {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'light' || theme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', theme);
+                }
+            })();
+        </script>
         <!-- Tailwind CSS -->
         <script src="{% static 'vendor/tailwind.min.js' %}"></script>
-        <!-- Theme CSS -->
-        {% if request.session.theme %}
-            <link rel="stylesheet"
-                  href="{% static 'css/themes/'|add:request.session.theme|add:'.css' %}">
-        {% else %}
-            <link rel="stylesheet" href="{% static 'css/themes/light.css' %}">
-        {% endif %}
+        <!-- Theme CSS (automatically adapts to system dark/light preference) -->
+        <link rel="stylesheet" href="{% static 'css/themes/theme.css' %}">
         <!-- Google Fonts - Outfit -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -290,33 +294,33 @@
                            style="color: var(--theme-primary)">Source code</a>
                         available under BSD-3-Clause license.
                     </p>
-                    <div class="flex items-center gap-4">
-                        <form method="post"
-                              action="{% url 'web:theme-select' %}"
-                              class="flex items-center gap-2">
-                            {% csrf_token %}
-                            <label for="theme-select" class="text-sm">{% translate "Theme:" %}</label>
-                            <select name="theme"
-                                    id="theme-select"
-                                    class="px-2 py-1 text-sm rounded focus:outline-none"
-                                    style="background-color: var(--theme-bg);
-                                           border: 1px solid var(--theme-border);
-                                           color: var(--theme-text)"
-                                    onchange="this.form.submit()">
-                                <option value="light"
-                                        {% if request.session.theme == "light" or not request.session.theme %}selected{% endif %}>
-                                    {% translate "Light" %}
-                                </option>
-                                <option value="dark"
-                                        {% if request.session.theme == "dark" %}selected{% endif %}>
-                                    {% translate "Dark" %}
-                                </option>
-                                <option value="solarized"
-                                        {% if request.session.theme == "solarized" %}selected{% endif %}>
-                                    {% translate "Solarized" %}
-                                </option>
-                            </select>
-                        </form>
+                    <!-- Theme Switcher -->
+                    <div class="flex items-center gap-1 rounded p-0.5"
+                         style="background-color: var(--theme-bg-tertiary)">
+                        <button onclick="setTheme('light')"
+                                data-theme-btn="light"
+                                class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors"
+                                style="color: var(--theme-text-muted)"
+                                title="{% translate "Light theme" %}">
+                            {% heroicon_mini "sun" class="w-4 h-4" %}
+                            <span class="hidden sm:inline">{% translate "Light" %}</span>
+                        </button>
+                        <button onclick="setTheme('system')"
+                                data-theme-btn="system"
+                                class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors"
+                                style="color: var(--theme-text-muted)"
+                                title="{% translate "System theme" %}">
+                            {% heroicon_mini "computer-desktop" class="w-4 h-4" %}
+                            <span class="hidden sm:inline">{% translate "System" %}</span>
+                        </button>
+                        <button onclick="setTheme('dark')"
+                                data-theme-btn="dark"
+                                class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors"
+                                style="color: var(--theme-text-muted)"
+                                title="{% translate "Dark theme" %}">
+                            {% heroicon_mini "moon" class="w-4 h-4" %}
+                            <span class="hidden sm:inline">{% translate "Dark" %}</span>
+                        </button>
                     </div>
                 </div>
                 <div class="mt-4 flex flex-wrap justify-center md:justify-end gap-4 text-sm"
@@ -335,6 +339,36 @@
         </footer>
         <!-- Scripts -->
         <script src="{% static 'vendor/htmx.min.js' %}"></script>
+        <!-- Theme Switcher Script -->
+        <script>
+            function setTheme(theme) {
+                if (theme === 'system') {
+                    localStorage.removeItem('theme');
+                    document.documentElement.removeAttribute('data-theme');
+                } else {
+                    localStorage.setItem('theme', theme);
+                    document.documentElement.setAttribute('data-theme', theme);
+                }
+                updateThemeButtons();
+            }
+
+            function updateThemeButtons() {
+                var current = localStorage.getItem('theme') || 'system';
+                document.querySelectorAll('[data-theme-btn]').forEach(function(btn) {
+                    var isActive = btn.dataset.themeBtn === current;
+                    if (isActive) {
+                        btn.style.backgroundColor = 'var(--theme-bg-secondary)';
+                        btn.style.color = 'var(--theme-text)';
+                    } else {
+                        btn.style.backgroundColor = 'transparent';
+                        btn.style.color = 'var(--theme-text-muted)';
+                    }
+                });
+            }
+
+            // Initialize on page load
+            document.addEventListener('DOMContentLoaded', updateThemeButtons);
+        </script>
         {% block extra_scripts %}
         {% endblock extra_scripts %}
     </body>
