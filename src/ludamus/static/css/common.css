@@ -6,6 +6,10 @@
   --bs-link-decoration: none;
 }
 
+.main-content {
+  flex-grow: 1;
+}
+
 .main-content,
 .page-footer,
 .navbar {
