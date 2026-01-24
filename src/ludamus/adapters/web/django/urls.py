@@ -92,6 +92,11 @@ urlpatterns = [
     path("", views.IndexPageView.as_view(), name="index"),
     path("design/", TemplateView.as_view(template_name="design.html"), name="design"),
     path(
+        "design/tailwind/",
+        TemplateView.as_view(template_name="design_tailwind.html"),
+        name="design-tailwind",
+    ),
+    path(
         "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
     path("crowd/", include((crowd_urls, "crowd"), namespace="crowd")),
