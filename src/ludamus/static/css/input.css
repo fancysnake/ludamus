@@ -125,10 +125,10 @@
 
     --theme-border: #404040;
     --theme-border-light: #262626;
-    --theme-border-focus: #ff7d61;
+    --theme-border-focus: #f85a3c;
 
-    --theme-primary: #ff7d61;
-    --theme-primary-hover: #ff9b85;
+    --theme-primary: #f85a3c;
+    --theme-primary-hover: #e53e20;
     --theme-primary-light: #292524;
 
     --theme-secondary: #2dd4b3;
@@ -153,10 +153,10 @@
 
   --theme-border: #404040;
   --theme-border-light: #262626;
-  --theme-border-focus: #ff7d61;
+  --theme-border-focus: #f85a3c;
 
-  --theme-primary: #ff7d61;
-  --theme-primary-hover: #ff9b85;
+  --theme-primary: #f85a3c;
+  --theme-primary-hover: #e53e20;
   --theme-primary-light: #292524;
 
   --theme-secondary: #2dd4b3;
