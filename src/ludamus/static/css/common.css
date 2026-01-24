@@ -42,9 +42,28 @@ body {
   cursor: pointer;
 }
 
-/* Navbar - dark instead of primary blue */
+/* Navbar - neutral with dashed border */
 .navbar.bg-primary {
-  background-color: #292524 !important;
+  background-color: var(--bs-body-bg, #fff) !important;
+  color: var(--bs-body-color, #1c1917) !important;
+  border-bottom: 1px dashed var(--bs-border-color, #dee2e6);
+}
+
+.navbar.bg-primary .navbar-brand,
+.navbar.bg-primary .nav-link,
+.navbar.bg-primary .navbar-text {
+  color: var(--bs-body-color, #1c1917) !important;
+}
+
+.navbar.bg-primary .btn-light {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: #fff;
+}
+
+.navbar.bg-primary .btn-outline-light {
+  border-color: var(--bs-body-color, #1c1917);
+  color: var(--bs-body-color, #1c1917);
 }
 
 /* Links - black with underline on hover */
@@ -58,18 +77,18 @@ a:hover {
 }
 
 
-/* Footer - dark warm tone */
+/* Footer - neutral with dashed border */
 .page-footer {
   margin-top: 4rem;
-  background-color: #292524 !important;
-  color: #e7e5e4;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, #1c1917);
+  border-top: 1px dashed var(--bs-border-color, #dee2e6);
 }
 
 .page-footer a {
-  color: #f0e6d2;
+  color: var(--bs-body-color, #1c1917);
 }
 
 .page-footer a:hover {
-  color: #fff;
+  color: var(--bs-primary);
 }
