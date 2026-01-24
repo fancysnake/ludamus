@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -617,19 +617,3 @@ def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
     form_attrs = {"space": space_field, "time_slot": time_slot_field, "clean": clean}
 
     return type("ProposalAcceptanceForm", (forms.Form,), form_attrs)
-
-
-class ThemeSelectionForm(forms.Form):
-    THEME_CHOICES: ClassVar = [
-        ("cold-steel", _("Cold Steel (Default)")),
-        ("cyberpunk", _("Cyberpunk")),
-        ("green-forest", _("Green Forest")),
-        ("dragons-lair", _("Dragon's Lair")),
-        ("outer-space", _("Outer Space")),
-    ]
-
-    theme = forms.ChoiceField(
-        choices=THEME_CHOICES,
-        label=_("Theme"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
-    )
