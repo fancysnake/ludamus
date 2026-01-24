@@ -118,6 +118,14 @@ class UserRepository(UserRepositoryProtocol):
 
         return UserDTO.model_validate(user)
 
+    def read_by_username(self, username: str) -> UserDTO:
+        try:
+            user = User.objects.get(username=username, user_type=self._user_type)
+        except User.DoesNotExist as exception:
+            raise NotFoundError from exception
+        self._collection[user.slug] = user
+        return UserDTO.model_validate(user)
+
     def update(self, user_slug: str, user_data: UserData) -> None:
         User.objects.filter(slug=user_slug).update(**user_data)
         user = User.objects.get(slug=user_slug)

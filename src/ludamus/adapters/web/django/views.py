@@ -180,17 +180,17 @@ class Auth0LoginCallbackActionView(RedirectView):
         # Handle login/signup
         if not self.request.context.current_user_slug:
             username = self._get_username()
-            slug = slugify(username)
             try:
-                user = self.request.uow.active_users.read(slug=slug)
+                user = self.request.uow.active_users.read_by_username(username)
             except NotFoundError:
+                slug = slugify(username)
                 self.request.uow.active_users.create(
                     UserData(slug=slug, username=username, password=make_password(None))
                 )
-                user = self.request.uow.active_users.read(slug=slug)
+                user = self.request.uow.active_users.read_by_username(username)
 
             # Log the user in
-            self.request.uow.login_user(self.request, slug)
+            self.request.uow.login_user(self.request, user.slug)
             if self.request.session.get("anonymous_enrollment_active"):
                 self.request.session.pop("anonymous_user_code", None)
                 self.request.session.pop("anonymous_enrollment_active", None)
