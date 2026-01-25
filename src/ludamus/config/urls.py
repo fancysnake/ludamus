@@ -37,6 +37,18 @@ handler500 = (  # pylint: disable=invalid-name
 if settings.DEBUG:
     urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]
 
+    # Debug URLs to test error pages
+    def _trigger_500(request):  # noqa: ARG001
+        raise Exception("Test 500 error")  # noqa: TRY002
+
+    from ludamus.adapters.web.django.error_views import custom_404, custom_500
+
+    urlpatterns += [
+        path("404/", lambda r: custom_404(r, None)),
+        path("500/", custom_500),
+        path("500-real/", _trigger_500),  # triggers actual 500 (shows debug page)
+    ]
+
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
     from debug_toolbar.toolbar import debug_toolbar_urls
 
