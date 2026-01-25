@@ -67,7 +67,7 @@ target-version = ['py314']
 # CODESPELL
 
 [tool.codespell]
-skip = 'node_modules,tests/e2e,*.po,*.lock,vendor'
+skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor'
 
 # COVERAGE
 

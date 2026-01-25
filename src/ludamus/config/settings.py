@@ -109,8 +109,7 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
-    INSTALLED_APPS.append("debug_toolbar")
-    INSTALLED_APPS.append("django_browser_reload")
+    INSTALLED_APPS.extend(["debug_toolbar", "django_browser_reload"])
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
     MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
 

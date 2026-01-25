@@ -27,12 +27,9 @@ class RequestContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: RootRepositoryRequest) -> HttpResponseBase:
-        if request.path.startswith((
-            settings.STATIC_URL,
-            "/admin/",
-            "/__debug__/",
-            "/__reload__/",
-        )):
+        if request.path.startswith(
+            (settings.STATIC_URL, "/admin/", "/__debug__/", "/__reload__/")
+        ):
             return self.get_response(request)
 
         sphere_repository = request.uow.spheres
@@ -73,8 +70,7 @@ class RedirectErrorMiddleware:
 
     @staticmethod
     def process_exception(  # pylint: disable=no-self-use
-        request: HttpRequest,
-        exception: Exception,  # pylint: disable=unused-argument
+        request: HttpRequest, exception: Exception  # pylint: disable=unused-argument
     ) -> HttpResponseBase | None:
         if isinstance(exception, RedirectError):
             if exception.error:
