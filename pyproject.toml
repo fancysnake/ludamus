@@ -78,7 +78,8 @@ omit = [
     "src/ludamus/config/*",
     "src/ludamus/deploy/*",
     "src/ludamus/adapters/db/django/migrations/*",
-    "src/ludamus/adapters/web/django/templatetags/*",
+    "src/ludamus/adapters/web/django/templatetags/date_tags.py",
+    "src/ludamus/adapters/web/django/templatetags/enrollment_tags.py",
     "src/ludamus/manage.py",
 ]
 

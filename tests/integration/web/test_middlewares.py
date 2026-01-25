@@ -73,9 +73,10 @@ class TestRequestContextMiddleware:
         "path", ("/static/test.css", "/admin/", "/__debug__/toolbar/", "/__reload__/")
     )
     def test_skips_processing_for_excluded_paths(
-        middleware, get_response_mock, rf, path
+        middleware, get_response_mock, rf, path, settings
     ):
-        """Middleware skips context setup for static/admin/debug URLs."""
+        """Middleware skips context setup for paths in MIDDLEWARE_SKIP_PREFIXES."""
+        assert any(path.startswith(p) for p in settings.MIDDLEWARE_SKIP_PREFIXES)
         request = rf.get(path)
 
         middleware(request)
@@ -105,8 +106,11 @@ class TestRepositoryInjectionMiddleware:
     @pytest.mark.parametrize(
         "path", ("/static/test.css", "/admin/", "/__debug__/toolbar/", "/__reload__/")
     )
-    def test_skips_uow_for_excluded_paths(middleware, get_response_mock, rf, path):
-        """Middleware skips UoW creation for static/admin/debug URLs."""
+    def test_skips_uow_for_excluded_paths(
+        middleware, get_response_mock, rf, path, settings
+    ):
+        """Middleware skips UoW creation for paths in MIDDLEWARE_SKIP_PREFIXES."""
+        assert any(path.startswith(p) for p in settings.MIDDLEWARE_SKIP_PREFIXES)
         request = rf.get(path)
 
         middleware(request)

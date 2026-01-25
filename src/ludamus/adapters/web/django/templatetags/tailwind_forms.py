@@ -196,8 +196,7 @@ def tw_button(  # noqa: PLR0913
 
     variant_styles = {
         "primary": (
-            "background-color: var(--theme-primary); "
-            "color: var(--theme-text-inverse);"
+            "background-color: var(--theme-primary); color: var(--theme-text-inverse);"
         ),
         "secondary": (
             "background-color: var(--theme-bg-tertiary); "
@@ -205,12 +204,10 @@ def tw_button(  # noqa: PLR0913
             "color: var(--theme-text);"
         ),
         "danger": (
-            "background-color: var(--theme-danger); "
-            "color: var(--theme-text-inverse);"
+            "background-color: var(--theme-danger); color: var(--theme-text-inverse);"
         ),
         "success": (
-            "background-color: var(--theme-success); "
-            "color: var(--theme-text-inverse);"
+            "background-color: var(--theme-success); color: var(--theme-text-inverse);"
         ),
         "ghost": "background-color: transparent; color: var(--theme-text-secondary);",
     }
@@ -380,13 +377,24 @@ def _render_multi_choice_field(field: BoundField, *, is_radio: bool = False) -> 
                 checked = "checked" if str(value) in [str(v) for v in values] else ""
 
         label_style = "color: var(--theme-text);"
+        checked_attr = "checked" if checked else ""
         parts.append(
-            f'<label class="flex items-center cursor-pointer">'
-            f'<input type="{input_type}" id="{input_id}" name="{field.html_name}" '
-            f'value="{value}" class="{CHECKBOX_CLASSES}" '
-            f'style="{CHECKBOX_STYLE}" {checked}>'
-            f'<span class="ml-2 text-sm" style="{label_style}">{label}</span>'
-            f"</label>"
+            format_html(
+                '<label class="flex items-center cursor-pointer">'
+                '<input type="{}" id="{}" name="{}" value="{}" class="{}" '
+                'style="{}" {}>'
+                '<span class="ml-2 text-sm" style="{}">{}</span>'
+                "</label>",
+                input_type,
+                input_id,
+                field.html_name,
+                value,
+                CHECKBOX_CLASSES,
+                CHECKBOX_STYLE,
+                checked_attr,
+                label_style,
+                label,
+            )
         )
 
     parts.extend(("</div>", _render_help_text(field), _render_errors(field)))

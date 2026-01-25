@@ -24,9 +24,7 @@ class RepositoryInjectionMiddleware[Response]:
         self.get_response: Callable[[RootRequestProtocol], Response] = get_response
 
     def __call__(self, request: RootRequestProtocol) -> Response:
-        if not request.path.startswith(
-            (settings.STATIC_URL, "/admin/", "/__debug__/", "/__reload__/")
-        ):
+        if not request.path.startswith(settings.MIDDLEWARE_SKIP_PREFIXES):
             request.uow = UnitOfWork()
 
         return self.get_response(request)

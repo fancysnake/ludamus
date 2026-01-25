@@ -187,9 +187,12 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# URL prefixes that skip middleware processing (UoW injection, context setup)
+MIDDLEWARE_SKIP_PREFIXES = (STATIC_URL, "/admin/", "/__debug__/", "/__reload__/")
 
 # Cache busting version for static files (set via GIT_COMMIT_SHA env var during build)
 STATIC_VERSION = os.getenv("GIT_COMMIT_SHA", "1")[:8]

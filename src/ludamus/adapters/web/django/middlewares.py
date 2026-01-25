@@ -27,9 +27,7 @@ class RequestContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: RootRepositoryRequest) -> HttpResponseBase:
-        if request.path.startswith(
-            (settings.STATIC_URL, "/admin/", "/__debug__/", "/__reload__/")
-        ):
+        if request.path.startswith(settings.MIDDLEWARE_SKIP_PREFIXES):
             return self.get_response(request)
 
         sphere_repository = request.uow.spheres
