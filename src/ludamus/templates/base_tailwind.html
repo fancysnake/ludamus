@@ -42,13 +42,18 @@
         <script>
             (function() {
                 var theme = localStorage.getItem('theme');
-                if (theme === 'light' || theme === 'dark') {
-                    document.documentElement.setAttribute('data-theme', theme);
+                if (theme === 'light') {
+                    document.documentElement.classList.add('light');
+                } else if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
                 }
             })();
         </script>
         <!-- Tailwind CSS (compiled) -->
-        <link rel="stylesheet" href="{% static 'css/output.css' %}?v={{ STATIC_VERSION }}">
+        <link rel="stylesheet"
+              href="{% static 'css/output.css' %}?v={{ STATIC_VERSION }}">
         <style>
             /* Card accent line */
             .card-accent {
@@ -107,74 +112,7 @@
     <body class="flex flex-col min-h-screen font-sans antialiased"
           style="background-color: var(--theme-bg);
                  color: var(--theme-text)">
-        <!-- Navbar -->
-        <nav class="sticky top-0 z-50 border-b"
-             style="background-color: var(--theme-bg-secondary);
-                    border-color: var(--theme-border)">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-14">
-                    <div class="flex items-center">
-                        <a href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}"
-                           class="flex items-center space-x-2">
-                            <!-- Geometric logo -->
-                            <div class="w-8 h-8 bg-steel-800 flex items-center justify-center"
-                                 style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)">
-                                <div class="w-4 h-4 bg-bronze"
-                                     style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)">
-                                </div>
-                            </div>
-                            <span class="text-xl font-semibold tracking-tight hidden sm:inline">
-                                <span class="text-steel-800">{{ current_sphere.name }}</span>
-                            </span>
-                        </a>
-                    </div>
-                    <div class="flex items-center space-x-2 sm:space-x-4">
-                        {% if request.user.is_authenticated %}
-                            {% if request.user.full_name %}
-                                <div class="hidden sm:flex items-center text-sm"
-                                     style="color: var(--theme-text-secondary)">
-                                    <div class="w-8 h-8 rounded bg-steel-700 flex items-center justify-center mr-2">
-                                        <span class="text-white text-xs font-medium">{{ request.user.full_name|slice:":2"|upper }}</span>
-                                    </div>
-                                    <span class="hidden md:inline">{{ request.user.full_name }}</span>
-                                </div>
-                                <!-- Mobile user avatar -->
-                                <div class="sm:hidden w-8 h-8 rounded bg-steel-700 flex items-center justify-center">
-                                    <span class="text-white text-xs font-medium">{{ request.user.full_name|slice:":2"|upper }}</span>
-                                </div>
-                            {% endif %}
-                            {% if is_sphere_manager %}
-                                <a href="{% url 'panel:index' %}"
-                                   class="hidden sm:inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition"
-                                   style="color: var(--theme-text-secondary);
-                                          border: 1px solid var(--theme-border)">
-                                    {% heroicon_outline "squares-2x2" class="w-4 h-4 mr-1" %}
-                                    {% translate "Panel" %}
-                                </a>
-                            {% endif %}
-                            <a href="{% url 'web:crowd:profile' %}"
-                               class="hidden sm:inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition"
-                               style="color: var(--theme-text-secondary)">
-                                {% heroicon_outline "user-circle" class="w-4 h-4 mr-1" %}
-                                {% translate "Profile" %}
-                            </a>
-                            <a href="{% url 'web:crowd:auth0:logout' %}"
-                               class="px-2 sm:px-3 py-1.5 text-sm font-medium rounded transition"
-                               style="color: var(--theme-text-secondary)">
-                                <span class="hidden sm:inline">{% translate "Logout" %}</span>
-                                <span class="sm:hidden">{% heroicon_outline "arrow-right-on-rectangle" class="w-5 h-5" %}</span>
-                            </a>
-                        {% else %}
-                            <a href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}"
-                               class="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-bronze hover:bg-bronze-dark text-white rounded transition">
-                                {% heroicon_outline "arrow-left-on-rectangle" class="w-4 h-4 mr-1" %}
-                                {% translate "Login" %}
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </nav>
+        {% include "components/navbar.html" %}
         <!-- Flash Messages -->
         {% if messages %}
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-2">
@@ -213,7 +151,7 @@
             </div>
         {% endif %}
         <!-- Main Content -->
-        <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        <main class="grow flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
             <!-- Page Header -->
             {% block header_section %}
                 <div class="mb-6 text-center">
@@ -239,12 +177,17 @@
                 style="background-color: var(--theme-bg-secondary);
                        border-color: var(--theme-border)">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-end mb-4">
-                    {% include "components/theme_switcher.html" %}
-                </div>
+                <div class="flex justify-end mb-4">{% include "components/theme_switcher.html" %}</div>
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm"
                      style="color: var(--theme-text-muted)">
-                    <div class="flex flex-wrap justify-center sm:justify-start gap-4">
+                    <p class="text-center sm:text-left">
+                        © 2025 Radosław Ganczarek.
+                        <a href="https://github.com/fancysnake/ludamus"
+                           class="hover:underline"
+                           style="color: var(--theme-primary)">Source code</a>
+                        available under BSD-3-Clause license.
+                    </p>
+                    <div class="flex flex-wrap justify-center sm:justify-end gap-4">
                         <a href="mailto:{{ SUPPORT_EMAIL }}"
                            class="hover:underline"
                            style="color: var(--theme-primary)">{% translate "Contact" %}</a>
@@ -255,13 +198,6 @@
                            class="hover:underline"
                            style="color: var(--theme-primary)">{% translate "Terms of Service" %}</a>
                     </div>
-                    <p class="text-center sm:text-right">
-                        © 2025 Radosław Ganczarek.
-                        <a href="https://github.com/fancysnake/ludamus"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">Source code</a>
-                        available under BSD-3-Clause license.
-                    </p>
                 </div>
             </div>
         </footer>
@@ -270,20 +206,31 @@
         <!-- Theme Switcher Script -->
         <script>
             function setTheme(theme) {
+                document.documentElement.classList.add('no-transitions');
+                document.documentElement.classList.remove('light', 'dark');
                 if (theme === 'system') {
                     localStorage.removeItem('theme');
-                    document.documentElement.removeAttribute('data-theme');
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        document.documentElement.classList.add('dark');
+                    }
                 } else {
                     localStorage.setItem('theme', theme);
-                    document.documentElement.setAttribute('data-theme', theme);
+                    document.documentElement.classList.add(theme);
                 }
                 updateIndicator(theme);
+                requestAnimationFrame(function() {
+                    document.documentElement.classList.remove('no-transitions');
+                });
             }
 
             function updateIndicator(theme) {
                 var indicator = document.querySelector('.theme-indicator');
                 if (!indicator) return;
-                var positions = { system: 0, light: 1, dark: 2 };
+                var positions = {
+                    system: 0,
+                    light: 1,
+                    dark: 2
+                };
                 var pos = positions[theme] || 0;
                 // 2px padding + 32px width + 2px gap per position
                 indicator.style.transform = 'translateX(' + (pos * 34) + 'px)';
