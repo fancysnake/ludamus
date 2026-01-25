@@ -79,6 +79,7 @@ omit = [
     "src/ludamus/deploy/*",
     "src/ludamus/adapters/db/django/migrations/*",
     "src/ludamus/adapters/web/django/templatetags/*",
+    "src/ludamus/manage.py",
 ]
 
 [tool.coverage.report]

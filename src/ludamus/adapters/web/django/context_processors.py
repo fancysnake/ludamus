@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 
 def sites(request: RootRepositoryRequest) -> dict[str, Any]:
     # Context processor may run during error handling before middleware completes
-    if not hasattr(request, "context") or not hasattr(request, "uow"):
+    if not hasattr(request, "context") or not hasattr(
+        request, "uow"
+    ):  # pragma: no cover
         return {
             "root_site": None,
             "current_site": None,
