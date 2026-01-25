@@ -1,7 +1,6 @@
-{% extends "base_tailwind.html" %}
+{% extends "base.html" %}
 {% load i18n %}
-{% load heroicons %}
-{% load tailwind_forms %}
+{% load django_bootstrap5 %}
 {% block title %}
     {% if time_slot %}
         {% translate "Propose Session for" %} {{ time_slot.start_time|date:"l, F j - G:i" }}
@@ -24,133 +23,97 @@
     {% endif %}
 {% endblock description %}
 {% block body %}
-    <div class="max-w-3xl mx-auto">
-        <div class="card gradient-border">
-            <div class="px-6 py-4 border-b flex items-center gap-2"
-                 style="background-color: var(--theme-warning-bg);
-                        border-color: var(--theme-warning-light)">
-                {% heroicon_outline "light-bulb" class="w-5 h-5 text-warning" %}
-                <h2 class="font-semibold" style="color: var(--theme-warning-text)">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightbulb"></i>
+                        {% if time_slot %}
+                            {% translate "Propose Session for Time Slot" %}
+                        {% else %}
+                            {% translate "Propose New Session" %}
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
                     {% if time_slot %}
-                        {% translate "Propose Session for Time Slot" %}
-                    {% else %}
-                        {% translate "Propose New Session" %}
-                    {% endif %}
-                </h2>
-            </div>
-            <div class="card-body">
-                {% if time_slot %}
-                    <div class="alert-info mb-6 flex items-start gap-3">
-                        {% heroicon_outline "clock" class="w-5 h-5 flex-shrink-0 mt-0.5" %}
-                        <div>
-                            <strong>{% translate "Selected Time Slot:" %}</strong>
-                            <div class="text-sm mt-1">
-                                {{ time_slot.start_time|date:"l, F j, Y" }}
-                                <br>
-                                {{ time_slot.start_time|date:"G:i" }} - {{ time_slot.end_time|date:"G:i" }}
+                        <div class="alert alert-info mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-clock"></i>
+                                <div class="ms-2">
+                                    <strong>{% translate "Selected Time Slot:" %}</strong>
+                                    <br>
+                                    {{ time_slot.start_time|date:"l, F j, Y" }}
+                                    <br>
+                                    {{ time_slot.start_time|date:"G:i" }} - {{ time_slot.end_time|date:"G:i" }}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% endif %}
-                <form method="post" class="space-y-5">
-                    {% csrf_token %}
-                    <div>
-                        <label for="title"
-                               class="block text-sm font-medium mb-1.5"
-                               style="color: var(--theme-text-secondary)">
-                            {% heroicon_mini "document-text" class="w-4 h-4 inline" %}
-                            {% translate "Session Title" %} <span style="color: var(--theme-danger)">*</span>
-                        </label>
-                        <input type="text"
-                               class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                               style="background-color: var(--theme-bg-secondary);
-                                      border-color: var(--theme-border);
-                                      color: var(--theme-text)"
-                               id="title"
-                               name="title"
-                               required
-                               placeholder="{% translate "Enter a compelling title for your session" %}"
-                               maxlength="255">
-                        <p class="text-xs mt-1.5" style="color: var(--theme-text-muted)">
-                            {% translate "Choose a clear and engaging title that describes your session." %}
-                        </p>
-                    </div>
-                    <div>
-                        <label for="description"
-                               class="block text-sm font-medium mb-1.5"
-                               style="color: var(--theme-text-secondary)">
-                            {% heroicon_mini "document" class="w-4 h-4 inline" %}
-                            {% translate "Description" %}
-                        </label>
-                        <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                  style="background-color: var(--theme-bg-secondary);
-                                         border-color: var(--theme-border);
-                                         color: var(--theme-text)"
-                                  id="description"
-                                  name="description"
-                                  rows="4"
-                                  placeholder="{% translate 'Describe what your session is about, what participants will learn or do...' %}"></textarea>
-                        <p class="text-xs mt-1.5" style="color: var(--theme-text-muted)">
-                            {% translate "Provide a detailed description of your session content and objectives." %}
-                        </p>
-                    </div>
-                    <div>
-                        <label for="requirements"
-                               class="block text-sm font-medium mb-1.5"
-                               style="color: var(--theme-text-secondary)">
-                            {% heroicon_mini "clipboard-document-check" class="w-4 h-4 inline" %}
-                            {% translate "Requirements" %}
-                        </label>
-                        <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                  style="background-color: var(--theme-bg-secondary);
-                                         border-color: var(--theme-border);
-                                         color: var(--theme-text)"
-                                  id="requirements"
-                                  name="requirements"
-                                  rows="3"
-                                  placeholder="{% translate 'Any prerequisites, skills, or materials participants should have...' %}"></textarea>
-                        <p class="text-xs mt-1.5" style="color: var(--theme-text-muted)">
-                            {% translate "List any requirements or prerequisites for participants." %}
-                        </p>
-                    </div>
-                    <div>
-                        <label for="needs"
-                               class="block text-sm font-medium mb-1.5"
-                               style="color: var(--theme-text-secondary)">
-                            {% heroicon_mini "wrench-screwdriver" class="w-4 h-4 inline" %}
-                            {% translate "Special Needs" %}
-                        </label>
-                        <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                  style="background-color: var(--theme-bg-secondary);
-                                         border-color: var(--theme-border);
-                                         color: var(--theme-text)"
-                                  id="needs"
-                                  name="needs"
-                                  rows="2"
-                                  placeholder="{% translate 'Equipment, room setup, technical requirements...' %}"></textarea>
-                        <p class="text-xs mt-1.5" style="color: var(--theme-text-muted)">
-                            {% translate "Specify any special equipment or room setup requirements." %}
-                        </p>
-                    </div>
-                    {% if tag_categories %}
-                        <div>
-                            <label class="block text-sm font-medium mb-3"
-                                   style="color: var(--theme-text-secondary)">
-                                {% heroicon_mini "tag" class="w-4 h-4 inline" %}
-                                {% translate "Tags" %}
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="title" class="form-label">
+                                <i class="bi bi-card-text"></i> {% translate "Session Title" %} <span class="text-danger">*</span>
                             </label>
-                            <div class="space-y-4">
+                            <input type="text"
+                                   class="form-control"
+                                   id="title"
+                                   name="title"
+                                   required
+                                   placeholder="{% translate "Enter a compelling title for your session" %}"
+                                   maxlength="255">
+                            <div class="form-text">{% translate "Choose a clear and engaging title that describes your session." %}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                <i class="bi bi-file-text"></i> {% translate "Description" %}
+                            </label>
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
+                                      rows="4"
+                                      placeholder="{% translate 'Describe what your session is about, what participants will learn or do...' %}"></textarea>
+                            <div class="form-text">{% translate "Provide a detailed description of your session content and objectives." %}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="requirements" class="form-label">
+                                <i class="bi bi-list-check"></i> {% translate "Requirements" %}
+                            </label>
+                            <textarea class="form-control"
+                                      id="requirements"
+                                      name="requirements"
+                                      rows="3"
+                                      placeholder="{% translate 'Any prerequisites, skills, or materials participants should have...' %}"></textarea>
+                            <div class="form-text">{% translate "List any requirements or prerequisites for participants." %}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="needs" class="form-label">
+                                <i class="bi bi-tools"></i> {% translate "Special Needs" %}
+                            </label>
+                            <textarea class="form-control"
+                                      id="needs"
+                                      name="needs"
+                                      rows="2"
+                                      placeholder="{% translate 'Equipment, room setup, technical requirements...' %}"></textarea>
+                            <div class="form-text">{% translate "Specify any special equipment or room setup requirements." %}</div>
+                        </div>
+                        <!-- Tags Section -->
+                        {% if tag_categories %}
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-tags"></i> {% translate "Tags" %}
+                                </label>
                                 {% for category in tag_categories %}
-                                    <div>
-                                        <label for="tags_{{ category.id }}"
-                                               class="block text-sm mb-1.5"
-                                               style="color: var(--theme-text)">{{ category.name }}</label>
+                                    <div class="mb-3">
+                                        <label for="tags_{{ category.id }}" class="form-label fw-normal">
+                                            {% if category.icon %}<i class="bi bi-{{ category.icon }}"></i>{% endif %}
+                                            {{ category.name }}
+                                        </label>
                                         {% if category.input_type == 'select' %}
                                             <select multiple
-                                                    class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                                    style="background-color: var(--theme-bg-secondary);
-                                                           border-color: var(--theme-border);
-                                                           color: var(--theme-text)"
+                                                    class="form-select"
                                                     id="tags_{{ category.id }}"
                                                     name="tags_{{ category.id }}"
                                                     size="4">
@@ -160,133 +123,88 @@
                                                     {% endif %}
                                                 {% endfor %}
                                             </select>
-                                            <p class="text-xs mt-1.5" style="color: var(--theme-text-muted)">
-                                                {% translate "Hold Ctrl/Cmd to select multiple tags." %}
-                                            </p>
+                                            <div class="form-text">{% translate "Hold Ctrl/Cmd to select multiple tags." %}</div>
                                         {% elif category.input_type == 'type' %}
                                             <input type="text"
-                                                   class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                                   style="background-color: var(--theme-bg-secondary);
-                                                          border-color: var(--theme-border);
-                                                          color: var(--theme-text)"
+                                                   class="form-control"
                                                    id="tags_{{ category.id }}"
                                                    name="tags_{{ category.id }}"
                                                    placeholder="{% translate "Enter comma-separated tags..." %}">
-                                            <p class="text-xs mt-1.5" style="color: var(--theme-text-muted)">
+                                            <div class="form-text">
                                                 {% translate "Enter tag names separated by commas. New tags will be reviewed by organizers." %}
-                                            </p>
+                                            </div>
                                         {% endif %}
                                     </div>
                                 {% endfor %}
                             </div>
+                        {% endif %}
+                        <div class="mb-4">
+                            <label for="participants_limit" class="form-label">
+                                <i class="bi bi-people"></i> {% translate "Participants Limit" %} <span class="text-danger">*</span>
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="participants_limit"
+                                   name="participants_limit"
+                                   value="{{ min_participants_limit }}"
+                                   min="{{ min_participants_limit }}"
+                                   max="{{ max_participants_limit }}"
+                                   required>
+                            <div class="form-text">
+                                {% blocktranslate %}Maximum number of participants ({{ min_participants_limit }}-{{ max_participants_limit }}).{% endblocktranslate %}
+                            </div>
                         </div>
-                    {% endif %}
-                    <div>
-                        <label for="participants_limit"
-                               class="block text-sm font-medium mb-1.5"
-                               style="color: var(--theme-text-secondary)">
-                            {% heroicon_mini "user-group" class="w-4 h-4 inline" %}
-                            {% translate "Participants Limit" %} <span style="color: var(--theme-danger)">*</span>
-                        </label>
-                        <input type="number"
-                               class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                               style="background-color: var(--theme-bg-secondary);
-                                      border-color: var(--theme-border);
-                                      color: var(--theme-text)"
-                               id="participants_limit"
-                               name="participants_limit"
-                               value="{{ min_participants_limit }}"
-                               min="{{ min_participants_limit }}"
-                               max="{{ max_participants_limit }}"
-                               required>
-                        <p class="text-xs mt-1.5" style="color: var(--theme-text-muted)">
-                            {% blocktranslate %}Maximum number of participants ({{ min_participants_limit }}-{{ max_participants_limit }}).{% endblocktranslate %}
-                        </p>
-                    </div>
-                    <div>
-                        <label for="min_age"
-                               class="block text-sm font-medium mb-1.5"
-                               style="color: var(--theme-text-secondary)">
-                            {% heroicon_mini "shield-check" class="w-4 h-4 inline" %}
-                            {% translate "Age Rating" %} <span style="color: var(--theme-danger)">*</span>
-                        </label>
-                        <select class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                style="background-color: var(--theme-bg-secondary);
-                                       border-color: var(--theme-border);
-                                       color: var(--theme-text)"
-                                id="min_age"
-                                name="min_age"
-                                required>
-                            <option value="3">{% translate "PEGI 3" %}</option>
-                            <option value="7">{% translate "PEGI 7" %}</option>
-                            <option value="12">{% translate "PEGI 12" %}</option>
-                            <option value="16">{% translate "PEGI 16" %}</option>
-                            <option value="18">{% translate "PEGI 18" %}</option>
-                        </select>
-                        <p class="text-xs mt-1.5" style="color: var(--theme-text-muted)">
-                            {% translate "Select the appropriate age rating for this session" %}
-                        </p>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-                        <button type="submit" class="btn btn-primary py-3">
-                            {% heroicon_outline "paper-airplane" class="w-5 h-5" %}
-                            {% translate "Submit Proposal" %}
-                        </button>
-                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
-                           class="btn btn-secondary py-3">
-                            {% heroicon_outline "arrow-left" class="w-5 h-5" %}
-                            {% translate "Back to Event" %}
-                        </a>
-                    </div>
-                </form>
+                        <div class="mb-4">
+                            <label for="min_age" class="form-label">
+                                <i class="bi bi-shield-check"></i> {% translate "Age Rating" %} <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="min_age" name="min_age" required>
+                                <option value="3">{% translate "PEGI 3" %}</option>
+                                <option value="7">{% translate "PEGI 7" %}</option>
+                                <option value="12">{% translate "PEGI 12" %}</option>
+                                <option value="16">{% translate "PEGI 16" %}</option>
+                                <option value="18">{% translate "PEGI 18" %}</option>
+                            </select>
+                            <div class="form-text">{% translate "Select the appropriate age rating for this session" %}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="bi bi-send"></i> {% translate "Submit Proposal" %}
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                                   class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-arrow-left"></i> {% translate "Back to Event" %}
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
-        <div class="card mt-6">
-            <div class="px-6 py-4 border-b"
-                 style="background-color: var(--theme-bg-tertiary);
-                        border-color: var(--theme-border)">
-                <h3 class="font-medium flex items-center gap-2"
-                    style="color: var(--theme-text)">
-                    {% heroicon_outline "information-circle" class="w-5 h-5" %}
-                    {% translate "Proposal Guidelines" %}
-                </h3>
-            </div>
-            <div class="card-body">
-                <ul class="space-y-2 text-sm" style="color: var(--theme-text-secondary)">
-                    <li class="flex items-start gap-2">
-                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                              style="background-color: var(--theme-primary)"></span>
-                        {% translate "Proposals are reviewed by event organizers" %}
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                              style="background-color: var(--theme-primary)"></span>
-                        {% translate "You will be notified if your proposal is accepted" %}
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                              style="background-color: var(--theme-primary)"></span>
-                        {% translate "Accepted proposals will be added to the event agenda" %}
-                    </li>
-                    {% if time_slot %}
-                        <li class="flex items-start gap-2">
-                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                  style="background-color: var(--theme-primary)"></span>
-                            {% translate "Your proposal is for a specific time slot, but organizers may adjust scheduling if needed" %}
+            <!-- Guidelines Card -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> {% translate "Proposal Guidelines" %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>{% translate "Proposals are reviewed by event organizers" %}</li>
+                        <li>{% translate "You will be notified if your proposal is accepted" %}</li>
+                        <li>{% translate "Accepted proposals will be added to the event agenda" %}</li>
+                        {% if time_slot %}
+                            <li>{% translate "Your proposal is for a specific time slot, but organizers may adjust scheduling if needed" %}</li>
+                        {% else %}
+                            <li>{% translate "Organizers will assign time slots to accepted proposals" %}</li>
+                        {% endif %}
+                        <li>
+                            {% translate "Make sure your title and description clearly explain what participants will gain from your session" %}
                         </li>
-                    {% else %}
-                        <li class="flex items-start gap-2">
-                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                  style="background-color: var(--theme-primary)"></span>
-                            {% translate "Organizers will assign time slots to accepted proposals" %}
-                        </li>
-                    {% endif %}
-                    <li class="flex items-start gap-2">
-                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                              style="background-color: var(--theme-primary)"></span>
-                        {% translate "Make sure your title and description clearly explain what participants will gain from your session" %}
-                    </li>
-                </ul>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
