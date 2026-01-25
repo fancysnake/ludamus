@@ -95,8 +95,7 @@ def _create_event(
 
 def _create_flatpage(site: Site, *, url: str, title: str, content: str) -> FlatPage:
     page, _ = FlatPage.objects.get_or_create(
-        url=url,
-        defaults={"title": title, "content": content},
+        url=url, defaults={"title": title, "content": content}
     )
     page.sites.add(site)
     return page

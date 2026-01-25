@@ -111,17 +111,17 @@ fi
 [tasks.tw]
 description = "Tailwind CSS watch mode"
 depends = ["tw-install"]
-run = "bin/tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --watch"
+run = "bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --watch"
 
 [tasks.tw-build]
 description = "Build Tailwind CSS (minified)"
 depends = ["tw-install"]
-run = "bin/tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --minify"
+run = "bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --minify"
 
 [tasks.dev]
 description = "Start Django + Tailwind watch mode"
 depends = ["tw-install"]
-run = "bin/tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --watch & django-admin runserver localhost:8000"
+run = "bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --watch & django-admin runserver localhost:8000"
 
 # Composite tasks
 [tasks.check]
