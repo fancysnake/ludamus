@@ -307,6 +307,10 @@ class IndexPageView(TemplateView):
         return context
 
 
+class IndexTailwindPageView(IndexPageView):
+    template_name = "index_tailwind.html"
+
+
 class ProfilePageView(
     LoginRequiredMixin,
     SingleObjectTemplateResponseMixin,
