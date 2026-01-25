@@ -1,0 +1,79 @@
+<script>
+    var MEDIA = '(prefers-color-scheme: dark)';
+
+    function disableTransitions() {
+        var css = document.createElement('style');
+        css.appendChild(document.createTextNode(
+            '*,*::before,*::after{-webkit-transition:none!important;-moz-transition:none!important;-o-transition:none!important;-ms-transition:none!important;transition:none!important}'
+        ));
+        document.head.appendChild(css);
+        return css;
+    }
+
+    function applyTheme(theme) {
+        var css = disableTransitions();
+
+        document.documentElement.classList.remove('light', 'dark');
+        var resolved = theme === 'system'
+            ? (window.matchMedia(MEDIA).matches ? 'dark' : 'light')
+            : theme;
+        document.documentElement.classList.add(resolved);
+        document.documentElement.style.colorScheme = resolved;
+
+        // Force repaint then remove
+        window.getComputedStyle(css).opacity;
+        document.head.removeChild(css);
+    }
+
+    function setTheme(theme) {
+        if (theme === 'system') {
+            localStorage.removeItem('theme');
+        } else {
+            localStorage.setItem('theme', theme);
+        }
+        applyTheme(theme);
+        updateIndicator(theme);
+    }
+
+    function updateIndicator(theme) {
+        var indicator = document.querySelector('.theme-indicator');
+        if (!indicator) return;
+        var positions = { system: 0, light: 1, dark: 2 };
+        indicator.style.transform = 'translateX(' + ((positions[theme] || 0) * 34) + 'px)';
+    }
+
+    function getCurrentTheme() {
+        return localStorage.getItem('theme') || 'system';
+    }
+
+    function initThemeSwitcher() {
+        var current = getCurrentTheme();
+        var radio = document.querySelector('input[name="theme"][value="' + current + '"]');
+        if (radio) radio.checked = true;
+        updateIndicator(current);
+
+        document.querySelectorAll('input[name="theme"]').forEach(function(input) {
+            input.addEventListener('change', function() {
+                setTheme(this.value);
+            });
+        });
+
+        // Listen for system preference changes
+        window.matchMedia(MEDIA).addEventListener('change', function() {
+            if (getCurrentTheme() === 'system') applyTheme('system');
+        });
+
+        // Cross-tab sync
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'theme') {
+                var theme = e.newValue || 'system';
+                applyTheme(theme);
+                updateIndicator(theme);
+                var radio = document.querySelector('input[name="theme"][value="' + theme + '"]');
+                if (radio) radio.checked = true;
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initThemeSwitcher);
+</script>
