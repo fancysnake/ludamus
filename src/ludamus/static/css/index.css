@@ -55,6 +55,12 @@
   --color-neutral-900: #171717;
   --color-neutral-950: #0a0a0a;
 
+  /* Disable unused gray palettes - use neutral only */
+  --color-slate-*: initial;
+  --color-gray-*: initial;
+  --color-zinc-*: initial;
+  --color-stone-*: initial;
+
   --color-primary: #f85a3c;
   --color-secondary: #14b89b;
   --color-warning: #f59e0b;
