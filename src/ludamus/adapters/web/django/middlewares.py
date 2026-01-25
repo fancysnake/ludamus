@@ -27,7 +27,7 @@ class RequestContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: RootRepositoryRequest) -> HttpResponseBase:
-        if request.path.startswith(  # pragma: no cover
+        if request.path.startswith(
             (settings.STATIC_URL, "/admin/", "/__debug__/", "/__reload__/")
         ):
             return self.get_response(request)

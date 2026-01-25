@@ -10,6 +10,7 @@ from ludamus.adapters.web.django.middlewares import (
     RedirectErrorMiddleware,
     RequestContextMiddleware,
 )
+from ludamus.binds import RepositoryInjectionMiddleware
 from ludamus.links.db.django.uow import UnitOfWork
 from ludamus.pacts import RequestContext
 
@@ -66,6 +67,52 @@ class TestRequestContextMiddleware:
             assert response.url == expected_url
             mock_messages.error.assert_called_once()
             get_response_mock.assert_not_called()
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "path", ("/static/test.css", "/admin/", "/__debug__/toolbar/", "/__reload__/")
+    )
+    def test_skips_processing_for_excluded_paths(
+        middleware, get_response_mock, rf, path
+    ):
+        """Middleware skips context setup for static/admin/debug URLs."""
+        request = rf.get(path)
+
+        middleware(request)
+
+        # Should pass through without setting context
+        assert not hasattr(request, "context")
+        get_response_mock.assert_called_once_with(request)
+
+
+class TestRepositoryInjectionMiddleware:
+    @pytest.fixture
+    @staticmethod
+    def middleware(get_response_mock):
+        return RepositoryInjectionMiddleware(get_response_mock)
+
+    @staticmethod
+    def test_injects_uow_for_normal_requests(middleware, get_response_mock, rf):
+        request = rf.get("/some/page/")
+
+        middleware(request)
+
+        assert hasattr(request, "uow")
+        assert isinstance(request.uow, UnitOfWork)
+        get_response_mock.assert_called_once_with(request)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "path", ("/static/test.css", "/admin/", "/__debug__/toolbar/", "/__reload__/")
+    )
+    def test_skips_uow_for_excluded_paths(middleware, get_response_mock, rf, path):
+        """Middleware skips UoW creation for static/admin/debug URLs."""
+        request = rf.get(path)
+
+        middleware(request)
+
+        assert not hasattr(request, "uow")
+        get_response_mock.assert_called_once_with(request)
 
 
 class TestRedirectErrorMiddleware:
