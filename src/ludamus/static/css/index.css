@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+@import "./progressive-blur.css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -8,7 +9,7 @@
 @source "../js/**/*.js";
 
 @theme {
-  --font-family-sans: "Outfit", system-ui, sans-serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
 
   --color-warm-50: #fdfcfb;
   --color-warm-100: #f7f5f3;
@@ -295,3 +296,4 @@ select:focus-visible {
   border-color: var(--theme-border-focus) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
+

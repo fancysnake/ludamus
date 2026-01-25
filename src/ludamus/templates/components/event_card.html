@@ -1,0 +1,71 @@
+{% load i18n %}
+{% load date_tags %}
+{% load heroicons %}
+{# Event card component - expects 'event' in context #}
+{# Optional: 'variant' can be "past" for muted styling #}
+<a href="{% url 'web:chronology:event' slug=event.slug %}"
+   class="block group {% if variant == 'past' %}opacity-70 hover:opacity-100{% endif %}">
+    <div class="progressive-blur relative h-full overflow-hidden rounded-2xl shadow-sm transition-shadow duration-200 group-hover:shadow-lg border border-warm-200/50 dark:border-neutral-700/50 group-hover:ring-3 group-hover:ring-coral-500/30 group-hover:ring-offset-2 group-hover:ring-offset-warm-50 dark:group-hover:ring-offset-neutral-900"
+         style="--pb-image: url('{{ event.cover_image_url }}')">
+        {# Progressive blur layers #}
+        <div class="pb-layers">
+            <div class="pb-layer" style="--i:0"></div>
+            <div class="pb-layer" style="--i:1"></div>
+            <div class="pb-layer" style="--i:2"></div>
+            <div class="pb-layer" style="--i:3"></div>
+            <div class="pb-layer" style="--i:4"></div>
+            <div class="pb-layer" style="--i:5"></div>
+        </div>
+        {# Badges floating on image - top area #}
+        <div class="relative p-3 pb-8 z-10">
+            <div class="flex flex-wrap gap-2">
+                {% if event.is_live %}
+                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white"
+                          style="background-color: rgba(0,0,0,0.25)">
+                        <span class="rounded-full bg-white" style="width: 0.5rem; height: 0.5rem;"></span>
+                        {% translate "LIVE" %}
+                    </span>
+                {% endif %}
+                {% if event.is_proposal_active %}
+                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                          style="background: rgba(255,255,255,0.85); color: #5c534a;">
+                        {% heroicon_mini "pencil-square" class="h-3.5 w-3.5" %}
+                        {% translate "Proposals open" %}
+                    </span>
+                {% endif %}
+            </div>
+            {# Duration pill - top right #}
+            <div class="absolute top-3 right-3">
+                <span class="inline-flex rounded-lg px-2 py-1 text-xs font-medium"
+                      style="background: rgba(255,255,255,0.85); color: #5c534a;">
+                    {{ event.start_time|format_datetime_range:event.end_time }}
+                </span>
+            </div>
+        </div>
+        {# Tint overlay for readability #}
+        <div class="absolute inset-x-0 bottom-0 pointer-events-none bg-gradient-to-t from-warm-50/95 dark:from-neutral-900/95 via-warm-50/60 dark:via-neutral-900/60 to-transparent z-[7]" style="height: 65%;"></div>
+        {# Content area - sits on top #}
+        <div class="relative px-5 pb-5 z-10">
+            <h3 class="mb-3 text-lg font-semibold leading-tight text-warm-900 dark:text-neutral-100">{{ event.name }}</h3>
+            {% if event.description %}
+                <p class="mb-4 line-clamp-2 text-sm text-warm-600 dark:text-neutral-300">{{ event.description }}</p>
+            {% endif %}
+            <div class="flex items-center justify-between border-t border-warm-200/50 dark:border-neutral-700/50 pt-3">
+                <div class="flex items-center gap-2 text-sm text-warm-500 dark:text-neutral-400">
+                    {% heroicon_outline "squares-2x2" class="h-4 w-4" %}
+                    <span>
+                        {% blocktranslate count counter=event.session_count|default:0 %}
+                            {{ counter }} session
+                        {% plural %}
+                            {{ counter }} sessions
+                        {% endblocktranslate %}
+                    </span>
+                </div>
+                <div class="flex items-center justify-center rounded-full bg-warm-200/50 dark:bg-neutral-700/50 text-warm-400 dark:text-neutral-400 transition-all duration-200 group-hover:bg-coral-500 group-hover:text-white"
+                     style="width: 1.75rem; height: 1.75rem;">
+                    {% heroicon_mini "arrow-right" class="h-4 w-4" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</a>
