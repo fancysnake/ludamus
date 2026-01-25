@@ -9,6 +9,7 @@
 | links | `links/db/django/` | Repositories, Storage, UoW |
 | gates | `gates/web/django/` | Views, forms (panel) |
 | adapters | `adapters/web/django/` | Views, forms (other) |
+| norms | `config/` | Settings |
 | binds | `binds.py` | DI middleware |
 
 ## Import Rules
@@ -64,3 +65,25 @@ class UnitOfWork(UnitOfWorkProtocol):
 ```
 
 Injected by middleware in `binds.py`. Views use `request.uow.proposals.read(id)`.
+
+## Views
+
+Use `TemplateResponse`, type hint request as `RootRequestProtocol`:
+
+```python
+def get(self, request: RootRequestProtocol, slug: str) -> TemplateResponse:
+    event = request.uow.events.read(slug)
+    return TemplateResponse(request, "panel/event.html", {"event": event})
+```
+
+Mixins: `PanelAccessMixin` (permissions), `EventContextMixin` (loads `request.context.current_event`).
+
+## Services (mills)
+
+Services take UoW via constructor:
+
+```python
+class PanelService:
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+```

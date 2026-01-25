@@ -28,7 +28,8 @@ assert_response(
     response,
     status=200,
     template="namespace/page.html",
-    context_data={...}  # ALL keys, exact equality
+    context_data={...},  # ALL keys, exact equality
+    messages=[(messages.SUCCESS, "Saved.")],  # optional
 )
 ```
 
