@@ -80,7 +80,15 @@ run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template
 # Dev server (Django + Tailwind watch via django-tailwind-cli)
 [tasks.start]
 description = "Start Django + Tailwind watch mode"
-run = "django-admin tailwind runserver"
+# Note: django-tailwind-cli's runserver uses --watch which stops when stdin closes.
+# We run both processes manually with --watch=always to keep Tailwind running.
+run = """
+src/ludamus/.django_tailwind_cli/tailwindcss-macos-arm64-4.1.18 \
+  --input src/ludamus/static/css/index.css \
+  --output src/ludamus/static/css/output.css \
+  --watch=always &
+django-admin runserver
+"""
 
 [tasks.build-tailwind]
 description = "Build Tailwind CSS (production)"
