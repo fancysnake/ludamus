@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     # Third Party
     "django_bootstrap5",
     "django_extensions",
+    "django_tailwind_cli",
     "heroicons",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
@@ -408,3 +409,8 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
 ]
 
 VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
+
+# Tailwind CSS CLI Configuration
+TAILWIND_CLI_VERSION = "4.1.18"
+TAILWIND_CLI_SRC_CSS = "static/css/input.css"
+TAILWIND_CLI_DIST_CSS = "css/output.css"

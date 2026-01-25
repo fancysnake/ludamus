@@ -19,10 +19,11 @@ mise run start    # Run Django dev server
 
 ### Tailwind CSS
 
-```bash
-mise run tw       # Watch mode (rebuilds on file changes)
-mise run tw-build # One-time build (minified)
-mise run dev      # Django + Tailwind watch together
-```
+Uses [django-tailwind-cli](https://github.com/django-commons/django-tailwind-cli) - no Node.js required.
 
-The Tailwind CLI binary is auto-downloaded to `bin/` on first run.
+`mise run start` runs Django + Tailwind watch together. CLI binary auto-downloads on first run.
+
+**Deployment:**
+```bash
+mise run build-tailwind  # Build production CSS (run before collectstatic)
+```
