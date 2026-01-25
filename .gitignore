@@ -208,3 +208,4 @@ worktrees/
 # Tailwind CSS
 src/ludamus/static/css/output.css
 bin/
+src/ludamus/staticfiles/
