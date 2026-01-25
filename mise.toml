@@ -77,10 +77,6 @@ run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-t
 description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
 
-# Dev server
-[tasks.start]
-run = "django-admin runserver localhost:8000"
-
 # Tailwind CSS (uses standalone CLI binary)
 [tasks.tw-install]
 description = "Install Tailwind CSS standalone CLI"
@@ -118,10 +114,16 @@ description = "Build Tailwind CSS (minified)"
 depends = ["tw-install"]
 run = "bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --minify"
 
-[tasks.dev]
+# Dev server
+[tasks.start]
 description = "Start Django + Tailwind watch mode"
 depends = ["tw-install"]
-run = "bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --watch & django-admin runserver localhost:8000"
+run = """
+bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --watch &
+TW_PID=$!
+trap "kill $TW_PID 2>/dev/null" EXIT
+django-admin runserver localhost:8000
+"""
 
 # Composite tasks
 [tasks.check]
