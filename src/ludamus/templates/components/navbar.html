@@ -26,12 +26,12 @@
                         <!-- Avatar trigger -->
                         <button type="button"
                                 class="w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center
-                                       cursor-pointer transition-all duration-200
+                                       cursor-pointer transition-all duration-150
                                        ring-2 ring-transparent hover:ring-coral-500/30
                                        focus:outline-none focus:ring-coral-500/50"
                                 aria-haspopup="true"
                                 aria-expanded="false">
-                            <span class="text-white text-sm font-semibold tracking-tight">
+                            <span class="text-sm text-white font-semibold tracking-tight">
                                 {{ request.user.full_name|default:request.user.email|slice:":2"|upper }}
                             </span>
                         </button>
