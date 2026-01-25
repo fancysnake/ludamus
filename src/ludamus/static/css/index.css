@@ -8,7 +8,7 @@
 @source "../js/**/*.js";
 
 @theme {
-  --font-family-sans: "Outfit", system-ui, sans-serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
 
   --color-warm-50: #fdfcfb;
   --color-warm-100: #f7f5f3;
