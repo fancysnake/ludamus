@@ -322,7 +322,9 @@ class IndexPageView(TemplateView):
         # Assign placeholder images based on index
         for i, event in enumerate(all_events):
             img_id = EVENT_PLACEHOLDER_IMAGES[i % len(EVENT_PLACEHOLDER_IMAGES)]
-            event.cover_image_url = f"https://images.unsplash.com/{img_id}?w=800&h=400&fit=crop"
+            event.cover_image_url = (  # type: ignore[attr-defined]
+                f"https://images.unsplash.com/{img_id}?w=800&h=400&fit=crop"
+            )
         context["upcoming_events"] = [e for e in all_events if not e.is_ended]
         context["past_events"] = [e for e in all_events if e.is_ended]
         return context
