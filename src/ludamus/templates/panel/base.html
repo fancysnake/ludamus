@@ -16,20 +16,8 @@
               content="Ludamus backoffice panel for event management">
         <meta name="keywords" content="ludamus, backoffice, events, management">
         <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
-        <script src="{% static 'vendor/tailwind.min.js' %}?v={{ STATIC_VERSION }}"></script>
+        <link rel="stylesheet" href="{% static 'css/output.css' %}?v={{ STATIC_VERSION }}">
         <script src="{% static 'vendor/htmx.min.js' %}?v={{ STATIC_VERSION }}"></script>
-        <script>
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        colors: {
-                            primary: '#6366f1',
-                            secondary: '#8b5cf6',
-                        }
-                    }
-                }
-            }
-        </script>
         <style>
             .sidebar-overlay {
                 transition: opacity 0.3s ease-in-out;

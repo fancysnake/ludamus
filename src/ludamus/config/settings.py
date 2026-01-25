@@ -405,12 +405,6 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
         "filename": "fonts/bootstrap-icons.woff",
         "sha384": "IYfD9pNP/nesQsPyYtTdGCb4uhEWUmNF8GxaCvqcJFH+Of3c1b0VbH6hdHUonDSC",
     },
-    {
-        "name": "tailwind",
-        "url": "https://cdn.tailwindcss.com",
-        "filename": "tailwind.min.js",
-        "sha384": "igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K",
-    },
 ]
 
 VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
