@@ -11,6 +11,15 @@ if TYPE_CHECKING:
 
 
 def sites(request: RootRepositoryRequest) -> dict[str, Any]:
+    # Context processor may run during error handling before middleware completes
+    if not hasattr(request, "context") or not hasattr(request, "uow"):
+        return {
+            "root_site": None,
+            "current_site": None,
+            "current_sphere": None,
+            "is_sphere_manager": False,
+        }
+
     sphere_repository = request.uow.spheres
     root_sphere = sphere_repository.read(request.context.root_sphere_id)
     current_sphere = sphere_repository.read(request.context.current_sphere_id)

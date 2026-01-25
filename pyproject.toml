@@ -30,7 +30,7 @@ pydantic = "^2.11.7"
 django-extensions = "^4.1"
 requests = "^2.32.5"
 heroicons = { version = "^2.9", extras = ["django"] }
-django-tailwind-cli = "^4.5.1"
+django-tailwind = {version = "^4.0.0", extras = ["reload"]}
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"

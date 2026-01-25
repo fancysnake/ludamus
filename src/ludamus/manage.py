@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""Django management script for django-tailwind-cli compatibility.
+"""Django management script for local tooling.
 
 This project uses django-admin directly (DJANGO_SETTINGS_MODULE is set in mise.toml),
-but django-tailwind-cli's runserver command expects manage.py to exist in BASE_DIR.
+but some tooling expects manage.py to exist in BASE_DIR.
 
 This file lives in src/ludamus/ (which is BASE_DIR) and adds src/ to PYTHONPATH
 so that 'import ludamus' works correctly.

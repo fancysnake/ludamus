@@ -356,7 +356,7 @@ version = "8.3.1"
 description = "Composable command line interface toolkit"
 optional = false
 python-versions = ">=3.10"
-groups = ["main", "dev"]
+groups = ["dev"]
 files = [
     {file = "click-8.3.1-py3-none-any.whl", hash = "sha256:981153a64e25f12d547d3426c367a4857371575ee7ad18df2a6183ab0545b2a6"},
     {file = "click-8.3.1.tar.gz", hash = "sha256:12ff4785d337a1bb490bb7e9c2b1ee5da3112e94a8622f26a6c77f5d2fc6842a"},
@@ -389,12 +389,11 @@ version = "0.4.6"
 description = "Cross-platform colored terminal text."
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
-groups = ["main", "dev"]
+groups = ["dev"]
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-markers = {main = "platform_system == \"Windows\""}
 
 [[package]]
 name = "coverage"
@@ -695,6 +694,22 @@ django = ">=4.2"
 jinja = ["jinja2 (>=3.0,<4)"]
 
 [[package]]
+name = "django-browser-reload"
+version = "1.21.0"
+description = "Automatically refresh your browser on changes to Python code, templates, or static files."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "django_browser_reload-1.21.0-py3-none-any.whl", hash = "sha256:0b2a86ab460774fa9bb142a121c70e75a72f18109f51a4f6de409cd633d3a70d"},
+    {file = "django_browser_reload-1.21.0.tar.gz", hash = "sha256:3335ad3d107eb657f623d1a8e680dfbcab8a83ae1f94df1895e069dddf5604ba"},
+]
+
+[package.dependencies]
+asgiref = ">=3.6"
+django = ">=4.2"
+
+[[package]]
 name = "django-debug-toolbar"
 version = "6.1.0"
 description = "A configurable set of panels that display various debug information about the current request/response."
@@ -782,45 +797,26 @@ django = "*"
 typing-extensions = "*"
 
 [[package]]
-name = "django-tailwind-cli"
-version = "4.5.1"
-description = "Django and Tailwind integration based on the prebuilt Tailwind CSS CLI."
+name = "django-tailwind"
+version = "4.4.2"
+description = "Tailwind CSS Framework for Django projects"
 optional = false
-python-versions = ">=3.10"
+python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "django_tailwind_cli-4.5.1-py3-none-any.whl", hash = "sha256:72991e93c070da864c63d2af96cf601b70af51fadfae786b9326b2ff0e124a72"},
-    {file = "django_tailwind_cli-4.5.1.tar.gz", hash = "sha256:e3cdacab1d7e81f08c3ec44a4e8217c7b3a1e986825c1cd4c2acca58fbc584ac"},
+    {file = "django_tailwind-4.4.2-py3-none-any.whl", hash = "sha256:0e4a2836cb36e8952700457d049fadb8743583017cef80fa3a374f8597c289f4"},
+    {file = "django_tailwind-4.4.2.tar.gz", hash = "sha256:b3a3eb2d22cbb8c17565898fb68ccedcf806542b04fe4107bdfec7035d582819"},
 ]
 
 [package.dependencies]
-django = ">=4.2,<5.0.dev0 || >=5.2.dev0"
-django-typer = ">=2.1.2"
-semver = ">=3.0.4"
+django = ">=4.2.20"
+django-browser-reload = {version = ">=1.21.0,<2", optional = true, markers = "extra == \"reload\""}
+pytailwindcss = ">=0.3.0"
 
 [package.extras]
-django-extensions = ["django-extensions (>=3.2)", "werkzeug (>=3.0)"]
-
-[[package]]
-name = "django-typer"
-version = "3.5.1"
-description = "Use Typer to define the CLI for your Django management commands."
-optional = false
-python-versions = "<4.0,>=3.10"
-groups = ["main"]
-files = [
-    {file = "django_typer-3.5.1-py3-none-any.whl", hash = "sha256:e8a68aa6f95bf40f8fff66a2af16d90e6a21c7963564c3aecb25a0e37c47033d"},
-    {file = "django_typer-3.5.1.tar.gz", hash = "sha256:9e9a6e9093b97fcb61c003a192f4398249830346c64f60276485f4c8b1e331f8"},
-]
-
-[package.dependencies]
-click = ">=8.1.8,<8.4"
-django = ">=4.2,<6.1"
-shellingham = ">=1.5.4,<2.0"
-typer-slim = ">=0.20.1,<0.22.0"
-
-[package.extras]
-rich = ["rich (>=10.11.0,<15.0.0)"]
+cookiecutter = ["cookiecutter (>=2.6.0,<3)"]
+honcho = ["honcho (>=2.0.0,<3)"]
+reload = ["django-browser-reload (>=1.21.0,<2)"]
 
 [[package]]
 name = "djlint"
@@ -1599,6 +1595,18 @@ spelling = ["pyenchant (>=3.2,<4.0)"]
 testutils = ["gitpython (>3)"]
 
 [[package]]
+name = "pytailwindcss"
+version = "0.3.0"
+description = "Standalone Tailwind CSS CLI, installable via pip. Use Tailwind CSS without Node.js."
+optional = false
+python-versions = "<4.0,>=3.11"
+groups = ["main"]
+files = [
+    {file = "pytailwindcss-0.3.0-py3-none-any.whl", hash = "sha256:a9b770ad3c0a0f40073052bcfe81a060b550fed38af614a472f5aa7bb85fa8aa"},
+    {file = "pytailwindcss-0.3.0.tar.gz", hash = "sha256:1f71dd64020aacb40608dfe8725ca441c772016c344f757ccbc74b8b6143027d"},
+]
+
+[[package]]
 name = "pytest"
 version = "9.0.2"
 description = "pytest: simple powerful testing with Python"
@@ -2035,30 +2043,6 @@ files = [
 ]
 
 [[package]]
-name = "semver"
-version = "3.0.4"
-description = "Python helper for Semantic Versioning (https://semver.org)"
-optional = false
-python-versions = ">=3.7"
-groups = ["main"]
-files = [
-    {file = "semver-3.0.4-py3-none-any.whl", hash = "sha256:9c824d87ba7f7ab4a1890799cec8596f15c1241cb473404ea1cb0c55e4b04746"},
-    {file = "semver-3.0.4.tar.gz", hash = "sha256:afc7d8c584a5ed0a11033af086e8af226a9c0b206f313e0301f8dd7b6b589602"},
-]
-
-[[package]]
-name = "shellingham"
-version = "1.5.4"
-description = "Tool to Detect Surrounding Shell"
-optional = false
-python-versions = ">=3.7"
-groups = ["main"]
-files = [
-    {file = "shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686"},
-    {file = "shellingham-1.5.4.tar.gz", hash = "sha256:8dbca0739d487e5bd35ab3ca4b36e11c4078f3a234bfce294b0a0291363404de"},
-]
-
-[[package]]
 name = "six"
 version = "1.17.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -2119,25 +2103,6 @@ discord = ["requests"]
 notebook = ["ipywidgets (>=6)"]
 slack = ["slack-sdk"]
 telegram = ["requests"]
-
-[[package]]
-name = "typer-slim"
-version = "0.21.1"
-description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "typer_slim-0.21.1-py3-none-any.whl", hash = "sha256:6e6c31047f171ac93cc5a973c9e617dbc5ab2bddc4d0a3135dc161b4e2020e0d"},
-    {file = "typer_slim-0.21.1.tar.gz", hash = "sha256:73495dd08c2d0940d611c5a8c04e91c2a0a98600cbd4ee19192255a233b6dbfd"},
-]
-
-[package.dependencies]
-click = ">=8.0.0"
-typing-extensions = ">=3.7.4.3"
-
-[package.extras]
-standard = ["rich (>=10.11.0)", "shellingham (>=1.3.0)"]
 
 [[package]]
 name = "types-authlib"
@@ -2275,4 +2240,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14.0,<3.15"
-content-hash = "b0f91baebddc2ae69c63740f9d1399dc80cfffdef44d8bf5720f1ccd150277e3"
+content-hash = "e692bd6187121e1139fbf3f581246d1647dd3f74c2f77db5f8344e80edb90252"

@@ -77,22 +77,18 @@ run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-t
 description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
 
-# Dev server (Django + Tailwind watch via django-tailwind-cli)
+# Dev server (Django + Tailwind watch via django-tailwind)
 [tasks.start]
 description = "Start Django + Tailwind watch mode"
-# Note: django-tailwind-cli's runserver uses --watch which stops when stdin closes.
-# We run both processes manually with --watch=always to keep Tailwind running.
-run = """
-src/ludamus/.django_tailwind_cli/tailwindcss-macos-arm64-4.1.18 \
-  --input src/ludamus/static/css/index.css \
-  --output src/ludamus/static/css/output.css \
-  --watch=always &
-django-admin runserver
-"""
+run = "python src/ludamus/manage.py tailwind dev"
 
 [tasks.build-tailwind]
 description = "Build Tailwind CSS (production)"
-run = "django-admin tailwind build"
+run = "python src/ludamus/manage.py tailwind build"
+
+[tasks.kill]
+description = "Kill dev servers (Django on :8000, Tailwind watch)"
+run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch' 2>/dev/null; echo 'Dev servers killed'"
 
 # Composite tasks
 [tasks.check]

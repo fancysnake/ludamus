@@ -6,9 +6,8 @@ Replace Bootstrap 5 with production-grade Tailwind 4, matching mockup-1.html des
 
 ## Build System
 
-**Tool**: [django-tailwind-cli](https://github.com/django-commons/django-tailwind-cli)
-- No Node.js dependency
-- Auto-downloads Tailwind CLI binary (pinned version in settings)
+**Tool**: [django-tailwind](https://github.com/timonweb/django-tailwind)
+- npm-based build (Tailwind v4)
 - Integrated with Django management commands
 
 ## File Structure
@@ -17,35 +16,36 @@ Replace Bootstrap 5 with production-grade Tailwind 4, matching mockup-1.html des
 src/ludamus/
 ├── static/
 │   ├── css/
-│   │   ├── index.css     # Source: @theme config + components
-│   │   └── output.css    # Generated (gitignored locally, built in CI/Docker)
+│   │   └── dist/
+│   │       └── styles.css    # Generated (gitignored locally, built in CI/Docker)
 │   └── vendor/
-│       └── htmx.min.js   # Keep - remove Bootstrap files
+│       └── htmx.min.js       # Keep - remove Bootstrap files
+├── theme/
+│   ├── static_src/
+│   │   └── src/styles.css    # Source: @theme config + components
 ```
 
 ## Phase 1: Infrastructure ✅
 
 ### 1.1 Settings
 ```python
-INSTALLED_APPS = [..., "django_tailwind_cli", ...]
+INSTALLED_APPS = [..., "tailwind", "ludamus.theme", ...]
 
-TAILWIND_CLI_VERSION = "4.1.18"
-TAILWIND_CLI_SRC_CSS = "static/css/index.css"
-TAILWIND_CLI_DIST_CSS = "css/output.css"
+TAILWIND_APP_NAME = "ludamus.theme"
 ```
 
 ### 1.2 mise.toml tasks
 ```toml
 [tasks.start]
 description = "Start Django + Tailwind watch mode"
-run = "django-admin tailwind runserver"
+run = "python src/ludamus/manage.py tailwind dev"
 
 [tasks.build-tailwind]
 description = "Build Tailwind CSS (production)"
-run = "django-admin tailwind build"
+run = "python src/ludamus/manage.py tailwind build"
 ```
 
-### 1.3 index.css with @theme (Tailwind 4 CSS-first config)
+### 1.3 styles.css with @theme (Tailwind 4 CSS-first config)
 
 Colors from mockup-1.html:
 - **warm**: cream tones (#fdfcfb → #252220)
@@ -59,7 +59,7 @@ Components layer:
 
 ### 1.4 Dockerfile
 ```dockerfile
-# Build Tailwind CSS (django-tailwind-cli downloads binary automatically)
+# Build Tailwind CSS (django-tailwind)
 RUN django-admin tailwind build
 ```
 
@@ -71,7 +71,7 @@ RUN django-admin tailwind build
 ## Phase 2: Base Template Migration
 
 Convert `base.html`:
-1. Replace Bootstrap CSS with `output.css`
+1. Replace Bootstrap CSS with `static/css/dist/styles.css`
 2. Keep HTMX
 3. Convert navbar to Tailwind (sticky, warm-50 bg, coral accents)
 4. Convert messages to `.alert-*` components
@@ -126,17 +126,17 @@ Replace Bootstrap Icons with heroicons (already installed):
 | File | Action |
 |------|--------|
 | `.gitignore` | Add `src/ludamus/static/css/output.css` ✅ |
-| `mise.toml` | Add django-tailwind-cli tasks ✅ |
-| `static/css/index.css` | Create with @theme ✅ |
+| `mise.toml` | Add django-tailwind tasks ✅ |
+| `theme/static_src/src/styles.css` | Create with @theme ✅ |
 | `Dockerfile` | Add `django-admin tailwind build` ✅ |
-| `config/settings.py` | Add django_tailwind_cli, update VENDOR_DEPENDENCIES |
+| `config/settings.py` | Add tailwind app, update VENDOR_DEPENDENCIES |
 | `templates/base.html` | Full conversion |
 | `templatetags/tailwind_forms.py` | Port from tailwind branch ✅ |
 
 ## Verification
 
 1. `mise run start` - runs Django + Tailwind watch
-2. `mise run build-tailwind` - generates output.css
+2. `mise run build-tailwind` - generates styles.css
 3. Visual check: pages render with new design
 4. `mise run test` - all tests pass
 5. `docker build .` - builds successfully
@@ -144,6 +144,6 @@ Replace Bootstrap Icons with heroicons (already installed):
 ## Decisions
 
 - **Font hosting**: Google Fonts CDN (simple, fast)
-- **output.css**: Gitignored, generated in CI/Docker
+- **styles.css**: Gitignored, generated in CI/Docker
 - **Migration**: Parallel - keep Bootstrap loaded until all templates converted
-- **No tailwind.config.js**: Tailwind 4 uses CSS-first config via `@theme` in index.css
+- **No tailwind.config.js**: Tailwind 4 uses CSS-first config via `@theme` in styles.css

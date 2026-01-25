@@ -19,9 +19,9 @@ mise run start    # Run Django dev server
 
 ### Tailwind CSS
 
-Uses [django-tailwind-cli](https://github.com/django-commons/django-tailwind-cli) - no Node.js required.
+Uses [django-tailwind](https://github.com/timonweb/django-tailwind) with npm-based build.
 
-`mise run start` runs Django + Tailwind watch together. CLI binary auto-downloads on first run.
+`mise run start` runs Django + Tailwind watch together via `tailwind dev`.
 
 **Deployment:**
 ```bash

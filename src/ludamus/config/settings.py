@@ -83,7 +83,8 @@ INSTALLED_APPS = [
     # Third Party
     "django_bootstrap5",
     "django_extensions",
-    "django_tailwind_cli",
+    "tailwind",
+    "ludamus.theme",
     "heroicons",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
@@ -109,7 +110,9 @@ MIDDLEWARE = [
 
 if DEBUG:
     INSTALLED_APPS.append("debug_toolbar")
+    INSTALLED_APPS.append("django_browser_reload")
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
 
 ROOT_URLCONF = "ludamus.config.urls"
 
@@ -410,7 +413,5 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
 
 VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
 
-# Tailwind CSS CLI Configuration
-TAILWIND_CLI_VERSION = "4.1.18"
-TAILWIND_CLI_SRC_CSS = "static/css/input.css"
-TAILWIND_CLI_DIST_CSS = "css/output.css"
+# Tailwind CSS Configuration
+TAILWIND_APP_NAME = "ludamus.theme"

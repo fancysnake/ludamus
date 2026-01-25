@@ -81,7 +81,7 @@ WORKDIR /app/src
 # Compile translation messages
 RUN django-admin compilemessages
 
-# Build Tailwind CSS (django-tailwind-cli downloads binary automatically)
+# Build Tailwind CSS (django-tailwind)
 RUN django-admin tailwind build
 
 # Download vendor dependencies and collect static files (requires SECRET_KEY to be set)
