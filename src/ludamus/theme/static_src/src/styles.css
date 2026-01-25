@@ -1,10 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /**
-  * A catch-all path to Django template files, JavaScript, and Python files
-  * that contain Tailwind CSS classes and will be scanned by Tailwind to generate the final CSS file.
-  *
-  * If your final CSS file is not being updated after code changes, you may want to broaden or narrow
-  * the scope of this path.
-  */
-@source "../../../../**/*.{html,py,js}";
+ * A catch-all path to Django template files, JavaScript, and Python files
+ * that contain Tailwind CSS classes and will be scanned by Tailwind to generate the final CSS file.
+ *
+ * If your final CSS file is not being updated after code changes, you may want to broaden or narrow
+ * the scope of this path.
+ */
+ @source "../../../../**/*.{html,py,js}";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Outfit", system-ui, sans-serif;
+
+  --color-warm-50: #fdfcfb;
+  --color-warm-100: #f7f5f3;
+  --color-warm-200: #f0ece8;
+  --color-warm-300: #e4ddd6;
+  --color-warm-400: #c9bfb3;
+  --color-warm-500: #a69a8c;
+  --color-warm-600: #7d7164;
+  --color-warm-700: #5c534a;
+  --color-warm-800: #3d3732;
+  --color-warm-900: #252220;
+
+  --color-coral-50: #fef5f3;
+  --color-coral-100: #ffe5df;
+  --color-coral-200: #ffcfc5;
+  --color-coral-300: #ffab9a;
+  --color-coral-400: #ff7d61;
+  --color-coral-500: #f85a3c;
+  --color-coral-600: #e53e20;
+  --color-coral-700: #c13118;
+  --color-coral-800: #9f2c18;
+  --color-coral-900: #842a1b;
+
+  --color-teal-50: #f0fdfa;
+  --color-teal-100: #ccfbef;
+  --color-teal-200: #9af5df;
+  --color-teal-300: #5fe9cb;
+  --color-teal-400: #2dd4b3;
+  --color-teal-500: #14b89b;
+  --color-teal-600: #0d947e;
+  --color-teal-700: #0f7666;
+  --color-teal-800: #115e53;
+  --color-teal-900: #134e45;
+
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  /* Disable unused gray palettes - use neutral only */
+  --color-slate-*: initial;
+  --color-gray-*: initial;
+  --color-zinc-*: initial;
+  --color-stone-*: initial;
+
+  --color-primary: #f85a3c;
+  --color-secondary: #14b89b;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-success: #14b89b;
+  --color-info: #3b82f6;
+}
+
+* {
+  corner-shape: superellipse(1.8);
+}
+
+html {
+  height: 100%;
+}
+
+a {
+  cursor: pointer;
+}
+
+:root {
+  --theme-bg: #f0f1f3;
+  --theme-bg-secondary: #fdfcfb;
+  --theme-bg-tertiary: #f7f5f3;
+  --theme-text: #252220;
+  --theme-text-secondary: #5c534a;
+  --theme-text-muted: #737373;
+  --theme-text-inverse: #ffffff;
+  --theme-border: #e4ddd6;
+  --theme-border-light: #f0ece8;
+  --theme-border-focus: #f85a3c;
+  --theme-primary: #f85a3c;
+  --theme-primary-hover: #e53e20;
+  --theme-primary-light: #fef5f3;
+  --theme-secondary: #14b89b;
+  --theme-secondary-hover: #0d947e;
+  --theme-secondary-light: #f0fdfa;
+  --theme-success: #14b89b;
+  --theme-success-light: #f0fdfa;
+  --theme-success-bg: #ccfbef;
+  --theme-success-text: #0f7666;
+  --theme-warning: #f59e0b;
+  --theme-warning-light: #fef3c7;
+  --theme-warning-bg: #fffbeb;
+  --theme-warning-text: #92400e;
+  --theme-danger: #ef4444;
+  --theme-danger-light: #fee2e2;
+  --theme-danger-bg: #fef2f2;
+  --theme-danger-text: #991b1b;
+  --theme-info: #3b82f6;
+  --theme-info-light: #dbeafe;
+  --theme-info-bg: #eff6ff;
+  --theme-info-text: #1e40af;
+  --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --theme-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --theme-accent-gradient: linear-gradient(90deg, #f85a3c, #14b89b);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --theme-bg: #0a0a0a;
+    --theme-bg-secondary: #171717;
+    --theme-bg-tertiary: #262626;
+    --theme-text: #fafafa;
+    --theme-text-secondary: #d4d4d4;
+    --theme-text-muted: #737373;
+    --theme-text-inverse: #0a0a0a;
+    --theme-border: #404040;
+    --theme-border-light: #262626;
+    --theme-border-focus: #f85a3c;
+    --theme-primary: #f85a3c;
+    --theme-primary-hover: #e53e20;
+    --theme-primary-light: #292524;
+    --theme-secondary: #2dd4b3;
+    --theme-secondary-hover: #5fe9cb;
+    --theme-secondary-light: #134e45;
+    --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.dark {
+  --theme-bg: #0a0a0a;
+  --theme-bg-secondary: #171717;
+  --theme-bg-tertiary: #262626;
+  --theme-text: #fafafa;
+  --theme-text-secondary: #d4d4d4;
+  --theme-text-muted: #737373;
+  --theme-text-inverse: #0a0a0a;
+  --theme-border: #404040;
+  --theme-border-light: #262626;
+  --theme-border-focus: #f85a3c;
+  --theme-primary: #f85a3c;
+  --theme-primary-hover: #e53e20;
+  --theme-primary-light: #292524;
+  --theme-secondary: #2dd4b3;
+  --theme-secondary-hover: #5fe9cb;
+  --theme-secondary-light: #134e45;
+}
+
+.no-transitions,
+.no-transitions * {
+  transition: none !important;
+}
+
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--theme-accent-gradient);
+  border-radius: 9999px 9999px 0 0;
+}
+
+.session-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.session-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+}
+
+.live-dot {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.tag-pill {
+  transition: all 0.2s ease;
+}
+.tag-pill:hover {
+  transform: scale(1.05);
+}
+
+.blob {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+}
+.blob-2 {
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+}
+.blob-3 {
+  border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%;
+}
+
+.alert {
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border-width: 1px;
+  border-style: solid;
+}
+.alert-success {
+  background-color: var(--theme-success-bg);
+  border-color: var(--theme-success-light);
+  color: var(--theme-success-text);
+}
+.alert-warning {
+  background-color: var(--theme-warning-bg);
+  border-color: var(--theme-warning-light);
+  color: var(--theme-warning-text);
+}
+.alert-error, .alert-danger {
+  background-color: var(--theme-danger-bg);
+  border-color: var(--theme-danger-light);
+  color: var(--theme-danger-text);
+}
+.alert-info {
+  background-color: var(--theme-info-bg);
+  border-color: var(--theme-info-light);
+  color: var(--theme-info-text);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--theme-primary), 0 0 0 4px var(--theme-bg);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background-color: var(--theme-primary);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--theme-primary-hover);
+}
+.btn-primary:focus-visible {
+  box-shadow: 0 0 0 2px var(--theme-bg), 0 0 0 4px var(--theme-primary);
+}
+.btn-secondary {
+  background-color: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+}
+.btn-secondary:hover {
+  background-color: var(--theme-bg-tertiary);
+}
+.btn-teal {
+  background-color: var(--theme-secondary);
+  color: white;
+}
+.btn-teal:hover {
+  background-color: var(--theme-secondary-hover);
+}
+
+.card {
+  border-radius: 1rem;
+  border: 1px solid var(--theme-border);
+  background-color: var(--theme-bg-secondary);
+  box-shadow: var(--theme-shadow);
+}
+.card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--theme-border);
+}
+.card-body {
+  padding: 1.5rem;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--theme-border-focus) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
+}
+
