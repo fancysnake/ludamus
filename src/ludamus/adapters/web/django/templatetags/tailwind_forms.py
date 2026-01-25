@@ -147,11 +147,13 @@ def tw_errors(form: BaseForm) -> str:
         return ""
 
     errors_html = [
-        f'<div class="p-3 rounded border text-sm mb-4" '
-        f'style="background-color: var(--theme-danger-bg); '
-        f"border-color: var(--theme-danger-light); "
-        f'color: var(--theme-danger-text);">'
-        f"{error}</div>"
+        format_html(
+            '<div class="p-3 rounded border text-sm mb-4" '
+            'style="background-color: var(--theme-danger-bg); '
+            "border-color: var(--theme-danger-light); "
+            'color: var(--theme-danger-text);">{}</div>',
+            error,
+        )
         for error in form.non_field_errors()
     ]
     return mark_safe("\n".join(errors_html))  # noqa: S308
@@ -254,15 +256,18 @@ def _render_label(field: BoundField) -> str:
         return ""
 
     required_mark = (
-        '<span style="color: var(--theme-danger);">*</span>'
+        mark_safe('<span style="color: var(--theme-danger);">*</span>')
         if field.field.required
         else ""
     )
 
-    return (
-        f'<label for="{field.id_for_label}" '
-        f'class="{LABEL_CLASSES}" style="{LABEL_STYLE}">'
-        f"{field.label}{required_mark}</label>"
+    return format_html(
+        '<label for="{}" class="{}" style="{}">{}{}</label>',
+        field.id_for_label,
+        LABEL_CLASSES,
+        LABEL_STYLE,
+        field.label,
+        required_mark,
     )
 
 
@@ -337,15 +342,15 @@ def _render_checkbox_field(field: BoundField) -> str:
         {"class": CHECKBOX_CLASSES, "style": CHECKBOX_STYLE}
     )
 
-    label_style = "color: var(--theme-text);"
-    return (
-        f'<label class="inline-flex items-center cursor-pointer">'
-        f"{field}"
-        f'<span class="ml-2 text-sm" style="{label_style}">{field.label}</span>'
-        f"</label>"
-        f"{_render_help_text(field)}"
-        f"{_render_errors(field)}"
+    label_html = format_html(
+        '<label class="inline-flex items-center cursor-pointer">'
+        "{}"
+        '<span class="ml-2 text-sm" style="color: var(--theme-text);">{}</span>'
+        "</label>",
+        field,
+        field.label,
     )
+    return f"{label_html}{_render_help_text(field)}{_render_errors(field)}"
 
 
 def _render_multi_choice_field(field: BoundField, *, is_radio: bool = False) -> str:
@@ -398,9 +403,11 @@ def _render_help_text(field: BoundField) -> str:
     if not field.help_text:
         return ""
 
-    return (
-        f'<p class="{HELP_TEXT_CLASSES}" style="{HELP_TEXT_STYLE}">'
-        f"{field.help_text}</p>"
+    return format_html(
+        '<p class="{}" style="{}">{}</p>',
+        HELP_TEXT_CLASSES,
+        HELP_TEXT_STYLE,
+        field.help_text,
     )
 
 
@@ -414,7 +421,9 @@ def _render_errors(field: BoundField) -> str:
         return ""
 
     errors_html = [
-        f'<p class="{ERROR_CLASSES}" style="{ERROR_STYLE}">{error}</p>'
+        format_html(
+            '<p class="{}" style="{}">{}</p>', ERROR_CLASSES, ERROR_STYLE, error
+        )
         for error in field.errors
     ]
 
