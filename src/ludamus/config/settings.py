@@ -108,7 +108,7 @@ MIDDLEWARE = [
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
 ]
 
-if DEBUG:
+if DEBUG and env.bool("DEBUG_TOOLBAR", default=True):
     INSTALLED_APPS.extend(["debug_toolbar", "django_browser_reload"])
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
     MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
