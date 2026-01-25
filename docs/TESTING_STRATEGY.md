@@ -60,6 +60,12 @@ Asserts:
 
 Yes: Full features, complete flows
 
+## TDD Workflow
+
+Plan → Tests (red) → Implement (green) → Refactor
+
+Wait for approval between phases.
+
 ## Migration to the new strategy
 
 1. Review current integration tests and move them to correct directories and
