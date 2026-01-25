@@ -15,7 +15,8 @@
     <div class="max-w-3xl mx-auto">
         <div class="card gradient-border">
             <div class="px-6 py-4 border-b flex items-center gap-2"
-                 style="background-color: var(--theme-warning-bg); border-color: var(--theme-warning-light)">
+                 style="background-color: var(--theme-warning-bg);
+                        border-color: var(--theme-warning-light)">
                 {% heroicon_outline "light-bulb" class="w-5 h-5 text-warning" %}
                 <h2 class="font-semibold" style="color: var(--theme-warning-text)">
                     {% if time_slot %}
@@ -42,13 +43,17 @@
                 <form method="post" class="space-y-5">
                     {% csrf_token %}
                     <div>
-                        <label for="title" class="block text-sm font-medium mb-1.5" style="color: var(--theme-text-secondary)">
+                        <label for="title"
+                               class="block text-sm font-medium mb-1.5"
+                               style="color: var(--theme-text-secondary)">
                             {% heroicon_mini "document-text" class="w-4 h-4 inline" %}
                             {% translate "Session Title" %} <span style="color: var(--theme-danger)">*</span>
                         </label>
                         <input type="text"
                                class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                               style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                               style="background-color: var(--theme-bg-secondary);
+                                      border-color: var(--theme-border);
+                                      color: var(--theme-text)"
                                id="title"
                                name="title"
                                required
@@ -59,12 +64,16 @@
                         </p>
                     </div>
                     <div>
-                        <label for="description" class="block text-sm font-medium mb-1.5" style="color: var(--theme-text-secondary)">
+                        <label for="description"
+                               class="block text-sm font-medium mb-1.5"
+                               style="color: var(--theme-text-secondary)">
                             {% heroicon_mini "document" class="w-4 h-4 inline" %}
                             {% translate "Description" %}
                         </label>
                         <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                  style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                  style="background-color: var(--theme-bg-secondary);
+                                         border-color: var(--theme-border);
+                                         color: var(--theme-text)"
                                   id="description"
                                   name="description"
                                   rows="4"
@@ -74,12 +83,16 @@
                         </p>
                     </div>
                     <div>
-                        <label for="requirements" class="block text-sm font-medium mb-1.5" style="color: var(--theme-text-secondary)">
+                        <label for="requirements"
+                               class="block text-sm font-medium mb-1.5"
+                               style="color: var(--theme-text-secondary)">
                             {% heroicon_mini "clipboard-document-check" class="w-4 h-4 inline" %}
                             {% translate "Requirements" %}
                         </label>
                         <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                  style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                  style="background-color: var(--theme-bg-secondary);
+                                         border-color: var(--theme-border);
+                                         color: var(--theme-text)"
                                   id="requirements"
                                   name="requirements"
                                   rows="3"
@@ -89,12 +102,16 @@
                         </p>
                     </div>
                     <div>
-                        <label for="needs" class="block text-sm font-medium mb-1.5" style="color: var(--theme-text-secondary)">
+                        <label for="needs"
+                               class="block text-sm font-medium mb-1.5"
+                               style="color: var(--theme-text-secondary)">
                             {% heroicon_mini "wrench-screwdriver" class="w-4 h-4 inline" %}
                             {% translate "Special Needs" %}
                         </label>
                         <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                  style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                  style="background-color: var(--theme-bg-secondary);
+                                         border-color: var(--theme-border);
+                                         color: var(--theme-text)"
                                   id="needs"
                                   name="needs"
                                   rows="2"
@@ -105,20 +122,23 @@
                     </div>
                     {% if tag_categories %}
                         <div>
-                            <label class="block text-sm font-medium mb-3" style="color: var(--theme-text-secondary)">
+                            <label class="block text-sm font-medium mb-3"
+                                   style="color: var(--theme-text-secondary)">
                                 {% heroicon_mini "tag" class="w-4 h-4 inline" %}
                                 {% translate "Tags" %}
                             </label>
                             <div class="space-y-4">
                                 {% for category in tag_categories %}
                                     <div>
-                                        <label for="tags_{{ category.id }}" class="block text-sm mb-1.5" style="color: var(--theme-text)">
-                                            {{ category.name }}
-                                        </label>
+                                        <label for="tags_{{ category.id }}"
+                                               class="block text-sm mb-1.5"
+                                               style="color: var(--theme-text)">{{ category.name }}</label>
                                         {% if category.input_type == 'select' %}
                                             <select multiple
                                                     class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                                    style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                                    style="background-color: var(--theme-bg-secondary);
+                                                           border-color: var(--theme-border);
+                                                           color: var(--theme-text)"
                                                     id="tags_{{ category.id }}"
                                                     name="tags_{{ category.id }}"
                                                     size="4">
@@ -134,7 +154,9 @@
                                         {% elif category.input_type == 'type' %}
                                             <input type="text"
                                                    class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                                   style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                                   style="background-color: var(--theme-bg-secondary);
+                                                          border-color: var(--theme-border);
+                                                          color: var(--theme-text)"
                                                    id="tags_{{ category.id }}"
                                                    name="tags_{{ category.id }}"
                                                    placeholder="{% translate "Enter comma-separated tags..." %}">
@@ -148,13 +170,17 @@
                         </div>
                     {% endif %}
                     <div>
-                        <label for="participants_limit" class="block text-sm font-medium mb-1.5" style="color: var(--theme-text-secondary)">
+                        <label for="participants_limit"
+                               class="block text-sm font-medium mb-1.5"
+                               style="color: var(--theme-text-secondary)">
                             {% heroicon_mini "user-group" class="w-4 h-4 inline" %}
                             {% translate "Participants Limit" %} <span style="color: var(--theme-danger)">*</span>
                         </label>
                         <input type="number"
                                class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                               style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                               style="background-color: var(--theme-bg-secondary);
+                                      border-color: var(--theme-border);
+                                      color: var(--theme-text)"
                                id="participants_limit"
                                name="participants_limit"
                                value="{{ min_participants_limit }}"
@@ -166,13 +192,19 @@
                         </p>
                     </div>
                     <div>
-                        <label for="min_age" class="block text-sm font-medium mb-1.5" style="color: var(--theme-text-secondary)">
+                        <label for="min_age"
+                               class="block text-sm font-medium mb-1.5"
+                               style="color: var(--theme-text-secondary)">
                             {% heroicon_mini "shield-check" class="w-4 h-4 inline" %}
                             {% translate "Age Rating" %} <span style="color: var(--theme-danger)">*</span>
                         </label>
                         <select class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
-                                style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
-                                id="min_age" name="min_age" required>
+                                style="background-color: var(--theme-bg-secondary);
+                                       border-color: var(--theme-border);
+                                       color: var(--theme-text)"
+                                id="min_age"
+                                name="min_age"
+                                required>
                             <option value="3">{% translate "PEGI 3" %}</option>
                             <option value="7">{% translate "PEGI 7" %}</option>
                             <option value="12">{% translate "PEGI 12" %}</option>
@@ -188,7 +220,8 @@
                             {% heroicon_outline "paper-airplane" class="w-5 h-5" %}
                             {% translate "Submit Proposal" %}
                         </button>
-                        <a href="{% url 'web:chronology:event' slug=event.slug %}" class="btn btn-secondary py-3">
+                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                           class="btn btn-secondary py-3">
                             {% heroicon_outline "arrow-left" class="w-5 h-5" %}
                             {% translate "Back to Event" %}
                         </a>
@@ -196,23 +229,49 @@
                 </form>
             </div>
         </div>
+        <div class="card mt-6">
+            <div class="px-6 py-4 border-b"
+                 style="background-color: var(--theme-bg-tertiary);
+                        border-color: var(--theme-border)">
+                <h3 class="font-medium flex items-center gap-2"
+                    style="color: var(--theme-text)">
+                    {% heroicon_outline "information-circle" class="w-5 h-5" %}
+                    {% translate "Proposal Guidelines" %}
+                </h3>
+            </div>
+            <div class="card-body">
+                <ul class="space-y-2 text-sm" style="color: var(--theme-text-secondary)">
                     <li class="flex items-start gap-2">
-                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: var(--theme-primary)"></span>
+                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                              style="background-color: var(--theme-primary)"></span>
+                        {% translate "Proposals are reviewed by event organizers" %}
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                              style="background-color: var(--theme-primary)"></span>
+                        {% translate "You will be notified if your proposal is accepted" %}
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                              style="background-color: var(--theme-primary)"></span>
                         {% translate "Accepted proposals will be added to the event agenda" %}
                     </li>
                     {% if time_slot %}
                         <li class="flex items-start gap-2">
-                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: var(--theme-primary)"></span>
+                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style="background-color: var(--theme-primary)"></span>
                             {% translate "Your proposal is for a specific time slot, but organizers may adjust scheduling if needed" %}
                         </li>
                     {% else %}
                         <li class="flex items-start gap-2">
-                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: var(--theme-primary)"></span>
+                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style="background-color: var(--theme-primary)"></span>
                             {% translate "Organizers will assign time slots to accepted proposals" %}
                         </li>
                     {% endif %}
                     <li class="flex items-start gap-2">
-                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: var(--theme-primary)"></span>
+                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                              style="background-color: var(--theme-primary)"></span>
                         {% translate "Make sure your title and description clearly explain what participants will gain from your session" %}
                     </li>
                 </ul>
