@@ -12,9 +12,7 @@
 {% block body %}
     <div class="max-w-3xl mx-auto">
         <div class="card">
-            <div class="card-body prose max-w-none" style="color: var(--theme-text)">
-                {{ flatpage.content|safe|linebreaks }}
-            </div>
+            <div class="card-body prose max-w-none" style="color: var(--theme-text)">{{ flatpage.content|safe|linebreaks }}</div>
         </div>
         <div class="mt-6 text-center">
             <a href="{% url 'web:index' %}" class="btn btn-secondary">
