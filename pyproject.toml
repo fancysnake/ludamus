@@ -232,9 +232,9 @@ source_modules = ["ludamus.pacts"]
 forbidden_modules = ["ludamus.gates"]
 
 [[tool.importlinter.contracts]]
-name = "mills not in norms"
+name = "mills not in config"
 type = "forbidden"
-source_modules = ["ludamus.norms"]
+source_modules = ["ludamus.config"]
 forbidden_modules = ["ludamus.mills"]
 
 [[tool.importlinter.contracts]]
@@ -256,31 +256,157 @@ source_modules = ["ludamus.pacts"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
-name = "links not in norms"
+name = "links not in config"
 type = "forbidden"
-source_modules = ["ludamus.norms"]
+source_modules = ["ludamus.config"]
 forbidden_modules = ["ludamus.links"]
 
 [[tool.importlinter.contracts]]
-name = "norms not in gates"
+name = "config not in gates"
 type = "forbidden"
 source_modules = ["ludamus.gates"]
-forbidden_modules = ["ludamus.norms"]
+forbidden_modules = ["ludamus.config"]
 
 [[tool.importlinter.contracts]]
-name = "norms not in mills"
+name = "config not in mills"
 type = "forbidden"
 source_modules = ["ludamus.mills"]
-forbidden_modules = ["ludamus.norms"]
+forbidden_modules = ["ludamus.config"]
 
 [[tool.importlinter.contracts]]
-name = "norms not in links"
+name = "config not in links"
 type = "forbidden"
 source_modules = ["ludamus.links"]
-forbidden_modules = ["ludamus.norms"]
+forbidden_modules = ["ludamus.config"]
 
 [[tool.importlinter.contracts]]
-name = "norms not in pacts"
+name = "config not in pacts"
 type = "forbidden"
 source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.norms"]
+forbidden_modules = ["ludamus.config"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.web not in mills"
+type = "forbidden"
+source_modules = ["ludamus.mills"]
+forbidden_modules = ["ludamus.adapters.web"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.web not in links"
+type = "forbidden"
+source_modules = ["ludamus.links"]
+forbidden_modules = ["ludamus.adapters.web"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.web not in pacts"
+type = "forbidden"
+source_modules = ["ludamus.pacts"]
+forbidden_modules = ["ludamus.adapters.web"]
+
+[[tool.importlinter.contracts]]
+name = "links not in adapters.web"
+type = "forbidden"
+source_modules = ["ludamus.adapters.web"]
+forbidden_modules = ["ludamus.links"]
+
+[[tool.importlinter.contracts]]
+name = "config not in adapters.web"
+type = "forbidden"
+source_modules = ["ludamus.adapters.web"]
+forbidden_modules = ["ludamus.config"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.db not in gates"
+type = "forbidden"
+source_modules = ["ludamus.gates"]
+forbidden_modules = ["ludamus.adapters.db"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.db not in mills"
+type = "forbidden"
+source_modules = ["ludamus.mills"]
+forbidden_modules = ["ludamus.adapters.db"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.db not in pacts"
+type = "forbidden"
+source_modules = ["ludamus.pacts"]
+forbidden_modules = ["ludamus.adapters.db"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.db not in config"
+type = "forbidden"
+source_modules = ["ludamus.config"]
+forbidden_modules = ["ludamus.adapters.db"]
+
+# [[tool.importlinter.contracts]]
+# name = "adapters.db not in adapters.web"
+# type = "forbidden"
+# source_modules = ["ludamus.adapters.web"]
+# forbidden_modules = ["ludamus.adapters.db"]
+
+[[tool.importlinter.contracts]]
+name = "gates not in adapters.db"
+type = "forbidden"
+source_modules = ["ludamus.adapters.db"]
+forbidden_modules = ["ludamus.gates"]
+
+[[tool.importlinter.contracts]]
+name = "config not in adapters.db"
+type = "forbidden"
+source_modules = ["ludamus.adapters.db"]
+forbidden_modules = ["ludamus.config"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.web not in adapters.db"
+type = "forbidden"
+source_modules = ["ludamus.adapters.db"]
+forbidden_modules = ["ludamus.adapters.web"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.external not in gates"
+type = "forbidden"
+source_modules = ["ludamus.gates"]
+forbidden_modules = ["ludamus.adapters.external"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.external not in mills"
+type = "forbidden"
+source_modules = ["ludamus.mills"]
+forbidden_modules = ["ludamus.adapters.external"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.external not in pacts"
+type = "forbidden"
+source_modules = ["ludamus.pacts"]
+forbidden_modules = ["ludamus.adapters.external"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.external not in config"
+type = "forbidden"
+source_modules = ["ludamus.config"]
+forbidden_modules = ["ludamus.adapters.external"]
+
+# [[tool.importlinter.contracts]]
+# name = "adapters.external not in adapters.web"
+# type = "forbidden"
+# source_modules = ["ludamus.adapters.web"]
+# forbidden_modules = ["ludamus.adapters.external"]
+
+[[tool.importlinter.contracts]]
+name = "gates not in adapters.external"
+type = "forbidden"
+source_modules = ["ludamus.adapters.external"]
+forbidden_modules = ["ludamus.gates"]
+
+[[tool.importlinter.contracts]]
+name = "config not in adapters.external"
+type = "forbidden"
+source_modules = ["ludamus.adapters.external"]
+forbidden_modules = ["ludamus.config"]
+
+[[tool.importlinter.contracts]]
+name = "adapters.web not in adapters.external"
+type = "forbidden"
+source_modules = ["ludamus.adapters.external"]
+forbidden_modules = ["ludamus.adapters.web"]
