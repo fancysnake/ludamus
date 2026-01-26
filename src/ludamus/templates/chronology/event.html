@@ -97,7 +97,7 @@
         {% endif %}
     {% endfor %}
     <!-- Enrollment Passes Info (for authenticated users) -->
-    {% if request.user.is_authenticated and event.get_active_enrollment_configs and enrollment_requires_slots %}
+    {% if current_user and event.get_active_enrollment_configs and enrollment_requires_slots %}
         <div class="row mb-4">
             <div class="col-12">
                 <div class="alert alert-success" role="alert">
@@ -138,10 +138,10 @@
                                 {% else %}
                                     <small class="text-muted">{% translate "Each person can be enrolled in multiple sessions." %}</small>
                                 {% endif %}
-                            {% elif request.user.user_type == 'connected' %}
+                            {% elif current_user.user_type == 'connected' %}
                                 <p class="mb-1">{% translate "You may be able to enroll using your manager's enrollment passes." %}</p>
                                 <small class="text-muted">{% translate "Contact your manager for enrollment assistance." %}</small>
-                            {% elif request.user.is_authenticated %}
+                            {% elif current_user %}
                                 <p class="mb-1">{% translate "You don't have any enrollment passes." %}</p>
                                 <small class="text-muted">{% translate "You can enroll when general enrollment opens." %}</small>
                             {% else %}
@@ -155,7 +155,7 @@
         </div>
     {% endif %}
     <!-- Anonymous Mode Banner -->
-    {% if request.session.anonymous_enrollment_active and not request.user.is_authenticated %}
+    {% if request.session.anonymous_enrollment_active and not current_user %}
         <div class="row mb-4">
             <div class="col-12">
                 <div class="alert alert-warning" role="alert">
@@ -619,14 +619,14 @@
                             <h6>{% translate "Your Status" %}</h6>
                             {% with user_participation=data.session.session_participations.all|dictsort:"creation_time" %}
                                 {% for participation in user_participation %}
-                                    {% if participation.user.pk == request.user.pk %}
+                                    {% if participation.user.pk == current_user.pk %}
                                         <div class="d-flex align-items-center">
                                             {% if participation.status == 'confirmed' %}
                                                 <span class="badge bg-success me-2">{% translate "Enrolled" %}</span>
                                             {% else %}
                                                 <span class="badge bg-warning text-dark me-2">{% translate "Waiting List" %}</span>
                                             {% endif %}
-                                            <span>{{ request.user.full_name }}</span>
+                                            <span>{{ current_user.full_name }}</span>
                                             <small class="text-muted ms-2">{{ participation.creation_time|date:"M j, G:i" }}</small>
                                         </div>
                                     {% endif %}
@@ -638,10 +638,10 @@
                             {% endwith %}
                         </div>
                         <!-- Connected users enrollment status -->
-                        {% if request.user.connected.exists %}
+                        {% if current_connected_users %}
                             <div class="mb-3">
                                 <h6>{% translate "Connected Users Status" %}</h6>
-                                {% for connected_user in request.user.connected.all %}
+                                {% for connected_user in current_connected_users %}
                                     <div class="d-flex align-items-center mb-2">
                                         {% with connected_participation=data.session.session_participations.all|dictsort:"creation_time" %}
                                             {% for participation in connected_participation %}
@@ -691,10 +691,10 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
                         {% if data.session.is_enrollment_available and not user_enrolled and not user_waiting %}
-                            {% if request.session.anonymous_enrollment_active and not request.user.is_authenticated %}
+                            {% if request.session.anonymous_enrollment_active and not current_user %}
                                 <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
                                    class="btn btn-success"><i class="bi bi-person-plus"></i> {% translate "Enroll Anonymously" %}</a>
-                            {% elif request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                            {% elif current_user.user_type == 'connected' or current_user.user_type == 'active' %}
                                 <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                    class="btn btn-success"><i class="bi bi-person-plus"></i> {% translate "Enroll" %}</a>
                             {% endif %}
@@ -765,8 +765,8 @@
                                             <i class="bi bi-person-circle"></i> {% translate "Host" %}
                                         </h6>
                                         <p class="ms-4">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
-                                        {% if data.session.proposal %}
-                                            {% with host=data.session.proposal.host %}
+                                        {% if data.proposal %}
+                                            {% with host=data.proposal.host %}
                                                 {% if host and host.slug and host.discord_username %}
                                                     <h6>
                                                         <i class="bi bi-discord"></i> {% translate "Host Discord" %}
@@ -857,7 +857,7 @@
                                     </div>
                                 {% endif %}
                                 <!-- Enrollment Status for Authenticated Users -->
-                                {% if request.user.is_authenticated %}
+                                {% if current_user %}
                                     <div class="border-top pt-3">
                                         <h6>
                                             <i class="bi bi-person-check"></i> {% translate "Your Enrollment Status" %}
@@ -992,14 +992,14 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
                         {% if data.session.is_enrollment_available %}
-                            {% if request.user.is_authenticated %}
+                            {% if current_user %}
                                 {% if data.user_enrolled or data.user_waiting %}
                                     <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                        class="btn btn-warning">
                                         <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
                                     </a>
                                 {% else %}
-                                    {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                    {% if current_user.user_type == 'connected' or current_user.user_type == 'active' %}
                                         <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
                                            class="btn btn-success">
                                             <i class="bi bi-person-plus"></i> {% translate "Enroll Now" %}

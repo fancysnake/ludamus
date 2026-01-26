@@ -98,6 +98,16 @@ class TestEventPageView:
         active_user.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
+        session_data = SessionData(
+            session=session,
+            proposal=None,
+            has_any_enrollments=True,
+            user_enrolled=True,
+            user_waiting=True,
+            filterable_tags=[],
+            is_ongoing=False,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
@@ -108,40 +118,12 @@ class TestEventPageView:
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=session,
-                            has_any_enrollments=True,
-                            user_enrolled=True,
-                            user_waiting=True,
-                            filterable_tags=[],
-                            is_ongoing=False,
-                            should_show_as_inactive=False,
-                        )
-                    ]
+                    agenda_item.start_time: [session_data]
                 },
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=session,
-                            has_any_enrollments=True,
-                            user_enrolled=True,
-                            user_waiting=True,
-                            filterable_tags=[],
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [proposal],
-                "sessions": [
-                    SessionData(
-                        session=session,
-                        has_any_enrollments=True,
-                        user_enrolled=True,
-                        user_waiting=True,
-                        filterable_tags=[],
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": None,
                 "view": ANY,
             },
@@ -154,53 +136,29 @@ class TestEventPageView:
         agenda_item.save()
         response = client.get(self._get_url(event.slug))
 
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
                 "current_hour_data": {},
-                "ended_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "ended_hour_data": {agenda_item.start_time: [session_data]},
                 "enrollment_requires_slots": False,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": None,
                 "view": ANY,
             },
@@ -213,53 +171,29 @@ class TestEventPageView:
         agenda_item.save()
         response = client.get(self._get_url(event.slug))
 
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": False,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": None,
                 "view": ANY,
             },
@@ -490,6 +424,16 @@ class TestEventPageView:
 
         response = client.get(self._get_url(event.slug))
 
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=True,
+            user_enrolled=True,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=False,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
@@ -502,43 +446,11 @@ class TestEventPageView:
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=True,
-                            user_enrolled=True,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=False,
-                            should_show_as_inactive=False,
-                        )
-                    ]
+                    agenda_item.start_time: [session_data]
                 },
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=True,
-                            user_enrolled=True,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=False,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=True,
-                        user_enrolled=True,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=False,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": None,
                 "view": ANY,
             },
@@ -555,53 +467,29 @@ class TestEventPageView:
         agenda_item.save()
         response = client.get(self._get_url(event.slug))
 
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=True,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=True,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": False,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=True,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=True,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": None,
                 "view": ANY,
             },
@@ -656,54 +544,30 @@ class TestEventPageView:
         assert combined_config._has_individual_config  # noqa: SLF001
         assert not combined_config._has_domain_config  # noqa: SLF001
         assert combined_config._domain_config_source is None  # noqa: SLF001
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": combined_config,
                 "view": ANY,
             },
@@ -745,54 +609,30 @@ class TestEventPageView:
             allowed_slots=slots,
             fetched_from_api=True,
         )
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": user_config,
                 "view": ANY,
             },
@@ -828,54 +668,30 @@ class TestEventPageView:
         assert not virtual_config.fetched_from_api
         assert virtual_config._is_domain_based  # noqa: SLF001
         assert virtual_config._source_domain_config == domain_config  # noqa: SLF001
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": virtual_config,
                 "view": ANY,
             },
@@ -919,54 +735,30 @@ class TestEventPageView:
         assert combined_config._has_individual_config  # noqa: SLF001
         assert combined_config._has_domain_config  # noqa: SLF001
         assert combined_config._domain_config_source == domain_config  # noqa: SLF001
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": combined_config,
                 "view": ANY,
             },
@@ -1001,54 +793,30 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": None,
                 "view": ANY,
             },
@@ -1083,54 +851,30 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": None,
                 "view": ANY,
             },
@@ -1179,54 +923,30 @@ class TestEventPageView:
             allowed_slots=slots,
             fetched_from_api=True,
         )
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": user_config,
                 "view": ANY,
             },
@@ -1264,54 +984,30 @@ class TestEventPageView:
             user_email=active_user.email,
             allowed_slots=0,
         )
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": user_config,
                 "view": ANY,
             },
@@ -1346,54 +1042,30 @@ class TestEventPageView:
             user_email=active_user.email,
             allowed_slots=0,
         )
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": user_config,
                 "view": ANY,
             },
@@ -1441,54 +1113,30 @@ class TestEventPageView:
             allowed_slots=0,
             fetched_from_api=True,
         )
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": user_config,
                 "view": ANY,
             },
@@ -1529,54 +1177,30 @@ class TestEventPageView:
             allowed_slots=0,
             fetched_from_api=True,
         )
+        session_data = SessionData(
+            session=agenda_item.session,
+            proposal=None,
+            has_any_enrollments=False,
+            user_enrolled=False,
+            user_waiting=False,
+            filterable_tags=[],
+            is_ongoing=True,
+            should_show_as_inactive=False,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
-                "current_hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "current_hour_data": {agenda_item.start_time: [session_data]},
                 "ended_hour_data": {},
                 "enrollment_requires_slots": True,
                 "event": event,
                 "filterable_tag_categories": [],
                 "future_unavailable_hour_data": {},
-                "hour_data": {
-                    agenda_item.start_time: [
-                        SessionData(
-                            session=agenda_item.session,
-                            has_any_enrollments=False,
-                            user_enrolled=False,
-                            user_waiting=False,
-                            filterable_tags=[],
-                            is_ongoing=True,
-                            should_show_as_inactive=False,
-                        )
-                    ]
-                },
+                "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
                 "proposals": [],
-                "sessions": [
-                    SessionData(
-                        session=agenda_item.session,
-                        has_any_enrollments=False,
-                        user_enrolled=False,
-                        user_waiting=False,
-                        filterable_tags=[],
-                        is_ongoing=True,
-                        should_show_as_inactive=False,
-                    )
-                ],
+                "sessions": [session_data],
                 "user_enrollment_config": user_config,
                 "view": ANY,
             },

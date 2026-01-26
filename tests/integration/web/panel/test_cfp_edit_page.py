@@ -253,6 +253,14 @@ class TestCFPEditPageView:
                 "active_nav": "cfp",
                 "category": ProposalCategoryDTO.model_validate(category),
                 "form": ANY,
+                "field_order": [],
+                "field_requirements": {},
+                "proposal_count": 0,
+                "session_field_order": [],
+                "session_field_requirements": {},
+                "available_fields": [],
+                "available_session_fields": [],
+                "durations": [],
             },
         )
         category.refresh_from_db()

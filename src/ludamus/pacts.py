@@ -96,6 +96,7 @@ class TagCategoryDTO(BaseModel):
 class TagDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    category_id: int
     confirmed: bool
     name: str
     pk: int
@@ -321,6 +322,8 @@ class ProposalRepositoryProtocol(Protocol):
     def update(self, proposal_dto: ProposalDTO) -> None: ...
     @staticmethod
     def count_by_category(category_id: int) -> int: ...
+    def read_tags(self, proposal_id: int) -> list[TagDTO]: ...
+    def read_tag_categories(self, proposal_id: int) -> list[TagCategoryDTO]: ...
 
 
 class SessionRepositoryProtocol(Protocol):

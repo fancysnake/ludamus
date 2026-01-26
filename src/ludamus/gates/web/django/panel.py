@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -268,6 +269,9 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "settings"
         context["days_to_event"] = get_days_to_event(current_event)
+        context["current_event_is_ended"] = current_event.end_time < datetime.now(
+            tz=UTC
+        )
         return TemplateResponse(self.request, "panel/settings.html", context)
 
     def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
@@ -469,6 +473,44 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         form = ProposalCategoryForm(self.request.POST)
         if not form.is_valid():
+            # Get field requirements and order
+            field_requirements = (
+                self.request.uow.proposal_categories.get_field_requirements(category.pk)
+            )
+            field_order = self.request.uow.proposal_categories.get_field_order(
+                category.pk
+            )
+            available_fields = list(
+                self.request.uow.personal_data_fields.list_by_event(current_event.pk)
+            )
+            context["available_fields"] = _sort_fields_by_order(
+                available_fields, field_order
+            )
+            context["field_requirements"] = field_requirements
+            context["field_order"] = field_order
+            # Get session field requirements and order
+            session_field_requirements = (
+                self.request.uow.proposal_categories.get_session_field_requirements(
+                    category.pk
+                )
+            )
+            session_field_order = (
+                self.request.uow.proposal_categories.get_session_field_order(
+                    category.pk
+                )
+            )
+            available_session_fields = list(
+                self.request.uow.session_fields.list_by_event(current_event.pk)
+            )
+            context["available_session_fields"] = _sort_fields_by_order(
+                available_session_fields, session_field_order
+            )
+            context["session_field_requirements"] = session_field_requirements
+            context["session_field_order"] = session_field_order
+            context["durations"] = category.durations
+            context["proposal_count"] = self.request.uow.proposals.count_by_category(
+                category.pk
+            )
             context["active_nav"] = "cfp"
             context["category"] = category
             context["form"] = form

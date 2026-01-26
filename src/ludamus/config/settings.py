@@ -126,6 +126,7 @@ TEMPLATES = [
                 "ludamus.adapters.web.django.context_processors.sites",
                 "ludamus.adapters.web.django.context_processors.support",
                 "ludamus.adapters.web.django.context_processors.static_version",
+                "ludamus.adapters.web.django.context_processors.current_user",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
