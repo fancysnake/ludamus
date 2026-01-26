@@ -23,17 +23,17 @@ package-mode = false
 authlib = "~1.6.0"
 django = "~6.0.0"
 django-bootstrap5 = "~26.1.0"
-gunicorn = "^23.0.0"
+gunicorn = "^24.1.1"
 django-environ = "^0.12.0"
 psycopg = "^3.2.9"
 pydantic = "^2.11.7"
 django-extensions = "^4.1"
 requests = "^2.32.5"
 heroicons = { version = "^2.9", extras = ["django"] }
-django-tailwind = {version = "^4.0.0", extras = ["reload"]}
+django-tailwind = { version = "^4.0.0", extras = ["reload"] }
 
 [tool.poetry.group.dev.dependencies]
-black = "^25.1.0"
+black = "^26.1.0"
 codespell = "^2.4.1"
 deptry = "^0.24.0"
 django-debug-toolbar = "^6.0.0"
@@ -103,6 +103,7 @@ known_first_party = ["ludamus"]
 DEP002 = [
     "django-bootstrap5",
     "django-extensions",
+    "django-tailwind",
     "gunicorn",
     "heroicons",
     "psycopg",
