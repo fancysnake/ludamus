@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load django_bootstrap5 %}
-{% load enrollment_tags %}
 {% block title %}
     {{ event.name }}
 {% endblock title %}
@@ -674,11 +673,7 @@
                                 <div class="col-sm-6">
                                     <small class="text-muted">{% translate "Participants" %}:</small>
                                     <br>
-                                    {{ data.session.full_participant_info }}
-                                    {% if data.session.is_full %}
-                                        <br>
-                                        <small class="text-danger">{% enrollment_status_text data.session %}</small>
-                                    {% endif %}
+                                    <span class="{% if data.session.is_full %}text-danger{% else %}text-success{% endif %}">{{ data.session.full_participant_info }}</span>
                                 </div>
                                 <div class="col-sm-6">
                                     <small class="text-muted">{% translate "Time" %}:</small>
