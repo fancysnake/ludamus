@@ -33,7 +33,7 @@ heroicons = { version = "^2.9", extras = ["django"] }
 django-tailwind = {version = "^4.0.0", extras = ["reload"]}
 
 [tool.poetry.group.dev.dependencies]
-black = "^25.1.0"
+black = "^26.1.0"
 codespell = "^2.4.1"
 deptry = "^0.24.0"
 django-debug-toolbar = "^6.0.0"
