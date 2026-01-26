@@ -77,9 +77,18 @@ run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-t
 description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
 
-# Dev server
+# Dev server (Django + Tailwind watch via django-tailwind)
 [tasks.start]
-run = "django-admin runserver localhost:8000"
+description = "Start Django + Tailwind watch mode"
+run = "python src/ludamus/manage.py tailwind dev"
+
+[tasks.build-tailwind]
+description = "Build Tailwind CSS (production)"
+run = "python src/ludamus/manage.py tailwind build"
+
+[tasks.kill]
+description = "Kill dev servers (Django on :8000, Tailwind watch)"
+run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch' 2>/dev/null; echo 'Dev servers killed'"
 
 # Composite tasks
 [tasks.check]

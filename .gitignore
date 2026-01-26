@@ -200,7 +200,14 @@ cython_debug/
 .vscode
 dev.sqlite3
 src/ludamus/static/icon_cache/
+src/ludamus/staticfiles/
 
 .beads/
 worktrees/
 **/static/vendor/*
+
+# Tailwind CSS
+src/ludamus/static/css/output.css
+src/ludamus/static/css/dist/
+bin/
+.django_tailwind_cli/

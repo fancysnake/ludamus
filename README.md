@@ -8,3 +8,22 @@ Event management website
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
 ![Static Badge](https://img.shields.io/badge/type%20checked-mypy-039dfc)
 [![codecov](https://codecov.io/github/fancysnake/ludamus/graph/badge.svg?token=DB3HZP1OWT)](https://codecov.io/github/fancysnake/ludamus)
+
+## Development
+
+```bash
+mise install      # Install Python, create venv
+poetry install    # Install dependencies
+mise run start    # Run Django dev server
+```
+
+### Tailwind CSS
+
+Uses [django-tailwind](https://github.com/timonweb/django-tailwind) with npm-based build.
+
+`mise run start` runs Django + Tailwind watch together via `tailwind dev`.
+
+**Deployment:**
+```bash
+mise run build-tailwind  # Build production CSS (run before collectstatic)
+```

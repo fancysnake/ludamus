@@ -27,7 +27,6 @@ urlpatterns = [
     path("page/", include("django.contrib.flatpages.urls")),
 ]
 
-# Custom error handlers
 handler404 = (  # pylint: disable=invalid-name
     "ludamus.adapters.web.django.error_views.custom_404"
 )
@@ -39,3 +38,4 @@ if settings.DEBUG:
     from debug_toolbar.toolbar import debug_toolbar_urls
 
     urlpatterns += debug_toolbar_urls()
+    urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]

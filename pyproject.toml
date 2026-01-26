@@ -30,6 +30,7 @@ pydantic = "^2.11.7"
 django-extensions = "^4.1"
 requests = "^2.32.5"
 heroicons = { version = "^2.9", extras = ["django"] }
+django-tailwind = {version = "^4.0.0", extras = ["reload"]}
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
@@ -66,7 +67,7 @@ target-version = ['py314']
 # CODESPELL
 
 [tool.codespell]
-skip = 'node_modules,tests/e2e,*.po,*.lock,vendor'
+skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor'
 
 # COVERAGE
 
@@ -77,7 +78,9 @@ omit = [
     "src/ludamus/config/*",
     "src/ludamus/deploy/*",
     "src/ludamus/adapters/db/django/migrations/*",
-    "src/ludamus/adapters/web/django/templatetags/*",
+    "src/ludamus/adapters/web/django/templatetags/date_tags.py",
+    "src/ludamus/adapters/web/django/templatetags/enrollment_tags.py",
+    "src/ludamus/manage.py",
 ]
 
 [tool.coverage.report]
@@ -89,7 +92,7 @@ precision = 2
 # DJLINT
 
 [tool.djlint]
-ignore = "H021,H037"
+ignore = "H021,H031,H037,D018"
 
 # DEPTRY
 

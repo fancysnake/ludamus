@@ -83,6 +83,8 @@ INSTALLED_APPS = [
     # Third Party
     "django_bootstrap5",
     "django_extensions",
+    "tailwind",
+    "ludamus.theme",
     "heroicons",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
@@ -107,8 +109,9 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
-    INSTALLED_APPS.append("debug_toolbar")
+    INSTALLED_APPS.extend(["debug_toolbar", "django_browser_reload"])
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
 
 ROOT_URLCONF = "ludamus.config.urls"
 
@@ -184,9 +187,12 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# URL prefixes that skip middleware processing (UoW injection, context setup)
+MIDDLEWARE_SKIP_PREFIXES = (STATIC_URL, "/admin/", "/__debug__/", "/__reload__/")
 
 # Cache busting version for static files (set via GIT_COMMIT_SHA env var during build)
 STATIC_VERSION = os.getenv("GIT_COMMIT_SHA", "1")[:8]
@@ -405,12 +411,9 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
         "filename": "fonts/bootstrap-icons.woff",
         "sha384": "IYfD9pNP/nesQsPyYtTdGCb4uhEWUmNF8GxaCvqcJFH+Of3c1b0VbH6hdHUonDSC",
     },
-    {
-        "name": "tailwind",
-        "url": "https://cdn.tailwindcss.com",
-        "filename": "tailwind.min.js",
-        "sha384": "igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K",
-    },
 ]
 
 VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
+
+# Tailwind CSS Configuration
+TAILWIND_APP_NAME = "ludamus.theme"

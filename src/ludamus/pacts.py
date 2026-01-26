@@ -445,5 +445,6 @@ class UnitOfWorkProtocol(Protocol):
 
 
 class RootRequestProtocol(Protocol):
+    path: str
     uow: UnitOfWorkProtocol
     context: RequestContext
