@@ -14,6 +14,13 @@ class NotFoundError(Exception):
     pass
 
 
+class DateTimeRangeProtocol(Protocol):
+    """Protocol for objects with start_time and end_time datetime fields."""
+
+    start_time: datetime
+    end_time: datetime
+
+
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

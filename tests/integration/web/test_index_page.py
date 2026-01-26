@@ -1,8 +1,10 @@
+from datetime import UTC, datetime
 from http import HTTPStatus
 from unittest.mock import ANY
 
 from django.urls import reverse
 
+from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
 
 
@@ -20,6 +22,54 @@ class TestIndexPageView:
         )
 
     def test_ok_with_event(self, client, event):
+        response = client.get(self.URL)
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            template_name=["index.html"],
+        )
+
+    def test_ok_with_same_day_event(self, client, sphere, faker):
+        """Cover line 17 in date_tags.py: same-day formatting."""
+        day = faker.date_time_between(start_date="+7d", end_date="+30d", tzinfo=UTC)
+        start = day.replace(hour=10, minute=0, second=0, microsecond=0)
+        end = day.replace(hour=18, minute=0, second=0, microsecond=0)
+        event = EventFactory(sphere=sphere, start_time=start, end_time=end)
+
+        response = client.get(self.URL)
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            template_name=["index.html"],
+        )
+
+    def test_ok_with_multi_month_event(self, client, sphere, faker):
+        """Cover lines 31-41 in date_tags.py: different months, same year."""
+        base = faker.date_time_between("+1y")
+        start = datetime(base.year, 3, 15, 10, 0, tzinfo=UTC)
+        end = datetime(base.year, 4, 20, 18, 0, tzinfo=UTC)
+        event = EventFactory(sphere=sphere, start_time=start, end_time=end)
+
+        response = client.get(self.URL)
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            template_name=["index.html"],
+        )
+
+    def test_ok_with_multi_year_event(self, client, sphere):
+        """Cover lines 42-47 in date_tags.py: different years."""
+        now = datetime.now(UTC)
+        start = datetime(now.year + 1, 12, 28, 10, 0, tzinfo=UTC)
+        end = datetime(now.year + 2, 1, 3, 18, 0, tzinfo=UTC)
+        event = EventFactory(sphere=sphere, start_time=start, end_time=end)
+
         response = client.get(self.URL)
 
         assert_response(
