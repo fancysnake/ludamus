@@ -50,7 +50,7 @@ USER appuser
 EXPOSE 8000
 
 # Development command - runserver with reload
-CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["django-admin", "runserver", "0.0.0.0:8000"]
 
 # Production stage without dev dependencies
 FROM base AS prod
@@ -82,6 +82,7 @@ WORKDIR /app/src
 RUN django-admin compilemessages
 
 # Build Tailwind CSS (django-tailwind)
+RUN django-admin tailwind install
 RUN django-admin tailwind build
 
 # Download vendor dependencies and collect static files (requires SECRET_KEY to be set)
