@@ -8,7 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
-    gettext \
+    gettext
+
+RUN curl -fsSL https://deb.nodesource.com/setup_25.x | bash - \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
@@ -72,6 +75,7 @@ ARG STATIC_ROOT
 ARG GIT_COMMIT_SHA=unknown
 ENV ENV=production
 ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
+ENV ROOT_DOMAIN=localhost:8000
 
 # Switch to non-root user
 USER appuser
