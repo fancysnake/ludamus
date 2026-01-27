@@ -16,7 +16,7 @@
 {% block header_actions %}
     {% if current_event and category %}
         <a href="{% url 'panel:cfp' slug=current_event.slug %}"
-           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition mr-2">
+           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition mr-2">
             {% translate "Cancel" %}
         </a>
         <button type="submit"
@@ -31,61 +31,61 @@
     {% if current_event and category %}
         <form method="post" id="cfp-edit-form" class="max-w-2xl">
             {% csrf_token %}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-6">{% translate "Session Type Details" %}</h3>
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
+                <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Session Type Details" %}</h3>
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2" for="id_name">{% translate "Name" %}</label>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2" for="id_name">{% translate "Name" %}</label>
                         <input type="text"
                                name="name"
                                id="id_name"
                                value="{{ form.name.value|default:'' }}"
-                               class="w-full border {% if form.name.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                               class="w-full border {% if form.name.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                                placeholder="{% translate "e.g., RPG Sessions, Workshops, Lectures" %}">
                         {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2"
+                            <label class="block text-sm font-medium text-neutral-700 mb-2"
                                    for="id_start_time">{% translate "Submissions open" %}</label>
                             <input type="datetime-local"
                                    name="start_time"
                                    id="id_start_time"
                                    value="{{ form.start_time.value|date:'Y-m-d\TH:i'|default:'' }}"
-                                   class="w-full border {% if form.start_time.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                   class="w-full border {% if form.start_time.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
                             {% if form.start_time.errors %}<p class="mt-1 text-sm text-red-600">{{ form.start_time.errors.0 }}</p>{% endif %}
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2"
+                            <label class="block text-sm font-medium text-neutral-700 mb-2"
                                    for="id_end_time">{% translate "Submissions close" %}</label>
                             <input type="datetime-local"
                                    name="end_time"
                                    id="id_end_time"
                                    value="{{ form.end_time.value|date:'Y-m-d\TH:i'|default:'' }}"
-                                   class="w-full border {% if form.end_time.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                   class="w-full border {% if form.end_time.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
                             {% if form.end_time.errors %}<p class="mt-1 text-sm text-red-600">{{ form.end_time.errors.0 }}</p>{% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "Allowed Durations" %}</h3>
-                <p class="text-sm text-gray-500 mb-6">{% translate "Define how long sessions of this type can be." %}</p>
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 mt-6">
+                <h3 class="text-lg font-semibold text-neutral-900 mb-2">{% translate "Allowed Durations" %}</h3>
+                <p class="text-sm text-neutral-500 mb-6">{% translate "Define how long sessions of this type can be." %}</p>
                 <div class="flex items-center gap-2 mb-4">
                     <input type="number"
                            id="duration-hours"
                            min="0"
                            max="24"
                            value="1"
-                           class="w-16 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-center">
-                    <span class="text-sm text-gray-500">{% translate "h" %}</span>
+                           class="w-16 border border-neutral-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-center">
+                    <span class="text-sm text-neutral-500">{% translate "h" %}</span>
                     <input type="number"
                            id="duration-minutes"
                            min="0"
                            max="59"
                            value="0"
-                           class="w-16 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-center">
-                    <span class="text-sm text-gray-500">{% translate "min" %}</span>
+                           class="w-16 border border-neutral-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-center">
+                    <span class="text-sm text-neutral-500">{% translate "min" %}</span>
                     <button type="button"
                             id="add-duration-btn"
                             class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition text-sm flex items-center">
@@ -95,16 +95,16 @@
                 </div>
                 <div id="durations-list" class="space-y-2">
                     {% for duration in durations %}
-                        <div class="duration-item flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
-                            <span class="text-sm text-gray-700">{{ duration|format_duration }}</span>
+                        <div class="duration-item flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
+                            <span class="text-sm text-neutral-700">{{ duration|format_duration }}</span>
                             <input type="hidden" name="durations" value="{{ duration }}">
                             <button type="button"
-                                    class="remove-duration text-gray-400 hover:text-red-500 transition">
+                                    class="remove-duration text-neutral-400 hover:text-red-500 transition">
                                 {% heroicon_outline "x-mark" class="w-4 h-4" %}
                             </button>
                         </div>
                     {% empty %}
-                        <p id="no-durations-msg" class="text-sm text-gray-400 italic">{% translate "No durations configured yet." %}</p>
+                        <p id="no-durations-msg" class="text-sm text-neutral-400 italic">{% translate "No durations configured yet." %}</p>
                     {% endfor %}
                 </div>
             </div>
@@ -135,11 +135,11 @@
 
                     function createDurationItem(iso) {
                         const div = document.createElement('div');
-                        div.className = 'duration-item flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg';
+                        div.className = 'duration-item flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg';
                         div.innerHTML = `
-                            <span class="text-sm text-gray-700" data-iso="${iso}">${formatDuration(iso)}</span>
+                            <span class="text-sm text-neutral-700" data-iso="${iso}">${formatDuration(iso)}</span>
                             <input type="hidden" name="durations" value="${iso}">
-                            <button type="button" class="remove-duration text-gray-400 hover:text-red-500 transition">
+                            <button type="button" class="remove-duration text-neutral-400 hover:text-red-500 transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -171,7 +171,7 @@
                             if (!list.querySelector('.duration-item')) {
                                 const p = document.createElement('p');
                                 p.id = 'no-durations-msg';
-                                p.className = 'text-sm text-gray-400 italic';
+                                p.className = 'text-sm text-neutral-400 italic';
                                 p.textContent = 'No durations configured yet.';
                                 list.appendChild(p);
                             }
@@ -195,9 +195,9 @@
                 </div>
             {% endif %}
             {% if available_fields %}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "Host Data Fields" %}</h3>
-                    <p class="text-sm text-gray-500 mb-6">
+                <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-neutral-900 mb-2">{% translate "Host Data Fields" %}</h3>
+                    <p class="text-sm text-neutral-500 mb-6">
                         {% translate "Select which personal data fields hosts must provide. Drag to reorder." %}
                     </p>
                     <input type="hidden"
@@ -206,13 +206,13 @@
                            value="{{ field_order|join:',' }}">
                     <div id="host-fields-list" class="space-y-2">
                         {% for field in available_fields %}
-                            <div class="field-item flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg cursor-move"
+                            <div class="field-item flex items-center gap-3 py-2 px-3 bg-neutral-50 rounded-lg cursor-move"
                                  draggable="true"
                                  data-field-id="{{ field.pk }}">
-                                <span class="drag-handle text-gray-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
-                                <span class="text-sm font-medium text-gray-700 flex-1">{{ field.name }}</span>
+                                <span class="drag-handle text-neutral-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
+                                <span class="text-sm font-medium text-neutral-700 flex-1">{{ field.name }}</span>
                                 <select name="field_{{ field.pk }}"
-                                        class="field-select border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                        class="field-select border border-neutral-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                                     <option value="none"
                                             {% if field.pk not in field_requirements %}selected{% endif %}>
                                         {% translate "Not included" %}
@@ -231,16 +231,16 @@
                     </div>
                 </div>
             {% else %}
-                <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mt-6 text-center">
-                    <p class="text-sm text-gray-500 mb-2">{% translate "No personal data fields defined for this event." %}</p>
+                <div class="bg-neutral-50 rounded-xl border border-neutral-200 p-6 mt-6 text-center">
+                    <p class="text-sm text-neutral-500 mb-2">{% translate "No personal data fields defined for this event." %}</p>
                     <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
                        class="text-sm text-primary hover:text-primary/80">{% translate "Configure host data fields" %}</a>
                 </div>
             {% endif %}
             {% if available_session_fields %}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% translate "Session Fields" %}</h3>
-                    <p class="text-sm text-gray-500 mb-6">
+                <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-neutral-900 mb-2">{% translate "Session Fields" %}</h3>
+                    <p class="text-sm text-neutral-500 mb-6">
                         {% translate "Select which session fields hosts must provide. Drag to reorder." %}
                     </p>
                     <input type="hidden"
@@ -249,13 +249,13 @@
                            value="{{ session_field_order|join:',' }}">
                     <div id="session-fields-list" class="space-y-2">
                         {% for field in available_session_fields %}
-                            <div class="field-item flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg cursor-move"
+                            <div class="field-item flex items-center gap-3 py-2 px-3 bg-neutral-50 rounded-lg cursor-move"
                                  draggable="true"
                                  data-field-id="{{ field.pk }}">
-                                <span class="drag-handle text-gray-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
-                                <span class="text-sm font-medium text-gray-700 flex-1">{{ field.name }}</span>
+                                <span class="drag-handle text-neutral-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
+                                <span class="text-sm font-medium text-neutral-700 flex-1">{{ field.name }}</span>
                                 <select name="session_field_{{ field.pk }}"
-                                        class="field-select border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                        class="field-select border border-neutral-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                                     <option value="none"
                                             {% if field.pk not in session_field_requirements %}selected{% endif %}>
                                         {% translate "Not included" %}
@@ -274,8 +274,8 @@
                     </div>
                 </div>
             {% else %}
-                <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mt-6 text-center">
-                    <p class="text-sm text-gray-500 mb-2">{% translate "No session fields defined for this event." %}</p>
+                <div class="bg-neutral-50 rounded-xl border border-neutral-200 p-6 mt-6 text-center">
+                    <p class="text-sm text-neutral-500 mb-2">{% translate "No session fields defined for this event." %}</p>
                     <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
                        class="text-sm text-primary hover:text-primary/80">{% translate "Configure session fields" %}</a>
                 </div>

@@ -274,17 +274,13 @@ def _render_input(field: BoundField) -> str:
     Returns:
         HTML string of the input field.
     """
-    # Add Tailwind classes to the widget
+    # Add Tailwind classes to the widget (only if not already added)
     error_style = "border-color: var(--theme-danger);" if field.errors else ""
+    existing_class = field.field.widget.attrs.get("class", "")
 
-    field.field.widget.attrs.update(
-        {
-            "class": (
-                f"{INPUT_CLASSES} {field.field.widget.attrs.get('class', '')}".strip()
-            ),
-            "style": f"{INPUT_STYLE} {error_style}",
-        }
-    )
+    if INPUT_CLASSES not in existing_class:
+        field.field.widget.attrs["class"] = f"{INPUT_CLASSES} {existing_class}".strip()
+    field.field.widget.attrs["style"] = f"{INPUT_STYLE} {error_style}"
 
     return str(field)
 
@@ -297,14 +293,15 @@ def _render_textarea(field: BoundField) -> str:
     """
     error_style = "border-color: var(--theme-danger);" if field.errors else ""
     existing_class = field.field.widget.attrs.get("class", "")
+    textarea_classes = f"{INPUT_CLASSES} min-h-[100px]"
 
-    field.field.widget.attrs.update(
-        {
-            "class": f"{INPUT_CLASSES} min-h-[100px] {existing_class}".strip(),
-            "style": f"{INPUT_STYLE} {error_style}",
-            "rows": field.field.widget.attrs.get("rows", 4),
-        }
-    )
+    if INPUT_CLASSES not in existing_class:
+        field.field.widget.attrs["class"] = (
+            f"{textarea_classes} {existing_class}".strip()
+        )
+    field.field.widget.attrs["style"] = f"{INPUT_STYLE} {error_style}"
+    if "rows" not in field.field.widget.attrs:
+        field.field.widget.attrs["rows"] = 4
 
     return str(field)
 
@@ -316,15 +313,11 @@ def _render_select(field: BoundField) -> str:
         HTML string of the select field.
     """
     error_style = "border-color: var(--theme-danger);" if field.errors else ""
+    existing_class = field.field.widget.attrs.get("class", "")
 
-    field.field.widget.attrs.update(
-        {
-            "class": (
-                f"{INPUT_CLASSES} {field.field.widget.attrs.get('class', '')}".strip()
-            ),
-            "style": f"{INPUT_STYLE} {error_style}",
-        }
-    )
+    if INPUT_CLASSES not in existing_class:
+        field.field.widget.attrs["class"] = f"{INPUT_CLASSES} {existing_class}".strip()
+    field.field.widget.attrs["style"] = f"{INPUT_STYLE} {error_style}"
 
     return str(field)
 
@@ -335,9 +328,10 @@ def _render_checkbox_field(field: BoundField) -> str:
     Returns:
         HTML string of the checkbox field with label.
     """
-    field.field.widget.attrs.update(
-        {"class": CHECKBOX_CLASSES, "style": CHECKBOX_STYLE}
-    )
+    existing_class = field.field.widget.attrs.get("class", "")
+    if CHECKBOX_CLASSES not in existing_class:
+        field.field.widget.attrs["class"] = CHECKBOX_CLASSES
+    field.field.widget.attrs["style"] = CHECKBOX_STYLE
 
     label_html = format_html(
         '<label class="inline-flex items-center cursor-pointer">'

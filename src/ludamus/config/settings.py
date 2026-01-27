@@ -109,9 +109,12 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
-    INSTALLED_APPS.extend(["debug_toolbar", "django_browser_reload"])
-    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    INSTALLED_APPS.append("django_browser_reload")
     MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
+
+if DEBUG and env.bool("DEBUG_TOOLBAR", default=False):
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 ROOT_URLCONF = "ludamus.config.urls"
 

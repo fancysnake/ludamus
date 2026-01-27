@@ -16,7 +16,13 @@ class TestLoginRequiredPageView:
             response,
             HTTPStatus.OK,
             template_name=["crowd/login_required.html"],
-            context_data={"view": ANY, "next": ""},
+            context_data={
+                "view": ANY,
+                "next": "",
+                "show_icon": True,
+                "text": "",
+                "extra_class": "",
+            },
         )
 
     def test_ok_with_next_url(self, client):
@@ -27,5 +33,11 @@ class TestLoginRequiredPageView:
             response,
             HTTPStatus.OK,
             template_name=["crowd/login_required.html"],
-            context_data={"view": ANY, "next": "/chronology/event/test-event"},
+            context_data={
+                "view": ANY,
+                "next": "/chronology/event/test-event",
+                "show_icon": True,
+                "text": "",
+                "extra_class": "",
+            },
         )
