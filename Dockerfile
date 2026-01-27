@@ -10,8 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gettext
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN curl -fsSL https://deb.nodesource.com/setup_25.x | bash - \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
