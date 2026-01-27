@@ -2,25 +2,13 @@
 {% load i18n %}
 {% load django_bootstrap5 %}
 {% block title %}
-    {% if time_slot %}
-        {% translate "Propose Session for" %} {{ time_slot.start_time|date:"l, F j - G:i" }}
-    {% else %}
-        {% translate "Propose Session" %}
-    {% endif %}
+    {% translate "Propose Session" %}
 {% endblock title %}
 {% block header %}
-    {% if time_slot %}
-        {% translate "Propose Session for Time Slot" %}
-    {% else %}
-        {% translate "Propose Session" %}
-    {% endif %}
+    {% translate "Propose Session" %}
 {% endblock header %}
 {% block description %}
-    {% if time_slot %}
-        {% translate "Submit a session proposal for" %} {{ event.name }} - {{ time_slot.start_time|date:"l, F j" }} {{ time_slot.start_time|date:"G:i" }} to {{ time_slot.end_time|date:"G:i" }}
-    {% else %}
-        {% translate "Submit a session proposal for" %} {{ event.name }}
-    {% endif %}
+    {% translate "Submit a session proposal for" %} {{ event.name }}
 {% endblock description %}
 {% block body %}
     <div class="row justify-content-center">
@@ -29,28 +17,10 @@
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
                         <i class="bi bi-lightbulb"></i>
-                        {% if time_slot %}
-                            {% translate "Propose Session for Time Slot" %}
-                        {% else %}
-                            {% translate "Propose New Session" %}
-                        {% endif %}
+                        {% translate "Propose New Session" %}
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% if time_slot %}
-                        <div class="alert alert-info mb-4">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-clock"></i>
-                                <div class="ms-2">
-                                    <strong>{% translate "Selected Time Slot:" %}</strong>
-                                    <br>
-                                    {{ time_slot.start_time|date:"l, F j, Y" }}
-                                    <br>
-                                    {{ time_slot.start_time|date:"G:i" }} - {{ time_slot.end_time|date:"G:i" }}
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
@@ -195,11 +165,7 @@
                         <li>{% translate "Proposals are reviewed by event organizers" %}</li>
                         <li>{% translate "You will be notified if your proposal is accepted" %}</li>
                         <li>{% translate "Accepted proposals will be added to the event agenda" %}</li>
-                        {% if time_slot %}
-                            <li>{% translate "Your proposal is for a specific time slot, but organizers may adjust scheduling if needed" %}</li>
-                        {% else %}
-                            <li>{% translate "Organizers will assign time slots to accepted proposals" %}</li>
-                        {% endif %}
+                        <li>{% translate "Organizers will assign time slots to accepted proposals" %}</li>
                         <li>
                             {% translate "Make sure your title and description clearly explain what participants will gain from your session" %}
                         </li>

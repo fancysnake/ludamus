@@ -4,7 +4,7 @@ jobs = 1
 
 [tools]
 python = "3.14"
-poetry = { version="latest", pyproject="{{ config_root }}/pyproject.toml" }
+poetry = { version = "latest", pyproject = "{{ config_root }}/pyproject.toml" }
 
 [env]
 # Mise creates and activates this virtualenv automatically
@@ -40,6 +40,9 @@ run = "djlint src --profile=django"
 
 [tasks.djlint-format]
 run = "djlint src --reformat --format-css --format-js --profile=django"
+
+[tasks.il]
+run = "lint-imports --config=pyproject.toml"
 
 [tasks.mypy]
 run = "mypy src"
@@ -97,6 +100,7 @@ depends = [
     "ruff-fix",
     "codespell",
     "mypy",
+    "il",
     "djlint",
     "djlint-format",
     "pylint",
@@ -112,5 +116,6 @@ pip install -U pip
 pip install -U poetry
 poetry update
 deptry .
+pip-audit .
 poetry show -o
 """

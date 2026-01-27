@@ -44,6 +44,8 @@ from ludamus.pacts import (
     SpaceDTO,
     SphereDTO,
     SphereRepositoryProtocol,
+    TagCategoryDTO,
+    TagDTO,
     TimeSlotDTO,
     UserData,
     UserDTO,
@@ -228,6 +230,23 @@ class ProposalRepository(ProposalRepositoryProtocol):
     @staticmethod
     def count_by_category(category_id: int) -> int:
         return Proposal.objects.filter(category_id=category_id).count()
+
+    def read_tags(self, proposal_id: int) -> list[TagDTO]:
+        proposal = self._storage.proposals[proposal_id]
+        collection = self._storage.tags_by_proposal[proposal_id]
+        if not (tags := collection.values()):
+            for tag in proposal.tags.all():
+                collection[tag.id] = tag
+
+        return [TagDTO.model_validate(tag) for tag in tags]
+
+    def read_tag_categories(self, proposal_id: int) -> list[TagCategoryDTO]:
+        proposal = self._storage.proposals[proposal_id]
+
+        return [
+            TagCategoryDTO.model_validate(tag)
+            for tag in proposal.category.tag_categories.all()
+        ]
 
 
 class SessionRepository(SessionRepositoryProtocol):
