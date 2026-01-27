@@ -10,7 +10,7 @@ from ludamus.adapters.web.django.middlewares import (
     RedirectErrorMiddleware,
     RequestContextMiddleware,
 )
-from ludamus.binds import RepositoryInjectionMiddleware
+from ludamus.inits import RepositoryInjectionMiddleware
 from ludamus.links.db.django.uow import UnitOfWork
 from ludamus.pacts import RequestContext
 

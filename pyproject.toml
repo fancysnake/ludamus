@@ -231,6 +231,12 @@ source_modules = ["ludamus.pacts"]
 forbidden_modules = ["ludamus.gates"]
 
 [[tool.importlinter.contracts]]
+name = "gates not in configs"
+type = "forbidden"
+source_modules = ["ludamus.config"]
+forbidden_modules = ["ludamus.gates"]
+
+[[tool.importlinter.contracts]]
 name = "mills not in config"
 type = "forbidden"
 source_modules = ["ludamus.config"]

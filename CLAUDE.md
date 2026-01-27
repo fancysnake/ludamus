@@ -13,19 +13,31 @@ mise run dj <cmd>   # django-admin
 
 ## Architecture
 
-Layers:
+GLIMPS system:
 
-1. `pacts` (protocols/DTOs)
-2. `mills` (logic)
-3. `links / adapters` (repos)
-4. `gates`/`adapters` (views)
-5. `binds` (DI)
+- `gates / adapters` (clis, apis, views)
+- `links / adapters` (models, repos)
+- `inits` (DI)
+- `mills` (logic)
+- `pacts` (protocols, DTOs, aggregates)
+- `specs / config` (configuration options)
 
 Access data: `request.uow.{repository}.read(id)` — returns Pydantic DTOs,
 never Django models.
 
-Views in `gates/web/django/` and `adapters/web/django/`.
-Repos in `links/db/django/`.
+## Layer
+
+Relation `X -> Y` means (Y can import X). It is transitive and reflexive.
+
+Relaxed rules:
+
+`pacts` -> `specs` -> `mills` -> `links` -> `gates` -> `inits`
+
+Strict rules:
+
+- `(anything) -> inits -> (nothing) (top level)`
+- `mills -> gates | links | inits`
+- `pacts -> (anything) (bottom level)`
 
 ## Rules
 
