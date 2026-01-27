@@ -31,10 +31,10 @@
                         <div class="col-md-6">
                             <h6>{% translate "Submitted" %}</h6>
                             <p>{{ proposal.creation_time|date:"M j, Y G:i" }}</p>
-                            {% if proposal.tags.exists %}
+                            {% if tags %}
                                 <h6>{% translate "Tags" %}</h6>
                                 <p>
-                                    {% for tag in proposal.tags.all %}
+                                    {% for tag in tags %}
                                         <span class="badge bg-light text-dark me-1">
                                             {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
                                             {{ tag.name }}
@@ -56,10 +56,10 @@
                         <h6>{% translate "Special Needs" %}</h6>
                         <p>{{ proposal.needs }}</p>
                     {% endif %}
-                    {% if proposal.time_slots.exists %}
+                    {% if time_slots %}
                         <h6>{% translate "Preferred Time Slots" %}</h6>
                         <div class="small">
-                            {% for slot in proposal.time_slots.all %}
+                            {% for slot in time_slots %}
                                 <span class="badge bg-secondary me-1">{{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}</span>
                             {% endfor %}
                         </div>
@@ -94,9 +94,9 @@
                                 <option value="">{% translate "Select a time slot..." %}</option>
                                 {% for slot in time_slots %}
                                     <option value="{{ slot.pk }}"
-                                            {% if slot in proposal.time_slots.all %}class="fw-bold text-primary"{% endif %}>
+                                            {% if slot in time_slots %}class="fw-bold text-primary"{% endif %}>
                                         {{ slot.start_time|date:"l, M j - G:i" }} - {{ slot.end_time|date:"G:i" }}
-                                        {% if slot in proposal.time_slots.all %}
+                                        {% if slot in time_slots %}
                                             ({% translate "Preferred" %})
                                         {% endif %}
                                     </option>

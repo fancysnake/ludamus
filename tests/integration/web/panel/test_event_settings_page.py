@@ -53,6 +53,7 @@ class TestEventSettingsPageViewGet:
                 "current_event": EventDTO.model_validate(event),
                 "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": is_proposal_active,
+                "current_event_is_ended": False,
                 "stats": {
                     "hosts_count": 0,
                     "pending_proposals": 0,
@@ -111,6 +112,7 @@ class TestEventSettingsPageViewGet:
                 },
                 "active_nav": "settings",
                 "days_to_event": days_to_event,
+                "current_event_is_ended": False,
             },
         )
 

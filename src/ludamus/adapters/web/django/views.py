@@ -827,7 +827,12 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
     def _get_session_data(
         self, event_sessions: QuerySet[Session]
     ) -> dict[int, SessionData]:
-        sessions_data = {es.id: SessionData(session=es) for es in event_sessions}
+        sessions_data = {
+            es.id: SessionData(
+                session=es, proposal=Proposal.objects.filter(session=es).first()
+            )
+            for es in event_sessions
+        }
 
         # Check if any active enrollment config has limit_to_end_time enabled
         active_configs = self.object.get_active_enrollment_configs()
@@ -1498,6 +1503,11 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         form_class = create_proposal_acceptance_form(event)
         form = form_class()
 
+        tags = proposal_repository.read_tags(proposal.pk)
+        tag_categories = {
+            tc.pk: tc for tc in proposal_repository.read_tag_categories(proposal.pk)
+        }
+
         context = {
             "proposal": proposal,
             "host": proposal_repository.read_host(proposal.pk),
@@ -1506,6 +1516,10 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
             "time_slots": proposal_repository.read_time_slots(proposal.pk),
             "form": form,
             "proposal_host": proposal_repository.read_host(proposal.pk),
+            "tags": [
+                {"category_icon": tag_categories[tag.category_id], "name": tag.name}
+                for tag in tags
+            ],
         }
 
         return TemplateResponse(request, "chronology/accept_proposal.html", context)
@@ -1542,6 +1556,11 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         form = form_class(data=request.POST)
         if not form.is_valid():
             # Re-render with form errors
+            tags = proposal_repository.read_tags(proposal.pk)
+            tag_categories = {
+                tc.pk: tc for tc in proposal_repository.read_tag_categories(proposal.pk)
+            }
+
             return TemplateResponse(
                 request,
                 "chronology/accept_proposal.html",
@@ -1553,6 +1572,13 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                     "time_slots": proposal_repository.read_time_slots(proposal.pk),
                     "form": form,
                     "proposal_host": proposal_repository.read_host(proposal.pk),
+                    "tags": [
+                        {
+                            "category_icon": tag_categories[tag.category_id],
+                            "name": tag.name,
+                        }
+                        for tag in tags
+                    ],
                 },
             )
 

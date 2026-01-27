@@ -2,13 +2,14 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ludamus.adapters.db.django.models import Session, Tag
+    from ludamus.adapters.db.django.models import Proposal, Session, Tag
     from ludamus.pacts import UserDTO
 
 
 @dataclass
-class SessionData:
+class SessionData:  # pylint: disable=too-many-instance-attributes
     session: Session
+    proposal: Proposal | None
     has_any_enrollments: bool = False
     user_enrolled: bool = False
     user_waiting: bool = False
