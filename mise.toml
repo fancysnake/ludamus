@@ -116,5 +116,6 @@ pip install -U pip
 pip install -U poetry
 poetry update
 deptry .
+pip-audit .
 poetry show -o
 """

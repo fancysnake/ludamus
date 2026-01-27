@@ -694,7 +694,6 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         if error_redirect:
             return error_redirect
-        assert field is not None  # noqa: S101
 
         context["active_nav"] = "cfp"
         context["field"] = field
@@ -725,7 +724,6 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         if error_redirect:
             return error_redirect
-        assert field is not None  # noqa: S101
 
         form = PersonalDataFieldForm(self.request.POST)
         if not form.is_valid():
@@ -769,7 +767,6 @@ class PersonalDataFieldDeleteActionView(PanelAccessMixin, EventContextMixin, Vie
         )
         if error_redirect:
             return error_redirect
-        assert field is not None  # noqa: S101
 
         service = PanelService(self.request.uow)
         if not service.delete_personal_data_field(field.pk):
@@ -887,7 +884,6 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         if error_redirect:
             return error_redirect
-        assert field is not None  # noqa: S101
 
         context["active_nav"] = "cfp"
         context["field"] = field
@@ -916,7 +912,6 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         if error_redirect:
             return error_redirect
-        assert field is not None  # noqa: S101
 
         form = SessionFieldForm(self.request.POST)
         if not form.is_valid():
@@ -960,7 +955,6 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         )
         if error_redirect:
             return error_redirect
-        assert field is not None  # noqa: S101
 
         service = PanelService(self.request.uow)
         if not service.delete_session_field(field.pk):

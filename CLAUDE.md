@@ -13,21 +13,33 @@ mise run dj <cmd>   # django-admin
 
 ## Architecture
 
-Layers: `pacts` (protocols/DTOs) → `mills` (logic) → `links` (repos) → `gates`/`adapters` (views) → `binds` (DI)
+Layers:
 
-Access data: `request.uow.{repository}.read(id)` — returns Pydantic DTOs, never Django models.
+1. `pacts` (protocols/DTOs)
+2. `mills` (logic)
+3. `links / adapters` (repos)
+4. `gates`/`adapters` (views)
+5. `binds` (DI)
 
-Views in `gates/web/django/` and `adapters/web/django/`. Repos in `links/db/django/`.
+Access data: `request.uow.{repository}.read(id)` — returns Pydantic DTOs,
+never Django models.
+
+Views in `gates/web/django/` and `adapters/web/django/`.
+Repos in `links/db/django/`.
 
 ## Rules
 
 - Views return DTOs to templates, never models
 - Never touch `.env*` files
 - Use `assert_response` utility for view tests, never manual assertions
+- NEVER modify, create, or delete configuration files without explicit
+  per-case approval.
+- NEVER add ignore comments or directives without explicit per-case approval.
 
 ## Details
 
 - [Architecture](docs/agents/architecture.md) — layers, repos, UoW
-- [Testing assertions](docs/agents/testing-assertions.md) — patterns for integration tests
+- [Testing assertions](docs/agents/testing-assertions.md) — patterns for
+  integration tests
 - [URL conventions](docs/CODE_LAYOUT.md)
 - [Testing strategy](docs/TESTING_STRATEGY.md)

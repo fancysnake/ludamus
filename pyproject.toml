@@ -43,20 +43,20 @@ factory-boy = "^3.3.3"
 faker = "^40.1.0"
 freezegun = "^1.5.2"
 mypy = "^1.16.0"
+pip-audit = "^2.10.0"
+pre-commit = "^4.5.1"
 pylint = "^4.0.3"
 pytest = "^9.0.1"
 pytest-cov = "^7.0.0"
 pytest-django = "^4.11.1"
+pytest-factoryboy = "^2.8.1"
+pytest-freezeblaster = "^2.0.4"
+responses = "^0.25.8"
 ruff = "^0.14.0"
 types-authlib = "^1.5.0.20250516"
-pytest-freezeblaster = "^2.0.4"
-
 types-requests = "^2.32.4.20250809"
-pytest-factoryboy = "^2.8.1"
-responses = "^0.25.8"
 
 # BLACK
-pre-commit = "^4.5.1"
 
 [tool.black]
 line-length = 88
