@@ -182,34 +182,19 @@ class EventContextMixin:
 
         return context, current_event
 
-    def _read_field_or_redirect(  # noqa: PLR0913, PLR0917
+    def _read_field_or_redirect(
         self,
         repository: _FieldRepositoryProtocol,
         event_pk: int,
         field_slug: str,
-        redirect_url: str,
-        redirect_kwargs: dict[str, str],
         error_message: str,
-    ) -> tuple[_FieldDTO | None, HttpResponse | None]:
-        """Read a field by slug or return redirect on error.
-
-        Args:
-            repository: Repository with read_by_slug method.
-            event_pk: Event primary key.
-            field_slug: Field slug to look up.
-            redirect_url: URL name to redirect to on error.
-            redirect_kwargs: Keyword arguments for the redirect URL.
-            error_message: Error message to display.
-
-        Returns:
-            Tuple of (field or None, redirect response or None).
-        """
+    ) -> _FieldDTO:
         try:
             field = repository.read_by_slug(event_pk, field_slug)
         except NotFoundError:
             messages.error(self.request, error_message)
-            return None, redirect(redirect_url, **redirect_kwargs)  # type: ignore[call-overload]
-        return field, None
+            raise
+        return field
 
 
 class PanelIndexRedirectView(PanelAccessMixin, View):
@@ -682,18 +667,15 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        redirect_url = "panel:personal-data-fields"
-        redirect_kwargs = {"slug": slug}
-        field, error_redirect = self._read_field_or_redirect(
-            self.request.uow.personal_data_fields,
-            current_event.pk,
-            field_slug,
-            redirect_url,
-            redirect_kwargs,
-            _("Personal data field not found."),
-        )
-        if error_redirect:
-            return error_redirect
+        try:
+            field = self._read_field_or_redirect(
+                self.request.uow.personal_data_fields,
+                current_event.pk,
+                field_slug,
+                _("Personal data field not found."),
+            )
+        except NotFoundError:
+            return redirect("panel:personal-data-fields", slug=slug)
 
         context["active_nav"] = "cfp"
         context["field"] = field
@@ -712,18 +694,15 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        redirect_url = "panel:personal-data-fields"
-        redirect_kwargs = {"slug": slug}
-        field, error_redirect = self._read_field_or_redirect(
-            self.request.uow.personal_data_fields,
-            current_event.pk,
-            field_slug,
-            redirect_url,
-            redirect_kwargs,
-            _("Personal data field not found."),
-        )
-        if error_redirect:
-            return error_redirect
+        try:
+            field = self._read_field_or_redirect(
+                self.request.uow.personal_data_fields,
+                current_event.pk,
+                field_slug,
+                _("Personal data field not found."),
+            )
+        except NotFoundError:
+            return redirect("panel:personal-data-fields", slug=slug)
 
         form = PersonalDataFieldForm(self.request.POST)
         if not form.is_valid():
@@ -757,16 +736,15 @@ class PersonalDataFieldDeleteActionView(PanelAccessMixin, EventContextMixin, Vie
         if current_event is None:
             return redirect("panel:index")
 
-        field, error_redirect = self._read_field_or_redirect(
-            self.request.uow.personal_data_fields,
-            current_event.pk,
-            field_slug,
-            "panel:personal-data-fields",
-            {"slug": slug},
-            _("Personal data field not found."),
-        )
-        if error_redirect:
-            return error_redirect
+        try:
+            field = self._read_field_or_redirect(
+                self.request.uow.personal_data_fields,
+                current_event.pk,
+                field_slug,
+                _("Personal data field not found."),
+            )
+        except NotFoundError:
+            return redirect("panel:personal-data-fields", slug=slug)
 
         service = PanelService(self.request.uow)
         if not service.delete_personal_data_field(field.pk):
@@ -872,18 +850,15 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        redirect_url = "panel:session-fields"
-        redirect_kwargs = {"slug": slug}
-        field, error_redirect = self._read_field_or_redirect(
-            self.request.uow.session_fields,
-            current_event.pk,
-            field_slug,
-            redirect_url,
-            redirect_kwargs,
-            _("Session field not found."),
-        )
-        if error_redirect:
-            return error_redirect
+        try:
+            field = self._read_field_or_redirect(
+                self.request.uow.session_fields,
+                current_event.pk,
+                field_slug,
+                _("Session field not found."),
+            )
+        except NotFoundError:
+            return redirect("panel:session-fields", slug=slug)
 
         context["active_nav"] = "cfp"
         context["field"] = field
@@ -900,18 +875,15 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        redirect_url = "panel:session-fields"
-        redirect_kwargs = {"slug": slug}
-        field, error_redirect = self._read_field_or_redirect(
-            self.request.uow.session_fields,
-            current_event.pk,
-            field_slug,
-            redirect_url,
-            redirect_kwargs,
-            _("Session field not found."),
-        )
-        if error_redirect:
-            return error_redirect
+        try:
+            field = self._read_field_or_redirect(
+                self.request.uow.session_fields,
+                current_event.pk,
+                field_slug,
+                _("Session field not found."),
+            )
+        except NotFoundError:
+            return redirect("panel:session-fields", slug=slug)
 
         form = SessionFieldForm(self.request.POST)
         if not form.is_valid():
@@ -945,16 +917,15 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        field, error_redirect = self._read_field_or_redirect(
-            self.request.uow.session_fields,
-            current_event.pk,
-            field_slug,
-            "panel:session-fields",
-            {"slug": slug},
-            _("Session field not found."),
-        )
-        if error_redirect:
-            return error_redirect
+        try:
+            field = self._read_field_or_redirect(
+                self.request.uow.session_fields,
+                current_event.pk,
+                field_slug,
+                _("Session field not found."),
+            )
+        except NotFoundError:
+            return redirect("panel:session-fields", slug=slug)
 
         service = PanelService(self.request.uow)
         if not service.delete_session_field(field.pk):
