@@ -67,7 +67,7 @@ target-version = ['py314']
 # CODESPELL
 
 [tool.codespell]
-skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor'
+skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor,src/ludamus/theme/static_src/package-lock.json'
 
 # COVERAGE
 
@@ -78,7 +78,6 @@ omit = [
     "src/ludamus/config/*",
     "src/ludamus/deploy/*",
     "src/ludamus/adapters/db/django/migrations/*",
-    "src/ludamus/manage.py",
     "tests/template_checks.py",
 ]
 

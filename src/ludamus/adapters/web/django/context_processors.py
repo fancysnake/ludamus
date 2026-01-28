@@ -49,14 +49,19 @@ def static_version(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
 
 
 def current_user(request: RootRepositoryRequest) -> dict[str, Any]:
-    if request.context.current_user_slug:
-        return {
-            "current_user": request.uow.active_users.read(
-                request.context.current_user_slug
-            ),
-            "current_connected_users": request.uow.connected_users.read_all(
-                request.context.current_user_slug
-            ),
-        }
+    # Context processor may run during error handling before middleware completes
+    if (
+        not hasattr(request, "context")
+        or not hasattr(request, "uow")
+        or not request.context.current_user_slug
+    ):
+        return {"current_user": None, "current_connected_users": []}
 
-    return {"current_user": None, "current_connected_users": []}
+    return {
+        "current_user": request.uow.active_users.read(
+            request.context.current_user_slug
+        ),
+        "current_connected_users": request.uow.connected_users.read_all(
+            request.context.current_user_slug
+        ),
+    }
