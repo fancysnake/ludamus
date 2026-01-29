@@ -957,9 +957,6 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 connected_users=self.request.uow.connected_users.read_all(
                     self.request.context.current_user_slug
                 ),
-                manager_email=self.request.uow.active_users.read(
-                    request.context.current_user_slug
-                ).email,
             )(),
         }
 
@@ -1049,9 +1046,6 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
             connected_users=self.request.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
-            manager_email=self.request.uow.active_users.read(
-                request.context.current_user_slug
-            ).email,
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
