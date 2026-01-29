@@ -596,15 +596,15 @@
     <!-- Status Modals -->
     {% for data in sessions %}
         <div class="modal fade"
-             id="statusModal{{ data.session.id }}"
+             id="statusModal{{ data.session.pk }}"
              tabindex="-1"
              data-bs-backdrop="true"
-             aria-labelledby="statusModalLabel{{ data.session.id }}"
+             aria-labelledby="statusModalLabel{{ data.session.pk }}"
              aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="statusModalLabel{{ data.session.id }}">
+                        <h5 class="modal-title" id="statusModalLabel{{ data.session.pk }}">
                             <i class="bi bi-info-circle"></i> {% translate "Enrollment Status" %} - {{ data.session.title }}
                         </h5>
                         <button type="button"
@@ -616,7 +616,7 @@
                         <!-- Your enrollment status -->
                         <div class="mb-3">
                             <h6>{% translate "Your Status" %}</h6>
-                            {% with user_participation=data.session.session_participations.all|dictsort:"creation_time" %}
+                            {% with user_participation=data.session_participations|dictsort:"creation_time" %}
                                 {% for participation in user_participation %}
                                     {% if participation.user.pk == current_user.pk %}
                                         <div class="d-flex align-items-center">
@@ -642,7 +642,7 @@
                                 <h6>{% translate "Connected Users Status" %}</h6>
                                 {% for connected_user in current_connected_users %}
                                     <div class="d-flex align-items-center mb-2">
-                                        {% with connected_participation=data.session.session_participations.all|dictsort:"creation_time" %}
+                                        {% with connected_participation=data.session_participations|dictsort:"creation_time" %}
                                             {% for participation in connected_participation %}
                                                 {% if participation.user == connected_user %}
                                                     {% if participation.status == 'confirmed' %}
@@ -673,24 +673,24 @@
                                 <div class="col-sm-6">
                                     <small class="text-muted">{% translate "Participants" %}:</small>
                                     <br>
-                                    <span class="{% if data.session.is_full %}text-danger{% else %}text-success{% endif %}">{{ data.session.full_participant_info }}</span>
+                                    <span class="{% if data.is_full %}text-danger{% else %}text-success{% endif %}">{{ data.full_participant_info }}</span>
                                 </div>
                                 <div class="col-sm-6">
                                     <small class="text-muted">{% translate "Time" %}:</small>
                                     <br>
-                                    {{ data.session.agenda_item.start_time|date:"M j, G:i" }} - {{ data.session.agenda_item.end_time|date:"G:i" }}
+                                    {{ data.agenda_item.start_time|date:"M j, G:i" }} - {{ data.agenda_item.end_time|date:"G:i" }}
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                        {% if data.session.is_enrollment_available and not user_enrolled and not user_waiting %}
+                        {% if data.is_enrollment_available and not user_enrolled and not user_waiting %}
                             {% if request.session.anonymous_enrollment_active and not current_user %}
-                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
                                    class="btn btn-success"><i class="bi bi-person-plus"></i> {% translate "Enroll Anonymously" %}</a>
                             {% elif current_user.user_type == 'connected' or current_user.user_type == 'active' %}
-                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
                                    class="btn btn-success"><i class="bi bi-person-plus"></i> {% translate "Enroll" %}</a>
                             {% endif %}
                         {% endif %}
@@ -703,14 +703,14 @@
     <!-- Session Detail Modals (merged with participant list) -->
     {% for data in sessions %}
         <div class="modal fade"
-             id="sessionDetailModal{{ data.session.id }}"
+             id="sessionDetailModal{{ data.session.pk }}"
              tabindex="-1"
-             aria-labelledby="sessionDetailModalLabel{{ data.session.id }}"
+             aria-labelledby="sessionDetailModalLabel{{ data.session.pk }}"
              aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="sessionDetailModalLabel{{ data.session.id }}">{{ data.session.title }}</h5>
+                        <h5 class="modal-title" id="sessionDetailModalLabel{{ data.session.pk }}">{{ data.session.title }}</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -721,27 +721,27 @@
                         <ul class="nav nav-tabs mb-3" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active"
-                                        id="info-tab-{{ data.session.id }}"
+                                        id="info-tab-{{ data.session.pk }}"
                                         data-bs-toggle="tab"
-                                        data-bs-target="#info-{{ data.session.id }}"
+                                        data-bs-target="#info-{{ data.session.pk }}"
                                         type="button"
                                         role="tab"
-                                        aria-controls="info-{{ data.session.id }}"
+                                        aria-controls="info-{{ data.session.pk }}"
                                         aria-selected="true">
                                     <i class="bi bi-info-circle"></i> {% translate "Information" %}
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link"
-                                        id="participants-tab-{{ data.session.id }}"
+                                        id="participants-tab-{{ data.session.pk }}"
                                         data-bs-toggle="tab"
-                                        data-bs-target="#participants-{{ data.session.id }}"
+                                        data-bs-target="#participants-{{ data.session.pk }}"
                                         type="button"
                                         role="tab"
-                                        aria-controls="participants-{{ data.session.id }}"
+                                        aria-controls="participants-{{ data.session.pk }}"
                                         aria-selected="false">
                                     <i class="bi bi-people"></i> {% translate "Participants" %}
-                                    <span class="badge bg-primary ms-1">{{ data.session.enrolled_count }}</span>
+                                    <span class="badge bg-primary ms-1">{{ data.enrolled_count }}</span>
                                     {% if data.session.waiting_count > 0 %}
                                         <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }}</span>
                                     {% endif %}
@@ -751,9 +751,9 @@
                         <div class="tab-content">
                             <!-- Information Tab -->
                             <div class="tab-pane fade show active"
-                                 id="info-{{ data.session.id }}"
+                                 id="info-{{ data.session.pk }}"
                                  role="tabpanel"
-                                 aria-labelledby="info-tab-{{ data.session.id }}">
+                                 aria-labelledby="info-tab-{{ data.session.pk }}">
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <h6>
@@ -781,16 +781,16 @@
                                             <i class="bi bi-clock"></i> {% translate "Time" %}
                                         </h6>
                                         <p class="ms-4">
-                                            {{ data.session.agenda_item.start_time|date:"l, F j, Y" }}
+                                            {{ data.agenda_item.start_time|date:"l, F j, Y" }}
                                             <br>
-                                            {{ data.session.agenda_item.start_time|time:"G:i" }} - {{ data.session.agenda_item.end_time|time:"G:i" }}
+                                            {{ data.agenda_item.start_time|time:"G:i" }} - {{ data.agenda_item.end_time|time:"G:i" }}
                                         </p>
                                         <h6>
                                             <i class="bi bi-geo-alt"></i> {% translate "Location" %}
                                         </h6>
                                         <p class="ms-4">
-                                            {% if data.session.agenda_item.space %}
-                                                {{ data.session.agenda_item.space.name }}
+                                            {% if data.space %}
+                                                {{ data.space.name }}
                                             {% else %}
                                                 <span class="text-muted">{% translate "To be announced" %}</span>
                                             {% endif %}
@@ -801,11 +801,11 @@
                                             <i class="bi bi-people"></i> {% translate "Capacity" %}
                                         </h6>
                                         <p class="ms-4">
-                                            <span class="badge bg-primary">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
+                                            <span class="badge bg-primary">{{ data.enrolled_count }}/{{ data.effective_participants_limit }}</span>
                                             {% if data.session.waiting_count > 0 %}
                                                 <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
                                             {% endif %}
-                                            {% if data.session.is_full %}
+                                            {% if data.is_full %}
                                                 <span class="badge bg-danger ms-1">{% translate "Full" %}</span>
                                             {% endif %}
                                         </p>
@@ -819,12 +819,12 @@
                                                 <span class="text-muted">{% translate "All ages welcome" %}</span>
                                             {% endif %}
                                         </p>
-                                        {% if data.session.tags.exists %}
+                                        {% if data.tags %}
                                             <h6>
                                                 <i class="bi bi-tags"></i> {% translate "Tags" %}
                                             </h6>
                                             <div class="ms-4">
-                                                {% for tag in data.session.tags.all %}
+                                                {% for tag in data.tags %}
                                                     <span class="badge bg-secondary me-1 mb-1 session-detail-tag"
                                                           title="{{ tag.name }} ({{ tag.category.name }})">
                                                         {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
@@ -880,11 +880,11 @@
                             </div>
                             <!-- Participants Tab -->
                             <div class="tab-pane fade"
-                                 id="participants-{{ data.session.id }}"
+                                 id="participants-{{ data.session.pk }}"
                                  role="tabpanel"
-                                 aria-labelledby="participants-tab-{{ data.session.id }}">
+                                 aria-labelledby="participants-tab-{{ data.session.pk }}">
                                 <!-- Enrolled Participants -->
-                                {% with confirmed_participants=data.session.session_participations.all|dictsort:"creation_time" %}
+                                {% with confirmed_participants=data.session_participations|dictsort:"creation_time" %}
                                     {% if confirmed_participants %}
                                         <h6>
                                             <i class="bi bi-check-circle"></i> {% translate "Enrolled Participants" %}
@@ -950,7 +950,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {% for participation in data.session.session_participations.all|dictsort:"creation_time" %}
+                                                {% for participation in data.session_participations|dictsort:"creation_time" %}
                                                     {% if participation.status == 'waiting' %}
                                                         <tr class="waiting-list-row">
                                                             <td>
@@ -976,7 +976,7 @@
                                         <p>{% translate "No one on the waiting list." %}</p>
                                     </div>
                                 {% endif %}
-                                {% if not data.session.session_participations.exists %}
+                                {% if not data.session_participations.exists %}
                                     <div class="text-center text-muted py-4">
                                         <p>{% translate "No participants enrolled yet." %}</p>
                                     </div>
@@ -986,16 +986,16 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
-                        {% if data.session.is_enrollment_available %}
+                        {% if data.is_enrollment_available %}
                             {% if current_user %}
                                 {% if data.user_enrolled or data.user_waiting %}
-                                    <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
+                                    <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
                                        class="btn btn-warning">
                                         <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
                                     </a>
                                 {% else %}
                                     {% if current_user.user_type == 'connected' or current_user.user_type == 'active' %}
-                                        <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
+                                        <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
                                            class="btn btn-success">
                                             <i class="bi bi-person-plus"></i> {% translate "Enroll Now" %}
                                         </a>
@@ -1003,12 +1003,12 @@
                                 {% endif %}
                             {% elif request.session.anonymous_enrollment_active %}
                                 {% if data.user_enrolled or data.user_waiting %}
-                                    <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
+                                    <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
                                        class="btn btn-warning">
                                         <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
                                     </a>
                                 {% else %}
-                                    <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
+                                    <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
                                        class="btn btn-success">
                                         <i class="bi bi-person-plus"></i> {% translate "Enroll Anonymously" %}
                                     </a>

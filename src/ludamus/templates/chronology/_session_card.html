@@ -1,20 +1,20 @@
 <div class="col-12 col-lg-6 col-xl-4">
-    <div class="card h-100 session-card{% if not data.session.is_enrollment_available or data.should_show_as_inactive or ended %} text-muted{% endif %}"
+    <div class="card h-100 session-card{% if not data.is_enrollment_available or data.should_show_as_inactive or ended %} text-muted{% endif %}"
          data-title="{{ data.session.title|lower }}"
          data-host="{{ data.session.presenter_name }}"
-         data-tags="{% for tag in data.session.tags.all %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
-         data-tag-categories="{% for tag in data.session.tags.all %}{{ tag.category.name|slugify }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
-         data-status="{% if ended %}ended{% elif data.is_ongoing %}in-progress{% elif not data.session.is_enrollment_available %}unavailable{% elif data.session.is_full %}full{% else %}available{% endif %}"
+         data-tags="{% for tag in data.tags %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
+         data-tag-categories="{% for tag in data.tags %}{{ tag.category.name|slugify }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
+         data-status="{% if ended %}ended{% elif data.is_ongoing %}in-progress{% elif not data.is_enrollment_available %}unavailable{% elif data.is_full %}full{% else %}available{% endif %}"
          data-debug-ended="{{ ended|yesno:'true,false' }}"
          data-debug-is-ongoing="{{ data.is_ongoing|yesno:'true,false' }}"
-         data-debug-enrollment-available="{{ data.session.is_enrollment_available|yesno:'true,false' }}"
-         data-debug-is-full="{{ data.session.is_full|yesno:'true,false' }}"
+         data-debug-enrollment-available="{{ data.is_enrollment_available|yesno:'true,false' }}"
+         data-debug-is-full="{{ data.is_full|yesno:'true,false' }}"
          data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
          style="cursor: pointer"
          data-bs-toggle="modal"
-         data-bs-target="#sessionDetailModal{{ data.session.id }}">
+         data-bs-target="#sessionDetailModal{{ data.session.pk }}">
         <div class="card-body d-flex flex-column">
             <!-- Session Title -->
             <h6 class="card-title mb-2">{{ data.session.title }}</h6>
@@ -24,8 +24,8 @@
                     <i class="bi bi-person-circle"></i> {{ data.session.presenter_name|default:data.session.presenter_name }}
                 </small>
                 <small class="text-muted d-block mb-1">
-                    {% if data.session.agenda_item.space %}
-                        <i class="bi bi-geo-alt"></i> {{ data.session.agenda_item.space.name }}
+                    {% if data.space %}
+                        <i class="bi bi-geo-alt"></i> {{ data.space.name }}
                     {% else %}
                         {% load i18n %}
                         <i class="bi bi-geo-alt"></i> {% translate "TBA" %}
@@ -34,7 +34,7 @@
             </div>
             <!-- Participants Info -->
             <div class="mb-2">
-                <span class="badge {% if data.session.is_full %}bg-danger{% else %}bg-success{% endif %}">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
+                <span class="badge {% if data.is_full %}bg-danger{% else %}bg-success{% endif %}">{{ data.enrolled_count }}/{{ data.effective_participants_limit }}</span>
                 {% if data.session.waiting_count > 0 %}
                     <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} waiting</span>
                 {% endif %}
@@ -74,18 +74,18 @@
             <div class="mt-auto">
                 <div class="d-flex gap-1 flex-column">
                     <!-- Primary enrollment action -->
-                    {% if not ended and data.session.is_enrollment_available and not data.should_show_as_inactive %}
+                    {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
                         {% if request.user.is_authenticated %}
                             <!-- Authenticated user -->
                             {% if data.user_enrolled or data.user_waiting %}
-                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
                                    class="btn btn-warning btn-sm"
                                    onclick="event.stopPropagation();">
                                     <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
                                 {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
-                                    <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.id %}"
+                                    <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
                                        class="btn btn-success btn-sm"
                                        onclick="event.stopPropagation();">
                                         <i class="bi bi-person-plus"></i> {% translate "Enroll Now" %}
@@ -101,13 +101,13 @@
                         {% elif request.session.anonymous_enrollment_active %}
                             <!-- Anonymous enrollment mode is active -->
                             {% if data.user_enrolled or data.user_waiting %}
-                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
                                    class="btn btn-warning btn-sm"
                                    onclick="event.stopPropagation();">
                                     <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
                                 </a>
                             {% else %}
-                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.id %}"
+                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
                                    class="btn btn-success btn-sm"
                                    onclick="event.stopPropagation();">
                                     <i class="bi bi-person-plus"></i> {% translate "Enroll Anonymously" %}

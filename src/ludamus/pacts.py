@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
@@ -71,6 +71,30 @@ class SessionDTO(BaseModel):
     requirements: str
     slug: str
     title: str
+
+
+class SessionParticipationStatus(StrEnum):
+    CONFIRMED = auto()
+    WAITING = auto()
+
+
+class SessionParticipationDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    session_id: int
+    user_id: int
+    creation_time: datetime
+    modification_time: datetime
+    status: SessionParticipationStatus
+
+
+class UserParticipation(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user: UserDTO
+    creation_time: datetime
+    modification_time: datetime
+    status: SessionParticipationStatus
 
 
 class SpaceDTO(BaseModel):
