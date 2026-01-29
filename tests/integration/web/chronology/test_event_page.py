@@ -14,6 +14,7 @@ from ludamus.adapters.db.django.models import (
     UserEnrollmentConfig,
 )
 from ludamus.adapters.web.django.entities import SessionData
+from ludamus.pacts import AgendaItemDTO, SessionDTO, SpaceDTO, UserParticipation
 from tests.integration.utils import assert_response
 
 
@@ -83,12 +84,12 @@ class TestEventPageView:
         connected_user,
         agenda_item,
     ):
-        SessionParticipation.objects.create(
+        part1 = SessionParticipation.objects.create(
             session=session,
             user=active_user,
             status=SessionParticipationStatus.CONFIRMED,
         )
-        SessionParticipation.objects.create(
+        part2 = SessionParticipation.objects.create(
             session=session,
             user=connected_user,
             status=SessionParticipationStatus.WAITING,
@@ -99,14 +100,26 @@ class TestEventPageView:
         response = authenticated_client.get(self._get_url(event.slug))
 
         session_data = SessionData(
-            session=session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=1,
+            filterable_tags=[],
+            full_participant_info="1/10, 1 waiting",
             has_any_enrollments=True,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            proposal=None,
+            session_participations=[
+                UserParticipation.model_validate(part1),
+                UserParticipation.model_validate(part2),
+            ],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(session.agenda_item.space),
+            tags=[],
             user_enrolled=True,
             user_waiting=True,
-            filterable_tags=[],
-            is_ongoing=False,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -137,14 +150,23 @@ class TestEventPageView:
         response = client.get(self._get_url(event.slug))
 
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -172,14 +194,23 @@ class TestEventPageView:
         response = client.get(self._get_url(event.slug))
 
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -425,14 +456,23 @@ class TestEventPageView:
         response = client.get(self._get_url(event.slug))
 
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=1,
+            filterable_tags=[],
+            full_participant_info="1/10",
             has_any_enrollments=True,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            proposal=None,
+            session_participations=[UserParticipation.model_validate(participation)],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=True,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=False,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -468,14 +508,23 @@ class TestEventPageView:
         response = client.get(self._get_url(event.slug))
 
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=True,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=True,
         )
         assert_response(
             response,
@@ -545,14 +594,23 @@ class TestEventPageView:
         assert not combined_config._has_domain_config  # noqa: SLF001
         assert combined_config._domain_config_source is None  # noqa: SLF001
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -610,14 +668,23 @@ class TestEventPageView:
             fetched_from_api=True,
         )
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -669,14 +736,23 @@ class TestEventPageView:
         assert virtual_config._is_domain_based  # noqa: SLF001
         assert virtual_config._source_domain_config == domain_config  # noqa: SLF001
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -736,14 +812,23 @@ class TestEventPageView:
         assert combined_config._has_domain_config  # noqa: SLF001
         assert combined_config._domain_config_source == domain_config  # noqa: SLF001
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -794,14 +879,23 @@ class TestEventPageView:
         response = authenticated_client.get(self._get_url(event.slug))
 
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -852,14 +946,23 @@ class TestEventPageView:
         response = authenticated_client.get(self._get_url(event.slug))
 
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -924,14 +1027,23 @@ class TestEventPageView:
             fetched_from_api=True,
         )
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -985,14 +1097,23 @@ class TestEventPageView:
             allowed_slots=0,
         )
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -1043,14 +1164,23 @@ class TestEventPageView:
             allowed_slots=0,
         )
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -1114,14 +1244,23 @@ class TestEventPageView:
             fetched_from_api=True,
         )
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
@@ -1178,14 +1317,23 @@ class TestEventPageView:
             fetched_from_api=True,
         )
         session_data = SessionData(
-            session=agenda_item.session,
-            proposal=None,
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
             has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            space=SpaceDTO.model_validate(agenda_item.space),
+            tags=[],
             user_enrolled=False,
             user_waiting=False,
-            filterable_tags=[],
-            is_ongoing=True,
-            should_show_as_inactive=False,
         )
         assert_response(
             response,
