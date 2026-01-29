@@ -1017,10 +1017,7 @@ class TestSessionEnrollPageView:
             messages=[
                 (
                     messages.ERROR,
-                    (
-                        f"{connected_user.name} cannot enroll: "
-                        "manager information missing"
-                    ),
+                    (f"{connected_user.name} cannot enroll: email address required"),
                 ),
                 (
                     messages.ERROR,
@@ -1369,7 +1366,7 @@ class TestSessionEnrollPageView:
                     messages.ERROR,
                     (
                         f"{connected_user.name} cannot enroll: "
-                        "manager has no enrollment access"
+                        "enrollment access permission required"
                     ),
                 ),
                 (
