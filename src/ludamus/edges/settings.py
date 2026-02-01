@@ -116,7 +116,7 @@ if DEBUG and env.bool("DEBUG_TOOLBAR", default=False):
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
-ROOT_URLCONF = "ludamus.edges.urls"
+ROOT_URLCONF = "ludamus.gates.web.django.urls"
 
 TEMPLATES = [
     {
