@@ -312,4 +312,3 @@ select:focus-visible {
   border-color: var(--theme-border-focus) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
-

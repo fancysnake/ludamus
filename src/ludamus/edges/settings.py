@@ -84,7 +84,7 @@ INSTALLED_APPS = [
     "django_bootstrap5",
     "django_extensions",
     "tailwind",
-    "ludamus.theme",
+    "ludamus.gates.web.django.theme",
     "heroicons",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
@@ -116,7 +116,7 @@ if DEBUG and env.bool("DEBUG_TOOLBAR", default=False):
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
-ROOT_URLCONF = "ludamus.config.urls"
+ROOT_URLCONF = "ludamus.gates.web.django.urls"
 
 TEMPLATES = [
     {
@@ -139,7 +139,7 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "ludamus.deploy.wsgi.application"
+WSGI_APPLICATION = "ludamus.edges.wsgi.application"
 
 
 # Database
@@ -420,4 +420,4 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
 VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
 
 # Tailwind CSS Configuration
-TAILWIND_APP_NAME = "ludamus.theme"
+TAILWIND_APP_NAME = "ludamus.gates.web.django.theme"

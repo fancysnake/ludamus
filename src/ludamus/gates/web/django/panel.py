@@ -26,12 +26,12 @@ from ludamus.gates.web.django.forms import (
     SessionFieldForm,
 )
 from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
-from ludamus.pacts import NotFoundError
+from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
 
 if TYPE_CHECKING:
     from django import forms
 
-    from ludamus.pacts import AuthenticatedRequestContext, EventDTO, UnitOfWorkProtocol
+    from ludamus.pacts import AuthenticatedRequestContext, EventDTO
 
 
 class _FieldDTO(Protocol):
@@ -115,7 +115,7 @@ class PanelRequest(HttpRequest):
     """Request type for panel views with UoW and context."""
 
     context: AuthenticatedRequestContext
-    uow: UnitOfWorkProtocol
+    di: DependencyInjectorProtocol
 
 
 class PanelAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -132,7 +132,7 @@ class PanelAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
         # LoginRequiredMixin ensures user is authenticated before this is called
         current_sphere_id = self.request.context.current_sphere_id
         user_slug = self.request.context.current_user_slug
-        return self.request.uow.spheres.is_manager(current_sphere_id, user_slug)
+        return self.request.di.uow.spheres.is_manager(current_sphere_id, user_slug)
 
     def handle_no_permission(self) -> HttpResponseRedirect:
         """Handle no permission based on authentication status.
@@ -162,15 +162,15 @@ class EventContextMixin:
             Tuple of (context dict, current_event or None if not found).
         """
         sphere_id = self.request.context.current_sphere_id
-        events = self.request.uow.events.list_by_sphere(sphere_id)
+        events = self.request.di.uow.events.list_by_sphere(sphere_id)
 
         try:
-            current_event = self.request.uow.events.read_by_slug(slug, sphere_id)
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
         except NotFoundError:
             messages.error(self.request, _("Event not found."))
             return {}, None
 
-        panel_service = PanelService(self.request.uow)
+        panel_service = PanelService(self.request.di.uow)
         stats = panel_service.get_event_stats(current_event.pk)
 
         context: dict[str, Any] = {
@@ -211,7 +211,7 @@ class PanelIndexRedirectView(PanelAccessMixin, View):
         """
         sphere_id = self.request.context.current_sphere_id
 
-        if not (events := self.request.uow.events.list_by_sphere(sphere_id)):
+        if not (events := self.request.di.uow.events.list_by_sphere(sphere_id)):
             messages.info(self.request, _("No events available for this sphere."))
             return redirect("web:index")
 
@@ -268,7 +268,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
         sphere_id = self.request.context.current_sphere_id
 
         try:
-            current_event = self.request.uow.events.read_by_slug(slug, sphere_id)
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
         except NotFoundError:
             messages.error(self.request, _("Event not found."))
             return redirect("panel:index")
@@ -283,7 +283,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
         # Update event via repository
         new_name = form.cleaned_data["name"]
         try:
-            self.request.uow.events.update_name(current_event.pk, new_name)
+            self.request.di.uow.events.update_name(current_event.pk, new_name)
         except NotFoundError:
             messages.error(self.request, _("Event not found."))
             return redirect("panel:event-settings", slug=slug)
@@ -308,11 +308,11 @@ class CFPPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         context["active_nav"] = "cfp"
-        context["categories"] = self.request.uow.proposal_categories.list_by_event(
+        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
         )
         context["category_stats"] = (
-            self.request.uow.proposal_categories.get_category_stats(current_event.pk)
+            self.request.di.uow.proposal_categories.get_category_stats(current_event.pk)
         )
         return TemplateResponse(self.request, "panel/cfp.html", context)
 
@@ -353,7 +353,9 @@ class CFPCreatePageView(PanelAccessMixin, EventContextMixin, View):
             return TemplateResponse(self.request, "panel/cfp-create.html", context)
 
         name = form.cleaned_data["name"]
-        category = self.request.uow.proposal_categories.create(current_event.pk, name)
+        category = self.request.di.uow.proposal_categories.create(
+            current_event.pk, name
+        )
 
         messages.success(self.request, _("Session type created successfully."))
 
@@ -382,7 +384,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         try:
-            category = self.request.uow.proposal_categories.read_by_slug(
+            category = self.request.di.uow.proposal_categories.read_by_slug(
                 current_event.pk, category_slug
             )
         except NotFoundError:
@@ -401,11 +403,13 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         # Get field requirements and order
         field_requirements = (
-            self.request.uow.proposal_categories.get_field_requirements(category.pk)
+            self.request.di.uow.proposal_categories.get_field_requirements(category.pk)
         )
-        field_order = self.request.uow.proposal_categories.get_field_order(category.pk)
+        field_order = self.request.di.uow.proposal_categories.get_field_order(
+            category.pk
+        )
         available_fields = list(
-            self.request.uow.personal_data_fields.list_by_event(current_event.pk)
+            self.request.di.uow.personal_data_fields.list_by_event(current_event.pk)
         )
         context["available_fields"] = _sort_fields_by_order(
             available_fields, field_order
@@ -415,15 +419,15 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         # Get session field requirements and order
         session_field_requirements = (
-            self.request.uow.proposal_categories.get_session_field_requirements(
+            self.request.di.uow.proposal_categories.get_session_field_requirements(
                 category.pk
             )
         )
         session_field_order = (
-            self.request.uow.proposal_categories.get_session_field_order(category.pk)
+            self.request.di.uow.proposal_categories.get_session_field_order(category.pk)
         )
         available_session_fields = list(
-            self.request.uow.session_fields.list_by_event(current_event.pk)
+            self.request.di.uow.session_fields.list_by_event(current_event.pk)
         )
         context["available_session_fields"] = _sort_fields_by_order(
             available_session_fields, session_field_order
@@ -431,7 +435,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["session_field_requirements"] = session_field_requirements
         context["session_field_order"] = session_field_order
         context["durations"] = category.durations
-        context["proposal_count"] = self.request.uow.proposals.count_by_category(
+        context["proposal_count"] = self.request.di.uow.proposals.count_by_category(
             category.pk
         )
         return TemplateResponse(self.request, "panel/cfp-edit.html", context)
@@ -449,7 +453,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         try:
-            category = self.request.uow.proposal_categories.read_by_slug(
+            category = self.request.di.uow.proposal_categories.read_by_slug(
                 current_event.pk, category_slug
             )
         except NotFoundError:
@@ -460,13 +464,15 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         if not form.is_valid():
             # Get field requirements and order
             field_requirements = (
-                self.request.uow.proposal_categories.get_field_requirements(category.pk)
+                self.request.di.uow.proposal_categories.get_field_requirements(
+                    category.pk
+                )
             )
-            field_order = self.request.uow.proposal_categories.get_field_order(
+            field_order = self.request.di.uow.proposal_categories.get_field_order(
                 category.pk
             )
             available_fields = list(
-                self.request.uow.personal_data_fields.list_by_event(current_event.pk)
+                self.request.di.uow.personal_data_fields.list_by_event(current_event.pk)
             )
             context["available_fields"] = _sort_fields_by_order(
                 available_fields, field_order
@@ -475,17 +481,17 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             context["field_order"] = field_order
             # Get session field requirements and order
             session_field_requirements = (
-                self.request.uow.proposal_categories.get_session_field_requirements(
+                self.request.di.uow.proposal_categories.get_session_field_requirements(
                     category.pk
                 )
             )
             session_field_order = (
-                self.request.uow.proposal_categories.get_session_field_order(
+                self.request.di.uow.proposal_categories.get_session_field_order(
                     category.pk
                 )
             )
             available_session_fields = list(
-                self.request.uow.session_fields.list_by_event(current_event.pk)
+                self.request.di.uow.session_fields.list_by_event(current_event.pk)
             )
             context["available_session_fields"] = _sort_fields_by_order(
                 available_session_fields, session_field_order
@@ -493,7 +499,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             context["session_field_requirements"] = session_field_requirements
             context["session_field_order"] = session_field_order
             context["durations"] = category.durations
-            context["proposal_count"] = self.request.uow.proposals.count_by_category(
+            context["proposal_count"] = self.request.di.uow.proposals.count_by_category(
                 category.pk
             )
             context["active_nav"] = "cfp"
@@ -505,7 +511,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         durations_raw = self.request.POST.getlist("durations")
         durations: list[str] = [d for d in durations_raw if d]
 
-        self.request.uow.proposal_categories.update(
+        self.request.di.uow.proposal_categories.update(
             category.pk,
             {
                 "name": form.cleaned_data["name"],
@@ -519,7 +525,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         field_requirements, field_order = _parse_field_requirements(
             self.request.POST, "field_", "field_order"
         )
-        self.request.uow.proposal_categories.set_field_requirements(
+        self.request.di.uow.proposal_categories.set_field_requirements(
             category.pk, field_requirements, field_order
         )
 
@@ -527,7 +533,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         session_field_requirements, session_field_order = _parse_field_requirements(
             self.request.POST, "session_field_", "session_field_order"
         )
-        self.request.uow.proposal_categories.set_session_field_requirements(
+        self.request.di.uow.proposal_categories.set_session_field_requirements(
             category.pk, session_field_requirements, session_field_order
         )
 
@@ -554,14 +560,14 @@ class CFPDeleteActionView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         try:
-            category = self.request.uow.proposal_categories.read_by_slug(
+            category = self.request.di.uow.proposal_categories.read_by_slug(
                 current_event.pk, category_slug
             )
         except NotFoundError:
             messages.error(self.request, _("Session type not found."))
             return redirect("panel:cfp", slug=event_slug)
 
-        service = PanelService(self.request.uow)
+        service = PanelService(self.request.di.uow)
         if not service.delete_category(category.pk):
             messages.error(
                 self.request, _("Cannot delete session type with existing proposals.")
@@ -588,7 +594,7 @@ class PersonalDataFieldsPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         context["active_nav"] = "cfp"
-        context["fields"] = self.request.uow.personal_data_fields.list_by_event(
+        context["fields"] = self.request.di.uow.personal_data_fields.list_by_event(
             current_event.pk
         )
         return TemplateResponse(
@@ -639,7 +645,7 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
             form
         )
 
-        self.request.uow.personal_data_fields.create(
+        self.request.di.uow.personal_data_fields.create(
             current_event.pk,
             name,
             field_type,
@@ -669,7 +675,7 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         try:
             field = self._read_field_or_redirect(
-                self.request.uow.personal_data_fields,
+                self.request.di.uow.personal_data_fields,
                 current_event.pk,
                 field_slug,
                 _("Personal data field not found."),
@@ -696,7 +702,7 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         try:
             field = self._read_field_or_redirect(
-                self.request.uow.personal_data_fields,
+                self.request.di.uow.personal_data_fields,
                 current_event.pk,
                 field_slug,
                 _("Personal data field not found."),
@@ -714,7 +720,7 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             )
 
         name = form.cleaned_data["name"]
-        self.request.uow.personal_data_fields.update(field.pk, name)
+        self.request.di.uow.personal_data_fields.update(field.pk, name)
 
         messages.success(self.request, _("Personal data field updated successfully."))
         return redirect("panel:personal-data-fields", slug=slug)
@@ -738,7 +744,7 @@ class PersonalDataFieldDeleteActionView(PanelAccessMixin, EventContextMixin, Vie
 
         try:
             field = self._read_field_or_redirect(
-                self.request.uow.personal_data_fields,
+                self.request.di.uow.personal_data_fields,
                 current_event.pk,
                 field_slug,
                 _("Personal data field not found."),
@@ -746,7 +752,7 @@ class PersonalDataFieldDeleteActionView(PanelAccessMixin, EventContextMixin, Vie
         except NotFoundError:
             return redirect("panel:personal-data-fields", slug=slug)
 
-        service = PanelService(self.request.uow)
+        service = PanelService(self.request.di.uow)
         if not service.delete_personal_data_field(field.pk):
             messages.error(
                 self.request, _("Cannot delete field that is used in session types.")
@@ -773,7 +779,7 @@ class SessionFieldsPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         context["active_nav"] = "cfp"
-        context["fields"] = self.request.uow.session_fields.list_by_event(
+        context["fields"] = self.request.di.uow.session_fields.list_by_event(
             current_event.pk
         )
         return TemplateResponse(self.request, "panel/session-fields.html", context)
@@ -822,7 +828,7 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
             form
         )
 
-        self.request.uow.session_fields.create(
+        self.request.di.uow.session_fields.create(
             current_event.pk,
             name,
             field_type,
@@ -852,7 +858,7 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         try:
             field = self._read_field_or_redirect(
-                self.request.uow.session_fields,
+                self.request.di.uow.session_fields,
                 current_event.pk,
                 field_slug,
                 _("Session field not found."),
@@ -877,7 +883,7 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         try:
             field = self._read_field_or_redirect(
-                self.request.uow.session_fields,
+                self.request.di.uow.session_fields,
                 current_event.pk,
                 field_slug,
                 _("Session field not found."),
@@ -895,7 +901,7 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             )
 
         name = form.cleaned_data["name"]
-        self.request.uow.session_fields.update(field.pk, name)
+        self.request.di.uow.session_fields.update(field.pk, name)
 
         messages.success(self.request, _("Session field updated successfully."))
         return redirect("panel:session-fields", slug=slug)
@@ -919,7 +925,7 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
 
         try:
             field = self._read_field_or_redirect(
-                self.request.uow.session_fields,
+                self.request.di.uow.session_fields,
                 current_event.pk,
                 field_slug,
                 _("Session field not found."),
@@ -927,7 +933,7 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         except NotFoundError:
             return redirect("panel:session-fields", slug=slug)
 
-        service = PanelService(self.request.uow)
+        service = PanelService(self.request.di.uow)
         if not service.delete_session_field(field.pk):
             messages.error(
                 self.request, _("Cannot delete field that is used in session types.")

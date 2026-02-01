@@ -478,7 +478,12 @@ class UnitOfWorkProtocol(Protocol):
     def spheres(self) -> SphereRepositoryProtocol: ...
 
 
+class DependencyInjectorProtocol(Protocol):
+    @property
+    def uow(self) -> UnitOfWorkProtocol: ...
+
+
 class RootRequestProtocol(Protocol):
     path: str
-    uow: UnitOfWorkProtocol
+    di: DependencyInjectorProtocol
     context: RequestContext

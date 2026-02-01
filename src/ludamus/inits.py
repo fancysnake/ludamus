@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import TYPE_CHECKING, TypeVar
 
 from django.conf import settings
@@ -9,7 +10,21 @@ if TYPE_CHECKING:
 
     from ludamus.pacts import RootRequestProtocol
 
+
 Response = TypeVar("Response")
+
+
+class DependencyInjector:
+    """Container for all request-scoped dependencies.
+
+    Usage:
+        request.di.uow.enrollments
+        request.di.membership_api  # (future)
+    """
+
+    @cached_property
+    def uow(self) -> UnitOfWork:
+        return UnitOfWork()
 
 
 class RepositoryInjectionMiddleware[Response]:
@@ -25,6 +40,6 @@ class RepositoryInjectionMiddleware[Response]:
 
     def __call__(self, request: RootRequestProtocol) -> Response:
         if not request.path.startswith(settings.MIDDLEWARE_SKIP_PREFIXES):
-            request.uow = UnitOfWork()
+            request.di = DependencyInjector()
 
         return self.get_response(request)

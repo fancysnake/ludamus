@@ -13,19 +13,22 @@ mise run dj <cmd>   # django-admin
 
 ## Architecture
 
-GLIMPS system:
+GLIMPSE system:
 
 - `gates / adapters` (clis, apis, views)
 - `links / adapters` (models, repos)
 - `inits` (DI)
 - `mills` (logic)
 - `pacts` (protocols, DTOs, aggregates)
-- `specs / config` (configuration options)
+- `specs` (configuration options)
+- `edges` (infrastructure boundary modules)
 
-Access data: `request.uow.{repository}.read(id)` — returns Pydantic DTOs,
+Access data: `request.di.uow.{repository}.read(id)` — returns Pydantic DTOs,
 never Django models.
 
 ## Layer
+
+Edges are outside of the import system. They are not going to be imported directly.
 
 Relation `X -> Y` means (Y can import X). It is transitive and reflexive.
 
