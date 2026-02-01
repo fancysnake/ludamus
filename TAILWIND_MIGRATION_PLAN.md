@@ -32,9 +32,9 @@ src/ludamus/
 ### 1.1 Settings
 
 ```python
-INSTALLED_APPS = [..., "tailwind", "ludamus.theme", ...]
+INSTALLED_APPS = [..., "tailwind", "ludamus.gates.web.django.theme", ...]
 
-TAILWIND_APP_NAME = "ludamus.theme"
+TAILWIND_APP_NAME = "ludamus.gates.web.django.theme"
 ```
 
 ### 1.2 mise.toml tasks

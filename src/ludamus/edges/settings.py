@@ -84,7 +84,7 @@ INSTALLED_APPS = [
     "django_bootstrap5",
     "django_extensions",
     "tailwind",
-    "ludamus.theme",
+    "ludamus.gates.web.django.theme",
     "heroicons",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
@@ -420,4 +420,4 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
 VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
 
 # Tailwind CSS Configuration
-TAILWIND_APP_NAME = "ludamus.theme"
+TAILWIND_APP_NAME = "ludamus.gates.web.django.theme"
