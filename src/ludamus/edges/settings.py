@@ -116,7 +116,7 @@ if DEBUG and env.bool("DEBUG_TOOLBAR", default=False):
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
-ROOT_URLCONF = "ludamus.config.urls"
+ROOT_URLCONF = "ludamus.edges.urls"
 
 TEMPLATES = [
     {
@@ -139,7 +139,7 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "ludamus.deploy.wsgi.application"
+WSGI_APPLICATION = "ludamus.edges.wsgi.application"
 
 
 # Database

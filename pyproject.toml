@@ -75,8 +75,7 @@ skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor,src/ludamus/
 branch = true
 source = ["src", "tests"]
 omit = [
-    "src/ludamus/config/*",
-    "src/ludamus/deploy/*",
+    "src/ludamus/edges/*",
     "src/ludamus/adapters/db/django/migrations/*",
     "tests/template_checks.py",
 ]
@@ -135,7 +134,7 @@ warn_unused_configs = true
 warn_unused_ignores = true
 
 [tool.django-stubs]
-django_settings_module = "ludamus.config.settings"
+django_settings_module = "ludamus.edges.settings"
 
 [[tool.mypy.overrides]]
 module = ["debug_toolbar.toolbar"]
@@ -148,7 +147,7 @@ ignore_missing_imports = true
 # PYTEST
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
+DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
 
 # RUFF
 
@@ -206,211 +205,98 @@ allow-star-arg-any = true
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
 
+
 # IMPORT LINTER
 
 [tool.importlinter]
+include_external_packages = "True"
 root_package = "ludamus"
 
-[[tool.importlinter.contracts]]
-name = "gates not in mills"
-type = "forbidden"
-source_modules = ["ludamus.mills"]
-forbidden_modules = ["ludamus.gates"]
+# Explanation <source_modules> can't import <forbidden_modules>
 
 [[tool.importlinter.contracts]]
-name = "gates not in links"
+name = "gates"
+type = "forbidden"
+source_modules = ["ludamus.gates"]
+forbidden_modules = [
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.specs",
+    "ludamus.edges",
+]
+
+
+[[tool.importlinter.contracts]]
+name = "links"
 type = "forbidden"
 source_modules = ["ludamus.links"]
-forbidden_modules = ["ludamus.gates"]
+forbidden_modules = [
+    "ludamus.gates",
+    "ludamus.inits",
+    "ludamus.specs",
+    "ludamus.edges",
+]
+
 
 [[tool.importlinter.contracts]]
-name = "gates not in pacts"
+name = "inits"
 type = "forbidden"
-source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.gates"]
+source_modules = ["ludamus.inits"]
+forbidden_modules = ["ludamus.edges"]
+
 
 [[tool.importlinter.contracts]]
-name = "gates not in configs"
-type = "forbidden"
-source_modules = ["ludamus.config"]
-forbidden_modules = ["ludamus.gates"]
-
-[[tool.importlinter.contracts]]
-name = "mills not in config"
-type = "forbidden"
-source_modules = ["ludamus.config"]
-forbidden_modules = ["ludamus.mills"]
-
-[[tool.importlinter.contracts]]
-name = "links not in gates"
-type = "forbidden"
-source_modules = ["ludamus.gates"]
-forbidden_modules = ["ludamus.links"]
-
-[[tool.importlinter.contracts]]
-name = "links not in mills"
+name = "mills"
 type = "forbidden"
 source_modules = ["ludamus.mills"]
-forbidden_modules = ["ludamus.links"]
+forbidden_modules = [
+    "ludamus.gates",
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.specs",
+    "ludamus.edges",
+    "django",
+]
+
 
 [[tool.importlinter.contracts]]
-name = "links not in pacts"
+name = "pacts"
 type = "forbidden"
 source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.links"]
+forbidden_modules = [
+    "ludamus.gates",
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.mills",
+    "ludamus.specs",
+    "ludamus.edges",
+    "django",
+]
+
 
 [[tool.importlinter.contracts]]
-name = "links not in config"
+name = "specs"
 type = "forbidden"
-source_modules = ["ludamus.config"]
-forbidden_modules = ["ludamus.links"]
+source_modules = ["ludamus.specs"]
+forbidden_modules = [
+    "ludamus.gates",
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.mills",
+    "ludamus.edges",
+    "django",
+]
+
 
 [[tool.importlinter.contracts]]
-name = "config not in gates"
+name = "edges"
 type = "forbidden"
-source_modules = ["ludamus.gates"]
-forbidden_modules = ["ludamus.config"]
-
-[[tool.importlinter.contracts]]
-name = "config not in mills"
-type = "forbidden"
-source_modules = ["ludamus.mills"]
-forbidden_modules = ["ludamus.config"]
-
-[[tool.importlinter.contracts]]
-name = "config not in links"
-type = "forbidden"
-source_modules = ["ludamus.links"]
-forbidden_modules = ["ludamus.config"]
-
-[[tool.importlinter.contracts]]
-name = "config not in pacts"
-type = "forbidden"
-source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.config"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.web not in mills"
-type = "forbidden"
-source_modules = ["ludamus.mills"]
-forbidden_modules = ["ludamus.adapters.web"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.web not in links"
-type = "forbidden"
-source_modules = ["ludamus.links"]
-forbidden_modules = ["ludamus.adapters.web"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.web not in pacts"
-type = "forbidden"
-source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.adapters.web"]
-
-[[tool.importlinter.contracts]]
-name = "links not in adapters.web"
-type = "forbidden"
-source_modules = ["ludamus.adapters.web"]
-forbidden_modules = ["ludamus.links"]
-
-[[tool.importlinter.contracts]]
-name = "config not in adapters.web"
-type = "forbidden"
-source_modules = ["ludamus.adapters.web"]
-forbidden_modules = ["ludamus.config"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.db not in gates"
-type = "forbidden"
-source_modules = ["ludamus.gates"]
-forbidden_modules = ["ludamus.adapters.db"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.db not in mills"
-type = "forbidden"
-source_modules = ["ludamus.mills"]
-forbidden_modules = ["ludamus.adapters.db"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.db not in pacts"
-type = "forbidden"
-source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.adapters.db"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.db not in config"
-type = "forbidden"
-source_modules = ["ludamus.config"]
-forbidden_modules = ["ludamus.adapters.db"]
-
-# [[tool.importlinter.contracts]]
-# name = "adapters.db not in adapters.web"
-# type = "forbidden"
-# source_modules = ["ludamus.adapters.web"]
-# forbidden_modules = ["ludamus.adapters.db"]
-
-[[tool.importlinter.contracts]]
-name = "gates not in adapters.db"
-type = "forbidden"
-source_modules = ["ludamus.adapters.db"]
-forbidden_modules = ["ludamus.gates"]
-
-[[tool.importlinter.contracts]]
-name = "config not in adapters.db"
-type = "forbidden"
-source_modules = ["ludamus.adapters.db"]
-forbidden_modules = ["ludamus.config"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.web not in adapters.db"
-type = "forbidden"
-source_modules = ["ludamus.adapters.db"]
-forbidden_modules = ["ludamus.adapters.web"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.external not in gates"
-type = "forbidden"
-source_modules = ["ludamus.gates"]
-forbidden_modules = ["ludamus.adapters.external"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.external not in mills"
-type = "forbidden"
-source_modules = ["ludamus.mills"]
-forbidden_modules = ["ludamus.adapters.external"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.external not in pacts"
-type = "forbidden"
-source_modules = ["ludamus.pacts"]
-forbidden_modules = ["ludamus.adapters.external"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.external not in config"
-type = "forbidden"
-source_modules = ["ludamus.config"]
-forbidden_modules = ["ludamus.adapters.external"]
-
-# [[tool.importlinter.contracts]]
-# name = "adapters.external not in adapters.web"
-# type = "forbidden"
-# source_modules = ["ludamus.adapters.web"]
-# forbidden_modules = ["ludamus.adapters.external"]
-
-[[tool.importlinter.contracts]]
-name = "gates not in adapters.external"
-type = "forbidden"
-source_modules = ["ludamus.adapters.external"]
-forbidden_modules = ["ludamus.gates"]
-
-[[tool.importlinter.contracts]]
-name = "config not in adapters.external"
-type = "forbidden"
-source_modules = ["ludamus.adapters.external"]
-forbidden_modules = ["ludamus.config"]
-
-[[tool.importlinter.contracts]]
-name = "adapters.web not in adapters.external"
-type = "forbidden"
-source_modules = ["ludamus.adapters.external"]
-forbidden_modules = ["ludamus.adapters.web"]
+source_modules = ["ludamus.edges"]
+forbidden_modules = [
+    "ludamus.gates",
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.mills",
+    "ludamus.pacts",
+    "ludamus.specs",
+]

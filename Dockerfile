@@ -32,7 +32,7 @@ RUN useradd --create-home --shell /bin/bash appuser
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app/src \
-    DJANGO_SETTINGS_MODULE=ludamus.config.settings
+    DJANGO_SETTINGS_MODULE=ludamus.edges.settings
 
 # Development stage with dev dependencies
 FROM base AS dev
@@ -106,4 +106,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
 # Production command using gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--worker-class", "sync", "--worker-tmp-dir", "/dev/shm", "--access-logfile", "-", "--error-logfile", "-", "--chdir", "/app/src", "ludamus.deploy.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--worker-class", "sync", "--worker-tmp-dir", "/dev/shm", "--access-logfile", "-", "--error-logfile", "-", "--chdir", "/app/src", "ludamus.edges.wsgi:application"]

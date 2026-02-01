@@ -12,7 +12,7 @@ _.python.venv = { path = ".venv", create = true }
 
 # Common environment variables
 PYTHONPATH = "src"
-DJANGO_SETTINGS_MODULE = "ludamus.config.settings"
+DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
 DEBUG = "true"
 USE_POSTGRES = "false"
 SECRET_KEY = "dev-secret-key-12345"
