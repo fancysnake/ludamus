@@ -47,6 +47,7 @@ from ludamus.mills import AcceptProposalService, AnonymousEnrollmentService
 from ludamus.pacts import (
     AgendaItemDTO,
     AuthenticatedRequestContext,
+    DependencyInjectorProtocol,
     NotFoundError,
     ProposalCategoryDTO,
     ProposalDTO,
@@ -56,7 +57,6 @@ from ludamus.pacts import (
     SpaceDTO,
     TagCategoryDTO,
     TagDTO,
-    UnitOfWorkProtocol,
     UserData,
     UserDTO,
     UserParticipation,
@@ -83,12 +83,12 @@ CACHE_TIMEOUT = 600  # 10 minutes
 
 class AuthenticatedRootRequest(HttpRequest):
     context: AuthenticatedRequestContext
-    uow: UnitOfWorkProtocol
+    di: DependencyInjectorProtocol
 
 
 class RootRequest(HttpRequest):
     context: RequestContext
-    uow: UnitOfWorkProtocol
+    di: DependencyInjectorProtocol
 
 
 class LoginRequiredPageView(TemplateView):
@@ -115,7 +115,7 @@ class Auth0LoginActionView(View):
         Raises:
             RedirectError: If the request is not from the root domain.
         """
-        root_domain = request.uow.spheres.read_site(
+        root_domain = request.di.uow.spheres.read_site(
             request.context.root_sphere_id
         ).domain
         next_path = request.GET.get("next")
@@ -188,16 +188,16 @@ class Auth0LoginCallbackActionView(RedirectView):
         if not self.request.context.current_user_slug:
             username = self._get_username()
             try:
-                user = self.request.uow.active_users.read_by_username(username)
+                user = self.request.di.uow.active_users.read_by_username(username)
             except NotFoundError:
                 slug = slugify(username)
-                self.request.uow.active_users.create(
+                self.request.di.uow.active_users.create(
                     UserData(slug=slug, username=username, password=make_password(None))
                 )
-                user = self.request.uow.active_users.read_by_username(username)
+                user = self.request.di.uow.active_users.read_by_username(username)
 
             # Log the user in
-            self.request.uow.login_user(self.request, user.slug)
+            self.request.di.uow.login_user(self.request, user.slug)
             if self.request.session.get("anonymous_enrollment_active"):
                 self.request.session.pop("anonymous_user_code", None)
                 self.request.session.pop("anonymous_enrollment_active", None)
@@ -233,7 +233,7 @@ class Auth0LogoutActionView(RedirectView):
 
         django_logout(self.request)
 
-        last_domain = self.request.uow.spheres.read_site(
+        last_domain = self.request.di.uow.spheres.read_site(
             self.request.context.current_sphere_id
         ).domain
         messages.success(self.request, _("You have been successfully logged out."))
@@ -249,7 +249,9 @@ def _auth0_logout_url(
     last_domain: str | None = None,
     redirect_to: str | None = None,
 ) -> str:
-    root_domain = request.uow.spheres.read_site(request.context.root_sphere_id).domain
+    root_domain = request.di.uow.spheres.read_site(
+        request.context.root_sphere_id
+    ).domain
     last_domain = last_domain or root_domain
     redirect_to = redirect_to or reverse("web:index")
     return f"https://{settings.AUTH0_DOMAIN}/v2/logout?" + urlencode(
@@ -289,7 +291,7 @@ class Auth0LogoutRedirectActionView(RedirectView):
 
             # Check against explicitly allowed domains
             try:
-                last_sphere = self.request.uow.spheres.read_by_domain(last_domain)
+                last_sphere = self.request.di.uow.spheres.read_by_domain(last_domain)
             except NotFoundError:
                 last_sphere = None
 
@@ -328,10 +330,10 @@ class ProfilePageView(
     template_name = "crowd/user/edit.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        kwargs["user"] = self.request.uow.active_users.read(
+        kwargs["user"] = self.request.di.uow.active_users.read(
             self.request.context.current_user_slug
         )
-        kwargs["object"] = self.request.uow.active_users.read(
+        kwargs["object"] = self.request.di.uow.active_users.read(
             self.request.context.current_user_slug
         )
         kwargs["confirmed_participations_count"] = SessionParticipation.objects.filter(
@@ -343,7 +345,7 @@ class ProfilePageView(
     def form_valid(self, form: UserForm) -> HttpResponse:
         # Check if email is being changed and if it already exists
         email = form.user_data.get("email", "").strip()
-        if email and self.request.uow.active_users.email_exists(
+        if email and self.request.di.uow.active_users.email_exists(
             email, exclude_slug=self.request.context.current_user_slug
         ):
             form.add_error(
@@ -355,7 +357,7 @@ class ProfilePageView(
             )
             return self.form_invalid(form)
 
-        self.request.uow.active_users.update(
+        self.request.di.uow.active_users.update(
             self.request.context.current_user_slug, form.user_data
         )
         messages.success(self.request, _("Profile updated successfully!"))
@@ -366,7 +368,7 @@ class ProfilePageView(
         return super().form_invalid(form)
 
     def get_initial(self) -> dict[str, Any]:
-        return self.request.uow.active_users.read(
+        return self.request.di.uow.active_users.read(
             self.request.context.current_user_slug
         ).model_dump()
 
@@ -392,7 +394,7 @@ class ProfileConnectedUsersPageView(
                 "user": connected,
                 "form": ConnectedUserForm(initial=connected.model_dump()),
             }
-            for connected in self.request.uow.connected_users.read_all(
+            for connected in self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             )
         ]
@@ -404,7 +406,7 @@ class ProfileConnectedUsersPageView(
         # Check if user has reached the maximum number of connected users
 
         connected_count = len(
-            self.request.uow.connected_users.read_all(
+            self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             )
         )
@@ -420,7 +422,7 @@ class ProfileConnectedUsersPageView(
         user_data["username"] = f"connected|{token_urlsafe(50)}"
         user_data["slug"] = slugify(user_data["username"][:50])
         result = super().form_valid(form)
-        self.request.uow.connected_users.create(
+        self.request.di.uow.connected_users.create(
             self.request.context.current_user_slug, user_data=user_data
         )
         messages.success(self.request, _("Connected user added successfully!"))
@@ -446,7 +448,7 @@ class ProfileConnectedUserUpdateActionView(
     template_name_suffix = "_form"
 
     def get_object(self) -> UserDTO:
-        return self.request.uow.connected_users.read(
+        return self.request.di.uow.connected_users.read(
             self.request.context.current_user_slug, self.kwargs["slug"]
         )
 
@@ -460,7 +462,7 @@ class ProfileConnectedUserUpdateActionView(
                     "user": connected,
                     "form": ConnectedUserForm(initial=connected.model_dump()),
                 }
-                for connected in self.request.uow.connected_users.read_all(
+                for connected in self.request.di.uow.connected_users.read_all(
                     self.request.context.current_user_slug
                 )
             ],
@@ -469,7 +471,7 @@ class ProfileConnectedUserUpdateActionView(
         return super().get_context_data(**context)
 
     def form_valid(self, form: ConnectedUserForm) -> HttpResponse:
-        self.request.uow.connected_users.update(
+        self.request.di.uow.connected_users.update(
             manager_slug=self.request.context.current_user_slug,
             user_slug=self.kwargs["slug"],
             user_data=form.user_data,
@@ -503,7 +505,7 @@ class ProfileConnectedUserDeleteActionView(
 
     def form_valid(self, form: forms.Form) -> HttpResponseRedirect:  # noqa: ARG002
         success_url = self.get_success_url()
-        self.request.uow.connected_users.delete(
+        self.request.di.uow.connected_users.delete(
             self.request.context.current_user_slug, self.kwargs["slug"]
         )
         messages.success(self.request, _("Connected user deleted successfully."))
@@ -518,7 +520,7 @@ class UserDiscordUsernameComponentView(View):
     @staticmethod
     def get(request: RootRequest, user_slug: str) -> HttpResponse:
         try:
-            user = request.uow.active_users.read(user_slug)
+            user = request.di.uow.active_users.read(user_slug)
         except NotFoundError:
             return HttpResponse(status=404)
         if user.discord_username:
@@ -620,12 +622,12 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         user_enrollment_config = None
         if (
             self.request.context.current_user_slug
-            and self.request.uow.active_users.read(
+            and self.request.di.uow.active_users.read(
                 self.request.context.current_user_slug
             ).email
         ):
             user_enrollment_config = self.object.get_user_enrollment_config(
-                self.request.uow.active_users.read(
+                self.request.di.uow.active_users.read(
                     self.request.context.current_user_slug
                 ).email
             )
@@ -637,7 +639,9 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             config.restrict_to_configured_users for config in active_configs
         )
         context["enrollment_requires_slots"] = requires_slots
-        anonymous_service = AnonymousEnrollmentService(self.request.uow.anonymous_users)
+        anonymous_service = AnonymousEnrollmentService(
+            self.request.di.uow.anonymous_users
+        )
 
         # Handle anonymous mode
         # Clear anonymous session flags if user is authenticated
@@ -700,7 +704,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             ).exists()
 
             if (
-                self.request.uow.active_users.read(
+                self.request.di.uow.active_users.read(
                     self.request.context.current_user_slug
                 ).is_superuser
                 or is_sphere_manager
@@ -733,15 +737,17 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
     def _set_user_participations(
         self, sessions: dict[int, SessionData], event_sessions: QuerySet[Session]
     ) -> None:
-        anonymous_service = AnonymousEnrollmentService(self.request.uow.anonymous_users)
+        anonymous_service = AnonymousEnrollmentService(
+            self.request.di.uow.anonymous_users
+        )
         # Handle authenticated users
         if self.request.context.current_user_slug:
             # Get all connected users in a single query
             all_users = [
-                self.request.uow.active_users.read(
+                self.request.di.uow.active_users.read(
                     self.request.context.current_user_slug
                 ),
-                *self.request.uow.connected_users.read_all(
+                *self.request.di.uow.connected_users.read_all(
                     self.request.context.current_user_slug
                 ),
             ]
@@ -949,16 +955,16 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         context = {
             "session": session,
             "event": session.agenda_item.space.event,
-            "connected_users": self.request.uow.connected_users.read_all(
+            "connected_users": self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
             "user_data": self._get_user_participation_data(session),
             "form": create_enrollment_form(
                 session=session,
-                current_user=self.request.uow.active_users.read(
+                current_user=self.request.di.uow.active_users.read(
                     self.request.context.current_user_slug
                 ),
-                connected_users=self.request.uow.connected_users.read_all(
+                connected_users=self.request.di.uow.connected_users.read_all(
                     self.request.context.current_user_slug
                 ),
             )(),
@@ -992,8 +998,10 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
         # Get all connected users with proper prefetching
         all_users = [
-            self.request.uow.active_users.read(self.request.context.current_user_slug),
-            *self.request.uow.connected_users.read_all(
+            self.request.di.uow.active_users.read(
+                self.request.context.current_user_slug
+            ),
+            *self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
         ]
@@ -1044,10 +1052,10 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         # Initialize form with POST data
         form_class = create_enrollment_form(
             session=session,
-            current_user=self.request.uow.active_users.read(
+            current_user=self.request.di.uow.active_users.read(
                 self.request.context.current_user_slug
             ),
-            connected_users=self.request.uow.connected_users.read_all(
+            connected_users=self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
         )
@@ -1063,7 +1071,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 session
             )
             if enrollment_config and enrollment_config.restrict_to_configured_users:
-                if not request.uow.active_users.read(
+                if not request.di.uow.active_users.read(
                     request.context.current_user_slug
                 ).email:
                     messages.error(
@@ -1071,7 +1079,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                         _("Email address is required for enrollment in this session."),
                     )
                 elif not session.agenda_item.space.event.get_user_enrollment_config(
-                    request.uow.active_users.read(
+                    request.di.uow.active_users.read(
                         request.context.current_user_slug
                     ).email
                 ):
@@ -1098,7 +1106,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 {
                     "session": session,
                     "event": session.agenda_item.space.event,
-                    "connected_users": self.request.uow.connected_users.read_all(
+                    "connected_users": self.request.di.uow.connected_users.read_all(
                         self.request.context.current_user_slug
                     ),
                     "user_data": self._get_user_participation_data(session),
@@ -1118,8 +1126,10 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
     def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
         enrollment_requests = []
         for user in (
-            self.request.uow.active_users.read(self.request.context.current_user_slug),
-            *self.request.uow.connected_users.read_all(
+            self.request.di.uow.active_users.read(
+                self.request.context.current_user_slug
+            ),
+            *self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
         ):
@@ -1489,7 +1499,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
 
 class ProposalAcceptPageView(LoginRequiredMixin, View):
     def get(self, request: AuthenticatedRootRequest, proposal_id: int) -> HttpResponse:
-        proposal_repository = request.uow.proposals
+        proposal_repository = request.di.uow.proposals
         try:
             proposal = proposal_repository.read(proposal_id)
         except NotFoundError as exception:
@@ -1505,7 +1515,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                 warning=_("This proposal has already been accepted."),
             )
 
-        service = AcceptProposalService(request.uow, context=request.context)
+        service = AcceptProposalService(request.di.uow, context=request.context)
         # Check permissions
         if not service.can_accept_proposals():
             raise RedirectError(
@@ -1545,7 +1555,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         return TemplateResponse(request, "chronology/accept_proposal.html", context)
 
     def post(self, request: AuthenticatedRootRequest, proposal_id: int) -> HttpResponse:
-        proposal_repository = request.uow.proposals
+        proposal_repository = request.di.uow.proposals
         try:
             proposal = proposal_repository.read(proposal_id)
         except NotFoundError as exception:
@@ -1561,7 +1571,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                 warning=_("This proposal has already been accepted."),
             )
 
-        service = AcceptProposalService(request.uow, context=request.context)
+        service = AcceptProposalService(request.di.uow, context=request.context)
         # Check permissions
         if not service.can_accept_proposals():
             raise RedirectError(
@@ -1675,7 +1685,7 @@ class EventAnonymousActivateActionView(View):
 
         code = token_urlsafe(4).lower()
         # Create new anonymous UserDTO immediately
-        user_repository = request.uow.anonymous_users
+        user_repository = request.di.uow.anonymous_users
         service = AnonymousEnrollmentService(user_repository=user_repository)
         user = service.build_user(code)
         user_repository.create(user)
@@ -1724,7 +1734,7 @@ class SessionEnrollmentAnonymousPageView(View):
             messages.error(request, _("Anonymous session expired."))
             return redirect("web:index")
 
-        user_repository = request.uow.anonymous_users
+        user_repository = request.di.uow.anonymous_users
         service = AnonymousEnrollmentService(user_repository=user_repository)
         # Look up user by code
         try:
@@ -1784,7 +1794,7 @@ class SessionEnrollmentAnonymousPageView(View):
             messages.error(request, _("Anonymous session expired."))
             return redirect("web:index")
 
-        user_repository = request.uow.anonymous_users
+        user_repository = request.di.uow.anonymous_users
         service = AnonymousEnrollmentService(user_repository=user_repository)
         # Look up user by code
         try:
@@ -1895,7 +1905,7 @@ class AnonymousLoadActionView(View):
                 return redirect(referer)
             return redirect("web:index")
 
-        user_repository = request.uow.anonymous_users
+        user_repository = request.di.uow.anonymous_users
         service = AnonymousEnrollmentService(user_repository=user_repository)
         # Look up user by code
         try:

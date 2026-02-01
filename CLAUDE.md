@@ -23,7 +23,7 @@ GLIMPSE system:
 - `specs` (configuration options)
 - `edges` (infrastructure boundary modules)
 
-Access data: `request.uow.{repository}.read(id)` — returns Pydantic DTOs,
+Access data: `request.di.uow.{repository}.read(id)` — returns Pydantic DTOs,
 never Django models.
 
 ## Layer

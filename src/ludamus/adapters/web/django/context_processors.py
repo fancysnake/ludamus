@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 def sites(request: RootRepositoryRequest) -> dict[str, Any]:
     # Context processor may run during error handling before middleware completes
     if not hasattr(request, "context") or not hasattr(
-        request, "uow"
+        request, "di"
     ):  # pragma: no cover
         return {
             "root_site": None,
@@ -22,7 +22,7 @@ def sites(request: RootRepositoryRequest) -> dict[str, Any]:
             "is_sphere_manager": False,
         }
 
-    sphere_repository = request.uow.spheres
+    sphere_repository = request.di.uow.spheres
     root_sphere = sphere_repository.read(request.context.root_sphere_id)
     current_sphere = sphere_repository.read(request.context.current_sphere_id)
 
@@ -52,16 +52,16 @@ def current_user(request: RootRepositoryRequest) -> dict[str, Any]:
     # Context processor may run during error handling before middleware completes
     if (
         not hasattr(request, "context")
-        or not hasattr(request, "uow")
+        or not hasattr(request, "di")
         or not request.context.current_user_slug
     ):
         return {"current_user": None, "current_connected_users": []}
 
     return {
-        "current_user": request.uow.active_users.read(
+        "current_user": request.di.uow.active_users.read(
             request.context.current_user_slug
         ),
-        "current_connected_users": request.uow.connected_users.read_all(
+        "current_connected_users": request.di.uow.connected_users.read_all(
             request.context.current_user_slug
         ),
     }
