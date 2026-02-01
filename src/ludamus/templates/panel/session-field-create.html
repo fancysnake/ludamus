@@ -15,7 +15,7 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
-           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
             {% translate "Cancel" %}
         </a>
     {% endif %}
@@ -24,25 +24,25 @@
     {% if current_event %}
         <form method="post" class="max-w-2xl">
             {% csrf_token %}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-6">{% translate "Field Details" %}</h3>
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
+                <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Field Details" %}</h3>
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2" for="id_name">{% translate "Name" %}</label>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2" for="id_name">{% translate "Name" %}</label>
                         <input type="text"
                                name="name"
                                id="id_name"
                                value="{{ form.name.value|default:'' }}"
-                               class="w-full border {% if form.name.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                               class="w-full border {% if form.name.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                                placeholder="{% translate "e.g., RPG System, Genre, Difficulty" %}">
                         {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2"
+                        <label class="block text-sm font-medium text-neutral-700 mb-2"
                                for="id_field_type">{% translate "Field Type" %}</label>
                         <select name="field_type"
                                 id="id_field_type"
-                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                class="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
                             <option value="text"
                                     {% if form.field_type.value == "text" %}selected{% endif %}>
                                 {% translate "Text" %}
@@ -54,29 +54,30 @@
                         </select>
                     </div>
                     <div id="options-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-2" for="id_options">{% translate "Options" %}</label>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2"
+                               for="id_options">{% translate "Options" %}</label>
                         <textarea name="options"
                                   id="id_options"
                                   rows="5"
-                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                                  class="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                                   placeholder="{% translate "One option per line" %}">{{ form.options.value|default:'' }}</textarea>
-                        <p class="mt-1 text-sm text-gray-500">{% translate "Enter one option per line (for Select fields only)." %}</p>
+                        <p class="mt-1 text-sm text-neutral-500">{% translate "Enter one option per line (for Select fields only)." %}</p>
                         <div class="mt-4 space-y-3">
                             <label class="flex items-center">
                                 <input type="checkbox"
                                        name="is_multiple"
                                        id="id_is_multiple"
                                        {% if form.is_multiple.value %}checked{% endif %}
-                                       class="rounded border-gray-300 text-primary focus:ring-primary">
-                                <span class="ml-2 text-sm text-gray-700">{% translate "Allow multiple selections" %}</span>
+                                       class="rounded border-neutral-300 text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm text-neutral-700">{% translate "Allow multiple selections" %}</span>
                             </label>
                             <label class="flex items-center">
                                 <input type="checkbox"
                                        name="allow_custom"
                                        id="id_allow_custom"
                                        {% if form.allow_custom.value %}checked{% endif %}
-                                       class="rounded border-gray-300 text-primary focus:ring-primary">
-                                <span class="ml-2 text-sm text-gray-700">{% translate "Allow custom values" %}</span>
+                                       class="rounded border-neutral-300 text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm text-neutral-700">{% translate "Allow custom values" %}</span>
                             </label>
                         </div>
                     </div>
