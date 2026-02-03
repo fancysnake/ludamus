@@ -4,7 +4,7 @@ jobs = 1
 
 [tools]
 python = "3.14"
-poetry = { version="latest", pyproject="{{ config_root }}/pyproject.toml" }
+poetry = { version = "latest", pyproject = "{{ config_root }}/pyproject.toml" }
 
 [env]
 # Mise creates and activates this virtualenv automatically
@@ -40,6 +40,9 @@ run = "djlint src --profile=django"
 
 [tasks.djlint-format]
 run = "djlint src --reformat --format-css --format-js --profile=django"
+
+[tasks.il]
+run = "lint-imports --config=pyproject.toml"
 
 [tasks.mypy]
 run = "mypy src"
@@ -77,53 +80,18 @@ run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-t
 description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
 
-# Tailwind CSS (uses standalone CLI binary)
-[tasks.tw-install]
-description = "Install Tailwind CSS standalone CLI"
-run = """
-if [ ! -f bin/tailwindcss ]; then
-  mkdir -p bin
-  ARCH=$(uname -m)
-  OS=$(uname -s)
-  if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
-    ARCH="arm64"
-  else
-    ARCH="x64"
-  fi
-  if [ "$OS" = "Darwin" ]; then
-    OS="macos"
-  else
-    OS="linux"
-  fi
-  echo "Downloading Tailwind CSS for ${OS}-${ARCH}..."
-  curl -sL "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-${OS}-${ARCH}" -o bin/tailwindcss
-  chmod +x bin/tailwindcss
-  echo "Tailwind CSS installed to bin/tailwindcss"
-else
-  echo "Tailwind CSS already installed"
-fi
-"""
-
-[tasks.tw]
-description = "Tailwind CSS watch mode"
-depends = ["tw-install"]
-run = "bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --watch"
-
-[tasks.tw-build]
-description = "Build Tailwind CSS (minified)"
-depends = ["tw-install"]
-run = "bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --minify"
-
-# Dev server
+# Dev server (Django + Tailwind watch via django-tailwind)
 [tasks.start]
 description = "Start Django + Tailwind watch mode"
-depends = ["tw-install"]
-run = """
-bin/tailwindcss -i src/ludamus/static/css/index.css -o src/ludamus/static/css/output.css --watch &
-TW_PID=$!
-trap "kill $TW_PID 2>/dev/null" EXIT
-django-admin runserver localhost:8000
-"""
+run = "python src/ludamus/manage.py tailwind dev"
+
+[tasks.build-tailwind]
+description = "Build Tailwind CSS (production)"
+run = "python src/ludamus/manage.py tailwind build"
+
+[tasks.kill]
+description = "Kill dev servers (Django on :8000, Tailwind watch)"
+run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch' 2>/dev/null; echo 'Dev servers killed'"
 
 # Composite tasks
 [tasks.check]
@@ -132,6 +100,7 @@ depends = [
     "ruff-fix",
     "codespell",
     "mypy",
+    "il",
     "djlint",
     "djlint-format",
     "pylint",
@@ -147,5 +116,6 @@ pip install -U pip
 pip install -U poetry
 poetry update
 deptry .
+pip-audit .
 poetry show -o
 """

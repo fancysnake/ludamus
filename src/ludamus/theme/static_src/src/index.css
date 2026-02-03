@@ -1,12 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
-@import "./progressive-blur.css";
+@import "../../../../static/css/progressive-blur.css";
 @plugin "@tailwindcss/typography";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@source "../../../../**/*.{html,py,js}";
 
-@source "../../templates/**/*.html";
-@source "../js/**/*.js";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --font-sans: "Outfit", system-ui, sans-serif;
@@ -55,6 +54,12 @@
   --color-neutral-800: #262626;
   --color-neutral-900: #171717;
   --color-neutral-950: #0a0a0a;
+
+  /* Disable unused gray palettes - use neutral only */
+  --color-slate-*: initial;
+  --color-gray-*: initial;
+  --color-zinc-*: initial;
+  --color-stone-*: initial;
 
   --color-primary: #f85a3c;
   --color-secondary: #14b89b;
@@ -296,4 +301,3 @@ select:focus-visible {
   border-color: var(--theme-border-focus) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
-

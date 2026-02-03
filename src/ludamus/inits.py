@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, TypeVar
 
+from django.conf import settings
+
 from ludamus.links.db.django.uow import UnitOfWork
 
 if TYPE_CHECKING:
@@ -22,6 +24,7 @@ class RepositoryInjectionMiddleware[Response]:
         self.get_response: Callable[[RootRequestProtocol], Response] = get_response
 
     def __call__(self, request: RootRequestProtocol) -> Response:
-        request.uow = UnitOfWork()
+        if not request.path.startswith(settings.MIDDLEWARE_SKIP_PREFIXES):
+            request.uow = UnitOfWork()
 
         return self.get_response(request)

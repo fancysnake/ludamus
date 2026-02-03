@@ -6,10 +6,9 @@ Replace Bootstrap 5 with production-grade Tailwind 4, matching mockup-1.html des
 
 ## Build System
 
-**Tool**: Tailwind CLI standalone (via mise)
-- No Node.js dependency in main project
-- ~15MB binary, fast cold starts
-- Native mise integration
+**Tool**: [django-tailwind](https://github.com/timonweb/django-tailwind)
+- npm-based build (Tailwind v4)
+- Integrated with Django management commands
 
 ## File Structure
 
@@ -17,33 +16,36 @@ Replace Bootstrap 5 with production-grade Tailwind 4, matching mockup-1.html des
 src/ludamus/
 ├── static/
 │   ├── css/
-│   │   ├── input.css      # Source: @theme config + components
-│   │   └── output.css     # Generated (gitignored locally, built in CI/Docker)
+│   │   └── dist/
+│   │       └── styles.css    # Generated (gitignored locally, built in CI/Docker)
 │   └── vendor/
-│       └── htmx.min.js    # Keep - remove Bootstrap files
+│       └── htmx.min.js       # Keep - remove Bootstrap files
+├── theme/
+│   ├── static_src/
+│   │   └── src/styles.css    # Source: @theme config + components
 ```
 
-## Phase 1: Infrastructure
+## Phase 1: Infrastructure ✅
 
-### 1.1 mise.toml additions
+### 1.1 Settings
+```python
+INSTALLED_APPS = [..., "tailwind", "ludamus.theme", ...]
+
+TAILWIND_APP_NAME = "ludamus.theme"
+```
+
+### 1.2 mise.toml tasks
 ```toml
-[tools]
-tailwindcss = "4"
+[tasks.start]
+description = "Start Django + Tailwind watch mode"
+run = "python src/ludamus/manage.py tailwind dev"
 
-[tasks.tw]
-description = "Tailwind watch mode"
-run = "tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --watch"
-
-[tasks.tw-build]
-description = "Build Tailwind (minified)"
-run = "tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --minify"
-
-[tasks.dev]
-description = "Django + Tailwind watch"
-run = "tailwindcss -i src/ludamus/static/css/input.css -o src/ludamus/static/css/output.css --watch & django-admin runserver localhost:8000"
+[tasks.build-tailwind]
+description = "Build Tailwind CSS (production)"
+run = "python src/ludamus/manage.py tailwind build"
 ```
 
-### 1.2 input.css with @theme (Tailwind 4 CSS-first config)
+### 1.3 styles.css with @theme (Tailwind 4 CSS-first config)
 
 Colors from mockup-1.html:
 - **warm**: cream tones (#fdfcfb → #252220)
@@ -51,34 +53,17 @@ Colors from mockup-1.html:
 - **teal**: secondary (#f0fdfa → #134e45, main: #14b89b)
 
 Components layer:
-- `.form-input`, `.form-select`, `.form-textarea` (replacing django_bootstrap5)
 - `.btn-primary`, `.btn-secondary`, `.btn-teal`
 - `.alert-*` variants
 - `.card`, `.card-header`, `.card-body`
-- Session card styles from mockup (`.session-card`, gradient overlays)
 
-### 1.3 tailwind.config.js (content paths)
-```js
-export default {
-  content: [
-    "./src/ludamus/templates/**/*.html",
-    "./src/ludamus/static/**/*.js",
-  ],
-}
-```
-
-### 1.4 Dockerfile update
+### 1.4 Dockerfile
 ```dockerfile
-# Add before collectstatic
-RUN curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
-    -o /usr/local/bin/tailwindcss && chmod +x /usr/local/bin/tailwindcss
-RUN tailwindcss -i src/ludamus/static/css/input.css \
-                -o src/ludamus/static/css/output.css --minify
+# Build Tailwind CSS (django-tailwind)
+RUN django-admin tailwind build
 ```
 
-### 1.5 Form templatetags
-
-Port `tailwind_forms.py` from tailwind branch:
+### 1.5 Form templatetags ✅
 - `{% tw_form form %}` - render full form
 - `{% tw_field field %}` - render single field
 - Replaces `{% bootstrap_form %}` and `{% bootstrap_field %}`
@@ -86,7 +71,7 @@ Port `tailwind_forms.py` from tailwind branch:
 ## Phase 2: Base Template Migration
 
 Convert `base.html`:
-1. Replace Bootstrap CSS with `output.css`
+1. Replace Bootstrap CSS with `static/css/dist/styles.css`
 2. Keep HTMX
 3. Convert navbar to Tailwind (sticky, warm-50 bg, coral accents)
 4. Convert messages to `.alert-*` components
@@ -114,9 +99,8 @@ Convert `base.html`:
 - `chronology/_session_card.html` - match mockup card design
 - `chronology/event.html` - largest template, do last
 
-### Tier 5 - Panel (already Tailwind)
-- `panel/base.html` - switch from CDN to output.css
-- Update color palette to match
+### Tier 5 - Panel ✅
+- `panel/base.html` - switched from CDN to output.css
 
 ## Phase 4: Cleanup
 
@@ -141,28 +125,25 @@ Replace Bootstrap Icons with heroicons (already installed):
 
 | File | Action |
 |------|--------|
-| `.gitignore` | Add `src/ludamus/static/css/output.css` |
-| `mise.toml` | Add tailwindcss tool + tasks |
-| `static/css/input.css` | Create with @theme |
-| `tailwind.config.js` | Create with content paths |
-| `Dockerfile` | Add Tailwind build step |
-| `config/settings.py` | Remove django_bootstrap5, update VENDOR_DEPENDENCIES |
+| `.gitignore` | Add `src/ludamus/static/css/output.css` ✅ |
+| `mise.toml` | Add django-tailwind tasks ✅ |
+| `theme/static_src/src/styles.css` | Create with @theme ✅ |
+| `Dockerfile` | Add `django-admin tailwind build` ✅ |
+| `config/settings.py` | Add tailwind app, update VENDOR_DEPENDENCIES |
 | `templates/base.html` | Full conversion |
-| `templatetags/tailwind_forms.py` | Port from tailwind branch |
-| `templates/forms/*.html` | Create field/form partials |
+| `templatetags/tailwind_forms.py` | Port from tailwind branch ✅ |
 
 ## Verification
 
-1. `mise install` - installs Tailwind CLI
-2. `mise run tw-build` - generates output.css
-3. `mise run dev` - starts Django + watch mode
-4. Visual check: pages render with new design
-5. `mise run test` - all tests pass
-6. `docker build .` - builds successfully
-7. Check mockup-1.html side-by-side with event.html
+1. `mise run start` - runs Django + Tailwind watch
+2. `mise run build-tailwind` - generates styles.css
+3. Visual check: pages render with new design
+4. `mise run test` - all tests pass
+5. `docker build .` - builds successfully
 
 ## Decisions
 
 - **Font hosting**: Google Fonts CDN (simple, fast)
-- **output.css**: Gitignored, generated in CI/Docker
+- **styles.css**: Gitignored, generated in CI/Docker
 - **Migration**: Parallel - keep Bootstrap loaded until all templates converted
+- **No tailwind.config.js**: Tailwind 4 uses CSS-first config via `@theme` in styles.css

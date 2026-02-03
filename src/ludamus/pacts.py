@@ -14,6 +14,13 @@ class NotFoundError(Exception):
     pass
 
 
+class DateTimeRangeProtocol(Protocol):
+    """Protocol for objects with start_time and end_time datetime fields."""
+
+    start_time: datetime
+    end_time: datetime
+
+
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -96,6 +103,7 @@ class TagCategoryDTO(BaseModel):
 class TagDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    category_id: int
     confirmed: bool
     name: str
     pk: int
@@ -321,6 +329,8 @@ class ProposalRepositoryProtocol(Protocol):
     def update(self, proposal_dto: ProposalDTO) -> None: ...
     @staticmethod
     def count_by_category(category_id: int) -> int: ...
+    def read_tags(self, proposal_id: int) -> list[TagDTO]: ...
+    def read_tag_categories(self, proposal_id: int) -> list[TagCategoryDTO]: ...
 
 
 class SessionRepositoryProtocol(Protocol):
@@ -445,5 +455,6 @@ class UnitOfWorkProtocol(Protocol):
 
 
 class RootRequestProtocol(Protocol):
+    path: str
     uow: UnitOfWorkProtocol
     context: RequestContext

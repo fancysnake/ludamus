@@ -16,8 +16,11 @@ Including another URLconf
 
 """
 
+from typing import NoReturn
+
 from django.conf import settings
 from django.contrib import admin
+from django.http import HttpRequest  # noqa: TC002  # used in debug view
 from django.urls import include, path
 
 urlpatterns = [
@@ -27,13 +30,29 @@ urlpatterns = [
     path("page/", include("django.contrib.flatpages.urls")),
 ]
 
-# Custom error handlers
 handler404 = (  # pylint: disable=invalid-name
     "ludamus.adapters.web.django.error_views.custom_404"
 )
 handler500 = (  # pylint: disable=invalid-name
     "ludamus.adapters.web.django.error_views.custom_500"
 )
+
+if settings.DEBUG:
+    urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]
+
+    # Debug URLs to test error pages
+    def _trigger_500(request: HttpRequest) -> NoReturn:  # noqa: ARG001
+        raise Exception(  # noqa: TRY002  # pylint: disable=broad-exception-raised
+            "Test 500 error"
+        )
+
+    from ludamus.adapters.web.django.error_views import custom_404, custom_500
+
+    urlpatterns += [
+        path("404/", lambda r: custom_404(r, None)),  # type: ignore[list-item]
+        path("500/", custom_500),  # type: ignore[list-item]
+        path("500-real/", _trigger_500),  # type: ignore[list-item]
+    ]
 
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
     from debug_toolbar.toolbar import debug_toolbar_urls

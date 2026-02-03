@@ -16,11 +16,11 @@
     {% if current_event %}
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-4 lg:mb-8">
-            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100">
+            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-neutral-100">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs lg:text-sm text-gray-500">{% translate "All Sessions" %}</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-gray-900">{{ stats.total_sessions }}</p>
+                        <p class="text-xs lg:text-sm text-neutral-500">{% translate "All Sessions" %}</p>
+                        <p class="text-2xl lg:text-3xl font-bold text-neutral-900">{{ stats.total_sessions }}</p>
                     </div>
                     <div class="w-10 h-10 lg:w-12 lg:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                         {% heroicon_outline "calendar" class="w-5 h-5 lg:w-6 lg:h-6 text-blue-600" %}
@@ -30,33 +30,33 @@
                     {{ stats.scheduled_sessions }} {% translate "scheduled" %}, {{ stats.pending_proposals }} {% translate "pending" %}
                 </p>
             </div>
-            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100">
+            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-neutral-100">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs lg:text-sm text-gray-500">{% translate "Program Hosts" %}</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-gray-900">{{ stats.hosts_count }}</p>
+                        <p class="text-xs lg:text-sm text-neutral-500">{% translate "Program Hosts" %}</p>
+                        <p class="text-2xl lg:text-3xl font-bold text-neutral-900">{{ stats.hosts_count }}</p>
                     </div>
                     <div class="w-10 h-10 lg:w-12 lg:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                         {% heroicon_outline "users" class="w-5 h-5 lg:w-6 lg:h-6 text-purple-600" %}
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100">
+            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-neutral-100">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs lg:text-sm text-gray-500">{% translate "Rooms" %}</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-gray-900">{{ stats.rooms_count }}</p>
+                        <p class="text-xs lg:text-sm text-neutral-500">{% translate "Rooms" %}</p>
+                        <p class="text-2xl lg:text-3xl font-bold text-neutral-900">{{ stats.rooms_count }}</p>
                     </div>
                     <div class="w-10 h-10 lg:w-12 lg:h-12 bg-green-100 rounded-lg flex items-center justify-center">
                         {% heroicon_outline "building-office" class="w-5 h-5 lg:w-6 lg:h-6 text-green-600" %}
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100">
+            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-neutral-100">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs lg:text-sm text-gray-500">{% translate "Proposals" %}</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-gray-900">{{ stats.total_proposals }}</p>
+                        <p class="text-xs lg:text-sm text-neutral-500">{% translate "Proposals" %}</p>
+                        <p class="text-2xl lg:text-3xl font-bold text-neutral-900">{{ stats.total_proposals }}</p>
                     </div>
                     <div class="w-10 h-10 lg:w-12 lg:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                         {% heroicon_outline "document-text" class="w-5 h-5 lg:w-6 lg:h-6 text-yellow-600" %}
@@ -65,8 +65,8 @@
             </div>
         </div>
     {% else %}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-            <p class="text-gray-500">{% translate "No events available. Create an event to get started." %}</p>
+        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+            <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}
 {% endblock content %}

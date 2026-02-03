@@ -26,7 +26,7 @@
                                     {% if event.description %}<p class="card-text text-muted">{{ event.description }}</p>{% endif %}
                                     <div class="d-flex align-items-center text-muted">
                                         <i class="bi bi-calendar3"></i>
-                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
+                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event|format_datetime_range }}</time>
                                     </div>
                                 </div>
                             </div>
@@ -46,7 +46,7 @@
                                     {% if event.description %}<p class="card-text text-muted">{{ event.description }}</p>{% endif %}
                                     <div class="d-flex align-items-center text-muted">
                                         <i class="bi bi-calendar3"></i>
-                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event.start_time|format_datetime_range:event.end_time }}</time>
+                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event|format_datetime_range }}</time>
                                     </div>
                                 </div>
                             </div>

@@ -3,25 +3,13 @@
 {% load heroicons %}
 {% load tailwind_forms %}
 {% block title %}
-    {% if time_slot %}
-        {% translate "Propose Session for" %} {{ time_slot.start_time|date:"l, F j - G:i" }}
-    {% else %}
-        {% translate "Propose Session" %}
-    {% endif %}
+    {% translate "Propose Session" %}
 {% endblock title %}
 {% block header %}
-    {% if time_slot %}
-        {% translate "Propose Session for Time Slot" %}
-    {% else %}
-        {% translate "Propose Session" %}
-    {% endif %}
+    {% translate "Propose Session" %}
 {% endblock header %}
 {% block description %}
-    {% if time_slot %}
-        {% translate "Submit a session proposal for" %} {{ event.name }} - {{ time_slot.start_time|date:"l, F j" }} {{ time_slot.start_time|date:"G:i" }} to {{ time_slot.end_time|date:"G:i" }}
-    {% else %}
-        {% translate "Submit a session proposal for" %} {{ event.name }}
-    {% endif %}
+    {% translate "Submit a session proposal for" %} {{ event.name }}
 {% endblock description %}
 {% block body %}
     <div class="max-w-3xl mx-auto">

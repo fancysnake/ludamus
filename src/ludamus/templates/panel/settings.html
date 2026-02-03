@@ -17,7 +17,7 @@
         <div class="flex items-center space-x-3">
             <button type="button"
                     onclick="document.getElementById('settings-form').reset()"
-                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                    class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
                 {% translate "Cancel Changes" %}
             </button>
             <button type="submit"
@@ -39,16 +39,16 @@
                 <!-- Main Settings -->
                 <div class="lg:col-span-2 space-y-8">
                     <!-- Basic Info -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-6">{% translate "Basic Information" %}</h3>
+                    <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
+                        <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Basic Information" %}</h3>
                         <div class="space-y-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2" for="name">{% translate "Event Name" %}</label>
+                                <label class="block text-sm font-medium text-neutral-700 mb-2" for="name">{% translate "Event Name" %}</label>
                                 <input type="text"
                                        name="name"
                                        id="name"
                                        value="{{ current_event.name }}"
-                                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                       class="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
                             </div>
                         </div>
                     </div>
@@ -56,24 +56,24 @@
                 <!-- Sidebar Info -->
                 <div class="space-y-6">
                     <!-- Event Status -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{% translate "Event Status" %}</h3>
+                    <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
+                        <h3 class="text-lg font-semibold text-neutral-900 mb-4">{% translate "Event Status" %}</h3>
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-600">{% translate "Status" %}</span>
-                                {% if current_event.is_ended %}
-                                    <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">{% translate "Ended" %}</span>
+                                <span class="text-neutral-600">{% translate "Status" %}</span>
+                                {% if current_event_is_ended %}
+                                    <span class="px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm font-medium">{% translate "Ended" %}</span>
                                 {% else %}
                                     <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">{% translate "Active" %}</span>
                                 {% endif %}
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-600">{% translate "Days to Event" %}</span>
-                                <span class="font-semibold text-gray-900">{{ days_to_event|default:"-" }}</span>
+                                <span class="text-neutral-600">{% translate "Days to Event" %}</span>
+                                <span class="font-semibold text-neutral-900">{{ days_to_event|default:"-" }}</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-600">{% translate "Proposals" %}</span>
-                                <span class="font-semibold text-gray-900">{{ stats.pending_proposals|default:0 }} /
+                                <span class="text-neutral-600">{% translate "Proposals" %}</span>
+                                <span class="font-semibold text-neutral-900">{{ stats.pending_proposals|default:0 }} /
                                     {% if is_proposal_active %}
                                         {% translate "open" %}
                                     {% else %}
@@ -82,8 +82,8 @@
                                 </span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-600">{% translate "Scheduled Sessions" %}</span>
-                                <span class="font-semibold text-gray-900">{{ stats.scheduled_sessions|default:0 }} / {{ stats.total_proposals|default:0 }}</span>
+                                <span class="text-neutral-600">{% translate "Scheduled Sessions" %}</span>
+                                <span class="font-semibold text-neutral-900">{{ stats.scheduled_sessions|default:0 }} / {{ stats.total_proposals|default:0 }}</span>
                             </div>
                         </div>
                     </div>
@@ -91,8 +91,8 @@
             </div>
         </form>
     {% else %}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-            <p class="text-gray-500">{% translate "No events available. Create an event to get started." %}</p>
+        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+            <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}
 {% endblock content %}

@@ -10,12 +10,12 @@ from ludamus.adapters.web.django.exceptions import RedirectError
 from ludamus.pacts import AuthenticatedRequestContext, NotFoundError, RequestContext
 
 if TYPE_CHECKING:
-    from ludamus.links.db.django.uow import UnitOfWork
+    from ludamus.pacts import UnitOfWorkProtocol
 
 
 class RootRepositoryRequest(HttpRequest):
     context: RequestContext
-    uow: UnitOfWork
+    uow: UnitOfWorkProtocol
 
 
 class _GetResponseCallable(Protocol):
@@ -27,12 +27,15 @@ class RequestContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: RootRepositoryRequest) -> HttpResponseBase:
+        if request.path.startswith(settings.MIDDLEWARE_SKIP_PREFIXES):
+            return self.get_response(request)
+
         sphere_repository = request.uow.spheres
         root_sphere = sphere_repository.read_by_domain(settings.ROOT_DOMAIN)
         try:
             current_sphere = sphere_repository.read_by_domain(request.get_host())
         except NotFoundError:
-            url = f'{request.scheme}://{settings.ROOT_DOMAIN}{reverse("web:index")}'
+            url = f"{request.scheme}://{settings.ROOT_DOMAIN}{reverse('web:index')}"
             messages.error(request, _("Sphere not found"))
             return HttpResponseRedirect(url)
 
@@ -57,7 +60,6 @@ class RequestContextMiddleware:
 
 
 class RedirectErrorMiddleware:
-
     def __init__(self, get_response: _GetResponseCallable) -> None:
         self.get_response = get_response
 

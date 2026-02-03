@@ -11,6 +11,17 @@ if TYPE_CHECKING:
 
 
 def sites(request: RootRepositoryRequest) -> dict[str, Any]:
+    # Context processor may run during error handling before middleware completes
+    if not hasattr(request, "context") or not hasattr(
+        request, "uow"
+    ):  # pragma: no cover
+        return {
+            "root_site": None,
+            "current_site": None,
+            "current_sphere": None,
+            "is_sphere_manager": False,
+        }
+
     sphere_repository = request.uow.spheres
     root_sphere = sphere_repository.read(request.context.root_sphere_id)
     current_sphere = sphere_repository.read(request.context.current_sphere_id)
@@ -35,3 +46,17 @@ def support(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
 
 def static_version(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
     return {"STATIC_VERSION": settings.STATIC_VERSION}
+
+
+def current_user(request: RootRepositoryRequest) -> dict[str, Any]:
+    if request.context.current_user_slug:
+        return {
+            "current_user": request.uow.active_users.read(
+                request.context.current_user_slug
+            ),
+            "current_connected_users": request.uow.connected_users.read_all(
+                request.context.current_user_slug
+            ),
+        }
+
+    return {"current_user": None, "current_connected_users": []}

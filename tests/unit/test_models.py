@@ -232,6 +232,11 @@ class TestUser:
 
         assert user.initials == "?"
 
+    def test_str(self):
+        user = User(name="John Smith", email="johnny@example.com")
+
+        assert str(user) == "John Smith <johnny@example.com>"
+
 
 class TestPersonalDataField:
     def test_str(self, faker):

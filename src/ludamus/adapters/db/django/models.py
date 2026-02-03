@@ -757,38 +757,6 @@ class Session(models.Model):
         return any(config.is_session_eligible(self) for config in active_configs)
 
     @property
-    def enrollment_status_context(self) -> dict[str, str | int]:  # pragma: no cover
-        """Get context data for enrollment status display in templates."""
-        # TODO(@fancysnake): This is used in templates. Rewrite to pass static values
-        # ZAG-16
-        if not self.is_full:
-            return {
-                "status_type": "not_full",
-                "enrolled": self.enrolled_count,
-                "limit": self.effective_participants_limit,
-            }
-
-        # Session is full - determine why
-        if (
-            enrollment_config := self.agenda_item.space.event.get_most_liberal_config(
-                self
-            )
-        ) and (
-            enrollment_config.percentage_slots < 100  # noqa: PLR2004
-        ):
-            return {
-                "status_type": "enrollment_limited",
-                "enrolled": self.enrolled_count,
-                "limit": self.effective_participants_limit,
-            }
-
-        return {
-            "status_type": "session_full",
-            "enrolled": self.enrolled_count,
-            "limit": self.participants_limit,
-        }
-
-    @property
     def full_participant_info(self) -> str:  # pragma: no cover
         """Get complete participant information display."""
         # TODO(@fancysnake): This is used in templates. Rewrite to pass static values

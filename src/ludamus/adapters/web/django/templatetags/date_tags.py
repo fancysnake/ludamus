@@ -1,10 +1,14 @@
 # ruff: noqa: RUF001
-from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING
 
 from django import template
 from django.utils import timezone
 from django.utils.formats import date_format, time_format
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from ludamus.pacts import DateTimeRangeProtocol
 
 register = template.Library()
 
@@ -48,11 +52,8 @@ def _format_date_range(start: datetime, end: datetime) -> str:
 
 
 @register.filter
-def format_datetime_range(start: Any, end: Any) -> str:  # type: ignore[misc]  # noqa: ANN401
-    if not isinstance(start, datetime) or not isinstance(end, datetime):
-        return ""
-
-    start = timezone.localtime(start)
-    end = timezone.localtime(end)
+def format_datetime_range(obj: DateTimeRangeProtocol) -> str:
+    start = timezone.localtime(obj.start_time)
+    end = timezone.localtime(obj.end_time)
 
     return _format_date_range(start, end)

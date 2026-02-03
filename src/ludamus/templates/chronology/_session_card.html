@@ -34,14 +34,9 @@
             </div>
             <!-- Participants Info -->
             <div class="mb-2">
-                <span class="badge bg-success">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
+                <span class="badge {% if data.session.is_full %}bg-danger{% else %}bg-success{% endif %}">{{ data.session.enrolled_count }}/{{ data.session.effective_participants_limit }}</span>
                 {% if data.session.waiting_count > 0 %}
                     <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} waiting</span>
-                {% endif %}
-                {% if data.session.is_full %}
-                    <br>
-                    {% load enrollment_tags %}
-                    <small class="text-danger">{% enrollment_status_text data.session %}</small>
                 {% endif %}
             </div>
             <!-- Tags and Age Restrictions -->

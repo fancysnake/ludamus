@@ -16,12 +16,12 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
-           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center mr-2">
+           class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
             {% heroicon_outline "identification" class="w-4 h-4 mr-2" %}
             {% translate "Host Data Fields" %}
         </a>
         <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
-           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center mr-2">
+           class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
             {% heroicon_outline "tag" class="w-4 h-4 mr-2" %}
             {% translate "Session Fields" %}
         </a>
@@ -35,33 +35,33 @@
 {% block content %}
     {% if current_event %}
         {% if categories %}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+                <table class="min-w-full divide-y divide-neutral-200">
+                    <thead class="bg-neutral-50">
                         <tr>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                                 {% translate "Name" %}
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                                 {% translate "Statistics" %}
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                                 {% translate "Submissions" %}
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                                 {% translate "Actions" %}
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-neutral-200">
                         {% for category in categories %}
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ category.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ category.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                                     {% with cat_stats=category_stats|get_item:category.pk %}
                                         {% if cat_stats %}
                                             {{ cat_stats.accepted_count }} / {{ cat_stats.proposals_count }}
@@ -70,7 +70,7 @@
                                         {% endif %}
                                     {% endwith %}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                                     {% with status=category|cfp_status %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ status.class }}">
                                             {{ status.label }}
@@ -99,15 +99,15 @@
                 </table>
             </div>
         {% else %}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-                <p class="text-gray-500">
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+                <p class="text-neutral-500">
                     {% translate "No session types yet. Add a session type to allow hosts to submit proposals." %}
                 </p>
             </div>
         {% endif %}
     {% else %}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-            <p class="text-gray-500">{% translate "No events available. Create an event to get started." %}</p>
+        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+            <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}
 {% endblock content %}

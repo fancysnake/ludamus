@@ -9,52 +9,69 @@
                 <a href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}"
                    class="flex items-center space-x-2">
                     <!-- Geometric logo -->
-                    <div class="w-8 h-8 bg-steel-800 flex items-center justify-center"
+                    <div class="w-8 h-8 bg-neutral-800 flex items-center justify-center"
                          style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)">
-                        <div class="w-4 h-4 bg-bronze"
+                        <div class="w-4 h-4 bg-coral-500"
                              style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"></div>
                     </div>
                     <span class="text-xl font-semibold tracking-tight hidden sm:inline">
-                        <span class="text-steel-800">{{ current_sphere.name }}</span>
+                        <span class="text-neutral-800 dark:text-neutral-200">{{ current_sphere.name }}</span>
                     </span>
                 </a>
             </div>
-            <div class="flex items-center space-x-2 sm:space-x-4">
+            <div class="flex items-center">
                 {% if request.user.is_authenticated %}
-                    {% if request.user.full_name %}
-                        <div class="hidden sm:flex items-center text-sm"
-                             style="color: var(--theme-text-secondary)">
-                            <div class="w-8 h-8 rounded bg-steel-700 flex items-center justify-center mr-2">
-                                <span class="text-white text-xs font-medium">{{ request.user.full_name|slice:":2"|upper }}</span>
+                    <!-- User dropdown menu -->
+                    <div class="relative group">
+                        <!-- Avatar trigger -->
+                        <button type="button"
+                                class="w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center cursor-pointer transition-all duration-150 ring-2 ring-transparent hover:ring-coral-500/30 focus:outline-none focus:ring-coral-500/50"
+                                aria-haspopup="true"
+                                aria-expanded="false">
+                            <span class="text-sm text-white font-semibold tracking-tight">
+                                {{ request.user.full_name|default:request.user.email|slice:":2"|upper }}
+                            </span>
+                        </button>
+                        <!-- Dropdown panel -->
+                        <div class="absolute right-0 top-full pt-2 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 transition-all duration-150 ease-out z-50">
+                            <div class="w-48 rounded-lg shadow-lg border overflow-hidden"
+                                 style="background-color: var(--theme-bg-secondary);
+                                        border-color: var(--theme-border);
+                                        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15)">
+                                <!-- User info header -->
+                                <div class="px-3.5 py-2.5 border-b"
+                                     style="border-color: var(--theme-border)">
+                                    <p class="text-sm font-medium truncate"
+                                       style="color: var(--theme-text-primary)">
+                                        {{ request.user.full_name|default:"User" }}
+                                    </p>
+                                    <p class="text-xs truncate mt-0.5"
+                                       style="color: var(--theme-text-secondary)">{{ request.user.email }}</p>
+                                </div>
+                                {% if is_sphere_manager %}
+                                    <a href="{% url 'panel:index' %}"
+                                       class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
+                                       style="color: var(--theme-text-secondary)">
+                                        {% heroicon_outline "squares-2x2" class="w-4 h-4 opacity-60" %}
+                                        {% translate "Panel" %}
+                                    </a>
+                                {% endif %}
+                                <a href="{% url 'web:crowd:profile' %}"
+                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
+                                   style="color: var(--theme-text-secondary)">
+                                    {% heroicon_outline "user-circle" class="w-4 h-4 opacity-60" %}
+                                    {% translate "Edit profile" %}
+                                </a>
+                                <a href="{% url 'web:crowd:auth0:logout' %}"
+                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm border-t transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
+                                   style="color: var(--theme-text-secondary);
+                                          border-color: var(--theme-border)">
+                                    {% heroicon_outline "arrow-right-on-rectangle" class="w-4 h-4 opacity-60" %}
+                                    {% translate "Log out" %}
+                                </a>
                             </div>
-                            <span class="hidden md:inline">{{ request.user.full_name }}</span>
                         </div>
-                        <!-- Mobile user avatar -->
-                        <div class="sm:hidden w-8 h-8 rounded bg-steel-700 flex items-center justify-center">
-                            <span class="text-white text-xs font-medium">{{ request.user.full_name|slice:":2"|upper }}</span>
-                        </div>
-                    {% endif %}
-                    {% if is_sphere_manager %}
-                        <a href="{% url 'panel:index' %}"
-                           class="hidden sm:inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition"
-                           style="color: var(--theme-text-secondary);
-                                  border: 1px solid var(--theme-border)">
-                            {% heroicon_outline "squares-2x2" class="w-4 h-4 mr-1" %}
-                            {% translate "Panel" %}
-                        </a>
-                    {% endif %}
-                    <a href="{% url 'web:crowd:profile' %}"
-                       class="hidden sm:inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition"
-                       style="color: var(--theme-text-secondary)">
-                        {% heroicon_outline "user-circle" class="w-4 h-4 mr-1" %}
-                        {% translate "Profile" %}
-                    </a>
-                    <a href="{% url 'web:crowd:auth0:logout' %}"
-                       class="px-2 sm:px-3 py-1.5 text-sm font-medium rounded transition"
-                       style="color: var(--theme-text-secondary)">
-                        <span class="hidden sm:inline">{% translate "Logout" %}</span>
-                        <span class="sm:hidden">{% heroicon_outline "arrow-right-on-rectangle" class="w-5 h-5" %}</span>
-                    </a>
+                    </div>
                 {% else %}
                     {% include "components/login_button.html" with extra_class="text-sm" %}
                 {% endif %}
