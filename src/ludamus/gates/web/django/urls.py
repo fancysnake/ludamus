@@ -1,12 +1,27 @@
 """URL configuration for gates/web/django views."""
 
-from django.urls import path
+from typing import TYPE_CHECKING
 
-from . import panel
+from django.conf import settings
+from django.contrib import admin
+from django.urls import include, path
 
-app_name = "panel"  # pylint: disable=invalid-name
+from ludamus.gates.web.django import panel
 
-urlpatterns = [
+if TYPE_CHECKING:
+    from django.http import HttpRequest, HttpResponse
+    from django.urls import URLPattern, URLResolver
+
+
+handler404 = (  # pylint: disable=invalid-name
+    "ludamus.adapters.web.django.error_views.custom_404"
+)
+handler500 = (  # pylint: disable=invalid-name
+    "ludamus.adapters.web.django.error_views.custom_500"
+)
+
+
+panel_urlpatterns = [
     path("", panel.PanelIndexRedirectView.as_view(), name="index"),
     path("event/<slug:slug>/", panel.EventIndexPageView.as_view(), name="event-index"),
     path(
@@ -71,3 +86,35 @@ urlpatterns = [
         name="cfp-delete",
     ),
 ]
+
+
+urlpatterns: list[URLResolver | URLPattern] = [
+    path("", include("ludamus.adapters.web.django.urls", namespace="web")),
+    path("panel/", include((panel_urlpatterns, "panel"), namespace="panel")),
+    path("admin/", admin.site.urls),
+    path("page/", include("django.contrib.flatpages.urls")),
+]
+
+
+if settings.DEBUG:
+    urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]
+
+    # Debug URLs to test error pages
+    def _trigger_500(_: HttpRequest) -> HttpResponse:
+        raise ValueError
+
+    from ludamus.adapters.web.django.error_views import (  # pylint: disable=ungrouped-imports
+        custom_404,
+        custom_500,
+    )
+
+    urlpatterns += [
+        path("404/", lambda r: custom_404(r, None)),
+        path("500/", custom_500),
+        path("500-real/", _trigger_500),
+    ]
+
+    if "debug_toolbar" in settings.INSTALLED_APPS:
+        from debug_toolbar.toolbar import debug_toolbar_urls
+
+        urlpatterns += debug_toolbar_urls()

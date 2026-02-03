@@ -13,7 +13,7 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ludamus.config.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ludamus.edges.settings")
 
 # pylint: disable=wrong-import-position  # Django imports must be after setup
 import django  # noqa: E402

@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
-@import "../../../static/css/progressive-blur.css";
+@import "../../../../../../static/css/progressive-blur.css";
 @plugin "@tailwindcss/typography";
 
-@source "../../../../**/*.{html,py,js}";
+@source "../../../../../../**/*.{html,py,js}";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

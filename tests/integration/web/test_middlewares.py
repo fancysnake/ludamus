@@ -10,7 +10,7 @@ from ludamus.adapters.web.django.middlewares import (
     RedirectErrorMiddleware,
     RequestContextMiddleware,
 )
-from ludamus.inits import RepositoryInjectionMiddleware
+from ludamus.inits import DependencyInjector, RepositoryInjectionMiddleware
 from ludamus.links.db.django.uow import UnitOfWork
 from ludamus.pacts import RequestContext
 
@@ -34,7 +34,7 @@ class TestRequestContextMiddleware:
     ):
         request = rf.get("/")
         request.META["HTTP_HOST"] = sphere.site.domain
-        request.uow = UnitOfWork()
+        request.di = DependencyInjector()
         root_sphere = Sphere.objects.get(site__domain=settings.ROOT_DOMAIN)
 
         sphere.site.sphere = sphere
@@ -57,7 +57,7 @@ class TestRequestContextMiddleware:
         settings.ALLOWED_HOSTS.append("nonexistent.example.com")
         request = rf.get("/")
         request.META["HTTP_HOST"] = "nonexistent.example.com"
-        request.uow = UnitOfWork()
+        request.di = DependencyInjector()
 
         with patch("ludamus.adapters.web.django.middlewares.messages") as mock_messages:
             response = middleware(request)
@@ -98,8 +98,8 @@ class TestRepositoryInjectionMiddleware:
 
         middleware(request)
 
-        assert hasattr(request, "uow")
-        assert isinstance(request.uow, UnitOfWork)
+        assert hasattr(request, "di")
+        assert isinstance(request.di.uow, UnitOfWork)
         get_response_mock.assert_called_once_with(request)
 
     @staticmethod
@@ -115,7 +115,7 @@ class TestRepositoryInjectionMiddleware:
 
         middleware(request)
 
-        assert not hasattr(request, "uow")
+        assert not hasattr(request, "di")
         get_response_mock.assert_called_once_with(request)
 
 

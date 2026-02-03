@@ -7,7 +7,7 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 // Ensure Django can find settings and source modules when Playwright spawns
 // helper processes (global setup and the webServer command) on CI, where the
 // environment is otherwise bare.
-process.env.DJANGO_SETTINGS_MODULE ||= 'ludamus.config.settings';
+process.env.DJANGO_SETTINGS_MODULE ||= 'ludamus.edges.settings';
 process.env.PYTHONPATH ||= path.join(repoRoot, 'src');
 
 const loadEnv = (filePath: string) => {

@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load date_tags %}
+{% load heroicons %}
 {% block title %}
     {% translate "Events" %}
 {% endblock title %}
@@ -10,58 +10,27 @@
     <div id="events">
         {% if upcoming_events or past_events %}
             {% if upcoming_events %}
-                <h1 class="mb-4">{% translate "Upcoming events" %}</h1>
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2 mb-5">
+                <h2 class="text-2xl font-bold mb-6" style="color: var(--theme-text)">{% translate "Upcoming events" %}</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                     {% for event in upcoming_events %}
-                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
-                           class="col text-decoration-none">
-                            <div class="card h-100 cursor-pointer">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">{{ event.name }}</h5>
-                                        {% if event.is_live %}
-                                            <span class="badge bg-secondary">{% translate "LIVE" %}</span>
-                                        {% endif %}
-                                    </div>
-                                    {% if event.description %}<p class="card-text text-muted">{{ event.description }}</p>{% endif %}
-                                    <div class="d-flex align-items-center text-muted">
-                                        <i class="bi bi-calendar3"></i>
-                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event|format_datetime_range }}</time>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
+                        {% include "components/event_card.html" with event=event %}
                     {% endfor %}
                 </div>
             {% endif %}
             {% if past_events %}
-                <h1 class="mb-4">{% translate "Past events" %}</h1>
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
+                <h2 class="text-2xl font-bold mb-6" style="color: var(--theme-text)">{% translate "Past events" %}</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for event in past_events %}
-                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
-                           class="col text-decoration-none">
-                            <div class="card h-100 cursor-pointer">
-                                <div class="card-body">
-                                    <h5 class="card-title mb-3">{{ event.name }}</h5>
-                                    {% if event.description %}<p class="card-text text-muted">{{ event.description }}</p>{% endif %}
-                                    <div class="d-flex align-items-center text-muted">
-                                        <i class="bi bi-calendar3"></i>
-                                        <time datetime="{{ event.start_time|date:'c' }}" class="ms-2">{{ event|format_datetime_range }}</time>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
+                        {% include "components/event_card.html" with event=event variant="past" %}
                     {% endfor %}
                 </div>
             {% endif %}
         {% else %}
-            <div class="text-center py-5">
-                <div class="text-muted">
-                    <p class="fs-1 mb-3">
-                        <i class="bi bi-calendar-x"></i>
-                    </p>
-                    <p class="fs-5 mb-2">{% translate "No events available" %}</p>
-                    <p>{% translate "There are currently no events scheduled. Please check back later!" %}</p>
+            <div class="text-center py-16">
+                <div style="color: var(--theme-text-muted)">
+                    <div class="mb-4">{% heroicon_outline "calendar-days" class="w-16 h-16 mx-auto opacity-50" %}</div>
+                    <p class="text-xl font-medium mb-2">{% translate "No events available" %}</p>
+                    <p class="text-sm">{% translate "There are currently no events scheduled. Please check back later!" %}</p>
                 </div>
             </div>
         {% endif %}

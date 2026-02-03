@@ -7,7 +7,7 @@ const scriptPath = path.join('tests', 'e2e', 'scripts', 'bootstrap_data.py');
 
 const baseEnv = {
   ...process.env,
-  DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE ?? 'ludamus.config.settings',
+  DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE ?? 'ludamus.edges.settings',
   PYTHONPATH: process.env.PYTHONPATH ?? path.join(repoRoot, 'src'),
 };
 

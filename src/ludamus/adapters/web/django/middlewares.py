@@ -10,12 +10,12 @@ from ludamus.adapters.web.django.exceptions import RedirectError
 from ludamus.pacts import AuthenticatedRequestContext, NotFoundError, RequestContext
 
 if TYPE_CHECKING:
-    from ludamus.pacts import UnitOfWorkProtocol
+    from ludamus.pacts import DependencyInjectorProtocol
 
 
 class RootRepositoryRequest(HttpRequest):
     context: RequestContext
-    uow: UnitOfWorkProtocol
+    di: DependencyInjectorProtocol
 
 
 class _GetResponseCallable(Protocol):
@@ -30,7 +30,7 @@ class RequestContextMiddleware:
         if request.path.startswith(settings.MIDDLEWARE_SKIP_PREFIXES):
             return self.get_response(request)
 
-        sphere_repository = request.uow.spheres
+        sphere_repository = request.di.uow.spheres
         root_sphere = sphere_repository.read_by_domain(settings.ROOT_DOMAIN)
         try:
             current_sphere = sphere_repository.read_by_domain(request.get_host())
