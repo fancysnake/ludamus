@@ -1359,6 +1359,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
             "chronology/propose_session.html",
             {
                 "event": event,
+                "time_slot": None,
                 "tag_categories": list(tag_categories),
                 "confirmed_tags": {
                     str(category.id): (
@@ -1423,6 +1424,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
                 "chronology/propose_session.html",
                 {
                     "event": event,
+                    "time_slot": None,
                     "tag_categories": list(tag_categories),
                     "confirmed_tags": {
                         str(category.id): list(

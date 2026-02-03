@@ -36,6 +36,7 @@ class TestEventProposalPageView:
                 "max_participants_limit": 20,
                 "min_participants_limit": 2,
                 "tag_categories": [],
+                "time_slot": None,
             },
             template_name="chronology/propose_session.html",
         )
@@ -61,6 +62,7 @@ class TestEventProposalPageView:
                 "max_participants_limit": 20,
                 "min_participants_limit": 2,
                 "tag_categories": [],
+                "time_slot": None,
             },
             template_name="chronology/propose_session.html",
         )
