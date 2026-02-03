@@ -73,7 +73,7 @@
                         </div>
                     </div>
                 {% else %}
-                    {% include "components/login_button.html" with extra_class="text-sm" %}
+                    {% include "components/login_button.html" with next=request.build_absolute_uri extra_class="text-sm" show_icon="" text="" %}
                 {% endif %}
             </div>
         </div>

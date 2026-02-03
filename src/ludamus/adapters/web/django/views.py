@@ -317,7 +317,7 @@ EVENT_PLACEHOLDER_IMAGES = [
 
 class IndexPageView(TemplateView):
     request: RootRequest
-    template_name = "index.html"
+    template_name = "index_tailwind.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -336,10 +336,6 @@ class IndexPageView(TemplateView):
         context["upcoming_events"] = [e for e in all_events if not e.is_ended]
         context["past_events"] = [e for e in all_events if e.is_ended]
         return context
-
-
-class IndexTailwindPageView(IndexPageView):
-    template_name = "index_tailwind.html"
 
 
 class ProfilePageView(

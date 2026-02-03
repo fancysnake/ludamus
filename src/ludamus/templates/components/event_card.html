@@ -47,7 +47,7 @@
             <div class="flex items-center justify-between border-t border-neutral-200/50 dark:border-neutral-700/50 pt-3 text-sm text-neutral-800 dark:text-neutral-200">
                 <div class="flex items-center gap-1.5">
                     {% heroicon_outline "calendar" class="h-4 w-4" %}
-                    <span>{{ event.start_time|format_datetime_range:event.end_time }}</span>
+                    <span>{{ event|format_datetime_range }}</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                     {% heroicon_outline "squares-2x2" class="h-4 w-4" %}

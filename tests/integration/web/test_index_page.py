@@ -18,7 +18,7 @@ class TestIndexPageView:
             response,
             HTTPStatus.OK,
             context_data={"past_events": [], "upcoming_events": [], "view": ANY},
-            template_name=["index.html"],
+            template_name=["index_tailwind.html"],
         )
 
     def test_ok_with_event(self, client, event):
@@ -28,7 +28,7 @@ class TestIndexPageView:
             response,
             HTTPStatus.OK,
             context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
-            template_name=["index.html"],
+            template_name=["index_tailwind.html"],
         )
 
     def test_ok_with_same_day_event(self, client, sphere, faker):
@@ -44,7 +44,7 @@ class TestIndexPageView:
             response,
             HTTPStatus.OK,
             context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
-            template_name=["index.html"],
+            template_name=["index_tailwind.html"],
         )
 
     def test_ok_with_multi_month_event(self, client, sphere, faker):
@@ -60,7 +60,7 @@ class TestIndexPageView:
             response,
             HTTPStatus.OK,
             context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
-            template_name=["index.html"],
+            template_name=["index_tailwind.html"],
         )
 
     def test_ok_with_multi_year_event(self, client, sphere):
@@ -76,7 +76,7 @@ class TestIndexPageView:
             response,
             HTTPStatus.OK,
             context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
-            template_name=["index.html"],
+            template_name=["index_tailwind.html"],
         )
 
     def test_panel_link_shown_for_sphere_manager(
