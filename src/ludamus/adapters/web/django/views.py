@@ -45,17 +45,21 @@ from ludamus.adapters.web.django.entities import (
 )
 from ludamus.mills import AcceptProposalService, AnonymousEnrollmentService
 from ludamus.pacts import (
+    AgendaItemDTO,
     AuthenticatedRequestContext,
     NotFoundError,
     ProposalCategoryDTO,
     ProposalDTO,
     ProposalRepositoryProtocol,
     RequestContext,
+    SessionDTO,
+    SpaceDTO,
     TagCategoryDTO,
     TagDTO,
     UnitOfWorkProtocol,
     UserData,
     UserDTO,
+    UserParticipation,
 )
 
 from .exceptions import RedirectError
@@ -614,15 +618,14 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         )
 
         for session_data in sessions_data.values():
-            session = session_data.session
-            session_end_time = session.agenda_item.end_time
-            session_start_time = session.agenda_item.start_time
+            session_end_time = session_data.agenda_item.end_time
+            session_start_time = session_data.agenda_item.start_time
             hour_key = session_start_time
             # Check if session has ended
             if session_end_time <= current_time:
                 ended_hour_data[hour_key].append(session_data)
             elif (
-                not session.is_enrollment_available
+                not session_data.is_enrollment_available
                 and session_start_time > current_time
             ):
                 future_unavailable_hour_data[hour_key].append(session_data)
@@ -860,7 +863,24 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
     ) -> dict[int, SessionData]:
         sessions_data = {
             es.id: SessionData(
-                session=es, proposal=Proposal.objects.filter(session=es).first()
+                effective_participants_limit=es.effective_participants_limit,
+                full_participant_info=es.full_participant_info,
+                agenda_item=AgendaItemDTO.model_validate(es.agenda_item),
+                session=SessionDTO.model_validate(es),
+                tags=[TagDTO.model_validate(t) for t in es.tags.all()],
+                proposal=(
+                    ProposalDTO.model_validate(es.proposal)
+                    if Proposal.objects.filter(session=es).exists()
+                    else None
+                ),
+                is_enrollment_available=es.is_enrollment_available,
+                is_full=es.is_full,
+                space=SpaceDTO.model_validate(es.agenda_item.space),
+                enrolled_count=es.enrolled_count,
+                session_participations=[
+                    UserParticipation.model_validate(sp)
+                    for sp in es.session_participations.all()
+                ],
             )
             for es in event_sessions
         }
@@ -876,15 +896,17 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             earliest_limit_end_time = min(config.end_time for config in limit_configs)
 
         # Set filterable tags and display status for each session
-        filterable_categories = set(self.object.filterable_tag_categories.all())
+        filterable_categories = set(
+            self.object.filterable_tag_categories.all().values_list("id")
+        )
         for session_data in sessions_data.values():
             session_data.filterable_tags = [
                 tag
-                for tag in session_data.session.tags.all()
-                if tag.category in filterable_categories
+                for tag in session_data.tags
+                if tag.category_id in filterable_categories
             ]
 
-            session_start = session_data.session.agenda_item.start_time
+            session_start = session_data.agenda_item.start_time
 
             # Calculate if session is ongoing (has already started)
             session_data.is_ongoing = session_start <= current_time
@@ -966,9 +988,6 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 connected_users=self.request.uow.connected_users.read_all(
                     self.request.context.current_user_slug
                 ),
-                manager_email=self.request.uow.active_users.read(
-                    request.context.current_user_slug
-                ).email,
             )(),
         }
 
@@ -1058,9 +1077,6 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
             connected_users=self.request.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
-            manager_email=self.request.uow.active_users.read(
-                request.context.current_user_slug
-            ).email,
         )
         form = form_class(data=request.POST)
         if not form.is_valid():

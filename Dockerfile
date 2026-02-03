@@ -8,7 +8,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
-    gettext \
+    gettext
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN curl -fsSL https://deb.nodesource.com/setup_25.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
@@ -50,7 +55,7 @@ USER appuser
 EXPOSE 8000
 
 # Development command - runserver with reload
-CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["django-admin", "runserver", "0.0.0.0:8000"]
 
 # Production stage without dev dependencies
 FROM base AS prod
@@ -72,6 +77,7 @@ ARG STATIC_ROOT
 ARG GIT_COMMIT_SHA=unknown
 ENV ENV=production
 ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
+ENV ROOT_DOMAIN=localhost:8000
 
 # Switch to non-root user
 USER appuser
@@ -82,6 +88,7 @@ WORKDIR /app/src
 RUN django-admin compilemessages
 
 # Build Tailwind CSS (django-tailwind)
+RUN django-admin tailwind install
 RUN django-admin tailwind build
 
 # Download vendor dependencies and collect static files (requires SECRET_KEY to be set)

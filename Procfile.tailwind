@@ -1,2 +1,2 @@
-django: python src/ludamus/manage.py runserver --insecure
-tailwind: python src/ludamus/manage.py tailwind start
+django: django-admin runserver --insecure
+tailwind: django-admin tailwind start
