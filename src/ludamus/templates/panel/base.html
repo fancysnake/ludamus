@@ -49,7 +49,7 @@
                     <div class="px-4 mb-6">
                         <label class="text-xs text-neutral-500 uppercase tracking-wider">{% translate "Event" %}</label>
                         <select id="eventSelector"
-                                class="mt-1 w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                class="mt-1 w-full bg-neutral-800 border border-neutral-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                 hx-on:change="window.location.href = '/panel/event/' + this.value + '/'">
                             {% for event in events %}
                                 <option value="{{ event.slug }}"
