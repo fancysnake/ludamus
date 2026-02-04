@@ -29,7 +29,8 @@
                 {% endif %}
                 {% if event.is_proposal_active %}
                     <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
-                          style="background: rgba(255,255,255,0.85); color: #5c534a;">
+                          style="background: rgba(255,255,255,0.85);
+                                 color: #5c534a">
                         {% heroicon_mini "pencil-square" class="h-3.5 w-3.5" %}
                         {% translate "Proposals open" %}
                     </span>
@@ -37,10 +38,15 @@
             </div>
         </div>
         {# Tint overlay for readability - stronger gradient #}
-        <div class="absolute inset-x-0 bottom-0 pointer-events-none z-[7]" style="height: 80%; background: linear-gradient(to top, var(--theme-bg-secondary) 0%, var(--theme-bg-secondary) 20%, color-mix(in srgb, var(--theme-bg-secondary) 85%, transparent) 50%, transparent 100%);"></div>
+        <div class="absolute inset-x-0 bottom-0 pointer-events-none z-[7]"
+             style="height: 80%;
+                    background: linear-gradient(to top, var(--theme-bg-secondary) 0%, var(--theme-bg-secondary) 20%, color-mix(in srgb, var(--theme-bg-secondary) 85%, transparent) 50%, transparent 100%)">
+        </div>
         {# Content area - sits on top #}
         <div class="relative px-5 pb-5 z-10">
-            <h3 class="mb-3 text-lg font-semibold leading-tight text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">{{ event.name }}</h3>
+            <h3 class="mb-3 text-lg font-semibold leading-tight text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                {{ event.name }}
+            </h3>
             {% if event.description %}
                 <p class="mb-4 line-clamp-2 text-sm text-neutral-900 dark:text-neutral-100">{{ event.description }}</p>
             {% endif %}

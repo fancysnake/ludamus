@@ -14,9 +14,9 @@
         var css = disableTransitions();
 
         document.documentElement.classList.remove('light', 'dark');
-        var resolved = theme === 'system'
-            ? (window.matchMedia(MEDIA).matches ? 'dark' : 'light')
-            : theme;
+        var resolved = theme === 'system' ?
+            (window.matchMedia(MEDIA).matches ? 'dark' : 'light') :
+            theme;
         document.documentElement.classList.add(resolved);
         document.documentElement.style.colorScheme = resolved;
 
@@ -38,7 +38,11 @@
     function updateIndicator(theme) {
         var indicator = document.querySelector('.theme-indicator');
         if (!indicator) return;
-        var positions = { system: 0, light: 1, dark: 2 };
+        var positions = {
+            system: 0,
+            light: 1,
+            dark: 2
+        };
         indicator.style.transform = 'translateX(' + ((positions[theme] || 0) * 34) + 'px)';
     }
 
