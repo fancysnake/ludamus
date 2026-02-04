@@ -303,6 +303,20 @@ class Auth0LogoutRedirectActionView(RedirectView):
         return redirect_url
 
 
+EVENT_PLACEHOLDER_IMAGES = [
+    "photo-1611371805429-8b5c1b2c34ba",  # meeples
+    "photo-1585504198199-20277593b94f",  # chess
+    "photo-1606503153255-59d8b8b82176",  # cards
+    "photo-1609743522653-52354461eb68",  # dice
+    "photo-1518908336710-4e0cf004e42f",  # dice close
+    "photo-1550745165-9bc0b252726f",  # chess pieces
+    "photo-1560419015262-2e24f3c0ed4b",  # rubik cube
+    "photo-1538481199705-c710c4e965fc",  # retro arcade
+    "photo-1493711662062-fa541f7f3d24",  # controller
+    "photo-1511882150382-421056c89033",  # arcade machine
+]
+
+
 class IndexPageView(TemplateView):
     request: RootRequest
     template_name = "index.html"
@@ -310,8 +324,17 @@ class IndexPageView(TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         all_events = list(
-            Event.objects.filter(sphere_id=self.request.context.current_sphere_id).all()
+            Event.objects.filter(sphere_id=self.request.context.current_sphere_id)
+            .annotate(session_count=Count("spaces__agenda_items"))
+            .order_by("start_time")
+            .all()
         )
+        # Assign placeholder images based on index
+        for i, event in enumerate(all_events):
+            img_id = EVENT_PLACEHOLDER_IMAGES[i % len(EVENT_PLACEHOLDER_IMAGES)]
+            event.cover_image_url = (  # type: ignore[attr-defined]
+                f"https://images.unsplash.com/{img_id}?w=800&h=400&fit=crop"
+            )
         context["upcoming_events"] = [e for e in all_events if not e.is_ended]
         context["past_events"] = [e for e in all_events if e.is_ended]
         return context
@@ -1342,6 +1365,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
             "chronology/propose_session.html",
             {
                 "event": event,
+                "time_slot": None,
                 "tag_categories": list(tag_categories),
                 "confirmed_tags": {
                     str(category.id): (
@@ -1406,6 +1430,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
                 "chronology/propose_session.html",
                 {
                     "event": event,
+                    "time_slot": None,
                     "tag_categories": list(tag_categories),
                     "confirmed_tags": {
                         str(category.id): list(

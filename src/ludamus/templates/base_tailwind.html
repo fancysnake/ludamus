@@ -203,54 +203,7 @@
         </footer>
         <!-- Scripts -->
         <script src="{% static 'vendor/htmx.min.js' %}"></script>
-        <!-- Theme Switcher Script -->
-        <script>
-            function setTheme(theme) {
-                document.documentElement.classList.add('no-transitions');
-                document.documentElement.classList.remove('light', 'dark');
-                if (theme === 'system') {
-                    localStorage.removeItem('theme');
-                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                        document.documentElement.classList.add('dark');
-                    }
-                } else {
-                    localStorage.setItem('theme', theme);
-                    document.documentElement.classList.add(theme);
-                }
-                updateIndicator(theme);
-                requestAnimationFrame(function() {
-                    document.documentElement.classList.remove('no-transitions');
-                });
-            }
-
-            function updateIndicator(theme) {
-                var indicator = document.querySelector('.theme-indicator');
-                if (!indicator) return;
-                var positions = {
-                    system: 0,
-                    light: 1,
-                    dark: 2
-                };
-                var pos = positions[theme] || 0;
-                // 2px padding + 32px width + 2px gap per position
-                indicator.style.transform = 'translateX(' + (pos * 34) + 'px)';
-            }
-
-            function initThemeSwitcher() {
-                var current = localStorage.getItem('theme') || 'system';
-                var radio = document.querySelector('input[name="theme"][value="' + current + '"]');
-                if (radio) radio.checked = true;
-                updateIndicator(current);
-
-                document.querySelectorAll('input[name="theme"]').forEach(function(input) {
-                    input.addEventListener('change', function() {
-                        setTheme(this.value);
-                    });
-                });
-            }
-
-            document.addEventListener('DOMContentLoaded', initThemeSwitcher);
-        </script>
+        {% include "components/theme_script.html" %}
         {% block extra_scripts %}
         {% endblock extra_scripts %}
     </body>

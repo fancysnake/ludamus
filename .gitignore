@@ -209,6 +209,5 @@ worktrees/
 # Tailwind CSS
 src/ludamus/static/css/output.css
 src/ludamus/static/css/dist/
-bin/
 .django_tailwind_cli/
 screenshots/

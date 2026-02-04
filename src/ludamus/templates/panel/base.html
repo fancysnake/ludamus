@@ -16,8 +16,7 @@
               content="Ludamus backoffice panel for event management">
         <meta name="keywords" content="ludamus, backoffice, events, management">
         <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
-        <link rel="stylesheet"
-              href="{% static 'css/output.css' %}?v={{ STATIC_VERSION }}">
+        <link rel="stylesheet" href="{% static 'css/output.css' %}?v={{ STATIC_VERSION }}">
         <script src="{% static 'vendor/htmx.min.js' %}?v={{ STATIC_VERSION }}"></script>
         <style>
             .sidebar-overlay {
@@ -49,8 +48,9 @@
                 {% if events %}
                     <div class="px-4 mb-6">
                         <label class="text-xs text-neutral-500 uppercase tracking-wider">{% translate "Event" %}</label>
+                        <div class="relative mt-1">
                         <select id="eventSelector"
-                                class="mt-1 w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                class="w-full appearance-none bg-neutral-800 border border-neutral-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                 hx-on:change="window.location.href = '/panel/event/' + this.value + '/'">
                             {% for event in events %}
                                 <option value="{{ event.slug }}"
@@ -59,6 +59,10 @@
                                 </option>
                             {% endfor %}
                         </select>
+                        <svg class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                        </svg>
+                        </div>
                     </div>
                 {% endif %}
                 <nav class="px-4 space-y-1">
