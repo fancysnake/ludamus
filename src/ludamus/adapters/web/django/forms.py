@@ -30,6 +30,8 @@ from ludamus.pacts import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from ludamus.adapters.external.ticket_api_registry import TicketAPIClientFactory
+
 
 TODAY = datetime.now(tz=UTC).date()
 logger = logging.getLogger(__name__)
@@ -67,7 +69,10 @@ class ConnectedUserForm(BaseUserForm):
 
 
 def create_enrollment_form(
-    session: Session, current_user: UserDTO, connected_users: Iterable[UserDTO]
+    session: Session,
+    current_user: UserDTO,
+    connected_users: Iterable[UserDTO],
+    get_api_client: TicketAPIClientFactory,
 ) -> type[forms.Form]:
     # Create form class dynamically with pre-generated fields
     form_fields = {}
@@ -78,7 +83,9 @@ def create_enrollment_form(
     # Get enrollment config to check waitlist settings
     enrollment_config = session.agenda_item.space.event.get_most_liberal_config(session)
     current_user_enrollment_config = (
-        session.agenda_item.space.event.get_user_enrollment_config(current_user.email)
+        session.agenda_item.space.event.get_user_enrollment_config(
+            current_user.email, get_api_client
+        )
     )
     user_can_enroll = bool(
         enrollment_config

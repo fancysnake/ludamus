@@ -21,8 +21,10 @@ from ludamus.adapters.db.django.models import (
     Sphere,
     Tag,
     TagCategory,
+    TicketAPIIntegration,
     TimeSlot,
 )
+from ludamus.adapters.security.encryption import SecretEncryption
 from tests.integration.factories import AnonymousUserFactory, CompleteUserFactory
 
 User = get_user_model()
@@ -323,3 +325,29 @@ def faker_fixture():
 
     fake.date_time_between = date_time_between_tz
     return fake
+
+
+class TicketAPIIntegrationFactory(DjangoModelFactory):
+    class Meta:
+        model = TicketAPIIntegration
+
+    sphere = SubFactory(SphereFactory)
+    provider = "kapitularz"
+    base_url = "https://api.example.com/check/member"
+    encrypted_secret = LazyAttribute(lambda _: SecretEncryption.encrypt("test-token"))
+    timeout = 30
+    is_active = True
+
+
+@pytest.fixture
+def ticket_api_integration(sphere, faker):
+    """Create a ticket API integration for the test sphere.
+
+    Returns:
+        A TicketAPIIntegration instance for the test sphere.
+    """
+    return TicketAPIIntegrationFactory(
+        sphere=sphere,
+        base_url="https://api.example.com/check/member",
+        encrypted_secret=SecretEncryption.encrypt(faker.uuid4()),
+    )

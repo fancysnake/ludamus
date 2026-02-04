@@ -641,13 +641,11 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
+        ticket_api_integration,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         slots = 7
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=ticket_api_integration.base_url,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -859,12 +857,10 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
+        ticket_api_integration,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=ticket_api_integration.base_url,
             status=HTTPStatus.INTERNAL_SERVER_ERROR,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -926,12 +922,10 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
+        ticket_api_integration,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=ticket_api_integration.base_url,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -993,10 +987,8 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
+        ticket_api_integration,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
@@ -1006,7 +998,7 @@ class TestEventPageView:
         )
         slots = 7
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=ticket_api_integration.base_url,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -1073,10 +1065,7 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
@@ -1211,10 +1200,8 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
+        ticket_api_integration,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
@@ -1223,7 +1210,7 @@ class TestEventPageView:
             last_check=faker.date_time_between("-10d", "-5d"),
         )
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=ticket_api_integration.base_url,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -1291,12 +1278,10 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
+        ticket_api_integration,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=ticket_api_integration.base_url,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
