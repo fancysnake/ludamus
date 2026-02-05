@@ -2,6 +2,10 @@
 
 Django event management. Python 3.14, Poetry, mise.
 
+## ⚠️ CRITICAL: Command Execution
+
+**ALL commands MUST go through mise. NEVER run Python tools directly.**
+
 ## Commands
 
 ```bash

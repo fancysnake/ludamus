@@ -19,6 +19,7 @@ from ludamus.pacts import SessionParticipationStatus, UserType
 if TYPE_CHECKING:
     from collections.abc import Collection
 
+    from ludamus.adapters.external.ticket_api_registry import TicketAPIClientFactory
     from ludamus.pacts import UserDTO
 
 
@@ -204,9 +205,9 @@ class Event(models.Model):
         return max(eligible_configs, key=lambda c: c.percentage_slots)
 
     def get_user_enrollment_config(
-        self, user_email: str
+        self, user_email: str, get_api_client: TicketAPIClientFactory
     ) -> UserEnrollmentConfig | None:
-        from ludamus.adapters.external.membership_api import (  # noqa: PLC0415
+        from ludamus.adapters.external.ticket_api import (  # noqa: PLC0415
             get_or_create_user_enrollment_config,
         )
 
@@ -219,7 +220,7 @@ class Event(models.Model):
         for config in self.get_active_enrollment_configs():
             # Check for explicit user config
             if api_user_config := get_or_create_user_enrollment_config(
-                config, user_email
+                config, user_email, get_api_client
             ):
                 # Try to fetch from API if not found locally
                 total_slots += api_user_config.allowed_slots
@@ -1098,3 +1099,26 @@ class SessionFieldRequirement(models.Model):
     def __str__(self) -> str:
         req = "required" if self.is_required else "optional"
         return f"{self.field.name} ({req}) for {self.category.name}"
+
+
+class TicketAPIIntegration(models.Model):
+    """Ticket API configuration per sphere. Multiple can exist per sphere."""
+
+    sphere = models.ForeignKey(
+        Sphere, on_delete=models.CASCADE, related_name="ticket_api_integrations"
+    )
+    provider = models.CharField(
+        max_length=50, help_text="Registered provider, e.g. 'kapitularz'"
+    )
+    base_url = models.URLField(max_length=500)
+    encrypted_secret = models.TextField()
+    timeout = models.PositiveIntegerField(default=30)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "ticket_api_integration"
+
+    def __str__(self) -> str:
+        return f"{self.sphere.name} - {self.provider}"

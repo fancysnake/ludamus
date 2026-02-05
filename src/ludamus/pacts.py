@@ -21,6 +21,26 @@ class DateTimeRangeProtocol(Protocol):
     end_time: datetime
 
 
+class TicketAPIClientProtocol(Protocol):
+    """Protocol for ticket API client implementations."""
+
+    def fetch_ticket_count(self, email: str) -> int:
+        """Fetch ticket count for email. Return 0 if no tickets."""
+
+
+class EnrollmentConfigEventProtocol(Protocol):
+    """Protocol for the event part of enrollment config."""
+
+    @property
+    def sphere_id(self) -> int: ...
+
+
+class EnrollmentConfigProtocol(Protocol):
+    """Protocol for enrollment config used by ticket API client factory."""
+
+    event: EnrollmentConfigEventProtocol
+
+
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -481,6 +501,11 @@ class UnitOfWorkProtocol(Protocol):
 class DependencyInjectorProtocol(Protocol):
     @property
     def uow(self) -> UnitOfWorkProtocol: ...
+
+    @staticmethod
+    def get_ticket_api_client(
+        enrollment_config: EnrollmentConfigProtocol,
+    ) -> TicketAPIClientProtocol | None: ...
 
 
 class RootRequestProtocol(Protocol):

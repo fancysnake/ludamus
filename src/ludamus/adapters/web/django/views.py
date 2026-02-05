@@ -77,6 +77,8 @@ if TYPE_CHECKING:
 
     from django.db.models.query import QuerySet
 
+    from ludamus.adapters.external.ticket_api_registry import TicketAPIClientFactory
+
 MINIMUM_ALLOWED_USER_AGE = 16
 CACHE_TIMEOUT = 600  # 10 minutes
 
@@ -652,7 +654,8 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             user_enrollment_config = self.object.get_user_enrollment_config(
                 self.request.di.uow.active_users.read(
                     self.request.context.current_user_slug
-                ).email
+                ).email,
+                self.request.di.get_ticket_api_client,
             )
         context["user_enrollment_config"] = user_enrollment_config
 
@@ -990,6 +993,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 connected_users=self.request.di.uow.connected_users.read_all(
                     self.request.context.current_user_slug
                 ),
+                get_api_client=request.di.get_ticket_api_client,
             )(),
         }
 
@@ -1081,6 +1085,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
             connected_users=self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
+            get_api_client=request.di.get_ticket_api_client,
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
@@ -1104,7 +1109,8 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 elif not session.agenda_item.space.event.get_user_enrollment_config(
                     request.di.uow.active_users.read(
                         request.context.current_user_slug
-                    ).email
+                    ).email,
+                    request.di.get_ticket_api_client,
                 ):
                     messages.error(
                         self.request,
@@ -1192,7 +1198,12 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
                 # If this was a confirmed enrollment, promote from waiting list
                 self._promote_from_waitlist(
-                    existing_participation, participations, req, session, enrollments
+                    existing_participation,
+                    participations,
+                    req,
+                    session,
+                    enrollments,
+                    self.request.di.get_ticket_api_client,
                 )
                 continue
 
@@ -1200,12 +1211,13 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         return enrollments
 
     @staticmethod
-    def _promote_from_waitlist(
+    def _promote_from_waitlist(  # noqa: PLR0913, PLR0917
         existing_participation: SessionParticipation,
         participations: QuerySet[SessionParticipation],
         req: EnrollmentRequest,
         session: Session,
         enrollments: Enrollments,
+        get_api_client: TicketAPIClientFactory,
     ) -> None:
         if existing_participation.status == SessionParticipationStatus.CONFIRMED:
             for participation in participations:
@@ -1224,7 +1236,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
                         user_config = (
                             session.agenda_item.space.event.get_user_enrollment_config(
-                                manager_user.email
+                                manager_user.email, get_api_client
                             )
                         )
                         if user_config and not user_config.can_enroll_users(
