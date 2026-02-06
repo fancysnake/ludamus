@@ -76,9 +76,13 @@ def create_enrollment_form(
     field_to_user_name = {}
 
     # Get enrollment config to check waitlist settings
-    enrollment_config = session.agenda_item.space.event.get_most_liberal_config(session)
+    enrollment_config = (
+        session.agenda_item.space.area.venue.event.get_most_liberal_config(session)
+    )
     current_user_enrollment_config = (
-        session.agenda_item.space.event.get_user_enrollment_config(current_user.email)
+        session.agenda_item.space.area.venue.event.get_user_enrollment_config(
+            current_user.email
+        )
     )
     user_can_enroll = bool(
         enrollment_config
@@ -110,7 +114,7 @@ def create_enrollment_form(
         current_waitlist_count = SessionParticipation.objects.filter(
             user_id=user.pk,
             status=SessionParticipationStatus.WAITING,
-            session__agenda_item__space__event=session.agenda_item.space.event,
+            session__agenda_item__space__area__venue__event=session.agenda_item.space.area.venue.event,
         ).count()
 
         return current_waitlist_count < enrollment_config.max_waitlist_sessions
@@ -482,7 +486,7 @@ def create_session_proposal_form(
 def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
     # Query spaces with related area and venue for proper grouping
     spaces = (
-        Space.objects.filter(event_id=event.pk)
+        Space.objects.filter(area__venue__event_id=event.pk)
         .select_related("area__venue")
         .order_by(
             "area__venue__order",
@@ -497,13 +501,7 @@ def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
     # Build grouped choices: {(venue_name, area_name): [(space_id, space_name), ...]}
     grouped_choices: dict[str, list[tuple[int, str]]] = {}
     for space in spaces:
-        # Areas always have venues (venue FK is required), so we only need to check
-        # if space has an area or not
-        group_label = (
-            f"{space.area.venue.name} > {space.area.name}"
-            if space.area
-            else _("Unassigned")
-        )
+        group_label = f"{space.area.venue.name} > {space.area.name}"
         if group_label not in grouped_choices:
             grouped_choices[group_label] = []
         grouped_choices[group_label].append((space.id, space.name))
@@ -535,7 +533,7 @@ def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
         if not (space_id := self.cleaned_data.get("space")):
             raise ValidationError(_("This field is required."))
         try:
-            return Space.objects.get(pk=int(space_id), event_id=event.pk)
+            return Space.objects.get(pk=int(space_id), area__venue__event_id=event.pk)
         except (Space.DoesNotExist, ValueError) as e:
             raise ValidationError(_("Invalid space selection.")) from e
 

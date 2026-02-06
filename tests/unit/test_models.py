@@ -110,12 +110,6 @@ class TestArea:
 
 class TestSpace:
     def test_str(self, faker):
-        name = faker.word()
-        pk = faker.random_int(min=1)
-
-        assert str(Space(name=name, id=pk)) == f"{name} ({pk})"
-
-    def test_str_with_area(self, faker):
         venue_name = faker.word()
         area_name = faker.word()
         space_name = faker.word()

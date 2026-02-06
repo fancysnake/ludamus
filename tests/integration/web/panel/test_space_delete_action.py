@@ -32,9 +32,7 @@ class TestSpaceDeleteActionView:
         """Anonymous users get redirect to login."""
         venue = Venue.objects.create(event=event, name="Test Venue", slug="test-venue")
         area = Area.objects.create(venue=venue, name="Test Area", slug="test-area")
-        space = Space.objects.create(
-            event=event, area=area, name="Test Space", slug="test-space"
-        )
+        space = Space.objects.create(area=area, name="Test Space", slug="test-space")
         url = self.get_url(event, venue, area, space)
 
         response = client.post(url)
@@ -47,9 +45,7 @@ class TestSpaceDeleteActionView:
         """Non-managers get error message and redirect home."""
         venue = Venue.objects.create(event=event, name="Test Venue", slug="test-venue")
         area = Area.objects.create(venue=venue, name="Test Area", slug="test-area")
-        space = Space.objects.create(
-            event=event, area=area, name="Test Space", slug="test-space"
-        )
+        space = Space.objects.create(area=area, name="Test Space", slug="test-space")
 
         response = authenticated_client.post(self.get_url(event, venue, area, space))
 
@@ -67,9 +63,7 @@ class TestSpaceDeleteActionView:
         sphere.managers.add(active_user)
         venue = Venue.objects.create(event=event, name="Main Hall", slug="main-hall")
         area = Area.objects.create(venue=venue, name="East Wing", slug="east-wing")
-        space = Space.objects.create(
-            event=event, area=area, name="Room 101", slug="room-101"
-        )
+        space = Space.objects.create(area=area, name="Room 101", slug="room-101")
         space_pk = space.pk
 
         response = authenticated_client.post(self.get_url(event, venue, area, space))
@@ -181,9 +175,7 @@ class TestSpaceDeleteActionView:
         sphere.managers.add(active_user)
         venue = Venue.objects.create(event=event, name="Main Hall", slug="main-hall")
         area = Area.objects.create(venue=venue, name="East Wing", slug="east-wing")
-        space = Space.objects.create(
-            event=event, area=area, name="Room 101", slug="room-101"
-        )
+        space = Space.objects.create(area=area, name="Room 101", slug="room-101")
 
         response = authenticated_client.get(self.get_url(event, venue, area, space))
 
@@ -196,9 +188,7 @@ class TestSpaceDeleteActionView:
         sphere.managers.add(active_user)
         venue = Venue.objects.create(event=event, name="Main Hall", slug="main-hall")
         area = Area.objects.create(venue=venue, name="East Wing", slug="east-wing")
-        space = Space.objects.create(
-            event=event, area=area, name="Room 101", slug="room-101"
-        )
+        space = Space.objects.create(area=area, name="Room 101", slug="room-101")
         session = Session.objects.create(
             title="Test Session",
             slug="test-session",

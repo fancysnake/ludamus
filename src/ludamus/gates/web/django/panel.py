@@ -1742,7 +1742,7 @@ class SpaceCreatePageView(PanelAccessMixin, EventContextMixin, View):
 
         name = form.cleaned_data["name"]
         capacity = form.cleaned_data.get("capacity")
-        self.request.di.uow.spaces.create(current_event.pk, area.pk, name, capacity)
+        self.request.di.uow.spaces.create(area.pk, name, capacity)
 
         messages.success(self.request, _("Space created successfully."))
         return redirect(

@@ -40,9 +40,6 @@ class Storage:  # pylint: disable=too-many-instance-attributes
     spaces_by_area: dict[int, dict[int, Space]] = field(
         default_factory=lambda: defaultdict(dict)
     )
-    spaces_by_event: dict[int, dict[int, Space]] = field(
-        default_factory=lambda: defaultdict(dict)
-    )
     sphere_managers: dict[int, dict[str, User]] = field(
         default_factory=lambda: defaultdict(dict)
     )

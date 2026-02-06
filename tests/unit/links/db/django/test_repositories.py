@@ -79,38 +79,6 @@ class TestProposalRepositoryReadTimeSlots:
         assert result[0].pk == MOCK_ENTITY_ID
 
 
-class TestProposalRepositoryReadSpaces:
-    """Test cache-hit behavior for read_spaces method."""
-
-    def test_returns_cached_spaces_without_db_query(self):
-        storage = Storage()
-        proposal_id = 1
-        event_id = 10
-
-        mock_proposal = MagicMock()
-        mock_proposal.category.event_id = event_id
-        storage.proposals[proposal_id] = mock_proposal
-
-        mock_space = MagicMock()
-        mock_space.id = 100
-        mock_space.pk = 100
-        mock_space.name = "Test Space"
-        mock_space.slug = "test-space"
-        mock_space.creation_time = datetime(2025, 1, 1, tzinfo=UTC)
-        mock_space.modification_time = datetime(2025, 1, 1, tzinfo=UTC)
-        storage.spaces_by_event[event_id][mock_space.id] = mock_space
-
-        repo = ProposalRepository(storage)
-
-        with patch("ludamus.links.db.django.repositories.Space") as mock_space_model:
-            result = repo.read_spaces(proposal_id)
-
-            mock_space_model.objects.filter.assert_not_called()
-
-        assert len(result) == 1
-        assert result[0].pk == MOCK_ENTITY_ID
-
-
 class TestProposalRepositoryReadTagIds:
     """Test cache-hit behavior for read_tag_ids method."""
 

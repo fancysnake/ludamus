@@ -328,7 +328,7 @@ class IndexPageView(TemplateView):
         context = super().get_context_data(**kwargs)
         all_events = list(
             Event.objects.filter(sphere_id=self.request.context.current_sphere_id)
-            .annotate(session_count=Count("spaces__agenda_items"))
+            .annotate(session_count=Count("venues__areas__spaces__agenda_items"))
             .order_by("start_time")
             .all()
         )
@@ -569,9 +569,9 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             Event.objects.filter(sphere_id=self.request.context.current_sphere_id)
             .select_related("sphere")
             .prefetch_related(
-                "spaces__agenda_items__session__tags__category",
-                "spaces__agenda_items__session__session_participations__user",
-                "spaces__agenda_items__session__proposal",
+                "venues__areas__spaces__agenda_items__session__tags__category",
+                "venues__areas__spaces__agenda_items__session__session_participations__user",
+                "venues__areas__spaces__agenda_items__session__proposal",
                 "enrollment_configs",
                 "filterable_tag_categories",
             )
@@ -582,13 +582,13 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
 
         # Get all sessions for this event that are published
         event_sessions = (
-            Session.objects.filter(agenda_item__space__event=self.object)
+            Session.objects.filter(agenda_item__space__area__venue__event=self.object)
             .select_related("proposal__host", "agenda_item__space", "sphere")
             .prefetch_related(
                 "tags__category",
                 "session_participations__user__manager",
                 "session_participations__user__connected",
-                "agenda_item__space__event__enrollment_configs",
+                "agenda_item__space__area__venue__event__enrollment_configs",
             )
             .annotate(
                 enrolled_count_cached=Count(
@@ -701,7 +701,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                     # Get anonymous user's enrollments for this event
                     anonymous_enrollments = SessionParticipation.objects.filter(
                         user_id=anonymous_user.pk,
-                        session__agenda_item__space__event=self.object,
+                        session__agenda_item__space__area__venue__event=self.object,
                     ).select_related("session")
 
                     context["anonymous_user_enrollments"] = list(anonymous_enrollments)
@@ -990,7 +990,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
         context = {
             "session": session,
-            "event": session.agenda_item.space.event,
+            "event": session.agenda_item.space.area.venue.event,
             "connected_users": self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
@@ -1011,12 +1011,12 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
     @staticmethod
     def _validate_request(session: Session) -> EnrollmentConfig:
         # Get the most liberal config for this session
-        event = session.agenda_item.space.event
+        event = session.agenda_item.space.area.venue.event
         if not (enrollment_config := event.get_most_liberal_config(session)):
             raise RedirectError(
                 reverse(
                     "web:chronology:event",
-                    kwargs={"slug": session.agenda_item.space.event.slug},
+                    kwargs={"slug": session.agenda_item.space.area.venue.event.slug},
                 ),
                 error=_("No enrollment configuration is available for this session."),
             )
@@ -1045,7 +1045,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         # Bulk fetch all participations for the event and users
         user_participations = SessionParticipation.objects.filter(
             user_id__in=[u.pk for u in all_users],
-            session__agenda_item__space__event=session.agenda_item.space.event,
+            session__agenda_item__space__area__venue__event=session.agenda_item.space.area.venue.event,
         ).select_related("session__agenda_item")
 
         # Group participations by user for efficient lookup
@@ -1103,8 +1103,10 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                     messages.error(self.request, str(error))
 
             # Check for specific enrollment restrictions and provide helpful messages
-            enrollment_config = session.agenda_item.space.event.get_most_liberal_config(
-                session
+            enrollment_config = (
+                session.agenda_item.space.area.venue.event.get_most_liberal_config(
+                    session
+                )
             )
             if enrollment_config and enrollment_config.restrict_to_configured_users:
                 if not request.di.uow.active_users.read(
@@ -1114,22 +1116,25 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                         self.request,
                         _("Email address is required for enrollment in this session."),
                     )
-                elif not session.agenda_item.space.event.get_user_enrollment_config(
-                    request.di.uow.active_users.read(
+                else:
+                    user_email = request.di.uow.active_users.read(
                         request.context.current_user_slug
                     ).email
-                ):
-                    messages.error(
-                        self.request,
-                        _(
-                            "Enrollment access permission is required for this "
-                            "session. Please contact the organizers to obtain access."
-                        ),
-                    )
-                else:
-                    messages.warning(
-                        self.request, _("Please review the enrollment options below.")
-                    )
+                    event = session.agenda_item.space.area.venue.event
+                    if not event.get_user_enrollment_config(user_email):
+                        messages.error(
+                            self.request,
+                            _(
+                                "Enrollment access permission is required for this "
+                                "session. Please contact the organizers to obtain "
+                                "access."
+                            ),
+                        )
+                    else:
+                        messages.warning(
+                            self.request,
+                            _("Please review the enrollment options below."),
+                        )
             else:
                 messages.warning(
                     self.request, _("Please review the enrollment options below.")
@@ -1141,7 +1146,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 "chronology/enroll_select.html",
                 {
                     "session": session,
-                    "event": session.agenda_item.space.event,
+                    "event": session.agenda_item.space.area.venue.event,
                     "connected_users": self.request.di.uow.connected_users.read_all(
                         self.request.context.current_user_slug
                     ),
@@ -1156,7 +1161,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         self._manage_enrollments(form, session, enrollment_config)
 
         return redirect(
-            "web:chronology:event", slug=session.agenda_item.space.event.slug
+            "web:chronology:event", slug=session.agenda_item.space.area.venue.event.slug
         )
 
     def _get_enrollment_requests(self, form: forms.Form) -> list[EnrollmentRequest]:
@@ -1235,10 +1240,9 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                         if participation.user.manager:
                             manager_user = participation.user.manager
 
-                        user_config = (
-                            session.agenda_item.space.event.get_user_enrollment_config(
-                                manager_user.email
-                            )
+                        event = session.agenda_item.space.area.venue.event
+                        user_config = event.get_user_enrollment_config(
+                            manager_user.email
                         )
                         if user_config and not user_config.can_enroll_users(
                             [UserDTO.model_validate(participation.user)]
@@ -1788,7 +1792,7 @@ class SessionEnrollmentAnonymousPageView(View):
 
         context = {
             "session": session,
-            "event": session.agenda_item.space.event,
+            "event": session.agenda_item.space.area.venue.event,
             "anonymous_user": anonymous_user,
             "anonymous_code": anonymous_user.slug.removeprefix("code_"),
             "needs_user_data": not anonymous_user.name,
@@ -1922,7 +1926,7 @@ class SessionEnrollmentAnonymousPageView(View):
                 )
 
         return redirect(
-            "web:chronology:event", slug=session.agenda_item.space.event.slug
+            "web:chronology:event", slug=session.agenda_item.space.area.venue.event.slug
         )
 
 
@@ -1959,14 +1963,16 @@ class AnonymousLoadActionView(View):
         # Get user's enrollments to find the event and site
         enrollments = SessionParticipation.objects.filter(
             user_id=anonymous_user.pk
-        ).select_related("session__agenda_item__space__event", "session__sphere")
+        ).select_related(
+            "session__agenda_item__space__area__venue__event", "session__sphere"
+        )
 
         if not (first_enrollment := enrollments.first()):
             messages.warning(request, _("No enrollments found for this code."))
             return redirect("web:index")
 
         # Get the first enrollment to determine the event and site
-        event = first_enrollment.session.agenda_item.space.event
+        event = first_enrollment.session.agenda_item.space.area.venue.event
         site_id = first_enrollment.session.sphere.site_id
 
         # Load user into session with proper site association

@@ -416,7 +416,7 @@ class UserEnrollmentConfig(models.Model):
             SessionParticipation.objects.filter(
                 status=SessionParticipationStatus.CONFIRMED,
                 user__in=all_users,
-                session__agenda_item__space__event=self.enrollment_config.event,
+                session__agenda_item__space__area__venue__event=self.enrollment_config.event,
             )
             .values_list("user", flat=True)
             .distinct()
@@ -438,7 +438,7 @@ class UserEnrollmentConfig(models.Model):
             SessionParticipation.objects.filter(
                 status=SessionParticipationStatus.CONFIRMED,
                 user__in=all_users,
-                session__agenda_item__space__event=self.enrollment_config.event,
+                session__agenda_item__space__area__venue__event=self.enrollment_config.event,
             )
             .values_list("user_id", flat=True)
             .distinct()
@@ -547,14 +547,8 @@ class DomainEnrollmentConfig(models.Model):
 class Space(models.Model):
     """Bookable room/location within an area."""
 
-    # Owner - spaces belong to an area (and event for efficient querying)
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="spaces")
-    area = models.ForeignKey(
-        "Area",
-        on_delete=models.CASCADE,
-        related_name="spaces",
-        null=True,  # TODO(fancysnake): Fix after merging venues
-    )
+    # Owner - spaces belong to an area
+    area = models.ForeignKey("Area", on_delete=models.CASCADE, related_name="spaces")
     # ID
     name = models.CharField(max_length=255)
     slug = models.SlugField()
@@ -571,16 +565,12 @@ class Space(models.Model):
         ordering: ClassVar = ["order", "name"]
         constraints = (
             models.UniqueConstraint(
-                fields=("slug", "area"),
-                name="space_has_unique_slug_and_area",
-                condition=models.Q(area__isnull=False),
+                fields=("slug", "area"), name="space_has_unique_slug_and_area"
             ),
         )
 
     def __str__(self) -> str:
-        if self.area:
-            return f"{self.area.venue.name} > {self.area.name} > {self.name}"
-        return f"{self.name} ({self.id})"
+        return f"{self.area.venue.name} > {self.area.name} > {self.name}"
 
 
 class Venue(models.Model):
@@ -728,7 +718,7 @@ class SessionManager(models.Manager["Session"]):
         return (
             self.get_queryset()
             .filter(
-                agenda_item__space__event=session.agenda_item.space.event,
+                agenda_item__space__area__venue__event=session.agenda_item.space.area.venue.event,
                 session_participations__user_id=user.pk,
                 session_participations__status=SessionParticipationStatus.CONFIRMED,
             )
@@ -811,9 +801,8 @@ class Session(models.Model):
     @property
     def effective_participants_limit(self) -> int:
         """Get effective participants limit considering enrollment config percentage."""
-        if enrollment_config := self.agenda_item.space.event.get_most_liberal_config(
-            self
-        ):
+        event = self.agenda_item.space.area.venue.event
+        if enrollment_config := event.get_most_liberal_config(self):
             return math.ceil(
                 self.participants_limit * enrollment_config.percentage_slots / 100
             )
@@ -827,7 +816,9 @@ class Session(models.Model):
     @property
     def is_enrollment_available(self) -> bool:
         """Check if enrollment is available for this session under any active config."""
-        active_configs = self.agenda_item.space.event.get_active_enrollment_configs()
+        active_configs = (
+            self.agenda_item.space.area.venue.event.get_active_enrollment_configs()
+        )
         return any(config.is_session_eligible(self) for config in active_configs)
 
     @property

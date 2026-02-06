@@ -17,6 +17,7 @@ from ludamus.adapters.web.django.entities import SessionUserParticipationData
 from ludamus.pacts import UserDTO
 from tests.integration.conftest import (
     AgendaItemFactory,
+    AreaFactory,
     SessionFactory,
     SpaceFactory,
     TimeSlotFactory,
@@ -38,7 +39,7 @@ class TestSessionEnrollPageView:
             HTTPStatus.OK,
             context_data={
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [
@@ -100,7 +101,7 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [
@@ -275,7 +276,7 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [
@@ -382,8 +383,9 @@ class TestSessionEnrollPageView:
     @pytest.mark.usefixtures("enrollment_config")
     @staticmethod
     def test_post_time_conflict_skipped(authenticated_client, active_user, event):
-        space1 = SpaceFactory(event=event)
-        space2 = SpaceFactory(event=event)
+        area = AreaFactory(venue__event=event)
+        space1 = SpaceFactory(area=area)
+        space2 = SpaceFactory(area=area)
         time_slot = TimeSlotFactory(event=event)
 
         session1 = SessionFactory(sphere=event.sphere)
@@ -922,7 +924,7 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [
@@ -973,7 +975,7 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [UserDTO.model_validate(connected_user)],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [
@@ -1026,7 +1028,7 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [UserDTO.model_validate(connected_user)],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [
@@ -1103,7 +1105,7 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [
@@ -1282,7 +1284,7 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [
@@ -1379,7 +1381,7 @@ class TestSessionEnrollPageView:
             ],
             context_data={
                 "connected_users": [UserDTO.model_validate(connected_user)],
-                "event": agenda_item.space.event,
+                "event": agenda_item.space.area.venue.event,
                 "form": ANY,
                 "session": agenda_item.session,
                 "user_data": [

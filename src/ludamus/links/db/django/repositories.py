@@ -203,11 +203,7 @@ class ProposalRepository(ProposalRepositoryProtocol):
     def read_spaces(self, proposal_id: int) -> list[SpaceDTO]:
         proposal = self._storage.proposals[proposal_id]
         event_id = proposal.category.event_id
-        collection = self._storage.spaces_by_event[event_id]
-        if not (spaces := collection.values()):
-            for space in Space.objects.filter(event_id=event_id):
-                collection[space.id] = space
-
+        spaces = Space.objects.filter(area__venue__event_id=event_id)
         return [SpaceDTO.model_validate(space) for space in spaces]
 
     def read_tag_ids(self, proposal_id: int) -> list[int]:
@@ -409,8 +405,10 @@ class EventRepository(EventRepositoryProtocol):
             self._storage.events[event_id] = event
 
         proposals = Proposal.objects.filter(category__event_id=event_id)
-        sessions = Session.objects.filter(agenda_item__space__event_id=event_id)
-        spaces = Space.objects.filter(event_id=event_id)
+        sessions = Session.objects.filter(
+            agenda_item__space__area__venue__event_id=event_id
+        )
+        spaces = Space.objects.filter(area__venue__event_id=event_id)
 
         return EventStatsData(
             pending_proposals=proposals.filter(session__isnull=True).count(),
@@ -691,7 +689,6 @@ class VenueRepository(VenueRepositoryProtocol):
                     new_area.pk, space.slug
                 )
                 Space.objects.create(
-                    event_id=space.event_id,
                     area_id=new_area.pk,
                     name=space.name,
                     slug=space_slug,
@@ -765,7 +762,6 @@ class VenueRepository(VenueRepositoryProtocol):
                     new_area.pk, space.slug
                 )
                 Space.objects.create(
-                    event_id=target_event_id,
                     area_id=new_area.pk,
                     name=space.name,
                     slug=space_slug,
@@ -984,13 +980,10 @@ class SpaceRepository(SpaceRepositoryProtocol):
         self._storage = storage
 
     @transaction.atomic
-    def create(
-        self, event_id: int, area_id: int, name: str, capacity: int | None = None
-    ) -> SpaceDTO:
+    def create(self, area_id: int, name: str, capacity: int | None = None) -> SpaceDTO:
         """Create a new space for an area.
 
         Args:
-            event_id: The event to create the space for.
             area_id: The area to create the space for.
             name: The space name.
             capacity: The space capacity (optional).
@@ -1012,7 +1005,6 @@ class SpaceRepository(SpaceRepositoryProtocol):
         )
 
         space = Space.objects.create(
-            event_id=event_id,
             area_id=area_id,
             name=name,
             slug=slug,
@@ -1135,8 +1127,7 @@ class SpaceRepository(SpaceRepositoryProtocol):
         try:
             # Lock space and its area to serialize slug generation
             space = Space.objects.select_for_update().select_related("area").get(pk=pk)
-            if space.area_id:
-                Area.objects.select_for_update().get(pk=space.area_id)
+            Area.objects.select_for_update().get(pk=space.area_id)
         except Space.DoesNotExist as err:
             msg = f"Space with pk '{pk}' not found"
             raise NotFoundError(msg) from err
@@ -1145,9 +1136,6 @@ class SpaceRepository(SpaceRepositoryProtocol):
 
         if space.name != name:
             base_slug = slugify(name)
-            if space.area_id is None:
-                msg = f"Space with pk '{pk}' has no area"
-                raise NotFoundError(msg)
             slug = self.generate_unique_slug(space.area_id, base_slug, exclude_pk=pk)
             space.name = name
             space.slug = slug
@@ -1159,8 +1147,7 @@ class SpaceRepository(SpaceRepositoryProtocol):
 
         if needs_save:
             space.save()
-            if space.area_id:
-                self._storage.spaces_by_area[space.area_id][space.pk] = space
+            self._storage.spaces_by_area[space.area_id][space.pk] = space
 
         return SpaceDTO.model_validate(space)
 
