@@ -5,7 +5,7 @@ import pytest
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import AgendaItem, Session
+from ludamus.adapters.db.django.models import AgendaItem, Session, Space
 from ludamus.pacts import EventDTO, ProposalDTO, SpaceDTO, TimeSlotDTO, UserDTO
 from tests.integration.utils import assert_response
 
@@ -56,6 +56,59 @@ class TestProposalAcceptPageView:
             },
             template_name="chronology/accept_proposal.html",
         )
+
+    @pytest.mark.usefixtures("event", "time_slot")
+    def test_get_shows_spaces_grouped_by_venue_area(
+        self, proposal, venue, area, space, staff_client
+    ):
+        """Test that space dropdown shows optgroups grouped by Venue > Area."""
+        response = staff_client.get(self._get_url(proposal.id))
+
+        assert response.status_code == HTTPStatus.OK
+        content = response.content.decode()
+        # Verify optgroup with "Venue > Area" label is present
+        assert f'<optgroup label="{venue.name} &gt; {area.name}">' in content
+        # Verify space is within the optgroup
+        assert f'<option value="{space.id}">{space.name}</option>' in content
+
+    @pytest.mark.usefixtures("time_slot")
+    def test_get_shows_multiple_spaces_in_same_area(
+        self, event, proposal, venue, area, space, staff_client
+    ):
+        """Test that multiple spaces in same area are grouped together."""
+        # Create a second space in the same area
+        second_space = Space.objects.create(
+            event=event, area=area, name="Second Room", slug="second-room"
+        )
+
+        response = staff_client.get(self._get_url(proposal.id))
+
+        assert response.status_code == HTTPStatus.OK
+        content = response.content.decode()
+        # Verify optgroup with "Venue > Area" label is present
+        assert f'<optgroup label="{venue.name} &gt; {area.name}">' in content
+        # Verify both spaces are within the optgroup
+        assert f'<option value="{space.id}">{space.name}</option>' in content
+        assert f'<option value="{second_space.id}">Second Room</option>' in content
+
+    @pytest.mark.usefixtures("time_slot")
+    def test_get_shows_unassigned_spaces_when_no_area(
+        self, event, proposal, staff_client
+    ):
+        """Test that spaces without area are grouped under 'Unassigned'."""
+        # Create a space without an area (area=None)
+        unassigned_space = Space.objects.create(
+            event=event, area=None, name="Lobby", slug="lobby"
+        )
+
+        response = staff_client.get(self._get_url(proposal.id))
+
+        assert response.status_code == HTTPStatus.OK
+        content = response.content.decode()
+        # Verify "Unassigned" optgroup label is present
+        assert '<optgroup label="Unassigned">' in content
+        # Verify space is within the optgroup
+        assert f'<option value="{unassigned_space.id}">Lobby</option>' in content
 
     def test_get_error_no_space(self, event, proposal, staff_client):
         response = staff_client.get(self._get_url(proposal.id))

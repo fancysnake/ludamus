@@ -4,6 +4,7 @@ from django.contrib import admin
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
+    Area,
     DomainEnrollmentConfig,
     EnrollmentConfig,
     Event,
@@ -17,10 +18,25 @@ from ludamus.adapters.db.django.models import (
     TimeSlot,
     User,
     UserEnrollmentConfig,
+    Venue,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+
+@admin.register(Venue)
+class VenueAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = ("name", "event", "address", "order")
+    list_filter = ("event",)
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
+
+
+@admin.register(Area)
+class AreaAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = ("name", "venue", "order")
+    list_filter = ("venue__event",)
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 
 @admin.register(AgendaItem)

@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ludamus.pacts import (
         AgendaItemDTO,
+        LocationData,
         ProposalDTO,
         SessionDTO,
-        SpaceDTO,
         TagDTO,
         UserDTO,
         UserParticipation,
@@ -25,7 +25,7 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     effective_participants_limit: int
     enrolled_count: int
     session_participations: list[UserParticipation]
-    space: SpaceDTO
+    loc: LocationData
     has_any_enrollments: bool = False
     user_enrolled: bool = False
     user_waiting: bool = False

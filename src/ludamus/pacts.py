@@ -73,6 +73,12 @@ class SessionDTO(BaseModel):
     title: str
 
 
+class LocationData(TypedDict):
+    space: SpaceDTO
+    area: AreaDTO | None  # TODO(fancysnake): Fix after merging venues
+    venue: VenueDTO | None  # TODO(fancysnake): Fix after merging venues
+
+
 class SessionParticipationStatus(StrEnum):
     CONFIRMED = auto()
     WAITING = auto()
@@ -100,11 +106,40 @@ class UserParticipation(BaseModel):
 class SpaceDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    area_id: int | None
+    capacity: int | None
     creation_time: datetime
     modification_time: datetime
     name: str
+    order: int
     pk: int
     slug: str
+
+
+class VenueDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    address: str
+    areas_count: int = 0
+    creation_time: datetime
+    modification_time: datetime
+    name: str
+    order: int
+    pk: int
+    slug: str
+
+
+class AreaDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    description: str
+    modification_time: datetime
+    name: str
+    order: int
+    pk: int
+    slug: str
+    spaces_count: int = 0
 
 
 class TimeSlotDTO(BaseModel):
@@ -383,6 +418,43 @@ class EventRepositoryProtocol(Protocol):
     def update_name(self, event_id: int, name: str) -> None: ...
 
 
+class VenueRepositoryProtocol(Protocol):
+    def copy_to_event(self, pk: int, target_event_id: int) -> VenueDTO: ...
+    def create(self, event_id: int, name: str, address: str = "") -> VenueDTO: ...
+    def delete(self, pk: int) -> None: ...
+    def duplicate(self, pk: int, new_name: str) -> VenueDTO: ...
+    def list_by_event(self, event_pk: int) -> list[VenueDTO]: ...
+    def read_by_slug(self, event_pk: int, slug: str) -> VenueDTO: ...
+    def reorder(self, event_id: int, venue_pks: list[int]) -> None: ...
+    def update(self, pk: int, name: str, address: str = "") -> VenueDTO: ...
+    @staticmethod
+    def has_sessions(pk: int) -> bool: ...
+
+
+class AreaRepositoryProtocol(Protocol):
+    def create(self, venue_id: int, name: str, description: str = "") -> AreaDTO: ...
+    def delete(self, pk: int) -> None: ...
+    def list_by_venue(self, venue_pk: int) -> list[AreaDTO]: ...
+    def read_by_slug(self, venue_pk: int, slug: str) -> AreaDTO: ...
+    def reorder(self, venue_id: int, area_pks: list[int]) -> None: ...
+    def update(self, pk: int, name: str, description: str = "") -> AreaDTO: ...
+    @staticmethod
+    def has_sessions(pk: int) -> bool: ...
+
+
+class SpaceRepositoryProtocol(Protocol):
+    def create(
+        self, event_id: int, area_id: int, name: str, capacity: int | None = None
+    ) -> SpaceDTO: ...
+    def delete(self, pk: int) -> None: ...
+    def list_by_area(self, area_pk: int) -> list[SpaceDTO]: ...
+    def read_by_slug(self, area_pk: int, slug: str) -> SpaceDTO: ...
+    def reorder(self, area_id: int, space_pks: list[int]) -> None: ...
+    def update(self, pk: int, name: str, capacity: int | None = None) -> SpaceDTO: ...
+    @staticmethod
+    def has_sessions(pk: int) -> bool: ...
+
+
 class ProposalCategoryRepositoryProtocol(Protocol):
     def create(self, event_id: int, name: str) -> ProposalCategoryDTO: ...
     def delete(self, pk: int) -> None: ...
@@ -476,6 +548,12 @@ class UnitOfWorkProtocol(Protocol):
     def sessions(self) -> SessionRepositoryProtocol: ...
     @property
     def spheres(self) -> SphereRepositoryProtocol: ...
+    @property
+    def areas(self) -> AreaRepositoryProtocol: ...
+    @property
+    def spaces(self) -> SpaceRepositoryProtocol: ...
+    @property
+    def venues(self) -> VenueRepositoryProtocol: ...
 
 
 class DependencyInjectorProtocol(Protocol):

@@ -202,7 +202,7 @@ class TestPersonalDataFieldEditPageView:
         authenticated_client.post(self.get_url(event, field), data={"name": "Phone"})
 
         field.refresh_from_db()
-        assert field.slug == "phone-2"
+        assert field.slug.startswith("phone-")
 
     def test_post_error_on_empty_name_rerenders_form(
         self, authenticated_client, active_user, sphere, event

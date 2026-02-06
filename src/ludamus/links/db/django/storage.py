@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ludamus.adapters.db.django.models import (
         AgendaItem,
+        Area,
         Event,
         PersonalDataField,
         Proposal,
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
         Tag,
         TimeSlot,
         User,
+        Venue,
     )
     from ludamus.pacts import UserType
 
@@ -23,6 +25,9 @@ if TYPE_CHECKING:
 @dataclass
 class Storage:  # pylint: disable=too-many-instance-attributes
     agenda_items: dict[int, AgendaItem] = field(default_factory=dict)
+    areas_by_venue: dict[int, dict[int, Area]] = field(
+        default_factory=lambda: defaultdict(dict)
+    )
     connected_users_by_user: dict[str, dict[str, User]] = field(
         default_factory=lambda: defaultdict(dict)
     )
@@ -32,6 +37,9 @@ class Storage:  # pylint: disable=too-many-instance-attributes
     proposals: dict[int, Proposal] = field(default_factory=dict)
     session_fields: dict[int, SessionField] = field(default_factory=dict)
     sessions: dict[int, Session] = field(default_factory=dict)
+    spaces_by_area: dict[int, dict[int, Space]] = field(
+        default_factory=lambda: defaultdict(dict)
+    )
     spaces_by_event: dict[int, dict[int, Space]] = field(
         default_factory=lambda: defaultdict(dict)
     )
@@ -46,5 +54,8 @@ class Storage:  # pylint: disable=too-many-instance-attributes
         default_factory=lambda: defaultdict(dict)
     )
     users: dict[UserType, dict[str, User]] = field(
+        default_factory=lambda: defaultdict(dict)
+    )
+    venues_by_event: dict[int, dict[int, Venue]] = field(
         default_factory=lambda: defaultdict(dict)
     )

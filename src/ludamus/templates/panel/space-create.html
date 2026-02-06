@@ -1,0 +1,65 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% block title %}
+    {% translate "New Space" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "New Space" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {{ venue.name }} · {{ area.name }} · {% translate "Spaces" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:area-detail' slug=current_event.slug venue_slug=venue.slug area_slug=area.slug %}"
+           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
+            {% translate "Cancel" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        <form method="post" class="max-w-2xl">
+            {% csrf_token %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
+                <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Space Details" %}</h3>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2" for="id_name">
+                            {% translate "Name" context "place" %}
+                        </label>
+                        <input type="text"
+                               name="name"
+                               id="id_name"
+                               value="{{ form.name.value|default:'' }}"
+                               class="w-full border {% if form.name.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                               placeholder="{% translate "e.g., Room 101, Main Hall" %}">
+                        {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2"
+                               for="id_capacity">{% translate "Capacity" %}</label>
+                        <input type="number"
+                               name="capacity"
+                               id="id_capacity"
+                               value="{{ form.capacity.value|default:'' }}"
+                               min="1"
+                               class="w-full border {% if form.capacity.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                               placeholder="{% translate "Optional - maximum number of attendees" %}">
+                        {% if form.capacity.errors %}<p class="mt-1 text-sm text-red-600">{{ form.capacity.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button type="submit"
+                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+                        {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+                        {% translate "Create Space" %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+{% endblock content %}

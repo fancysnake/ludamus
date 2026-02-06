@@ -21,7 +21,9 @@ test.describe('Event detail page', () => {
     await expect(sessionCards).toHaveCount(2);
 
     const megaStrategyCard = sessionCards.filter({ hasText: 'Mega Strategy Lab' });
-    await expect(megaStrategyCard).toContainText('Main Hall East Wing');
+    await expect(megaStrategyCard).toContainText('Convention Center ›');
+    await expect(megaStrategyCard).toContainText('Main Hall ›');
+    await expect(megaStrategyCard).toContainText('East Wing');
     await megaStrategyCard.click();
 
     const detailDialog = page.getByRole('dialog', { name: 'Mega Strategy Lab' });

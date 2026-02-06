@@ -28,11 +28,13 @@ from django.utils import timezone  # noqa: E402
 
 from ludamus.adapters.db.django.models import (  # noqa: E402
     AgendaItem,
+    Area,
     EnrollmentConfig,
     Event,
     Session,
     Space,
     Sphere,
+    Venue,
 )
 
 
@@ -101,19 +103,36 @@ def _create_flatpage(site: Site, *, url: str, title: str, content: str) -> FlatP
     return page
 
 
+def _create_venue(event: Event, *, name: str, slug: str, address: str = "") -> Venue:
+    return Venue.objects.create(event=event, name=name, slug=slug, address=address)
+
+
+def _create_area(venue: Venue, *, name: str, slug: str, description: str = "") -> Area:
+    return Area.objects.create(
+        venue=venue, name=name, slug=slug, description=description
+    )
+
+
+def _create_space(
+    event: Event, area: Area, *, name: str, slug: str, capacity: int | None = None
+) -> Space:
+    return Space.objects.create(
+        event=event, area=area, name=name, slug=slug, capacity=capacity
+    )
+
+
 def _create_session(
     sphere: Sphere,
     event: Event,
+    space: Space,
     *,
     title: str,
     slug: str,
     presenter: str,
     description: str,
-    location_name: str,
     start_offset: timedelta,
     duration_hours: int,
 ) -> Session:
-    space = Space.objects.create(event=event, name=location_name, slug=slug)
     session = Session.objects.create(
         sphere=sphere,
         presenter_name=presenter,
@@ -184,14 +203,48 @@ def main() -> None:
         allow_anonymous=True,
     )
 
+    # Create venue hierarchy for the upcoming event
+    main_venue = _create_venue(
+        upcoming_event,
+        name="Convention Center",
+        slug="convention-center",
+        address="123 Gaming Street, Tabletop City",
+    )
+
+    main_hall_area = _create_area(
+        main_venue,
+        name="Main Hall",
+        slug="main-hall",
+        description="The central gaming area with multiple tables.",
+    )
+
+    lounge_area = _create_area(
+        main_venue,
+        name="Lounge",
+        slug="lounge",
+        description="A cozy space for smaller gatherings.",
+    )
+
+    east_wing_space = _create_space(
+        upcoming_event, main_hall_area, name="East Wing", slug="east-wing", capacity=30
+    )
+
+    fireside_space = _create_space(
+        upcoming_event,
+        lounge_area,
+        name="Fireside Alcove",
+        slug="fireside-alcove",
+        capacity=12,
+    )
+
     _create_session(
         sphere,
         upcoming_event,
+        east_wing_space,
         title="Mega Strategy Lab",
         slug="mega-strategy",
         presenter="Alex Morgan",
         description="Deep dive into asymmetric mechanics and pacing tricks.",
-        location_name="Main Hall East Wing",
         start_offset=timedelta(hours=1),
         duration_hours=2,
     )
@@ -199,16 +252,16 @@ def main() -> None:
     _create_session(
         sphere,
         upcoming_event,
+        fireside_space,
         title="Cozy Storytellers Circle",
         slug="story-circle",
         presenter="Priya Chen",
         description="Collaborative narrative building with lightweight prompts.",
-        location_name="Fireside Alcove",
         start_offset=timedelta(hours=2),
         duration_hours=1,
     )
 
-    _create_event(
+    past_event = _create_event(
         sphere,
         name="Retro Mini Jam",
         slug="retro-mini-jam",
@@ -216,6 +269,25 @@ def main() -> None:
         start_offset=timedelta(days=-7),
         duration_hours=6,
         publication_offset=timedelta(days=8),
+    )
+
+    # Create venue hierarchy for the past event
+    retro_venue = _create_venue(
+        past_event,
+        name="Arcade Hall",
+        slug="arcade-hall",
+        address="456 Pixel Lane, Retro Town",
+    )
+
+    arcade_area = _create_area(
+        retro_venue,
+        name="Main Arcade Floor",
+        slug="main-floor",
+        description="Classic arcade machines and gaming tables.",
+    )
+
+    _create_space(
+        past_event, arcade_area, name="Puzzle Corner", slug="puzzle-corner", capacity=8
     )
 
 

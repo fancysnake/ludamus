@@ -98,3 +98,86 @@ class SessionFieldForm(forms.Form):
         initial=False,
         help_text=_("Allow entering custom values (for Select fields only)."),
     )
+
+
+class VenueForm(forms.Form):
+    """Form for creating/editing venues."""
+
+    name = forms.CharField(
+        max_length=255,
+        strip=True,
+        error_messages={
+            "max_length": _("Venue name is too long (max 255 characters)."),
+            "required": _("Venue name is required."),
+        },
+    )
+    address = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}))
+
+
+class VenueDuplicateForm(forms.Form):
+    """Form for duplicating a venue within the same event."""
+
+    name = forms.CharField(
+        max_length=255,
+        strip=True,
+        label=_("New Venue Name"),
+        error_messages={
+            "max_length": _("Venue name is too long (max 255 characters)."),
+            "required": _("Venue name is required."),
+        },
+    )
+
+
+def create_venue_copy_form(events: list[tuple[int, str]]) -> type[forms.Form]:
+    """Create a form for copying a venue to another event.
+
+    Args:
+        events: List of (event_id, event_name) tuples for target event choices.
+
+    Returns:
+        A form class with the target_event field configured.
+    """
+    target_event_field = forms.ChoiceField(
+        label=_("Target Event"),
+        choices=events,
+        error_messages={
+            "required": _("Please select a target event."),
+            "invalid_choice": _("Invalid event selection."),
+        },
+    )
+
+    return type("VenueCopyForm", (forms.Form,), {"target_event": target_event_field})
+
+
+class AreaForm(forms.Form):
+    """Form for creating/editing areas within a venue."""
+
+    name = forms.CharField(
+        max_length=255,
+        strip=True,
+        error_messages={
+            "max_length": _("Area name is too long (max 255 characters)."),
+            "required": _("Area name is required."),
+        },
+    )
+    description = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 3})
+    )
+
+
+class SpaceForm(forms.Form):
+    """Form for creating/editing spaces within an area."""
+
+    name = forms.CharField(
+        max_length=255,
+        strip=True,
+        error_messages={
+            "max_length": _("Space name is too long (max 255 characters)."),
+            "required": _("Space name is required."),
+        },
+    )
+    capacity = forms.IntegerField(
+        required=False,
+        min_value=1,
+        error_messages={"min_value": _("Capacity must be at least 1.")},
+    )

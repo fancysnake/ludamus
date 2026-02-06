@@ -545,25 +545,100 @@ class DomainEnrollmentConfig(models.Model):
 
 
 class Space(models.Model):
-    # Owner
+    """Bookable room/location within an area."""
+
+    # Owner - spaces belong to an area (and event for efficient querying)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="spaces")
+    area = models.ForeignKey(
+        "Area",
+        on_delete=models.CASCADE,
+        related_name="spaces",
+        null=True,  # TODO(fancysnake): Fix after merging venues
+    )
     # ID
     name = models.CharField(max_length=255)
     slug = models.SlugField()
+    # Details
+    capacity = models.PositiveIntegerField(null=True, blank=True)
+    # Ordering
+    order = models.PositiveIntegerField(default=0)
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "space"
+        ordering: ClassVar = ["order", "name"]
         constraints = (
             models.UniqueConstraint(
-                fields=("slug", "event"), name="space_has_unique_slug_and_event"
+                fields=("slug", "area"),
+                name="space_has_unique_slug_and_area",
+                condition=models.Q(area__isnull=False),
             ),
         )
 
     def __str__(self) -> str:
+        if self.area:
+            return f"{self.area.venue.name} > {self.area.name} > {self.name}"
         return f"{self.name} ({self.id})"
+
+
+class Venue(models.Model):
+    """Physical location/building for an event."""
+
+    # Owner - venues belong to an event
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="venues")
+    # ID
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    # Details
+    address = models.TextField(blank=True, default="")
+    # Ordering
+    order = models.PositiveIntegerField(default=0)
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "venue"
+        ordering: ClassVar = ["order", "name"]
+        constraints = (
+            models.UniqueConstraint(
+                fields=("slug", "event"), name="venue_has_unique_slug_and_event"
+            ),
+        )
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Area(models.Model):
+    """Subdivision within a venue (floor, wing, section)."""
+
+    # Owner - areas belong to a venue
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="areas")
+    # ID
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    # Details
+    description = models.TextField(blank=True, default="")
+    # Ordering
+    order = models.PositiveIntegerField(default=0)
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "area"
+        ordering: ClassVar = ["order", "name"]
+        constraints = (
+            models.UniqueConstraint(
+                fields=("slug", "venue"), name="area_has_unique_slug_and_venue"
+            ),
+        )
+
+    def __str__(self) -> str:
+        return f"{self.venue.name} > {self.name}"
 
 
 class TimeSlot(models.Model):

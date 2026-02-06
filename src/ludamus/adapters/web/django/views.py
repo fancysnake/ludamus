@@ -46,8 +46,10 @@ from ludamus.adapters.web.django.entities import (
 from ludamus.mills import AcceptProposalService, AnonymousEnrollmentService
 from ludamus.pacts import (
     AgendaItemDTO,
+    AreaDTO,
     AuthenticatedRequestContext,
     DependencyInjectorProtocol,
+    LocationData,
     NotFoundError,
     ProposalCategoryDTO,
     ProposalDTO,
@@ -60,6 +62,7 @@ from ludamus.pacts import (
     UserData,
     UserDTO,
     UserParticipation,
+    VenueDTO,
 )
 
 from .exceptions import RedirectError
@@ -863,29 +866,39 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
     def _get_session_data(
         self, event_sessions: QuerySet[Session]
     ) -> dict[int, SessionData]:
-        sessions_data = {
-            es.id: SessionData(
-                effective_participants_limit=es.effective_participants_limit,
-                full_participant_info=es.full_participant_info,
-                agenda_item=AgendaItemDTO.model_validate(es.agenda_item),
-                session=SessionDTO.model_validate(es),
-                tags=[TagDTO.model_validate(t) for t in es.tags.all()],
+        sessions_data = {}
+        for session in event_sessions:
+            area = getattr(
+                session.agenda_item.space, "area", None
+            )  # TODO(fancysnake): Fix after merging venues
+            sessions_data[session.id] = SessionData(
+                effective_participants_limit=session.effective_participants_limit,
+                full_participant_info=session.full_participant_info,
+                agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
+                session=SessionDTO.model_validate(session),
+                tags=[TagDTO.model_validate(t) for t in session.tags.all()],
                 proposal=(
-                    ProposalDTO.model_validate(es.proposal)
-                    if Proposal.objects.filter(session=es).exists()
+                    ProposalDTO.model_validate(session.proposal)
+                    if Proposal.objects.filter(session=session).exists()
                     else None
                 ),
-                is_enrollment_available=es.is_enrollment_available,
-                is_full=es.is_full,
-                space=SpaceDTO.model_validate(es.agenda_item.space),
-                enrolled_count=es.enrolled_count,
+                is_enrollment_available=session.is_enrollment_available,
+                is_full=session.is_full,
+                loc=LocationData(
+                    space=SpaceDTO.model_validate(session.agenda_item.space),
+                    area=(  # TODO(fancysnake): Fix after merging venues
+                        AreaDTO.model_validate(area) if area else None
+                    ),
+                    venue=(  # TODO(fancysnake): Fix after merging venues
+                        VenueDTO.model_validate(area.venue) if area else None
+                    ),
+                ),
+                enrolled_count=session.enrolled_count,
                 session_participations=[
                     UserParticipation.model_validate(sp)
-                    for sp in es.session_participations.all()
+                    for sp in session.session_participations.all()
                 ],
             )
-            for es in event_sessions
-        }
 
         # Check if any active enrollment config has limit_to_end_time enabled
         active_configs = self.object.get_active_enrollment_configs()

@@ -41,6 +41,10 @@ class UnitOfWork(UnitOfWorkProtocol):
         return repositories.UserRepository(self._storage, user_type=UserType.ANONYMOUS)
 
     @cached_property
+    def areas(self) -> repositories.AreaRepository:
+        return repositories.AreaRepository(self._storage)
+
+    @cached_property
     def connected_users(self) -> repositories.ConnectedUserRepository:
         return repositories.ConnectedUserRepository(self._storage)
 
@@ -69,5 +73,13 @@ class UnitOfWork(UnitOfWorkProtocol):
         return repositories.SessionRepository(self._storage)
 
     @cached_property
+    def spaces(self) -> repositories.SpaceRepository:
+        return repositories.SpaceRepository(self._storage)
+
+    @cached_property
     def spheres(self) -> repositories.SphereRepository:
         return repositories.SphereRepository(self._storage)
+
+    @cached_property
+    def venues(self) -> repositories.VenueRepository:
+        return repositories.VenueRepository(self._storage)

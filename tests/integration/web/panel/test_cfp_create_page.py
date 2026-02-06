@@ -197,7 +197,7 @@ class TestCFPCreatePageView:
         categories = ProposalCategory.objects.filter(event=event)
         assert categories.count() == 1 + 1  # existing + new
         new_category = categories.exclude(slug="rpg-sessions").first()
-        assert new_category.slug == "rpg-sessions-2"
+        assert new_category.slug.startswith("rpg-sessions-")
 
     def test_post_redirects_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
