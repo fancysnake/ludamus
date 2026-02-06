@@ -42,6 +42,8 @@ from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
     SessionData,
     SessionUserParticipationData,
+    TagCategoryData,
+    TagWithCategory,
 )
 from ludamus.mills import AcceptProposalService, AnonymousEnrollmentService
 from ludamus.pacts import (
@@ -876,7 +878,18 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 full_participant_info=session.full_participant_info,
                 agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
                 session=SessionDTO.model_validate(session),
-                tags=[TagDTO.model_validate(t) for t in session.tags.all()],
+                tags=[
+                    TagWithCategory(
+                        category=TagCategoryData(
+                            icon=t.category.icon, name=t.category.name, pk=t.category.pk
+                        ),
+                        category_id=t.category_id,
+                        confirmed=t.confirmed,
+                        name=t.name,
+                        pk=t.pk,
+                    )
+                    for t in session.tags.select_related("category").all()
+                ],
                 proposal=(
                     ProposalDTO.model_validate(session.proposal)
                     if Proposal.objects.filter(session=session).exists()
@@ -912,7 +925,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
 
         # Set filterable tags and display status for each session
         filterable_categories = set(
-            self.object.filterable_tag_categories.all().values_list("id")
+            self.object.filterable_tag_categories.all().values_list("id", flat=True)
         )
         for session_data in sessions_data.values():
             session_data.filterable_tags = [
