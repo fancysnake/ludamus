@@ -11,9 +11,15 @@ from ludamus.adapters.db.django.models import (
     EnrollmentConfig,
     SessionParticipation,
     SessionParticipationStatus,
+    Tag,
+    TagCategory,
     UserEnrollmentConfig,
 )
-from ludamus.adapters.web.django.entities import SessionData
+from ludamus.adapters.web.django.entities import (
+    SessionData,
+    TagCategoryData,
+    TagWithCategory,
+)
 from ludamus.pacts import (
     AgendaItemDTO,
     AreaDTO,
@@ -1422,6 +1428,75 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": user_config,
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
+    def test_ok_session_with_filterable_tags(self, agenda_item, client, event):
+        """Regression test: session tags are displayed when category is filterable.
+
+        Previously, values_list("id") returned tuples like [(1,)] instead of
+        flat integers [1], causing the tag filter comparison to always fail.
+        """
+        tag_category = TagCategory.objects.create(
+            name="Game Type", input_type=TagCategory.InputType.SELECT, icon="dice"
+        )
+        tag = Tag.objects.create(name="RPG", category=tag_category)
+        session = agenda_item.session
+        session.tags.add(tag)
+        event.filterable_tag_categories.add(tag_category)
+
+        response = client.get(self._get_url(event.slug))
+
+        tag_with_category = TagWithCategory(
+            category=TagCategoryData(
+                icon=tag_category.icon, name=tag_category.name, pk=tag_category.pk
+            ),
+            category_id=tag.category_id,
+            confirmed=tag.confirmed,
+            name=tag.name,
+            pk=tag.pk,
+        )
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[tag_with_category],
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            proposal=None,
+            session_participations=[],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            tags=[tag_with_category],
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": False,
+                "event": event,
+                "filterable_tag_categories": [tag_category],
+                "future_unavailable_hour_data": {
+                    agenda_item.start_time: [session_data]
+                },
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "sessions": [session_data],
+                "user_enrollment_config": None,
                 "view": ANY,
             },
             template_name=["chronology/event.html"],

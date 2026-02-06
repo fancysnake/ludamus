@@ -160,12 +160,7 @@ class TestVenuesStructurePageView:
             order=0,
         )
         space = Space.objects.create(
-            event=event,
-            area=area,
-            name="Room 101",
-            slug="room-101",
-            capacity=50,
-            order=0,
+            area=area, name="Room 101", slug="room-101", capacity=50, order=0
         )
 
         response = authenticated_client.get(self.get_url(event))
@@ -193,18 +188,12 @@ class TestVenuesStructurePageView:
         area1 = Area.objects.create(
             venue=venue1, name="Floor 1", slug="floor-1", order=0
         )
-        Space.objects.create(
-            event=event, area=area1, name="Room 1A", slug="room-1a", order=0
-        )
-        Space.objects.create(
-            event=event, area=area1, name="Room 1B", slug="room-1b", order=1
-        )
+        Space.objects.create(area=area1, name="Room 1A", slug="room-1a", order=0)
+        Space.objects.create(area=area1, name="Room 1B", slug="room-1b", order=1)
         area2 = Area.objects.create(
             venue=venue1, name="Floor 2", slug="floor-2", order=1
         )
-        Space.objects.create(
-            event=event, area=area2, name="Room 2A", slug="room-2a", order=0
-        )
+        Space.objects.create(area=area2, name="Room 2A", slug="room-2a", order=0)
 
         # Second venue with 1 area
         venue2 = Venue.objects.create(
@@ -213,9 +202,7 @@ class TestVenuesStructurePageView:
         area3 = Area.objects.create(
             venue=venue2, name="Main Hall", slug="main-hall", order=0
         )
-        Space.objects.create(
-            event=event, area=area3, name="Stage", slug="stage", order=0
-        )
+        Space.objects.create(area=area3, name="Stage", slug="stage", order=0)
 
         response = authenticated_client.get(self.get_url(event))
 
@@ -277,12 +264,8 @@ class TestVenuesStructurePageView:
         sphere.managers.add(active_user)
         venue = Venue.objects.create(event=event, name="Venue", slug="venue", order=0)
         area = Area.objects.create(venue=venue, name="Area", slug="area", order=0)
-        space_z = Space.objects.create(
-            event=event, area=area, name="Room Z", slug="room-z", order=2
-        )
-        space_a = Space.objects.create(
-            event=event, area=area, name="Room A", slug="room-a", order=1
-        )
+        space_z = Space.objects.create(area=area, name="Room Z", slug="room-z", order=2)
+        space_a = Space.objects.create(area=area, name="Room A", slug="room-a", order=1)
 
         response = authenticated_client.get(self.get_url(event))
 

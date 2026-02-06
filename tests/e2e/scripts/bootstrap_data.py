@@ -114,11 +114,9 @@ def _create_area(venue: Venue, *, name: str, slug: str, description: str = "") -
 
 
 def _create_space(
-    event: Event, area: Area, *, name: str, slug: str, capacity: int | None = None
+    area: Area, *, name: str, slug: str, capacity: int | None = None
 ) -> Space:
-    return Space.objects.create(
-        event=event, area=area, name=name, slug=slug, capacity=capacity
-    )
+    return Space.objects.create(area=area, name=name, slug=slug, capacity=capacity)
 
 
 def _create_session(
@@ -226,15 +224,11 @@ def main() -> None:
     )
 
     east_wing_space = _create_space(
-        upcoming_event, main_hall_area, name="East Wing", slug="east-wing", capacity=30
+        main_hall_area, name="East Wing", slug="east-wing", capacity=30
     )
 
     fireside_space = _create_space(
-        upcoming_event,
-        lounge_area,
-        name="Fireside Alcove",
-        slug="fireside-alcove",
-        capacity=12,
+        lounge_area, name="Fireside Alcove", slug="fireside-alcove", capacity=12
     )
 
     _create_session(
@@ -286,9 +280,7 @@ def main() -> None:
         description="Classic arcade machines and gaming tables.",
     )
 
-    _create_space(
-        past_event, arcade_area, name="Puzzle Corner", slug="puzzle-corner", capacity=8
-    )
+    _create_space(arcade_area, name="Puzzle Corner", slug="puzzle-corner", capacity=8)
 
 
 if __name__ == "__main__":

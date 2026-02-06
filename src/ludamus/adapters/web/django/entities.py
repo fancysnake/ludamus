@@ -7,10 +7,29 @@ if TYPE_CHECKING:
         LocationData,
         ProposalDTO,
         SessionDTO,
-        TagDTO,
         UserDTO,
         UserParticipation,
     )
+
+
+@dataclass
+class TagCategoryData:
+    """Tag category data for template rendering."""
+
+    icon: str
+    name: str
+    pk: int
+
+
+@dataclass
+class TagWithCategory:
+    """Tag data with full category info for template rendering."""
+
+    category: TagCategoryData
+    category_id: int
+    confirmed: bool
+    name: str
+    pk: int
 
 
 @dataclass
@@ -19,7 +38,7 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     is_enrollment_available: bool
     proposal: ProposalDTO | None
     session: SessionDTO
-    tags: list[TagDTO]
+    tags: list[TagWithCategory]
     is_full: bool
     full_participant_info: str
     effective_participants_limit: int
@@ -29,7 +48,7 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     has_any_enrollments: bool = False
     user_enrolled: bool = False
     user_waiting: bool = False
-    filterable_tags: list[TagDTO] = field(default_factory=list)
+    filterable_tags: list[TagWithCategory] = field(default_factory=list)
     is_ongoing: bool = False  # True if session has already started
     should_show_as_inactive: bool = (
         False  # True if should be displayed as inactive due to limit_to_end_time

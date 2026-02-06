@@ -123,7 +123,6 @@ class SpaceFactory(DjangoModelFactory):
 
     name = Faker("word")
     slug = Faker("slug")
-    event = SubFactory(EventFactory)
     area = SubFactory(AreaFactory)
 
 
@@ -291,8 +290,8 @@ def area_fixture(venue):
 
 
 @pytest.fixture(name="space")
-def space_fixture(event, area):
-    return SpaceFactory(event=event, area=area)
+def space_fixture(area):
+    return SpaceFactory(area=area)
 
 
 @pytest.fixture
