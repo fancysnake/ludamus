@@ -10,6 +10,7 @@ from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
 from django.conf import settings
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.contrib import messages
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.hashers import make_password
@@ -309,16 +310,16 @@ class Auth0LogoutRedirectActionView(RedirectView):
 
 
 EVENT_PLACEHOLDER_IMAGES = [
-    "photo-1611371805429-8b5c1b2c34ba",  # meeples
-    "photo-1585504198199-20277593b94f",  # chess
-    "photo-1606503153255-59d8b8b82176",  # cards
-    "photo-1609743522653-52354461eb68",  # dice
-    "photo-1518908336710-4e0cf004e42f",  # dice close
-    "photo-1550745165-9bc0b252726f",  # chess pieces
-    "photo-1560419015262-2e24f3c0ed4b",  # rubik cube
-    "photo-1538481199705-c710c4e965fc",  # retro arcade
-    "photo-1493711662062-fa541f7f3d24",  # controller
-    "photo-1511882150382-421056c89033",  # arcade machine
+    "placeholder-images/01.jpg",  # meeples
+    "placeholder-images/02.jpg",  # chess
+    "placeholder-images/03.jpg",  # cards
+    "placeholder-images/04.jpg",  # dice
+    "placeholder-images/05.jpg",  # tabletop
+    "placeholder-images/06.jpg",  # chess pieces
+    "placeholder-images/07.jpg",  # board game
+    "placeholder-images/08.jpg",  # retro arcade
+    "placeholder-images/09.jpg",  # controller
+    "placeholder-images/10.png",  # arcade
 ]
 
 
@@ -336,10 +337,8 @@ class IndexPageView(TemplateView):
         )
         # Assign placeholder images based on index
         for i, event in enumerate(all_events):
-            img_id = EVENT_PLACEHOLDER_IMAGES[i % len(EVENT_PLACEHOLDER_IMAGES)]
-            event.cover_image_url = (  # type: ignore[attr-defined]
-                f"https://images.unsplash.com/{img_id}?w=800&h=400&fit=crop"
-            )
+            img = EVENT_PLACEHOLDER_IMAGES[i % len(EVENT_PLACEHOLDER_IMAGES)]
+            event.cover_image_url = staticfiles_storage.url(img)  # type: ignore[attr-defined]
         context["upcoming_events"] = [e for e in all_events if not e.is_ended]
         context["past_events"] = [e for e in all_events if e.is_ended]
         return context
