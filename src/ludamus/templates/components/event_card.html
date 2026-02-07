@@ -6,7 +6,7 @@
 <a href="{% url 'web:chronology:event' slug=event.slug %}"
    class="block group"
    {% if variant == 'past' %}style="filter: saturate(0.7);"{% endif %}>
-    <div class="progressive-blur relative h-full overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 group-hover:[--pb-scale:1.08] duration-150"
+    <div class="progressive-blur relative aspect-[5/3] flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 group-hover:[--pb-scale:1.01] group-hover:shadow-xs dark:group-hover:shadow-none group-hover:-translate-y-px transition-[box-shadow,translate] duration-150"
          style="--pb-image: url('{{ event.cover_image_url }}')">
         {# Progressive blur layers #}
         <div class="pb-layers">
@@ -18,7 +18,7 @@
             <div class="pb-layer" style="--i:5"></div>
         </div>
         {# Badges floating on image - top area #}
-        <div class="relative p-3 pt-8 pb-16 z-10">
+        <div class="relative p-3 pb-16 z-10">
             <div class="flex flex-wrap gap-2">
                 {% if event.is_live %}
                     <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white"
@@ -28,9 +28,10 @@
                     </span>
                 {% endif %}
                 {% if event.is_proposal_active %}
-                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
-                          style="background: rgba(255,255,255,0.85);
-                                 color: #5c534a">
+                    <span class="inline-flex items-center gap-1 rounded-full pr-2.5 py-1 text-xs font-medium"
+                          style="background: #fff;
+                                 color: #5c534a;
+                                 padding-left: 7px">
                         {% heroicon_mini "pencil-square" class="h-3.5 w-3.5" %}
                         {% translate "Proposals open" %}
                     </span>
