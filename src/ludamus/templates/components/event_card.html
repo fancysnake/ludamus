@@ -4,68 +4,65 @@
 {# Event card component - expects 'event' in context #}
 {# Optional: 'variant' can be "past" for muted styling #}
 <a href="{% url 'web:chronology:event' slug=event.slug %}"
-   class="block group"
-   {% if variant == 'past' %}style="filter: saturate(0.7);"{% endif %}>
-    <div class="progressive-blur relative aspect-[5/3] flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 group-hover:[--pb-scale:1.01] group-hover:shadow-xs dark:group-hover:shadow-none group-hover:-translate-y-px transition-[box-shadow,translate] duration-150"
-         style="--pb-image: url('{{ event.cover_image_url }}')">
-        {# Progressive blur layers #}
-        <div class="pb-layers">
-            <div class="pb-layer" style="--i:0"></div>
-            <div class="pb-layer" style="--i:1"></div>
-            <div class="pb-layer" style="--i:2"></div>
-            <div class="pb-layer" style="--i:3"></div>
-            <div class="pb-layer" style="--i:4"></div>
-            <div class="pb-layer" style="--i:5"></div>
-        </div>
-        {# Badges floating on image - top area #}
-        <div class="relative p-3 pb-16 z-10">
-            <div class="flex flex-wrap gap-2">
-                {% if event.is_live %}
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white"
-                          style="background-color: rgba(0,0,0,0.25)">
-                        <span class="rounded-full bg-white" style="width: 0.5rem; height: 0.5rem;"></span>
-                        {% translate "LIVE" %}
-                    </span>
-                {% endif %}
-                {% if event.is_proposal_active %}
-                    <span class="inline-flex items-center gap-1 rounded-full pr-2.5 py-1 text-xs font-medium"
-                          style="background: #fff;
-                                 color: #5c534a;
-                                 padding-left: 7px">
-                        {% heroicon_mini "pencil-square" class="h-3.5 w-3.5" %}
-                        {% translate "Proposals open" %}
-                    </span>
-                {% endif %}
-            </div>
-        </div>
-        {# Tint overlay for readability - stronger gradient #}
-        <div class="absolute inset-x-0 bottom-0 pointer-events-none z-[7]"
-             style="height: 80%;
-                    background: linear-gradient(to top, var(--theme-bg-secondary) 0%, var(--theme-bg-secondary) 20%, color-mix(in srgb, var(--theme-bg-secondary) 85%, transparent) 50%, transparent 100%)">
-        </div>
-        {# Content area - sits on top #}
-        <div class="relative px-5 pb-5 z-10">
-            <h3 class="mb-3 text-lg font-semibold leading-tight text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-                {{ event.name }}
-            </h3>
-            {% if event.description %}
-                <p class="mb-4 line-clamp-2 text-sm text-neutral-900 dark:text-neutral-100">{{ event.description }}</p>
+   class="progressive-blur relative aspect-5/3 flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background"
+   style="--pb-image: url('{{ event.cover_image_url }}'){% if variant == 'past' %}; filter: saturate(0.7){% endif %}">
+    {# Progressive blur layers #}
+    <div class="pb-layers">
+        <div class="pb-layer" style="--i:0"></div>
+        <div class="pb-layer" style="--i:1"></div>
+        <div class="pb-layer" style="--i:2"></div>
+        <div class="pb-layer" style="--i:3"></div>
+        <div class="pb-layer" style="--i:4"></div>
+        <div class="pb-layer" style="--i:5"></div>
+    </div>
+    {# Badges floating on image - top area #}
+    <div class="relative p-3 pb-16 z-10">
+        <div class="flex flex-wrap gap-2">
+            {% if event.is_live %}
+                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white"
+                      style="background-color: rgba(0,0,0,0.25)">
+                    <span class="rounded-full bg-white" style="width: 0.5rem; height: 0.5rem;"></span>
+                    {% translate "LIVE" %}
+                </span>
             {% endif %}
-            <div class="flex items-center justify-between border-t border-neutral-200/50 dark:border-neutral-700/50 pt-3 text-sm text-neutral-800 dark:text-neutral-200">
-                <div class="flex items-center gap-1.5">
-                    {% heroicon_outline "calendar" class="h-4 w-4" %}
-                    <span>{{ event|format_datetime_range }}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    {% heroicon_outline "squares-2x2" class="h-4 w-4" %}
-                    <span>
-                        {% blocktranslate count counter=event.session_count|default:0 %}
-                            {{ counter }} session
-                        {% plural %}
-                            {{ counter }} sessions
-                        {% endblocktranslate %}
-                    </span>
-                </div>
+            {% if event.is_proposal_active %}
+                <span class="inline-flex items-center gap-1 rounded-full pr-2.5 py-1 text-xs font-medium"
+                      style="background: #fff;
+                             color: #5c534a;
+                             padding-left: 7px">
+                    {% heroicon_mini "pencil-square" class="h-3.5 w-3.5" %}
+                    {% translate "Proposals open" %}
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {# Tint overlay for readability - stronger gradient #}
+    <div class="absolute inset-x-0 bottom-0 pointer-events-none z-[7]"
+         style="height: 80%;
+                background: linear-gradient(to top, var(--theme-bg-secondary) 0%, var(--theme-bg-secondary) 20%, color-mix(in srgb, var(--theme-bg-secondary) 85%, transparent) 50%, transparent 100%)">
+    </div>
+    {# Content area - sits on top #}
+    <div class="relative px-5 pb-5 z-10">
+        <h3 class="mb-3 text-lg font-semibold leading-tight text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+            {{ event.name }}
+        </h3>
+        {% if event.description %}
+            <p class="mb-4 line-clamp-2 text-sm text-neutral-900 dark:text-neutral-100">{{ event.description }}</p>
+        {% endif %}
+        <div class="flex items-center justify-between border-t border-neutral-200/50 dark:border-neutral-700/50 pt-3 text-sm text-neutral-800 dark:text-neutral-200">
+            <div class="flex items-center gap-1.5">
+                {% heroicon_outline "calendar" class="h-4 w-4" %}
+                <span>{{ event|format_datetime_range }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                {% heroicon_outline "squares-2x2" class="h-4 w-4" %}
+                <span>
+                    {% blocktranslate count counter=event.session_count|default:0 %}
+                        {{ counter }} session
+                    {% plural %}
+                        {{ counter }} sessions
+                    {% endblocktranslate %}
+                </span>
             </div>
         </div>
     </div>

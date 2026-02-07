@@ -61,6 +61,8 @@
   --color-zinc-*: initial;
   --color-stone-*: initial;
 
+  --color-background: #f0f1f3;
+
   --color-primary: #f85a3c;
   --color-secondary: #14b89b;
   --color-warning: #f59e0b;
@@ -82,7 +84,6 @@ a {
 }
 
 :root {
-  --theme-bg: #f0f1f3;
   --theme-bg-secondary: #fdfcfb;
   --theme-bg-tertiary: #f7f5f3;
   --theme-text: #252220;
@@ -122,7 +123,7 @@ a {
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --theme-bg: #0a0a0a;
+    --color-background: #0a0a0a;
     --theme-bg-secondary: #171717;
     --theme-bg-tertiary: #262626;
     --theme-text: #fafafa;
@@ -144,7 +145,7 @@ a {
 }
 
 .dark {
-  --theme-bg: #0a0a0a;
+  --color-background: #0a0a0a;
   --theme-bg-secondary: #171717;
   --theme-bg-tertiary: #262626;
   --theme-text: #fafafa;
@@ -260,7 +261,7 @@ a {
 
 .btn:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--theme-primary), 0 0 0 4px var(--theme-bg);
+  box-shadow: 0 0 0 2px var(--theme-primary), 0 0 0 4px var(--color-background);
 }
 
 .btn:disabled {
@@ -275,10 +276,6 @@ a {
 
 .btn-primary:hover {
   background-color: var(--theme-primary-hover);
-}
-
-.btn-primary:focus-visible {
-  box-shadow: 0 0 0 2px var(--theme-bg), 0 0 0 4px var(--theme-primary);
 }
 
 .btn-secondary {
@@ -316,9 +313,13 @@ a {
   padding: 1.5rem;
 }
 
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--theme-primary);
+}
+
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   border-color: var(--theme-border-focus) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }
