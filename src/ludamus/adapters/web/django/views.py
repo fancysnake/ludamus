@@ -10,11 +10,11 @@ from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
 from django.conf import settings
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.contrib import messages
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
