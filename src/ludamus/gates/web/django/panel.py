@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -46,7 +47,7 @@ from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
 if TYPE_CHECKING:
     from django import forms
 
-    from ludamus.pacts import AuthenticatedRequestContext, EventDTO
+    from ludamus.pacts import AuthenticatedRequestContext, EventDTO, TimeSlotDTO
 
 
 class _FieldDTO(Protocol):
@@ -142,6 +143,155 @@ def suggest_copy_name(name: str) -> str:
         num = int(match.group(2) or 1) + 1
         return f"{base} (Copy {num})"
     return f"{name} (Copy)"
+
+
+@dataclass
+class SlotDisplay:
+    """Display-oriented data for a time slot on a specific day."""
+
+    slot: TimeSlotDTO
+    top_px: int
+    height_px: int
+    starts_here: bool
+    ends_here: bool
+    spans_midnight: bool
+
+
+class TimeSlotCalendarMixin:
+    """Mixin providing calendar calculation helpers for time slot views."""
+
+    DAYS_PER_PAGE = 5
+    HOUR_HEIGHT_PX = 40
+
+    @staticmethod
+    def get_event_days(event: EventDTO) -> list[date]:
+        """Return all dates in event period.
+
+        Args:
+            event: The event DTO with start_time and end_time.
+
+        Returns:
+            List of dates from event start to end (inclusive).
+        """
+        start_date = event.start_time.date()
+        end_date = event.end_time.date()
+        num_days = (end_date - start_date).days + 1
+        return [start_date + timedelta(days=i) for i in range(num_days)]
+
+    def get_visible_days(self, all_days: list[date], page: int) -> list[date]:
+        """Return days for current page.
+
+        Args:
+            all_days: All event days.
+            page: Zero-indexed page number.
+
+        Returns:
+            Slice of days for the requested page.
+        """
+        start_idx = page * self.DAYS_PER_PAGE
+        end_idx = start_idx + self.DAYS_PER_PAGE
+        return all_days[start_idx:end_idx]
+
+    def group_slots_by_day(
+        self, slots: list[TimeSlotDTO], visible_days: list[date]
+    ) -> dict[date, list[SlotDisplay]]:
+        """Group slots by day with position calculations.
+
+        Slots spanning multiple days appear on all their days.
+
+        Args:
+            slots: List of time slot DTOs.
+            visible_days: Days currently visible in the calendar.
+
+        Returns:
+            Dict mapping each visible day to its SlotDisplay list.
+        """
+        result: dict[date, list[SlotDisplay]] = {day: [] for day in visible_days}
+
+        for slot in slots:
+            slot_start_date = slot.start_time.date()
+            slot_end_date = slot.end_time.date()
+
+            for day in visible_days:
+                if slot_start_date <= day <= slot_end_date:
+                    display = self.calculate_slot_position(slot, day)
+                    result[day].append(display)
+
+        # Sort slots by start time on each day
+        for day_slots in result.values():
+            day_slots.sort(key=lambda d: d.top_px)
+
+        return result
+
+    def calculate_slot_position(self, slot: TimeSlotDTO, day: date) -> SlotDisplay:
+        """Calculate CSS positioning for a slot on a given day.
+
+        Args:
+            slot: The time slot DTO.
+            day: The day to calculate position for.
+
+        Returns:
+            SlotDisplay with position and styling information.
+        """
+        slot_start_date = slot.start_time.date()
+        slot_end_date = slot.end_time.date()
+
+        starts_here = slot_start_date == day
+        ends_here = slot_end_date == day
+        spans_midnight = slot_start_date != slot_end_date
+
+        if starts_here:
+            start_hour = slot.start_time.hour
+            start_minute = slot.start_time.minute
+            top_px = (start_hour * self.HOUR_HEIGHT_PX) + int(
+                start_minute / 60 * self.HOUR_HEIGHT_PX
+            )
+        else:
+            # Slot continues from previous day
+            top_px = 0
+
+        if ends_here:
+            end_hour = slot.end_time.hour
+            end_minute = slot.end_time.minute
+            end_px = (end_hour * self.HOUR_HEIGHT_PX) + int(
+                end_minute / 60 * self.HOUR_HEIGHT_PX
+            )
+            height_px = end_px - top_px
+        else:
+            # Slot continues to next day - extend to midnight
+            height_px = (24 * self.HOUR_HEIGHT_PX) - top_px
+
+        # Ensure minimum height for visibility
+        height_px = max(height_px, self.HOUR_HEIGHT_PX // 2)
+
+        return SlotDisplay(
+            slot=slot,
+            top_px=top_px,
+            height_px=height_px,
+            starts_here=starts_here,
+            ends_here=ends_here,
+            spans_midnight=spans_midnight,
+        )
+
+    def get_pagination_info(
+        self, all_days: list[date], page: int
+    ) -> dict[str, int | bool]:
+        """Calculate pagination information.
+
+        Args:
+            all_days: All event days.
+            page: Current page number (zero-indexed).
+
+        Returns:
+            Dict with pagination info.
+        """
+        total_pages = (len(all_days) + self.DAYS_PER_PAGE - 1) // self.DAYS_PER_PAGE
+        return {
+            "current_page": page,
+            "total_pages": total_pages,
+            "has_prev": page > 0,
+            "has_next": page < total_pages - 1,
+        }
 
 
 class PanelRequest(HttpRequest):
@@ -1004,25 +1154,49 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         return redirect("panel:session-fields", slug=slug)
 
 
-class TimeSlotsPageView(PanelAccessMixin, EventContextMixin, View):
-    """List time slots for an event."""
+class TimeSlotsPageView(
+    PanelAccessMixin, EventContextMixin, TimeSlotCalendarMixin, View
+):
+    """Display time slots in a visual calendar view."""
 
     request: PanelRequest
 
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display time slots list.
+        """Display time slots calendar.
 
         Returns:
-            TemplateResponse with the slots list or redirect if not found.
+            TemplateResponse with the calendar view or redirect if not found.
         """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
 
-        context["active_nav"] = "cfp"
-        context["time_slots"] = self.request.di.uow.time_slots.list_by_event(
-            current_event.pk
+        # Get page from query param (default 0)
+        try:
+            page = max(0, int(self.request.GET.get("page", 0)))
+        except ValueError:
+            page = 0
+
+        # Calculate event days and pagination
+        all_days = self.get_event_days(current_event)
+        visible_days = self.get_visible_days(all_days, page)
+        pagination = self.get_pagination_info(all_days, page)
+
+        # Get time slots and group by day
+        time_slots = list(
+            self.request.di.uow.time_slots.list_by_event(current_event.pk)
         )
+        slots_by_day = self.group_slots_by_day(time_slots, visible_days)
+
+        # Hour labels for the time axis
+        hours = list(range(24))
+
+        context["active_nav"] = "cfp"
+        context["days"] = visible_days
+        context["slots_by_day"] = slots_by_day
+        context["hours"] = hours
+        context["pagination"] = pagination
+        context["time_slots"] = time_slots  # Keep for backward compat / empty check
         return TemplateResponse(self.request, "panel/time-slots.html", context)
 
 
@@ -1034,6 +1208,8 @@ class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
         """Display the time slot creation form.
 
+        Accepts optional ?date=YYYY-MM-DD query param to pre-fill the date.
+
         Returns:
             TemplateResponse with the form or redirect if event not found.
         """
@@ -1041,8 +1217,21 @@ class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
+        # Parse optional date query param to pre-fill form
+        initial: dict[str, datetime] = {}
+        if date_str := self.request.GET.get("date"):
+            try:
+                parsed_date = datetime.strptime(date_str, "%Y-%m-%d").replace(
+                    tzinfo=UTC
+                )
+                # Default: 09:00 - 11:00 on the selected day
+                initial["start_time"] = parsed_date.replace(hour=9, minute=0)
+                initial["end_time"] = parsed_date.replace(hour=11, minute=0)
+            except ValueError:
+                pass  # Invalid date format, ignore
+
         context["active_nav"] = "cfp"
-        context["form"] = TimeSlotForm()
+        context["form"] = TimeSlotForm(initial=initial) if initial else TimeSlotForm()
         return TemplateResponse(self.request, "panel/time-slot-create.html", context)
 
     def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
