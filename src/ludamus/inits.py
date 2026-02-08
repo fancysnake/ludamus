@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, TypeVar
 
 from django.conf import settings
 
-from ludamus.adapters.external.membership_api import MembershipApiClient
 from ludamus.links.db.django.uow import UnitOfWork
+from ludamus.links.ticket_api import MembershipApiClient
 from ludamus.pacts import DependencyInjectorProtocol, TicketAPIProtocol
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ class DependencyInjector(DependencyInjectorProtocol):
 
     Usage:
         request.di.uow.enrollments
-        request.di.membership_api  # (future)
+        request.di.ticket_api
     """
 
     @cached_property
