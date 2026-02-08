@@ -3,21 +3,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
-from typing import TYPE_CHECKING
 
 import requests
 from django.conf import settings
-from django.utils import timezone
 
-if TYPE_CHECKING:
-    from ludamus.adapters.db.django.models import EnrollmentConfig, UserEnrollmentConfig
+from ludamus.pacts import MembershipAPIError
 
 logger = logging.getLogger(__name__)
-
-
-class MembershipAPIError(Exception):
-    pass
 
 
 class MembershipApiClient:
@@ -28,16 +20,7 @@ class MembershipApiClient:
         self.token = settings.MEMBERSHIP_API_TOKEN
         self.timeout = settings.MEMBERSHIP_API_TIMEOUT
 
-    def is_configured(self) -> bool:
-        return bool(self.base_url and self.token)
-
     def fetch_membership_count(self, email: str) -> int:
-        if not self.is_configured():
-            logger.warning(
-                "Membership API not configured - skipping fetch for %s", email
-            )
-            raise MembershipAPIError
-
         try:
             response = requests.get(
                 self.base_url,
@@ -61,128 +44,3 @@ class MembershipApiClient:
             raise MembershipAPIError from exception
 
         return membership_count
-
-
-def get_or_create_user_enrollment_config(
-    enrollment_config: EnrollmentConfig, user_email: str
-) -> UserEnrollmentConfig | None:
-    # First try to get existing config
-    user_config = enrollment_config.user_configs.filter(
-        user_email=user_email, fetched_from_api=True
-    ).first()
-
-    if user_config:
-        # If config has slots > 0, it's final - no need to refresh
-        if user_config.allowed_slots > 0:
-            logger.debug(
-                "Config for %s has %d slots, using final cached data",
-                user_email,
-                user_config.allowed_slots,
-            )
-            return user_config
-
-        # Only refresh configs with 0 slots, and only if enough time has passed
-        check_interval_minutes = getattr(settings, "MEMBERSHIP_API_CHECK_INTERVAL", 15)
-        time_threshold = timezone.now() - timedelta(minutes=check_interval_minutes)
-
-        if not user_config.last_check or user_config.last_check < time_threshold:
-            logger.info(
-                (
-                    "Config for %s has 0 slots and is older than %d minutes, "
-                    "refreshing from API"
-                ),
-                user_email,
-                check_interval_minutes,
-            )
-            # Update the existing config with fresh API data
-            return _refresh_user_config_from_api(user_config)
-        logger.debug(
-            "Config for %s has 0 slots but was checked recently, using cached data",
-            user_email,
-        )
-
-        # Config has 0 slots
-        return None
-
-    # No existing config - try to fetch from API
-    api_client = MembershipApiClient()
-
-    return _create_user_config_from_api(enrollment_config, user_email, api_client)
-
-
-def _refresh_user_config_from_api(
-    user_config: UserEnrollmentConfig,
-) -> UserEnrollmentConfig | None:
-    api_client = MembershipApiClient()
-
-    try:
-        membership_count = api_client.fetch_membership_count(user_config.user_email)
-    except MembershipAPIError:
-        return user_config
-
-    current_time = timezone.now()
-
-    # Update config with fresh data
-    if membership_count == 0:
-        user_config.allowed_slots = 0
-        user_config.last_check = current_time
-        user_config.save(update_fields=["allowed_slots", "last_check"])
-        logger.info(
-            "Refreshed config for %s: now has 0 slots (membership expired)",
-            user_config.user_email,
-        )
-        return None  # Return None since user has no slots
-
-    user_config.allowed_slots = membership_count
-    user_config.last_check = current_time
-    user_config.save(update_fields=["allowed_slots", "last_check"])
-    logger.info(
-        "Refreshed config for %s: now has %d slots",
-        user_config.user_email,
-        membership_count,
-    )
-    return user_config
-
-
-def _create_user_config_from_api(
-    enrollment_config: EnrollmentConfig,
-    user_email: str,
-    api_client: MembershipApiClient,
-) -> UserEnrollmentConfig | None:
-    from ludamus.adapters.db.django.models import (  # noqa: PLC0415
-        UserEnrollmentConfig as UserEnrollmentConfigModel,
-    )
-
-    try:
-        membership_count = api_client.fetch_membership_count(user_email)
-    except MembershipAPIError:
-        return None
-
-    current_time = timezone.now()
-
-    if membership_count == 0:
-        # User has no membership - create config with 0 slots and mark as API-fetched
-        user_config = UserEnrollmentConfigModel.objects.create(
-            enrollment_config=enrollment_config,
-            user_email=user_email,
-            allowed_slots=0,
-            fetched_from_api=True,
-            last_check=current_time,
-        )
-        logger.info("Created zero-slot config for non-member %s", user_email)
-        return None  # Return None since user has no slots
-
-    # User has membership - create config with slots based on membership count
-    # You can customize this logic based on your business rules
-    user_config = UserEnrollmentConfigModel.objects.create(
-        enrollment_config=enrollment_config,
-        user_email=user_email,
-        allowed_slots=membership_count,
-        fetched_from_api=True,
-        last_check=current_time,
-    )
-
-    logger.info(
-        "Created config with %d slots for member %s", membership_count, user_email
-    )
-    return user_config

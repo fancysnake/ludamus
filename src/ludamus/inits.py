@@ -3,7 +3,9 @@ from typing import TYPE_CHECKING, TypeVar
 
 from django.conf import settings
 
+from ludamus.adapters.external.membership_api import MembershipApiClient
 from ludamus.links.db.django.uow import UnitOfWork
+from ludamus.pacts import DependencyInjectorProtocol, TicketAPIProtocol
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
 Response = TypeVar("Response")
 
 
-class DependencyInjector:
+class DependencyInjector(DependencyInjectorProtocol):
     """Container for all request-scoped dependencies.
 
     Usage:
@@ -25,6 +27,10 @@ class DependencyInjector:
     @cached_property
     def uow(self) -> UnitOfWork:
         return UnitOfWork()
+
+    @cached_property
+    def ticket_api(self) -> TicketAPIProtocol:
+        return MembershipApiClient()
 
 
 class RepositoryInjectionMiddleware[Response]:

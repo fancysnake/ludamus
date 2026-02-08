@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
 from django import forms
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
@@ -16,12 +17,18 @@ from ludamus.adapters.db.django.models import (
     Space,
     TagCategory,
     TimeSlot,
+    can_enroll_users,
+    get_used_slots,
+    get_vc_available_slots,
 )
+from ludamus.mills import get_user_enrollment_config
 from ludamus.pacts import (
+    EnrollmentConfigRepositoryProtocol,
     EventDTO,
     ProposalCategoryDTO,
     TagCategoryDTO,
     TagDTO,
+    TicketAPIProtocol,
     UserData,
     UserDTO,
     UserType,
@@ -67,7 +74,12 @@ class ConnectedUserForm(BaseUserForm):
 
 
 def create_enrollment_form(
-    session: Session, current_user: UserDTO, connected_users: Iterable[UserDTO]
+    *,
+    session: Session,
+    current_user: UserDTO,
+    connected_users: Iterable[UserDTO],
+    enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
+    ticket_api: TicketAPIProtocol,
 ) -> type[forms.Form]:
     # Create form class dynamically with pre-generated fields
     form_fields = {}
@@ -79,10 +91,12 @@ def create_enrollment_form(
     enrollment_config = (
         session.agenda_item.space.area.venue.event.get_most_liberal_config(session)
     )
-    current_user_enrollment_config = (
-        session.agenda_item.space.area.venue.event.get_user_enrollment_config(
-            current_user.email
-        )
+    current_user_enrollment_config = get_user_enrollment_config(
+        event=EventDTO.model_validate(session.agenda_item.space.area.venue.event),
+        user_email=current_user.email,
+        enrollment_config_repo=enrollment_config_repo,
+        ticket_api=ticket_api,
+        check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
     )
     user_can_enroll = bool(
         enrollment_config
@@ -273,10 +287,12 @@ def create_enrollment_form(
                 and enrollment_config
                 and enrollment_config.restrict_to_configured_users
                 and current_user_enrollment_config
-                and not current_user_enrollment_config.can_enroll_users(enroll_requests)
+                and not can_enroll_users(
+                    current_user_enrollment_config, enroll_requests
+                )
             ):
-                used_slots = current_user_enrollment_config.get_used_slots()
-                available_slots = current_user_enrollment_config.get_available_slots()
+                used_slots = get_used_slots(current_user_enrollment_config)
+                available_slots = get_vc_available_slots(current_user_enrollment_config)
                 # Add error to first enrollment field using user's name
                 user_field = next(
                     field_name

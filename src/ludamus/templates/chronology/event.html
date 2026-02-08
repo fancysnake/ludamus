@@ -114,23 +114,23 @@
                                         {% endblocktranslate %}
                                     {% endwith %}
                                 </p>
-                                {% if user_enrollment_config.is_combined_access %}
+                                {% if user_enrollment_config.user_config and user_enrollment_config.domain_config %}
                                     <small class="text-muted">
-                                        {% if user_enrollment_config.has_individual_access and user_enrollment_config.has_domain_access %}
-                                            {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                        {% if user_enrollment_config.has_individual_access and user_enrollment_config.domain_config %}
+                                            {% blocktranslate with domain=user_enrollment_config.domain_config %}
                                                 Combined access: Individual enrollment passes + domain access (@{{ domain }}).
                                             {% endblocktranslate %}
-                                        {% elif user_enrollment_config.has_domain_access %}
-                                            {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                        {% elif user_enrollment_config.domain_config %}
+                                            {% blocktranslate with domain=user_enrollment_config.domain_config %}
                                                 Domain-based access: Users from @{{ domain }} have enrollment access.
                                             {% endblocktranslate %}
                                         {% else %}
                                             {% translate "Each person can be enrolled in multiple sessions." %}
                                         {% endif %}
                                     </small>
-                                {% elif user_enrollment_config.is_domain_based %}
+                                {% elif user_enrollment_config.domain_config %}
                                     <small class="text-muted">
-                                        {% blocktranslate with domain=user_enrollment_config.get_source_domain %}
+                                        {% blocktranslate with domain=user_enrollment_config.domain_config %}
                                             Domain-based access: Users from @{{ domain }} have enrollment access.
                                         {% endblocktranslate %}
                                     </small>

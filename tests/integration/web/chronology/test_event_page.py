@@ -23,11 +23,14 @@ from ludamus.adapters.web.django.entities import (
 from ludamus.pacts import (
     AgendaItemDTO,
     AreaDTO,
+    DomainEnrollmentConfigDTO,
     LocationData,
     SessionDTO,
     SpaceDTO,
+    UserEnrollmentConfigDTO,
     UserParticipation,
     VenueDTO,
+    VirtualEnrollmentConfig,
 )
 from tests.integration.utils import assert_response
 
@@ -600,7 +603,7 @@ class TestEventPageView:
             restrict_to_configured_users=True,
         )
         primary_slots = 7
-        UserEnrollmentConfig.objects.create(
+        user_config = UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=primary_slots,
@@ -618,15 +621,6 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        combined_config = response.context_data["user_enrollment_config"]
-        assert combined_config.enrollment_config == enrollment_config
-        assert combined_config.user_email == active_user.email
-        assert combined_config.allowed_slots == primary_slots + other_slots
-        assert combined_config.fetched_from_api == fetched_from_api
-        assert combined_config._is_combined_access  # noqa: SLF001
-        assert combined_config._has_individual_config  # noqa: SLF001
-        assert not combined_config._has_domain_config  # noqa: SLF001
-        assert combined_config._domain_config_source is None  # noqa: SLF001
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
@@ -664,7 +658,14 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
-                "user_enrollment_config": combined_config,
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=7 + 8,
+                    domain_config=None,
+                    enrollment_config_id=enrollment_config.pk,
+                    fetched_from_api=fetched_from_api,
+                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
+                    user_email=active_user.email,
+                ),
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -681,8 +682,6 @@ class TestEventPageView:
         faker,
         settings,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         slots = 7
         responses.get(
             url=settings.MEMBERSHIP_API_BASE_URL,
@@ -699,12 +698,7 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        user_config = UserEnrollmentConfig.objects.get(
-            enrollment_config=enrollment_config,
-            user_email=active_user.email,
-            allowed_slots=slots,
-            fetched_from_api=True,
-        )
+        user_enrollment_config = UserEnrollmentConfig.objects.get()
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
@@ -742,12 +736,27 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
-                "user_enrollment_config": user_config,
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=slots,
+                    domain_config=None,
+                    enrollment_config_id=enrollment_config.pk,
+                    fetched_from_api=True,
+                    user_config=UserEnrollmentConfigDTO(
+                        allowed_slots=slots,
+                        enrollment_config_id=enrollment_config.pk,
+                        fetched_from_api=True,
+                        last_check=user_enrollment_config.last_check,
+                        pk=user_enrollment_config.pk,
+                        user_email=active_user.email,
+                    ),
+                    user_email=active_user.email,
+                ),
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
         )
 
+    @responses.activate
     def test_ok_current_session_domain_config(
         self,
         active_user,
@@ -756,7 +765,15 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
+        settings,
     ):
+        responses.get(
+            url=settings.MEMBERSHIP_API_BASE_URL,
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            match=[
+                responses.matchers.query_param_matcher({"email": active_user.email})
+            ],
+        )
         slots = 7
         domain_config = DomainEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
@@ -770,13 +787,6 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        virtual_config = response.context_data["user_enrollment_config"]
-        assert virtual_config.enrollment_config == enrollment_config
-        assert virtual_config.user_email == active_user.email
-        assert virtual_config.allowed_slots == slots
-        assert not virtual_config.fetched_from_api
-        assert virtual_config._is_domain_based  # noqa: SLF001
-        assert virtual_config._source_domain_config == domain_config  # noqa: SLF001
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
@@ -814,7 +824,16 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
-                "user_enrollment_config": virtual_config,
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=slots,
+                    domain_config=DomainEnrollmentConfigDTO.model_validate(
+                        domain_config
+                    ),
+                    enrollment_config_id=enrollment_config.pk,
+                    fetched_from_api=False,
+                    user_config=None,
+                    user_email=active_user.email,
+                ),
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -830,7 +849,7 @@ class TestEventPageView:
         faker,
     ):
         primary_slots = 8
-        UserEnrollmentConfig.objects.create(
+        user_config = UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=primary_slots,
@@ -848,15 +867,6 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        combined_config = response.context_data["user_enrollment_config"]
-        assert combined_config.enrollment_config == enrollment_config
-        assert combined_config.user_email == active_user.email
-        assert combined_config.allowed_slots == primary_slots + domain_slots
-        assert not combined_config.fetched_from_api
-        assert combined_config._is_combined_access  # noqa: SLF001
-        assert combined_config._has_individual_config  # noqa: SLF001
-        assert combined_config._has_domain_config  # noqa: SLF001
-        assert combined_config._domain_config_source == domain_config  # noqa: SLF001
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
@@ -894,7 +904,16 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
-                "user_enrollment_config": combined_config,
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=primary_slots + domain_slots,
+                    domain_config=DomainEnrollmentConfigDTO.model_validate(
+                        domain_config
+                    ),
+                    enrollment_config_id=enrollment_config.pk,
+                    fetched_from_api=False,
+                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
+                    user_email=active_user.email,
+                ),
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -1121,7 +1140,14 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
-                "user_enrollment_config": user_config,
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=slots,
+                    domain_config=None,
+                    enrollment_config_id=enrollment_config.pk,
+                    fetched_from_api=True,
+                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
+                    user_email=active_user.email,
+                ),
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -1195,78 +1221,14 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
-                "user_enrollment_config": user_config,
-                "view": ANY,
-            },
-            template_name=["chronology/event.html"],
-        )
-
-    def test_ok_current_session_get_user_config_from_api_refetch_no_api(
-        self,
-        active_user,
-        agenda_item,
-        authenticated_client,
-        enrollment_config,
-        event,
-        faker,
-    ):
-        UserEnrollmentConfig.objects.create(
-            enrollment_config=enrollment_config,
-            user_email=active_user.email,
-            allowed_slots=0,
-            fetched_from_api=True,
-            last_check=faker.date_time_between("-10d", "-5d"),
-        )
-        enrollment_config.restrict_to_configured_users = True
-        enrollment_config.save()
-        agenda_item.start_time = faker.date_time_between("-10d", "-1d", tzinfo=UTC)
-        agenda_item.end_time = faker.date_time_between("+1d", "+10d", tzinfo=UTC)
-        agenda_item.save()
-        response = authenticated_client.get(self._get_url(event.slug))
-
-        user_config = UserEnrollmentConfig.objects.get(
-            enrollment_config=enrollment_config,
-            user_email=active_user.email,
-            allowed_slots=0,
-        )
-        session_data = SessionData(
-            agenda_item=AgendaItemDTO.model_validate(agenda_item),
-            effective_participants_limit=10,
-            enrolled_count=0,
-            filterable_tags=[],
-            full_participant_info="0/10",
-            has_any_enrollments=False,
-            is_enrollment_available=True,
-            is_full=False,
-            is_ongoing=True,
-            proposal=None,
-            session_participations=[],
-            session=SessionDTO.model_validate(agenda_item.session),
-            should_show_as_inactive=False,
-            loc=LocationData(
-                space=SpaceDTO.model_validate(agenda_item.space),
-                area=AreaDTO.model_validate(agenda_item.space.area),
-                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
-            ),
-            tags=[],
-            user_enrolled=False,
-            user_waiting=False,
-        )
-        assert_response(
-            response,
-            HTTPStatus.OK,
-            context_data={
-                "current_hour_data": {agenda_item.start_time: [session_data]},
-                "ended_hour_data": {},
-                "enrollment_requires_slots": True,
-                "event": event,
-                "filterable_tag_categories": [],
-                "future_unavailable_hour_data": {},
-                "hour_data": {agenda_item.start_time: [session_data]},
-                "object": event,
-                "proposals": [],
-                "sessions": [session_data],
-                "user_enrollment_config": user_config,
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=0,
+                    domain_config=None,
+                    enrollment_config_id=enrollment_config.pk,
+                    fetched_from_api=True,
+                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
+                    user_email=active_user.email,
+                ),
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -1350,7 +1312,14 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
-                "user_enrollment_config": user_config,
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=0,
+                    domain_config=None,
+                    enrollment_config_id=enrollment_config.pk,
+                    fetched_from_api=True,
+                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
+                    user_email=active_user.email,
+                ),
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -1427,7 +1396,14 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
-                "user_enrollment_config": user_config,
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=0,
+                    domain_config=None,
+                    enrollment_config_id=enrollment_config.pk,
+                    fetched_from_api=True,
+                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
+                    user_email=active_user.email,
+                ),
                 "view": ANY,
             },
             template_name=["chronology/event.html"],

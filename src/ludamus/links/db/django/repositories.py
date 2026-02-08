@@ -8,6 +8,8 @@ from django.utils.text import slugify
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
+    DomainEnrollmentConfig,
+    EnrollmentConfig,
     Event,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -21,6 +23,7 @@ from ludamus.adapters.db.django.models import (
     Space,
     Sphere,
     TimeSlot,
+    UserEnrollmentConfig,
     Venue,
 )
 from ludamus.pacts import (
@@ -30,6 +33,9 @@ from ludamus.pacts import (
     AreaRepositoryProtocol,
     CategoryStats,
     ConnectedUserRepositoryProtocol,
+    DomainEnrollmentConfigDTO,
+    EnrollmentConfigDTO,
+    EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventRepositoryProtocol,
     EventStatsData,
@@ -57,6 +63,8 @@ from ludamus.pacts import (
     TimeSlotDTO,
     UserData,
     UserDTO,
+    UserEnrollmentConfigData,
+    UserEnrollmentConfigDTO,
     UserRepositoryProtocol,
     UserType,
     VenueDTO,
@@ -65,6 +73,7 @@ from ludamus.pacts import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from datetime import datetime
 
     from ludamus.adapters.db.django.models import User
     from ludamus.links.db.django.storage import Storage
@@ -1647,3 +1656,55 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             pk=field.pk,
             slug=field.slug,
         )
+
+
+class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):
+    @staticmethod
+    def read_list(
+        event_id: int, max_start_time: datetime, min_end_time: datetime
+    ) -> list[EnrollmentConfigDTO]:
+        return [
+            EnrollmentConfigDTO.model_validate(config)
+            for config in EnrollmentConfig.objects.filter(
+                event_id=event_id,
+                start_time__lte=max_start_time,
+                end_time__gte=min_end_time,
+            ).all()
+        ]
+
+    @staticmethod
+    def create_user_config(
+        user_enrollment_config: UserEnrollmentConfigData,
+    ) -> UserEnrollmentConfigDTO:
+        return UserEnrollmentConfigDTO.model_validate(
+            UserEnrollmentConfig.objects.create(**user_enrollment_config)
+        )
+
+    @staticmethod
+    def read_user_config(
+        config: EnrollmentConfigDTO, user_email: str
+    ) -> UserEnrollmentConfigDTO | None:
+        user_config = UserEnrollmentConfig.objects.filter(
+            enrollment_config_id=config.pk, user_email=user_email
+        ).first()
+        return (
+            UserEnrollmentConfigDTO.model_validate(user_config) if user_config else None
+        )
+
+    @staticmethod
+    def update_user_config(user_enrollment_config: UserEnrollmentConfigDTO) -> None:
+        update_dict = user_enrollment_config.dict()
+        del update_dict["pk"]
+        UserEnrollmentConfig.objects.filter(id=user_enrollment_config.pk).update(
+            **update_dict
+        )
+
+    @staticmethod
+    def read_domain_config(
+        enrollment_config: EnrollmentConfigDTO, domain: str
+    ) -> DomainEnrollmentConfigDTO | None:
+        config = DomainEnrollmentConfig.objects.filter(
+            enrollment_config_id=enrollment_config.pk, domain=domain
+        ).first()
+
+        return DomainEnrollmentConfigDTO.model_validate(config) if config else None
