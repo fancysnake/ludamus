@@ -43,7 +43,7 @@
                 </div>
             </div>
         </div>
-        {% if time_slots %}
+        {% if days %}
             <div class="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
                 <!-- Header with pagination -->
                 <div class="flex justify-between items-center p-4 border-b border-neutral-200">
@@ -162,14 +162,9 @@
             <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
                 <div class="max-w-sm mx-auto">
                     <div class="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        {% heroicon_outline "clock" class="w-6 h-6 text-neutral-400" %}
+                        {% heroicon_outline "exclamation-triangle" class="w-6 h-6 text-neutral-400" %}
                     </div>
-                    <p class="text-neutral-500 mb-4">{% translate "No time slots defined. Add time slots to schedule sessions." %}</p>
-                    <a href="{% url 'panel:time-slot-create' slug=current_event.slug %}"
-                       class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
-                        {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
-                        {% translate "Add First Time Slot" %}
-                    </a>
+                    <p class="text-neutral-500">{% translate "Event dates are not configured. Set the event start and end dates in settings first." %}</p>
                 </div>
             </div>
         {% endif %}
