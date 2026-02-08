@@ -35,6 +35,7 @@ from ludamus.gates.web.django.forms import (
     ProposalCategoryForm,
     SessionFieldForm,
     SpaceForm,
+    TimeSlotForm,
     VenueDuplicateForm,
     VenueForm,
     create_venue_copy_form,
@@ -974,6 +975,155 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Session field deleted successfully."))
         return redirect("panel:session-fields", slug=slug)
+
+
+class TimeSlotsPageView(PanelAccessMixin, EventContextMixin, View):
+    """List time slots for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display time slots list.
+
+        Returns:
+            TemplateResponse with the slots list or redirect if not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        context["time_slots"] = self.request.di.uow.time_slots.list_by_event(
+            current_event.pk
+        )
+        return TemplateResponse(self.request, "panel/time-slots.html", context)
+
+
+class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    """Create a new time slot for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display the time slot creation form.
+
+        Returns:
+            TemplateResponse with the form or redirect if event not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "cfp"
+        context["form"] = TimeSlotForm()
+        return TemplateResponse(self.request, "panel/time-slot-create.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Handle time slot creation.
+
+        Returns:
+            Redirect response to slots list on success, or form with errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        form = TimeSlotForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "cfp"
+            context["form"] = form
+            return TemplateResponse(
+                self.request, "panel/time-slot-create.html", context
+            )
+
+        start_time = form.cleaned_data["start_time"]
+        end_time = form.cleaned_data["end_time"]
+
+        self.request.di.uow.time_slots.create(current_event.pk, start_time, end_time)
+
+        messages.success(self.request, _("Time slot created successfully."))
+        return redirect("panel:time-slots", slug=slug)
+
+
+class TimeSlotEditPageView(PanelAccessMixin, EventContextMixin, View):
+    """Edit an existing time slot."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, slot_pk: int) -> HttpResponse:
+        """Display the time slot edit form.
+
+        Returns:
+            TemplateResponse with the form or redirect if not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            time_slot = self.request.di.uow.time_slots.read(slot_pk)
+        except NotFoundError:
+            messages.error(self.request, _("Time slot not found."))
+            return redirect("panel:time-slots", slug=slug)
+
+        context["active_nav"] = "cfp"
+        context["time_slot"] = time_slot
+        context["form"] = TimeSlotForm(
+            initial={"start_time": time_slot.start_time, "end_time": time_slot.end_time}
+        )
+        return TemplateResponse(self.request, "panel/time-slot-edit.html", context)
+
+    def post(self, _request: PanelRequest, slug: str, slot_pk: int) -> HttpResponse:
+        """Handle time slot update.
+
+        Returns:
+            Redirect response to slots list on success, or form with errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            time_slot = self.request.di.uow.time_slots.read(slot_pk)
+        except NotFoundError:
+            messages.error(self.request, _("Time slot not found."))
+            return redirect("panel:time-slots", slug=slug)
+
+        form = TimeSlotForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "cfp"
+            context["time_slot"] = time_slot
+            context["form"] = form
+            return TemplateResponse(self.request, "panel/time-slot-edit.html", context)
+
+        start_time = form.cleaned_data["start_time"]
+        end_time = form.cleaned_data["end_time"]
+
+        self.request.di.uow.time_slots.update(slot_pk, start_time, end_time)
+
+        messages.success(self.request, _("Time slot updated successfully."))
+        return redirect("panel:time-slots", slug=slug)
+
+
+class TimeSlotDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+    """Delete a time slot (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, slot_pk: int) -> HttpResponse:
+        """Handle time slot deletion.
+
+        Returns:
+            Redirect response to time slots list.
+        """
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        self.request.di.uow.time_slots.delete(slot_pk)
+        messages.success(self.request, _("Time slot deleted successfully."))
+        return redirect("panel:time-slots", slug=slug)
 
 
 class VenuesPageView(PanelAccessMixin, EventContextMixin, View):
