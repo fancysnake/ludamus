@@ -69,13 +69,13 @@
                 {% if data.session.min_age > 0 %}
                     <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
                           style="color: var(--theme-text-secondary)"
-                          title="{% translate 'Minimum age' %}: {{ data.session.min_age }} {% translate 'years' %}">
+                          title="{% translate "Minimum age" %}: {{ data.session.min_age }} {% translate "years" %}">
                         {{ data.session.min_age }}+
                     </span>
                 {% else %}
                     <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
                           style="color: var(--theme-text-secondary)"
-                          title="{% translate 'All ages welcome' %}">
+                          title="{% translate "All ages welcome" %}">
                         {% translate "All ages" %}
                     </span>
                 {% endif %}
@@ -124,7 +124,7 @@
                                 </a>
                             {% else %}
                                 <button class="btn btn-secondary text-xs py-1.5 px-3" disabled
-                                        title="{% translate 'Only connected users can enroll' %}">
+                                        title="{% translate "Only connected users can enroll" %}">
                                     {% heroicon_mini "user-plus" class="w-3.5 h-3.5" %} {% translate "Enroll" %}
                                 </button>
                             {% endif %}
