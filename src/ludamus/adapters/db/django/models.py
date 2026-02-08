@@ -983,6 +983,30 @@ class SessionFieldRequirement(models.Model):
         return f"{self.field.name} ({req}) for {self.category.name}"
 
 
+class TimeSlotAvailability(models.Model):
+    """Specifies which time slots are available for a proposal category."""
+
+    category = models.ForeignKey(
+        ProposalCategory,
+        on_delete=models.CASCADE,
+        related_name="time_slot_availabilities",
+    )
+    time_slot = models.ForeignKey(
+        TimeSlot, on_delete=models.CASCADE, related_name="category_availabilities"
+    )
+
+    class Meta:
+        db_table = "time_slot_availability"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("category", "time_slot"), name="unique_time_slot_per_category"
+            ),
+        )
+
+    def __str__(self) -> str:
+        return f"{self.time_slot} available for {self.category.name}"
+
+
 def can_enroll_users(
     *,
     users: list[UserDTO],
