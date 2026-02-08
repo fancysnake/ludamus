@@ -1282,7 +1282,18 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                             check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
                         )
                         if user_config and not can_enroll_users(
-                            user_config, [UserDTO.model_validate(participation.user)]
+                            users=[
+                                UserDTO.model_validate(manager_user),
+                                *[
+                                    UserDTO.model_validate(c)
+                                    for c in manager_user.connected.all()
+                                ],
+                            ],
+                            event=EventDTO.model_validate(event),
+                            virtual_config=user_config,
+                            users_to_enroll=[
+                                UserDTO.model_validate(participation.user)
+                            ],
                         ):
                             can_be_promoted = False
 

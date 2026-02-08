@@ -23,11 +23,9 @@ from ludamus.adapters.web.django.entities import (
 from ludamus.pacts import (
     AgendaItemDTO,
     AreaDTO,
-    DomainEnrollmentConfigDTO,
     LocationData,
     SessionDTO,
     SpaceDTO,
-    UserEnrollmentConfigDTO,
     UserParticipation,
     VenueDTO,
     VirtualEnrollmentConfig,
@@ -603,7 +601,7 @@ class TestEventPageView:
             restrict_to_configured_users=True,
         )
         primary_slots = 7
-        user_config = UserEnrollmentConfig.objects.create(
+        UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=primary_slots,
@@ -659,12 +657,7 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
-                    allowed_slots=7 + 8,
-                    domain_config=None,
-                    enrollment_config_id=enrollment_config.pk,
-                    fetched_from_api=fetched_from_api,
-                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
-                    user_email=active_user.email,
+                    allowed_slots=7 + 8, has_domain_config=False, has_user_config=True
                 ),
                 "view": ANY,
             },
@@ -698,7 +691,6 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        user_enrollment_config = UserEnrollmentConfig.objects.get()
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
@@ -737,19 +729,7 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
-                    allowed_slots=slots,
-                    domain_config=None,
-                    enrollment_config_id=enrollment_config.pk,
-                    fetched_from_api=True,
-                    user_config=UserEnrollmentConfigDTO(
-                        allowed_slots=slots,
-                        enrollment_config_id=enrollment_config.pk,
-                        fetched_from_api=True,
-                        last_check=user_enrollment_config.last_check,
-                        pk=user_enrollment_config.pk,
-                        user_email=active_user.email,
-                    ),
-                    user_email=active_user.email,
+                    allowed_slots=slots, has_domain_config=False, has_user_config=True
                 ),
                 "view": ANY,
             },
@@ -775,7 +755,7 @@ class TestEventPageView:
             ],
         )
         slots = 7
-        domain_config = DomainEnrollmentConfig.objects.create(
+        DomainEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             domain=active_user.email.split("@")[1],
             allowed_slots_per_user=slots,
@@ -825,14 +805,7 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
-                    allowed_slots=slots,
-                    domain_config=DomainEnrollmentConfigDTO.model_validate(
-                        domain_config
-                    ),
-                    enrollment_config_id=enrollment_config.pk,
-                    fetched_from_api=False,
-                    user_config=None,
-                    user_email=active_user.email,
+                    allowed_slots=slots, has_domain_config=True, has_user_config=False
                 ),
                 "view": ANY,
             },
@@ -849,13 +822,13 @@ class TestEventPageView:
         faker,
     ):
         primary_slots = 8
-        user_config = UserEnrollmentConfig.objects.create(
+        UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=primary_slots,
         )
         domain_slots = 7
-        domain_config = DomainEnrollmentConfig.objects.create(
+        DomainEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             domain=active_user.email.split("@")[1],
             allowed_slots_per_user=domain_slots,
@@ -906,13 +879,8 @@ class TestEventPageView:
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=primary_slots + domain_slots,
-                    domain_config=DomainEnrollmentConfigDTO.model_validate(
-                        domain_config
-                    ),
-                    enrollment_config_id=enrollment_config.pk,
-                    fetched_from_api=False,
-                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
-                    user_email=active_user.email,
+                    has_domain_config=True,
+                    has_user_config=True,
                 ),
                 "view": ANY,
             },
@@ -1078,7 +1046,6 @@ class TestEventPageView:
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=0,
-            fetched_from_api=True,
             last_check=faker.date_time_between("-10d", "-5d"),
         )
         slots = 7
@@ -1097,11 +1064,10 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        user_config = UserEnrollmentConfig.objects.get(
+        assert UserEnrollmentConfig.objects.get(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=slots,
-            fetched_from_api=True,
         )
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
@@ -1141,12 +1107,7 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
-                    allowed_slots=slots,
-                    domain_config=None,
-                    enrollment_config_id=enrollment_config.pk,
-                    fetched_from_api=True,
-                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
-                    user_email=active_user.email,
+                    allowed_slots=slots, has_domain_config=False, has_user_config=True
                 ),
                 "view": ANY,
             },
@@ -1169,7 +1130,6 @@ class TestEventPageView:
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=0,
-            fetched_from_api=True,
             last_check=faker.date_time_between("-1m", "now"),
         )
         enrollment_config.restrict_to_configured_users = True
@@ -1179,7 +1139,7 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        user_config = UserEnrollmentConfig.objects.get(
+        assert UserEnrollmentConfig.objects.get(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=0,
@@ -1222,12 +1182,7 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
-                    allowed_slots=0,
-                    domain_config=None,
-                    enrollment_config_id=enrollment_config.pk,
-                    fetched_from_api=True,
-                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
-                    user_email=active_user.email,
+                    allowed_slots=0, has_domain_config=False, has_user_config=True
                 ),
                 "view": ANY,
             },
@@ -1251,7 +1206,6 @@ class TestEventPageView:
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=0,
-            fetched_from_api=True,
             last_check=faker.date_time_between("-10d", "-5d"),
         )
         responses.get(
@@ -1269,11 +1223,10 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        user_config = UserEnrollmentConfig.objects.get(
+        assert UserEnrollmentConfig.objects.get(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=0,
-            fetched_from_api=True,
         )
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
@@ -1313,12 +1266,7 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
-                    allowed_slots=0,
-                    domain_config=None,
-                    enrollment_config_id=enrollment_config.pk,
-                    fetched_from_api=True,
-                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
-                    user_email=active_user.email,
+                    allowed_slots=0, has_domain_config=False, has_user_config=True
                 ),
                 "view": ANY,
             },
@@ -1353,11 +1301,10 @@ class TestEventPageView:
         agenda_item.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
-        user_config = UserEnrollmentConfig.objects.get(
+        assert UserEnrollmentConfig.objects.get(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
             allowed_slots=0,
-            fetched_from_api=True,
         )
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
@@ -1397,12 +1344,7 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
-                    allowed_slots=0,
-                    domain_config=None,
-                    enrollment_config_id=enrollment_config.pk,
-                    fetched_from_api=True,
-                    user_config=UserEnrollmentConfigDTO.model_validate(user_config),
-                    user_email=active_user.email,
+                    allowed_slots=0, has_domain_config=False, has_user_config=True
                 ),
                 "view": ANY,
             },

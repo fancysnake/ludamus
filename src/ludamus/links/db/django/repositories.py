@@ -1693,7 +1693,7 @@ class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):
 
     @staticmethod
     def update_user_config(user_enrollment_config: UserEnrollmentConfigDTO) -> None:
-        update_dict = user_enrollment_config.dict()
+        update_dict = user_enrollment_config.model_dump()
         del update_dict["pk"]
         UserEnrollmentConfig.objects.filter(id=user_enrollment_config.pk).update(
             **update_dict

@@ -288,11 +288,21 @@ def create_enrollment_form(
                 and enrollment_config.restrict_to_configured_users
                 and current_user_enrollment_config
                 and not can_enroll_users(
-                    current_user_enrollment_config, enroll_requests
+                    users=[current_user, *connected_users],
+                    event=EventDTO.model_validate(enrollment_config.event),
+                    virtual_config=current_user_enrollment_config,
+                    users_to_enroll=enroll_requests,
                 )
             ):
-                used_slots = get_used_slots(current_user_enrollment_config)
-                available_slots = get_vc_available_slots(current_user_enrollment_config)
+                used_slots = get_used_slots(
+                    users=[current_user, *connected_users],
+                    event=EventDTO.model_validate(enrollment_config.event),
+                )
+                available_slots = get_vc_available_slots(
+                    users=[current_user, *connected_users],
+                    event=EventDTO.model_validate(enrollment_config.event),
+                    virtual_config=current_user_enrollment_config,
+                )
                 # Add error to first enrollment field using user's name
                 user_field = next(
                     field_name

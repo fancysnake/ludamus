@@ -346,14 +346,7 @@ def get_user_enrollment_config(
     ticket_api: TicketAPIProtocol,
     check_interval_minutes: int,
 ) -> VirtualEnrollmentConfig | None:
-    primary_config = VirtualEnrollmentConfig(
-        enrollment_config_id=0,
-        user_email=user_email,
-        allowed_slots=0,
-        domain_config=None,
-        user_config=None,
-        fetched_from_api=False,
-    )
+    virtual_config = VirtualEnrollmentConfig()
 
     now = datetime.now(tz=UTC)
     for config in enrollment_config_repo.read_list(
@@ -372,21 +365,11 @@ def get_user_enrollment_config(
             enrollment_config_repo=enrollment_config_repo,
         ):
             # Try to fetch from API if not found locally
-            primary_config.allowed_slots += api_user_config.allowed_slots
-            if not primary_config.user_config:
-                primary_config.enrollment_config_id = (
-                    api_user_config.enrollment_config_id
-                )
-                primary_config.user_config = api_user_config
-                primary_config.fetched_from_api = api_user_config.fetched_from_api
+            virtual_config.allowed_slots += api_user_config.allowed_slots
+            virtual_config.has_user_config = True
         elif existing_user_config:
-            primary_config.allowed_slots += existing_user_config.allowed_slots
-            if not primary_config.user_config:
-                primary_config.enrollment_config_id = (
-                    existing_user_config.enrollment_config_id
-                )
-                primary_config.user_config = existing_user_config
-                primary_config.fetched_from_api = existing_user_config.fetched_from_api
+            virtual_config.allowed_slots += existing_user_config.allowed_slots
+            virtual_config.has_user_config = True
 
         # Always check for domain-based access regardless of individual config
         email_domain = (
@@ -397,9 +380,11 @@ def get_user_enrollment_config(
                 config, email_domain
             )
         ):
-            primary_config.allowed_slots += domain_config.allowed_slots_per_user
-            if not primary_config.domain_config:
-                primary_config.enrollment_config_id = domain_config.enrollment_config_id
-                primary_config.domain_config = domain_config
+            virtual_config.allowed_slots += domain_config.allowed_slots_per_user
+            virtual_config.has_domain_config = True
 
-    return primary_config if primary_config.enrollment_config_id else None
+    return (
+        virtual_config
+        if (virtual_config.has_user_config or virtual_config.has_domain_config)
+        else None
+    )

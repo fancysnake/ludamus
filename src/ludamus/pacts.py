@@ -633,12 +633,9 @@ class RootRequestProtocol(Protocol):
 
 @dataclass
 class VirtualEnrollmentConfig:
-    allowed_slots: int
-    domain_config: DomainEnrollmentConfigDTO | None
-    enrollment_config_id: int
-    fetched_from_api: bool
-    user_config: UserEnrollmentConfigDTO | None
-    user_email: str
+    allowed_slots: int = 0
+    has_domain_config: bool = False
+    has_user_config: bool = False
 
 
 class MembershipAPIError(Exception):
