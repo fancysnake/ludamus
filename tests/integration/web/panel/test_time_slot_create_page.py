@@ -66,6 +66,21 @@ class TestTimeSlotCreatePageView:
             },
         )
 
+    def test_get_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:time-slot-create", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
+        )
+
     def test_post_creates_time_slot(
         self, authenticated_client, active_user, sphere, event
     ):

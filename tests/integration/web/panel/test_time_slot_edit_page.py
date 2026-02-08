@@ -86,6 +86,24 @@ class TestTimeSlotEditPageView:
             url=reverse("panel:time-slots", kwargs={"slug": event.slug}),
         )
 
+    def test_get_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere, time_slot
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:time-slot-edit",
+            kwargs={"slug": "nonexistent", "slot_pk": time_slot.pk},
+        )
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
+        )
+
     def test_post_updates_time_slot(
         self, authenticated_client, active_user, sphere, event, time_slot
     ):
@@ -170,4 +188,30 @@ class TestTimeSlotEditPageView:
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, "Time slot not found.")],
             url=reverse("panel:time-slots", kwargs={"slug": event.slug}),
+        )
+
+    def test_post_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere, event, time_slot
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:time-slot-edit",
+            kwargs={"slug": "nonexistent", "slot_pk": time_slot.pk},
+        )
+
+        response = authenticated_client.post(
+            url,
+            data={
+                "start_time": event.start_time.strftime("%Y-%m-%dT%H:%M"),
+                "end_time": (
+                    (event.start_time + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M")
+                ),
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
         )
