@@ -109,9 +109,7 @@
         {% block extra_head %}
         {% endblock extra_head %}
     </head>
-    <body class="flex flex-col min-h-screen font-sans antialiased"
-          style="background-color: var(--color-background);
-                 color: var(--theme-text)">
+    <body class="flex flex-col min-h-screen font-sans antialiased bg-background text-text">
         {% include "components/navbar.html" %}
         <!-- Flash Messages -->
         {% if messages %}
@@ -132,7 +130,7 @@
                                 color: var(--theme-info-text);
                                 {% else %}background-color: var(--theme-bg-tertiary);
                                 border-color: var(--theme-border);
-                                color: var(--theme-text-secondary);
+                                color: var(--color-text-secondary);
                                 {% endif %}">
                         {% if message.tags == 'error' %}
                             {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
@@ -156,13 +154,13 @@
             {% block header_section %}
                 <div class="mb-6 text-center">
                     <h1 class="text-2xl sm:text-3xl font-bold"
-                        style="color: var(--theme-text)">
+                        style="color: var(--color-text)">
                         {% block header %}
                         {% endblock header %}
                     </h1>
                     {% block description %}
                         <p class="mt-2 text-sm sm:text-base"
-                           style="color: var(--theme-text-muted)">
+                           style="color: var(--color-text-muted)">
                             {% block description_text %}
                             {% endblock description_text %}
                         </p>
@@ -179,7 +177,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-end mb-4">{% include "components/theme_switcher.html" %}</div>
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm"
-                     style="color: var(--theme-text-muted)">
+                     style="color: var(--color-text-muted)">
                     <p class="text-center sm:text-left">
                         © {% now "Y" %} Radosław Ganczarek.
                         <a href="https://github.com/fancysnake/ludamus"

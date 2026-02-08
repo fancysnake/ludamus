@@ -50,12 +50,12 @@
                         </div>
                     {% endif %}
 
-                    <h1 class="text-3xl sm:text-4xl font-bold mb-3" style="color: var(--theme-text)">
+                    <h1 class="text-3xl sm:text-4xl font-bold mb-3" style="color: var(--color-text)">
                         {{ event.name }}
                     </h1>
 
                     {% if event.description %}
-                        <p class="text-lg mb-6 max-w-2xl" style="color: var(--theme-text-muted)">
+                        <p class="text-lg mb-6 max-w-2xl" style="color: var(--color-text-muted)">
                             {{ event.description }}
                         </p>
                     {% endif %}
@@ -67,8 +67,8 @@
                                 {% heroicon_mini "calendar-days" class="w-4 h-4 text-coral-600" %}
                             </div>
                             <div>
-                                <div class="font-medium" style="color: var(--theme-text)">{{ event.start_time|date:"l, F j" }}</div>
-                                <div style="color: var(--theme-text-muted)">{{ event.start_time|time:"G:i" }} - {{ event.end_time|time:"G:i" }}</div>
+                                <div class="font-medium" style="color: var(--color-text)">{{ event.start_time|date:"l, F j" }}</div>
+                                <div style="color: var(--color-text-muted)">{{ event.start_time|time:"G:i" }} - {{ event.end_time|time:"G:i" }}</div>
                             </div>
                         </div>
                     </div>
@@ -171,7 +171,7 @@
                     <p class="mb-2">
                         {% translate "Your Anonymous Code" %}: <strong class="text-lg">{{ anonymous_code }}</strong>
                         <br>
-                        <small style="color: var(--theme-text-muted)">{% translate "Save this code to manage your enrollment later" %}</small>
+                        <small style="color: var(--color-text-muted)">{% translate "Save this code to manage your enrollment later" %}</small>
                     </p>
                     <div class="flex gap-2" role="group">
                         <button type="button"
@@ -192,8 +192,8 @@
         <div id="anonymousCodeModal-panel" class="modal-panel" onclick="if(event.target===this)closeModal('anonymousCodeModal')">
             <div class="modal-content-tw modal-sm">
                 <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--theme-border)">
-                    <h3 class="font-semibold" style="color: var(--theme-text)">{% translate "Enter Different Code" %}</h3>
-                    <button onclick="closeModal('anonymousCodeModal')" class="p-1 rounded-lg hover:opacity-70" style="color: var(--theme-text-muted)" aria-label="Close">
+                    <h3 class="font-semibold" style="color: var(--color-text)">{% translate "Enter Different Code" %}</h3>
+                    <button onclick="closeModal('anonymousCodeModal')" class="p-1 rounded-lg hover:opacity-70" style="color: var(--color-text-muted)" aria-label="Close">
                         {% heroicon_mini "x-mark" class="w-5 h-5" %}
                     </button>
                 </div>
@@ -201,16 +201,16 @@
                     <div class="px-6 py-4">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="modalCode" class="block text-sm font-medium mb-1" style="color: var(--theme-text)">{% translate "Anonymous Code" %}</label>
+                            <label for="modalCode" class="block text-sm font-medium mb-1" style="color: var(--color-text)">{% translate "Anonymous Code" %}</label>
                             <input type="text"
                                    class="w-full rounded-xl border px-3 py-2 text-sm"
-                                   style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                   style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--color-text)"
                                    id="modalCode"
                                    name="code"
                                    placeholder="{% translate "Enter your code" %}"
                                    required
                                    maxlength="6">
-                            <p class="text-xs mt-1" style="color: var(--theme-text-muted)">{% translate "This will replace your current anonymous session" %}</p>
+                            <p class="text-xs mt-1" style="color: var(--color-text-muted)">{% translate "This will replace your current anonymous session" %}</p>
                         </div>
                     </div>
                     <div class="px-6 py-4 border-t flex justify-end gap-2" style="border-color: var(--theme-border)">
@@ -226,7 +226,7 @@
                 <!-- Section Header -->
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
-                        <h2 class="text-xl font-bold" style="color: var(--theme-text)">
+                        <h2 class="text-xl font-bold" style="color: var(--color-text)">
                             {% translate "Sessions" %}
                         </h2>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-coral-100 text-coral-700">
@@ -246,19 +246,19 @@
                         <div class="mb-6 space-y-3">
                             <!-- Search bar -->
                             <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--theme-text-muted)">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--color-text-muted)">
                                     {% heroicon_mini "magnifying-glass" class="w-5 h-5" %}
                                 </span>
                                 <input type="text"
                                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm"
-                                       style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                       style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--color-text)"
                                        id="sessionFilter"
                                        placeholder="{% translate "Filter by title or host..." %}">
                             </div>
                             <!-- Filter row -->
                             <div class="flex flex-wrap gap-2 items-center">
                                 <select class="rounded-xl px-3 py-2 text-sm border"
-                                        style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                        style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--color-text)"
                                         id="statusFilter">
                                     <option value="">{% translate "All statuses" %}</option>
                                     <option value="available">{% translate "Available spots" %}</option>
@@ -270,7 +270,7 @@
                                     <option value="my-waiting">{% translate "I am waiting" %}</option>
                                 </select>
                                 <select class="rounded-xl px-3 py-2 text-sm border"
-                                        style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                        style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--color-text)"
                                         id="venueFilter">
                                     <option value="">{% translate "All venues" %}</option>
                                 </select>
@@ -278,14 +278,14 @@
                                 <div class="flex items-center gap-1.5">
                                     <input type="number"
                                            class="w-20 rounded-xl px-3 py-2 text-sm border"
-                                           style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                           style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--color-text)"
                                            id="minAgeFilter"
                                            placeholder="{% translate "Min age" %}"
                                            min="0" max="99">
-                                    <span class="text-sm" style="color: var(--theme-text-muted)">–</span>
+                                    <span class="text-sm" style="color: var(--color-text-muted)">–</span>
                                     <input type="number"
                                            class="w-20 rounded-xl px-3 py-2 text-sm border"
-                                           style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                           style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--color-text)"
                                            id="maxAgeFilter"
                                            placeholder="{% translate "Max age" %}"
                                            min="0" max="99">
@@ -294,7 +294,7 @@
                                 <div id="tagFilters" class="contents">
                                     {% for category in filterable_tag_categories %}
                                         <select class="rounded-xl px-3 py-2 text-sm border tag-filter"
-                                                style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--theme-text)"
+                                                style="background-color: var(--theme-bg-secondary); border-color: var(--theme-border); color: var(--color-text)"
                                                 data-category="{{ category.name|slugify }}"
                                                 id="tagFilter_{{ category.name|slugify }}">
                                             <option value="">{% translate "All" %} {{ category.name }}</option>
@@ -317,13 +317,13 @@
                                  data-time-slot="ended-{{ forloop.counter }}">
                                 <!-- Time Slot Header -->
                                 <div class="flex items-center gap-4 mb-4">
-                                    <div class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold" style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-muted)">
+                                    <div class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold" style="background-color: var(--theme-bg-tertiary); color: var(--color-text-muted)">
                                         {% heroicon_mini "clock" class="w-4 h-4" %}
                                         {{ hour|date:"l, F j" }} – {{ hour|time:"H:i" }}
                                         <span class="text-xs font-normal">({% translate "Completed" %})</span>
                                     </div>
                                     <div class="h-px grow" style="background: var(--theme-border)"></div>
-                                    <span class="text-xs" style="color: var(--theme-text-muted)">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
+                                    <span class="text-xs" style="color: var(--color-text-muted)">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
                                 </div>
                                 <!-- Sessions in this time slot -->
                                 <div class="session-grid grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -344,7 +344,7 @@
                                         {{ hour|date:"l, F j" }} – {{ hour|time:"H:i" }}
                                     </div>
                                     <div class="h-px grow" style="background: var(--theme-accent-gradient)"></div>
-                                    <span class="text-xs" style="color: var(--theme-text-muted)">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
+                                    <span class="text-xs" style="color: var(--color-text-muted)">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
                                     {% if event.is_proposal_active %}
                                         <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
                                            class="btn btn-teal text-xs py-1.5 px-3 shrink-0">
@@ -361,7 +361,7 @@
                                     </div>
                                 {% else %}
                                     <div class="text-center py-6">
-                                        <p class="text-sm" style="color: var(--theme-text-muted)">
+                                        <p class="text-sm" style="color: var(--color-text-muted)">
                                             {% translate "No sessions scheduled for this time slot" %}
                                             {% if event.is_proposal_active %}
                                                 – <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}" style="color: var(--theme-primary)">{% translate "be the first to propose!" %}</a>
@@ -383,7 +383,7 @@
                                         <span class="text-xs font-normal">({% translate "Not Yet Available" %})</span>
                                     </div>
                                     <div class="h-px grow" style="background: var(--theme-border)"></div>
-                                    <span class="text-xs" style="color: var(--theme-text-muted)">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
+                                    <span class="text-xs" style="color: var(--color-text-muted)">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
                                 </div>
                                 <!-- Sessions in this time slot -->
                                 <div class="session-grid grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -395,11 +395,11 @@
                         {% endfor %}
                         {% if not ended_hour_data and not current_hour_data and not future_unavailable_hour_data %}
                             <div class="text-center py-12">
-                                <div class="mb-3" style="color: var(--theme-text-muted)">
+                                <div class="mb-3" style="color: var(--color-text-muted)">
                                     {% heroicon_outline "calendar" class="w-10 h-10 mx-auto" %}
                                 </div>
-                                <h5 class="text-lg font-semibold mb-2" style="color: var(--theme-text-muted)">{% translate "No sessions or time slots available yet" %}</h5>
-                                <p class="text-sm" style="color: var(--theme-text-muted)">
+                                <h5 class="text-lg font-semibold mb-2" style="color: var(--color-text-muted)">{% translate "No sessions or time slots available yet" %}</h5>
+                                <p class="text-sm" style="color: var(--color-text-muted)">
                                     {% if event.is_proposal_active %}
                                         {% translate "Be the first to propose a session!" %}
                                     {% else %}
@@ -424,12 +424,12 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr style="border-bottom: 1px solid var(--theme-border)">
-                            <th class="text-left py-3 px-4 font-medium" style="color: var(--theme-text-secondary)">{% translate "Proposal" %}</th>
-                            <th class="text-left py-3 px-4 font-medium" style="color: var(--theme-text-secondary)">{% translate "Host" %}</th>
-                            <th class="text-left py-3 px-4 font-medium" style="color: var(--theme-text-secondary)">{% translate "Submitted" %}</th>
-                            <th class="text-left py-3 px-4 font-medium" style="color: var(--theme-text-secondary)">{% translate "Preferred Times" %}</th>
-                            <th class="text-left py-3 px-4 font-medium" style="color: var(--theme-text-secondary)">{% translate "Participants" %}</th>
-                            <th class="text-left py-3 px-4 font-medium" style="color: var(--theme-text-secondary)">{% translate "Action" %}</th>
+                            <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-secondary)">{% translate "Proposal" %}</th>
+                            <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-secondary)">{% translate "Host" %}</th>
+                            <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-secondary)">{% translate "Submitted" %}</th>
+                            <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-secondary)">{% translate "Preferred Times" %}</th>
+                            <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-secondary)">{% translate "Participants" %}</th>
+                            <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-secondary)">{% translate "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -437,16 +437,16 @@
                             <tr class="hover:bg-warm-50 dark:hover:bg-neutral-800" style="border-bottom: 1px solid var(--theme-border-light)">
                                 <td class="py-3 px-4">
                                     <div>
-                                        <span class="font-medium" style="color: var(--theme-text)">{{ proposal.title }}</span>
+                                        <span class="font-medium" style="color: var(--color-text)">{{ proposal.title }}</span>
                                         {% if proposal.description %}
                                             <br>
-                                            <span class="text-xs" style="color: var(--theme-text-muted)">{{ proposal.description|truncatechars:100 }}</span>
+                                            <span class="text-xs" style="color: var(--color-text-muted)">{{ proposal.description|truncatechars:100 }}</span>
                                         {% endif %}
                                         {% if proposal.tags.exists %}
                                             <div class="flex flex-wrap gap-1 mt-1">
                                                 {% for tag in proposal.tags.all %}
                                                     <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700 proposal-tag"
-                                                          style="color: var(--theme-text-secondary)"
+                                                          style="color: var(--color-text-secondary)"
                                                           title="{{ tag.name }}">{{ tag.name }}</span>
                                                 {% endfor %}
                                             </div>
@@ -460,12 +460,12 @@
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="flex items-center gap-2">
-                                        <span style="color: var(--theme-text-muted)">{% heroicon_mini "user-circle" class="w-4 h-4" %}</span>
+                                        <span style="color: var(--color-text-muted)">{% heroicon_mini "user-circle" class="w-4 h-4" %}</span>
                                         <span>{{ proposal.host.name }}</span>
                                     </div>
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
-                                    <span class="text-xs" style="color: var(--theme-text-muted)">{{ proposal.creation_time|date:"M j" }}</span>
+                                    <span class="text-xs" style="color: var(--color-text-muted)">{{ proposal.creation_time|date:"M j" }}</span>
                                     <br>
                                     {{ proposal.creation_time|date:"G:i" }}
                                 </td>
@@ -476,15 +476,15 @@
                                                 <div class="whitespace-nowrap">{{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}</div>
                                             {% endfor %}
                                             {% if proposal.time_slots.count > 2 %}
-                                                <span style="color: var(--theme-text-muted)">+{{ proposal.time_slots.count|add:"-2" }} more</span>
+                                                <span style="color: var(--color-text-muted)">+{{ proposal.time_slots.count|add:"-2" }} more</span>
                                             {% endif %}
                                         </div>
                                     {% else %}
-                                        <span style="color: var(--theme-text-muted)">{% translate "Flexible" %}</span>
+                                        <span style="color: var(--color-text-muted)">{% translate "Flexible" %}</span>
                                     {% endif %}
                                 </td>
                                 <td class="py-3 px-4">
-                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-200 dark:bg-neutral-700" style="color: var(--theme-text-secondary)">{{ proposal.participants_limit }}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-200 dark:bg-neutral-700" style="color: var(--color-text-secondary)">{{ proposal.participants_limit }}</span>
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="flex flex-col gap-1.5">
@@ -511,29 +511,29 @@
             <div id="proposalModal{{ proposal.pk }}-panel" class="modal-panel">
                 <div class="modal-content-tw modal-lg">
                     <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--theme-border)">
-                        <h3 class="text-lg font-semibold" style="color: var(--theme-text)">{{ proposal.title }}</h3>
-                        <button onclick="closeModal('proposalModal{{ proposal.pk }}')" class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700" style="color: var(--theme-text-muted)">
+                        <h3 class="text-lg font-semibold" style="color: var(--color-text)">{{ proposal.title }}</h3>
+                        <button onclick="closeModal('proposalModal{{ proposal.pk }}')" class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700" style="color: var(--color-text-muted)">
                             {% heroicon_mini "x-mark" class="w-5 h-5" %}
                         </button>
                     </div>
-                    <div class="px-6 py-4" style="color: var(--theme-text)">
+                    <div class="px-6 py-4" style="color: var(--color-text)">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="space-y-3">
                                 <div>
-                                    <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text-secondary)">{% translate "Host" %}</h4>
+                                    <h4 class="text-sm font-semibold mb-1" style="color: var(--color-text-secondary)">{% translate "Host" %}</h4>
                                     <p>{{ proposal.host.name|default:proposal.host.name }}</p>
                                 </div>
                                 <div>
-                                    <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text-secondary)">{% translate "Participants Limit" %}</h4>
+                                    <h4 class="text-sm font-semibold mb-1" style="color: var(--color-text-secondary)">{% translate "Participants Limit" %}</h4>
                                     <p>{{ proposal.participants_limit }}</p>
                                 </div>
                                 {% if proposal.tags.exists %}
                                     <div>
-                                        <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text-secondary)">{% translate "Tags" %}</h4>
+                                        <h4 class="text-sm font-semibold mb-1" style="color: var(--color-text-secondary)">{% translate "Tags" %}</h4>
                                         <div class="flex flex-wrap gap-1.5">
                                             {% for tag in proposal.tags.all %}
                                                 <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
-                                                      style="color: var(--theme-text-secondary)"
+                                                      style="color: var(--color-text-secondary)"
                                                       title="{{ tag.name }}">
                                                     {{ tag.name }}
                                                 </span>
@@ -544,12 +544,12 @@
                             </div>
                             <div class="space-y-3">
                                 <div>
-                                    <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text-secondary)">{% translate "Submitted" %}</h4>
+                                    <h4 class="text-sm font-semibold mb-1" style="color: var(--color-text-secondary)">{% translate "Submitted" %}</h4>
                                     <p>{{ proposal.creation_time|date:"F j, Y G:i" }}</p>
                                 </div>
                                 {% if proposal.time_slots.exists %}
                                     <div>
-                                        <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text-secondary)">{% translate "Preferred Time Slots" %}</h4>
+                                        <h4 class="text-sm font-semibold mb-1" style="color: var(--color-text-secondary)">{% translate "Preferred Time Slots" %}</h4>
                                         {% for slot in proposal.time_slots.all %}<div class="text-sm">{{ slot }}</div>{% endfor %}
                                     </div>
                                 {% endif %}
@@ -557,19 +557,19 @@
                         </div>
                         {% if proposal.description %}
                             <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
-                                <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text-secondary)">{% translate "Description" %}</h4>
+                                <h4 class="text-sm font-semibold mb-1" style="color: var(--color-text-secondary)">{% translate "Description" %}</h4>
                                 <p>{{ proposal.description }}</p>
                             </div>
                         {% endif %}
                         {% if proposal.requirements %}
                             <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
-                                <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text-secondary)">{% translate "Requirements" %}</h4>
+                                <h4 class="text-sm font-semibold mb-1" style="color: var(--color-text-secondary)">{% translate "Requirements" %}</h4>
                                 <p>{{ proposal.requirements }}</p>
                             </div>
                         {% endif %}
                         {% if proposal.needs %}
                             <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
-                                <h4 class="text-sm font-semibold mb-1" style="color: var(--theme-text-secondary)">{% translate "Special Needs" %}</h4>
+                                <h4 class="text-sm font-semibold mb-1" style="color: var(--color-text-secondary)">{% translate "Special Needs" %}</h4>
                                 <p>{{ proposal.needs }}</p>
                             </div>
                         {% endif %}
@@ -589,18 +589,18 @@
         <div id="statusModal{{ data.session.pk }}-panel" class="modal-panel">
             <div class="modal-content-tw modal-md">
                 <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--theme-border)">
-                    <h3 class="text-lg font-semibold flex items-center gap-2" style="color: var(--theme-text)">
+                    <h3 class="text-lg font-semibold flex items-center gap-2" style="color: var(--color-text)">
                         <span style="color: var(--theme-info)">{% heroicon_mini "information-circle" class="w-5 h-5" %}</span>
                         {% translate "Enrollment Status" %} - {{ data.session.title }}
                     </h3>
-                    <button onclick="closeModal('statusModal{{ data.session.pk }}')" class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700" style="color: var(--theme-text-muted)">
+                    <button onclick="closeModal('statusModal{{ data.session.pk }}')" class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700" style="color: var(--color-text-muted)">
                         {% heroicon_mini "x-mark" class="w-5 h-5" %}
                     </button>
                 </div>
-                <div class="px-6 py-4 space-y-4" style="color: var(--theme-text)">
+                <div class="px-6 py-4 space-y-4" style="color: var(--color-text)">
                     <!-- Your enrollment status -->
                     <div>
-                        <h4 class="text-sm font-semibold mb-2" style="color: var(--theme-text-secondary)">{% translate "Your Status" %}</h4>
+                        <h4 class="text-sm font-semibold mb-2" style="color: var(--color-text-secondary)">{% translate "Your Status" %}</h4>
                         {% with user_participation=data.session_participations|dictsort:"creation_time" %}
                             {% for participation in user_participation %}
                                 {% if participation.user.pk == current_user.pk %}
@@ -611,18 +611,18 @@
                                             <span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background-color: var(--theme-warning-light); color: var(--theme-warning-text)">{% translate "Waiting List" %}</span>
                                         {% endif %}
                                         <span>{{ current_user.full_name }}</span>
-                                        <span class="text-xs" style="color: var(--theme-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
+                                        <span class="text-xs" style="color: var(--color-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
                                     </div>
                                 {% endif %}
                             {% empty %}
-                                <p class="text-sm italic" style="color: var(--theme-text-muted)">{% translate "Not enrolled" %}</p>
+                                <p class="text-sm italic" style="color: var(--color-text-muted)">{% translate "Not enrolled" %}</p>
                             {% endfor %}
                         {% endwith %}
                     </div>
                     <!-- Connected users enrollment status -->
                     {% if current_connected_users %}
                         <div>
-                            <h4 class="text-sm font-semibold mb-2" style="color: var(--theme-text-secondary)">{% translate "Connected Users Status" %}</h4>
+                            <h4 class="text-sm font-semibold mb-2" style="color: var(--color-text-secondary)">{% translate "Connected Users Status" %}</h4>
                             <div class="space-y-2">
                                 {% for connected_user in current_connected_users %}
                                     <div class="flex items-center gap-2">
@@ -635,14 +635,14 @@
                                                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background-color: var(--theme-warning-light); color: var(--theme-warning-text)">{% translate "Waiting List" %}</span>
                                                     {% endif %}
                                                     <span>{{ connected_user.full_name }}</span>
-                                                    <span class="text-xs" style="color: var(--theme-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
+                                                    <span class="text-xs" style="color: var(--color-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
                                                 {% endif %}
                                             {% empty %}
-                                                <span class="text-sm" style="color: var(--theme-text-muted)">{% translate "Not enrolled" %}</span>
+                                                <span class="text-sm" style="color: var(--color-text-muted)">{% translate "Not enrolled" %}</span>
                                                 <span>{{ connected_user.full_name }}</span>
                                             {% endfor %}
                                             {% if not connected_participation %}
-                                                <span class="text-sm" style="color: var(--theme-text-muted)">{% translate "Not enrolled" %}</span>
+                                                <span class="text-sm" style="color: var(--color-text-muted)">{% translate "Not enrolled" %}</span>
                                                 <span>{{ connected_user.full_name }}</span>
                                             {% endif %}
                                         {% endwith %}
@@ -653,14 +653,14 @@
                     {% endif %}
                     <!-- Session Information -->
                     <div class="pt-3" style="border-top: 1px solid var(--theme-border)">
-                        <h4 class="text-sm font-semibold mb-2" style="color: var(--theme-text-secondary)">{% translate "Session Information" %}</h4>
+                        <h4 class="text-sm font-semibold mb-2" style="color: var(--color-text-secondary)">{% translate "Session Information" %}</h4>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <span class="text-xs" style="color: var(--theme-text-muted)">{% translate "Participants" %}:</span>
+                                <span class="text-xs" style="color: var(--color-text-muted)">{% translate "Participants" %}:</span>
                                 <div class="{% if data.is_full %}text-coral-600{% else %}text-teal-600{% endif %} font-medium">{{ data.full_participant_info }}</div>
                             </div>
                             <div>
-                                <span class="text-xs" style="color: var(--theme-text-muted)">{% translate "Time" %}:</span>
+                                <span class="text-xs" style="color: var(--color-text-muted)">{% translate "Time" %}:</span>
                                 <div>{{ data.agenda_item.start_time|date:"M j, G:i" }} - {{ data.agenda_item.end_time|date:"G:i" }}</div>
                             </div>
                         </div>
@@ -688,8 +688,8 @@
             <div class="modal-content-tw modal-xl h-[600px] max-h-[90vh] flex flex-col">
                 <!-- Header -->
                 <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--theme-border)">
-                    <h3 class="text-lg font-semibold" style="color: var(--theme-text)">{{ data.session.title }}</h3>
-                    <button onclick="closeModal('sessionDetailModal{{ data.session.pk }}')" class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700" style="color: var(--theme-text-muted)">
+                    <h3 class="text-lg font-semibold" style="color: var(--color-text)">{{ data.session.title }}</h3>
+                    <button onclick="closeModal('sessionDetailModal{{ data.session.pk }}')" class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700" style="color: var(--color-text-muted)">
                         {% heroicon_mini "x-mark" class="w-5 h-5" %}
                     </button>
                 </div>
@@ -704,7 +704,7 @@
                     <button id="participants-tab-{{ data.session.pk }}"
                             onclick="switchTab('{{ data.session.pk }}', 'participants')"
                             class="px-4 py-3 text-sm font-medium flex items-center gap-1.5"
-                            style="border-bottom: 2px solid transparent; color: var(--theme-text-muted)">
+                            style="border-bottom: 2px solid transparent; color: var(--color-text-muted)">
                         {% heroicon_mini "users" class="w-4 h-4" %} {% translate "Participants" %}
                         <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-coral-100 text-coral-700">{{ data.enrolled_count }}</span>
                         {% if data.session.waiting_count > 0 %}
@@ -713,7 +713,7 @@
                     </button>
                 </div>
                 <!-- Tab Content -->
-                <div class="px-6 py-4 flex-1 overflow-y-auto" style="color: var(--theme-text)">
+                <div class="px-6 py-4 flex-1 overflow-y-auto" style="color: var(--color-text)">
                     <!-- Information Tab -->
                     <div id="info-{{ data.session.pk }}" class="tab-pane">
                         <!-- Host info -->
@@ -722,7 +722,7 @@
                                 <span class="text-white text-sm font-medium">{% heroicon_mini "user" class="w-5 h-5" %}</span>
                             </div>
                             <div>
-                                <div class="font-medium" style="color: var(--theme-text)">{{ data.session.presenter_name|default:data.session.presenter_name }}</div>
+                                <div class="font-medium" style="color: var(--color-text)">{{ data.session.presenter_name|default:data.session.presenter_name }}</div>
                                 {% if data.proposal %}
                                     {% with host=data.proposal.host %}
                                         {% if host and host.slug and host.discord_username %}
@@ -740,8 +740,8 @@
                         {% if data.session.description %}
                             <!-- Description -->
                             <div class="mb-6">
-                                <h3 class="font-semibold mb-2" style="color: var(--theme-text-secondary)">{% translate "About this session" %}</h3>
-                                <div class="leading-relaxed" style="color: var(--theme-text-muted)">{{ data.session.description|linebreaks }}</div>
+                                <h3 class="font-semibold mb-2" style="color: var(--color-text-secondary)">{% translate "About this session" %}</h3>
+                                <div class="leading-relaxed" style="color: var(--color-text-muted)">{{ data.session.description|linebreaks }}</div>
                             </div>
                         {% endif %}
                         {% if data.tags %}
@@ -749,7 +749,7 @@
                             <div class="flex flex-wrap gap-2 mb-6">
                                 {% for tag in data.tags %}
                                     <span class="tag-pill px-3 py-1.5 rounded-lg text-sm font-medium bg-warm-200 dark:bg-neutral-700 session-detail-tag"
-                                          style="color: var(--theme-text-secondary)"
+                                          style="color: var(--color-text-secondary)"
                                           title="{{ tag.name }} ({{ tag.category.name }})">
                                         {{ tag.name }}
                                     </span>
@@ -759,16 +759,16 @@
                         <!-- Details grid -->
                         <div class="grid grid-cols-2 gap-3 mb-6">
                             <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                                <div class="text-sm mb-1" style="color: var(--theme-text-muted)">{% translate "Time" %}</div>
-                                <div class="font-medium" style="color: var(--theme-text)">
+                                <div class="text-sm mb-1" style="color: var(--color-text-muted)">{% translate "Time" %}</div>
+                                <div class="font-medium" style="color: var(--color-text)">
                                     {{ data.agenda_item.start_time|date:"l, F j" }}
                                     <br>
                                     {{ data.agenda_item.start_time|time:"G:i" }} - {{ data.agenda_item.end_time|time:"G:i" }}
                                 </div>
                             </div>
                             <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                                <div class="text-sm mb-1" style="color: var(--theme-text-muted)">{% translate "Location" %}</div>
-                                <div class="font-medium" style="color: var(--theme-text)">
+                                <div class="text-sm mb-1" style="color: var(--color-text-muted)">{% translate "Location" %}</div>
+                                <div class="font-medium" style="color: var(--color-text)">
                                     {% if data.loc.space %}
                                         {% if data.loc.area %}
                                             {{ data.loc.venue.name }} ›
@@ -776,13 +776,13 @@
                                         {% endif %}
                                         {{ data.loc.space.name }}
                                     {% else %}
-                                        <span style="color: var(--theme-text-muted)">{% translate "TBA" %}</span>
+                                        <span style="color: var(--color-text-muted)">{% translate "TBA" %}</span>
                                     {% endif %}
                                 </div>
                             </div>
                             <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                                <div class="text-sm mb-1" style="color: var(--theme-text-muted)">{% translate "Capacity" %}</div>
-                                <div class="font-medium flex flex-wrap items-center gap-1.5" style="color: var(--theme-text)">
+                                <div class="text-sm mb-1" style="color: var(--color-text-muted)">{% translate "Capacity" %}</div>
+                                <div class="font-medium flex flex-wrap items-center gap-1.5" style="color: var(--color-text)">
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
                                         {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
                                     </span>
@@ -792,8 +792,8 @@
                                 </div>
                             </div>
                             <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                                <div class="text-sm mb-1" style="color: var(--theme-text-muted)">{% translate "Minimum Age" %}</div>
-                                <div class="font-medium" style="color: var(--theme-text)">
+                                <div class="text-sm mb-1" style="color: var(--color-text-muted)">{% translate "Minimum Age" %}</div>
+                                <div class="font-medium" style="color: var(--color-text)">
                                     {% if data.session.min_age > 0 %}
                                         {{ data.session.min_age }}+ {% translate "years" %}
                                     {% else %}
@@ -804,8 +804,8 @@
                         </div>
                         {% if data.session.requirements %}
                             <div class="mb-6">
-                                <h3 class="font-semibold mb-2" style="color: var(--theme-text-secondary)">{% translate "Requirements" %}</h3>
-                                <div class="leading-relaxed" style="color: var(--theme-text-muted)">{{ data.session.requirements|linebreaks }}</div>
+                                <h3 class="font-semibold mb-2" style="color: var(--color-text-secondary)">{% translate "Requirements" %}</h3>
+                                <div class="leading-relaxed" style="color: var(--color-text-muted)">{{ data.session.requirements|linebreaks }}</div>
                             </div>
                         {% endif %}
                         <!-- Enrollment Status for Authenticated Users -->
@@ -828,7 +828,7 @@
                         <!-- Enrolled Participants -->
                         {% with confirmed_participants=data.session_participations|dictsort:"creation_time" %}
                             {% if confirmed_participants %}
-                                <h3 class="font-semibold mb-3" style="color: var(--theme-text-secondary)">
+                                <h3 class="font-semibold mb-3" style="color: var(--color-text-secondary)">
                                     {% translate "Enrolled" %} ({{ data.enrolled_count }}/{{ data.effective_participants_limit }})
                                 </h3>
                                 <div class="space-y-2 mb-6">
@@ -839,7 +839,7 @@
                                                     <div class="w-8 h-8 rounded-full bg-gradient-to-br from-warm-400 to-warm-500 flex items-center justify-center shrink-0">
                                                         {% heroicon_mini "user" class="w-4 h-4 text-white" %}
                                                     </div>
-                                                    <span class="font-medium" style="color: var(--theme-text)">{{ participation.user.full_name }}</span>
+                                                    <span class="font-medium" style="color: var(--color-text)">{{ participation.user.full_name }}</span>
                                                 </div>
                                                 <div class="flex items-center gap-2">
                                                     {% with user=participation.user %}
@@ -864,7 +864,7 @@
                         {% endwith %}
                         <!-- Waiting List -->
                         {% if data.session.waiting_count > 0 %}
-                            <h3 class="font-semibold mb-3" style="color: var(--theme-text-secondary)">
+                            <h3 class="font-semibold mb-3" style="color: var(--color-text-secondary)">
                                 {% translate "Waiting List" %}
                             </h3>
                             <div class="space-y-2">
@@ -873,23 +873,23 @@
                                         <div class="waiting-list-row flex items-center justify-between p-3 rounded-xl bg-warm-100 dark:bg-neutral-800">
                                             <div class="flex items-center gap-3">
                                                 <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold waiting-position" style="background-color: var(--theme-warning-light); color: var(--theme-warning-text)"></span>
-                                                <span class="font-medium" style="color: var(--theme-text)">{{ participation.user.full_name }}</span>
+                                                <span class="font-medium" style="color: var(--color-text)">{{ participation.user.full_name }}</span>
                                             </div>
-                                            <span class="text-xs" style="color: var(--theme-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
+                                            <span class="text-xs" style="color: var(--color-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
                                         </div>
                                     {% endif %}
                                 {% endfor %}
                             </div>
                         {% else %}
                             {% if data.session_participations %}
-                                <div class="text-center py-4" style="color: var(--theme-text-muted)">
+                                <div class="text-center py-4" style="color: var(--color-text-muted)">
                                     <p class="text-sm">{% translate "No one on the waiting list." %}</p>
                                 </div>
                             {% endif %}
                         {% endif %}
                         {% if not data.session_participations %}
                             <div class="flex items-center justify-center p-4 border-2 border-dashed rounded-xl" style="border-color: var(--theme-border)">
-                                <span class="text-sm" style="color: var(--theme-text-muted)">{% translate "No participants enrolled yet." %}</span>
+                                <span class="text-sm" style="color: var(--color-text-muted)">{% translate "No participants enrolled yet." %}</span>
                             </div>
                         {% endif %}
                     </div>
@@ -976,7 +976,7 @@
                     } else {
                         pane.style.display = 'none';
                         btn.style.borderBottomColor = 'transparent';
-                        btn.style.color = 'var(--theme-text-muted)';
+                        btn.style.color = 'var(--color-text-muted)';
                     }
                 }
             });

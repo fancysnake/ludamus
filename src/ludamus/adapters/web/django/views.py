@@ -642,9 +642,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 "ended_hour_data": dict(ended_hour_data),
                 "current_hour_data": dict(current_hour_data),
                 "future_unavailable_hour_data": dict(future_unavailable_hour_data),
-                "total_enrolled": sum(
-                    s.enrolled_count for s in sessions_data.values()
-                ),
+                "total_enrolled": sum(s.enrolled_count for s in sessions_data.values()),
             }
         )
 

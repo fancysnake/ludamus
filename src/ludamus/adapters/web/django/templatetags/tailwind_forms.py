@@ -31,16 +31,16 @@ INPUT_CLASSES = (
 INPUT_STYLE = (
     "background-color: var(--theme-bg-secondary); "
     "border-color: var(--theme-border); "
-    "color: var(--theme-text);"
+    "color: var(--color-text);"
 )
 
 INPUT_FOCUS_STYLE = "border-color: var(--theme-border-focus);"
 
 LABEL_CLASSES = "block text-sm font-medium mb-1"
-LABEL_STYLE = "color: var(--theme-text-secondary);"
+LABEL_STYLE = "color: var(--color-text-secondary);"
 
 HELP_TEXT_CLASSES = "text-xs mt-1"
-HELP_TEXT_STYLE = "color: var(--theme-text-muted);"
+HELP_TEXT_STYLE = "color: var(--color-text-muted);"
 
 ERROR_CLASSES = "text-xs mt-1"
 ERROR_STYLE = "color: var(--theme-danger);"
@@ -196,20 +196,20 @@ def tw_button(  # noqa: PLR0913
 
     variant_styles = {
         "primary": (
-            "background-color: var(--theme-primary); color: var(--theme-text-inverse);"
+            "background-color: var(--theme-primary); color: var(--color-text-inverse);"
         ),
         "secondary": (
             "background-color: var(--theme-bg-tertiary); "
             "border: 1px solid var(--theme-border); "
-            "color: var(--theme-text);"
+            "color: var(--color-text);"
         ),
         "danger": (
-            "background-color: var(--theme-danger); color: var(--theme-text-inverse);"
+            "background-color: var(--theme-danger); color: var(--color-text-inverse);"
         ),
         "success": (
-            "background-color: var(--theme-success); color: var(--theme-text-inverse);"
+            "background-color: var(--theme-success); color: var(--color-text-inverse);"
         ),
-        "ghost": "background-color: transparent; color: var(--theme-text-secondary);",
+        "ghost": "background-color: transparent; color: var(--color-text-secondary);",
     }
 
     classes = [
@@ -336,7 +336,7 @@ def _render_checkbox_field(field: BoundField) -> str:
     label_html = format_html(
         '<label class="inline-flex items-center cursor-pointer">'
         "{}"
-        '<span class="ml-2 text-sm" style="color: var(--theme-text);">{}</span>'
+        '<span class="ml-2 text-sm" style="color: var(--color-text);">{}</span>'
         "</label>",
         field,
         field.label,
@@ -370,7 +370,7 @@ def _render_multi_choice_field(field: BoundField, *, is_radio: bool = False) -> 
                 )
                 checked = "checked" if str(value) in [str(v) for v in values] else ""
 
-        label_style = "color: var(--theme-text);"
+        label_style = "color: var(--color-text);"
         checked_attr = "checked" if checked else ""
         parts.append(
             format_html(
