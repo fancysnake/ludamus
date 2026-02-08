@@ -7,7 +7,7 @@ import re
 from collections import defaultdict
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -164,21 +164,6 @@ class TimeSlotCalendarMixin:
     DAYS_PER_PAGE = 5
     HOUR_HEIGHT_PX = 40
 
-    @staticmethod
-    def get_event_days(event: EventDTO) -> list[date]:
-        """Return all dates in event period.
-
-        Args:
-            event: The event DTO with start_time and end_time.
-
-        Returns:
-            List of dates from event start to end (inclusive).
-        """
-        start_date = event.start_time.date()
-        end_date = event.end_time.date()
-        num_days = (end_date - start_date).days + 1
-        return [start_date + timedelta(days=i) for i in range(num_days)]
-
     def get_visible_days(self, all_days: list[date], page: int) -> list[date]:
         """Return days for current page.
 
@@ -293,36 +278,6 @@ class TimeSlotCalendarMixin:
             "has_prev": page > 0,
             "has_next": page < total_pages - 1,
         }
-
-    @staticmethod
-    def get_hour_availability(
-        event: EventDTO, visible_days: list[date]
-    ) -> dict[date, dict[int, bool]]:
-        """Calculate which hours are within event period for each day.
-
-        Args:
-            event: The event with start_time and end_time.
-            visible_days: Days currently visible in the calendar.
-
-        Returns:
-            Dict mapping each day to a dict of hour -> is_available.
-        """
-        result: dict[date, dict[int, bool]] = {}
-        event_start = event.start_time
-        event_end = event.end_time
-
-        for day in visible_days:
-            hour_availability: dict[int, bool] = {}
-            for hour in range(24):
-                # Create datetime for start of this hour on this day
-                hour_start = datetime(day.year, day.month, day.day, hour, 0, tzinfo=UTC)
-                hour_end = datetime(day.year, day.month, day.day, hour, 59, tzinfo=UTC)
-                # Hour is available if it overlaps with event period
-                is_available = hour_start < event_end and hour_end >= event_start
-                hour_availability[hour] = is_available
-            result[day] = hour_availability
-
-        return result
 
 
 class PanelRequest(HttpRequest):
@@ -1209,7 +1164,7 @@ class TimeSlotsPageView(
             page = 0
 
         # Calculate event days and pagination
-        all_days = self.get_event_days(current_event)
+        all_days = PanelService.get_event_days(current_event)
         visible_days = self.get_visible_days(all_days, page)
         pagination = self.get_pagination_info(all_days, page)
 
@@ -1223,7 +1178,9 @@ class TimeSlotsPageView(
         hours = list(range(24))
 
         # Calculate which hours are within event period
-        hour_availability = self.get_hour_availability(current_event, visible_days)
+        hour_availability = PanelService.get_hour_availability(
+            current_event, visible_days
+        )
 
         context["active_nav"] = "cfp"
         context["days"] = visible_days
