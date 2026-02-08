@@ -87,3 +87,7 @@ class UnitOfWork(UnitOfWorkProtocol):
     @cached_property
     def enrollment_configs(self) -> repositories.EnrollmentConfigRepository:
         return repositories.EnrollmentConfigRepository()
+
+    @cached_property
+    def time_slots(self) -> repositories.TimeSlotRepository:
+        return repositories.TimeSlotRepository(self._storage)
