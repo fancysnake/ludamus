@@ -31,6 +31,7 @@
   --color-coral-700: #c13118;
   --color-coral-800: #9f2c18;
   --color-coral-900: #842a1b;
+  --color-coral-950: #4a1610;
 
   --color-teal-50: #f0fdfa;
   --color-teal-100: #ccfbef;
@@ -139,6 +140,22 @@ a {
     --theme-secondary: #2dd4b3;
     --theme-secondary-hover: #5fe9cb;
     --theme-secondary-light: #134e45;
+    --theme-success: #2dd4b3;
+    --theme-success-light: #134e45;
+    --theme-success-bg: #052e24;
+    --theme-success-text: #5fe9cb;
+    --theme-warning: #fbbf24;
+    --theme-warning-light: #44380f;
+    --theme-warning-bg: #292211;
+    --theme-warning-text: #fbbf24;
+    --theme-danger: #f87171;
+    --theme-danger-light: #450a0a;
+    --theme-danger-bg: #2d0808;
+    --theme-danger-text: #fca5a5;
+    --theme-info: #60a5fa;
+    --theme-info-light: #1e3a5f;
+    --theme-info-bg: #0c1e36;
+    --theme-info-text: #93c5fd;
     --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
     --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
   }
@@ -161,6 +178,22 @@ a {
   --theme-secondary: #2dd4b3;
   --theme-secondary-hover: #5fe9cb;
   --theme-secondary-light: #134e45;
+  --theme-success: #2dd4b3;
+  --theme-success-light: #134e45;
+  --theme-success-bg: #052e24;
+  --theme-success-text: #5fe9cb;
+  --theme-warning: #fbbf24;
+  --theme-warning-light: #44380f;
+  --theme-warning-bg: #292211;
+  --theme-warning-text: #fbbf24;
+  --theme-danger: #f87171;
+  --theme-danger-light: #450a0a;
+  --theme-danger-bg: #2d0808;
+  --theme-danger-text: #fca5a5;
+  --theme-info: #60a5fa;
+  --theme-info-light: #1e3a5f;
+  --theme-info-bg: #0c1e36;
+  --theme-info-text: #93c5fd;
 }
 
 .no-transitions,
@@ -312,6 +345,55 @@ a {
 .card-body {
   padding: 1.5rem;
 }
+
+/* Modal system */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-panel.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content-tw {
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 100%;
+  border-radius: 1.5rem;
+  background-color: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  box-shadow: var(--theme-shadow-lg);
+}
+
+.modal-content-tw.modal-sm { max-width: 28rem; }
+.modal-content-tw.modal-md { max-width: 36rem; }
+.modal-content-tw.modal-lg { max-width: 48rem; }
+.modal-content-tw.modal-xl { max-width: 64rem; }
 
 :focus-visible {
   outline: none;

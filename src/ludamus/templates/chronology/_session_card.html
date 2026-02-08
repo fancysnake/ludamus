@@ -1,5 +1,7 @@
-<div class="col-12 col-lg-6 col-xl-4">
-    <div class="card h-100 session-card{% if not data.is_enrollment_available or data.should_show_as_inactive or ended %} text-muted{% endif %}"
+{% load i18n %}
+{% load heroicons %}
+<div class="session-card-wrapper">
+    <div class="session-card card rounded-2xl h-full{% if not data.is_enrollment_available or data.should_show_as_inactive or ended %} opacity-60{% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
          data-title="{{ data.session.title|lower }}"
          data-host="{{ data.session.presenter_name }}"
          data-tags="{% for tag in data.tags %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
@@ -14,131 +16,151 @@
          data-min-age="{{ data.session.min_age }}"
          data-venue="{% if data.loc.area %}{{ data.loc.venue.slug }}{% endif %}"
          style="cursor: pointer"
-         data-bs-toggle="modal"
-         data-bs-target="#sessionDetailModal{{ data.session.pk }}">
-        <div class="card-body d-flex flex-column">
-            <!-- Session Title -->
-            <h6 class="card-title mb-2">{{ data.session.title }}</h6>
-            <!-- Session Metadata -->
-            <div class="mb-2">
-                <small class="text-muted d-block mb-1">
-                    <i class="bi bi-person-circle"></i> {{ data.session.presenter_name|default:data.session.presenter_name }}
-                </small>
-                <small class="text-muted d-block mb-1">
-                    {% if data.loc.space %}
-                        <i class="bi bi-geo-alt"></i>
-                        {% if data.loc.area %}
-                            {{ data.loc.venue.name }} ›
-                            {{ data.loc.area.name }} ›
-                        {% endif %}
-                        {{ data.loc.space.name }}
-                    {% else %}
-                        {% load i18n %}
-                        <i class="bi bi-geo-alt"></i> {% translate "TBA" %}
-                    {% endif %}
-                </small>
-            </div>
-            <!-- Participants Info -->
-            <div class="mb-2">
-                <span class="badge {% if data.is_full %}bg-danger{% else %}bg-success{% endif %}">{{ data.enrolled_count }}/{{ data.effective_participants_limit }}</span>
-                {% if data.session.waiting_count > 0 %}
-                    <span class="badge bg-warning text-dark ms-1">+{{ data.session.waiting_count }} waiting</span>
+         onclick="openModal('sessionDetailModal{{ data.session.pk }}')">
+        <div class="p-4 flex flex-col h-full">
+            <!-- Status badge row -->
+            <div class="flex items-start justify-between mb-3">
+                {% if data.user_enrolled %}
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-coral-500 text-white">
+                        {% translate "You're in!" %}
+                    </span>
+                {% elif data.user_waiting %}
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold" style="background-color: var(--theme-warning); color: white">
+                        {% translate "Waiting" %}
+                    </span>
+                {% elif data.is_full %}
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-warm-500 text-white">
+                        {% translate "Full" %}
+                    </span>
+                {% elif data.is_enrollment_available and not ended %}
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-500 text-white">
+                        {% translate "Open" %}
+                    </span>
                 {% endif %}
             </div>
-            <!-- Tags and Age Restrictions -->
-            <div class="mb-3 flex-grow-1">
-                <div class="d-flex flex-wrap align-items-start">
-                    {% if data.session.min_age > 0 %}
-                        <span class="badge bg-light text-dark me-1 mb-1"
-                              title="Minimum age: {{ data.session.min_age }} years">
-                            <i class="bi bi-shield-check"></i>
-                            {{ data.session.min_age }}+
+
+            <!-- Session Title -->
+            <h3 class="font-semibold text-base mb-2" style="color: var(--theme-text)">{{ data.session.title }}</h3>
+
+            <!-- Session Metadata -->
+            <div class="mb-3 space-y-1 text-sm" style="color: var(--theme-text-muted)">
+                <div class="flex items-center gap-1.5">
+                    {% heroicon_mini "user" class="w-4 h-4 shrink-0" %}
+                    <span>{{ data.session.presenter_name|default:data.session.presenter_name }}</span>
+                </div>
+                <div class="flex items-center gap-1.5 venue-icon">
+                    {% heroicon_mini "map-pin" class="w-4 h-4 shrink-0" %}
+                    {% if data.loc.space %}
+                        <span>
+                            {% if data.loc.area %}
+                                {{ data.loc.venue.name }} ›
+                                {{ data.loc.area.name }} ›
+                            {% endif %}
+                            {{ data.loc.space.name }}
                         </span>
                     {% else %}
-                        <span class="badge bg-light text-dark me-1 mb-1" title="All ages welcome">
-                            <i class="bi bi-shield-check"></i>
-                            {% translate "All ages" %}
-                        </span>
-                    {% endif %}
-                    {% if data.filterable_tags %}
-                        {% for tag in data.filterable_tags|slice:":2" %}
-                            <span class="badge bg-light text-dark me-1 mb-1 filterable-tag"
-                                  title="{{ tag.name }}">
-                                {% if tag.category.icon %}<i class="bi bi-{{ tag.category.icon }}"></i>{% endif %}
-                                {{ tag.name }}
-                            </span>
-                        {% endfor %}
-                        {% if data.filterable_tags|length > 2 %}
-                            <small class="text-muted">
-                                <span class="text-decoration-none">+{{ data.filterable_tags|length|add:"-2" }} more...</span>
-                            </small>
-                        {% endif %}
+                        <span>{% translate "TBA" %}</span>
                     {% endif %}
                 </div>
             </div>
-            <!-- Action Buttons -->
-            <div class="mt-auto">
-                <div class="d-flex gap-1 flex-column">
-                    <!-- Primary enrollment action -->
-                    {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
-                        {% if request.user.is_authenticated %}
-                            <!-- Authenticated user -->
-                            {% if data.user_enrolled or data.user_waiting %}
-                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
-                                   class="btn btn-warning btn-sm"
-                                   onclick="event.stopPropagation();">
-                                    <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
-                                </a>
-                            {% else %}
-                                {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
-                                    <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
-                                       class="btn btn-success btn-sm"
-                                       onclick="event.stopPropagation();">
-                                        <i class="bi bi-person-plus"></i> {% translate "Enroll Now" %}
-                                    </a>
-                                {% else %}
-                                    <button class="btn btn-outline-secondary btn-sm"
-                                            disabled
-                                            title="{% translate "Only connected users can enroll" %}">
-                                        <i class="bi bi-person-plus"></i> {% translate "Enroll" %}
-                                    </button>
-                                {% endif %}
-                            {% endif %}
-                        {% elif request.session.anonymous_enrollment_active %}
-                            <!-- Anonymous enrollment mode is active -->
-                            {% if data.user_enrolled or data.user_waiting %}
-                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
-                                   class="btn btn-warning btn-sm"
-                                   onclick="event.stopPropagation();">
-                                    <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
-                                </a>
-                            {% else %}
-                                <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
-                                   class="btn btn-success btn-sm"
-                                   onclick="event.stopPropagation();">
-                                    <i class="bi bi-person-plus"></i> {% translate "Enroll Anonymously" %}
-                                </a>
-                            {% endif %}
-                        {% else %}
-                            <!-- Not authenticated and no anonymous mode -->
-                            <a href="{% url 'web:crowd:login-required' %}?next={% url 'web:chronology:event' slug=event.slug %}"
-                               class="btn btn-primary btn-sm"
+
+            <!-- Tags and Age -->
+            <div class="flex flex-wrap gap-1.5 mb-3 grow">
+                {% if data.session.min_age > 0 %}
+                    <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
+                          style="color: var(--theme-text-secondary)"
+                          title="{% translate 'Minimum age' %}: {{ data.session.min_age }} {% translate 'years' %}">
+                        {{ data.session.min_age }}+
+                    </span>
+                {% else %}
+                    <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
+                          style="color: var(--theme-text-secondary)"
+                          title="{% translate 'All ages welcome' %}">
+                        {% translate "All ages" %}
+                    </span>
+                {% endif %}
+                {% if data.filterable_tags %}
+                    {% for tag in data.filterable_tags|slice:":2" %}
+                        <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium filterable-tag bg-warm-200 dark:bg-neutral-700"
+                              style="color: var(--theme-text-secondary)"
+                              title="{{ tag.name }}">
+                            {{ tag.name }}
+                        </span>
+                    {% endfor %}
+                    {% if data.filterable_tags|length > 2 %}
+                        <span class="text-xs" style="color: var(--theme-text-muted)">
+                            +{{ data.filterable_tags|length|add:"-2" }}
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Participants + Action -->
+            <div class="mt-auto flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
+                        {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
+                    </span>
+                    {% if data.session.waiting_count > 0 %}
+                        <span class="text-xs font-medium" style="color: var(--theme-warning)">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
+                    {% endif %}
+                </div>
+
+                <!-- Enrollment action -->
+                {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
+                    {% if request.user.is_authenticated %}
+                        {% if data.user_enrolled or data.user_waiting %}
+                            <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
+                               class="btn text-xs py-1.5 px-3" style="background-color: var(--theme-warning); color: white"
                                onclick="event.stopPropagation();">
-                                <i class="bi bi-box-arrow-in-right"></i> {% translate "Login to Enroll" %}
+                                {% heroicon_mini "cog-6-tooth" class="w-3.5 h-3.5" %} {% translate "Manage" %}
+                            </a>
+                        {% else %}
+                            {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
+                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
+                                   class="btn btn-teal text-xs py-1.5 px-3"
+                                   onclick="event.stopPropagation();">
+                                    {% heroicon_mini "user-plus" class="w-3.5 h-3.5" %} {% translate "Enroll" %}
+                                </a>
+                            {% else %}
+                                <button class="btn btn-secondary text-xs py-1.5 px-3" disabled
+                                        title="{% translate 'Only connected users can enroll' %}">
+                                    {% heroicon_mini "user-plus" class="w-3.5 h-3.5" %} {% translate "Enroll" %}
+                                </button>
+                            {% endif %}
+                        {% endif %}
+                    {% elif request.session.anonymous_enrollment_active %}
+                        {% if data.user_enrolled or data.user_waiting %}
+                            <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
+                               class="btn text-xs py-1.5 px-3" style="background-color: var(--theme-warning); color: white"
+                               onclick="event.stopPropagation();">
+                                {% heroicon_mini "cog-6-tooth" class="w-3.5 h-3.5" %} {% translate "Manage" %}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
+                               class="btn btn-teal text-xs py-1.5 px-3"
+                               onclick="event.stopPropagation();">
+                                {% heroicon_mini "user-plus" class="w-3.5 h-3.5" %} {% translate "Enroll" %}
                             </a>
                         {% endif %}
                     {% else %}
-                        <button class="btn btn-outline-secondary btn-sm" disabled>
-                            {% if ended %}
-                                <i class="bi bi-check-circle"></i> {% translate "Session Ended" %}
-                            {% elif data.should_show_as_inactive %}
-                                <i class="bi bi-clock"></i> {% translate "In Progress" %}
-                            {% else %}
-                                <i class="bi bi-lock"></i> {% translate "Not Available" %}
-                            {% endif %}
-                        </button>
+                        <a href="{% url 'web:crowd:login-required' %}?next={% url 'web:chronology:event' slug=event.slug %}"
+                           class="btn btn-primary text-xs py-1.5 px-3"
+                           onclick="event.stopPropagation();">
+                            {% heroicon_mini "arrow-right-on-rectangle" class="w-3.5 h-3.5" %} {% translate "Login" %}
+                        </a>
                     {% endif %}
-                </div>
+                {% else %}
+                    <span class="text-xs font-medium" style="color: var(--theme-text-muted)">
+                        {% if ended %}
+                            {% translate "Ended" %}
+                        {% elif data.should_show_as_inactive %}
+                            {% translate "In Progress" %}
+                        {% else %}
+                            {% translate "Not Available" %}
+                        {% endif %}
+                    </span>
+                {% endif %}
             </div>
         </div>
     </div>

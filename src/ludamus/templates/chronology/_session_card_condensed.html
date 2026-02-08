@@ -1,6 +1,7 @@
 {% load i18n %}
-<div class="col-12 col-lg-6 col-xl-4">
-    <div class="card h-100 session-card text-muted opacity-75"
+{% load heroicons %}
+<div class="session-card-wrapper">
+    <div class="session-card card rounded-2xl h-full opacity-60"
          data-title="{{ data.session.title|lower }}"
          data-host="{{ data.session.presenter_name }}"
          data-tags="{% for tag in data.tags %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
@@ -15,38 +16,40 @@
          data-min-age="{{ data.session.min_age }}"
          data-venue="{% if data.loc.area %}{{ data.loc.venue.slug }}{% endif %}"
          style="cursor: pointer"
-         data-bs-toggle="modal"
-         data-bs-target="#sessionDetailModal{{ data.session.pk }}">
-        <div class="card-body d-flex flex-column py-2">
-            <!-- Session Title (smaller) -->
-            <h6 class="card-title mb-1 small">{{ data.session.title }}</h6>
-            <!-- Session Metadata (condensed) -->
-            <div class="mb-1">
-                <small class="text-muted d-block">
-                    <i class="bi bi-person-circle"></i> {{ data.session.presenter_name|default:data.session.presenter_name }}
+         onclick="openModal('sessionDetailModal{{ data.session.pk }}')">
+        <div class="px-4 py-3 flex flex-col h-full">
+            <!-- Title -->
+            <h3 class="font-medium text-sm mb-1" style="color: var(--theme-text-secondary)">{{ data.session.title }}</h3>
+            <!-- Metadata -->
+            <div class="text-xs mb-2" style="color: var(--theme-text-muted)">
+                <span class="venue-icon">
+                    {{ data.session.presenter_name|default:data.session.presenter_name }}
                     {% if data.loc.space %}
-                        | <i class="bi bi-geo-alt"></i>
+                        &middot;
                         {% if data.loc.area %}
                             {{ data.loc.venue.name }} ›
                             {{ data.loc.area.name }} ›
                         {% endif %}
                         {{ data.loc.space.name }}
                     {% endif %}
-                </small>
+                </span>
             </div>
-            <!-- Status indicator -->
-            <div class="mt-auto d-flex justify-content-between align-items-center">
-                <small class="text-muted">
+            <!-- Status -->
+            <div class="mt-auto flex justify-between items-center text-xs" style="color: var(--theme-text-muted)">
+                <span>
                     {% if ended %}
-                        <i class="bi bi-check-circle"></i> {% translate "Completed" %}
+                        {% translate "Completed" %}
                     {% elif not data.is_enrollment_available %}
-                        <i class="bi bi-clock"></i> {% translate "Not Yet Available" %}
+                        {% translate "Not Yet Available" %}
                     {% endif %}
-                </small>
-                <small>
-                    <i class="bi bi-people"></i> {{ data.enrolled_count }}
-                    {% if data.session.waiting_count > 0 %}<span class="text-warning">+{{ data.session.waiting_count }}</span>{% endif %}
-                </small>
+                </span>
+                <span class="flex items-center gap-1">
+                    {% heroicon_mini "users" class="w-3.5 h-3.5" %}
+                    {{ data.enrolled_count }}
+                    {% if data.session.waiting_count > 0 %}
+                        <span style="color: var(--theme-warning)">+{{ data.session.waiting_count }}</span>
+                    {% endif %}
+                </span>
             </div>
         </div>
     </div>
