@@ -114,10 +114,14 @@
                                         {% with is_available=day_hours|get_item:hour %}
                                             {% if is_available %}
                                                 <a href="{% url 'panel:time-slot-create' slug=current_event.slug %}?date={{ day|date:'Y-m-d' }}&hour={{ hour }}"
-                                                   class="absolute w-full border-b border-neutral-100 hover:bg-blue-50 transition-colors cursor-pointer"
+                                                   class="absolute w-full border-b border-neutral-100 hover:bg-blue-50 transition-colors cursor-pointer group/hour flex items-center justify-center"
                                                    style="top: {{ hour|multiply:40 }}px;
                                                           height: 40px"
-                                                   title="{% translate "Add time slot at" %} {{ hour }}:00"></a>
+                                                   title="{% translate "Add time slot at" %} {{ hour }}:00">
+                                                    <span class="opacity-0 group-hover/hour:opacity-100 text-blue-400 transition">
+                                                        {% heroicon_mini "plus" class="w-5 h-5" %}
+                                                    </span>
+                                                </a>
                                             {% else %}
                                                 <div class="absolute w-full border-b border-neutral-100 bg-neutral-200/50 cursor-not-allowed"
                                                      style="top: {{ hour|multiply:40 }}px;
@@ -130,50 +134,54 @@
                                 <!-- Time slots -->
                                 {% with day_slots=slots_by_day|get_item:day %}
                                     {% for display in day_slots %}
-                                        <div class="absolute left-1 right-1 bg-blue-100 border-l-4 border-blue-500 rounded-r text-sm overflow-hidden group"
+                                        <div class="absolute left-1 right-1 bg-blue-100 border-l-4 border-blue-500 rounded-r text-sm overflow-hidden group/slot"
                                              style="top: {{ display.top_px }}px;
                                                     height: {{ display.height_px }}px">
+                                            <!-- Action buttons -->
+                                            <div class="absolute top-0.5 right-0.5 flex gap-0.5 opacity-0 group-hover/slot:opacity-100 transition z-10">
+                                                <a href="{% url 'panel:time-slot-edit' slug=current_event.slug slot_pk=display.slot.pk %}"
+                                                   class="p-1 bg-white/90 hover:bg-blue-100 text-blue-600 rounded transition"
+                                                   title="{% translate "Edit" %}">
+                                                    {% heroicon_mini "pencil" class="w-3.5 h-3.5" %}
+                                                </a>
+                                                <form method="post"
+                                                      action="{% url 'panel:time-slot-delete' slug=current_event.slug slot_pk=display.slot.pk %}"
+                                                      class="inline"
+                                                      onsubmit="return confirm('{% translate "Delete this time slot?" %}');">
+                                                    {% csrf_token %}
+                                                    <button type="submit"
+                                                            class="p-1 bg-white/90 hover:bg-red-100 text-red-600 rounded transition"
+                                                            title="{% translate "Delete" %}">
+                                                        {% heroicon_mini "trash" class="w-3.5 h-3.5" %}
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            <!-- Slot content (clickable to edit) -->
                                             <a href="{% url 'panel:time-slot-edit' slug=current_event.slug slot_pk=display.slot.pk %}"
                                                class="block px-2 py-1 hover:bg-blue-200 transition h-full">
-                                                <div class="flex items-start justify-between">
-                                                    <div class="min-w-0 flex-1">
-                                                        <div class="font-medium text-blue-900 truncate">
-                                                            {% if display.starts_here %}
-                                                                {{ display.slot.start_time|time:"H:i" }}
-                                                            {% else %}
-                                                                <span class="text-xs">{% translate "cont." %}</span>
-                                                            {% endif %}
-                                                            –
-                                                            {% if display.ends_here %}
-                                                                {{ display.slot.end_time|time:"H:i" }}
-                                                            {% else %}
-                                                                <span class="text-xs">{% translate "cont." %}</span>
-                                                            {% endif %}
-                                                        </div>
-                                                        {% if display.spans_midnight %}
-                                                            <div class="text-xs text-blue-700 truncate">
-                                                                {% if display.starts_here %}
-                                                                    → {{ display.slot.end_time|date:"M j" }}
-                                                                {% else %}
-                                                                    ← {{ display.slot.start_time|date:"M j" }}
-                                                                {% endif %}
-                                                            </div>
+                                                <div class="font-medium text-blue-900 truncate">
+                                                    {% if display.starts_here %}
+                                                        {{ display.slot.start_time|time:"H:i" }}
+                                                    {% else %}
+                                                        <span class="text-xs">{% translate "cont." %}</span>
+                                                    {% endif %}
+                                                    –
+                                                    {% if display.ends_here %}
+                                                        {{ display.slot.end_time|time:"H:i" }}
+                                                    {% else %}
+                                                        <span class="text-xs">{% translate "cont." %}</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if display.spans_midnight %}
+                                                    <div class="text-xs text-blue-700 truncate">
+                                                        {% if display.starts_here %}
+                                                            → {{ display.slot.end_time|date:"M j" }}
+                                                        {% else %}
+                                                            ← {{ display.slot.start_time|date:"M j" }}
                                                         {% endif %}
                                                     </div>
-                                                    <span class="opacity-0 group-hover:opacity-100 text-blue-600">{% heroicon_mini "pencil" class="w-4 h-4" %}</span>
-                                                </div>
+                                                {% endif %}
                                             </a>
-                                            <form method="post"
-                                                  action="{% url 'panel:time-slot-delete' slug=current_event.slug slot_pk=display.slot.pk %}"
-                                                  class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition"
-                                                  onsubmit="return confirm('{% translate "Delete this time slot?" %}');">
-                                                {% csrf_token %}
-                                                <button type="submit"
-                                                        class="p-1 bg-white/80 hover:bg-red-100 text-red-600 rounded transition"
-                                                        title="{% translate "Delete" %}">
-                                                    {% heroicon_mini "trash" class="w-3.5 h-3.5" %}
-                                                </button>
-                                            </form>
                                         </div>
                                     {% endfor %}
                                 {% endwith %}
