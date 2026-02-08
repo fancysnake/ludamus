@@ -293,6 +293,36 @@ class TimeSlotCalendarMixin:
             "has_next": page < total_pages - 1,
         }
 
+    @staticmethod
+    def get_hour_availability(
+        event: EventDTO, visible_days: list[date]
+    ) -> dict[date, dict[int, bool]]:
+        """Calculate which hours are within event period for each day.
+
+        Args:
+            event: The event with start_time and end_time.
+            visible_days: Days currently visible in the calendar.
+
+        Returns:
+            Dict mapping each day to a dict of hour -> is_available.
+        """
+        result: dict[date, dict[int, bool]] = {}
+        event_start = event.start_time
+        event_end = event.end_time
+
+        for day in visible_days:
+            hour_availability: dict[int, bool] = {}
+            for hour in range(24):
+                # Create datetime for start of this hour on this day
+                hour_start = datetime(day.year, day.month, day.day, hour, 0, tzinfo=UTC)
+                hour_end = datetime(day.year, day.month, day.day, hour, 59, tzinfo=UTC)
+                # Hour is available if it overlaps with event period
+                is_available = hour_start < event_end and hour_end >= event_start
+                hour_availability[hour] = is_available
+            result[day] = hour_availability
+
+        return result
+
 
 class PanelRequest(HttpRequest):
     """Request type for panel views with UoW and context."""
@@ -1191,11 +1221,15 @@ class TimeSlotsPageView(
         # Hour labels for the time axis
         hours = list(range(24))
 
+        # Calculate which hours are within event period
+        hour_availability = self.get_hour_availability(current_event, visible_days)
+
         context["active_nav"] = "cfp"
         context["days"] = visible_days
         context["slots_by_day"] = slots_by_day
         context["hours"] = hours
         context["pagination"] = pagination
+        context["hour_availability"] = hour_availability
         context["time_slots"] = time_slots  # Keep for backward compat / empty check
         return TemplateResponse(self.request, "panel/time-slots.html", context)
 
