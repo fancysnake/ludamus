@@ -17,7 +17,7 @@
          data-venue="{% if data.loc.area %}{{ data.loc.venue.slug }}{% endif %}"
          style="cursor: pointer"
          onclick="openModal('sessionDetailModal{{ data.session.pk }}')">
-        <div class="p-4 flex flex-col h-full">
+        <div class="p-5 flex flex-col h-full">
             <!-- Status badge row -->
             <div class="flex items-start justify-between mb-3">
                 {% if data.user_enrolled %}
@@ -37,68 +37,56 @@
                         {% translate "Open" %}
                     </span>
                 {% endif %}
+                {% if data.loc.space %}
+                    <span class="text-xs px-2 py-1 rounded-lg venue-icon" style="background-color: var(--theme-bg-tertiary); color: var(--theme-text-muted)">
+                        {% if data.loc.area %}{{ data.loc.venue.name }} › {% endif %}{{ data.loc.space.name }}
+                    </span>
+                {% endif %}
             </div>
 
             <!-- Session Title -->
-            <h3 class="font-semibold text-base mb-2" style="color: var(--theme-text)">{{ data.session.title }}</h3>
+            <h3 class="font-bold text-lg mb-2" style="color: var(--theme-text)">{{ data.session.title }}</h3>
 
-            <!-- Session Metadata -->
-            <div class="mb-3 space-y-1 text-sm" style="color: var(--theme-text-muted)">
-                <div class="flex items-center gap-1.5">
-                    {% heroicon_mini "user" class="w-4 h-4 shrink-0" %}
-                    <span>{{ data.session.presenter_name|default:data.session.presenter_name }}</span>
+            <!-- Host -->
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center ring-2 ring-white dark:ring-neutral-800">
+                    {% heroicon_mini "user" class="w-3.5 h-3.5 text-white" %}
                 </div>
-                <div class="flex items-center gap-1.5 venue-icon">
-                    {% heroicon_mini "map-pin" class="w-4 h-4 shrink-0" %}
-                    {% if data.loc.space %}
-                        <span>
-                            {% if data.loc.area %}
-                                {{ data.loc.venue.name }} ›
-                                {{ data.loc.area.name }} ›
-                            {% endif %}
-                            {{ data.loc.space.name }}
-                        </span>
-                    {% else %}
-                        <span>{% translate "TBA" %}</span>
-                    {% endif %}
-                </div>
+                <span class="text-sm" style="color: var(--theme-text-muted)">{{ data.session.presenter_name }}</span>
             </div>
 
-            <!-- Tags and Age -->
-            <div class="flex flex-wrap gap-1.5 mb-3 grow">
+            <!-- Description -->
+            {% if data.session.description %}
+                <p class="text-sm mb-4 line-clamp-2" style="color: var(--theme-text-muted)">
+                    {{ data.session.description }}
+                </p>
+            {% endif %}
+
+            <!-- Tags -->
+            <div class="flex flex-wrap gap-2 mb-4 grow">
+                {% for tag in data.tags %}
+                    <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium filterable-tag bg-warm-200/90 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
+                          title="{{ tag.name }}">
+                        {{ tag.name }}
+                    </span>
+                {% endfor %}
                 {% if data.session.min_age > 0 %}
-                    <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
-                          style="color: var(--theme-text-secondary)"
+                    <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium bg-warm-200/90 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
                           title="{% translate "Minimum age" %}: {{ data.session.min_age }} {% translate "years" %}">
                         {{ data.session.min_age }}+
                     </span>
                 {% else %}
-                    <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
-                          style="color: var(--theme-text-secondary)"
+                    <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium bg-teal-100/90 dark:bg-teal-900/40 text-teal-700 dark:text-teal-400"
                           title="{% translate "All ages welcome" %}">
                         {% translate "All ages" %}
                     </span>
-                {% endif %}
-                {% if data.filterable_tags %}
-                    {% for tag in data.filterable_tags|slice:":2" %}
-                        <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium filterable-tag bg-warm-200 dark:bg-neutral-700"
-                              style="color: var(--theme-text-secondary)"
-                              title="{{ tag.name }}">
-                            {{ tag.name }}
-                        </span>
-                    {% endfor %}
-                    {% if data.filterable_tags|length > 2 %}
-                        <span class="text-xs" style="color: var(--theme-text-muted)">
-                            +{{ data.filterable_tags|length|add:"-2" }}
-                        </span>
-                    {% endif %}
                 {% endif %}
             </div>
 
             <!-- Participants + Action -->
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
+                    <span class="inline-flex items-center gap-1 text-sm" style="color: var(--theme-text-muted)">
                         {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
                     </span>
                     {% if data.session.waiting_count > 0 %}
@@ -106,49 +94,13 @@
                     {% endif %}
                 </div>
 
-                <!-- Enrollment action -->
                 {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
-                    {% if request.user.is_authenticated %}
-                        {% if data.user_enrolled or data.user_waiting %}
-                            <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
-                               class="btn text-xs py-1.5 px-3" style="background-color: var(--theme-warning); color: white"
-                               onclick="event.stopPropagation();">
-                                {% heroicon_mini "cog-6-tooth" class="w-3.5 h-3.5" %} {% translate "Manage" %}
-                            </a>
-                        {% else %}
-                            {% if request.user.user_type == 'connected' or request.user.user_type == 'active' %}
-                                <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
-                                   class="btn btn-teal text-xs py-1.5 px-3"
-                                   onclick="event.stopPropagation();">
-                                    {% heroicon_mini "user-plus" class="w-3.5 h-3.5" %} {% translate "Enroll" %}
-                                </a>
-                            {% else %}
-                                <button class="btn btn-secondary text-xs py-1.5 px-3" disabled
-                                        title="{% translate "Only connected users can enroll" %}">
-                                    {% heroicon_mini "user-plus" class="w-3.5 h-3.5" %} {% translate "Enroll" %}
-                                </button>
-                            {% endif %}
-                        {% endif %}
-                    {% elif request.session.anonymous_enrollment_active %}
-                        {% if data.user_enrolled or data.user_waiting %}
-                            <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
-                               class="btn text-xs py-1.5 px-3" style="background-color: var(--theme-warning); color: white"
-                               onclick="event.stopPropagation();">
-                                {% heroicon_mini "cog-6-tooth" class="w-3.5 h-3.5" %} {% translate "Manage" %}
-                            </a>
-                        {% else %}
-                            <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
-                               class="btn btn-teal text-xs py-1.5 px-3"
-                               onclick="event.stopPropagation();">
-                                {% heroicon_mini "user-plus" class="w-3.5 h-3.5" %} {% translate "Enroll" %}
-                            </a>
-                        {% endif %}
-                    {% else %}
-                        <a href="{% url 'web:crowd:login-required' %}?next={% url 'web:chronology:event' slug=event.slug %}"
-                           class="btn btn-primary text-xs py-1.5 px-3"
-                           onclick="event.stopPropagation();">
-                            {% heroicon_mini "arrow-right-on-rectangle" class="w-3.5 h-3.5" %} {% translate "Login" %}
-                        </a>
+                    {% if not data.is_full %}
+                        <span class="text-sm font-medium text-teal-600 dark:text-teal-400">
+                            {% with spots_left=data.effective_participants_limit %}
+                                {% translate "Spots open" %}
+                            {% endwith %}
+                        </span>
                     {% endif %}
                 {% else %}
                     <span class="text-xs font-medium" style="color: var(--theme-text-muted)">

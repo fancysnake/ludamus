@@ -19,67 +19,74 @@
 {% block twitter_description %}
     {{ event.description|truncatewords:30 }}
 {% endblock twitter_description %}
-{% block header %}
-    {{ event.name }}
-{% endblock header %}
-{% block description %}
-    {{ event.description }}
-{% endblock description %}
+{% block header_section %}{% endblock header_section %}
 {% block body %}
-    <!-- Event Information Card -->
-    <div class="card gradient-border mb-8">
-        <div class="card-body">
-            <!-- Status badges -->
-            <div class="flex flex-wrap gap-2 mb-4">
-                {% if event.is_live %}
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold bg-teal-100 text-teal-700">
-                        <span class="w-2 h-2 bg-teal-500 rounded-full live-dot"></span>
-                        {% translate "LIVE" %}
-                    </span>
-                {% elif event.is_ended %}
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold bg-neutral-200 text-neutral-600">
-                        {% heroicon_mini "check-circle" class="w-4 h-4" %}
-                        {% translate "COMPLETED" %}
-                    </span>
-                {% else %}
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold bg-blue-100 text-blue-700">
-                        {% heroicon_mini "clock" class="w-4 h-4" %}
-                        {% translate "UPCOMING" %}
-                    </span>
-                {% endif %}
-                {% if event.get_active_enrollment_configs %}
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold bg-teal-100 text-teal-700">
-                        {% heroicon_mini "user-plus" class="w-4 h-4" %}
-                        {% translate "Enrollment Open" %}
-                    </span>
-                {% endif %}
-                {% if event.is_proposal_active %}
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold bg-amber-100 text-amber-700">
-                        {% heroicon_mini "light-bulb" class="w-4 h-4" %}
-                        {% translate "Proposals Open" %}
-                    </span>
-                {% endif %}
-            </div>
-            <!-- Date & time -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="flex items-start gap-3">
-                    <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-coral-100 text-coral-600">
-                        {% heroicon_mini "calendar-days" class="w-5 h-5" %}
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium" style="color: var(--theme-text-muted)">{% translate "Start Time" %}</p>
-                        <p class="font-semibold" style="color: var(--theme-text)">{{ event.start_time|date:"l, F j, Y" }}</p>
-                        <p class="text-sm" style="color: var(--theme-text-secondary)">{{ event.start_time|date:"G:i" }}</p>
+    <!-- Hero Card -->
+    <div class="relative rounded-3xl shadow-xl overflow-hidden gradient-border mb-8" style="background-color: var(--theme-bg-secondary); box-shadow: var(--theme-shadow-lg)">
+        <div class="p-6 sm:p-8">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <div class="flex-1">
+                    <!-- Status badge -->
+                    {% if event.is_live %}
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-100 text-teal-700 rounded-full text-sm font-medium mb-4">
+                            <span class="w-2 h-2 bg-teal-500 rounded-full live-dot"></span>
+                            {% translate "Happening now!" %}
+                        </div>
+                    {% elif event.is_ended %}
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-200 text-neutral-600 rounded-full text-sm font-medium mb-4">
+                            {% heroicon_mini "check-circle" class="w-4 h-4" %}
+                            {% translate "Completed" %}
+                        </div>
+                    {% else %}
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-warm-200 text-warm-700 rounded-full text-sm font-medium mb-4">
+                            {% heroicon_mini "clock" class="w-4 h-4" %}
+                            {% translate "Upcoming" %}
+                        </div>
+                    {% endif %}
+                    {% if event.is_proposal_active %}
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4 ml-2">
+                            {% heroicon_mini "light-bulb" class="w-4 h-4" %}
+                            {% translate "Proposals Open" %}
+                        </div>
+                    {% endif %}
+
+                    <h1 class="text-3xl sm:text-4xl font-bold mb-3" style="color: var(--theme-text)">
+                        {{ event.name }}
+                    </h1>
+
+                    {% if event.description %}
+                        <p class="text-lg mb-6 max-w-2xl" style="color: var(--theme-text-muted)">
+                            {{ event.description }}
+                        </p>
+                    {% endif %}
+
+                    <!-- Event meta -->
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-coral-100 rounded-lg flex items-center justify-center">
+                                {% heroicon_mini "calendar-days" class="w-4 h-4 text-coral-600" %}
+                            </div>
+                            <div>
+                                <div class="font-medium" style="color: var(--theme-text)">{{ event.start_time|date:"l, F j" }}</div>
+                                <div style="color: var(--theme-text-muted)">{{ event.start_time|time:"G:i" }} - {{ event.end_time|time:"G:i" }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-coral-100 text-coral-600">
-                        {% heroicon_mini "calendar-days" class="w-5 h-5" %}
+
+                <!-- Quick stats -->
+                <div class="flex lg:flex-col gap-3">
+                    <div class="flex-1 lg:flex-none bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/30 dark:to-teal-800/30 rounded-2xl p-4 text-center min-w-[120px]">
+                        <div class="text-3xl font-bold text-teal-700 dark:text-teal-400">{{ sessions|length }}</div>
+                        <div class="text-sm text-teal-600 dark:text-teal-500">
+                            {% blocktranslate count counter=sessions|length %}Session{% plural %}Sessions{% endblocktranslate %}
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-sm font-medium" style="color: var(--theme-text-muted)">{% translate "End Time" %}</p>
-                        <p class="font-semibold" style="color: var(--theme-text)">{{ event.end_time|date:"l, F j, Y" }}</p>
-                        <p class="text-sm" style="color: var(--theme-text-secondary)">{{ event.end_time|date:"G:i" }}</p>
+                    <div class="flex-1 lg:flex-none bg-gradient-to-br from-coral-50 to-coral-100 dark:from-coral-900/30 dark:to-coral-800/30 rounded-2xl p-4 text-center min-w-[120px]">
+                        <div class="text-3xl font-bold text-coral-700 dark:text-coral-400">{{ total_enrolled }}</div>
+                        <div class="text-sm text-coral-600 dark:text-coral-500">
+                            {% blocktranslate count counter=total_enrolled %}Player{% plural %}Players{% endblocktranslate %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -453,7 +460,7 @@
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="flex items-center gap-2">
-                                        {% heroicon_mini "user-circle" class="w-4 h-4" style="color: var(--theme-text-muted)" %}
+                                        <span style="color: var(--theme-text-muted)">{% heroicon_mini "user-circle" class="w-4 h-4" %}</span>
                                         <span>{{ proposal.host.name }}</span>
                                     </div>
                                 </td>
@@ -678,7 +685,7 @@
     {% for data in sessions %}
         <div id="sessionDetailModal{{ data.session.pk }}-backdrop" class="modal-backdrop" onclick="closeModal('sessionDetailModal{{ data.session.pk }}')"></div>
         <div id="sessionDetailModal{{ data.session.pk }}-panel" class="modal-panel">
-            <div class="modal-content-tw modal-xl">
+            <div class="modal-content-tw modal-xl h-[600px] max-h-[90vh] flex flex-col">
                 <!-- Header -->
                 <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--theme-border)">
                     <h3 class="text-lg font-semibold" style="color: var(--theme-text)">{{ data.session.title }}</h3>
@@ -706,146 +713,112 @@
                     </button>
                 </div>
                 <!-- Tab Content -->
-                <div class="px-6 py-4" style="color: var(--theme-text)">
+                <div class="px-6 py-4 flex-1 overflow-y-auto" style="color: var(--theme-text)">
                     <!-- Information Tab -->
                     <div id="info-{{ data.session.pk }}" class="tab-pane">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                            <div class="space-y-4">
-                                <div>
-                                    <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                        {% heroicon_mini "user" class="w-4 h-4" %} {% translate "Host" %}
-                                    </h4>
-                                    <p class="ml-6">{{ data.session.presenter_name|default:data.session.presenter_name }}</p>
-                                </div>
+                        <!-- Host info -->
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center shrink-0">
+                                <span class="text-white text-sm font-medium">{% heroicon_mini "user" class="w-5 h-5" %}</span>
+                            </div>
+                            <div>
+                                <div class="font-medium" style="color: var(--theme-text)">{{ data.session.presenter_name|default:data.session.presenter_name }}</div>
                                 {% if data.proposal %}
                                     {% with host=data.proposal.host %}
                                         {% if host and host.slug and host.discord_username %}
-                                            <div>
-                                                <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                                    {% heroicon_mini "chat-bubble-left-right" class="w-4 h-4" %} {% translate "Host Discord" %}
-                                                </h4>
-                                                <div class="ml-6">
-                                                    <button class="btn btn-secondary text-xs reveal-discord-btn"
-                                                            hx-get="{% url 'web:crowd:user-discord-username' user_slug=host.slug %}"
-                                                            hx-swap="outerHTML"
-                                                            hx-trigger="click once">
-                                                        {% heroicon_mini "chat-bubble-left-right" class="w-3.5 h-3.5" %} {% translate "Show Discord" %}
-                                                    </button>
-                                                </div>
-                                            </div>
+                                            <button class="btn btn-secondary text-xs mt-1 reveal-discord-btn"
+                                                    hx-get="{% url 'web:crowd:user-discord-username' user_slug=host.slug %}"
+                                                    hx-swap="outerHTML"
+                                                    hx-trigger="click once">
+                                                {% heroicon_mini "chat-bubble-left-right" class="w-3.5 h-3.5" %} {% translate "Show Discord" %}
+                                            </button>
                                         {% endif %}
                                     {% endwith %}
-                                {% endif %}
-                                <div>
-                                    <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                        {% heroicon_mini "clock" class="w-4 h-4" %} {% translate "Time" %}
-                                    </h4>
-                                    <p class="ml-6">
-                                        {{ data.agenda_item.start_time|date:"l, F j, Y" }}
-                                        <br>
-                                        {{ data.agenda_item.start_time|time:"G:i" }} - {{ data.agenda_item.end_time|time:"G:i" }}
-                                    </p>
-                                </div>
-                                <div>
-                                    <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                        {% heroicon_mini "map-pin" class="w-4 h-4" %} {% translate "Location" %}
-                                    </h4>
-                                    <p class="ml-6">
-                                        {% if data.loc.space %}
-                                            {% if data.loc.area %}
-                                                {{ data.loc.venue.name }} ›
-                                                {{ data.loc.area.name }} ›
-                                            {% endif %}
-                                            {{ data.loc.space.name }}
-                                        {% else %}
-                                            <span style="color: var(--theme-text-muted)">{% translate "To be announced" %}</span>
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="space-y-4">
-                                <div>
-                                    <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                        {% heroicon_mini "users" class="w-4 h-4" %} {% translate "Capacity" %}
-                                    </h4>
-                                    <div class="ml-6 flex flex-wrap items-center gap-1.5">
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
-                                            {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
-                                        </span>
-                                        {% if data.session.waiting_count > 0 %}
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background-color: var(--theme-warning-light); color: var(--theme-warning-text)">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
-                                        {% endif %}
-                                        {% if data.is_full %}
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-coral-100 text-coral-700">{% translate "Full" %}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div>
-                                    <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                        {% heroicon_mini "shield-check" class="w-4 h-4" %} {% translate "Minimum Age" %}
-                                    </h4>
-                                    <p class="ml-6">
-                                        {% if data.session.min_age > 0 %}
-                                            <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700" style="color: var(--theme-text-secondary)">{{ data.session.min_age }}+ {% translate "years" %}</span>
-                                        {% else %}
-                                            <span style="color: var(--theme-text-muted)">{% translate "All ages welcome" %}</span>
-                                        {% endif %}
-                                    </p>
-                                </div>
-                                {% if data.tags %}
-                                    <div>
-                                        <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                            {% heroicon_mini "tag" class="w-4 h-4" %} {% translate "Tags" %}
-                                        </h4>
-                                        <div class="ml-6 flex flex-wrap gap-1.5">
-                                            {% for tag in data.tags %}
-                                                <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700 session-detail-tag"
-                                                      style="color: var(--theme-text-secondary)"
-                                                      title="{{ tag.name }} ({{ tag.category.name }})">
-                                                    {{ tag.name }}
-                                                </span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
                                 {% endif %}
                             </div>
                         </div>
                         {% if data.session.description %}
-                            <div class="pt-4 mt-4" style="border-top: 1px solid var(--theme-border)">
-                                <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                    {% heroicon_mini "document-text" class="w-4 h-4" %} {% translate "Description" %}
-                                </h4>
-                                <div class="ml-6">{{ data.session.description|linebreaks }}</div>
+                            <!-- Description -->
+                            <div class="mb-6">
+                                <h3 class="font-semibold mb-2" style="color: var(--theme-text-secondary)">{% translate "About this session" %}</h3>
+                                <div class="leading-relaxed" style="color: var(--theme-text-muted)">{{ data.session.description|linebreaks }}</div>
                             </div>
                         {% endif %}
+                        {% if data.tags %}
+                            <!-- Tags -->
+                            <div class="flex flex-wrap gap-2 mb-6">
+                                {% for tag in data.tags %}
+                                    <span class="tag-pill px-3 py-1.5 rounded-lg text-sm font-medium bg-warm-200 dark:bg-neutral-700 session-detail-tag"
+                                          style="color: var(--theme-text-secondary)"
+                                          title="{{ tag.name }} ({{ tag.category.name }})">
+                                        {{ tag.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <!-- Details grid -->
+                        <div class="grid grid-cols-2 gap-3 mb-6">
+                            <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
+                                <div class="text-sm mb-1" style="color: var(--theme-text-muted)">{% translate "Time" %}</div>
+                                <div class="font-medium" style="color: var(--theme-text)">
+                                    {{ data.agenda_item.start_time|date:"l, F j" }}
+                                    <br>
+                                    {{ data.agenda_item.start_time|time:"G:i" }} - {{ data.agenda_item.end_time|time:"G:i" }}
+                                </div>
+                            </div>
+                            <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
+                                <div class="text-sm mb-1" style="color: var(--theme-text-muted)">{% translate "Location" %}</div>
+                                <div class="font-medium" style="color: var(--theme-text)">
+                                    {% if data.loc.space %}
+                                        {% if data.loc.area %}
+                                            {{ data.loc.venue.name }} ›
+                                            {{ data.loc.area.name }} ›
+                                        {% endif %}
+                                        {{ data.loc.space.name }}
+                                    {% else %}
+                                        <span style="color: var(--theme-text-muted)">{% translate "TBA" %}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
+                                <div class="text-sm mb-1" style="color: var(--theme-text-muted)">{% translate "Capacity" %}</div>
+                                <div class="font-medium flex flex-wrap items-center gap-1.5" style="color: var(--theme-text)">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
+                                        {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
+                                    </span>
+                                    {% if data.session.waiting_count > 0 %}
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background-color: var(--theme-warning-light); color: var(--theme-warning-text)">+{{ data.session.waiting_count }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
+                                <div class="text-sm mb-1" style="color: var(--theme-text-muted)">{% translate "Minimum Age" %}</div>
+                                <div class="font-medium" style="color: var(--theme-text)">
+                                    {% if data.session.min_age > 0 %}
+                                        {{ data.session.min_age }}+ {% translate "years" %}
+                                    {% else %}
+                                        {% translate "All ages" %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                         {% if data.session.requirements %}
-                            <div class="pt-4 mt-4" style="border-top: 1px solid var(--theme-border)">
-                                <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-1" style="color: var(--theme-text-secondary)">
-                                    {% heroicon_mini "check-badge" class="w-4 h-4" %} {% translate "Requirements" %}
-                                </h4>
-                                <div class="ml-6">{{ data.session.requirements|linebreaks }}</div>
+                            <div class="mb-6">
+                                <h3 class="font-semibold mb-2" style="color: var(--theme-text-secondary)">{% translate "Requirements" %}</h3>
+                                <div class="leading-relaxed" style="color: var(--theme-text-muted)">{{ data.session.requirements|linebreaks }}</div>
                             </div>
                         {% endif %}
                         <!-- Enrollment Status for Authenticated Users -->
-                        {% if current_user %}
-                            <div class="pt-4 mt-4" style="border-top: 1px solid var(--theme-border)">
-                                <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-2" style="color: var(--theme-text-secondary)">
-                                    {% heroicon_mini "user-circle" class="w-4 h-4" %} {% translate "Your Enrollment Status" %}
-                                </h4>
-                                <div class="ml-6">
-                                    {% if data.user_enrolled %}
-                                        <div class="alert alert-success inline-flex items-center gap-2 text-sm">
-                                            {% heroicon_mini "check-circle" class="w-4 h-4" %} {% translate "You are enrolled in this session" %}
-                                        </div>
-                                    {% elif data.user_waiting %}
-                                        <div class="alert alert-warning inline-flex items-center gap-2 text-sm">
-                                            {% heroicon_mini "clock" class="w-4 h-4" %} {% translate "You are on the waiting list" %}
-                                        </div>
-                                    {% else %}
-                                        <div class="alert alert-info inline-flex items-center gap-2 text-sm">
-                                            {% heroicon_mini "information-circle" class="w-4 h-4" %} {% translate "You are not enrolled in this session" %}
-                                        </div>
-                                    {% endif %}
+                        {% if current_user and data.user_enrolled %}
+                            <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
+                                <div class="alert alert-success inline-flex items-center gap-2 text-sm">
+                                    {% heroicon_mini "check-circle" class="w-4 h-4" %} {% translate "You are enrolled in this session" %}
+                                </div>
+                            </div>
+                        {% elif current_user and data.user_waiting %}
+                            <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
+                                <div class="alert alert-warning inline-flex items-center gap-2 text-sm">
+                                    {% heroicon_mini "clock" class="w-4 h-4" %} {% translate "You are on the waiting list" %}
                                 </div>
                             </div>
                         {% endif %}
@@ -855,97 +828,68 @@
                         <!-- Enrolled Participants -->
                         {% with confirmed_participants=data.session_participations|dictsort:"creation_time" %}
                             {% if confirmed_participants %}
-                                <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-3" style="color: var(--theme-text-secondary)">
-                                    {% heroicon_mini "check-circle" class="w-4 h-4" %} {% translate "Enrolled Participants" %}
-                                </h4>
-                                <div class="overflow-x-auto mb-6">
-                                    <table class="w-full text-sm">
-                                        <thead>
-                                            <tr style="border-bottom: 1px solid var(--theme-border)">
-                                                <th class="text-left py-2 px-3 font-medium" style="color: var(--theme-text-secondary)">{% translate "Name" %}</th>
-                                                <th class="text-left py-2 px-3 font-medium" style="color: var(--theme-text-secondary)">{% translate "Discord" %}</th>
-                                                <th class="text-left py-2 px-3 font-medium" style="color: var(--theme-text-secondary)">{% translate "Enrolled" %}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for participation in confirmed_participants %}
-                                                {% if participation.status == 'confirmed' %}
-                                                    <tr style="border-bottom: 1px solid var(--theme-border-light)">
-                                                        <td class="py-2 px-3">
-                                                            <div class="flex items-center gap-2">
-                                                                <span style="color: var(--theme-text-muted)">{% heroicon_mini "user-circle" class="w-4 h-4" %}</span>
-                                                                <span>{{ participation.user.full_name }}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td class="py-2 px-3">
-                                                            {% with user=participation.user %}
-                                                                {% if user and user.slug and user.discord_username %}
-                                                                    <button class="btn btn-secondary text-xs reveal-discord-btn"
-                                                                            hx-get="{% url 'web:crowd:user-discord-username' user_slug=user.slug %}"
-                                                                            hx-swap="outerHTML"
-                                                                            hx-trigger="click once">
-                                                                        {% heroicon_mini "chat-bubble-left-right" class="w-3.5 h-3.5" %} {% translate "Show" %}
-                                                                    </button>
-                                                                {% else %}
-                                                                    <span style="color: var(--theme-text-muted)">—</span>
-                                                                {% endif %}
-                                                            {% endwith %}
-                                                        </td>
-                                                        <td class="py-2 px-3">
-                                                            <span class="text-xs" style="color: var(--theme-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
-                                                        </td>
-                                                    </tr>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                                <h3 class="font-semibold mb-3" style="color: var(--theme-text-secondary)">
+                                    {% translate "Enrolled" %} ({{ data.enrolled_count }}/{{ data.effective_participants_limit }})
+                                </h3>
+                                <div class="space-y-2 mb-6">
+                                    {% for participation in confirmed_participants %}
+                                        {% if participation.status == 'confirmed' %}
+                                            <div class="flex items-center justify-between p-3 rounded-xl {% if participation.user.pk == current_user.pk %}bg-coral-50 dark:bg-coral-950 border border-coral-200 dark:border-coral-800{% else %}bg-warm-100 dark:bg-neutral-800{% endif %}">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-warm-400 to-warm-500 flex items-center justify-center shrink-0">
+                                                        {% heroicon_mini "user" class="w-4 h-4 text-white" %}
+                                                    </div>
+                                                    <span class="font-medium" style="color: var(--theme-text)">{{ participation.user.full_name }}</span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    {% with user=participation.user %}
+                                                        {% if user and user.slug and user.discord_username %}
+                                                            <button class="btn btn-secondary text-xs py-1 px-2 reveal-discord-btn"
+                                                                    hx-get="{% url 'web:crowd:user-discord-username' user_slug=user.slug %}"
+                                                                    hx-swap="outerHTML"
+                                                                    hx-trigger="click once">
+                                                                {% heroicon_mini "chat-bubble-left-right" class="w-3.5 h-3.5" %}
+                                                            </button>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                    {% if participation.user.pk == current_user.pk %}
+                                                        <span class="text-xs font-medium text-coral-600">{% translate "You" %}</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
                                 </div>
                             {% endif %}
                         {% endwith %}
                         <!-- Waiting List -->
-                        <h4 class="text-sm font-semibold flex items-center gap-1.5 mb-3" style="color: var(--theme-text-secondary)">
-                            {% heroicon_mini "clock" class="w-4 h-4" %} {% translate "Waiting List" %}
-                        </h4>
                         {% if data.session.waiting_count > 0 %}
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <thead>
-                                        <tr style="border-bottom: 1px solid var(--theme-border)">
-                                            <th class="text-left py-2 px-3 font-medium" style="color: var(--theme-text-secondary)">{% translate "Position" %}</th>
-                                            <th class="text-left py-2 px-3 font-medium" style="color: var(--theme-text-secondary)">{% translate "Name" %}</th>
-                                            <th class="text-left py-2 px-3 font-medium" style="color: var(--theme-text-secondary)">{% translate "Added" %}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for participation in data.session_participations|dictsort:"creation_time" %}
-                                            {% if participation.status == 'waiting' %}
-                                                <tr class="waiting-list-row" style="border-bottom: 1px solid var(--theme-border-light)">
-                                                    <td class="py-2 px-3">
-                                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold waiting-position" style="background-color: var(--theme-warning-light); color: var(--theme-warning-text)"></span>
-                                                    </td>
-                                                    <td class="py-2 px-3">
-                                                        <div class="flex items-center gap-2">
-                                                            <span style="color: var(--theme-text-muted)">{% heroicon_mini "clock" class="w-4 h-4" %}</span>
-                                                            <span>{{ participation.user.full_name }}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td class="py-2 px-3">
-                                                        <span class="text-xs" style="color: var(--theme-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
-                                                    </td>
-                                                </tr>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            <h3 class="font-semibold mb-3" style="color: var(--theme-text-secondary)">
+                                {% translate "Waiting List" %}
+                            </h3>
+                            <div class="space-y-2">
+                                {% for participation in data.session_participations|dictsort:"creation_time" %}
+                                    {% if participation.status == 'waiting' %}
+                                        <div class="waiting-list-row flex items-center justify-between p-3 rounded-xl bg-warm-100 dark:bg-neutral-800">
+                                            <div class="flex items-center gap-3">
+                                                <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold waiting-position" style="background-color: var(--theme-warning-light); color: var(--theme-warning-text)"></span>
+                                                <span class="font-medium" style="color: var(--theme-text)">{{ participation.user.full_name }}</span>
+                                            </div>
+                                            <span class="text-xs" style="color: var(--theme-text-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
                             </div>
                         {% else %}
-                            <div class="text-center py-4" style="color: var(--theme-text-muted)">
-                                <p>{% translate "No one on the waiting list." %}</p>
-                            </div>
+                            {% if data.session_participations %}
+                                <div class="text-center py-4" style="color: var(--theme-text-muted)">
+                                    <p class="text-sm">{% translate "No one on the waiting list." %}</p>
+                                </div>
+                            {% endif %}
                         {% endif %}
-                        {% if not data.session_participations.exists %}
-                            <div class="text-center py-6" style="color: var(--theme-text-muted)">
-                                <p>{% translate "No participants enrolled yet." %}</p>
+                        {% if not data.session_participations %}
+                            <div class="flex items-center justify-center p-4 border-2 border-dashed rounded-xl" style="border-color: var(--theme-border)">
+                                <span class="text-sm" style="color: var(--theme-text-muted)">{% translate "No participants enrolled yet." %}</span>
                             </div>
                         {% endif %}
                     </div>
