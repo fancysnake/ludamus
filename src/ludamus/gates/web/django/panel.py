@@ -471,6 +471,17 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["proposal_count"] = self.request.di.uow.proposals.count_by_category(
             category.pk
         )
+
+        # Get time slots and availabilities
+        context["time_slots"] = self.request.di.uow.time_slots.list_by_event(
+            current_event.pk
+        )
+        context["time_slot_availabilities"] = (
+            self.request.di.uow.proposal_categories.get_time_slot_availabilities(
+                category.pk
+            )
+        )
+
         return TemplateResponse(self.request, "panel/cfp-edit.html", context)
 
     def post(
@@ -535,6 +546,15 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             context["proposal_count"] = self.request.di.uow.proposals.count_by_category(
                 category.pk
             )
+            # Get time slots and availabilities
+            context["time_slots"] = self.request.di.uow.time_slots.list_by_event(
+                current_event.pk
+            )
+            context["time_slot_availabilities"] = (
+                self.request.di.uow.proposal_categories.get_time_slot_availabilities(
+                    category.pk
+                )
+            )
             context["active_nav"] = "cfp"
             context["category"] = category
             context["form"] = form
@@ -568,6 +588,13 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         self.request.di.uow.proposal_categories.set_session_field_requirements(
             category.pk, session_field_requirements, session_field_order
+        )
+
+        # Parse and save time slot availabilities
+        time_slot_ids_raw = self.request.POST.getlist("time_slots")
+        time_slot_ids = {int(slot_id) for slot_id in time_slot_ids_raw if slot_id}
+        self.request.di.uow.proposal_categories.set_time_slot_availabilities(
+            category.pk, time_slot_ids
         )
 
         messages.success(self.request, _("Session type updated successfully."))
