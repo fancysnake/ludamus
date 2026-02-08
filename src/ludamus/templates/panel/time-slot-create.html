@@ -13,12 +13,6 @@
     {% endif %}
 {% endblock page_subtitle %}
 {% block header_actions %}
-    {% if current_event %}
-        <a href="{% url 'panel:time-slots' slug=current_event.slug %}"
-           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
-            {% translate "Cancel" %}
-        </a>
-    {% endif %}
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
@@ -53,7 +47,11 @@
                         {% for error in form.non_field_errors %}<p class="text-sm text-red-600">{{ error }}</p>{% endfor %}
                     </div>
                 {% endif %}
-                <div class="mt-6 flex justify-end">
+                <div class="mt-6 flex justify-end gap-3">
+                    <a href="{% url 'panel:time-slots' slug=current_event.slug %}"
+                       class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
+                        {% translate "Cancel" %}
+                    </a>
                     <button type="submit"
                             class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
                         {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}

@@ -134,55 +134,33 @@
                                 <!-- Time slots -->
                                 {% with day_slots=slots_by_day|get_item:day %}
                                     {% for display in day_slots %}
-                                        <div class="absolute left-1 right-1 bg-blue-100 border-l-4 border-blue-500 rounded-r text-sm overflow-hidden group/slot"
-                                             style="top: {{ display.top_px }}px;
-                                                    height: {{ display.height_px }}px">
-                                            <!-- Action buttons -->
-                                            <div class="absolute top-0.5 right-0.5 flex gap-0.5 opacity-0 group-hover/slot:opacity-100 transition z-10">
-                                                <a href="{% url 'panel:time-slot-edit' slug=current_event.slug slot_pk=display.slot.pk %}"
-                                                   class="p-1 bg-white/90 hover:bg-blue-100 text-blue-600 rounded transition"
-                                                   title="{% translate "Edit" %}">
-                                                    {% heroicon_mini "pencil" class="w-3.5 h-3.5" %}
-                                                </a>
-                                                <form method="post"
-                                                      action="{% url 'panel:time-slot-delete' slug=current_event.slug slot_pk=display.slot.pk %}"
-                                                      class="inline"
-                                                      onsubmit="return confirm('{% translate "Delete this time slot?" %}');">
-                                                    {% csrf_token %}
-                                                    <button type="submit"
-                                                            class="p-1 bg-white/90 hover:bg-red-100 text-red-600 rounded transition"
-                                                            title="{% translate "Delete" %}">
-                                                        {% heroicon_mini "trash" class="w-3.5 h-3.5" %}
-                                                    </button>
-                                                </form>
+                                        <a href="{% url 'panel:time-slot-edit' slug=current_event.slug slot_pk=display.slot.pk %}"
+                                           class="absolute left-1 right-1 bg-blue-100 border-l-4 border-blue-500 rounded-r text-sm overflow-hidden block px-2 py-1 hover:bg-blue-200 transition"
+                                           style="top: {{ display.top_px }}px;
+                                                  height: {{ display.height_px }}px">
+                                            <div class="font-medium text-blue-900 truncate">
+                                                {% if display.starts_here %}
+                                                    {{ display.slot.start_time|time:"H:i" }}
+                                                {% else %}
+                                                    <span class="text-xs">{% translate "cont." %}</span>
+                                                {% endif %}
+                                                –
+                                                {% if display.ends_here %}
+                                                    {{ display.slot.end_time|time:"H:i" }}
+                                                {% else %}
+                                                    <span class="text-xs">{% translate "cont." %}</span>
+                                                {% endif %}
                                             </div>
-                                            <!-- Slot content (clickable to edit) -->
-                                            <a href="{% url 'panel:time-slot-edit' slug=current_event.slug slot_pk=display.slot.pk %}"
-                                               class="block px-2 py-1 hover:bg-blue-200 transition h-full">
-                                                <div class="font-medium text-blue-900 truncate">
+                                            {% if display.spans_midnight %}
+                                                <div class="text-xs text-blue-700 truncate">
                                                     {% if display.starts_here %}
-                                                        {{ display.slot.start_time|time:"H:i" }}
+                                                        → {{ display.slot.end_time|date:"M j" }}
                                                     {% else %}
-                                                        <span class="text-xs">{% translate "cont." %}</span>
-                                                    {% endif %}
-                                                    –
-                                                    {% if display.ends_here %}
-                                                        {{ display.slot.end_time|time:"H:i" }}
-                                                    {% else %}
-                                                        <span class="text-xs">{% translate "cont." %}</span>
+                                                        ← {{ display.slot.start_time|date:"M j" }}
                                                     {% endif %}
                                                 </div>
-                                                {% if display.spans_midnight %}
-                                                    <div class="text-xs text-blue-700 truncate">
-                                                        {% if display.starts_here %}
-                                                            → {{ display.slot.end_time|date:"M j" }}
-                                                        {% else %}
-                                                            ← {{ display.slot.start_time|date:"M j" }}
-                                                        {% endif %}
-                                                    </div>
-                                                {% endif %}
-                                            </a>
-                                        </div>
+                                            {% endif %}
+                                        </a>
                                     {% endfor %}
                                 {% endwith %}
                             </div>

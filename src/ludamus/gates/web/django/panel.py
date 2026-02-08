@@ -1298,6 +1298,18 @@ class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
         start_time = form.cleaned_data["start_time"]
         end_time = form.cleaned_data["end_time"]
 
+        # Validate against event period
+        service = PanelService(self.request.di.uow)
+        if error := service.validate_time_slot_period(
+            current_event, start_time, end_time
+        ):
+            messages.error(self.request, _(error))
+            context["active_nav"] = "cfp"
+            context["form"] = form
+            return TemplateResponse(
+                self.request, "panel/time-slot-create.html", context
+            )
+
         self.request.di.uow.time_slots.create(current_event.pk, start_time, end_time)
 
         messages.success(self.request, _("Time slot created successfully."))
@@ -1357,6 +1369,17 @@ class TimeSlotEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         start_time = form.cleaned_data["start_time"]
         end_time = form.cleaned_data["end_time"]
+
+        # Validate against event period
+        service = PanelService(self.request.di.uow)
+        if error := service.validate_time_slot_period(
+            current_event, start_time, end_time
+        ):
+            messages.error(self.request, _(error))
+            context["active_nav"] = "cfp"
+            context["time_slot"] = time_slot
+            context["form"] = form
+            return TemplateResponse(self.request, "panel/time-slot-edit.html", context)
 
         self.request.di.uow.time_slots.update(slot_pk, start_time, end_time)
 

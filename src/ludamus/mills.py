@@ -220,6 +220,36 @@ class PanelService:
         self._uow.spaces.delete(space_pk)
         return True
 
+    @staticmethod
+    def validate_time_slot_period(
+        event: EventDTO, start_time: datetime, end_time: datetime
+    ) -> str | None:
+        """Validate that a time slot falls within the event period.
+
+        Args:
+            event: The event DTO with start_time and end_time.
+            start_time: The proposed time slot start time.
+            end_time: The proposed time slot end time.
+
+        Returns:
+            Error message if validation fails, None if valid.
+        """
+        # Treat form times as UTC (strip any local timezone and apply UTC)
+        # Django's DateTimeField may parse with local timezone, but event times
+        # are stored in UTC, so we need to compare in the same timezone.
+        start_time = start_time.replace(tzinfo=UTC)
+        end_time = end_time.replace(tzinfo=UTC)
+
+        # Normalize to minute precision (form only uses hours/minutes)
+        event_start = event.start_time.replace(second=0, microsecond=0)
+        event_end = event.end_time.replace(second=0, microsecond=0)
+
+        if start_time < event_start:
+            return "Time slot cannot start before the event begins."
+        if end_time > event_end:
+            return "Time slot cannot end after the event ends."
+        return None
+
     def get_event_stats(self, event_id: int) -> PanelStatsDTO:
         """Calculate panel statistics for an event.
 

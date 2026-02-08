@@ -85,9 +85,11 @@ class TestTimeSlotCreatePageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        # Use fixed strings for datetime-local inputs (form interprets as local time)
-        start_str = "2026-02-15T10:00"
-        end_str = "2026-02-15T12:00"
+        # Use event's actual times to ensure slot is within event period
+        start_time = event.start_time
+        end_time = event.start_time.replace(hour=event.start_time.hour + 2)
+        start_str = start_time.strftime("%Y-%m-%dT%H:%M")
+        end_str = end_time.strftime("%Y-%m-%dT%H:%M")
 
         response = authenticated_client.post(
             self.get_url(event), data={"start_time": start_str, "end_time": end_str}
