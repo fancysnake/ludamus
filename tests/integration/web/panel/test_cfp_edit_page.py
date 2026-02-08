@@ -100,6 +100,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -261,6 +263,8 @@ class TestCFPEditPageView:
                 "available_fields": [],
                 "available_session_fields": [],
                 "durations": [],
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
         category.refresh_from_db()
@@ -347,6 +351,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -468,6 +474,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -537,6 +545,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -589,6 +599,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -796,6 +808,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": ["PT1H", "PT2H", "PT3H"],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -836,6 +850,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -997,6 +1013,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1069,6 +1087,8 @@ class TestCFPEditPageView:
                 "session_field_order": [genre_field.pk, difficulty_field.pk],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1121,6 +1141,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1332,6 +1354,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1403,6 +1427,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1443,6 +1469,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1555,6 +1583,8 @@ class TestCFPEditPageView:
                 "session_field_order": [difficulty_field.pk, genre_field.pk],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1625,6 +1655,8 @@ class TestCFPEditPageView:
                 "session_field_order": [genre_field.pk],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1665,6 +1697,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1746,6 +1780,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 0,
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1789,6 +1825,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 1 + 1 + 1,  # 3 proposals created
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 
@@ -1835,6 +1873,8 @@ class TestCFPEditPageView:
                 "session_field_order": [],
                 "durations": [],
                 "proposal_count": 1 + 1,  # Only 2 in this category
+                "time_slots": [],
+                "time_slot_availabilities": set(),
             },
         )
 

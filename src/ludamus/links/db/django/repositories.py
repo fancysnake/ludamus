@@ -23,6 +23,7 @@ from ludamus.adapters.db.django.models import (
     Space,
     Sphere,
     TimeSlot,
+    TimeSlotAvailability,
     UserEnrollmentConfig,
     Venue,
 )
@@ -61,6 +62,7 @@ from ludamus.pacts import (
     TagCategoryDTO,
     TagDTO,
     TimeSlotDTO,
+    TimeSlotRepositoryProtocol,
     UserData,
     UserDTO,
     UserEnrollmentConfigData,
@@ -1388,6 +1390,35 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
             )
 
     @staticmethod
+    def get_time_slot_availabilities(category_id: int) -> set[int]:
+        """Get available time slot IDs for a category.
+
+        Returns:
+            Set of time slot IDs that are available for this category.
+        """
+        availabilities = TimeSlotAvailability.objects.filter(category_id=category_id)
+        return {a.time_slot_id for a in availabilities}
+
+    @staticmethod
+    def set_time_slot_availabilities(category_id: int, time_slot_ids: set[int]) -> None:
+        """Set available time slots for a category.
+
+        Replaces all existing availabilities with the provided ones.
+
+        Args:
+            category_id: The category to set availabilities for.
+            time_slot_ids: Set of time slot IDs to make available.
+        """
+        # Delete existing availabilities
+        TimeSlotAvailability.objects.filter(category_id=category_id).delete()
+
+        # Create new availabilities
+        for time_slot_id in time_slot_ids:
+            TimeSlotAvailability.objects.create(
+                category_id=category_id, time_slot_id=time_slot_id
+            )
+
+    @staticmethod
     def generate_unique_slug(
         event_id: int, base_slug: str, exclude_pk: int | None = None
     ) -> str:
@@ -1708,3 +1739,113 @@ class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):
         ).first()
 
         return DomainEnrollmentConfigDTO.model_validate(config) if config else None
+
+
+class TimeSlotRepository(TimeSlotRepositoryProtocol):
+    def __init__(self, storage: Storage) -> None:
+        self._storage = storage
+
+    def create(
+        self, event_id: int, start_time: datetime, end_time: datetime
+    ) -> TimeSlotDTO:
+        """Create a new time slot for an event.
+
+        Args:
+            event_id: The event to create the time slot for.
+            start_time: The start time of the slot.
+            end_time: The end time of the slot.
+
+        Returns:
+            TimeSlotDTO of the created time slot.
+        """
+        time_slot = TimeSlot.objects.create(
+            event_id=event_id, start_time=start_time, end_time=end_time
+        )
+        self._storage.time_slots_by_event[event_id][time_slot.pk] = time_slot
+        return TimeSlotDTO.model_validate(time_slot)
+
+    def delete(self, pk: int) -> None:
+        """Delete a time slot.
+
+        Args:
+            pk: The time slot primary key.
+        """
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist:
+            return
+
+        event_id = time_slot.event_id
+        time_slot.delete()
+
+        # Remove from storage cache
+        self._storage.time_slots_by_event[event_id].pop(pk, None)
+
+    def list_by_event(self, event_id: int) -> list[TimeSlotDTO]:
+        """List all time slots for an event, ordered by start time.
+
+        Returns:
+            List of TimeSlotDTO objects for the event.
+        """
+        if not (collection := self._storage.time_slots_by_event[event_id]):
+            time_slots = TimeSlot.objects.filter(event_id=event_id).order_by(
+                "start_time"
+            )
+            for time_slot in time_slots:
+                collection[time_slot.pk] = time_slot
+
+        return [
+            TimeSlotDTO.model_validate(ts)
+            for ts in sorted(collection.values(), key=lambda x: x.start_time)
+        ]
+
+    def read(self, pk: int) -> TimeSlotDTO:
+        """Read a time slot by primary key.
+
+        Returns:
+            TimeSlotDTO of the time slot.
+
+        Raises:
+            NotFoundError: If the time slot is not found.
+        """
+        # Check storage first
+        for collection in self._storage.time_slots_by_event.values():
+            if time_slot := collection.get(pk):
+                return TimeSlotDTO.model_validate(time_slot)
+
+        # Query database
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist as err:
+            msg = f"TimeSlot with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+
+        self._storage.time_slots_by_event[time_slot.event_id][time_slot.pk] = time_slot
+        return TimeSlotDTO.model_validate(time_slot)
+
+    def update(self, pk: int, start_time: datetime, end_time: datetime) -> TimeSlotDTO:
+        """Update a time slot.
+
+        Args:
+            pk: The time slot primary key.
+            start_time: The new start time.
+            end_time: The new end time.
+
+        Returns:
+            TimeSlotDTO of the updated time slot.
+
+        Raises:
+            NotFoundError: If the time slot is not found.
+        """
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist as err:
+            msg = f"TimeSlot with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+
+        time_slot.start_time = start_time
+        time_slot.end_time = end_time
+        time_slot.save()
+
+        self._storage.time_slots_by_event[time_slot.event_id][time_slot.pk] = time_slot
+        return TimeSlotDTO.model_validate(time_slot)

@@ -27,6 +27,7 @@ from ludamus.adapters.db.django.models import (
     Tag,
     TagCategory,
     TimeSlot,
+    TimeSlotAvailability,
     User,
     UserEnrollmentConfig,
     Venue,
@@ -149,6 +150,22 @@ class TestTimeSlot:
             )
             == f"2025-01-02 03:04 - 2025-05-06 07:08 ({pk})"
         )
+
+
+class TestTimeSlotAvailability:
+    def test_str(self, faker, time_zone):
+        category_name = faker.word()
+        pk = faker.random_int(min=1)
+        time_slot = TimeSlot(
+            id=pk,
+            start_time=datetime(2025, 1, 2, 10, 0, tzinfo=time_zone),
+            end_time=datetime(2025, 1, 2, 12, 0, tzinfo=time_zone),
+        )
+        category = ProposalCategory(name=category_name)
+
+        availability = TimeSlotAvailability(time_slot=time_slot, category=category)
+
+        assert str(availability) == f"{time_slot} available for {category_name}"
 
 
 class TestTagCategory:

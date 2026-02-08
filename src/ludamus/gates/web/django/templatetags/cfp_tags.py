@@ -77,3 +77,17 @@ def format_duration(iso_duration: str) -> str:
     if minutes:
         return f"{minutes}min"
     return iso_duration
+
+
+@register.filter
+def multiply(value: int | str, arg: int | str) -> int:
+    """Multiply two values for CSS calculations.
+
+    Args:
+        value: First operand.
+        arg: Second operand.
+
+    Returns:
+        Product of the two values.
+    """
+    return int(value) * int(arg)

@@ -1,0 +1,188 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% load cfp_tags %}
+{% block title %}
+    {% translate "Time Slots" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "Time Slots" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Session Scheduling" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:cfp' slug=current_event.slug %}"
+           class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
+            {% heroicon_outline "arrow-left" class="w-4 h-4 mr-2" %}
+            {% translate "Back to CFP" %}
+        </a>
+        <a href="{% url 'panel:time-slot-create' slug=current_event.slug %}"
+           class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+            {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+            {% translate "New Time Slot" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% heroicon_outline "information-circle" class="w-5 h-5" %}</span>
+                <div>
+                    <p class="text-sm font-medium text-blue-800">{% translate "What are Time Slots?" %}</p>
+                    <p class="text-sm text-blue-700 mt-1">
+                        {% translate "Time slots define when sessions can be scheduled during the event. Hosts select their preferred time slots when submitting proposals." %}
+                    </p>
+                    <p class="text-sm text-blue-700 mt-2">
+                        {% translate "After creating time slots here, configure which ones are available for each session type in the session type's settings." %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% if days %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+                <!-- Header with pagination -->
+                <div class="flex justify-between items-center p-4 border-b border-neutral-200">
+                    <h2 class="text-lg font-semibold text-neutral-900">{% translate "Schedule" %}</h2>
+                    <div class="flex items-center gap-4">
+                        {% if pagination.has_prev %}
+                            <a href="?page={{ pagination.current_page|add:'-1' }}"
+                               class="flex items-center gap-1 px-3 py-1.5 text-sm text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition">
+                                {% heroicon_mini "chevron-left" class="w-4 h-4" %}
+                                {% translate "Previous" %}
+                            </a>
+                        {% else %}
+                            <span class="flex items-center gap-1 px-3 py-1.5 text-sm text-neutral-400 cursor-not-allowed">
+                                {% heroicon_mini "chevron-left" class="w-4 h-4" %}
+                                {% translate "Previous" %}
+                            </span>
+                        {% endif %}
+                        <span class="text-sm text-neutral-600">
+                            {% with first_day=days.0 last_day=days|last %}{{ first_day|date:"M j" }} – {{ last_day|date:"M j, Y" }}{% endwith %}
+                        </span>
+                        {% if pagination.has_next %}
+                            <a href="?page={{ pagination.current_page|add:'1' }}"
+                               class="flex items-center gap-1 px-3 py-1.5 text-sm text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition">
+                                {% translate "Next" %}
+                                {% heroicon_mini "chevron-right" class="w-4 h-4" %}
+                            </a>
+                        {% else %}
+                            <span class="flex items-center gap-1 px-3 py-1.5 text-sm text-neutral-400 cursor-not-allowed">
+                                {% translate "Next" %}
+                                {% heroicon_mini "chevron-right" class="w-4 h-4" %}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Calendar grid -->
+                <div class="flex overflow-x-auto">
+                    <!-- Time axis (left column) -->
+                    <div class="w-16 flex-shrink-0 border-r border-neutral-200 bg-neutral-50">
+                        <!-- Empty header cell to align with day headers -->
+                        <div class="h-12 border-b border-neutral-200"></div>
+                        <!-- Hour labels -->
+                        {% for hour in hours %}
+                            <div class="h-10 text-xs text-neutral-500 text-right pr-2 flex items-start justify-end pt-0.5 border-b border-neutral-100">
+                                {{ hour|stringformat:"02d" }}:00
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Day columns -->
+                    {% for day in days %}
+                        <div class="flex-1 min-w-40 border-r border-neutral-200 last:border-r-0">
+                            <!-- Day header with add button -->
+                            <div class="sticky top-0 bg-neutral-100 h-12 px-3 flex items-center justify-between border-b border-neutral-200 z-10">
+                                <div>
+                                    <span class="text-sm font-medium text-neutral-900">{{ day|date:"D" }}</span>
+                                    <span class="text-sm text-neutral-500 ml-1">{{ day|date:"M j" }}</span>
+                                </div>
+                                <a href="{% url 'panel:time-slot-create' slug=current_event.slug %}?date={{ day|date:'Y-m-d' }}"
+                                   class="p-1.5 text-neutral-500 hover:text-primary hover:bg-white rounded-lg transition"
+                                   title="{% translate "Add time slot" %}">
+                                    {% heroicon_mini "plus" class="w-5 h-5" %}
+                                </a>
+                            </div>
+                            <!-- Timeline area (relative positioning container) -->
+                            <div class="relative" style="height: 960px;">
+                                <!-- Hour grid lines with availability shading - clickable to add slot -->
+                                {% with day_hours=hour_availability|get_item:day %}
+                                    {% for hour in hours %}
+                                        {% with is_available=day_hours|get_item:hour %}
+                                            {% if is_available %}
+                                                <a href="{% url 'panel:time-slot-create' slug=current_event.slug %}?date={{ day|date:'Y-m-d' }}&hour={{ hour }}"
+                                                   class="absolute w-full border-b border-neutral-100 hover:bg-blue-50 transition-colors cursor-pointer group/hour flex items-center justify-center"
+                                                   style="top: {{ hour|multiply:40 }}px;
+                                                          height: 40px"
+                                                   title="{% translate "Add time slot at" %} {{ hour }}:00">
+                                                    <span class="opacity-0 group-hover/hour:opacity-100 text-blue-400 transition">
+                                                        {% heroicon_mini "plus" class="w-5 h-5" %}
+                                                    </span>
+                                                </a>
+                                            {% else %}
+                                                <div class="absolute w-full border-b border-neutral-100 bg-neutral-200/50 cursor-not-allowed"
+                                                     style="top: {{ hour|multiply:40 }}px;
+                                                            height: 40px"
+                                                     title="{% translate "Outside event period" %}"></div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endfor %}
+                                {% endwith %}
+                                <!-- Time slots -->
+                                {% with day_slots=slots_by_day|get_item:day %}
+                                    {% for display in day_slots %}
+                                        <a href="{% url 'panel:time-slot-edit' slug=current_event.slug slot_pk=display.slot.pk %}"
+                                           class="absolute left-1 right-1 bg-blue-100 border-l-4 border-blue-500 rounded-r text-sm overflow-hidden block px-2 py-1 hover:bg-blue-200 transition"
+                                           style="top: {{ display.top_px }}px;
+                                                  height: {{ display.height_px }}px">
+                                            <div class="font-medium text-blue-900 truncate">
+                                                {% if display.starts_here %}
+                                                    {{ display.slot.start_time|time:"H:i" }}
+                                                {% else %}
+                                                    <span class="text-xs">{% translate "cont." %}</span>
+                                                {% endif %}
+                                                –
+                                                {% if display.ends_here %}
+                                                    {{ display.slot.end_time|time:"H:i" }}
+                                                {% else %}
+                                                    <span class="text-xs">{% translate "cont." %}</span>
+                                                {% endif %}
+                                            </div>
+                                            {% if display.spans_midnight %}
+                                                <div class="text-xs text-blue-700 truncate">
+                                                    {% if display.starts_here %}
+                                                        → {{ display.slot.end_time|date:"M j" }}
+                                                    {% else %}
+                                                        ← {{ display.slot.start_time|date:"M j" }}
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </a>
+                                    {% endfor %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+                <div class="max-w-sm mx-auto">
+                    <div class="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        {% heroicon_outline "exclamation-triangle" class="w-6 h-6 text-neutral-400" %}
+                    </div>
+                    <p class="text-neutral-500">
+                        {% translate "Event dates are not configured. Set the event start and end dates in settings first." %}
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+            <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
+        </div>
+    {% endif %}
+{% endblock content %}
