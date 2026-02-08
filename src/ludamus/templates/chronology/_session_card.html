@@ -38,26 +38,26 @@
                     </span>
                 {% endif %}
                 {% if data.loc.space %}
-                    <span class="text-xs px-2 py-1 rounded-lg venue-icon" style="background-color: var(--theme-bg-tertiary); color: var(--color-text-muted)">
+                    <span class="text-xs px-2 py-1 rounded-lg venue-icon" style="background-color: var(--theme-bg-tertiary); color: var(--color-foreground-muted)">
                         {% if data.loc.area %}{{ data.loc.venue.name }} › {% endif %}{{ data.loc.space.name }}
                     </span>
                 {% endif %}
             </div>
 
             <!-- Session Title -->
-            <h3 class="font-bold text-lg mb-2" style="color: var(--color-text)">{{ data.session.title }}</h3>
+            <h3 class="font-bold text-lg mb-2" style="color: var(--color-foreground)">{{ data.session.title }}</h3>
 
             <!-- Host -->
             <div class="flex items-center gap-2 mb-3">
                 <div class="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center ring-2 ring-white dark:ring-neutral-800">
                     {% heroicon_mini "user" class="w-3.5 h-3.5 text-white" %}
                 </div>
-                <span class="text-sm" style="color: var(--color-text-muted)">{{ data.session.presenter_name }}</span>
+                <span class="text-sm" style="color: var(--color-foreground-muted)">{{ data.session.presenter_name }}</span>
             </div>
 
             <!-- Description -->
             {% if data.session.description %}
-                <p class="text-sm mb-4 line-clamp-2" style="color: var(--color-text-muted)">
+                <p class="text-sm mb-4 line-clamp-2" style="color: var(--color-foreground-muted)">
                     {{ data.session.description }}
                 </p>
             {% endif %}
@@ -86,7 +86,7 @@
             <!-- Participants + Action -->
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1 text-sm" style="color: var(--color-text-muted)">
+                    <span class="inline-flex items-center gap-1 text-sm" style="color: var(--color-foreground-muted)">
                         {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
                     </span>
                     {% if data.session.waiting_count > 0 %}
@@ -103,7 +103,7 @@
                         </span>
                     {% endif %}
                 {% else %}
-                    <span class="text-xs font-medium" style="color: var(--color-text-muted)">
+                    <span class="text-xs font-medium" style="color: var(--color-foreground-muted)">
                         {% if ended %}
                             {% translate "Ended" %}
                         {% elif data.should_show_as_inactive %}

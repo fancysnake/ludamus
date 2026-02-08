@@ -13,11 +13,11 @@
                 <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-white dark:bg-neutral-900">
                     {% heroicon_outline "question-mark-circle" class="w-8 h-8 text-warning" %}
                 </div>
-                <span class="text-6xl font-bold" style="color: var(--color-text-muted)">{{ error_code }}</span>
+                <span class="text-6xl font-bold" style="color: var(--color-foreground-muted)">{{ error_code }}</span>
             </div>
             <h1 class="text-2xl font-bold mb-3">{{ title }}</h1>
-            <p class="mb-2" style="color: var(--color-text-muted)">{{ message }}</p>
-            <p class="text-sm mb-6" style="color: var(--color-text-muted)">{{ subtitle }}</p>
+            <p class="mb-2" style="color: var(--color-foreground-muted)">{{ message }}</p>
+            <p class="text-sm mb-6" style="color: var(--color-foreground-muted)">{{ subtitle }}</p>
             <div class="flex flex-col sm:flex-row gap-3">
                 <button onclick="history.back()" class="btn btn-secondary">
                     {% heroicon_outline "arrow-left" class="w-5 h-5" %}

@@ -36,10 +36,10 @@
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
                             <label for="title"
                                    class="text-sm font-medium"
-                                   style="color: var(--color-text-secondary)">
+                                   style="color: var(--color-foreground-secondary)">
                                 {% translate "Session Title" %} <span style="color: var(--theme-danger)" aria-hidden="true">*</span><span class="sr-only">{% translate "(required)" %}</span>
                             </label>
-                            <span class="text-sm" style="color: var(--color-text-muted)">
+                            <span class="text-sm" style="color: var(--color-foreground-muted)">
                                 {% translate "Choose a clear and engaging title that describes your session." %}
                             </span>
                         </div>
@@ -47,7 +47,7 @@
                                class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
                                style="background-color: var(--theme-bg-secondary);
                                       border-color: var(--theme-border);
-                                      color: var(--color-text)"
+                                      color: var(--color-foreground)"
                                id="title"
                                name="title"
                                required
@@ -58,15 +58,15 @@
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
                             <label for="description"
                                    class="text-sm font-medium"
-                                   style="color: var(--color-text-secondary)">{% translate "Description" %}</label>
-                            <span class="text-sm" style="color: var(--color-text-muted)">
+                                   style="color: var(--color-foreground-secondary)">{% translate "Description" %}</label>
+                            <span class="text-sm" style="color: var(--color-foreground-muted)">
                                 {% translate "Provide a detailed description of your session content and objectives." %}
                             </span>
                         </div>
                         <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
                                   style="background-color: var(--theme-bg-secondary);
                                          border-color: var(--theme-border);
-                                         color: var(--color-text)"
+                                         color: var(--color-foreground)"
                                   id="description"
                                   name="description"
                                   rows="4"
@@ -76,15 +76,15 @@
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
                             <label for="requirements"
                                    class="text-sm font-medium"
-                                   style="color: var(--color-text-secondary)">{% translate "Requirements" %}</label>
-                            <span class="text-sm" style="color: var(--color-text-muted)">
+                                   style="color: var(--color-foreground-secondary)">{% translate "Requirements" %}</label>
+                            <span class="text-sm" style="color: var(--color-foreground-muted)">
                                 {% translate "List any requirements or prerequisites for participants." %}
                             </span>
                         </div>
                         <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
                                   style="background-color: var(--theme-bg-secondary);
                                          border-color: var(--theme-border);
-                                         color: var(--color-text)"
+                                         color: var(--color-foreground)"
                                   id="requirements"
                                   name="requirements"
                                   rows="3"
@@ -94,15 +94,15 @@
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
                             <label for="needs"
                                    class="text-sm font-medium"
-                                   style="color: var(--color-text-secondary)">{% translate "Special Needs" %}</label>
-                            <span class="text-sm" style="color: var(--color-text-muted)">
+                                   style="color: var(--color-foreground-secondary)">{% translate "Special Needs" %}</label>
+                            <span class="text-sm" style="color: var(--color-foreground-muted)">
                                 {% translate "Specify any special equipment or room setup requirements." %}
                             </span>
                         </div>
                         <textarea class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
                                   style="background-color: var(--theme-bg-secondary);
                                          border-color: var(--theme-border);
-                                         color: var(--color-text)"
+                                         color: var(--color-foreground)"
                                   id="needs"
                                   name="needs"
                                   rows="2"
@@ -112,19 +112,19 @@
                         <div role="group" aria-labelledby="tags-group-label">
                             <span id="tags-group-label"
                                   class="block text-sm font-medium mb-3"
-                                  style="color: var(--color-text-secondary)">{% translate "Tags" %}</span>
+                                  style="color: var(--color-foreground-secondary)">{% translate "Tags" %}</span>
                             <div class="space-y-4">
                                 {% for category in tag_categories %}
                                     <div>
                                         <label for="tags_{{ category.id }}"
                                                class="block text-sm mb-1.5"
-                                               style="color: var(--color-text)">{{ category.name }}</label>
+                                               style="color: var(--color-foreground)">{{ category.name }}</label>
                                         {% if category.input_type == 'select' %}
                                             <select multiple
                                                     class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
                                                     style="background-color: var(--theme-bg-secondary);
                                                            border-color: var(--theme-border);
-                                                           color: var(--color-text)"
+                                                           color: var(--color-foreground)"
                                                     id="tags_{{ category.id }}"
                                                     name="tags_{{ category.id }}"
                                                     size="4">
@@ -135,11 +135,11 @@
                                                 {% endfor %}
                                             </select>
                                             <p class="text-sm mt-1.5 hidden sm:block"
-                                               style="color: var(--color-text-muted)">
+                                               style="color: var(--color-foreground-muted)">
                                                 {% translate "Hold Ctrl/Cmd to select multiple tags." %}
                                             </p>
                                             <p class="text-sm mt-1.5 sm:hidden"
-                                               style="color: var(--color-text-muted)">
+                                               style="color: var(--color-foreground-muted)">
                                                 {% translate "Tap to select multiple tags." %}
                                             </p>
                                         {% elif category.input_type == 'type' %}
@@ -147,11 +147,11 @@
                                                    class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
                                                    style="background-color: var(--theme-bg-secondary);
                                                           border-color: var(--theme-border);
-                                                          color: var(--color-text)"
+                                                          color: var(--color-foreground)"
                                                    id="tags_{{ category.id }}"
                                                    name="tags_{{ category.id }}"
                                                    placeholder="{% translate "e.g. horror, investigation, sandbox" %}">
-                                            <p class="text-sm mt-1.5" style="color: var(--color-text-muted)">
+                                            <p class="text-sm mt-1.5" style="color: var(--color-foreground-muted)">
                                                 {% translate "Comma-separated. New tags will be reviewed by organizers." %}
                                             </p>
                                         {% endif %}
@@ -165,10 +165,10 @@
                             <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
                                 <label for="participants_limit"
                                        class="text-sm font-medium"
-                                       style="color: var(--color-text-secondary)">
+                                       style="color: var(--color-foreground-secondary)">
                                     {% translate "Participants" %}
                                 </label>
-                                <span class="text-sm" style="color: var(--color-text-muted)">
+                                <span class="text-sm" style="color: var(--color-foreground-muted)">
                                     {% translate "How many players can join your session?" %}
                                 </span>
                             </div>
@@ -178,7 +178,7 @@
                                    class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
                                    style="background-color: var(--theme-bg-secondary);
                                           border-color: var(--theme-border);
-                                          color: var(--color-text)"
+                                          color: var(--color-foreground)"
                                    id="participants_limit"
                                    name="participants_limit"
                                    placeholder="{% translate "e.g. 5" %}"
@@ -187,13 +187,13 @@
                         <div>
                             <label for="min_age"
                                    class="block text-sm font-medium mb-1.5"
-                                   style="color: var(--color-text-secondary)">
+                                   style="color: var(--color-foreground-secondary)">
                                 {% translate "Age Rating" %} <span style="color: var(--theme-danger)" aria-hidden="true">*</span><span class="sr-only">{% translate "(required)" %}</span>
                             </label>
                             <select class="w-full px-3 py-2.5 rounded-lg border focus:outline-none focus:ring-2"
                                     style="background-color: var(--theme-bg-secondary);
                                            border-color: var(--theme-border);
-                                           color: var(--color-text)"
+                                           color: var(--color-foreground)"
                                     id="min_age"
                                     name="min_age"
                                     required>
@@ -221,7 +221,7 @@
         </div>
         <div class="card mt-6">
             <div class="card-body">
-                <p class="text-sm" style="color: var(--color-text-muted)">
+                <p class="text-sm" style="color: var(--color-foreground-muted)">
                     {% translate "Proposals are reviewed by organizers. You'll be notified when yours is accepted and added to the agenda." %}
                     {% if not time_slot %}
                         {% translate "Organizers will assign time slots to accepted proposals." %}

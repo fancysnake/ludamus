@@ -64,10 +64,10 @@
 
   --color-background: #f0f1f3;
 
-  --color-text: #252220;
-  --color-text-secondary: #5c534a;
-  --color-text-muted: #737373;
-  --color-text-inverse: #ffffff;
+  --color-foreground: #252220;
+  --color-foreground-secondary: #5c534a;
+  --color-foreground-muted: #737373;
+  --color-foreground-inverse: #ffffff;
 
   --color-primary: #f85a3c;
   --color-secondary: #14b89b;
@@ -128,10 +128,10 @@ a {
     --color-background: #0a0a0a;
     --theme-bg-secondary: #171717;
     --theme-bg-tertiary: #262626;
-    --color-text: #fafafa;
-    --color-text-secondary: #d4d4d4;
-    --color-text-muted: #737373;
-    --color-text-inverse: #0a0a0a;
+    --color-foreground: #fafafa;
+    --color-foreground-secondary: #d4d4d4;
+    --color-foreground-muted: #737373;
+    --color-foreground-inverse: #0a0a0a;
     --theme-border: #404040;
     --theme-border-light: #262626;
     --theme-border-focus: #f85a3c;
@@ -166,10 +166,10 @@ a {
   --color-background: #0a0a0a;
   --theme-bg-secondary: #171717;
   --theme-bg-tertiary: #262626;
-  --color-text: #fafafa;
-  --color-text-secondary: #d4d4d4;
-  --color-text-muted: #737373;
-  --color-text-inverse: #0a0a0a;
+  --color-foreground: #fafafa;
+  --color-foreground-secondary: #d4d4d4;
+  --color-foreground-muted: #737373;
+  --color-foreground-inverse: #0a0a0a;
   --theme-border: #404040;
   --theme-border-light: #262626;
   --theme-border-focus: #f85a3c;
@@ -315,7 +315,7 @@ a {
 .btn-secondary {
   background-color: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
-  color: var(--color-text);
+  color: var(--color-foreground);
 }
 
 .btn-secondary:hover {
