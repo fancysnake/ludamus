@@ -213,3 +213,4 @@ src/ludamus/static/css/output.css
 src/ludamus/static/css/dist/
 .django_tailwind_cli/
 screenshots/
+tmp
