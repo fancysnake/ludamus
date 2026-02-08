@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import (
@@ -1242,7 +1243,9 @@ class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
         """Display the time slot creation form.
 
-        Accepts optional ?date=YYYY-MM-DD query param to pre-fill the date.
+        Accepts optional query params to pre-fill the form:
+        - ?date=YYYY-MM-DD - pre-fill the date
+        - ?hour=HH - pre-fill the start hour (requires date)
 
         Returns:
             TemplateResponse with the form or redirect if event not found.
@@ -1251,16 +1254,22 @@ class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        # Parse optional date query param to pre-fill form
+        # Parse optional date and hour query params to pre-fill form
         initial: dict[str, datetime] = {}
         if date_str := self.request.GET.get("date"):
             try:
                 parsed_date = datetime.strptime(date_str, "%Y-%m-%d").replace(
                     tzinfo=UTC
                 )
-                # Default: 09:00 - 11:00 on the selected day
-                initial["start_time"] = parsed_date.replace(hour=9, minute=0)
-                initial["end_time"] = parsed_date.replace(hour=11, minute=0)
+                # Default start hour is 9, but can be overridden
+                start_hour = 9
+                if hour_str := self.request.GET.get("hour"):
+                    with suppress(ValueError):
+                        start_hour = max(0, min(23, int(hour_str)))
+                # Default duration: 2 hours
+                end_hour = min(23, start_hour + 2)
+                initial["start_time"] = parsed_date.replace(hour=start_hour, minute=0)
+                initial["end_time"] = parsed_date.replace(hour=end_hour, minute=0)
             except ValueError:
                 pass  # Invalid date format, ignore
 

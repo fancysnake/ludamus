@@ -11,6 +11,8 @@ DAYS_PER_PAGE = 5
 DEFAULT_START_HOUR = 9
 DEFAULT_END_HOUR = 11
 TEST_DAY = 15
+TEST_HOUR = 14
+TEST_END_HOUR = 16
 
 
 class TestTimeSlotsPageView:
@@ -191,3 +193,20 @@ class TestTimeSlotCreatePageViewWithDate:
         form = response.context["form"]
         # Form should not have initial values for invalid date
         assert form.initial.get("start_time") is None
+
+    def test_get_with_date_and_hour_param_prefills_form(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(
+            self.get_url(event) + f"?date=2026-02-{TEST_DAY}&hour={TEST_HOUR}"
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        form = response.context["form"]
+        # Start time should be TEST_HOUR on the specified date
+        assert form.initial["start_time"].hour == TEST_HOUR
+        assert form.initial["start_time"].day == TEST_DAY
+        # End time should be TEST_END_HOUR (2-hour default)
+        assert form.initial["end_time"].hour == TEST_END_HOUR

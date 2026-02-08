@@ -108,13 +108,22 @@
                             </div>
                             <!-- Timeline area (relative positioning container) -->
                             <div class="relative" style="height: 960px;">
-                                <!-- Hour grid lines with availability shading -->
+                                <!-- Hour grid lines with availability shading - clickable to add slot -->
                                 {% with day_hours=hour_availability|get_item:day %}
                                     {% for hour in hours %}
                                         {% with is_available=day_hours|get_item:hour %}
-                                            <div class="absolute w-full border-b border-neutral-100 {% if not is_available %}bg-neutral-200/50{% endif %}"
-                                                 style="top: {{ hour|multiply:40 }}px;
-                                                        height: 40px"></div>
+                                            {% if is_available %}
+                                                <a href="{% url 'panel:time-slot-create' slug=current_event.slug %}?date={{ day|date:'Y-m-d' }}&hour={{ hour }}"
+                                                   class="absolute w-full border-b border-neutral-100 hover:bg-blue-50 transition-colors cursor-pointer"
+                                                   style="top: {{ hour|multiply:40 }}px;
+                                                          height: 40px"
+                                                   title="{% translate "Add time slot at" %} {{ hour }}:00"></a>
+                                            {% else %}
+                                                <div class="absolute w-full border-b border-neutral-100 bg-neutral-200/50 cursor-not-allowed"
+                                                     style="top: {{ hour|multiply:40 }}px;
+                                                            height: 40px"
+                                                     title="{% translate "Outside event period" %}"></div>
+                                            {% endif %}
                                         {% endwith %}
                                     {% endfor %}
                                 {% endwith %}
