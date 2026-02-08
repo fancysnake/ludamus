@@ -44,29 +44,29 @@
                                 <div class="px-3.5 py-2.5 border-b"
                                      style="border-color: var(--theme-border)">
                                     <p class="text-sm font-medium truncate"
-                                       style="color: var(--theme-text-primary)">
+                                       style="color: var(--color-foreground)">
                                         {{ request.user.full_name|default:"User" }}
                                     </p>
                                     <p class="text-xs truncate mt-0.5"
-                                       style="color: var(--theme-text-secondary)">{{ request.user.email }}</p>
+                                       style="color: var(--color-foreground-secondary)">{{ request.user.email }}</p>
                                 </div>
                                 {% if is_sphere_manager %}
                                     <a href="{% url 'panel:index' %}"
                                        class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
-                                       style="color: var(--theme-text-secondary)">
+                                       style="color: var(--color-foreground-secondary)">
                                         {% heroicon_outline "squares-2x2" class="w-4 h-4 opacity-60" %}
                                         {% translate "Panel" %}
                                     </a>
                                 {% endif %}
                                 <a href="{% url 'web:crowd:profile' %}"
                                    class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
-                                   style="color: var(--theme-text-secondary)">
+                                   style="color: var(--color-foreground-secondary)">
                                     {% heroicon_outline "user-circle" class="w-4 h-4 opacity-60" %}
                                     {% translate "Edit profile" %}
                                 </a>
                                 <a href="{% url 'web:crowd:auth0:logout' %}"
                                    class="flex items-center gap-1.5 px-3.5 py-3 text-sm border-t transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
-                                   style="color: var(--theme-text-secondary);
+                                   style="color: var(--color-foreground-secondary);
                                           border-color: var(--theme-border)">
                                     {% heroicon_outline "arrow-right-on-rectangle" class="w-4 h-4 opacity-60" %}
                                     {% translate "Log out" %}
