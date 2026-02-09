@@ -1212,7 +1212,7 @@ class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         # Parse optional date and hour query params to pre-fill form
-        initial: dict[str, datetime] = {}
+        initial: dict[str, str] = {}
         if date_str := self.request.GET.get("date"):
             try:
                 parsed_date = datetime.strptime(date_str, "%Y-%m-%d").replace(
@@ -1225,8 +1225,11 @@ class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
                         start_hour = max(0, min(23, int(hour_str)))
                 # Default duration: 2 hours
                 end_hour = min(23, start_hour + 2)
-                initial["start_time"] = parsed_date.replace(hour=start_hour, minute=0)
-                initial["end_time"] = parsed_date.replace(hour=end_hour, minute=0)
+                start_dt = parsed_date.replace(hour=start_hour, minute=0)
+                end_dt = parsed_date.replace(hour=end_hour, minute=0)
+                # Format as HTML5 datetime-local value
+                initial["start_time"] = start_dt.strftime("%Y-%m-%dT%H:%M")
+                initial["end_time"] = end_dt.strftime("%Y-%m-%dT%H:%M")
             except ValueError:
                 pass  # Invalid date format, ignore
 
@@ -1297,7 +1300,10 @@ class TimeSlotEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["active_nav"] = "cfp"
         context["time_slot"] = time_slot
         context["form"] = TimeSlotForm(
-            initial={"start_time": time_slot.start_time, "end_time": time_slot.end_time}
+            initial={
+                "start_time": time_slot.start_time.strftime("%Y-%m-%dT%H:%M"),
+                "end_time": time_slot.end_time.strftime("%Y-%m-%dT%H:%M"),
+            }
         )
         return TemplateResponse(self.request, "panel/time-slot-edit.html", context)
 

@@ -200,3 +200,81 @@ class TestTimeSlotCreatePageView:
             messages=[(messages.ERROR, "Event not found.")],
             url="/panel/",
         )
+
+    def test_post_shows_error_when_start_before_event(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        # Start time before event begins
+        start_time = event.start_time - timedelta(hours=2)
+        end_time = event.start_time
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            data={
+                "start_time": start_time.strftime("%Y-%m-%dT%H:%M"),
+                "end_time": end_time.strftime("%Y-%m-%dT%H:%M"),
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/time-slot-create.html",
+            messages=[
+                (messages.ERROR, "Time slot cannot start before the event begins.")
+            ],
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "cfp",
+                "form": ANY,
+            },
+        )
+
+    def test_post_shows_error_when_end_after_event(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        # End time after event ends
+        start_time = event.end_time - timedelta(hours=1)
+        end_time = event.end_time + timedelta(hours=2)
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            data={
+                "start_time": start_time.strftime("%Y-%m-%dT%H:%M"),
+                "end_time": end_time.strftime("%Y-%m-%dT%H:%M"),
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/time-slot-create.html",
+            messages=[(messages.ERROR, "Time slot cannot end after the event ends.")],
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "cfp",
+                "form": ANY,
+            },
+        )
