@@ -15,16 +15,32 @@
 {% endblock page_subtitle %}
 {% block header_actions %}
     {% if current_event %}
-        <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
-           class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
-            {% heroicon_outline "identification" class="w-4 h-4 mr-2" %}
-            {% translate "Host Data Fields" %}
-        </a>
-        <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
-           class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
-            {% heroicon_outline "tag" class="w-4 h-4 mr-2" %}
-            {% translate "Session Fields" %}
-        </a>
+        <div class="relative inline-block mr-2">
+            <button type="button"
+                    class="field-config-dropdown-toggle px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center"
+                    aria-haspopup="true">
+                {% heroicon_outline "cog-6-tooth" class="w-4 h-4 mr-2" %}
+                {% translate "Field Configuration" %}
+                {% heroicon_outline "chevron-down" class="w-4 h-4 ml-1" %}
+            </button>
+            <div class="field-config-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 z-10">
+                <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
+                   class="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 rounded-t-lg">
+                    {% heroicon_outline "tag" class="w-4 h-4 mr-2" %}
+                    {% translate "Session Fields" %}
+                </a>
+                <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
+                   class="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50">
+                    {% heroicon_outline "identification" class="w-4 h-4 mr-2" %}
+                    {% translate "Host Data Fields" %}
+                </a>
+                <a href="{% url 'panel:time-slots' slug=current_event.slug %}"
+                   class="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 rounded-b-lg">
+                    {% heroicon_outline "clock" class="w-4 h-4 mr-2" %}
+                    {% translate "Time Slots" %}
+                </a>
+            </div>
+        </div>
         <a href="{% url 'panel:cfp-create' slug=current_event.slug %}"
            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
             {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
@@ -110,4 +126,20 @@
             <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}
+    <script>
+        (function() {
+            document.querySelectorAll('.field-config-dropdown-toggle').forEach(button => {
+                button.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const menu = button.nextElementSibling;
+                    const isOpen = !menu.classList.contains('hidden');
+                    document.querySelectorAll('.field-config-dropdown-menu').forEach(m => m.classList.add('hidden'));
+                    if (!isOpen) menu.classList.remove('hidden');
+                });
+            });
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.field-config-dropdown-menu').forEach(m => m.classList.add('hidden'));
+            });
+        })();
+    </script>
 {% endblock content %}

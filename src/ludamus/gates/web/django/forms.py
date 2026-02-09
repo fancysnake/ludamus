@@ -181,3 +181,32 @@ class SpaceForm(forms.Form):
         min_value=1,
         error_messages={"min_value": _("Capacity must be at least 1.")},
     )
+
+
+class TimeSlotForm(forms.Form):
+    """Form for creating/editing time slots."""
+
+    start_time = forms.DateTimeField(
+        error_messages={
+            "required": _("Start time is required."),
+            "invalid": _("Enter a valid date and time."),
+        }
+    )
+    end_time = forms.DateTimeField(
+        error_messages={
+            "required": _("End time is required."),
+            "invalid": _("Enter a valid date and time."),
+        }
+    )
+
+    def clean(self) -> dict[str, object] | None:
+        if (cleaned_data := super().clean()) is None:
+            return None
+
+        start_time = cleaned_data.get("start_time")
+        end_time = cleaned_data.get("end_time")
+
+        if start_time and end_time and end_time <= start_time:
+            self.add_error("end_time", _("End time must be after start time."))
+
+        return cleaned_data

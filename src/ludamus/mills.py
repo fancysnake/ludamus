@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING
 
@@ -219,6 +219,79 @@ class PanelService:
             return False
         self._uow.spaces.delete(space_pk)
         return True
+
+    @staticmethod
+    def validate_time_slot_period(
+        event: EventDTO, start_time: datetime, end_time: datetime
+    ) -> str | None:
+        """Validate that a time slot falls within the event period.
+
+        Args:
+            event: The event DTO with start_time and end_time.
+            start_time: The proposed time slot start time.
+            end_time: The proposed time slot end time.
+
+        Returns:
+            Error message if validation fails, None if valid.
+        """
+        # Treat form times as UTC (strip any local timezone and apply UTC)
+        # Django's DateTimeField may parse with local timezone, but event times
+        # are stored in UTC, so we need to compare in the same timezone.
+        start_time = start_time.replace(tzinfo=UTC)
+        end_time = end_time.replace(tzinfo=UTC)
+
+        # Normalize to minute precision (form only uses hours/minutes)
+        event_start = event.start_time.replace(second=0, microsecond=0)
+        event_end = event.end_time.replace(second=0, microsecond=0)
+
+        if start_time < event_start:
+            return "Time slot cannot start before the event begins."
+        if end_time > event_end:
+            return "Time slot cannot end after the event ends."
+        return None
+
+    @staticmethod
+    def get_event_days(event: EventDTO) -> list[date]:
+        """Return all dates in event period (inclusive).
+
+        Args:
+            event: The event DTO with start_time and end_time.
+
+        Returns:
+            List of dates from event start to end.
+        """
+        start_date = event.start_time.date()
+        end_date = event.end_time.date()
+        num_days = (end_date - start_date).days + 1
+        return [start_date + timedelta(days=i) for i in range(num_days)]
+
+    @staticmethod
+    def get_hour_availability(
+        event: EventDTO, days: list[date]
+    ) -> dict[date, dict[int, bool]]:
+        """Calculate which hours are within event period for each day.
+
+        Args:
+            event: The event with start_time and end_time.
+            days: Days to check availability for.
+
+        Returns:
+            Dict mapping each day to a dict of hour -> is_available.
+        """
+        result: dict[date, dict[int, bool]] = {}
+        event_start = event.start_time
+        event_end = event.end_time
+
+        for day in days:
+            hour_availability: dict[int, bool] = {}
+            for hour in range(24):
+                hour_start = datetime(day.year, day.month, day.day, hour, 0, tzinfo=UTC)
+                hour_end = datetime(day.year, day.month, day.day, hour, 59, tzinfo=UTC)
+                is_available = hour_start < event_end and hour_end >= event_start
+                hour_availability[hour] = is_available
+            result[day] = hour_availability
+
+        return result
 
     def get_event_stats(self, event_id: int) -> PanelStatsDTO:
         """Calculate panel statistics for an event.

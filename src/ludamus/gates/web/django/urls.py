@@ -164,6 +164,26 @@ panel_urlpatterns = [
         name="session-field-delete",
     ),
     path(
+        "event/<slug:slug>/cfp/time-slots/",
+        panel.TimeSlotsPageView.as_view(),
+        name="time-slots",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/create/",
+        panel.TimeSlotCreatePageView.as_view(),
+        name="time-slot-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/<int:slot_pk>/edit/",
+        panel.TimeSlotEditPageView.as_view(),
+        name="time-slot-edit",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/<int:slot_pk>/do/delete",
+        panel.TimeSlotDeleteActionView.as_view(),
+        name="time-slot-delete",
+    ),
+    path(
         "event/<slug:event_slug>/cfp/<str:category_slug>/",
         panel.CFPEditPageView.as_view(),
         name="cfp-edit",
