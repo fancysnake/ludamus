@@ -6,6 +6,7 @@
 !pyproject.toml
 !poetry.lock
 !scripts/
+!scripts/**
 
 # But still ignore these even if they're in allowed directories
 **/__pycache__/
