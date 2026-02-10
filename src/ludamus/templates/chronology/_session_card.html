@@ -91,7 +91,7 @@
                             {% for p in data.session_participations|slice:":4" %}
                                 {% if p.status == 'confirmed' %}
                                     <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0"
-                                         style="border-color: var(--theme-bg-secondary); background: linear-gradient(135deg, var(--color-coral-400), var(--color-teal-500))">
+                                         style="border-color: var(--theme-bg-secondary); background-color: var({% cycle '--color-coral-400' '--color-teal-400' '--color-teal-500' '--color-warm-400' %})">
                                         {% heroicon_mini "user" class="w-3.5 h-3.5 text-white" %}
                                     </div>
                                 {% endif %}
@@ -114,10 +114,8 @@
 
                 {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
                     {% if not data.is_full %}
-                        <span class="text-sm font-medium text-teal-600 dark:text-teal-400">
-                            {% with spots_left=data.effective_participants_limit %}
-                                {% translate "Spots open" %}
-                            {% endwith %}
+                        <span class="text-sm font-semibold text-coral-600 dark:text-coral-400">
+                            {% blocktranslate count counter=data.spots_left %}{{ counter }} spot left{% plural %}{{ counter }} spots left{% endblocktranslate %}
                         </span>
                     {% endif %}
                 {% else %}

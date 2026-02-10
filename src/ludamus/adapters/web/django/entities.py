@@ -54,6 +54,10 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
         False  # True if should be displayed as inactive due to limit_to_end_time
     )
 
+    @property
+    def spots_left(self) -> int:
+        return max(0, self.effective_participants_limit - self.enrolled_count)
+
 
 @dataclass
 class SessionUserParticipationData:
