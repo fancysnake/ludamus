@@ -17,6 +17,15 @@
 - [ ] Konwencik app sync
 - [ ] News/announcements for event page
 
+## User's proposals view
+
+- [ ] Allow user to view and edit his not yet accepted proposals on the event page
+  while the proposal phase is active
+- [ ] Add a profile page to display user's current and past proposals to the events
+  in current sphere and their statuses
+- [ ] Add an option to "resend" old proposal to new event (duplicate the proposal
+  contents, ask to fill missing fields if any)
+
 ## Agent readiness
 
 ### Style & Validation
