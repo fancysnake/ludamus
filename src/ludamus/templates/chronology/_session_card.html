@@ -21,32 +21,27 @@
             <!-- Status badge row -->
             <div class="flex items-start justify-between mb-3">
                 {% if data.user_enrolled %}
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-coral-500 text-white">
-                        {% translate "You're in!" %}
-                    </span>
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-coral-500 text-white">{% translate "You're in!" %}</span>
                 {% elif data.user_waiting %}
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold" style="background-color: var(--theme-warning); color: white">
-                        {% translate "Waiting" %}
-                    </span>
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold"
+                          style="background-color: var(--theme-warning);
+                                 color: white">{% translate "Waiting" %}</span>
                 {% elif data.is_full %}
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-warm-500 text-white">
-                        {% translate "Full" %}
-                    </span>
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-warm-500 text-white">{% translate "Full" %}</span>
                 {% elif data.is_enrollment_available and not ended %}
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-500 text-white">
-                        {% translate "Open" %}
-                    </span>
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-500 text-white">{% translate "Open" %}</span>
                 {% endif %}
                 {% if data.loc.space %}
-                    <span class="text-xs px-2 py-1 rounded-lg venue-icon" style="background-color: var(--theme-bg-tertiary); color: var(--color-foreground-muted)">
-                        {% if data.loc.area %}{{ data.loc.venue.name }} › {% endif %}{{ data.loc.space.name }}
+                    <span class="text-xs px-2 py-1 rounded-lg venue-icon"
+                          style="background-color: var(--theme-bg-tertiary);
+                                 color: var(--color-foreground-muted)">
+                        {% if data.loc.area %}{{ data.loc.venue.name }} ›{% endif %}
+                        {{ data.loc.space.name }}
                     </span>
                 {% endif %}
             </div>
-
             <!-- Session Title -->
             <h3 class="font-bold text-lg mb-2" style="color: var(--color-foreground)">{{ data.session.title }}</h3>
-
             <!-- Host -->
             <div class="flex items-center gap-2 mb-3">
                 <div class="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center ring-2 ring-white dark:ring-neutral-800">
@@ -54,21 +49,16 @@
                 </div>
                 <span class="text-sm" style="color: var(--color-foreground-muted)">{{ data.session.presenter_name }}</span>
             </div>
-
             <!-- Description -->
             {% if data.session.description %}
-                <p class="text-sm mb-4 line-clamp-2" style="color: var(--color-foreground-muted)">
-                    {{ data.session.description }}
-                </p>
+                <p class="text-sm mb-4 line-clamp-2"
+                   style="color: var(--color-foreground-muted)">{{ data.session.description }}</p>
             {% endif %}
-
             <!-- Tags -->
             <div class="flex flex-wrap gap-2 mb-4 grow">
                 {% for tag in data.tags %}
                     <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium filterable-tag bg-warm-200/90 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
-                          title="{{ tag.name }}">
-                        {{ tag.name }}
-                    </span>
+                          title="{{ tag.name }}">{{ tag.name }}</span>
                 {% endfor %}
                 {% if data.session.min_age > 0 %}
                     <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium bg-warm-200/90 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
@@ -77,12 +67,9 @@
                     </span>
                 {% else %}
                     <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium bg-teal-100/90 dark:bg-teal-900/40 text-teal-700 dark:text-teal-400"
-                          title="{% translate "All ages welcome" %}">
-                        {% translate "All ages" %}
-                    </span>
+                          title="{% translate "All ages welcome" %}">{% translate "All ages" %}</span>
                 {% endif %}
             </div>
-
             <!-- Participants + Action -->
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -91,14 +78,17 @@
                             {% for p in data.session_participations|slice:":4" %}
                                 {% if p.status == 'confirmed' %}
                                     <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0"
-                                         style="border-color: var(--theme-bg-secondary); background-color: var({% cycle '--color-coral-400' '--color-teal-400' '--color-teal-500' '--color-warm-400' %})">
+                                         style="border-color: var(--theme-bg-secondary);
+                                                background-color: var({% cycle '--color-coral-400' '--color-teal-400' '--color-teal-500' '--color-warm-400' %})">
                                         {% heroicon_mini "user" class="w-3.5 h-3.5 text-white" %}
                                     </div>
                                 {% endif %}
                             {% endfor %}
                             {% if data.enrolled_count > 4 %}
                                 <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-medium shrink-0"
-                                     style="border-color: var(--theme-bg-secondary); background-color: var(--theme-bg-tertiary); color: var(--color-foreground-muted)">
+                                     style="border-color: var(--theme-bg-secondary);
+                                            background-color: var(--theme-bg-tertiary);
+                                            color: var(--color-foreground-muted)">
                                     +{{ data.enrolled_count|add:"-4" }}
                                 </div>
                             {% endif %}
@@ -111,7 +101,6 @@
                         <span class="text-xs font-medium" style="color: var(--theme-warning)">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
                     {% endif %}
                 </div>
-
                 {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
                     {% if not data.is_full %}
                         <span class="text-sm font-semibold text-coral-600 dark:text-coral-400">
@@ -119,7 +108,8 @@
                         </span>
                     {% endif %}
                 {% else %}
-                    <span class="text-xs font-medium" style="color: var(--color-foreground-muted)">
+                    <span class="text-xs font-medium"
+                          style="color: var(--color-foreground-muted)">
                         {% if ended %}
                             {% translate "Ended" %}
                         {% elif data.should_show_as_inactive %}

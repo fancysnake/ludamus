@@ -19,7 +19,8 @@
          onclick="openModal('sessionDetailModal{{ data.session.pk }}')">
         <div class="px-4 py-3 flex flex-col h-full">
             <!-- Title -->
-            <h3 class="font-medium text-sm mb-1" style="color: var(--color-foreground-secondary)">{{ data.session.title }}</h3>
+            <h3 class="font-medium text-sm mb-1"
+                style="color: var(--color-foreground-secondary)">{{ data.session.title }}</h3>
             <!-- Metadata -->
             <div class="text-xs mb-2" style="color: var(--color-foreground-muted)">
                 <span class="venue-icon">
@@ -35,7 +36,8 @@
                 </span>
             </div>
             <!-- Status -->
-            <div class="mt-auto flex justify-between items-center text-xs" style="color: var(--color-foreground-muted)">
+            <div class="mt-auto flex justify-between items-center text-xs"
+                 style="color: var(--color-foreground-muted)">
                 <span>
                     {% if ended %}
                         {% translate "Completed" %}

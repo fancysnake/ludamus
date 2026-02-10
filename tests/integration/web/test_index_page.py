@@ -4,6 +4,7 @@ from unittest.mock import ANY
 
 from django.urls import reverse
 
+from ludamus.adapters.web.django.views import EventData
 from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
 
@@ -27,7 +28,15 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventData.from_event(
+                        event=event, session_count=0, cover_image_url=ANY
+                    )
+                ],
+                "view": ANY,
+            },
             template_name=["index.html"],
         )
 
@@ -43,7 +52,15 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventData.from_event(
+                        event=event, session_count=0, cover_image_url=ANY
+                    )
+                ],
+                "view": ANY,
+            },
             template_name=["index.html"],
         )
 
@@ -59,7 +76,15 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventData.from_event(
+                        event=event, session_count=0, cover_image_url=ANY
+                    )
+                ],
+                "view": ANY,
+            },
             template_name=["index.html"],
         )
 
@@ -75,7 +100,15 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventData.from_event(
+                        event=event, session_count=0, cover_image_url=ANY
+                    )
+                ],
+                "view": ANY,
+            },
             template_name=["index.html"],
         )
 
