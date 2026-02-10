@@ -86,7 +86,25 @@
             <!-- Participants + Action -->
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1 text-sm" style="color: var(--color-foreground-muted)">
+                    {% if data.session_participations %}
+                        <div class="flex -space-x-2">
+                            {% for p in data.session_participations|slice:":4" %}
+                                {% if p.status == 'confirmed' %}
+                                    <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0"
+                                         style="border-color: var(--theme-bg-secondary); background: linear-gradient(135deg, var(--color-coral-400), var(--color-teal-500))">
+                                        {% heroicon_mini "user" class="w-3.5 h-3.5 text-white" %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% if data.enrolled_count > 4 %}
+                                <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-medium shrink-0"
+                                     style="border-color: var(--theme-bg-secondary); background-color: var(--theme-bg-tertiary); color: var(--color-foreground-muted)">
+                                    +{{ data.enrolled_count|add:"-4" }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <span class="text-sm" style="color: var(--color-foreground-muted)">
                         {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
                     </span>
                     {% if data.session.waiting_count > 0 %}

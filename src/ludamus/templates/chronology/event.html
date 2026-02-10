@@ -21,6 +21,13 @@
 {% endblock twitter_description %}
 {% block header_section %}{% endblock header_section %}
 {% block body %}
+    <!-- Decorative background blobs -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10" aria-hidden="true">
+        <div class="absolute -top-24 -right-24 w-96 h-96 blob opacity-30 bg-gradient-to-br from-coral-500/25 to-transparent"></div>
+        <div class="absolute top-1/4 -left-32 w-80 h-80 blob-2 opacity-25 bg-gradient-to-br from-teal-500/20 to-transparent"></div>
+        <div class="absolute bottom-1/3 right-1/4 w-72 h-72 blob-3 opacity-20 bg-gradient-to-br from-coral-500/15 to-transparent"></div>
+        <div class="absolute bottom-20 -left-16 w-64 h-64 blob opacity-20 bg-gradient-to-br from-teal-500/15 to-transparent"></div>
+    </div>
     <!-- Hero Card -->
     <div class="relative rounded-3xl shadow-xl overflow-hidden gradient-border mb-8" style="background-color: var(--theme-bg-secondary); box-shadow: var(--theme-shadow-lg)">
         <div class="p-6 sm:p-8">
@@ -155,6 +162,30 @@
                                 <p class="mb-1">{% translate "Login to check your enrollment options." %}</p>
                                 <small class="text-muted">{% translate "You may have enrollment passes available after logging in." %}</small>
                             {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Enrollment Summary Banner -->
+    {% if current_user and user_enrolled_sessions %}
+        <div class="mb-6 bg-gradient-to-r from-coral-400 to-coral-500 rounded-2xl p-[2px]">
+            <div class="rounded-2xl p-5" style="background-color: var(--theme-bg-secondary)">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="w-12 h-12 bg-coral-100 dark:bg-coral-900/30 rounded-xl flex items-center justify-center shrink-0">
+                        {% heroicon_mini "check-circle" class="w-6 h-6 text-coral-600 dark:text-coral-400" %}
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold" style="color: var(--color-foreground)">
+                            {% blocktranslate count counter=user_enrolled_sessions|length %}
+                                You're signed up for {{ counter }} session!
+                            {% plural %}
+                                You're signed up for {{ counter }} sessions!
+                            {% endblocktranslate %}
+                        </h3>
+                        <p class="text-sm" style="color: var(--color-foreground-muted)">
+                            {% for s in user_enrolled_sessions %}{{ s.session.title }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -344,6 +375,12 @@
                                         {{ hour|date:"l, F j" }} – {{ hour|time:"H:i" }}
                                     </div>
                                     <div class="h-px grow" style="background: var(--theme-accent-gradient)"></div>
+                                    {% if event.is_live and forloop.first %}
+                                        <span class="text-sm text-teal-600 dark:text-teal-400 font-medium flex items-center gap-1.5">
+                                            <span class="w-2 h-2 bg-teal-500 rounded-full live-dot"></span>
+                                            {% translate "Now" %}
+                                        </span>
+                                    {% endif %}
                                     <span class="text-xs" style="color: var(--color-foreground-muted)">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
                                     {% if event.is_proposal_active %}
                                         <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
@@ -410,6 +447,27 @@
                         {% endif %}
                     {% endif %}
     </div>
+    <!-- Propose Session CTA -->
+    {% if event.is_proposal_active %}
+        <div class="mt-12 text-center">
+            <div class="inline-flex flex-col items-center p-8 rounded-3xl border"
+                 style="background: linear-gradient(135deg, var(--theme-bg-tertiary), var(--theme-bg-secondary)); border-color: var(--theme-border)">
+                <div class="w-16 h-16 bg-coral-100 dark:bg-coral-900/30 rounded-2xl flex items-center justify-center mb-4 rotate-3">
+                    {% heroicon_outline "plus" class="w-8 h-8 text-coral-500" %}
+                </div>
+                <h3 class="text-xl font-bold mb-2" style="color: var(--color-foreground)">
+                    {% translate "Want to host a session?" %}
+                </h3>
+                <p class="mb-4 max-w-md" style="color: var(--color-foreground-muted)">
+                    {% translate "Got a game you're dying to play? Propose your own session and find players!" %}
+                </p>
+                <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
+                   class="btn btn-primary text-base px-6 py-3 shadow-lg shadow-coral-500/25">
+                    {% translate "Propose a session" %}
+                </a>
+            </div>
+        </div>
+    {% endif %}
     <!-- Proposals Section (Superuser Only) -->
     {% if user.is_superuser and event.is_proposal_active and proposals %}
         <div class="card mt-8" style="border-color: var(--theme-warning)">
