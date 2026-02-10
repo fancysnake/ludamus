@@ -61,6 +61,13 @@
   --color-zinc-*: initial;
   --color-stone-*: initial;
 
+  --color-background: #f0f1f3;
+
+  --color-foreground: #252220;
+  --color-foreground-secondary: #5c534a;
+  --color-foreground-muted: #737373;
+  --color-foreground-inverse: #ffffff;
+
   --color-primary: #f85a3c;
   --color-secondary: #14b89b;
   --color-warning: #f59e0b;
@@ -82,13 +89,8 @@ a {
 }
 
 :root {
-  --theme-bg: #f0f1f3;
   --theme-bg-secondary: #fdfcfb;
   --theme-bg-tertiary: #f7f5f3;
-  --theme-text: #252220;
-  --theme-text-secondary: #5c534a;
-  --theme-text-muted: #737373;
-  --theme-text-inverse: #ffffff;
   --theme-border: #e4ddd6;
   --theme-border-light: #f0ece8;
   --theme-border-focus: #f85a3c;
@@ -122,13 +124,13 @@ a {
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --theme-bg: #0a0a0a;
+    --color-background: #0a0a0a;
     --theme-bg-secondary: #171717;
     --theme-bg-tertiary: #262626;
-    --theme-text: #fafafa;
-    --theme-text-secondary: #d4d4d4;
-    --theme-text-muted: #737373;
-    --theme-text-inverse: #0a0a0a;
+    --color-foreground: #fafafa;
+    --color-foreground-secondary: #d4d4d4;
+    --color-foreground-muted: #737373;
+    --color-foreground-inverse: #0a0a0a;
     --theme-border: #404040;
     --theme-border-light: #262626;
     --theme-border-focus: #f85a3c;
@@ -144,13 +146,13 @@ a {
 }
 
 .dark {
-  --theme-bg: #0a0a0a;
+  --color-background: #0a0a0a;
   --theme-bg-secondary: #171717;
   --theme-bg-tertiary: #262626;
-  --theme-text: #fafafa;
-  --theme-text-secondary: #d4d4d4;
-  --theme-text-muted: #737373;
-  --theme-text-inverse: #0a0a0a;
+  --color-foreground: #fafafa;
+  --color-foreground-secondary: #d4d4d4;
+  --color-foreground-muted: #737373;
+  --color-foreground-inverse: #0a0a0a;
   --theme-border: #404040;
   --theme-border-light: #262626;
   --theme-border-focus: #f85a3c;
@@ -260,7 +262,7 @@ a {
 
 .btn:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--theme-primary), 0 0 0 4px var(--theme-bg);
+  box-shadow: 0 0 0 2px var(--theme-primary), 0 0 0 4px var(--color-background);
 }
 
 .btn:disabled {
@@ -277,14 +279,10 @@ a {
   background-color: var(--theme-primary-hover);
 }
 
-.btn-primary:focus-visible {
-  box-shadow: 0 0 0 2px var(--theme-bg), 0 0 0 4px var(--theme-primary);
-}
-
 .btn-secondary {
   background-color: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
-  color: var(--theme-text);
+  color: var(--color-foreground);
 }
 
 .btn-secondary:hover {
@@ -316,9 +314,13 @@ a {
   padding: 1.5rem;
 }
 
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--theme-primary);
+}
+
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   border-color: var(--theme-border-focus) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
 }

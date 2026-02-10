@@ -22,8 +22,8 @@
         <link rel="stylesheet" href="{% static 'css/output.css' %}">
     </head>
     <body class="min-h-screen font-sans antialiased flex items-center justify-center"
-          style="background-color: var(--theme-bg);
-                 color: var(--theme-text)">
+          style="background-color: var(--color-background);
+                 color: var(--color-foreground)">
         <div class="max-w-screen-sm xl:min-w-[600px] mx-auto px-4">
             <div class="mb-6 flex items-center gap-4">
                 <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-white dark:bg-neutral-900">
@@ -36,11 +36,11 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                     </svg>
                 </div>
-                <span class="text-6xl font-bold" style="color: var(--theme-text-muted)">{{ error_code }}</span>
+                <span class="text-6xl font-bold" style="color: var(--color-foreground-muted)">{{ error_code }}</span>
             </div>
             <h1 class="text-2xl font-bold mb-3">{{ title }}</h1>
-            <p class="mb-2" style="color: var(--theme-text-muted)">{{ message }}</p>
-            <p class="text-sm mb-6" style="color: var(--theme-text-muted)">{{ subtitle }}</p>
+            <p class="mb-2" style="color: var(--color-foreground-muted)">{{ message }}</p>
+            <p class="text-sm mb-6" style="color: var(--color-foreground-muted)">{{ subtitle }}</p>
             <div class="flex flex-col sm:flex-row gap-3">
                 <button onclick="history.back()" class="btn btn-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg"

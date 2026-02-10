@@ -197,8 +197,10 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+.DS_Store
 .vscode
 dev.sqlite3
+seed_local.py
 src/ludamus/static/icon_cache/
 src/ludamus/staticfiles/
 
