@@ -217,59 +217,9 @@ a {
   border-radius: 9999px 9999px 0 0;
 }
 
-.session-card {
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px -2px rgba(201, 191, 179, 0.2);
-}
-
-.session-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
-}
-
-/* Session card accent strips by status */
-.session-card[data-user-enrolled="true"]::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-coral-400), var(--color-coral-600));
-  border-radius: 1rem 1rem 0 0;
-  z-index: 1;
-}
-
-.session-card[data-status="available"]::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-teal-400), var(--color-teal-600));
-  border-radius: 1rem 1rem 0 0;
-  z-index: 1;
-}
-
-.session-card[data-status="full"]::before,
-.session-card[data-status="ended"]::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-warm-400), var(--color-warm-500));
-  border-radius: 1rem 1rem 0 0;
-  z-index: 1;
-}
 
 .live-dot {
   animation: pulse 1.5s ease-in-out infinite;
-}
-
-.tag-pill {
-  transition: all 0.2s ease;
-}
-
-.tag-pill:hover {
-  transform: scale(1.05);
 }
 
 .blob {

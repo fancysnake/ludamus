@@ -359,7 +359,7 @@
                                 <!-- Sessions in this time slot -->
                                 <div class="session-grid grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {% for data in sessions %}
-                                        {% include "chronology/_session_card_condensed.html" with data=data ended=True %}
+                                        {% include "chronology/_session_card.html" with data=data ended=True %}
                                     {% endfor %}
                                 </div>
                             </div>
@@ -425,7 +425,7 @@
                                 <!-- Sessions in this time slot -->
                                 <div class="session-grid grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {% for data in sessions %}
-                                        {% include "chronology/_session_card_condensed.html" with data=data ended=False %}
+                                        {% include "chronology/_session_card.html" with data=data ended=False %}
                                     {% endfor %}
                                 </div>
                             </div>
@@ -503,7 +503,7 @@
                                         {% if proposal.tags.exists %}
                                             <div class="flex flex-wrap gap-1 mt-1">
                                                 {% for tag in proposal.tags.all %}
-                                                    <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700 proposal-tag"
+                                                    <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700 proposal-tag"
                                                           style="color: var(--color-foreground-secondary)"
                                                           title="{{ tag.name }}">{{ tag.name }}</span>
                                                 {% endfor %}
@@ -590,7 +590,7 @@
                                         <h4 class="text-sm font-semibold mb-1" style="color: var(--color-foreground-secondary)">{% translate "Tags" %}</h4>
                                         <div class="flex flex-wrap gap-1.5">
                                             {% for tag in proposal.tags.all %}
-                                                <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
+                                                <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
                                                       style="color: var(--color-foreground-secondary)"
                                                       title="{{ tag.name }}">
                                                     {{ tag.name }}
@@ -806,7 +806,7 @@
                             <!-- Tags -->
                             <div class="flex flex-wrap gap-2 mb-6">
                                 {% for tag in data.tags %}
-                                    <span class="tag-pill px-3 py-1.5 rounded-lg text-sm font-medium bg-warm-200 dark:bg-neutral-700 session-detail-tag"
+                                    <span class="px-3 py-1.5 rounded-lg text-sm font-medium bg-warm-200 dark:bg-neutral-700 session-detail-tag"
                                           style="color: var(--color-foreground-secondary)"
                                           title="{{ tag.name }} ({{ tag.category.name }})">
                                         {{ tag.name }}
@@ -1367,14 +1367,10 @@
             width: 100%;
         }
 
-        /* Style ended sessions with reduced opacity */
-        .time-slot-section[data-time-slot*="ended"] {
-            opacity: 0.8;
-        }
-
         /* Style future unavailable sessions with warning border */
         .time-slot-section[data-time-slot*="future"] .session-card {
             border-left: 3px solid var(--theme-warning);
         }
+
     </style>
 {% endblock extra_head %}

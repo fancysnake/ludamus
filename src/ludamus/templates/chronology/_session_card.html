@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load heroicons %}
 <div class="session-card-wrapper">
-    <div class="session-card card rounded-2xl h-full{% if not data.is_enrollment_available or data.should_show_as_inactive or ended %} opacity-60{% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
+    <div class="session-card card h-full overflow-hidden rounded-[1.75rem] border ring-offset-[.5px] ring-offset-background transition-transform duration-100 ease-out hover:-translate-y-0.5 hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600{% if not data.is_enrollment_available or data.should_show_as_inactive %} opacity-70{% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
          data-title="{{ data.session.title|lower }}"
          data-host="{{ data.session.presenter_name }}"
          data-tags="{% for tag in data.tags %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
@@ -15,98 +15,78 @@
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
          data-venue="{% if data.loc.area %}{{ data.loc.venue.slug }}{% endif %}"
-         style="cursor: pointer"
+         style="cursor: pointer; border-color: var(--theme-border)"
          onclick="openModal('sessionDetailModal{{ data.session.pk }}')">
-        <div class="p-5 flex flex-col h-full">
-            <!-- Status badge row -->
-            <div class="flex items-start justify-between mb-3">
-                {% if data.user_enrolled %}
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-coral-500 text-white">
-                        {% translate "You're in!" %}
-                    </span>
-                {% elif data.user_waiting %}
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold" style="background-color: var(--theme-warning); color: white">
-                        {% translate "Waiting" %}
-                    </span>
-                {% elif data.is_full %}
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-warm-500 text-white">
-                        {% translate "Full" %}
-                    </span>
-                {% elif data.is_enrollment_available and not ended %}
-                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-500 text-white">
-                        {% translate "Open" %}
-                    </span>
-                {% endif %}
-                {% if data.loc.space %}
-                    <span class="text-xs px-2 py-1 rounded-lg venue-icon" style="background-color: var(--theme-bg-tertiary); color: var(--color-foreground-muted)">
-                        {% if data.loc.area %}{{ data.loc.venue.name }} › {% endif %}{{ data.loc.space.name }}
-                    </span>
-                {% endif %}
+        <div class="flex h-full flex-col px-5 pb-5">
+            <div class="-mx-5 mb-4 bg-transparent px-5 pb-6 pt-5">
+                <h3 class="text-3xl font-bold leading-tight tracking-tight text-warm-800">
+                    {{ data.session.title }}
+                </h3>
             </div>
 
-            <!-- Session Title -->
-            <h3 class="font-bold text-lg mb-2" style="color: var(--color-foreground)">{{ data.session.title }}</h3>
+            <div class="flex-1"></div>
 
-            <!-- Host -->
-            <div class="flex items-center gap-2 mb-3">
-                <div class="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-500 flex items-center justify-center ring-2 ring-white dark:ring-neutral-800">
-                    {% heroicon_mini "user" class="w-3.5 h-3.5 text-white" %}
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full border-2 font-semibold text-sm flex items-center justify-center"
+                     style="border-color: var(--theme-bg-secondary); background-color: var(--color-coral-400); color: white">
+                    {{ data.session.presenter_name|slice:":2"|upper }}
                 </div>
-                <span class="text-sm" style="color: var(--color-foreground-muted)">{{ data.session.presenter_name }}</span>
+                <span class="text-lg font-medium" style="color: #5b5048">
+                    {% translate "Hosted by" %} {{ data.session.presenter_name }}
+                </span>
             </div>
 
-            <!-- Description -->
             {% if data.session.description %}
-                <p class="text-sm mb-4 line-clamp-2" style="color: var(--color-foreground-muted)">
+                <p class="text-[1.05rem] leading-8 mb-4 line-clamp-3" style="color: #6c625b">
                     {{ data.session.description }}
                 </p>
             {% endif %}
 
-            <!-- Tags -->
             <div class="flex flex-wrap gap-2 mb-4 grow">
                 {% for tag in data.tags %}
-                    <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium filterable-tag bg-warm-200/90 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
+                    <span class="px-3 py-1 rounded-2xl text-sm font-medium filterable-tag bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
                           title="{{ tag.name }}">
                         {{ tag.name }}
                     </span>
                 {% endfor %}
                 {% if data.session.min_age > 0 %}
-                    <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium bg-warm-200/90 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
+                    <span class="px-2 py-1 rounded-lg text-xs font-medium bg-warm-200/90 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
                           title="{% translate "Minimum age" %}: {{ data.session.min_age }} {% translate "years" %}">
                         {{ data.session.min_age }}+
                     </span>
                 {% else %}
-                    <span class="tag-pill px-2 py-1 rounded-lg text-xs font-medium bg-teal-100/90 dark:bg-teal-900/40 text-teal-700 dark:text-teal-400"
+                    <span class="px-2 py-1 rounded-lg text-xs font-medium bg-teal-100/90 dark:bg-teal-900/40 text-teal-700 dark:text-teal-400"
                           title="{% translate "All ages welcome" %}">
                         {% translate "All ages" %}
                     </span>
                 {% endif %}
             </div>
 
-            <!-- Participants + Action -->
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    {% if data.session_participations %}
+                    {% if data.enrolled_count == 0 %}
+                    {% if not ended %}
+                        {% if not ended %}
+                            <span class="text-sm font-medium text-teal-700 dark:text-teal-400">
+                                {% blocktranslate count counter=data.spots_left %}{{ counter }} slot open{% plural %}{{ counter }} slots open{% endblocktranslate %}
+                            </span>
+                        {% endif %}
+                    {% endif %}
+                    {% else %}
                         <div class="flex -space-x-2">
-                            {% for p in data.session_participations|slice:":4" %}
+                            {% for p in data.session_participations|dictsort:"status"|slice:":3" %}
                                 {% if p.status == 'confirmed' %}
-                                    <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0"
-                                         style="border-color: var(--theme-bg-secondary); background-color: var({% cycle '--color-coral-400' '--color-teal-400' '--color-teal-500' '--color-warm-400' %})">
-                                        {% heroicon_mini "user" class="w-3.5 h-3.5 text-white" %}
+                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold text-white"
+                                         style="border-color: var(--theme-bg-secondary); background-color: var({% cycle '--color-coral-400' '--color-teal-400' '--color-teal-500' %})">
+                                        {{ p.user.name|slice:":1"|upper }}
                                     </div>
                                 {% endif %}
                             {% endfor %}
-                            {% if data.enrolled_count > 4 %}
-                                <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-medium shrink-0"
-                                     style="border-color: var(--theme-bg-secondary); background-color: var(--theme-bg-tertiary); color: var(--color-foreground-muted)">
-                                    +{{ data.enrolled_count|add:"-4" }}
-                                </div>
-                            {% endif %}
                         </div>
+                        <span class="text-sm font-medium text-teal-700 dark:text-teal-400">
+                            {% blocktranslate count counter=data.spots_left %}{{ counter }} slot open{% plural %}{{ counter }} slots open{% endblocktranslate %}
+                        </span>
                     {% endif %}
-                    <span class="text-sm" style="color: var(--color-foreground-muted)">
-                        {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
-                    </span>
                     {% if data.session.waiting_count > 0 %}
                         <span class="text-xs font-medium" style="color: var(--theme-warning)">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
                     {% endif %}
@@ -114,7 +94,7 @@
 
                 {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
                     {% if not data.is_full %}
-                        <span class="text-sm font-semibold text-coral-600 dark:text-coral-400">
+                        <span class="text-[1.05rem] font-semibold text-coral-600 dark:text-coral-400">
                             {% blocktranslate count counter=data.spots_left %}{{ counter }} spot left{% plural %}{{ counter }} spots left{% endblocktranslate %}
                         </span>
                     {% endif %}
