@@ -280,31 +280,31 @@
                         <input type="text"
                                class="filter-input w-full pl-11 pr-4 py-3 rounded-2xl border text-sm font-medium bg-bg-secondary text-foreground placeholder:text-foreground-muted placeholder:font-normal transition-all duration-150"
                                style="border-color: var(--theme-border)"
-                               id="sessionFilter"
+                               id="session-filter"
                                placeholder="{% translate "Filter by title or host..." %}"
                                autocomplete="off">
                     </div>
                     <button type="button"
                             class="filter-toggle inline-flex items-center gap-2 px-5 rounded-2xl text-sm font-semibold border whitespace-nowrap cursor-pointer bg-bg-secondary text-foreground-muted transition-all duration-150"
                             style="border-color: var(--theme-border)"
-                            id="filterToggle"
+                            id="filter-toggle"
                             aria-expanded="false"
-                            aria-controls="filterPanel">
-                        {% heroicon_mini "adjustments-horizontal" class="w-5 h-5" %}
+                            aria-controls="filter-panel">
                         <span class="hidden sm:inline">{% translate "Filters" %}</span>
-                        <span id="activeFilterCount"
+                        {% heroicon_mini "adjustments-horizontal" class="w-5 h-5" %}
+                        <span id="active-filter-count"
                               class="filter-badge hidden min-w-5 h-5 px-1.5 rounded-full text-[0.6875rem] font-bold leading-5 text-center bg-primary text-white"></span>
                     </button>
                 </div>
-                <div id="activeFilterChips" class="filter-chips-bar"></div>
-                <div id="filterPanel" class="filter-panel">
+                <div id="active-filter-chips" class="filter-chips-bar"></div>
+                <div id="filter-panel" class="filter-panel">
                     <div class="overflow-hidden">
                         <div class="grid gap-3 pt-3.5"
                              style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr))">
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
-                                       for="statusFilter">{% translate "Status" %}</label>
-                                <select id="statusFilter"
+                                       for="status-filter">{% translate "Status" %}</label>
+                                <select id="status-filter"
                                         class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                         style="border-color: var(--theme-border)">
                                     <option value="">{% translate "All statuses" %}</option>
@@ -317,10 +317,10 @@
                                     <option value="my-waiting">{% translate "I am waiting" %}</option>
                                 </select>
                             </div>
-                            <div id="venueFilterGroup" class="flex flex-col gap-1.5 hidden">
+                            <div id="venue-filter-group" class="flex flex-col gap-1.5 hidden">
                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
-                                       for="venueFilter">{% translate "Venue" %}</label>
-                                <select id="venueFilter"
+                                       for="venue-filter">{% translate "Venue" %}</label>
+                                <select id="venue-filter"
                                         class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                         style="border-color: var(--theme-border)">
                                     <option value="">{% translate "All venues" %}</option>
@@ -332,7 +332,7 @@
                                     <input type="number"
                                            class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                            style="border-color: var(--theme-border)"
-                                           id="minAgeFilter"
+                                           id="min-age-filter"
                                            placeholder="{% translate "Min" %}"
                                            min="0"
                                            max="99">
@@ -340,21 +340,21 @@
                                     <input type="number"
                                            class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                            style="border-color: var(--theme-border)"
-                                           id="maxAgeFilter"
+                                           id="max-age-filter"
                                            placeholder="{% translate "Max" %}"
                                            min="0"
                                            max="99">
                                 </div>
                             </div>
-                            <div id="tagFilters" class="contents">
+                            <div id="tag-filters" class="contents">
                                 {% for category in filterable_tag_categories %}
                                     <div class="flex flex-col gap-1.5">
                                         <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
-                                               for="tagFilter_{{ category.name|slugify }}">{{ category.name }}</label>
+                                               for="tag-filter-{{ category.name|slugify }}">{{ category.name }}</label>
                                         <select class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
                                                 style="border-color: var(--theme-border)"
                                                 data-category="{{ category.name|slugify }}"
-                                                id="tagFilter_{{ category.name|slugify }}">
+                                                id="tag-filter-{{ category.name|slugify }}">
                                             <option value="">{% translate "All" %} {{ category.name }}</option>
                                         </select>
                                     </div>
@@ -364,11 +364,11 @@
                     </div>
                 </div>
             </div>
-            <div id="filterNoResults" class="text-center py-12 px-4 text-foreground-muted" style="display: none">
+            <div id="filter-no-results" class="text-center py-12 px-4 text-foreground-muted" style="display: none">
                 {% heroicon_outline "funnel" class="w-8 h-8 mx-auto mb-2" %}
                 <p class="font-medium">{% translate "No sessions match your filters" %}</p>
                 <button type="button"
-                        id="clearFiltersFromNoResults"
+                        id="clear-filters-from-no-results"
                         class="text-sm mt-2 font-semibold text-primary">
                     {% translate "Clear all filters" %}
                 </button>
@@ -843,19 +843,13 @@
                 </button>
             </div>
             <!-- Tabs -->
-            <div class="flex border-b" style="border-color: var(--theme-border)">
-                <button id="info-tab-{{ data.session.pk }}"
-                        onclick="switchTab('{{ data.session.pk }}', 'info')"
-                        class="px-4 py-3 text-sm font-medium flex items-center gap-1.5"
-                        style="border-bottom: 2px solid var(--theme-primary);
-                                color: var(--theme-primary)">
+            <div class="tab-list" role="tablist">
+                <button role="tab" aria-selected="true" aria-controls="info-{{ data.session.pk }}"
+                        class="tab-trigger px-4 py-3 text-sm font-medium flex items-center gap-1.5">
                     {% heroicon_mini "information-circle" class="w-4 h-4" %} {% translate "Information" %}
                 </button>
-                <button id="participants-tab-{{ data.session.pk }}"
-                        onclick="switchTab('{{ data.session.pk }}', 'participants')"
-                        class="px-4 py-3 text-sm font-medium flex items-center gap-1.5"
-                        style="border-bottom: 2px solid transparent;
-                                color: var(--color-foreground-muted)">
+                <button role="tab" aria-selected="false" aria-controls="participants-{{ data.session.pk }}"
+                        class="tab-trigger px-4 py-3 text-sm font-medium flex items-center gap-1.5">
                     {% heroicon_mini "users" class="w-4 h-4" %} {% translate "Participants" %}
                     <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-coral-100 dark:bg-coral-900/30 text-coral-700 dark:text-coral-400">{{ data.enrolled_count }}</span>
                     {% if data.session.waiting_count > 0 %}
@@ -866,10 +860,10 @@
                 </button>
             </div>
             <!-- Tab Content -->
-            <div class="session-detail-tab-content px-6 py-4 flex-1 overflow-y-auto"
+            <div class="tab-content px-6 py-4 flex-1 overflow-y-auto"
                     style="color: var(--color-foreground)">
                 <!-- Information Tab -->
-                <div id="info-{{ data.session.pk }}" class="tab-pane is-active">
+                <div id="info-{{ data.session.pk }}" role="tabpanel" class="tab-panel" data-active>
                     <!-- Host info -->
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-10 h-10 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center shrink-0">
@@ -992,7 +986,7 @@
                 </div>
                 <!-- Participants Tab -->
                 <div id="participants-{{ data.session.pk }}"
-                        class="tab-pane">
+                        role="tabpanel" class="tab-panel" inert>
                     <!-- Enrolled Participants -->
                     {% with confirmed_participants=data.session_participations|dictsort:"creation_time" %}
                         {% if confirmed_participants %}
@@ -1120,25 +1114,8 @@
 {% endblock body %}
 {% block extra_scripts %}
     <script type="module" src="{% static 'js/modal.js' %}?v={{ STATIC_VERSION }}"></script>
+    <script src="{% static 'js/tabs.js' %}?v={{ STATIC_VERSION }}"></script>
     <script>
-        function switchTab(sessionPk, tabName) {
-            const tabs = ['info', 'participants'];
-            tabs.forEach(t => {
-                const pane = document.getElementById(t + '-' + sessionPk);
-                const btn = document.getElementById(t + '-tab-' + sessionPk);
-                if (pane && btn) {
-                    if (t === tabName) {
-                        pane.classList.add('is-active');
-                        btn.style.borderBottomColor = 'var(--theme-primary)';
-                        btn.style.color = 'var(--theme-primary)';
-                    } else {
-                        pane.classList.remove('is-active');
-                        btn.style.borderBottomColor = 'transparent';
-                        btn.style.color = 'var(--color-foreground-muted)';
-                    }
-                }
-            });
-        }
 
         // Event delegation for copy Discord buttons (works with htmx-loaded content)
         document.addEventListener('click', function(e) {
@@ -1176,18 +1153,18 @@
                 });
             });
 
-            const sessionFilter = document.getElementById('sessionFilter');
-            const statusFilter = document.getElementById('statusFilter');
-            const venueFilter = document.getElementById('venueFilter');
-            const minAgeFilter = document.getElementById('minAgeFilter');
-            const maxAgeFilter = document.getElementById('maxAgeFilter');
+            const sessionFilter = document.getElementById('session-filter');
+            const statusFilter = document.getElementById('status-filter');
+            const venueFilter = document.getElementById('venue-filter');
+            const minAgeFilter = document.getElementById('min-age-filter');
+            const maxAgeFilter = document.getElementById('max-age-filter');
             const sessionCards = document.querySelectorAll('.session-card');
-            const filterToggle = document.getElementById('filterToggle');
-            const filterPanel = document.getElementById('filterPanel');
-            const filterChipsBar = document.getElementById('activeFilterChips');
-            const filterCountBadge = document.getElementById('activeFilterCount');
-            const filterNoResults = document.getElementById('filterNoResults');
-            const clearFiltersFromNoResults = document.getElementById('clearFiltersFromNoResults');
+            const filterToggle = document.getElementById('filter-toggle');
+            const filterPanel = document.getElementById('filter-panel');
+            const filterChipsBar = document.getElementById('active-filter-chips');
+            const filterCountBadge = document.getElementById('active-filter-count');
+            const filterNoResults = document.getElementById('filter-no-results');
+            const clearFiltersFromNoResults = document.getElementById('clear-filters-from-no-results');
             const tagFilters = {};
 
             // Populate venue filter dropdown from session data
@@ -1210,6 +1187,9 @@
                     option.textContent = name;
                     venueFilter.appendChild(option);
                 });
+            if (venueMap.size > 1) {
+                document.getElementById('venue-filter-group').classList.remove('hidden');
+            }
 
             // Get tag filter elements created by Django template
             const tagFilterElements = document.querySelectorAll('.tag-filter');
@@ -1497,7 +1477,7 @@
             }
 
             // Number waiting list positions
-            document.querySelectorAll('.tab-pane').forEach(tabPane => {
+            document.querySelectorAll('.tab-panel').forEach(tabPane => {
                 let position = 1;
                 tabPane.querySelectorAll('.waiting-list-row .waiting-position').forEach(badge => {
                     badge.textContent = position++;
@@ -1545,25 +1525,5 @@
             border-left: 3px solid var(--theme-warning);
         }
 
-        .session-detail-tab-content {
-            position: relative;
-        }
-
-        .session-detail-tab-content .tab-pane {
-            position: absolute;
-            inset: 0;
-            visibility: hidden;
-            opacity: 0;
-            pointer-events: none;
-            overflow-y: auto;
-        }
-
-        .session-detail-tab-content .tab-pane.is-active {
-            position: relative;
-            inset: auto;
-            visibility: visible;
-            opacity: 1;
-            pointer-events: auto;
-        }
     </style>
 {% endblock extra_head %}

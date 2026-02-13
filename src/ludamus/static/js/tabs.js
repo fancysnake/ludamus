@@ -1,0 +1,1 @@
+/Users/hasparus/workspace/ludamus/src/ludamus/gates/web/django/theme/static_src/./src/tabs.js

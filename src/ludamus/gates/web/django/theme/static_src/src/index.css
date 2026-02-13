@@ -3,6 +3,8 @@
 
 @import "./progressive-blur.css";
 @import "./modal.css";
+@import "./filters.css";
+@import "./tabs.css";
 
 @plugin "@tailwindcss/typography";
 

@@ -1,0 +1,32 @@
+.tab-list {
+  display: flex;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.tab-trigger {
+  border-bottom: 2px solid transparent;
+  color: var(--color-foreground-muted);
+}
+
+.tab-trigger[aria-selected="true"] {
+  border-bottom-color: var(--theme-primary);
+  color: var(--theme-primary);
+}
+
+.tab-content {
+  display: grid;
+}
+
+.tab-panel {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  overflow-y: auto;
+}
+
+.tab-panel[data-active] {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
