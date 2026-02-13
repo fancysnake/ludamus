@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from ludamus.links.db.django.repositories import (
     ConnectedUserRepository,
@@ -48,33 +48,26 @@ class TestSphereRepositoryIsManager:
 
 
 class TestProposalRepositoryReadTimeSlots:
-    """Test cache-hit behavior for read_time_slots method."""
+    """Test read_time_slots uses proposal's M2M relationship."""
 
-    def test_returns_cached_time_slots_without_db_query(self):
+    def test_returns_proposal_time_slots_via_m2m(self):
         storage = Storage()
         proposal_id = 1
-        event_id = 10
-
-        mock_proposal = MagicMock()
-        mock_proposal.category.event_id = event_id
-        storage.proposals[proposal_id] = mock_proposal
 
         mock_time_slot = MagicMock()
-        mock_time_slot.id = 100
         mock_time_slot.pk = 100
         mock_time_slot.start_time = datetime(2025, 1, 1, 10, 0, tzinfo=UTC)
         mock_time_slot.end_time = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
-        storage.time_slots_by_event[event_id][mock_time_slot.id] = mock_time_slot
+
+        mock_proposal = MagicMock()
+        mock_proposal.time_slots.all.return_value = [mock_time_slot]
+        storage.proposals[proposal_id] = mock_proposal
 
         repo = ProposalRepository(storage)
 
-        with patch(
-            "ludamus.links.db.django.repositories.TimeSlot"
-        ) as mock_time_slot_model:
-            result = repo.read_time_slots(proposal_id)
+        result = repo.read_time_slots(proposal_id)
 
-            mock_time_slot_model.objects.filter.assert_not_called()
-
+        mock_proposal.time_slots.all.assert_called_once()
         assert len(result) == 1
         assert result[0].pk == MOCK_ENTITY_ID
 

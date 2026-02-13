@@ -39,6 +39,7 @@ class TestProposalAcceptPageView:
         )
 
     def test_get_ok(self, event, proposal, space, staff_client, time_slot):
+        proposal.time_slots.add(time_slot)
         response = staff_client.get(self._get_url(proposal.id))
 
         assert_response(
@@ -57,11 +58,12 @@ class TestProposalAcceptPageView:
             template_name="chronology/accept_proposal.html",
         )
 
-    @pytest.mark.usefixtures("event", "time_slot")
+    @pytest.mark.usefixtures("event")
     def test_get_shows_spaces_grouped_by_venue_area(
-        self, proposal, venue, area, space, staff_client
+        self, proposal, venue, area, space, staff_client, time_slot
     ):
         """Test that space dropdown shows optgroups grouped by Venue > Area."""
+        proposal.time_slots.add(time_slot)
         response = staff_client.get(self._get_url(proposal.id))
 
         assert response.status_code == HTTPStatus.OK
@@ -71,11 +73,11 @@ class TestProposalAcceptPageView:
         # Verify space is within the optgroup
         assert f'<option value="{space.id}">{space.name}</option>' in content
 
-    @pytest.mark.usefixtures("time_slot")
     def test_get_shows_multiple_spaces_in_same_area(
-        self, proposal, venue, area, space, staff_client
+        self, proposal, venue, area, space, staff_client, time_slot
     ):
         """Test that multiple spaces in same area are grouped together."""
+        proposal.time_slots.add(time_slot)
         # Create a second space in the same area
         second_space = Space.objects.create(
             area=area, name="Second Room", slug="second-room"
@@ -163,6 +165,7 @@ class TestProposalAcceptPageView:
         )
 
     def test_post_invalid_form(self, event, proposal, staff_client, time_slot):
+        proposal.time_slots.add(time_slot)
         response = staff_client.post(self._get_url(proposal.id))
 
         assert_response(
@@ -239,6 +242,7 @@ class TestProposalAcceptPageView:
     def test_post_ok_conflict(
         self, staff_user, event, proposal, space, staff_client, time_slot
     ):
+        proposal.time_slots.add(time_slot)
         session = Session.objects.create(
             title="Other Session",
             sphere=event.sphere,

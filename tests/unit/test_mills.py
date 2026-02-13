@@ -3,8 +3,80 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from ludamus.mills import PanelService, is_proposal_active
-from ludamus.pacts import EventDTO, EventStatsData, PanelStatsDTO
+from ludamus.mills import PanelService, compute_proposal_status, is_proposal_active
+from ludamus.pacts import (
+    EventDTO,
+    EventStatsData,
+    PanelStatsDTO,
+    ProposalActionError,
+    ProposalDetailDTO,
+    ProposalDTO,
+    ProposalListItemDTO,
+    ProposalListResult,
+    ProposalStatus,
+    TagDTO,
+    TimeSlotDTO,
+    UserDTO,
+    UserType,
+)
+
+NOW = datetime(2025, 6, 15, 12, 0, tzinfo=UTC)
+
+
+def _make_proposal_dto(**overrides):
+    defaults = {
+        "pk": 1,
+        "title": "Test Proposal",
+        "description": "A test proposal",
+        "host_id": 10,
+        "min_age": 0,
+        "needs": "",
+        "participants_limit": 6,
+        "rejected": False,
+        "requirements": "",
+        "session_id": None,
+        "creation_time": NOW,
+    }
+    defaults.update(overrides)
+    return ProposalDTO(**defaults)
+
+
+def _make_user_dto(**overrides):
+    defaults = {
+        "pk": 10,
+        "slug": "host-slug",
+        "username": "hostuser",
+        "email": "host@example.com",
+        "name": "Host Name",
+        "full_name": "Host Name",
+        "discord_username": "",
+        "user_type": UserType.ACTIVE,
+        "manager_id": None,
+        "date_joined": NOW,
+        "is_active": True,
+        "is_authenticated": True,
+        "is_staff": False,
+        "is_superuser": False,
+    }
+    defaults.update(overrides)
+    return UserDTO(**defaults)
+
+
+def _make_list_item(**overrides):
+    defaults = {
+        "pk": 1,
+        "title": "Test",
+        "description": "Desc",
+        "host_name": "Host",
+        "host_id": 10,
+        "category_name": "Cat",
+        "category_id": 1,
+        "status": ProposalStatus.PENDING.value,
+        "creation_time": NOW,
+        "session_id": None,
+    }
+    defaults.update(overrides)
+    return ProposalListItemDTO(**defaults)
 
 
 class TestPanelService:
@@ -182,3 +254,185 @@ class TestIsProposalActive:
         event = EventDTO(**base_event_data)
 
         assert is_proposal_active(event) is False
+
+
+class TestComputeProposalStatus:
+    def test_pending_when_not_rejected_and_no_session(self):
+        result = compute_proposal_status(
+            rejected=False, session_id=None, has_agenda_item=False
+        )
+
+        assert result == ProposalStatus.PENDING.value
+
+    def test_rejected_when_rejected_is_true(self):
+        result = compute_proposal_status(
+            rejected=True, session_id=None, has_agenda_item=False
+        )
+
+        assert result == ProposalStatus.REJECTED.value
+
+    def test_scheduled_when_session_and_agenda_item(self):
+        result = compute_proposal_status(
+            rejected=False, session_id=5, has_agenda_item=True
+        )
+
+        assert result == ProposalStatus.SCHEDULED.value
+
+    def test_unassigned_when_session_but_no_agenda_item(self):
+        result = compute_proposal_status(
+            rejected=False, session_id=5, has_agenda_item=False
+        )
+
+        assert result == ProposalStatus.UNASSIGNED.value
+
+
+class TestPanelServiceRejectProposal:
+    @pytest.fixture
+    def mock_uow(self):
+        return MagicMock()
+
+    def test_calls_repo_with_event_scope(self, mock_uow):
+        mock_uow.proposals.read_for_event.return_value = _make_proposal_dto(
+            rejected=False, session_id=None
+        )
+        mock_uow.proposals.has_agenda_item.return_value = False
+        service = PanelService(mock_uow)
+
+        service.reject_proposal(event_id=10, proposal_id=1)
+
+        mock_uow.proposals.read_for_event.assert_called_once_with(10, 1)
+        mock_uow.proposals.reject.assert_called_once_with(1)
+
+    def test_fails_when_already_rejected(self, mock_uow):
+        mock_uow.proposals.read_for_event.return_value = _make_proposal_dto(
+            rejected=True
+        )
+        service = PanelService(mock_uow)
+
+        with pytest.raises(ProposalActionError):
+            service.reject_proposal(event_id=10, proposal_id=1)
+
+        mock_uow.proposals.reject.assert_not_called()
+
+    def test_fails_when_scheduled(self, mock_uow):
+        mock_uow.proposals.read_for_event.return_value = _make_proposal_dto(
+            rejected=False, session_id=5
+        )
+        mock_uow.proposals.has_agenda_item.return_value = True
+        service = PanelService(mock_uow)
+
+        with pytest.raises(ProposalActionError):
+            service.reject_proposal(event_id=10, proposal_id=1)
+
+        mock_uow.proposals.reject.assert_not_called()
+
+
+class TestPanelServiceUnrejectProposal:
+    @pytest.fixture
+    def mock_uow(self):
+        return MagicMock()
+
+    def test_unrejects_rejected_proposal(self, mock_uow):
+        mock_uow.proposals.read_for_event.return_value = _make_proposal_dto(
+            rejected=True
+        )
+        service = PanelService(mock_uow)
+
+        service.unreject_proposal(event_id=10, proposal_id=1)
+
+        mock_uow.proposals.read_for_event.assert_called_once_with(10, 1)
+        mock_uow.proposals.unreject.assert_called_once_with(1)
+
+    def test_fails_when_not_rejected(self, mock_uow):
+        mock_uow.proposals.read_for_event.return_value = _make_proposal_dto(
+            rejected=False
+        )
+        service = PanelService(mock_uow)
+
+        with pytest.raises(ProposalActionError):
+            service.unreject_proposal(event_id=10, proposal_id=1)
+
+        mock_uow.proposals.unreject.assert_not_called()
+
+
+class TestPanelServiceGetProposalDetail:
+    @pytest.fixture
+    def mock_uow(self):
+        return MagicMock()
+
+    def test_returns_aggregated_data(self, mock_uow):
+        proposal = _make_proposal_dto(rejected=False, session_id=None)
+        host = _make_user_dto()
+        tags = [TagDTO(pk=1, name="RPG", category_id=1, confirmed=True)]
+        time_slots = [TimeSlotDTO(pk=1, start_time=NOW, end_time=NOW)]
+
+        mock_uow.proposals.read_for_event.return_value = proposal
+        mock_uow.proposals.read_host.return_value = host
+        mock_uow.proposals.read_tags.return_value = tags
+        mock_uow.proposals.read_time_slots.return_value = time_slots
+        mock_uow.proposals.has_agenda_item.return_value = False
+        service = PanelService(mock_uow)
+
+        result = service.get_proposal_detail(event_id=10, proposal_id=1)
+
+        assert isinstance(result, ProposalDetailDTO)
+        assert result.proposal == proposal
+        assert result.host == host
+        assert result.tags == tags
+        assert result.time_slots == time_slots
+        assert result.status == ProposalStatus.PENDING.value
+
+
+class TestPanelServiceListProposals:
+    @pytest.fixture
+    def mock_uow(self):
+        return MagicMock()
+
+    def test_computes_statuses_and_filters(self, mock_uow):
+        items = [
+            _make_list_item(pk=1, status=ProposalStatus.PENDING.value),
+            _make_list_item(pk=2, status=ProposalStatus.REJECTED.value),
+            _make_list_item(pk=3, status=ProposalStatus.PENDING.value),
+        ]
+        total_items = len(items)
+        expected_pending = 2
+        mock_uow.proposals.list_by_event.return_value = ProposalListResult(
+            proposals=items,
+            status_counts={},
+            total_count=total_items,
+            filtered_count=total_items,
+        )
+        service = PanelService(mock_uow)
+
+        result = service.list_proposals(
+            event_id=10, filters={"statuses": ["PENDING"], "page": 1, "page_size": 10}
+        )
+
+        assert result.total_count == total_items
+        assert result.filtered_count == expected_pending
+        assert len(result.proposals) == expected_pending
+        assert all(p.status == "PENDING" for p in result.proposals)
+
+    def test_status_counts_unaffected_by_status_filter(self, mock_uow):
+        items = [
+            _make_list_item(pk=1, status=ProposalStatus.PENDING.value),
+            _make_list_item(pk=2, status=ProposalStatus.REJECTED.value),
+            _make_list_item(pk=3, status=ProposalStatus.SCHEDULED.value),
+        ]
+        total_items = len(items)
+        mock_uow.proposals.list_by_event.return_value = ProposalListResult(
+            proposals=items,
+            status_counts={},
+            total_count=total_items,
+            filtered_count=total_items,
+        )
+        service = PanelService(mock_uow)
+
+        result = service.list_proposals(
+            event_id=10, filters={"statuses": ["PENDING"], "page": 1, "page_size": 10}
+        )
+
+        assert result.status_counts["PENDING"] == 1
+        assert result.status_counts["REJECTED"] == 1
+        assert result.status_counts["SCHEDULED"] == 1
+        assert result.status_counts["UNASSIGNED"] == 0

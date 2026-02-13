@@ -80,8 +80,13 @@
                             {% heroicon_outline "rectangle-stack" class="w-5 h-5 mr-3" %}
                             {% translate "Call for Proposals" %}
                         </a>
+                        <a href="{% url 'panel:proposals' slug=current_event.slug %}"
+                           class="flex items-center px-4 py-3 {% if active_nav == 'proposals' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
+                            {% heroicon_outline "document-text" class="w-5 h-5 mr-3" %}
+                            {% translate "Proposals" %}
+                        </a>
                         <a href="{% url 'panel:venues' slug=current_event.slug %}"
-                           class="flex items-center px-4 py-3 {% if active_nav == 'venues' %}text-white bg-gray-800{% else %}text-gray-300 hover:bg-gray-800{% endif %} rounded-lg transition">
+                           class="flex items-center px-4 py-3 {% if active_nav == 'venues' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
                             {% heroicon_outline "building-office-2" class="w-5 h-5 mr-3" %}
                             {% translate "Venues" %}
                         </a>

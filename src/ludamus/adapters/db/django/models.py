@@ -751,6 +751,8 @@ class Proposal(models.Model):
     time_slots = models.ManyToManyField(TimeSlot)
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
+    # Status
+    rejected = models.BooleanField(default=False)
     # Assignment
     session = models.OneToOneField(
         Session,

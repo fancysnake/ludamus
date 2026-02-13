@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 from collections import defaultdict
@@ -40,7 +41,12 @@ from ludamus.gates.web.django.forms import (
     create_venue_copy_form,
 )
 from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
-from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
+from ludamus.pacts import (
+    DependencyInjectorProtocol,
+    NotFoundError,
+    ProposalActionError,
+    ProposalListFilters,
+)
 
 if TYPE_CHECKING:
     from django import forms
@@ -974,6 +980,158 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Session field deleted successfully."))
         return redirect("panel:session-fields", slug=slug)
+
+
+class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
+    """List proposals for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        filters = self._parse_filters()
+        service = PanelService(self.request.di.uow)
+        result = service.list_proposals(current_event.pk, filters)
+
+        page = max(1, filters.get("page", 1))
+        page_size = filters.get("page_size", 10)
+        filtered_count = result.filtered_count
+        total_pages = max(1, (filtered_count + page_size - 1) // page_size)
+
+        # Ensure all filter keys are present for template access
+        template_filters = {
+            "q": filters.get("q", ""),
+            "statuses": filters.get("statuses", []),
+            "category_ids": filters.get("category_ids", []),
+            "sort": filters.get("sort", "newest"),
+            "page_size": page_size,
+        }
+
+        context["active_nav"] = "proposals"
+        context["proposals"] = result.proposals
+        context["status_counts"] = result.status_counts
+        context["total_count"] = result.total_count
+        context["filtered_count"] = filtered_count
+        context["filters"] = template_filters
+        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
+        context["page"] = page
+        context["total_pages"] = total_pages
+        context["has_previous"] = page > 1
+        context["has_next"] = page < total_pages
+        return TemplateResponse(self.request, "panel/proposals.html", context)
+
+    def _parse_filters(self) -> ProposalListFilters:
+        params = self.request.GET
+        filters = ProposalListFilters()
+        if statuses := [s for s in params.getlist("status") if s]:
+            filters["statuses"] = statuses
+        if category_ids := params.getlist("category"):
+            parsed_ids = []
+            for c in category_ids:
+                try:
+                    parsed_ids.append(int(c))
+                except ValueError:
+                    continue
+            if parsed_ids:
+                filters["category_ids"] = parsed_ids
+        if q := params.get("q", "").strip():
+            filters["q"] = q
+        if sort := params.get("sort"):
+            filters["sort"] = sort
+        if page := params.get("page", "").strip():
+            with contextlib.suppress(ValueError):
+                filters["page"] = int(page)
+        if page_size := params.get("page_size", "").strip():
+            with contextlib.suppress(ValueError):
+                filters["page_size"] = max(1, min(int(page_size), 100))
+        return filters
+
+
+class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
+    """View details of a single proposal."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        service = PanelService(self.request.di.uow)
+        try:
+            detail = service.get_proposal_detail(current_event.pk, proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        context["active_nav"] = "proposals"
+        context["proposal"] = detail.proposal
+        context["host"] = detail.host
+        context["tags"] = detail.tags
+        context["time_slots"] = detail.time_slots
+        context["status"] = detail.status
+        return TemplateResponse(self.request, "panel/proposal-detail.html", context)
+
+
+class ProposalRejectActionView(PanelAccessMixin, View):
+    """Reject a proposal (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        sphere_id = self.request.context.current_sphere_id
+        try:
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
+        except NotFoundError:
+            messages.error(self.request, _("Event not found."))
+            return redirect("panel:index")
+
+        service = PanelService(self.request.di.uow)
+        try:
+            service.reject_proposal(current_event.pk, proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+        except ProposalActionError as exc:
+            messages.error(self.request, str(exc))
+            return redirect("panel:proposals", slug=slug)
+
+        messages.success(self.request, _("Proposal rejected."))
+        return redirect("panel:proposals", slug=slug)
+
+
+class ProposalUnrejectActionView(PanelAccessMixin, View):
+    """Unreject a proposal (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        sphere_id = self.request.context.current_sphere_id
+        try:
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
+        except NotFoundError:
+            messages.error(self.request, _("Event not found."))
+            return redirect("panel:index")
+
+        service = PanelService(self.request.di.uow)
+        try:
+            service.unreject_proposal(current_event.pk, proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+        except ProposalActionError as exc:
+            messages.error(self.request, str(exc))
+            return redirect("panel:proposals", slug=slug)
+
+        messages.success(self.request, _("Proposal restored."))
+        return redirect("panel:proposals", slug=slug)
 
 
 class VenuesPageView(PanelAccessMixin, EventContextMixin, View):

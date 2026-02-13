@@ -2,7 +2,17 @@ from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Literal, cast  # pylint: disable=unused-import
 
 from django.db import transaction
-from django.db.models import Count, Max, Q
+from django.db.models import (
+    Case,
+    CharField,
+    Count,
+    Exists,
+    Max,
+    OuterRef,
+    Q,
+    Value,
+    When,
+)
 from django.utils.text import slugify
 
 from ludamus.adapters.db.django.models import (
@@ -22,7 +32,6 @@ from ludamus.adapters.db.django.models import (
     SessionFieldRequirement,
     Space,
     Sphere,
-    TimeSlot,
     UserEnrollmentConfig,
     Venue,
 )
@@ -47,7 +56,11 @@ from ludamus.pacts import (
     ProposalCategoryDTO,
     ProposalCategoryRepositoryProtocol,
     ProposalDTO,
+    ProposalListFilters,
+    ProposalListItemDTO,
+    ProposalListResult,
     ProposalRepositoryProtocol,
+    ProposalStatus,
     SessionData,
     SessionFieldDTO,
     SessionFieldOptionDTO,
@@ -179,6 +192,21 @@ class ProposalRepository(ProposalRepositoryProtocol):
 
         return ProposalDTO.model_validate(proposal)
 
+    def read_for_event(self, event_id: int, pk: int) -> ProposalDTO:
+        try:
+            proposal = Proposal.objects.select_related("category").get(
+                id=pk, category__event_id=event_id
+            )
+        except Proposal.DoesNotExist as exception:
+            raise NotFoundError from exception
+
+        self._storage.proposals[pk] = proposal
+        return ProposalDTO.model_validate(proposal)
+
+    @staticmethod
+    def has_agenda_item(proposal_id: int) -> bool:
+        return AgendaItem.objects.filter(session__proposal__pk=proposal_id).exists()
+
     def update(self, proposal_dto: ProposalDTO) -> None:
         proposal = Proposal.objects.get(id=proposal_dto.pk)
         for key, value in proposal_dto.model_dump().items():
@@ -201,13 +229,10 @@ class ProposalRepository(ProposalRepositoryProtocol):
 
     def read_time_slots(self, proposal_id: int) -> list[TimeSlotDTO]:
         proposal = self._storage.proposals[proposal_id]
-        event_id = proposal.category.event_id
-        collection = self._storage.time_slots_by_event[event_id]
-        if not (time_slots := collection.values()):
-            for time_slot in TimeSlot.objects.filter(event_id=event_id):
-                collection[time_slot.id] = time_slot
-
-        return [TimeSlotDTO.model_validate(time_slot) for time_slot in time_slots]
+        return [
+            TimeSlotDTO.model_validate(time_slot)
+            for time_slot in proposal.time_slots.all()
+        ]
 
     def read_spaces(self, proposal_id: int) -> list[SpaceDTO]:
         proposal = self._storage.proposals[proposal_id]
@@ -262,6 +287,91 @@ class ProposalRepository(ProposalRepositoryProtocol):
             TagCategoryDTO.model_validate(tag)
             for tag in proposal.category.tag_categories.all()
         ]
+
+    @staticmethod
+    def list_by_event(
+        event_id: int, filters: ProposalListFilters | None = None
+    ) -> ProposalListResult:
+        filters = filters or {}
+        qs = (
+            Proposal.objects.filter(category__event_id=event_id)
+            .select_related("host", "category", "session")
+            .annotate(
+                computed_status=Case(
+                    When(rejected=True, then=Value(ProposalStatus.REJECTED.value)),
+                    When(
+                        session__isnull=True, then=Value(ProposalStatus.PENDING.value)
+                    ),
+                    When(
+                        Exists(
+                            AgendaItem.objects.filter(session_id=OuterRef("session_id"))
+                        ),
+                        then=Value(ProposalStatus.SCHEDULED.value),
+                    ),
+                    default=Value(ProposalStatus.UNASSIGNED.value),
+                    output_field=CharField(),
+                )
+            )
+        )
+
+        # Text search
+        if q := filters.get("q", "").strip():
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(description__icontains=q)
+                | Q(host__name__icontains=q)
+                | Q(host__username__icontains=q)
+            )
+
+        # Category filter
+        if category_ids := filters.get("category_ids"):
+            qs = qs.filter(category_id__in=category_ids)
+
+        # Sorting
+        sort = filters.get("sort", "newest")
+        qs = qs.order_by("title") if sort == "title" else qs.order_by("-creation_time")
+
+        proposals: list[ProposalListItemDTO] = [
+            ProposalListItemDTO(
+                pk=p.pk,
+                title=p.title,
+                description=p.description,
+                host_name=p.host.name or p.host.username,
+                host_id=p.host_id,
+                category_name=p.category.name,
+                category_id=p.category_id,
+                status=p.computed_status,
+                creation_time=p.creation_time,
+                session_id=p.session_id,
+            )
+            for p in qs
+        ]
+        total_count = len(proposals)
+
+        return ProposalListResult(
+            proposals=proposals,
+            status_counts={},
+            total_count=total_count,
+            filtered_count=total_count,
+        )
+
+    def reject(self, pk: int) -> None:
+        try:
+            proposal = Proposal.objects.get(pk=pk)
+        except Proposal.DoesNotExist as exc:
+            raise NotFoundError from exc
+        proposal.rejected = True
+        proposal.save(update_fields=["rejected"])
+        self._storage.proposals.pop(pk, None)
+
+    def unreject(self, pk: int) -> None:
+        try:
+            proposal = Proposal.objects.get(pk=pk)
+        except Proposal.DoesNotExist as exc:
+            raise NotFoundError from exc
+        proposal.rejected = False
+        proposal.save(update_fields=["rejected"])
+        self._storage.proposals.pop(pk, None)
 
 
 class SessionRepository(SessionRepositoryProtocol):
