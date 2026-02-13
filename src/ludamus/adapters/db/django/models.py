@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING, ClassVar, Never, cast
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
+import hashlib
+from urllib.parse import urlencode
+
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Lower
@@ -77,6 +80,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         help_text=_("Your Discord username for session coordination"),
     )
+    avatar_url = models.URLField(
+        _("Avatar URL"),
+        blank=True,
+        default="",
+        help_text=_("Profile avatar URL (e.g. from Auth0)"),
+    )
 
     objects = UserManager()
 
@@ -85,6 +94,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_full_name(self) -> str:
         return self.name or DEFAULT_NAME
+
+    @property
+    def gravatar_url(self) -> str | None:
+        if not self.email:
+            return None
+        email = self.email.strip().lower()
+        digest = hashlib.md5(email.encode("utf-8")).hexdigest()  # noqa: S324
+        params = urlencode({"s": "64", "d": "blank"})
+        return f"https://www.gravatar.com/avatar/{digest}?{params}"
 
     @property
     def full_name(self) -> str:

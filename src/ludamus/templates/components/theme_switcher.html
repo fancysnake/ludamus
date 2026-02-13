@@ -1,11 +1,9 @@
 {% load i18n %}
-<fieldset class="theme-switcher relative flex items-center gap-0.5 rounded-lg p-0.5"
-          style="background-color: var(--theme-bg-tertiary)">
+<fieldset class="theme-switcher relative flex items-center gap-0.5 rounded-lg p-0.5 background-bg-tertiary">
     <legend class="sr-only">{% translate "Select a display theme:" %}</legend>
     <!-- Sliding indicator -->
-    <span class="theme-indicator absolute w-8 h-8 rounded-md transition-transform duration-200 ease-out"
-          style="background-color: var(--theme-bg-secondary);
-                 box-shadow: 0 1px 2px rgba(0,0,0,0.05)"></span>
+    <span class="theme-indicator absolute w-8 h-8 rounded-md transition-transform duration-200 ease-out background-bg-secondary"
+          style="box-shadow: 0 1px 2px rgba(0,0,0,0.05)"></span>
     <span class="relative h-full z-10">
         <input type="radio"
                name="theme"
@@ -34,8 +32,7 @@
                id="theme-light"
                class="sr-only peer">
         <label for="theme-light"
-               class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors"
-               style="color: var(--color-foreground-muted)"
+               class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors color-foreground-muted"
                title="{% translate "Light theme" %}">
             <span class="sr-only">{% translate "light" %}</span>
             <svg height="16"

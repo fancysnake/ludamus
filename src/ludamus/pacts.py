@@ -196,10 +196,12 @@ class UserType(StrEnum):
 class UserDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    avatar_url: str
     date_joined: datetime
     discord_username: str
     email: str
     full_name: str
+    gravatar_url: str | None
     is_active: bool
     is_authenticated: bool
     is_staff: bool
@@ -244,6 +246,7 @@ class EventDTO(BaseModel):
 
 
 class UserData(TypedDict, total=False):
+    avatar_url: str
     discord_username: str
     email: str
     is_active: bool

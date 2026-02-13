@@ -37,6 +37,7 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     agenda_item: AgendaItemDTO
     is_enrollment_available: bool
     proposal: ProposalDTO | None
+    presenter: UserDTO | None
     session: SessionDTO
     tags: list[TagWithCategory]
     is_full: bool

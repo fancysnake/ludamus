@@ -5,12 +5,15 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
 from django.conf import settings
 from django.contrib import messages
+from django.utils import timezone
+import logging
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -77,6 +80,8 @@ from .forms import (
     create_session_proposal_form,
     get_tag_data_from_form,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -190,15 +195,27 @@ class Auth0LoginCallbackActionView(RedirectView):
             messages.error(self.request, _("Invalid authentication state"))
             return self.request.build_absolute_uri(reverse("web:index"))
 
+        userinfo = self._get_userinfo()
+        username = self._get_username(userinfo)
+        email = userinfo.get("email") if isinstance(userinfo, dict) else None
+        avatar_url = userinfo.get("picture") if isinstance(userinfo, dict) else None
+        display_name = self._get_display_name(userinfo)
+
         # Handle login/signup
         if not self.request.context.current_user_slug:
-            username = self._get_username()
             try:
                 user = self.request.di.uow.active_users.read_by_username(username)
             except NotFoundError:
                 slug = slugify(username)
                 self.request.di.uow.active_users.create(
-                    UserData(slug=slug, username=username, password=make_password(None))
+                    UserData(
+                        slug=slug,
+                        username=username,
+                        password=make_password(None),
+                        email=email or "",
+                        avatar_url=avatar_url or "",
+                        name=display_name or "",
+                    )
                 )
                 user = self.request.di.uow.active_users.read_by_username(username)
 
@@ -209,9 +226,27 @@ class Auth0LoginCallbackActionView(RedirectView):
                 self.request.session.pop("anonymous_enrollment_active", None)
                 self.request.session.pop("anonymous_event_id", None)
             messages.success(self.request, _("Welcome!"))
+        else:
+            user = self.request.di.uow.active_users.read(
+                self.request.context.current_user_slug
+            )
 
+        update_data: UserData = {}
+        if email and user.email != email:
+            update_data["email"] = email
+        if avatar_url and user.avatar_url != avatar_url:
+            update_data["avatar_url"] = avatar_url
+        if display_name and not (user.name or "").strip():
+            update_data["name"] = display_name
+        if update_data:
+            self.request.di.uow.active_users.update(user.slug, update_data)
+
+            if "name" in update_data:
+                user = self.request.di.uow.active_users.read(user.slug)
+
+        if not self.request.context.current_user_slug:
             # Check if profile needs completion
-            if not user.name:
+            if not (user.name or "").strip():
                 messages.success(self.request, _("Please complete your profile."))
                 if redirect_to:
                     parsed = urlparse(redirect_to)
@@ -220,15 +255,72 @@ class Auth0LoginCallbackActionView(RedirectView):
 
         return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
 
-    def _get_username(self) -> str:
+    def _get_userinfo(self) -> dict[str, Any]:
         token = oauth.auth0.authorize_access_token(self.request)
-
+        if isinstance(token, dict):
+            userinfo = token.get("userinfo")
+            if isinstance(userinfo, dict) and userinfo:
+                logger.info(
+                    "Auth0 userinfo from token: sub=%s provider=%s has_name=%s ts=%s",
+                    userinfo.get("sub"),
+                    userinfo.get("identities", [{}])[0].get("provider"),
+                    bool(userinfo.get("name")),
+                    timezone.now().isoformat(),
+                )
+                return userinfo
         try:
-            return f'auth0|{token["userinfo"]["sub"]}'
-        except KeyError, TypeError:
+            userinfo = oauth.auth0.userinfo(token=token)
+        except Exception as exc:  # noqa: BLE001
             raise RedirectError(
                 reverse("web:index"), error=_("Authentication failed")
-            ) from None
+            ) from exc
+        if isinstance(userinfo, dict) and userinfo:
+            logger.info(
+                "Auth0 userinfo via /userinfo: sub=%s provider=%s has_name=%s ts=%s",
+                userinfo.get("sub"),
+                userinfo.get("identities", [{}])[0].get("provider"),
+                bool(userinfo.get("name")),
+                timezone.now().isoformat(),
+            )
+        return userinfo if isinstance(userinfo, dict) else {}
+
+    @staticmethod
+    def _get_display_name(userinfo: dict[str, Any]) -> str | None:
+        if not isinstance(userinfo, dict):
+            return None
+
+        name = userinfo.get("name")
+        if isinstance(name, str) and name.strip():
+            return name.strip()
+
+        given = userinfo.get("given_name")
+        family = userinfo.get("family_name")
+        parts = [
+            part.strip()
+            for part in (given, family)
+            if isinstance(part, str) and part.strip()
+        ]
+        if parts:
+            return " ".join(parts)
+
+        nickname = userinfo.get("nickname")
+        if isinstance(nickname, str) and nickname.strip():
+            return nickname.strip()
+
+        preferred = userinfo.get("preferred_username")
+        if isinstance(preferred, str) and preferred.strip():
+            return preferred.strip()
+
+        return None
+
+    @staticmethod
+    def _get_username(userinfo: dict[str, Any]) -> str:
+        try:
+            return f'auth0|{userinfo["sub"]}'
+        except KeyError as exc:
+            raise RedirectError(
+                reverse("web:index"), error=_("Authentication failed")
+            ) from exc
 
 
 class Auth0LogoutActionView(RedirectView):
@@ -876,11 +968,20 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             area = getattr(
                 session.agenda_item.space, "area", None
             )  # TODO(fancysnake): Fix after merging venues
+            presenter_name = session.presenter_name or ""
+            presenter = SimpleNamespace(
+                full_name=presenter_name,
+                name=presenter_name,
+                username=presenter_name,
+                avatar_url=None,
+                gravatar_url=None,
+            )
             sessions_data[session.id] = SessionData(
                 effective_participants_limit=session.effective_participants_limit,
                 full_participant_info=session.full_participant_info,
                 agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
                 session=SessionDTO.model_validate(session),
+                presenter=presenter,
                 tags=[
                     TagWithCategory(
                         category=TagCategoryData(

@@ -23,13 +23,13 @@
 {% block body %}
     <!-- Decorative background blobs -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10" aria-hidden="true">
-        <div class="absolute -top-24 -right-24 w-96 h-96 blob opacity-30 bg-gradient-to-br from-coral-500/25 to-transparent"></div>
-        <div class="absolute top-1/4 -left-32 w-80 h-80 blob-2 opacity-25 bg-gradient-to-br from-teal-500/20 to-transparent"></div>
-        <div class="absolute bottom-1/3 right-1/4 w-72 h-72 blob-3 opacity-20 bg-gradient-to-br from-coral-500/15 to-transparent"></div>
-        <div class="absolute bottom-20 -left-16 w-64 h-64 blob opacity-20 bg-gradient-to-br from-teal-500/15 to-transparent"></div>
+        <div class="absolute -top-24 -right-24 w-96 h-96 blob opacity-30 bg-linear-to-br from-coral-500/25 to-transparent"></div>
+        <div class="absolute top-1/4 -left-32 w-80 h-80 blob-2 opacity-25 bg-linear-to-br from-teal-500/20 to-transparent"></div>
+        <div class="absolute bottom-1/3 right-1/4 w-72 h-72 blob-3 opacity-20 bg-linear-to-br from-coral-500/15 to-transparent"></div>
+        <div class="absolute bottom-20 -left-16 w-64 h-64 blob opacity-20 bg-linear-to-br from-teal-500/15 to-transparent"></div>
     </div>
     <!-- Hero Card -->
-    <div class="relative rounded-3xl shadow-xl overflow-hidden gradient-border mb-8" style="background-color: var(--theme-bg-secondary); box-shadow: var(--theme-shadow-lg)">
+    <div class="relative z-0 rounded-3xl shadow-xl overflow-hidden gradient-border mb-8" style="background-color: var(--theme-bg-secondary); box-shadow: var(--theme-shadow-lg)">
         <div class="p-6 sm:p-8">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                 <div class="flex-1">
@@ -40,7 +40,7 @@
                             {% translate "Happening now!" %}
                         </div>
                     {% elif event.is_ended %}
-                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-200 text-neutral-600 rounded-full text-sm font-medium mb-4">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700/30 text-neutral-600 rounded-full text-sm font-medium mb-4 dark:text-foreground-secondary">
                             {% heroicon_mini "check-circle" class="w-4 h-4" %}
                             {% translate "Completed" %}
                         </div>
@@ -70,7 +70,7 @@
                     <!-- Event meta -->
                     <div class="flex flex-wrap gap-4 text-sm">
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-coral-100 rounded-lg flex items-center justify-center">
+                            <div class="w-8 h-8 bg-coral-100 dark:bg-coral-900/30 rounded-lg flex items-center justify-center">
                                 {% heroicon_mini "calendar-days" class="w-4 h-4 text-coral-600" %}
                             </div>
                             <div>
@@ -776,9 +776,7 @@
                     <div id="info-{{ data.session.pk }}" class="tab-pane">
                         <!-- Host info -->
                         <div class="flex items-center gap-3 mb-6">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center shrink-0">
-                                <span class="text-white text-sm font-medium">{% heroicon_mini "user" class="w-5 h-5" %}</span>
-                            </div>
+                            {% include "components/avatar.html" with user=data.presenter size="w-10 h-10" %}
                             <div>
                                 <div class="font-medium" style="color: var(--color-foreground)">{{ data.session.presenter_name|default:data.session.presenter_name }}</div>
                                 {% if data.proposal %}
@@ -894,9 +892,7 @@
                                         {% if participation.status == 'confirmed' %}
                                             <div class="flex items-center justify-between p-3 rounded-xl {% if participation.user.pk == current_user.pk %}bg-coral-50 dark:bg-coral-950 border border-coral-200 dark:border-coral-800{% else %}bg-warm-100 dark:bg-neutral-800{% endif %}">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-warm-400 to-warm-500 flex items-center justify-center shrink-0">
-                                                        {% heroicon_mini "user" class="w-4 h-4 text-white" %}
-                                                    </div>
+                                                    {% include "components/avatar.html" with user=participation.user size="w-8 h-8" %}
                                                     <span class="font-medium" style="color: var(--color-foreground)">{{ participation.user.full_name }}</span>
                                                 </div>
                                                 <div class="flex items-center gap-2">

@@ -69,6 +69,9 @@
   --color-foreground-muted: #737373;
   --color-foreground-inverse: #ffffff;
 
+  --color-bg-secondary: #fdfcfb;
+  --color-bg-tertiary: #f7f5f3;
+
   --color-primary: #f85a3c;
   --color-secondary: #14b89b;
   --color-warning: #f59e0b;
@@ -127,7 +130,9 @@ a {
   :root:not(.light) {
     --color-background: #0a0a0a;
     --theme-bg-secondary: #171717;
+    --color-bg-secondary: #171717;
     --theme-bg-tertiary: #262626;
+    --color-bg-tertiary: #262626;
     --color-foreground: #fafafa;
     --color-foreground-secondary: #d4d4d4;
     --color-foreground-muted: #737373;
@@ -165,7 +170,9 @@ a {
 .dark {
   --color-background: #0a0a0a;
   --theme-bg-secondary: #171717;
+  --color-bg-secondary: #171717;
   --theme-bg-tertiary: #262626;
+  --color-bg-tertiary: #262626;
   --color-foreground: #fafafa;
   --color-foreground-secondary: #d4d4d4;
   --color-foreground-muted: #737373;
