@@ -130,6 +130,8 @@ class TestConnectedUserRepositoryReadAll:
         mock_connected_user.is_authenticated = True
         mock_connected_user.is_staff = False
         mock_connected_user.is_superuser = False
+        mock_connected_user.avatar_url = ""
+        mock_connected_user.gravatar_url = ""
         storage.connected_users_by_user[manager_slug][
             mock_connected_user.slug
         ] = mock_connected_user

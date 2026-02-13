@@ -201,6 +201,9 @@ class Auth0LoginCallbackActionView(RedirectView):
             messages.error(self.request, _("Invalid authentication state"))
             return self.request.build_absolute_uri(reverse("web:index"))
 
+        if self.request.context.current_user_slug:
+            return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
+
         userinfo = self._get_userinfo()
         username = self._get_username(userinfo)
         email = userinfo.get("email") if isinstance(userinfo, dict) else None
@@ -232,10 +235,6 @@ class Auth0LoginCallbackActionView(RedirectView):
                 self.request.session.pop("anonymous_enrollment_active", None)
                 self.request.session.pop("anonymous_event_id", None)
             messages.success(self.request, _("Welcome!"))
-        else:
-            user = self.request.di.uow.active_users.read(
-                self.request.context.current_user_slug
-            )
 
         update_data: UserData = {}
         if email and user.email != email:
