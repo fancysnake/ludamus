@@ -1,8 +1,9 @@
 {% load i18n %}
 {% load heroicons %}
 <div class="session-card-wrapper">
-    <div class="session-card h-full overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background {% if not data.is_enrollment_available or data.should_show_as_inactive %} opacity-70{% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
+    <div class="session-card relative block w-full h-full overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background {% if not data.is_enrollment_available or data.should_show_as_inactive %} {% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
          data-title="{{ data.session.title|lower }}"
+         data-session-id="{{ data.session.pk }}"
          data-host="{{ data.session.presenter_name }}"
          data-tags="{% for tag in data.tags %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
          data-tag-categories="{% for tag in data.tags %}{{ tag.category.name|slugify }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
@@ -15,10 +16,16 @@
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
          data-venue="{% if data.loc.area %}{{ data.loc.venue.slug }}{% endif %}"
-         style="cursor: pointer; border-color: var(--theme-border)"
-         onclick="openModal('sessionDetailModal{{ data.session.pk }}')">
-        <div class="flex h-full flex-col px-5 pb-5">
-            <div class="-mx-5 mb-4 bg-transparent px-5 pb-6 pt-5">
+         style="border-color: var(--theme-border)">
+        <a href="?session={{ data.session.pk }}"
+           class="session-card-link absolute inset-0 z-10 rounded-2xl"
+           aria-haspopup="dialog"
+           aria-controls="session-{{ data.session.pk }}"
+           aria-label="{% blocktranslate with title=data.session.title %}Open details for {{ title }}{% endblocktranslate %}">
+            <span class="sr-only">{% blocktranslate with title=data.session.title %}Open details for {{ title }}{% endblocktranslate %}</span>
+        </a>
+        <div class="relative z-0 flex h-full flex-col px-5 pb-5">
+            <div class="-mx-5 bg-transparent px-5 pb-6 pt-5">
                 <h3 class="text-3xl font-bold leading-tight tracking-tight color-foreground-primary">
                     {{ data.session.title }}
                 </h3>

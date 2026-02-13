@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+import hashlib
 import math
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, ClassVar, Never, cast
+from urllib.parse import urlencode
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
-import hashlib
-from urllib.parse import urlencode
-
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Lower

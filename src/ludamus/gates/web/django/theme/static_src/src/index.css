@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
-@import "../../../../../../static/css/progressive-blur.css";
+
+@import "./progressive-blur.css";
+@import "./modal.css";
+
 @plugin "@tailwindcss/typography";
 
 @source "../../../../../../**/*.{html,py,js}";
@@ -64,6 +67,26 @@
 
   --color-background: #f0f1f3;
 
+  --ease-spring-a-bit: linear(
+    0 0%,
+    0.5007 7.21%,
+    0.7803 12.29%,
+    0.8883 14.93%,
+    0.9724 17.63%,
+    1.0343 20.44%,
+    1.0754 23.44%,
+    1.0898 25.22%,
+    1.0984 27.11%,
+    1.1014 29.15%,
+    1.0989 31.4%,
+    1.0854 35.23%,
+    1.0196 48.86%,
+    1.0043 54.06%,
+    0.9956 59.6%,
+    0.9925 68.11%,
+    1 100%
+  );
+
   --color-foreground: #252220;
   --color-foreground-secondary: #5c534a;
   --color-foreground-muted: #737373;
@@ -88,7 +111,7 @@ html {
   height: 100%;
 }
 
-a {
+a, button {
   cursor: pointer;
 }
 
@@ -96,6 +119,7 @@ a {
   --theme-bg-secondary: #fdfcfb;
   --theme-bg-tertiary: #f7f5f3;
   --theme-border: #e4ddd6;
+  --color-border: #e4ddd6;
   --theme-border-light: #f0ece8;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
@@ -138,6 +162,7 @@ a {
     --color-foreground-muted: #737373;
     --color-foreground-inverse: #0a0a0a;
     --theme-border: #404040;
+    --color-border: #404040;
     --theme-border-light: #262626;
     --theme-border-focus: #f85a3c;
     --theme-primary: #f85a3c;
@@ -178,6 +203,7 @@ a {
   --color-foreground-muted: #737373;
   --color-foreground-inverse: #0a0a0a;
   --theme-border: #404040;
+  --color-border: #404040;
   --theme-border-light: #262626;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
@@ -338,55 +364,6 @@ a {
   padding: 1.5rem;
 }
 
-/* Modal system */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 40;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.modal-backdrop.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.modal-panel {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.modal-panel.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.modal-content-tw {
-  max-height: 90vh;
-  overflow-y: auto;
-  width: 100%;
-  border-radius: 1.5rem;
-  background-color: var(--theme-bg-secondary);
-  border: 1px solid var(--theme-border);
-  box-shadow: var(--theme-shadow-lg);
-}
-
-.modal-content-tw.modal-sm { max-width: 28rem; }
-.modal-content-tw.modal-md { max-width: 36rem; }
-.modal-content-tw.modal-lg { max-width: 48rem; }
-.modal-content-tw.modal-xl { max-width: 64rem; }
-
 /* Select dropdown chevron fix */
 select:not([multiple]):not([size]) {
   appearance: none;
@@ -407,3 +384,8 @@ textarea:focus-visible,
 select:focus-visible {
   border-color: var(--theme-border-focus) !important;
 }
+
+button:active {
+  @apply scale-97;  
+}
+

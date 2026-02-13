@@ -1,4 +1,5 @@
 import json
+import logging
 from collections import defaultdict
 from contextlib import suppress
 from dataclasses import dataclass
@@ -12,8 +13,6 @@ from urllib.parse import quote_plus, urlencode, urlparse
 from django import forms
 from django.conf import settings
 from django.contrib import messages
-from django.utils import timezone
-import logging
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -25,6 +24,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.generic.base import ContextMixin, RedirectView, TemplateView, View
@@ -276,7 +276,7 @@ class Auth0LoginCallbackActionView(RedirectView):
                 return userinfo
         try:
             userinfo = oauth.auth0.userinfo(token=token)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise RedirectError(
                 reverse("web:index"), error=_("Authentication failed")
             ) from exc
