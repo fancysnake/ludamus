@@ -848,7 +848,7 @@
                         class="tab-trigger px-4 py-3 text-sm font-medium flex items-center gap-1.5">
                     {% heroicon_mini "information-circle" class="w-4 h-4" %} {% translate "Information" %}
                 </button>
-                <button role="tab" aria-selected="false" aria-controls="participants-{{ data.session.pk }}"
+                <button tabIndex="-1" role="tab" aria-selected="false" aria-controls="participants-{{ data.session.pk }}"
                         class="tab-trigger px-4 py-3 text-sm font-medium flex items-center gap-1.5">
                     {% heroicon_mini "users" class="w-4 h-4" %} {% translate "Participants" %}
                     <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-coral-100 dark:bg-coral-900/30 text-coral-700 dark:text-coral-400">{{ data.enrolled_count }}</span>
@@ -866,12 +866,10 @@
                 <div id="info-{{ data.session.pk }}" role="tabpanel" class="tab-panel" data-active>
                     <!-- Host info -->
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center shrink-0">
-                            <span class="text-white text-sm font-medium">{% heroicon_mini "user" class="w-5 h-5" %}</span>
-                        </div>
+                        {% include "components/avatar.html" with user=data.presenter size="size-10" %}
                         <div>
                             <div class="font-medium" style="color: var(--color-foreground)">
-                                {{ data.session.presenter_name|default:data.session.presenter_name }}
+                                {{ data.presenter.full_name }}
                             </div>
                             {% if data.proposal %}
                                 {% with host=data.proposal.host %}
@@ -983,6 +981,39 @@
                             </div>
                         </div>
                     {% endif %}
+                    {% if current_connected_users %}
+                        <div class="pt-4 mt-2" style="border-top: 1px solid var(--theme-border)">
+                            <h3 class="font-semibold mb-3"
+                                style="color: var(--color-foreground-secondary)">
+                                {% translate "Connected Users" %}
+                            </h3>
+                            <div class="space-y-2">
+                                {% for connected_user in current_connected_users %}
+                                    <div class="flex items-center justify-between p-3 rounded-xl bg-warm-100 dark:bg-neutral-800">
+                                        <div class="flex items-center gap-3">
+                                            {% include "components/avatar.html" with user=connected_user size="size-8" %}
+                                            <span class="font-medium" style="color: var(--color-foreground)">{{ connected_user.full_name }}</span>
+                                        </div>
+                                        {% with participations=data.session_participations|dictsort:"creation_time" %}
+                                            {% for participation in participations %}
+                                                {% if participation.user.pk == connected_user.pk %}
+                                                    {% if participation.status == 'confirmed' %}
+                                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-100 text-teal-700">{% translate "Enrolled" %}</span>
+                                                    {% else %}
+                                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                                                                style="background-color: var(--theme-warning-light);
+                                                                        color: var(--theme-warning-text)">{% translate "Waiting List" %}</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% empty %}
+                                                <span class="text-xs" style="color: var(--color-foreground-muted)">{% translate "Not enrolled" %}</span>
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
                 <!-- Participants Tab -->
                 <div id="participants-{{ data.session.pk }}"
@@ -999,9 +1030,7 @@
                                     {% if participation.status == 'confirmed' %}
                                         <div class="flex items-center justify-between p-3 rounded-xl {% if participation.user.pk == current_user.pk %}bg-coral-50 dark:bg-coral-950 border border-coral-200 dark:border-coral-800{% else %}bg-warm-100 dark:bg-neutral-800{% endif %}">
                                             <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-warm-400 to-warm-500 flex items-center justify-center shrink-0">
-                                                    {% heroicon_mini "user" class="w-4 h-4 text-white" %}
-                                                </div>
+                                                {% include "components/avatar.html" with user=participation.user size="size-8" %}
                                                 <span class="font-medium" style="color: var(--color-foreground)">{{ participation.user.full_name }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">

@@ -23,6 +23,7 @@ function activateTab(trigger) {
 
   tablist.querySelectorAll(".tab-trigger").forEach((t) => {
     t.setAttribute("aria-selected", "false");
+    t.setAttribute("tabindex", "-1");
     const id = t.getAttribute("aria-controls");
     const panel = id && document.getElementById(id);
     if (panel) {
@@ -32,6 +33,7 @@ function activateTab(trigger) {
   });
 
   trigger.setAttribute("aria-selected", "true");
+  trigger.setAttribute("tabindex", "0");
   const active = document.getElementById(panelId);
   if (active) {
     active.setAttribute("data-active", "");
