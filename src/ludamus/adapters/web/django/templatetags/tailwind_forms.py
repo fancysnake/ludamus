@@ -213,8 +213,7 @@ def tw_button(  # noqa: PLR0913
             "color: var(--color-foreground-inverse);"
         ),
         "ghost": (
-            "background-color: transparent; "
-            "color: var(--color-foreground-secondary);"
+            "background-color: transparent; color: var(--color-foreground-secondary);"
         ),
     }
 

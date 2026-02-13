@@ -64,7 +64,6 @@ FROM base AS prod
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
 COPY src ./src
 
 # Create necessary directories and set ownership
@@ -105,5 +104,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
-# Production command using gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--worker-class", "sync", "--worker-tmp-dir", "/dev/shm", "--access-logfile", "-", "--error-logfile", "-", "--chdir", "/app/src", "ludamus.edges.wsgi:application"]
+# Run migrations on startup, then start gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--worker-class", "sync", "--worker-tmp-dir", "/dev/shm", "--access-logfile", "-", "--error-logfile", "-", "--chdir", "/app/src", "ludamus.deploy.wsgi:application"]

@@ -26,7 +26,7 @@
         </a>
         <div class="relative z-0 flex h-full flex-col px-5 pb-5">
             <div class="-mx-5 bg-transparent px-5 pb-6 pt-5">
-                <h3 class="text-3xl font-bold leading-tight tracking-tight color-foreground-primary">
+                <h3 class="text-3xl font-bold leading-tight tracking-tight text-foreground-primary">
                     {{ data.session.title }}
                 </h3>
             </div>
@@ -35,13 +35,13 @@
 
             <div class="flex items-center gap-2 mb-3">
                 {% include "components/avatar.html" with user=data.presenter size="size-8" %}
-                <span class="text-base font-medium color-foreground-secondary">
+                <span class="text-base font-medium text-foreground-secondary">
                     {% translate "Hosted by" %} {{ data.session.presenter_name }}
                 </span>
             </div>
 
             {% if data.session.description %}
-                <p class="text-sm mb-4 line-clamp-3 color-foreground-primary">
+                <p class="text-sm mb-4 line-clamp-3 text-foreground-primary">
                     {{ data.session.description }}
                 </p>
             {% endif %}
