@@ -8,9 +8,9 @@
                     <span class="text-xs font-semibold text-white">{{ name_value|slice:":2"|upper }}</span>
                 </div>
                 {% if user.avatar_url %}
-                    <img src="{{ user.avatar_url }}" alt="{{ name_value }}" class="absolute inset-0 h-full w-full object-cover" loading="lazy">
+                    <img src="{{ user.avatar_url }}" alt="{{ name_value }}" width="32" height="32" class="absolute inset-0 h-full w-full object-cover" loading="lazy">
                 {% elif user.gravatar_url %}
-                    <img src="{{ user.gravatar_url }}" alt="{{ name_value }}" class="absolute inset-0 h-full w-full object-cover" loading="lazy">
+                    <img src="{{ user.gravatar_url }}" alt="{{ name_value }}" width="32" height="32" class="absolute inset-0 h-full w-full object-cover" loading="lazy">
                 {% endif %}
             </div>
         {% endwith %}

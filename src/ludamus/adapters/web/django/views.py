@@ -292,9 +292,6 @@ class Auth0LoginCallbackActionView(RedirectView):
 
     @staticmethod
     def _get_display_name(userinfo: dict[str, Any]) -> str | None:
-        if not isinstance(userinfo, dict):
-            return None
-
         name = userinfo.get("name")
         if isinstance(name, str) and name.strip():
             return name.strip()

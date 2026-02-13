@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ludamus.pacts import (
@@ -37,7 +37,7 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     agenda_item: AgendaItemDTO
     is_enrollment_available: bool
     proposal: ProposalDTO | None
-    presenter: UserDTO | None
+    presenter: Any
     session: SessionDTO
     tags: list[TagWithCategory]
     is_full: bool
