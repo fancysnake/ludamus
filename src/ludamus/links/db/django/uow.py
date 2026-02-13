@@ -83,3 +83,7 @@ class UnitOfWork(UnitOfWorkProtocol):
     @cached_property
     def venues(self) -> repositories.VenueRepository:
         return repositories.VenueRepository(self._storage)
+
+    @cached_property
+    def enrollment_configs(self) -> repositories.EnrollmentConfigRepository:
+        return repositories.EnrollmentConfigRepository()

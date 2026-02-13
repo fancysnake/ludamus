@@ -17,12 +17,12 @@ from django.utils import timezone
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
-from ludamus.pacts import SessionParticipationStatus, UserType
+from ludamus.pacts import SessionParticipationStatus, UserType, VirtualEnrollmentConfig
 
 if TYPE_CHECKING:
     from collections.abc import Collection
 
-    from ludamus.pacts import UserDTO
+    from ludamus.pacts import EventDTO, UserDTO
 
 
 MAX_SLUG_RETRIES = 10
@@ -221,87 +221,6 @@ class Event(models.Model):
 
         return max(eligible_configs, key=lambda c: c.percentage_slots)
 
-    def get_user_enrollment_config(
-        self, user_email: str
-    ) -> UserEnrollmentConfig | None:
-        from ludamus.adapters.external.membership_api import (  # noqa: PLC0415
-            get_or_create_user_enrollment_config,
-        )
-
-        total_slots = 0
-        primary_config = None
-        has_individual_config = False
-        has_domain_config = False
-        domain_config_source = None
-
-        for config in self.get_active_enrollment_configs():
-            # Check for explicit user config
-            if api_user_config := get_or_create_user_enrollment_config(
-                config, user_email
-            ):
-                # Try to fetch from API if not found locally
-                total_slots += api_user_config.allowed_slots
-                if not primary_config:
-                    primary_config = api_user_config
-                has_individual_config = True
-            elif user_config := config.user_configs.filter(
-                user_email=user_email
-            ).first():
-                total_slots += user_config.allowed_slots
-                if not primary_config:
-                    primary_config = user_config
-                has_individual_config = True
-
-            # Always check for domain-based access regardless of individual config
-            if domain_config := self.get_domain_config_for_email(user_email, config):
-                total_slots += domain_config.allowed_slots_per_user
-                has_domain_config = True
-                domain_config_source = domain_config
-                if not primary_config:
-                    # Create virtual config as primary
-                    primary_config = domain_config.create_virtual_user_config(
-                        user_email
-                    )
-
-        if not primary_config:
-            return None
-
-        # If we have multiple sources, create a combined virtual config
-        if (
-            has_individual_config and has_domain_config
-        ) or total_slots != primary_config.allowed_slots:
-            combined_config = UserEnrollmentConfig(
-                enrollment_config=primary_config.enrollment_config,
-                user_email=user_email,
-                allowed_slots=total_slots,
-                fetched_from_api=(
-                    primary_config.fetched_from_api
-                    if hasattr(primary_config, "fetched_from_api")
-                    else False
-                ),
-            )
-            # Mark as combined access
-            combined_config._is_combined_access = True  # noqa: SLF001
-            combined_config._has_individual_config = (  # noqa: SLF001
-                has_individual_config
-            )
-            combined_config._has_domain_config = has_domain_config  # noqa: SLF001
-            combined_config._domain_config_source = domain_config_source  # noqa: SLF001
-            return combined_config
-
-        return primary_config
-
-    @staticmethod
-    def get_domain_config_for_email(
-        user_email: str, enrollment_config: EnrollmentConfig
-    ) -> DomainEnrollmentConfig | None:
-        if not user_email or "@" not in user_email:
-            return None
-
-        email_domain = user_email.split("@")[1].lower()
-
-        return enrollment_config.domain_configs.filter(domain=email_domain).first()
-
 
 class EnrollmentConfig(models.Model):
     event = models.ForeignKey(
@@ -404,13 +323,6 @@ class UserEnrollmentConfig(models.Model):
         null=True, blank=True, help_text="Last time the membership was checked via API"
     )
 
-    _domain_config_source: DomainEnrollmentConfig | None
-    _has_domain_config: bool | None
-    _has_individual_config: bool | None
-    _is_domain_based: bool | None
-    _source_domain_config: DomainEnrollmentConfig | None
-    _is_combined_access: bool | None
-
     class Meta:
         db_table = "user_enrollment_config"
         constraints = (
@@ -422,87 +334,6 @@ class UserEnrollmentConfig(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_email}: {self.allowed_slots} people enrollment limit"
-
-    def get_used_slots(self) -> int:
-        user = User.objects.get(email=self.user_email)
-
-        # Get all users (main user + connected users)
-        all_users = [user, *user.connected.all()]
-
-        # Count unique users who have at least one confirmed enrollment
-        users_with_enrollments = (
-            SessionParticipation.objects.filter(
-                status=SessionParticipationStatus.CONFIRMED,
-                user__in=all_users,
-                session__agenda_item__space__area__venue__event=self.enrollment_config.event,
-            )
-            .values_list("user", flat=True)
-            .distinct()
-        )
-
-        return len(users_with_enrollments)
-
-    def get_available_slots(self) -> int:
-        return max(0, self.allowed_slots - self.get_used_slots())
-
-    def can_enroll_users(self, users_to_enroll: list[UserDTO]) -> bool:
-        user = User.objects.get(email=self.user_email)
-
-        # Get all users (main user + connected users)
-        all_users = [user, *user.connected.all()]
-
-        # Get currently enrolled users
-        currently_enrolled = set(
-            SessionParticipation.objects.filter(
-                status=SessionParticipationStatus.CONFIRMED,
-                user__in=all_users,
-                session__agenda_item__space__area__venue__event=self.enrollment_config.event,
-            )
-            .values_list("user_id", flat=True)
-            .distinct()
-        )
-
-        # Add new users to enroll
-        users_to_enroll_ids = {u.pk for u in users_to_enroll}
-        total_enrolled = currently_enrolled | users_to_enroll_ids
-
-        return len(total_enrolled) <= self.allowed_slots
-
-    def is_domain_based(self) -> bool:
-        return bool(hasattr(self, "_is_domain_based") and self._is_domain_based)
-
-    def is_combined_access(self) -> bool:
-        return bool(hasattr(self, "_is_combined_access") and self._is_combined_access)
-
-    def has_domain_access(self) -> bool:
-        return self.is_domain_based() or bool(
-            self.is_combined_access()
-            and hasattr(self, "_has_domain_config")
-            and self._has_domain_config
-        )
-
-    def has_individual_access(self) -> bool:
-        return (not self.is_domain_based() and not self.is_combined_access()) or bool(
-            self.is_combined_access()
-            and hasattr(self, "_has_individual_config")
-            and self._has_individual_config
-        )
-
-    def get_source_domain(self) -> str | None:
-        if (
-            self.is_domain_based()
-            and hasattr(self, "_source_domain_config")
-            and self._source_domain_config is not None
-        ):
-            return self._source_domain_config.domain
-        if (
-            self.is_combined_access()
-            and hasattr(self, "_domain_config_source")
-            and self._domain_config_source
-        ):
-            return self._domain_config_source.domain
-
-        return None  # pragma: no cover
 
 
 class DomainEnrollmentConfig(models.Model):
@@ -546,20 +377,6 @@ class DomainEnrollmentConfig(models.Model):
                 raise ValidationError(
                     "Please enter a valid domain (e.g. 'company.com')"
                 )
-
-    def create_virtual_user_config(self, user_email: str) -> UserEnrollmentConfig:
-        # This creates a non-persistent UserEnrollmentConfig object
-        # that behaves like a regular config but represents domain access
-        virtual_config = UserEnrollmentConfig(
-            enrollment_config=self.enrollment_config,
-            user_email=user_email,
-            allowed_slots=self.allowed_slots_per_user,
-            fetched_from_api=False,
-        )
-        # Mark it as domain-based so we can identify it later
-        virtual_config._is_domain_based = True  # noqa: SLF001
-        virtual_config._source_domain_config = self  # noqa: SLF001
-        return virtual_config
 
 
 class Space(models.Model):
@@ -1182,3 +999,49 @@ class SessionFieldRequirement(models.Model):
     def __str__(self) -> str:
         req = "required" if self.is_required else "optional"
         return f"{self.field.name} ({req}) for {self.category.name}"
+
+
+def can_enroll_users(
+    *,
+    users: list[UserDTO],
+    event: EventDTO,
+    virtual_config: VirtualEnrollmentConfig,
+    users_to_enroll: list[UserDTO],
+) -> bool:
+    # Get currently enrolled users
+    currently_enrolled = set(
+        SessionParticipation.objects.filter(
+            status=SessionParticipationStatus.CONFIRMED,
+            user_id__in=[u.pk for u in users],
+            session__agenda_item__space__area__venue__event_id=event.pk,
+        )
+        .values_list("user_id", flat=True)
+        .distinct()
+    )
+
+    # Add new users to enroll
+    users_to_enroll_ids = {u.pk for u in users_to_enroll}
+    total_enrolled = currently_enrolled | users_to_enroll_ids
+
+    return len(total_enrolled) <= virtual_config.allowed_slots
+
+
+def get_used_slots(users: list[UserDTO], event: EventDTO) -> int:
+    # Count unique users who have at least one confirmed enrollment
+    return len(
+        SessionParticipation.objects.filter(
+            status=SessionParticipationStatus.CONFIRMED,
+            user_id__in=[u.pk for u in users],
+            session__agenda_item__space__area__venue__event_id=event.pk,
+        )
+        .values_list("user", flat=True)
+        .distinct()
+    )
+
+
+def get_vc_available_slots(
+    *, users: list[UserDTO], event: EventDTO, virtual_config: VirtualEnrollmentConfig
+) -> int:
+    return max(
+        0, virtual_config.allowed_slots - get_used_slots(users=users, event=event)
+    )

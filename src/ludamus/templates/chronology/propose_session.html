@@ -58,7 +58,9 @@
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
                             <label for="description"
                                    class="text-sm font-medium"
-                                   style="color: var(--color-foreground-secondary)">{% translate "Description" %}</label>
+                                   style="color: var(--color-foreground-secondary)">
+                                {% translate "Description" %}
+                            </label>
                             <span class="text-sm" style="color: var(--color-foreground-muted)">
                                 {% translate "Provide a detailed description of your session content and objectives." %}
                             </span>
@@ -76,7 +78,9 @@
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
                             <label for="requirements"
                                    class="text-sm font-medium"
-                                   style="color: var(--color-foreground-secondary)">{% translate "Requirements" %}</label>
+                                   style="color: var(--color-foreground-secondary)">
+                                {% translate "Requirements" %}
+                            </label>
                             <span class="text-sm" style="color: var(--color-foreground-muted)">
                                 {% translate "List any requirements or prerequisites for participants." %}
                             </span>
@@ -94,7 +98,9 @@
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
                             <label for="needs"
                                    class="text-sm font-medium"
-                                   style="color: var(--color-foreground-secondary)">{% translate "Special Needs" %}</label>
+                                   style="color: var(--color-foreground-secondary)">
+                                {% translate "Special Needs" %}
+                            </label>
                             <span class="text-sm" style="color: var(--color-foreground-muted)">
                                 {% translate "Specify any special equipment or room setup requirements." %}
                             </span>
@@ -231,43 +237,89 @@
         </div>
     </div>
     <script>
-    {# Random example placeholders — one coherent set per RPG system #}
-    var _ph = [
         {
-            title: "{% translate "e.g. Curse of Strahd — one-shot for beginners" %}",
-            description: "{% translate "e.g. A gothic horror adventure in Barovia. We create characters together and play through a haunted castle. No experience needed, I will teach the rules as we go." %}",
-            requirements: "{% translate "e.g. Know basic D&D 5e rules. Bring your own dice and a level 3 character (or come 15 min early to make one)." %}",
-            needs: "{% translate "e.g. Large table for maps and minis, power outlet for laptop" %}"
-        },
-        {
-            title: "{% translate "e.g. A Pound of Flesh — survival horror in deep space" %}",
-            description: "{% translate "e.g. You are crew on a deep-space fuel station. Something has gone wrong. Survive, escape, or die trying. Mothership is rules-light and beginner-friendly." %}",
-            requirements: "{% translate "e.g. No experience needed. Characters are created in 10 minutes at the table." %}",
-            needs: "{% translate "e.g. Dim lighting preferred for atmosphere" %}"
-        },
-        {
-            title: "{% translate "e.g. Honey in the Rafters — a Mausritter adventure" %}",
-            description: "{% translate "e.g. Play as brave mice exploring a dangerous world. We venture into an abandoned farmhouse to find a legendary honey cache. Light, fast rules — great for newcomers." %}",
-            requirements: "{% translate "e.g. None — rules are simple and we make characters at the table. Good for ages 8+." %}",
-            needs: "{% translate "e.g. Colored pencils and blank paper for mapping" %}"
-        },
-        {
-            title: "{% translate "e.g. The Sword — a tense Burning Wheel one-shot" %}",
-            description: "{% translate "e.g. Three lords, one ancient sword, and conflicting Beliefs. A drama-heavy one-shot focused on negotiation, betrayal, and hard choices. No dice needed until someone breaks." %}",
-            requirements: "{% translate "e.g. Read the Hub and Spokes section of the rulebook. Pre-generated characters provided." %}",
-            needs: "{% translate "e.g. Quiet room — this game needs focused conversation" %}"
-        },
-        {
-            title: "{% translate "e.g. Burned Over — life after the apocalypse" %}",
-            description: "{% translate "e.g. The world ended. Now what? We build a community together and see what happens when scarcity forces hard choices. Collaborative, fiction-first play." %}",
-            requirements: "{% translate "e.g. No prep needed. Pick a playbook at the table. Some mature themes — for players 16+." %}",
-            needs: "{% translate "e.g. Whiteboard or large paper for relationship maps" %}"
+            # Random example placeholders— one coherent set per RPG system #
         }
-    ];
-    var _i = Math.floor(Math.random() * _ph.length), _s = _ph[_i];
-    document.getElementById("title").placeholder = _s.title;
-    document.getElementById("description").placeholder = _s.description;
-    document.getElementById("requirements").placeholder = _s.requirements;
-    document.getElementById("needs").placeholder = _s.needs;
+        var _ph = [{
+            title: "{% translate "
+            e.g.Curse of Strahd— one - shot
+            for beginners " %}",
+            description: "{% translate "
+            e.g.A gothic horror adventure in Barovia.We create characters together and play through a haunted castle.No experience needed,
+            I will teach the rules as we go.
+            " %}",
+            requirements: "{% translate "
+            e.g.Know basic D & D 5 e rules.Bring your own dice and a level 3 character(or come 15 min early to make one).
+            " %}",
+            needs: "{% translate "
+            e.g.Large table
+            for maps and minis,
+            power outlet
+            for laptop " %}"
+        }, {
+            title: "{% translate "
+            e.g.A Pound of Flesh— survival horror in deep space " %}",
+            description: "{% translate "
+            e.g.You are crew on a deep - space fuel station.Something has gone wrong.Survive,
+            escape,
+            or die trying.Mothership is rules - light and beginner - friendly.
+            " %}",
+            requirements: "{% translate "
+            e.g.No experience needed.Characters are created in 10 minutes at the table.
+            " %}",
+            needs: "{% translate "
+            e.g.Dim lighting preferred
+            for atmosphere " %}"
+        }, {
+            title: "{% translate "
+            e.g.Honey in the Rafters— a Mausritter adventure " %}",
+            description: "{% translate "
+            e.g.Play as brave mice exploring a dangerous world.We venture into an abandoned farmhouse to find a legendary honey cache.Light,
+            fast rules— great
+            for newcomers.
+            " %}",
+            requirements: "{% translate "
+            e.g.None— rules are simple and we make characters at the table.Good
+            for ages 8 + .
+            " %}",
+            needs: "{% translate "
+            e.g.Colored pencils and blank paper
+            for mapping " %}"
+        }, {
+            title: "{% translate "
+            e.g.The Sword— a tense Burning Wheel one - shot " %}",
+            description: "{% translate "
+            e.g.Three lords,
+            one ancient sword,
+            and conflicting Beliefs.A drama - heavy one - shot focused on negotiation,
+            betrayal,
+            and hard choices.No dice needed until someone breaks.
+            " %}",
+            requirements: "{% translate "
+            e.g.Read the Hub and Spokes section of the rulebook.Pre - generated characters provided.
+            " %}",
+            needs: "{% translate "
+            e.g.Quiet room— this game needs focused conversation " %}"
+        }, {
+            title: "{% translate "
+            e.g.Burned Over— life after the apocalypse " %}",
+            description: "{% translate "
+            e.g.The world ended.Now what ? We build a community together and see what happens when scarcity forces hard choices.Collaborative,
+            fiction - first play.
+            " %}",
+            requirements : "{% translate "
+            e.g.No prep needed.Pick a playbook at the table.Some mature themes—
+            for players 16 + .
+            " %}",
+            needs: "{% translate "
+            e.g.Whiteboard or large paper
+            for relationship maps " %}"
+        }];
+        var _i = Math.floor(Math.random() * _ph.length),
+            _s = _ph[_i];
+        document.getElementById("title").placeholder = _s.title;
+        document.getElementById("description").placeholder = _s.description;
+        document.getElementById("requirements").placeholder = _s.requirements;
+        document.getElementById("needs").placeholder = _s.needs;
     </script>
 {% endblock body %}

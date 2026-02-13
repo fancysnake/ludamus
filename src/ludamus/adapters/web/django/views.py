@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
@@ -41,6 +41,7 @@ from ludamus.adapters.db.django.models import (
     SessionParticipation,
     SessionParticipationStatus,
     Tag,
+    can_enroll_users,
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
@@ -49,12 +50,17 @@ from ludamus.adapters.web.django.entities import (
     TagCategoryData,
     TagWithCategory,
 )
-from ludamus.mills import AcceptProposalService, AnonymousEnrollmentService
+from ludamus.mills import (
+    AcceptProposalService,
+    AnonymousEnrollmentService,
+    get_user_enrollment_config,
+)
 from ludamus.pacts import (
     AgendaItemDTO,
     AreaDTO,
     AuthenticatedRequestContext,
     DependencyInjectorProtocol,
+    EventDTO,
     LocationData,
     NotFoundError,
     ProposalCategoryDTO,
@@ -415,6 +421,37 @@ EVENT_PLACEHOLDER_IMAGES = [
 ]
 
 
+@dataclass
+class EventData:  # pylint: disable=too-many-instance-attributes
+    cover_image_url: str
+    description: str
+    end_time: datetime
+    is_ended: bool
+    is_live: bool
+    is_proposal_active: bool
+    name: str
+    session_count: int
+    start_time: datetime
+    slug: str
+
+    @classmethod
+    def from_event(
+        cls, *, event: Event, session_count: int, cover_image_url: str
+    ) -> Self:
+        return cls(
+            cover_image_url=cover_image_url,
+            description=event.description,
+            end_time=event.end_time,
+            is_ended=event.is_ended,
+            is_live=event.is_live,
+            is_proposal_active=event.is_proposal_active,
+            name=event.name,
+            session_count=session_count,
+            slug=event.slug,
+            start_time=event.start_time,
+        )
+
+
 class IndexPageView(TemplateView):
     request: RootRequest
     template_name = "index.html"
@@ -427,12 +464,19 @@ class IndexPageView(TemplateView):
             .order_by("start_time")
             .all()
         )
+        event_datas: list[EventData] = []
         # Assign placeholder images based on index
         for i, event in enumerate(all_events):
             img = EVENT_PLACEHOLDER_IMAGES[i % len(EVENT_PLACEHOLDER_IMAGES)]
-            event.cover_image_url = staticfiles_storage.url(img)  # type: ignore[attr-defined]
-        context["upcoming_events"] = [e for e in all_events if not e.is_ended]
-        context["past_events"] = [e for e in all_events if e.is_ended]
+            event_datas.append(
+                EventData.from_event(
+                    event=event,
+                    session_count=event.session_count,
+                    cover_image_url=staticfiles_storage.url(img),
+                )
+            )
+        context["upcoming_events"] = [e for e in event_datas if not e.is_ended]
+        context["past_events"] = [e for e in event_datas if e.is_ended]
         return context
 
 
@@ -749,10 +793,14 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 self.request.context.current_user_slug
             ).email
         ):
-            user_enrollment_config = self.object.get_user_enrollment_config(
-                self.request.di.uow.active_users.read(
+            user_enrollment_config = get_user_enrollment_config(
+                event=EventDTO.model_validate(self.object),
+                user_email=self.request.di.uow.active_users.read(
                     self.request.context.current_user_slug
-                ).email
+                ).email,
+                enrollment_config_repo=self.request.di.uow.enrollment_configs,
+                ticket_api=self.request.di.ticket_api,
+                check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
             )
         context["user_enrollment_config"] = user_enrollment_config
 
@@ -1120,6 +1168,8 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 connected_users=self.request.di.uow.connected_users.read_all(
                     self.request.context.current_user_slug
                 ),
+                enrollment_config_repo=request.di.uow.enrollment_configs,
+                ticket_api=request.di.ticket_api,
             )(),
         }
 
@@ -1211,6 +1261,8 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
             connected_users=self.request.di.uow.connected_users.read_all(
                 self.request.context.current_user_slug
             ),
+            enrollment_config_repo=request.di.uow.enrollment_configs,
+            ticket_api=request.di.ticket_api,
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
@@ -1238,7 +1290,13 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                         request.context.current_user_slug
                     ).email
                     event = session.agenda_item.space.area.venue.event
-                    if not event.get_user_enrollment_config(user_email):
+                    if not get_user_enrollment_config(
+                        event=EventDTO.model_validate(event),
+                        user_email=user_email,
+                        enrollment_config_repo=request.di.uow.enrollment_configs,
+                        ticket_api=request.di.ticket_api,
+                        check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
+                    ):
                         messages.error(
                             self.request,
                             _(
@@ -1334,8 +1392,8 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
             self._check_and_create_enrollment(req, session, enrollments)
         return enrollments
 
-    @staticmethod
     def _promote_from_waitlist(
+        self,
         existing_participation: SessionParticipation,
         participations: QuerySet[SessionParticipation],
         req: EnrollmentRequest,
@@ -1358,11 +1416,26 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                             manager_user = participation.user.manager
 
                         event = session.agenda_item.space.area.venue.event
-                        user_config = event.get_user_enrollment_config(
-                            manager_user.email
+                        user_config = get_user_enrollment_config(
+                            event=EventDTO.model_validate(event),
+                            user_email=manager_user.email,
+                            enrollment_config_repo=self.request.di.uow.enrollment_configs,
+                            ticket_api=self.request.di.ticket_api,
+                            check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
                         )
-                        if user_config and not user_config.can_enroll_users(
-                            [UserDTO.model_validate(participation.user)]
+                        if user_config and not can_enroll_users(
+                            users=[
+                                UserDTO.model_validate(manager_user),
+                                *[
+                                    UserDTO.model_validate(c)
+                                    for c in manager_user.connected.all()
+                                ],
+                            ],
+                            event=EventDTO.model_validate(event),
+                            virtual_config=user_config,
+                            users_to_enroll=[
+                                UserDTO.model_validate(participation.user)
+                            ],
                         ):
                             can_be_promoted = False
 

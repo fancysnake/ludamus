@@ -245,6 +245,21 @@ class EventDTO(BaseModel):
     start_time: datetime
 
 
+class EnrollmentConfigDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    allow_anonymous_enrollment: bool
+    banner_text: str
+    end_time: datetime
+    event_id: int
+    limit_to_end_time: bool
+    max_waitlist_sessions: int
+    percentage_slots: int
+    pk: int
+    restrict_to_configured_users: bool
+    start_time: datetime
+
+
 class UserData(TypedDict, total=False):
     avatar_url: str
     discord_username: str
@@ -350,6 +365,26 @@ class PanelStatsDTO(BaseModel):
     scheduled_sessions: int = 0
     total_proposals: int = 0
     total_sessions: int = 0
+
+
+class UserEnrollmentConfigDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    allowed_slots: int
+    enrollment_config_id: int
+    fetched_from_api: bool
+    last_check: datetime | None
+    pk: int
+    user_email: str
+
+
+class DomainEnrollmentConfigDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    enrollment_config_id: int
+    domain: str
+    allowed_slots_per_user: int
 
 
 class EventStatsData(BaseModel):
@@ -524,6 +559,27 @@ class SessionFieldRepositoryProtocol(Protocol):
     def update(self, pk: int, name: str) -> SessionFieldDTO: ...
 
 
+class EnrollmentConfigRepositoryProtocol(Protocol):
+    @staticmethod
+    def read_list(
+        event_id: int, max_start_time: datetime, min_end_time: datetime
+    ) -> list[EnrollmentConfigDTO]: ...
+    @staticmethod
+    def create_user_config(
+        user_enrollment_config: UserEnrollmentConfigData,
+    ) -> UserEnrollmentConfigDTO: ...
+    @staticmethod
+    def read_user_config(
+        config: EnrollmentConfigDTO, user_email: str
+    ) -> UserEnrollmentConfigDTO | None: ...
+    @staticmethod
+    def update_user_config(user_enrollment_config: UserEnrollmentConfigDTO) -> None: ...
+    @staticmethod
+    def read_domain_config(
+        enrollment_config: EnrollmentConfigDTO, domain: str
+    ) -> DomainEnrollmentConfigDTO | None: ...
+
+
 class UnitOfWorkProtocol(Protocol):
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
@@ -557,14 +613,41 @@ class UnitOfWorkProtocol(Protocol):
     def spaces(self) -> SpaceRepositoryProtocol: ...
     @property
     def venues(self) -> VenueRepositoryProtocol: ...
+    @property
+    def enrollment_configs(self) -> EnrollmentConfigRepositoryProtocol: ...
+
+
+class TicketAPIProtocol(Protocol):
+    def fetch_membership_count(self, user_email: str) -> int: ...
 
 
 class DependencyInjectorProtocol(Protocol):
     @property
     def uow(self) -> UnitOfWorkProtocol: ...
+    @property
+    def ticket_api(self) -> TicketAPIProtocol: ...
 
 
 class RootRequestProtocol(Protocol):
     path: str
     di: DependencyInjectorProtocol
     context: RequestContext
+
+
+@dataclass
+class VirtualEnrollmentConfig:
+    allowed_slots: int = 0
+    has_domain_config: bool = False
+    has_user_config: bool = False
+
+
+class MembershipAPIError(Exception):
+    pass
+
+
+class UserEnrollmentConfigData(TypedDict):
+    allowed_slots: int
+    enrollment_config_id: int
+    fetched_from_api: bool
+    last_check: datetime | None
+    user_email: str
