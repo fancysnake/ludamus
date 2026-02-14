@@ -14,6 +14,17 @@ class NotFoundError(Exception):
     pass
 
 
+class ProposalActionError(Exception):
+    pass
+
+
+class ProposalStatus(StrEnum):
+    PENDING = "PENDING"
+    REJECTED = "REJECTED"
+    UNASSIGNED = "UNASSIGNED"
+    SCHEDULED = "SCHEDULED"
+
+
 class DateTimeRangeProtocol(Protocol):
     """Protocol for objects with start_time and end_time datetime fields."""
 
@@ -44,9 +55,43 @@ class ProposalDTO(BaseModel):
     needs: str
     participants_limit: int
     pk: int
+    rejected: bool
     requirements: str
     session_id: int | None
     title: str
+
+
+class ProposalListItemDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    title: str
+    description: str
+    host_name: str
+    host_id: int
+    category_name: str
+    category_id: int
+    status: str
+    creation_time: datetime
+    session_id: int | None
+
+
+class ProposalListFilters(TypedDict, total=False):
+    statuses: list[str]
+    category_ids: list[int]
+    q: str
+    sort: str
+    page: int
+    page_size: int
+
+
+class ProposalListResult(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    proposals: list[ProposalListItemDTO]
+    status_counts: dict[str, int]
+    total_count: int
+    filtered_count: int
 
 
 class AgendaItemDTO(BaseModel):
@@ -120,13 +165,16 @@ class VenueDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     address: str
-    areas_count: int = 0
     creation_time: datetime
     modification_time: datetime
     name: str
     order: int
     pk: int
     slug: str
+
+
+class VenueListItemDTO(VenueDTO):
+    areas_count: int
 
 
 class AreaDTO(BaseModel):
@@ -139,7 +187,10 @@ class AreaDTO(BaseModel):
     order: int
     pk: int
     slug: str
-    spaces_count: int = 0
+
+
+class AreaListItemDTO(AreaDTO):
+    spaces_count: int
 
 
 class TimeSlotDTO(BaseModel):
@@ -210,6 +261,16 @@ class UserDTO(BaseModel):
     slug: str
     user_type: UserType
     username: str
+
+
+class ProposalDetailDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    proposal: ProposalDTO
+    host: UserDTO
+    tags: list[TagDTO]
+    time_slots: list[TimeSlotDTO]
+    status: str
 
 
 class SiteDTO(BaseModel):
@@ -420,11 +481,20 @@ class ProposalRepositoryProtocol(Protocol):
     def read_time_slot(self, proposal_id: int, time_slot_id: int) -> TimeSlotDTO: ...
     def read_time_slots(self, proposal_id: int) -> list[TimeSlotDTO]: ...
     def read(self, pk: int) -> ProposalDTO: ...
+    def read_for_event(self, event_id: int, pk: int) -> ProposalDTO: ...
+    @staticmethod
+    def has_agenda_item(proposal_id: int) -> bool: ...
     def update(self, proposal_dto: ProposalDTO) -> None: ...
     @staticmethod
     def count_by_category(category_id: int) -> int: ...
     def read_tags(self, proposal_id: int) -> list[TagDTO]: ...
     def read_tag_categories(self, proposal_id: int) -> list[TagCategoryDTO]: ...
+    @staticmethod
+    def list_by_event(
+        event_id: int, filters: ProposalListFilters | None = None
+    ) -> ProposalListResult: ...
+    def reject(self, pk: int) -> None: ...
+    def unreject(self, pk: int) -> None: ...
 
 
 class SessionRepositoryProtocol(Protocol):
@@ -458,7 +528,7 @@ class VenueRepositoryProtocol(Protocol):
     def create(self, event_id: int, name: str, address: str = "") -> VenueDTO: ...
     def delete(self, pk: int) -> None: ...
     def duplicate(self, pk: int, new_name: str) -> VenueDTO: ...
-    def list_by_event(self, event_pk: int) -> list[VenueDTO]: ...
+    def list_by_event(self, event_pk: int) -> list[VenueListItemDTO]: ...
     def read_by_slug(self, event_pk: int, slug: str) -> VenueDTO: ...
     def reorder(self, event_id: int, venue_pks: list[int]) -> None: ...
     def update(self, pk: int, name: str, address: str = "") -> VenueDTO: ...
@@ -469,7 +539,7 @@ class VenueRepositoryProtocol(Protocol):
 class AreaRepositoryProtocol(Protocol):
     def create(self, venue_id: int, name: str, description: str = "") -> AreaDTO: ...
     def delete(self, pk: int) -> None: ...
-    def list_by_venue(self, venue_pk: int) -> list[AreaDTO]: ...
+    def list_by_venue(self, venue_pk: int) -> list[AreaListItemDTO]: ...
     def read_by_slug(self, venue_pk: int, slug: str) -> AreaDTO: ...
     def reorder(self, venue_id: int, area_pks: list[int]) -> None: ...
     def update(self, pk: int, name: str, description: str = "") -> AreaDTO: ...

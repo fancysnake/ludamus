@@ -1,0 +1,246 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% block title %}
+    {% translate "Proposals" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "Proposals" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {{ total_count }} {% translate "total" %}
+        {% if status_counts.PENDING %}
+            , {{ status_counts.PENDING }} {% translate "pending" %}
+        {% endif %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block content %}
+    {% if current_event %}
+        <form method="get" class="mb-4 flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+                {% heroicon_outline "magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" %}
+                <input type="text"
+                       name="q"
+                       value="{{ filters.q|default:'' }}"
+                       placeholder="{% translate "Search proposals..." %}"
+                       class="w-full pl-9 pr-4 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <div class="flex gap-1 items-center">
+                    <label class="cursor-pointer">
+                        <input type="checkbox"
+                               name="status"
+                               value="PENDING"
+                               class="hidden peer"
+                               {% if "PENDING" in filters.statuses %}checked{% endif %}>
+                        <span class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg border transition peer-checked:bg-yellow-100 peer-checked:text-yellow-800 peer-checked:border-yellow-300 bg-white text-neutral-500 border-neutral-200 hover:bg-neutral-50">
+                            {% translate "Pending" %} ({{ status_counts.PENDING|default:"0" }})
+                        </span>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="checkbox"
+                               name="status"
+                               value="REJECTED"
+                               class="hidden peer"
+                               {% if "REJECTED" in filters.statuses %}checked{% endif %}>
+                        <span class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg border transition peer-checked:bg-red-100 peer-checked:text-red-800 peer-checked:border-red-300 bg-white text-neutral-500 border-neutral-200 hover:bg-neutral-50">
+                            {% translate "Rejected" %} ({{ status_counts.REJECTED|default:"0" }})
+                        </span>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="checkbox"
+                               name="status"
+                               value="UNASSIGNED"
+                               class="hidden peer"
+                               {% if "UNASSIGNED" in filters.statuses %}checked{% endif %}>
+                        <span class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg border transition peer-checked:bg-blue-100 peer-checked:text-blue-800 peer-checked:border-blue-300 bg-white text-neutral-500 border-neutral-200 hover:bg-neutral-50">
+                            {% translate "Unassigned" %} ({{ status_counts.UNASSIGNED|default:"0" }})
+                        </span>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="checkbox"
+                               name="status"
+                               value="SCHEDULED"
+                               class="hidden peer"
+                               {% if "SCHEDULED" in filters.statuses %}checked{% endif %}>
+                        <span class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg border transition peer-checked:bg-green-100 peer-checked:text-green-800 peer-checked:border-green-300 bg-white text-neutral-500 border-neutral-200 hover:bg-neutral-50">
+                            {% translate "Scheduled" %} ({{ status_counts.SCHEDULED|default:"0" }})
+                        </span>
+                    </label>
+                </div>
+                {% if categories %}
+                    <select name="category"
+                            class="text-sm border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">{% translate "All categories" %}</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.pk }}"
+                                    {% if cat.pk in filters.category_ids %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+                <select name="sort"
+                        class="text-sm border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="newest"
+                            {% if filters.sort == "newest" or not filters.sort %}selected{% endif %}>
+                        {% translate "Newest first" %}
+                    </option>
+                    <option value="title" {% if filters.sort == "title" %}selected{% endif %}>{% translate "Title A-Z" %}</option>
+                </select>
+                <select name="page_size"
+                        class="text-sm border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="10" {% if filters.page_size == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if filters.page_size == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if filters.page_size == 50 %}selected{% endif %}>50</option>
+                </select>
+                <button type="submit"
+                        class="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition cursor-pointer">
+                    {% translate "Filter" %}
+                </button>
+                {% if filters.q or filters.statuses or filters.category_ids or filters.sort and filters.sort != "newest" %}
+                    <a href="{% url 'panel:proposals' slug=current_event.slug %}"
+                       class="px-4 py-2 bg-neutral-100 text-neutral-700 text-sm rounded-lg hover:bg-neutral-200 transition">
+                        {% translate "Clear" %}
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+        {% if proposals %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+                <table class="w-full divide-y divide-neutral-200">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                {% translate "Title" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                {% translate "Host" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                {% translate "Category" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                {% translate "Status" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                {% translate "Actions" %}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-neutral-200">
+                        {% for proposal in proposals %}
+                            <tr>
+                                <td class="px-6 py-4 text-sm">
+                                    <a href="{% url 'panel:proposal-detail' slug=current_event.slug proposal_id=proposal.pk %}"
+                                       class="font-medium text-neutral-900 hover:text-primary transition">{{ proposal.title }}</a>
+                                    {% if proposal.description %}
+                                        <div class="text-neutral-500 truncate max-w-xs text-xs">{{ proposal.description|truncatechars:60 }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ proposal.host_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800">
+                                        {{ proposal.category_name }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if proposal.status == "PENDING" %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            {% translate "Pending" %}
+                                        </span>
+                                    {% elif proposal.status == "REJECTED" %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            {% translate "Rejected" %}
+                                        </span>
+                                    {% elif proposal.status == "UNASSIGNED" %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            {% translate "Unassigned" %}
+                                        </span>
+                                    {% elif proposal.status == "SCHEDULED" %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            {% translate "Scheduled" %}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'panel:proposal-detail' slug=current_event.slug proposal_id=proposal.pk %}"
+                                       class="text-primary hover:text-primary/80 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-primary/5 transition">
+                                        {% heroicon_outline "eye" class="w-4 h-4" %}
+                                        {% translate "View" %}
+                                    </a>
+                                    {% if proposal.status == "PENDING" %}
+                                        <form method="post"
+                                              action="{% url 'panel:proposal-reject' slug=current_event.slug proposal_id=proposal.pk %}"
+                                              class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="text-red-600 hover:text-red-800 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition cursor-pointer">
+                                                {% heroicon_outline "x-mark" class="w-4 h-4" %}
+                                                {% translate "Reject" %}
+                                            </button>
+                                        </form>
+                                    {% elif proposal.status == "REJECTED" %}
+                                        <form method="post"
+                                              action="{% url 'panel:proposal-unreject' slug=current_event.slug proposal_id=proposal.pk %}"
+                                              class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="text-yellow-600 hover:text-yellow-800 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-yellow-50 transition cursor-pointer">
+                                                {% heroicon_outline "arrow-uturn-left" class="w-4 h-4" %}
+                                                {% translate "Restore" %}
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if total_pages > 1 %}
+                <nav class="mt-4 flex items-center justify-between">
+                    <p class="text-sm text-neutral-500">
+                        {% blocktranslate with current=page total=total_pages count=filtered_count %}
+                            Page {{ current }} of {{ total }} ({{ count }} results)
+                        {% endblocktranslate %}
+                    </p>
+                    <div class="flex gap-1">
+                        {% if has_previous %}
+                            <a href="?{% for key, vals in request.GET.lists %}{% if key != 'page' %}{% for val in vals %}{{ key }}={{ val }}&{% endfor %}{% endif %}{% endfor %}page={{ page|add:"-1" }}"
+                               class="px-3 py-1.5 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 transition">
+                                {% translate "Previous" %}
+                            </a>
+                        {% endif %}
+                        {% if has_next %}
+                            <a href="?{% for key, vals in request.GET.lists %}{% if key != 'page' %}{% for val in vals %}{{ key }}={{ val }}&{% endfor %}{% endif %}{% endfor %}page={{ page|add:"1" }}"
+                               class="px-3 py-1.5 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 transition">
+                                {% translate "Next" %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+                {% if filters.q or filters.statuses or filters.category_ids %}
+                    <p class="text-neutral-500">{% translate "No proposals matching your filters." %}</p>
+                    <a href="{% url 'panel:proposals' slug=current_event.slug %}"
+                       class="mt-2 inline-block text-primary hover:text-primary/80 text-sm">
+                        {% translate "Clear filters" %}
+                    </a>
+                {% else %}
+                    <p class="text-neutral-500">{% translate "No proposals yet." %}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+            <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
+        </div>
+    {% endif %}
+{% endblock content %}

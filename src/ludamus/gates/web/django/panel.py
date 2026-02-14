@@ -33,19 +33,25 @@ from ludamus.gates.web.django.forms import (
     EventSettingsForm,
     PersonalDataFieldForm,
     ProposalCategoryForm,
+    ProposalFilterForm,
     SessionFieldForm,
     SpaceForm,
     VenueDuplicateForm,
     VenueForm,
     create_venue_copy_form,
 )
-from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
-from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
+from ludamus.mills import (
+    ProposalService,
+    SafeDeleteService,
+    get_days_to_event,
+    is_proposal_active,
+)
+from ludamus.pacts import DependencyInjectorProtocol, NotFoundError, ProposalActionError
 
 if TYPE_CHECKING:
     from django import forms
 
-    from ludamus.pacts import AuthenticatedRequestContext, EventDTO
+    from ludamus.pacts import AuthenticatedRequestContext, EventDTO, ProposalListFilters
 
 
 class _FieldDTO(Protocol):
@@ -202,8 +208,8 @@ class EventContextMixin:
             messages.error(self.request, _("Event not found."))
             return {}, None
 
-        panel_service = PanelService(self.request.di.uow)
-        stats = panel_service.get_event_stats(current_event.pk)
+        proposal_service = ProposalService(self.request.di.uow)
+        stats = proposal_service.get_event_stats(current_event.pk)
 
         context: dict[str, Any] = {
             "events": events,
@@ -599,7 +605,7 @@ class CFPDeleteActionView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Session type not found."))
             return redirect("panel:cfp", slug=event_slug)
 
-        service = PanelService(self.request.di.uow)
+        service = SafeDeleteService(self.request.di.uow)
         if not service.delete_category(category.pk):
             messages.error(
                 self.request, _("Cannot delete session type with existing proposals.")
@@ -784,7 +790,7 @@ class PersonalDataFieldDeleteActionView(PanelAccessMixin, EventContextMixin, Vie
         except NotFoundError:
             return redirect("panel:personal-data-fields", slug=slug)
 
-        service = PanelService(self.request.di.uow)
+        service = SafeDeleteService(self.request.di.uow)
         if not service.delete_personal_data_field(field.pk):
             messages.error(
                 self.request, _("Cannot delete field that is used in session types.")
@@ -965,7 +971,7 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         except NotFoundError:
             return redirect("panel:session-fields", slug=slug)
 
-        service = PanelService(self.request.di.uow)
+        service = SafeDeleteService(self.request.di.uow)
         if not service.delete_session_field(field.pk):
             messages.error(
                 self.request, _("Cannot delete field that is used in session types.")
@@ -974,6 +980,132 @@ class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Session field deleted successfully."))
         return redirect("panel:session-fields", slug=slug)
+
+
+class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
+    """List proposals for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        form = ProposalFilterForm(data=self.request.GET)
+        form.is_valid()
+        filters = cast("ProposalListFilters", form.cleaned_data)
+
+        service = ProposalService(self.request.di.uow)
+        result = service.list_proposals(current_event.pk, filters)
+
+        page = filters["page"]
+        page_size = filters["page_size"]
+        filtered_count = result.filtered_count
+        total_pages = max(1, (filtered_count + page_size - 1) // page_size)
+
+        context["active_nav"] = "proposals"
+        context["proposals"] = result.proposals
+        context["status_counts"] = result.status_counts
+        context["total_count"] = result.total_count
+        context["filtered_count"] = filtered_count
+        context["filters"] = {
+            "q": filters["q"],
+            "statuses": filters["statuses"],
+            "category_ids": filters["category_ids"],
+            "sort": filters["sort"],
+            "page_size": page_size,
+        }
+        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
+        context["page"] = page
+        context["total_pages"] = total_pages
+        context["has_previous"] = page > 1
+        context["has_next"] = page < total_pages
+        return TemplateResponse(self.request, "panel/proposals.html", context)
+
+
+class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
+    """View details of a single proposal."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        service = ProposalService(self.request.di.uow)
+        try:
+            detail = service.get_proposal_detail(current_event.pk, proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        context["active_nav"] = "proposals"
+        context["proposal"] = detail.proposal
+        context["host"] = detail.host
+        context["tags"] = detail.tags
+        context["time_slots"] = detail.time_slots
+        context["status"] = detail.status
+        return TemplateResponse(self.request, "panel/proposal-detail.html", context)
+
+
+class ProposalRejectActionView(PanelAccessMixin, View):
+    """Reject a proposal (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        sphere_id = self.request.context.current_sphere_id
+        try:
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
+        except NotFoundError:
+            messages.error(self.request, _("Event not found."))
+            return redirect("panel:index")
+
+        service = ProposalService(self.request.di.uow)
+        try:
+            service.reject_proposal(current_event.pk, proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+        except ProposalActionError as exc:
+            messages.error(self.request, str(exc))
+            return redirect("panel:proposals", slug=slug)
+
+        messages.success(self.request, _("Proposal rejected."))
+        return redirect("panel:proposals", slug=slug)
+
+
+class ProposalUnrejectActionView(PanelAccessMixin, View):
+    """Unreject a proposal (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        sphere_id = self.request.context.current_sphere_id
+        try:
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
+        except NotFoundError:
+            messages.error(self.request, _("Event not found."))
+            return redirect("panel:index")
+
+        service = ProposalService(self.request.di.uow)
+        try:
+            service.unreject_proposal(current_event.pk, proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+        except ProposalActionError as exc:
+            messages.error(self.request, str(exc))
+            return redirect("panel:proposals", slug=slug)
+
+        messages.success(self.request, _("Proposal restored."))
+        return redirect("panel:proposals", slug=slug)
 
 
 class VenuesPageView(PanelAccessMixin, EventContextMixin, View):
@@ -1220,7 +1352,7 @@ class VenueDeleteActionView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Venue not found."))
             return redirect("panel:venues", slug=slug)
 
-        service = PanelService(self.request.di.uow)
+        service = SafeDeleteService(self.request.di.uow)
         if not service.delete_venue(venue.pk):
             messages.error(
                 self.request, _("Cannot delete venue with scheduled sessions.")
@@ -1580,7 +1712,7 @@ class AreaDeleteActionView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Area not found."))
             return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
 
-        service = PanelService(self.request.di.uow)
+        service = SafeDeleteService(self.request.di.uow)
         if not service.delete_area(area.pk):
             messages.error(
                 self.request, _("Cannot delete area with scheduled sessions.")
@@ -1915,7 +2047,7 @@ class SpaceDeleteActionView(PanelAccessMixin, EventContextMixin, View):
                 area_slug=area_slug,
             )
 
-        service = PanelService(self.request.di.uow)
+        service = SafeDeleteService(self.request.di.uow)
         if not service.delete_space(space.pk):
             messages.error(
                 self.request, _("Cannot delete space with scheduled sessions.")

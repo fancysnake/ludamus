@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Venue
-from ludamus.pacts import EventDTO, VenueDTO
+from ludamus.pacts import EventDTO, VenueDTO, VenueListItemDTO
 from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
 
@@ -140,7 +140,9 @@ class TestVenuesPageView:
 
         venues = response.context["venues"]
         assert len(venues) == 1
-        assert venues[0] == VenueDTO.model_validate(venue)
+        assert venues[0] == VenueListItemDTO(
+            **VenueDTO.model_validate(venue).model_dump(), areas_count=0
+        )
 
     def test_only_shows_venues_for_current_event(
         self, authenticated_client, active_user, sphere, event, faker

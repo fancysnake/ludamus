@@ -45,6 +45,9 @@ Strict rules:
 ## Rules
 
 - Views return DTOs to templates, never models
+- DTOs that mirror a single model use plain names (`ProposalDTO`). Query-specific
+  projections use a descriptive suffix (`ProposalListItemDTO`, `ProposalDetailDTO`).
+  Annotation-derived fields live only in projection DTOs — do not prefix them.
 - Never touch `.env*` files
 - Use `assert_response` utility for view tests, never manual assertions
 - NEVER modify, create, or delete configuration files without explicit

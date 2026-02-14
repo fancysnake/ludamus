@@ -11,7 +11,12 @@ from ludamus.pacts import (
     EventStatsData,
     MembershipAPIError,
     PanelStatsDTO,
+    ProposalActionError,
+    ProposalDetailDTO,
     ProposalDTO,
+    ProposalListFilters,
+    ProposalListResult,
+    ProposalStatus,
     SessionData,
     TicketAPIProtocol,
     UnitOfWorkProtocol,
@@ -26,6 +31,18 @@ from ludamus.pacts import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+def compute_proposal_status(
+    *, rejected: bool, session_id: int | None, has_agenda_item: bool
+) -> str:
+    if rejected:
+        return ProposalStatus.REJECTED.value
+    if session_id is None:
+        return ProposalStatus.PENDING.value
+    if has_agenda_item:
+        return ProposalStatus.SCHEDULED.value
+    return ProposalStatus.UNASSIGNED.value
 
 
 def is_proposal_active(event: EventDTO) -> bool:
@@ -130,8 +147,103 @@ class AcceptProposalService:
             proposal_repository.update(proposal)
 
 
-class PanelService:
-    """Service for backoffice panel business logic."""
+class ProposalService:
+    """Service for proposal management in the backoffice panel."""
+
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+
+    def get_event_stats(self, event_id: int) -> PanelStatsDTO:
+        """Calculate panel statistics for an event.
+
+        Args:
+            event_id: The event ID to get stats for.
+
+        Returns:
+            PanelStatsDTO with computed statistics.
+        """
+        stats_data: EventStatsData = self._uow.events.get_stats_data(event_id)
+
+        # Business logic: total sessions = pending + scheduled
+        total_sessions = stats_data.pending_proposals + stats_data.scheduled_sessions
+
+        return PanelStatsDTO(
+            total_sessions=total_sessions,
+            scheduled_sessions=stats_data.scheduled_sessions,
+            pending_proposals=stats_data.pending_proposals,
+            hosts_count=len(stats_data.unique_host_ids),
+            rooms_count=stats_data.rooms_count,
+            total_proposals=stats_data.total_proposals,
+        )
+
+    def reject_proposal(self, event_id: int, proposal_id: int) -> None:
+        proposal = self._uow.proposals.read_for_event(event_id, proposal_id)
+        if proposal.rejected:
+            raise ProposalActionError("Proposal is already rejected.")
+        if proposal.session_id and self._uow.proposals.has_agenda_item(proposal_id):
+            raise ProposalActionError("Cannot reject a scheduled proposal.")
+        self._uow.proposals.reject(proposal_id)
+
+    def unreject_proposal(self, event_id: int, proposal_id: int) -> None:
+        proposal = self._uow.proposals.read_for_event(event_id, proposal_id)
+        if not proposal.rejected:
+            raise ProposalActionError("Proposal is not rejected.")
+        self._uow.proposals.unreject(proposal_id)
+
+    def get_proposal_detail(self, event_id: int, proposal_id: int) -> ProposalDetailDTO:
+        proposal = self._uow.proposals.read_for_event(event_id, proposal_id)
+        host = self._uow.proposals.read_host(proposal_id)
+        tags = self._uow.proposals.read_tags(proposal_id)
+        time_slots = self._uow.proposals.read_time_slots(proposal_id)
+        has_agenda = self._uow.proposals.has_agenda_item(proposal_id)
+        status = compute_proposal_status(
+            rejected=proposal.rejected,
+            session_id=proposal.session_id,
+            has_agenda_item=has_agenda,
+        )
+        return ProposalDetailDTO(
+            proposal=proposal,
+            host=host,
+            tags=tags,
+            time_slots=time_slots,
+            status=status,
+        )
+
+    def list_proposals(
+        self, event_id: int, filters: ProposalListFilters | None = None
+    ) -> ProposalListResult:
+        filters = filters or {}
+        result = self._uow.proposals.list_by_event(event_id, filters)
+
+        # Compute status counts from ALL items (before status filter)
+        status_counts: dict[str, int] = {s.value: 0 for s in ProposalStatus}
+        for p in result.proposals:
+            status_counts[p.status] += 1
+
+        # Apply status filter
+        items = result.proposals
+        if statuses := filters.get("statuses"):
+            status_set = set(statuses)
+            items = [p for p in items if p.status in status_set]
+
+        filtered_count = len(items)
+
+        # Pagination
+        page = max(1, filters.get("page", 1))
+        page_size = filters.get("page_size", 10)
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        return ProposalListResult(
+            proposals=items[start:end],
+            status_counts=status_counts,
+            total_count=result.total_count,
+            filtered_count=filtered_count,
+        )
+
+
+class SafeDeleteService:
+    """Service for safe deletion of entities with dependency checks."""
 
     def __init__(self, uow: UnitOfWorkProtocol) -> None:
         self._uow = uow
@@ -219,29 +331,6 @@ class PanelService:
             return False
         self._uow.spaces.delete(space_pk)
         return True
-
-    def get_event_stats(self, event_id: int) -> PanelStatsDTO:
-        """Calculate panel statistics for an event.
-
-        Args:
-            event_id: The event ID to get stats for.
-
-        Returns:
-            PanelStatsDTO with computed statistics.
-        """
-        stats_data: EventStatsData = self._uow.events.get_stats_data(event_id)
-
-        # Business logic: total sessions = pending + scheduled
-        total_sessions = stats_data.pending_proposals + stats_data.scheduled_sessions
-
-        return PanelStatsDTO(
-            total_sessions=total_sessions,
-            scheduled_sessions=stats_data.scheduled_sessions,
-            pending_proposals=stats_data.pending_proposals,
-            hosts_count=len(stats_data.unique_host_ids),
-            rooms_count=stats_data.rooms_count,
-            total_proposals=stats_data.total_proposals,
-        )
 
 
 def _refresh_user_config_from_api(

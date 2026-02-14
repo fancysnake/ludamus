@@ -117,6 +117,26 @@ panel_urlpatterns = [
         panel.SpaceReorderActionView.as_view(),
         name="space-reorder",
     ),
+    path(
+        "event/<slug:slug>/proposals/",
+        panel.ProposalsPageView.as_view(),
+        name="proposals",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/",
+        panel.ProposalDetailPageView.as_view(),
+        name="proposal-detail",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/do/reject",
+        panel.ProposalRejectActionView.as_view(),
+        name="proposal-reject",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/do/unreject",
+        panel.ProposalUnrejectActionView.as_view(),
+        name="proposal-unreject",
+    ),
     path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
     path(
         "event/<slug:slug>/cfp/create/",
