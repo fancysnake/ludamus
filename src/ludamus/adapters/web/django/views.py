@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote_plus, urlencode, urlparse
 
 from django import forms
@@ -44,11 +44,13 @@ from ludamus.adapters.db.django.models import (
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
-    HostData,
+    EventInfo,
+    ParticipationInfo,
     SessionData,
     SessionUserParticipationData,
     TagCategoryData,
     TagWithCategory,
+    UserInfo,
 )
 from ludamus.mills import (
     AcceptProposalService,
@@ -73,7 +75,6 @@ from ludamus.pacts import (
     TagDTO,
     UserData,
     UserDTO,
-    UserParticipation,
     VenueDTO,
 )
 
@@ -248,7 +249,7 @@ class Auth0LoginCallbackActionView(RedirectView):
             if "name" in update_data:
                 user = self.request.di.uow.active_users.read(user.slug)
 
-        if not self.request.context.current_user_slug and not (user.name or "").strip():
+        if not (user.name or "").strip():
             messages.success(self.request, _("Please complete your profile."))
             if redirect_to:
                 parsed = urlparse(redirect_to)
@@ -318,7 +319,7 @@ class Auth0LoginCallbackActionView(RedirectView):
     def _get_username(userinfo: dict[str, Any]) -> str:
         try:
             return f'auth0|{userinfo["sub"]}'
-        except KeyError as exc:
+        except (KeyError, TypeError) as exc:
             raise RedirectError(
                 reverse("web:index"), error=_("Authentication failed")
             ) from exc
@@ -416,37 +417,6 @@ EVENT_PLACEHOLDER_IMAGES = [
 ]
 
 
-@dataclass
-class EventData:  # pylint: disable=too-many-instance-attributes
-    cover_image_url: str
-    description: str
-    end_time: datetime
-    is_ended: bool
-    is_live: bool
-    is_proposal_active: bool
-    name: str
-    session_count: int
-    start_time: datetime
-    slug: str
-
-    @classmethod
-    def from_event(
-        cls, *, event: Event, session_count: int, cover_image_url: str
-    ) -> Self:
-        return cls(
-            cover_image_url=cover_image_url,
-            description=event.description,
-            end_time=event.end_time,
-            is_ended=event.is_ended,
-            is_live=event.is_live,
-            is_proposal_active=event.is_proposal_active,
-            name=event.name,
-            session_count=session_count,
-            slug=event.slug,
-            start_time=event.start_time,
-        )
-
-
 class IndexPageView(TemplateView):
     request: RootRequest
     template_name = "index.html"
@@ -459,12 +429,12 @@ class IndexPageView(TemplateView):
             .order_by("start_time")
             .all()
         )
-        event_datas: list[EventData] = []
+        event_datas: list[EventInfo] = []
         # Assign placeholder images based on index
         for i, event in enumerate(all_events):
             img = EVENT_PLACEHOLDER_IMAGES[i % len(EVENT_PLACEHOLDER_IMAGES)]
             event_datas.append(
-                EventData.from_event(
+                EventInfo.from_event(
                     event=event,
                     session_count=event.session_count,
                     cover_image_url=staticfiles_storage.url(img),
@@ -1013,28 +983,25 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             )  # TODO(fancysnake): Fix after merging venues
             presenter_name = session.presenter_name or ""
             if proposal_exists := Proposal.objects.filter(session=session).exists():
-                proposal_host = session.proposal.host
-                host = HostData(
-                    full_name=proposal_host.full_name,
-                    name=proposal_host.name,
-                    username=proposal_host.username,
-                    avatar_url=proposal_host.avatar_url or None,
-                    gravatar_url=proposal_host.gravatar_url,
-                )
+                proposal_dto = self.request.di.uow.proposals.read(session.proposal.pk)
+                host_dto = self.request.di.uow.proposals.read_host(proposal_dto.pk)
+                host = UserInfo.from_user_dto(host_dto)
             else:
-                host = HostData(
+                host = UserInfo(
+                    avatar_url=None,
+                    discord_username="",
                     full_name=presenter_name,
                     name=presenter_name,
+                    pk=0,
+                    slug="",
                     username=presenter_name,
-                    avatar_url=None,
-                    gravatar_url=None,
                 )
             sessions_data[session.id] = SessionData(
                 effective_participants_limit=session.effective_participants_limit,
                 full_participant_info=session.full_participant_info,
                 agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
                 session=SessionDTO.model_validate(session),
-                host=host,
+                presenter=host,
                 tags=[
                     TagWithCategory(
                         category=TagCategoryData(
@@ -1065,8 +1032,14 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 ),
                 enrolled_count=session.enrolled_count,
                 session_participations=[
-                    UserParticipation.model_validate(sp)
-                    for sp in session.session_participations.all()
+                    ParticipationInfo(
+                        user=UserInfo.from_user_dto(UserDTO.model_validate(sp.user)),
+                        status=sp.status,
+                        creation_time=sp.creation_time,
+                    )
+                    for sp in session.session_participations.select_related(
+                        "user"
+                    ).all()
                 ],
             )
 

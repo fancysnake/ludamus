@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import hashlib
 import math
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, ClassVar, Never, cast
-from urllib.parse import urlencode
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.contrib.sites.models import Site
@@ -93,15 +91,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_full_name(self) -> str:
         return self.name or DEFAULT_NAME
-
-    @property
-    def gravatar_url(self) -> str | None:
-        if not self.email:
-            return None
-        email = self.email.strip().lower()
-        digest = hashlib.md5(email.encode("utf-8")).hexdigest()  # noqa: S324
-        params = urlencode({"s": "64", "d": "blank"})
-        return f"https://www.gravatar.com/avatar/{digest}?{params}"
 
     @property
     def full_name(self) -> str:

@@ -14,13 +14,6 @@
                          height="32"
                          class="absolute inset-0 h-full w-full object-cover"
                          loading="lazy">
-                {% elif user.gravatar_url %}
-                    <img src="{{ user.gravatar_url }}"
-                         alt="{{ name_value }}"
-                         width="32"
-                         height="32"
-                         class="absolute inset-0 h-full w-full object-cover"
-                         loading="lazy">
                 {% endif %}
             </div>
         {% endwith %}

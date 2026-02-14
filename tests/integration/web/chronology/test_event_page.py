@@ -16,9 +16,11 @@ from ludamus.adapters.db.django.models import (
     UserEnrollmentConfig,
 )
 from ludamus.adapters.web.django.entities import (
+    ParticipationInfo,
     SessionData,
     TagCategoryData,
     TagWithCategory,
+    UserInfo,
 )
 from ludamus.pacts import (
     AgendaItemDTO,
@@ -26,11 +28,23 @@ from ludamus.pacts import (
     LocationData,
     SessionDTO,
     SpaceDTO,
-    UserParticipation,
+    UserDTO,
     VenueDTO,
     VirtualEnrollmentConfig,
 )
 from tests.integration.utils import assert_response
+
+
+def _fallback_presenter(name: str) -> UserInfo:
+    return UserInfo(
+        avatar_url=None,
+        discord_username="",
+        full_name=name,
+        name=name,
+        pk=0,
+        slug="",
+        username=name,
+    )
 
 
 class TestEventPageView:
@@ -129,10 +143,18 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=False,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(session.presenter_name),
             session_participations=[
-                UserParticipation.model_validate(part1),
-                UserParticipation.model_validate(part2),
+                ParticipationInfo(
+                    user=UserInfo.from_user_dto(UserDTO.model_validate(part1.user)),
+                    status=part1.status,
+                    creation_time=part1.creation_time,
+                ),
+                ParticipationInfo(
+                    user=UserInfo.from_user_dto(UserDTO.model_validate(part2.user)),
+                    status=part2.status,
+                    creation_time=part2.creation_time,
+                ),
             ],
             session=SessionDTO.model_validate(session),
             should_show_as_inactive=False,
@@ -186,7 +208,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -237,7 +259,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -518,8 +540,16 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=False,
             proposal=None,
-            host=ANY,
-            session_participations=[UserParticipation.model_validate(participation)],
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            session_participations=[
+                ParticipationInfo(
+                    user=UserInfo.from_user_dto(
+                        UserDTO.model_validate(participation.user)
+                    ),
+                    status=participation.status,
+                    creation_time=participation.creation_time,
+                )
+            ],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
             loc=LocationData(
@@ -577,7 +607,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=True,
@@ -661,7 +691,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -736,7 +766,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -815,7 +845,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -891,7 +921,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -969,7 +999,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1043,7 +1073,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1129,7 +1159,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1207,7 +1237,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1294,7 +1324,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1375,7 +1405,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1448,7 +1478,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=False,
             proposal=None,
-            host=ANY,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(session),
             should_show_as_inactive=False,

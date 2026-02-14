@@ -1,1 +1,1 @@
-/Users/hasparus/workspace/ludamus/src/ludamus/gates/web/django/theme/static_src/./src/modal.js
+/home/radek/Repozytoria/ludamus/src/ludamus/gates/web/django/theme/static_src/./src/modal.js

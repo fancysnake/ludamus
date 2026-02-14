@@ -759,9 +759,9 @@
                      data-active>
                     <!-- Host info -->
                     <div class="flex items-center gap-3 mb-6">
-                        {% include "components/avatar.html" with user=data.host size="size-10" %}
+                        {% include "components/avatar.html" with user=data.presenter size="size-10" %}
                         <div>
-                            <div class="font-medium" style="color: var(--color-foreground)">{{ data.host.full_name }}</div>
+                            <div class="font-medium" style="color: var(--color-foreground)">{{ data.presenter.full_name }}</div>
                             {% if data.proposal %}
                                 {% with host=data.proposal.host %}
                                     {% if host and host.slug and host.discord_username %}

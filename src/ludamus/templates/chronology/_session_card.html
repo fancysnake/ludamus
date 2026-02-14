@@ -31,7 +31,7 @@
             </div>
             <div class="flex-1"></div>
             <div class="flex items-center gap-2 mb-3">
-                {% include "components/avatar.html" with user=data.host size="size-8" %}
+                {% include "components/avatar.html" with user=data.presenter size="size-8" %}
                 <span class="text-base font-medium text-foreground-secondary">
                     {% translate "Hosted by" %} {{ data.session.presenter_name }}
                 </span>

@@ -201,7 +201,6 @@ class UserDTO(BaseModel):
     discord_username: str
     email: str
     full_name: str
-    gravatar_url: str | None
     is_active: bool
     is_authenticated: bool
     is_staff: bool
