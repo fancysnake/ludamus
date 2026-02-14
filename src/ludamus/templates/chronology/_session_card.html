@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load heroicons %}
 <div class="session-card-wrapper">
-    <div class="session-card relative block w-full h-full overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background {% if not data.is_enrollment_available or data.should_show_as_inactive %} {% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
+    <div class="session-card relative block w-full h-full overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background {% if not data.is_enrollment_available or data.should_show_as_inactive %}{% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
          data-title="{{ data.session.title|lower }}"
          data-session-id="{{ data.session.pk }}"
          data-host="{{ data.session.presenter_name }}"
@@ -16,6 +16,7 @@
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
          data-venue="{% if data.loc.area %}{{ data.loc.venue.slug }}{% endif %}"
+         data-venue-name="{% if data.loc.area %}{{ data.loc.venue.name }}{% endif %}"
          style="border-color: var(--theme-border)">
         <a href="?session={{ data.session.pk }}"
            class="session-card-link absolute inset-0 z-10 rounded-2xl"
@@ -26,28 +27,19 @@
         </a>
         <div class="relative z-0 flex h-full flex-col px-5 pb-5">
             <div class="-mx-5 bg-transparent px-5 pb-6 pt-5">
-                <h3 class="text-3xl font-bold leading-tight tracking-tight text-foreground-primary">
-                    {{ data.session.title }}
-                </h3>
+                <h3 class="text-3xl font-bold leading-tight tracking-tight text-foreground-primary">{{ data.session.title }}</h3>
             </div>
-
             <div class="flex-1"></div>
-
             <div class="flex items-center gap-2 mb-3">
                 {% include "components/avatar.html" with user=data.presenter size="size-8" %}
                 <span class="text-base font-medium text-foreground-secondary">
                     {% translate "Hosted by" %} {{ data.session.presenter_name }}
                 </span>
             </div>
-
             {% if data.session.description %}
-                <p class="text-sm mb-4 line-clamp-3 text-foreground-primary">
-                    {{ data.session.description }}
-                </p>
+                <p class="text-sm mb-4 line-clamp-3 text-foreground-primary">{{ data.session.description }}</p>
             {% endif %}
-
             {% include "chronology/session_tags.html" %}
-
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     {% if data.enrolled_count == 0 %}
@@ -74,7 +66,6 @@
                         <span class="text-xs font-medium" style="color: var(--theme-warning)">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
                     {% endif %}
                 </div>
-
                 {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
                     {% if not data.is_full %}
                         <span class="text-[1.05rem] font-semibold text-coral-600 dark:text-coral-400">
@@ -82,7 +73,8 @@
                         </span>
                     {% endif %}
                 {% else %}
-                    <span class="text-xs font-medium" style="color: var(--color-foreground-muted)">
+                    <span class="text-xs font-medium"
+                          style="color: var(--color-foreground-muted)">
                         {% if ended %}
                             {% translate "Ended" %}
                         {% elif data.should_show_as_inactive %}

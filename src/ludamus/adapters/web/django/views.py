@@ -211,30 +211,29 @@ class Auth0LoginCallbackActionView(RedirectView):
         display_name = self._get_display_name(userinfo)
 
         # Handle login/signup
-        if not self.request.context.current_user_slug:
-            try:
-                user = self.request.di.uow.active_users.read_by_username(username)
-            except NotFoundError:
-                slug = slugify(username)
-                self.request.di.uow.active_users.create(
-                    UserData(
-                        slug=slug,
-                        username=username,
-                        password=make_password(None),
-                        email=email or "",
-                        avatar_url=avatar_url or "",
-                        name=display_name or "",
-                    )
+        try:
+            user = self.request.di.uow.active_users.read_by_username(username)
+        except NotFoundError:
+            slug = slugify(username)
+            self.request.di.uow.active_users.create(
+                UserData(
+                    slug=slug,
+                    username=username,
+                    password=make_password(None),
+                    email=email or "",
+                    avatar_url=avatar_url or "",
+                    name=display_name or "",
                 )
-                user = self.request.di.uow.active_users.read_by_username(username)
+            )
+            user = self.request.di.uow.active_users.read_by_username(username)
 
-            # Log the user in
-            self.request.di.uow.login_user(self.request, user.slug)
-            if self.request.session.get("anonymous_enrollment_active"):
-                self.request.session.pop("anonymous_user_code", None)
-                self.request.session.pop("anonymous_enrollment_active", None)
-                self.request.session.pop("anonymous_event_id", None)
-            messages.success(self.request, _("Welcome!"))
+        # Log the user in
+        self.request.di.uow.login_user(self.request, user.slug)
+        if self.request.session.get("anonymous_enrollment_active"):
+            self.request.session.pop("anonymous_user_code", None)
+            self.request.session.pop("anonymous_enrollment_active", None)
+            self.request.session.pop("anonymous_event_id", None)
+        messages.success(self.request, _("Welcome!"))
 
         update_data: UserData = {}
         if email and user.email != email:
