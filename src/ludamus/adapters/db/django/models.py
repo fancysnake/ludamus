@@ -983,6 +983,34 @@ class SessionFieldRequirement(models.Model):
         return f"{self.field.name} ({req}) for {self.category.name}"
 
 
+class DiscountTier(models.Model):
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="discount_tiers"
+    )
+    name = models.CharField(max_length=255)
+    percentage = models.PositiveIntegerField()
+    threshold = models.PositiveIntegerField()
+    threshold_type = models.CharField(
+        max_length=20, choices=[("hours", "Hours"), ("agenda_items", "Agenda Items")]
+    )
+
+    class Meta:
+        db_table = "discount_tier"
+        ordering: ClassVar = ["-percentage"]
+        constraints: ClassVar = [
+            models.CheckConstraint(
+                condition=Q(percentage__gte=1, percentage__lte=100),
+                name="discount_tier_percentage_range",
+            ),
+            models.CheckConstraint(
+                condition=Q(threshold__gte=1), name="discount_tier_threshold_positive"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.percentage}%)"
+
+
 def can_enroll_users(
     *,
     users: list[UserDTO],

@@ -11,6 +11,7 @@ from pytest_factoryboy import register
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
+    DiscountTier,
     EnrollmentConfig,
     Event,
     Proposal,
@@ -197,6 +198,17 @@ class ProposalFactory(DjangoModelFactory):
     host = SubFactory(UserFactory)
     participants_limit = Faker("random_int", min=2, max=20)
     category = SubFactory(ProposalCategoryFactory)
+
+
+class DiscountTierFactory(DjangoModelFactory):
+    class Meta:
+        model = DiscountTier
+
+    event = SubFactory(EventFactory)
+    name = "Bronze"
+    percentage = 10
+    threshold = 3
+    threshold_type = "hours"
 
 
 class AgendaItemFactory(DjangoModelFactory):

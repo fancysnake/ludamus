@@ -1,3 +1,5 @@
+import math
+from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING
@@ -5,13 +7,16 @@ from typing import TYPE_CHECKING
 from ludamus.pacts import (
     AgendaItemData,
     AuthenticatedRequestContext,
+    CategoryCount,
     EnrollmentConfigDTO,
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventStatsData,
+    HostSummaryDTO,
     MembershipAPIError,
     PanelStatsDTO,
     ProposalDTO,
+    ScheduledProposalData,
     SessionData,
     TicketAPIProtocol,
     UnitOfWorkProtocol,
@@ -219,6 +224,53 @@ class PanelService:
             return False
         self._uow.spaces.delete(space_pk)
         return True
+
+    def get_host_summaries(self, event_id: int) -> list[HostSummaryDTO]:
+        proposals = self._uow.hosts.list_scheduled_proposals(event_id)
+        tiers = self._uow.discount_tiers.list_by_event(event_id)
+
+        if not proposals:
+            return []
+
+        threshold_type = tiers[0].threshold_type if tiers else "hours"
+
+        hosts: dict[int, list[ScheduledProposalData]] = defaultdict(list)
+        for p in proposals:
+            hosts[p["host_id"]].append(p)
+
+        summaries = []
+        for host_id, host_proposals in hosts.items():
+            first = host_proposals[0]
+            category_counts: dict[str, int] = defaultdict(int)
+            total_hours = 0
+            for p in host_proposals:
+                category_counts[p["category_name"]] += 1
+                seconds = (p["end_time"] - p["start_time"]).total_seconds()
+                total_hours += math.ceil(seconds / 3600)
+
+            session_count = len(host_proposals)
+            metric = total_hours if threshold_type == "hours" else session_count
+
+            matched = next((t for t in tiers if metric >= t.threshold), None)
+
+            summaries.append(
+                HostSummaryDTO(
+                    user_pk=host_id,
+                    name=first["host_name"],
+                    email=first["host_email"],
+                    slug=first["host_slug"],
+                    session_count=session_count,
+                    total_hours=total_hours,
+                    category_breakdown=[
+                        CategoryCount(category_name=n, count=c)
+                        for n, c in sorted(category_counts.items())
+                    ],
+                    matched_tier=matched,
+                )
+            )
+
+        summaries.sort(key=lambda s: (-s.session_count, s.name))
+        return summaries
 
     def get_event_stats(self, event_id: int) -> PanelStatsDTO:
         """Calculate panel statistics for an event.

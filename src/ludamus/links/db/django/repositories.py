@@ -8,6 +8,7 @@ from django.utils.text import slugify
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
+    DiscountTier,
     DomainEnrollmentConfig,
     EnrollmentConfig,
     Event,
@@ -33,12 +34,15 @@ from ludamus.pacts import (
     AreaRepositoryProtocol,
     CategoryStats,
     ConnectedUserRepositoryProtocol,
+    DiscountTierDTO,
+    DiscountTierRepositoryProtocol,
     DomainEnrollmentConfigDTO,
     EnrollmentConfigDTO,
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventRepositoryProtocol,
     EventStatsData,
+    HostRepositoryProtocol,
     NotFoundError,
     PersonalDataFieldDTO,
     PersonalDataFieldOptionDTO,
@@ -48,6 +52,7 @@ from ludamus.pacts import (
     ProposalCategoryRepositoryProtocol,
     ProposalDTO,
     ProposalRepositoryProtocol,
+    ScheduledProposalData,
     SessionData,
     SessionFieldDTO,
     SessionFieldOptionDTO,
@@ -1708,3 +1713,80 @@ class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):
         ).first()
 
         return DomainEnrollmentConfigDTO.model_validate(config) if config else None
+
+
+class DiscountTierRepository(DiscountTierRepositoryProtocol):
+    @staticmethod
+    def create(
+        event_id: int, name: str, percentage: int, threshold: int, threshold_type: str
+    ) -> DiscountTierDTO:
+        tier = DiscountTier.objects.create(
+            event_id=event_id,
+            name=name,
+            percentage=percentage,
+            threshold=threshold,
+            threshold_type=threshold_type,
+        )
+        return DiscountTierDTO.model_validate(tier)
+
+    @staticmethod
+    def delete(pk: int) -> None:
+        DiscountTier.objects.filter(pk=pk).delete()
+
+    @staticmethod
+    def list_by_event(event_id: int) -> list[DiscountTierDTO]:
+        tiers = DiscountTier.objects.filter(event_id=event_id)
+        return [DiscountTierDTO.model_validate(t) for t in tiers]
+
+    @staticmethod
+    def read(pk: int) -> DiscountTierDTO:
+        try:
+            tier = DiscountTier.objects.get(pk=pk)
+        except DiscountTier.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return DiscountTierDTO.model_validate(tier)
+
+    @staticmethod
+    def update(
+        pk: int, name: str, percentage: int, threshold: int, threshold_type: str
+    ) -> DiscountTierDTO:
+        try:
+            tier = DiscountTier.objects.get(pk=pk)
+        except DiscountTier.DoesNotExist as exc:
+            raise NotFoundError from exc
+        tier.name = name
+        tier.percentage = percentage
+        tier.threshold = threshold
+        tier.threshold_type = threshold_type
+        tier.save()
+        return DiscountTierDTO.model_validate(tier)
+
+
+class HostRepository(HostRepositoryProtocol):
+    @staticmethod
+    def list_scheduled_proposals(event_id: int) -> list[ScheduledProposalData]:
+        proposals = (
+            Proposal.objects.filter(
+                category__event_id=event_id,
+                session__isnull=False,
+                session__agenda_item__isnull=False,
+            )
+            .select_related("host", "category", "session__agenda_item")
+            .order_by("host__name")
+        )
+        result: list[ScheduledProposalData] = []
+        for p in proposals:
+            if (session := p.session) is None:
+                continue
+            result.append(
+                ScheduledProposalData(
+                    host_id=p.host_id,
+                    host_name=p.host.name,
+                    host_email=p.host.email,
+                    host_slug=p.host.slug,
+                    category_name=p.category.name,
+                    start_time=session.agenda_item.start_time,
+                    end_time=session.agenda_item.end_time,
+                )
+            )
+        return result

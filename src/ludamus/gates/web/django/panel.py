@@ -30,6 +30,7 @@ from django.views.generic.base import View
 
 from ludamus.gates.web.django.forms import (
     AreaForm,
+    DiscountTierForm,
     EventSettingsForm,
     PersonalDataFieldForm,
     ProposalCategoryForm,
@@ -1976,3 +1977,131 @@ class SpaceReorderActionView(PanelAccessMixin, EventContextMixin, View):
         self.request.di.uow.spaces.reorder(area.pk, space_ids)
 
         return JsonResponse({"success": True})
+
+
+class HostsPageView(PanelAccessMixin, EventContextMixin, View):
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, event = self.get_event_context(slug)
+        if event is None:
+            return redirect("panel:index")
+
+        service = PanelService(self.request.di.uow)
+        context["active_nav"] = "hosts"
+        context["host_summaries"] = service.get_host_summaries(event.pk)
+        context["discount_tiers"] = self.request.di.uow.discount_tiers.list_by_event(
+            event.pk
+        )
+        return TemplateResponse(self.request, "panel/hosts.html", context)
+
+
+class DiscountTierCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, event = self.get_event_context(slug)
+        if event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "hosts"
+        context["form"] = DiscountTierForm()
+        return TemplateResponse(
+            self.request, "panel/discount-tier-create.html", context
+        )
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, event = self.get_event_context(slug)
+        if event is None:
+            return redirect("panel:index")
+
+        form = DiscountTierForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "hosts"
+            context["form"] = form
+            return TemplateResponse(
+                self.request, "panel/discount-tier-create.html", context
+            )
+
+        self.request.di.uow.discount_tiers.create(
+            event_id=event.pk,
+            name=form.cleaned_data["name"],
+            percentage=form.cleaned_data["percentage"],
+            threshold=form.cleaned_data["threshold"],
+            threshold_type=form.cleaned_data["threshold_type"],
+        )
+
+        messages.success(self.request, _("Discount tier created successfully."))
+        return redirect("panel:hosts", slug=slug)
+
+
+class DiscountTierEditPageView(PanelAccessMixin, EventContextMixin, View):
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, tier_pk: int) -> HttpResponse:
+        context, event = self.get_event_context(slug)
+        if event is None:
+            return redirect("panel:index")
+
+        try:
+            tier = self.request.di.uow.discount_tiers.read(tier_pk)
+        except NotFoundError:
+            messages.error(self.request, _("Discount tier not found."))
+            return redirect("panel:hosts", slug=slug)
+
+        context["active_nav"] = "hosts"
+        context["tier"] = tier
+        context["form"] = DiscountTierForm(
+            initial={
+                "name": tier.name,
+                "percentage": tier.percentage,
+                "threshold": tier.threshold,
+                "threshold_type": tier.threshold_type,
+            }
+        )
+        return TemplateResponse(self.request, "panel/discount-tier-edit.html", context)
+
+    def post(self, _request: PanelRequest, slug: str, tier_pk: int) -> HttpResponse:
+        context, event = self.get_event_context(slug)
+        if event is None:
+            return redirect("panel:index")
+
+        try:
+            tier = self.request.di.uow.discount_tiers.read(tier_pk)
+        except NotFoundError:
+            messages.error(self.request, _("Discount tier not found."))
+            return redirect("panel:hosts", slug=slug)
+
+        form = DiscountTierForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "hosts"
+            context["tier"] = tier
+            context["form"] = form
+            return TemplateResponse(
+                self.request, "panel/discount-tier-edit.html", context
+            )
+
+        self.request.di.uow.discount_tiers.update(
+            pk=tier_pk,
+            name=form.cleaned_data["name"],
+            percentage=form.cleaned_data["percentage"],
+            threshold=form.cleaned_data["threshold"],
+            threshold_type=form.cleaned_data["threshold_type"],
+        )
+
+        messages.success(self.request, _("Discount tier updated successfully."))
+        return redirect("panel:hosts", slug=slug)
+
+
+class DiscountTierDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, tier_pk: int) -> HttpResponse:
+        _context, event = self.get_event_context(slug)
+        if event is None:
+            return redirect("panel:index")
+
+        self.request.di.uow.discount_tiers.delete(tier_pk)
+        messages.success(self.request, _("Discount tier deleted successfully."))
+        return redirect("panel:hosts", slug=slug)
