@@ -1,0 +1,95 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% block title %}
+    {% translate "New Discount Tier" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "New Discount Tier" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Hosts" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:hosts' slug=current_event.slug %}"
+           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
+            {% translate "Cancel" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        <form method="post" class="max-w-2xl">
+            {% csrf_token %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
+                <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Discount Tier Details" %}</h3>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2" for="id_name">{% translate "Name" %}</label>
+                        <input type="text"
+                               name="name"
+                               id="id_name"
+                               value="{{ form.name.value|default:'' }}"
+                               class="w-full border {% if form.name.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                               placeholder="{% translate "e.g., Gold, Silver, Bronze" %}">
+                        {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2"
+                               for="id_percentage">{% translate "Discount Percentage" %}</label>
+                        <input type="number"
+                               name="percentage"
+                               id="id_percentage"
+                               value="{{ form.percentage.value|default:'' }}"
+                               min="1"
+                               max="100"
+                               class="w-full border {% if form.percentage.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                               placeholder="{% translate "e.g., 50" %}">
+                        {% if form.percentage.errors %}<p class="mt-1 text-sm text-red-600">{{ form.percentage.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2"
+                               for="id_threshold">{% translate "Threshold" %}</label>
+                        <input type="number"
+                               name="threshold"
+                               id="id_threshold"
+                               value="{{ form.threshold.value|default:'' }}"
+                               min="1"
+                               class="w-full border {% if form.threshold.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                               placeholder="{% translate "e.g., 3" %}">
+                        {% if form.threshold.errors %}<p class="mt-1 text-sm text-red-600">{{ form.threshold.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2"
+                               for="id_threshold_type">{% translate "Threshold Type" %}</label>
+                        <select name="threshold_type"
+                                id="id_threshold_type"
+                                class="w-full border {% if form.threshold_type.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="hours"
+                                    {% if form.threshold_type.value == "hours" %}selected{% endif %}>
+                                {% translate "Hours" %}
+                            </option>
+                            <option value="agenda_items"
+                                    {% if form.threshold_type.value == "agenda_items" %}selected{% endif %}>
+                                {% translate "Agenda Items" %}
+                            </option>
+                        </select>
+                        {% if form.threshold_type.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.threshold_type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button type="submit"
+                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+                        {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+                        {% translate "Create Discount Tier" %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+{% endblock content %}

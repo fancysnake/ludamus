@@ -4,7 +4,13 @@ from unittest.mock import MagicMock
 import pytest
 
 from ludamus.mills import PanelService, is_proposal_active
-from ludamus.pacts import EventDTO, EventStatsData, PanelStatsDTO
+from ludamus.pacts import (
+    DiscountTierDTO,
+    EventDTO,
+    EventStatsData,
+    PanelStatsDTO,
+    ScheduledProposalData,
+)
 
 
 class TestPanelService:
@@ -182,3 +188,171 @@ class TestIsProposalActive:
         event = EventDTO(**base_event_data)
 
         assert is_proposal_active(event) is False
+
+
+def _make_proposal(
+    *,
+    host_id: int = 1,
+    host_name: str = "Alice",
+    host_email: str = "alice@example.com",
+    host_slug: str = "alice",
+    category_name: str = "RPG",
+    duration_minutes: int = 60,
+) -> ScheduledProposalData:
+    now = datetime.now(tz=UTC)
+    return ScheduledProposalData(
+        host_id=host_id,
+        host_name=host_name,
+        host_email=host_email,
+        host_slug=host_slug,
+        category_name=category_name,
+        start_time=now,
+        end_time=now + timedelta(minutes=duration_minutes),
+    )
+
+
+def _make_tier(
+    *,
+    pk: int = 1,
+    name: str = "Gold",
+    percentage: int = 50,
+    threshold: int = 3,
+    threshold_type: str = "hours",
+) -> DiscountTierDTO:
+    return DiscountTierDTO(
+        pk=pk,
+        event_id=1,
+        name=name,
+        percentage=percentage,
+        threshold=threshold,
+        threshold_type=threshold_type,
+    )
+
+
+class TestGetHostSummaries:
+    @pytest.fixture
+    def mock_uow(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def service(self, mock_uow):
+        return PanelService(mock_uow)
+
+    def test_empty_proposals_returns_empty_list(self, service, mock_uow):
+        mock_uow.hosts.list_scheduled_proposals.return_value = []
+        mock_uow.discount_tiers.list_by_event.return_value = []
+
+        result = service.get_host_summaries(event_id=1)
+
+        assert result == []
+
+    def test_groups_by_host(self, service, mock_uow):
+        alice_proposals = 2
+        mock_uow.hosts.list_scheduled_proposals.return_value = [
+            _make_proposal(host_id=1, host_name="Alice", host_slug="alice"),
+            _make_proposal(host_id=1, host_name="Alice", host_slug="alice"),
+            _make_proposal(host_id=2, host_name="Bob", host_slug="bob"),
+        ]
+        mock_uow.discount_tiers.list_by_event.return_value = []
+
+        result = service.get_host_summaries(event_id=1)
+
+        expected_hosts = 2
+        assert len(result) == expected_hosts
+        alice = next(h for h in result if h.name == "Alice")
+        bob = next(h for h in result if h.name == "Bob")
+        assert alice.session_count == alice_proposals
+        assert bob.session_count == 1
+
+    def test_ceiling_on_fractional_hours(self, service, mock_uow):
+        mock_uow.hosts.list_scheduled_proposals.return_value = [
+            _make_proposal(duration_minutes=45),
+            _make_proposal(duration_minutes=80),
+            _make_proposal(duration_minutes=120),
+        ]
+        mock_uow.discount_tiers.list_by_event.return_value = []
+
+        result = service.get_host_summaries(event_id=1)
+
+        # 45min -> 1h, 80min -> 2h, 120min -> 2h => total 5h
+        expected_total_hours = 5
+        assert result[0].total_hours == expected_total_hours
+
+    def test_matches_highest_qualifying_tier(self, service, mock_uow):
+        mock_uow.hosts.list_scheduled_proposals.return_value = [
+            _make_proposal(duration_minutes=60),
+            _make_proposal(duration_minutes=60),
+            _make_proposal(duration_minutes=60),
+        ]
+        gold_threshold = 5
+        gold = _make_tier(pk=1, name="Gold", percentage=50, threshold=gold_threshold)
+        silver = _make_tier(pk=2, name="Silver", percentage=30, threshold=3)
+        bronze = _make_tier(pk=3, name="Bronze", percentage=10, threshold=1)
+        mock_uow.discount_tiers.list_by_event.return_value = [gold, silver, bronze]
+
+        result = service.get_host_summaries(event_id=1)
+
+        # 3 hours, threshold_type=hours => Silver (threshold=3)
+        assert result[0].matched_tier == silver
+
+    def test_uses_agenda_items_count_when_threshold_type_is_agenda_items(
+        self, service, mock_uow
+    ):
+        mock_uow.hosts.list_scheduled_proposals.return_value = [
+            _make_proposal(duration_minutes=30),
+            _make_proposal(duration_minutes=30),
+        ]
+        tier = _make_tier(threshold=2, threshold_type="agenda_items", percentage=20)
+        mock_uow.discount_tiers.list_by_event.return_value = [tier]
+
+        result = service.get_host_summaries(event_id=1)
+
+        # 2 sessions >= threshold 2 => matches
+        assert result[0].matched_tier == tier
+
+    def test_no_tiers_matched_tier_is_none(self, service, mock_uow):
+        mock_uow.hosts.list_scheduled_proposals.return_value = [_make_proposal()]
+        mock_uow.discount_tiers.list_by_event.return_value = []
+
+        result = service.get_host_summaries(event_id=1)
+
+        assert result[0].matched_tier is None
+
+    def test_sorts_by_session_count_desc_then_name(self, service, mock_uow):
+        mock_uow.hosts.list_scheduled_proposals.return_value = [
+            _make_proposal(
+                host_id=1,
+                host_name="Zara",
+                host_slug="zara",
+                host_email="zara@example.com",
+            ),
+            _make_proposal(
+                host_id=2,
+                host_name="Alice",
+                host_slug="alice-2",
+                host_email="alice2@example.com",
+            ),
+            _make_proposal(
+                host_id=2,
+                host_name="Alice",
+                host_slug="alice-2",
+                host_email="alice2@example.com",
+            ),
+            _make_proposal(
+                host_id=3,
+                host_name="Bob",
+                host_slug="bob",
+                host_email="bob@example.com",
+            ),
+            _make_proposal(
+                host_id=3,
+                host_name="Bob",
+                host_slug="bob",
+                host_email="bob@example.com",
+            ),
+        ]
+        mock_uow.discount_tiers.list_by_event.return_value = []
+
+        result = service.get_host_summaries(event_id=1)
+
+        assert [h.name for h in result] == ["Alice", "Bob", "Zara"]

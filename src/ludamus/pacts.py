@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum, auto
@@ -276,6 +278,11 @@ class ProposalCategoryData(TypedDict, total=False):
     start_time: datetime | None
 
 
+class CategoryCount(TypedDict):
+    category_name: str
+    count: int
+
+
 class CategoryStats(TypedDict):
     """Statistics for a proposal category."""
 
@@ -394,6 +401,38 @@ class EventStatsData(BaseModel):
     total_proposals: int
     unique_host_ids: set[int]
     rooms_count: int
+
+
+class DiscountTierDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    event_id: int
+    name: str
+    percentage: int
+    pk: int
+    threshold: int
+    threshold_type: str
+
+
+class ScheduledProposalData(TypedDict):
+    host_id: int
+    host_name: str
+    host_email: str
+    host_slug: str
+    category_name: str
+    start_time: datetime
+    end_time: datetime
+
+
+class HostSummaryDTO(BaseModel):
+    category_breakdown: list[CategoryCount]
+    email: str
+    matched_tier: DiscountTierDTO | None
+    name: str
+    session_count: int
+    slug: str
+    total_hours: int
+    user_pk: int
 
 
 class SphereRepositoryProtocol(Protocol):
@@ -577,6 +616,28 @@ class EnrollmentConfigRepositoryProtocol(Protocol):
     ) -> DomainEnrollmentConfigDTO | None: ...
 
 
+class DiscountTierRepositoryProtocol(Protocol):
+    @staticmethod
+    def create(
+        event_id: int, name: str, percentage: int, threshold: int, threshold_type: str
+    ) -> DiscountTierDTO: ...
+    @staticmethod
+    def delete(pk: int) -> None: ...
+    @staticmethod
+    def list_by_event(event_id: int) -> list[DiscountTierDTO]: ...
+    @staticmethod
+    def read(pk: int) -> DiscountTierDTO: ...
+    @staticmethod
+    def update(
+        pk: int, name: str, percentage: int, threshold: int, threshold_type: str
+    ) -> DiscountTierDTO: ...
+
+
+class HostRepositoryProtocol(Protocol):
+    @staticmethod
+    def list_scheduled_proposals(event_id: int) -> list[ScheduledProposalData]: ...
+
+
 class UnitOfWorkProtocol(Protocol):
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
@@ -591,7 +652,11 @@ class UnitOfWorkProtocol(Protocol):
     @property
     def connected_users(self) -> ConnectedUserRepositoryProtocol: ...
     @property
+    def discount_tiers(self) -> DiscountTierRepositoryProtocol: ...
+    @property
     def events(self) -> EventRepositoryProtocol: ...
+    @property
+    def hosts(self) -> HostRepositoryProtocol: ...
     @property
     def personal_data_fields(self) -> PersonalDataFieldRepositoryProtocol: ...
     @property

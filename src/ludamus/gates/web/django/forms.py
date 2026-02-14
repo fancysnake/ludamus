@@ -165,6 +165,36 @@ class AreaForm(forms.Form):
     )
 
 
+class DiscountTierForm(forms.Form):
+    name = forms.CharField(
+        max_length=255,
+        strip=True,
+        error_messages={
+            "max_length": _("Tier name is too long (max 255 characters)."),
+            "required": _("Tier name is required."),
+        },
+    )
+    percentage = forms.IntegerField(
+        min_value=1,
+        max_value=100,
+        error_messages={
+            "min_value": _("Percentage must be at least 1."),
+            "max_value": _("Percentage cannot exceed 100."),
+            "required": _("Percentage is required."),
+        },
+    )
+    threshold = forms.IntegerField(
+        min_value=1,
+        error_messages={
+            "min_value": _("Threshold must be at least 1."),
+            "required": _("Threshold is required."),
+        },
+    )
+    threshold_type = forms.ChoiceField(
+        choices=[("hours", _("Hours")), ("agenda_items", _("Agenda Items"))]
+    )
+
+
 class SpaceForm(forms.Form):
     """Form for creating/editing spaces within an area."""
 

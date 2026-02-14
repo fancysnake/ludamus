@@ -1,0 +1,150 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load heroicons %}
+{% block title %}
+    {% translate "Hosts" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "Hosts" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Session Hosts" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:discount-tier-create' slug=current_event.slug %}"
+           class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
+            {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+            {% translate "New Discount Tier" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        {% if discount_tiers %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 mb-6">
+                <h3 class="text-lg font-semibold text-neutral-900 mb-4">{% translate "Discount Tiers" %}</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-neutral-200">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    {% translate "Name" %}
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    {% translate "Discount" %}
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    {% translate "Threshold" %}
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    {% translate "Actions" %}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-neutral-200">
+                            {% for tier in discount_tiers %}
+                                <tr class="hover:bg-neutral-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ tier.name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ tier.percentage }}%</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                                        {{ tier.threshold }}
+                                        {% if tier.threshold_type == "hours" %}
+                                            {% translate "hours" %}
+                                        {% else %}
+                                            {% translate "sessions" %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="{% url 'panel:discount-tier-edit' slug=current_event.slug tier_pk=tier.pk %}"
+                                           class="text-primary hover:text-primary/80 mr-4 inline-flex items-center">
+                                            {% heroicon_outline "pencil-square" class="w-4 h-4 mr-1" %}
+                                            {% translate "Edit" %}
+                                        </a>
+                                        <form method="post"
+                                              action="{% url 'panel:discount-tier-delete' slug=current_event.slug tier_pk=tier.pk %}"
+                                              class="inline"
+                                              onsubmit="return confirm('{% translate "Are you sure you want to delete this discount tier?" %}');">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="text-red-600 hover:text-red-800 inline-flex items-center">
+                                                {% heroicon_outline "trash" class="w-4 h-4 mr-1" %}
+                                                {% translate "Delete" %}
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+        {% if host_summaries %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-neutral-200">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    {% translate "Host" %}
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    {% translate "Sessions" %}
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    {% translate "Hours" %}
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    {% translate "Discount Tier" %}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-neutral-200">
+                            {% for host in host_summaries %}
+                                <tr class="hover:bg-neutral-50">
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-neutral-900">{{ host.name }}</div>
+                                        <div class="text-sm text-neutral-500">{{ host.email }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-neutral-900">{{ host.session_count }}</div>
+                                        {% for cat in host.category_breakdown %}
+                                            <span class="inline-block text-xs bg-neutral-100 text-neutral-600 rounded px-2 py-0.5 mr-1 mt-1">
+                                                {{ cat.category_name }}: {{ cat.count }}
+                                            </span>
+                                        {% endfor %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{{ host.total_hours }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        {% if host.matched_tier %}
+                                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full">
+                                                {{ host.matched_tier.name }} ({{ host.matched_tier.percentage }}%)
+                                            </span>
+                                        {% else %}
+                                            <span class="text-neutral-400">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+                <p class="text-neutral-500">{% translate "No scheduled sessions with hosts yet." %}</p>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock content %}

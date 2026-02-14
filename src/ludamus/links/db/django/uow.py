@@ -85,5 +85,13 @@ class UnitOfWork(UnitOfWorkProtocol):
         return repositories.VenueRepository(self._storage)
 
     @cached_property
+    def discount_tiers(self) -> repositories.DiscountTierRepository:
+        return repositories.DiscountTierRepository()
+
+    @cached_property
+    def hosts(self) -> repositories.HostRepository:
+        return repositories.HostRepository()
+
+    @cached_property
     def enrollment_configs(self) -> repositories.EnrollmentConfigRepository:
         return repositories.EnrollmentConfigRepository()

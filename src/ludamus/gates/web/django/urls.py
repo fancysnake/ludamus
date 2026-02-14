@@ -117,6 +117,22 @@ panel_urlpatterns = [
         panel.SpaceReorderActionView.as_view(),
         name="space-reorder",
     ),
+    path("event/<slug:slug>/hosts/", panel.HostsPageView.as_view(), name="hosts"),
+    path(
+        "event/<slug:slug>/hosts/tiers/create/",
+        panel.DiscountTierCreatePageView.as_view(),
+        name="discount-tier-create",
+    ),
+    path(
+        "event/<slug:slug>/hosts/tiers/<int:tier_pk>/edit/",
+        panel.DiscountTierEditPageView.as_view(),
+        name="discount-tier-edit",
+    ),
+    path(
+        "event/<slug:slug>/hosts/tiers/<int:tier_pk>/do/delete",
+        panel.DiscountTierDeleteActionView.as_view(),
+        name="discount-tier-delete",
+    ),
     path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
     path(
         "event/<slug:slug>/cfp/create/",
