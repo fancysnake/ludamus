@@ -3,6 +3,7 @@ from http import HTTPStatus
 from django.contrib import messages
 from django.urls import reverse
 
+from ludamus.pacts import EventDTO, ProposalDTO, UserDTO
 from tests.integration.conftest import (
     AgendaItemFactory,
     AreaFactory,
@@ -135,6 +136,25 @@ class TestProposalRejectActionView:
         sphere.managers.add(active_user)
         category = ProposalCategoryFactory(event=event)
         proposal = ProposalFactory(category=category, rejected=False)
+        host_dto = UserDTO.model_validate(proposal.host)
+        pending_dto = ProposalDTO.model_validate(proposal)
+        base_context = {
+            "events": [EventDTO.model_validate(event)],
+            "current_event": EventDTO.model_validate(event),
+            "is_proposal_active": False,
+            "stats": {
+                "total_sessions": 1,
+                "scheduled_sessions": 0,
+                "pending_proposals": 1,
+                "hosts_count": 1,
+                "rooms_count": 0,
+                "total_proposals": 1,
+            },
+            "active_nav": "proposals",
+            "host": host_dto,
+            "tags": [],
+            "time_slots": [],
+        }
 
         # Read proposal via detail view to populate cache
         detail_url = reverse(
@@ -142,14 +162,30 @@ class TestProposalRejectActionView:
             kwargs={"slug": event.slug, "proposal_id": proposal.pk},
         )
         response = authenticated_client.get(detail_url)
-        assert response.context_data["status"] == "PENDING"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={**base_context, "proposal": pending_dto, "status": "PENDING"},
+            template_name="panel/proposal-detail.html",
+        )
 
         # Reject the proposal
         authenticated_client.post(self.get_url(event, proposal))
 
         # Read detail again — should reflect rejected state
+        proposal.refresh_from_db()
         response = authenticated_client.get(detail_url)
-        assert response.context_data["status"] == "REJECTED"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            messages=[(messages.SUCCESS, "Proposal rejected.")],
+            context_data={
+                **base_context,
+                "proposal": ProposalDTO.model_validate(proposal),
+                "status": "REJECTED",
+            },
+            template_name="panel/proposal-detail.html",
+        )
 
 
 class TestProposalUnrejectActionView:

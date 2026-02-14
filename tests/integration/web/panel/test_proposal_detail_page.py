@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Tag, TagCategory
+from ludamus.pacts import EventDTO, ProposalDTO, TagDTO, TimeSlotDTO, UserDTO
 from tests.integration.conftest import (
     AgendaItemFactory,
     AreaFactory,
@@ -18,6 +19,41 @@ from tests.integration.conftest import (
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+def _build_detail_context(
+    event,
+    *,
+    proposal,
+    host,
+    tags,
+    time_slots,
+    status,
+    pending_proposals=0,
+    scheduled_sessions=0,
+    total_proposals=0,
+    hosts_count=0,
+    rooms_count=0,
+):
+    return {
+        "events": [EventDTO.model_validate(event)],
+        "current_event": EventDTO.model_validate(event),
+        "is_proposal_active": False,
+        "stats": {
+            "total_sessions": pending_proposals + scheduled_sessions,
+            "scheduled_sessions": scheduled_sessions,
+            "pending_proposals": pending_proposals,
+            "hosts_count": hosts_count,
+            "rooms_count": rooms_count,
+            "total_proposals": total_proposals,
+        },
+        "active_nav": "proposals",
+        "proposal": proposal,
+        "host": host,
+        "tags": tags,
+        "time_slots": time_slots,
+        "status": status,
+    }
 
 
 class TestProposalDetailPageView:
@@ -69,12 +105,22 @@ class TestProposalDetailPageView:
 
         response = authenticated_client.get(self.get_url(event, proposal))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context_data["proposal"].title == "My Proposal"
-        assert response.context_data["host"].pk == active_user.pk
-        assert response.context_data["status"] == "PENDING"
-        assert "tags" in response.context_data
-        assert "time_slots" in response.context_data
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data=_build_detail_context(
+                event,
+                proposal=ProposalDTO.model_validate(proposal),
+                host=UserDTO.model_validate(active_user),
+                tags=[],
+                time_slots=[],
+                status="PENDING",
+                pending_proposals=1,
+                total_proposals=1,
+                hosts_count=1,
+            ),
+            template_name="panel/proposal-detail.html",
+        )
 
     def test_shows_host_info(self, authenticated_client, active_user, sphere, event):
         sphere.managers.add(active_user)
@@ -83,10 +129,22 @@ class TestProposalDetailPageView:
 
         response = authenticated_client.get(self.get_url(event, proposal))
 
-        assert response.status_code == HTTPStatus.OK
-        host = response.context_data["host"]
-        assert host.name == active_user.name
-        assert host.email == active_user.email
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data=_build_detail_context(
+                event,
+                proposal=ProposalDTO.model_validate(proposal),
+                host=UserDTO.model_validate(active_user),
+                tags=[],
+                time_slots=[],
+                status="PENDING",
+                pending_proposals=1,
+                total_proposals=1,
+                hosts_count=1,
+            ),
+            template_name="panel/proposal-detail.html",
+        )
 
     def test_shows_tags(self, authenticated_client, active_user, sphere, event):
         sphere.managers.add(active_user)
@@ -98,9 +156,22 @@ class TestProposalDetailPageView:
 
         response = authenticated_client.get(self.get_url(event, proposal))
 
-        assert response.status_code == HTTPStatus.OK
-        tag_names = [t.name for t in response.context_data["tags"]]
-        assert "RPG" in tag_names
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data=_build_detail_context(
+                event,
+                proposal=ProposalDTO.model_validate(proposal),
+                host=UserDTO.model_validate(active_user),
+                tags=[TagDTO.model_validate(tag)],
+                time_slots=[],
+                status="PENDING",
+                pending_proposals=1,
+                total_proposals=1,
+                hosts_count=1,
+            ),
+            template_name="panel/proposal-detail.html",
+        )
 
     def test_redirects_on_proposal_not_found(
         self, authenticated_client, active_user, sphere, event
@@ -128,8 +199,22 @@ class TestProposalDetailPageView:
 
         response = authenticated_client.get(self.get_url(event, proposal))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context_data["status"] == "PENDING"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data=_build_detail_context(
+                event,
+                proposal=ProposalDTO.model_validate(proposal),
+                host=UserDTO.model_validate(proposal.host),
+                tags=[],
+                time_slots=[],
+                status="PENDING",
+                pending_proposals=1,
+                total_proposals=1,
+                hosts_count=1,
+            ),
+            template_name="panel/proposal-detail.html",
+        )
 
     def test_rejected_status_for_rejected_proposal(
         self, authenticated_client, active_user, sphere, event
@@ -140,8 +225,22 @@ class TestProposalDetailPageView:
 
         response = authenticated_client.get(self.get_url(event, proposal))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context_data["status"] == "REJECTED"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data=_build_detail_context(
+                event,
+                proposal=ProposalDTO.model_validate(proposal),
+                host=UserDTO.model_validate(proposal.host),
+                tags=[],
+                time_slots=[],
+                status="REJECTED",
+                pending_proposals=1,
+                total_proposals=1,
+                hosts_count=1,
+            ),
+            template_name="panel/proposal-detail.html",
+        )
 
     def test_scheduled_status_for_proposal_with_agenda_item(
         self, authenticated_client, active_user, sphere, event
@@ -157,8 +256,23 @@ class TestProposalDetailPageView:
 
         response = authenticated_client.get(self.get_url(event, proposal))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context_data["status"] == "SCHEDULED"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data=_build_detail_context(
+                event,
+                proposal=ProposalDTO.model_validate(proposal),
+                host=UserDTO.model_validate(proposal.host),
+                tags=[],
+                time_slots=[],
+                status="SCHEDULED",
+                scheduled_sessions=1,
+                total_proposals=1,
+                hosts_count=1,
+                rooms_count=1,
+            ),
+            template_name="panel/proposal-detail.html",
+        )
 
     def test_unassigned_status_for_proposal_with_session_but_no_agenda_item(
         self, authenticated_client, active_user, sphere, event
@@ -170,8 +284,21 @@ class TestProposalDetailPageView:
 
         response = authenticated_client.get(self.get_url(event, proposal))
 
-        assert response.status_code == HTTPStatus.OK
-        assert response.context_data["status"] == "UNASSIGNED"
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data=_build_detail_context(
+                event,
+                proposal=ProposalDTO.model_validate(proposal),
+                host=UserDTO.model_validate(proposal.host),
+                tags=[],
+                time_slots=[],
+                status="UNASSIGNED",
+                total_proposals=1,
+                hosts_count=1,
+            ),
+            template_name="panel/proposal-detail.html",
+        )
 
     def test_shows_only_proposal_time_slots_not_all_event_time_slots(
         self, authenticated_client, active_user, sphere, event
@@ -197,6 +324,19 @@ class TestProposalDetailPageView:
 
         response = authenticated_client.get(self.get_url(event, proposal))
 
-        time_slots = response.context_data["time_slots"]
-        assert len(time_slots) == 1
-        assert time_slots[0].pk == ts1.pk
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data=_build_detail_context(
+                event,
+                proposal=ProposalDTO.model_validate(proposal),
+                host=UserDTO.model_validate(active_user),
+                tags=[],
+                time_slots=[TimeSlotDTO.model_validate(ts1)],
+                status="PENDING",
+                pending_proposals=1,
+                total_proposals=1,
+                hosts_count=1,
+            ),
+            template_name="panel/proposal-detail.html",
+        )
