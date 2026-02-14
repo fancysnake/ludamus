@@ -263,11 +263,14 @@ class Auth0LoginCallbackActionView(RedirectView):
         try:
             user = self.request.di.uow.active_users.read_by_username(userinfo.username)
         except NotFoundError:
-            self.request.di.uow.active_users.create(
-                userinfo.to_create_data(
-                    slug=slugify(userinfo.username), password=make_password(None)
-                )
+            create_data = userinfo.to_create_data(
+                slug=slugify(userinfo.username), password=make_password(None)
             )
+            if self.request.di.uow.active_users.email_exists(
+                create_data.get("email", "")
+            ):
+                create_data["email"] = ""
+            self.request.di.uow.active_users.create(create_data)
             user = self.request.di.uow.active_users.read_by_username(userinfo.username)
 
         # Log the user in
@@ -279,7 +282,15 @@ class Auth0LoginCallbackActionView(RedirectView):
         messages.success(self.request, _("Welcome!"))
 
         if update_data := userinfo.to_update_data(user):
-            self.request.di.uow.active_users.update(user.slug, update_data)
+            if (
+                "email" in update_data
+                and self.request.di.uow.active_users.email_exists(
+                    update_data["email"], exclude_slug=user.slug
+                )
+            ):
+                del update_data["email"]
+            if update_data:
+                self.request.di.uow.active_users.update(user.slug, update_data)
 
             if "name" in update_data:
                 user = self.request.di.uow.active_users.read(user.slug)

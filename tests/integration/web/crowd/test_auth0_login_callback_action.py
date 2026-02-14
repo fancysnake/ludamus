@@ -359,3 +359,56 @@ class TestAuth0LoginCallbackActionView:
             url="/",
             messages=[(messages.ERROR, "Authentication failed")],
         )
+
+    @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
+    def test_ok_create_strips_duplicate_email(
+        self, authorize_access_token_mock, client, complete_user_factory, faker
+    ):
+        existing_email = "taken@example.com"
+        complete_user_factory(email=existing_email)
+        sub = faker.uuid4()
+        authorize_access_token_mock.return_value = {
+            "userinfo": {"sub": sub, "email": existing_email}
+        }
+        state_token = self._setup_valid_state()
+
+        response = client.get(self.URL, {"state": state_token})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url="http://testserver/crowd/profile/",
+            messages=[
+                (messages.SUCCESS, "Welcome!"),
+                (messages.SUCCESS, "Please complete your profile."),
+            ],
+        )
+        new_user = User.objects.get(username=f"auth0|{sub}")
+        assert not new_user.email
+
+    @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
+    def test_ok_update_strips_duplicate_email(
+        self, authorize_access_token_mock, client, complete_user_factory, faker
+    ):
+        existing_email = "taken@example.com"
+        complete_user_factory(email=existing_email)
+        sub = faker.uuid4()
+        username = f"auth0|{sub}"
+        complete_user_factory(
+            username=username, slug=slugify(username), email="old@example.com"
+        )
+        authorize_access_token_mock.return_value = {
+            "userinfo": {"sub": sub, "email": existing_email}
+        }
+        state_token = self._setup_valid_state()
+
+        response = client.get(self.URL, {"state": state_token})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url="http://testserver/",
+            messages=[(messages.SUCCESS, "Welcome!")],
+        )
+        user = User.objects.get(username=username)
+        assert user.email == "old@example.com"
