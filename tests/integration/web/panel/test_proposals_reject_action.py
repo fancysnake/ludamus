@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+import pytest
 from django.contrib import messages
 from django.urls import reverse
 
@@ -72,6 +73,24 @@ class TestProposalRejectActionView:
             HTTPStatus.FOUND,
             messages=[(messages.SUCCESS, "Proposal rejected.")],
             url=self.get_list_url(event),
+        )
+
+    @pytest.mark.usefixtures("event")
+    def test_redirects_on_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:proposal-reject", kwargs={"slug": "no-such-event", "proposal_id": 1}
+        )
+
+        response = authenticated_client.post(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
         )
 
     def test_redirects_on_proposal_not_found(
@@ -244,6 +263,25 @@ class TestProposalUnrejectActionView:
             url=self.get_list_url(event),
         )
 
+    @pytest.mark.usefixtures("event")
+    def test_redirects_on_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:proposal-unreject",
+            kwargs={"slug": "no-such-event", "proposal_id": 1},
+        )
+
+        response = authenticated_client.post(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
     def test_redirects_on_proposal_not_found(
         self, authenticated_client, active_user, sphere, event
     ):
@@ -258,5 +296,21 @@ class TestProposalUnrejectActionView:
             response,
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, "Proposal not found.")],
+            url=self.get_list_url(event),
+        )
+
+    def test_unreject_non_rejected_proposal_shows_error(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategoryFactory(event=event)
+        proposal = ProposalFactory(category=category, rejected=False)
+
+        response = authenticated_client.post(self.get_url(event, proposal))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Proposal is not rejected.")],
             url=self.get_list_url(event),
         )

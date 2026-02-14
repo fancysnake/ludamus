@@ -1,6 +1,7 @@
 from datetime import timedelta
 from http import HTTPStatus
 
+import pytest
 from django.contrib import messages
 from django.urls import reverse
 
@@ -171,6 +172,24 @@ class TestProposalDetailPageView:
                 hosts_count=1,
             ),
             template_name="panel/proposal-detail.html",
+        )
+
+    @pytest.mark.usefixtures("event")
+    def test_redirects_on_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:proposal-detail", kwargs={"slug": "no-such-event", "proposal_id": 1}
+        )
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
         )
 
     def test_redirects_on_proposal_not_found(
