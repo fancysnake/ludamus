@@ -23,12 +23,13 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
-from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.generic.base import ContextMixin, RedirectView, TemplateView, View
 from django.views.generic.detail import DetailView, SingleObjectTemplateResponseMixin
 from django.views.generic.edit import FormMixin, ProcessFormView
+from pydantic import BaseModel, ConfigDict
+from pydantic import ValidationError as PydanticValidationError
 
 from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
@@ -160,6 +161,57 @@ class Auth0LoginActionView(View):
         )
 
 
+class Auth0UserInfo(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    email: str = ""
+    family_name: str = ""
+    given_name: str = ""
+    name: str = ""
+    nickname: str = ""
+    picture: str = ""
+    preferred_username: str = ""
+    sub: str
+
+    @property
+    def display_name(self) -> str | None:
+        if self.name.strip():
+            return self.name.strip()
+        parts = [p.strip() for p in (self.given_name, self.family_name) if p.strip()]
+        if parts:
+            return " ".join(parts)
+        if self.nickname.strip():
+            return self.nickname.strip()
+        if self.preferred_username.strip():
+            return self.preferred_username.strip()
+        return None
+
+    @property
+    def username(self) -> str:
+        return f"auth0|{self.sub}"
+
+    def to_create_data(self, *, slug: str, password: str) -> UserData:
+        return UserData(
+            slug=slug,
+            username=self.username,
+            password=password,
+            email=self.email or "",
+            avatar_url=self.picture or "",
+            name=self.display_name or "",
+        )
+
+    def to_update_data(self, user: UserDTO) -> UserData:
+        data: UserData = {}
+        if self.email and user.email != self.email:
+            data["email"] = self.email
+        if self.picture and user.avatar_url != self.picture:
+            data["avatar_url"] = self.picture
+        display_name = self.display_name
+        if display_name and not (user.name or "").strip():
+            data["name"] = display_name
+        return data
+
+
 class Auth0LoginCallbackActionView(RedirectView):
     request: RootRequest
 
@@ -206,27 +258,17 @@ class Auth0LoginCallbackActionView(RedirectView):
             return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
 
         userinfo = self._get_userinfo()
-        username = self._get_username(userinfo)
-        email = userinfo.get("email") if isinstance(userinfo, dict) else None
-        avatar_url = userinfo.get("picture") if isinstance(userinfo, dict) else None
-        display_name = self._get_display_name(userinfo)
 
         # Handle login/signup
         try:
-            user = self.request.di.uow.active_users.read_by_username(username)
+            user = self.request.di.uow.active_users.read_by_username(userinfo.username)
         except NotFoundError:
-            slug = slugify(username)
             self.request.di.uow.active_users.create(
-                UserData(
-                    slug=slug,
-                    username=username,
-                    password=make_password(None),
-                    email=email or "",
-                    avatar_url=avatar_url or "",
-                    name=display_name or "",
+                userinfo.to_create_data(
+                    slug=slugify(userinfo.username), password=make_password(None)
                 )
             )
-            user = self.request.di.uow.active_users.read_by_username(username)
+            user = self.request.di.uow.active_users.read_by_username(userinfo.username)
 
         # Log the user in
         self.request.di.uow.login_user(self.request, user.slug)
@@ -236,14 +278,7 @@ class Auth0LoginCallbackActionView(RedirectView):
             self.request.session.pop("anonymous_event_id", None)
         messages.success(self.request, _("Welcome!"))
 
-        update_data: UserData = {}
-        if email and user.email != email:
-            update_data["email"] = email
-        if avatar_url and user.avatar_url != avatar_url:
-            update_data["avatar_url"] = avatar_url
-        if display_name and not (user.name or "").strip():
-            update_data["name"] = display_name
-        if update_data:
+        if update_data := userinfo.to_update_data(user):
             self.request.di.uow.active_users.update(user.slug, update_data)
 
             if "name" in update_data:
@@ -260,69 +295,34 @@ class Auth0LoginCallbackActionView(RedirectView):
 
         return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
 
-    def _get_userinfo(self) -> dict[str, Any]:
+    def _get_userinfo(self) -> Auth0UserInfo:
         token = oauth.auth0.authorize_access_token(self.request)
+        raw: dict[str, Any] = {}
+        source = "token"
         if isinstance(token, dict):
-            userinfo = token.get("userinfo")
-            if isinstance(userinfo, dict) and userinfo:
-                logger.info(
-                    "Auth0 userinfo from token: sub=%s provider=%s has_name=%s ts=%s",
-                    userinfo.get("sub"),
-                    userinfo.get("identities", [{}])[0].get("provider"),
-                    bool(userinfo.get("name")),
-                    timezone.now().isoformat(),
-                )
-                return userinfo
+            raw = token.get("userinfo") or {}
+        if not raw:
+            source = "/userinfo"
+            try:
+                result = oauth.auth0.userinfo(token=token)
+            except Exception as exc:
+                raise RedirectError(
+                    reverse("web:index"), error=_("Authentication failed")
+                ) from exc
+            raw = result if isinstance(result, dict) else {}
         try:
-            userinfo = oauth.auth0.userinfo(token=token)
-        except Exception as exc:
+            userinfo = Auth0UserInfo.model_validate(raw)
+        except PydanticValidationError as exc:
             raise RedirectError(
                 reverse("web:index"), error=_("Authentication failed")
             ) from exc
-        if isinstance(userinfo, dict) and userinfo:
-            logger.info(
-                "Auth0 userinfo via /userinfo: sub=%s provider=%s has_name=%s ts=%s",
-                userinfo.get("sub"),
-                userinfo.get("identities", [{}])[0].get("provider"),
-                bool(userinfo.get("name")),
-                timezone.now().isoformat(),
-            )
-        return userinfo if isinstance(userinfo, dict) else {}
-
-    @staticmethod
-    def _get_display_name(userinfo: dict[str, Any]) -> str | None:
-        name = userinfo.get("name")
-        if isinstance(name, str) and name.strip():
-            return name.strip()
-
-        given = userinfo.get("given_name")
-        family = userinfo.get("family_name")
-        parts = [
-            part.strip()
-            for part in (given, family)
-            if isinstance(part, str) and part.strip()
-        ]
-        if parts:
-            return " ".join(parts)
-
-        nickname = userinfo.get("nickname")
-        if isinstance(nickname, str) and nickname.strip():
-            return nickname.strip()
-
-        preferred = userinfo.get("preferred_username")
-        if isinstance(preferred, str) and preferred.strip():
-            return preferred.strip()
-
-        return None
-
-    @staticmethod
-    def _get_username(userinfo: dict[str, Any]) -> str:
-        try:
-            return f'auth0|{userinfo["sub"]}'
-        except (KeyError, TypeError) as exc:
-            raise RedirectError(
-                reverse("web:index"), error=_("Authentication failed")
-            ) from exc
+        logger.info(
+            "Auth0 userinfo from %s: sub=%s has_name=%s",
+            source,
+            userinfo.sub,
+            bool(userinfo.name),
+        )
+        return userinfo
 
 
 class Auth0LogoutActionView(RedirectView):
