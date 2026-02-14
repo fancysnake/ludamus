@@ -763,7 +763,7 @@
                         <div>
                             <div class="font-medium" style="color: var(--color-foreground)">{{ data.presenter.full_name }}</div>
                             {% if data.proposal %}
-                                {% with host=data.proposal.host %}
+                                {% with host=data.presenter %}
                                     {% if host and host.slug and host.discord_username %}
                                         <button class="btn btn-secondary text-xs mt-1 reveal-discord-btn"
                                                 hx-get="{% url 'web:crowd:user-discord-username' user_slug=host.slug %}"

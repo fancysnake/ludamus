@@ -26,6 +26,7 @@ from ludamus.pacts import (
     AgendaItemDTO,
     AreaDTO,
     LocationData,
+    ProposalDTO,
     SessionDTO,
     SpaceDTO,
     UserDTO,
@@ -186,6 +187,63 @@ class TestEventPageView:
                 "user_enrollment_config": None,
                 "total_enrolled": 1,
                 "user_enrolled_sessions": [session_data],
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
+    def test_ok_session_with_linked_proposal(
+        self, active_user, agenda_item, client, event, proposal, session
+    ):
+        proposal.session = session
+        proposal.save()
+
+        proposal_dto = ProposalDTO.model_validate(proposal)
+        host = UserInfo.from_user_dto(UserDTO.model_validate(active_user))
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            proposal=proposal_dto,
+            presenter=host,
+            session_participations=[],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            tags=[],
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        response = client.get(self._get_url(event.slug))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": False,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {
+                    agenda_item.start_time: [session_data]
+                },
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "sessions": [session_data],
+                "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
