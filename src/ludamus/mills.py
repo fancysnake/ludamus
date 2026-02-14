@@ -147,95 +147,11 @@ class AcceptProposalService:
             proposal_repository.update(proposal)
 
 
-class PanelService:
-    """Service for backoffice panel business logic."""
+class ProposalService:
+    """Service for proposal management in the backoffice panel."""
 
     def __init__(self, uow: UnitOfWorkProtocol) -> None:
         self._uow = uow
-
-    def delete_category(self, category_pk: int) -> bool:
-        """Delete a proposal category if it has no proposals.
-
-        Args:
-            category_pk: The category primary key.
-
-        Returns:
-            True if deleted, False if category has proposals.
-        """
-        if self._uow.proposal_categories.has_proposals(category_pk):
-            return False
-        self._uow.proposal_categories.delete(category_pk)
-        return True
-
-    def delete_personal_data_field(self, field_pk: int) -> bool:
-        """Delete a personal data field if not used by session types.
-
-        Args:
-            field_pk: The field primary key.
-
-        Returns:
-            True if deleted, False if field has requirements.
-        """
-        if self._uow.personal_data_fields.has_requirements(field_pk):
-            return False
-        self._uow.personal_data_fields.delete(field_pk)
-        return True
-
-    def delete_session_field(self, field_pk: int) -> bool:
-        """Delete a session field if not used by session types.
-
-        Args:
-            field_pk: The field primary key.
-
-        Returns:
-            True if deleted, False if field has requirements.
-        """
-        if self._uow.session_fields.has_requirements(field_pk):
-            return False
-        self._uow.session_fields.delete(field_pk)
-        return True
-
-    def delete_venue(self, venue_pk: int) -> bool:
-        """Delete a venue if it has no scheduled sessions.
-
-        Args:
-            venue_pk: The venue primary key.
-
-        Returns:
-            True if deleted, False if venue has sessions.
-        """
-        if self._uow.venues.has_sessions(venue_pk):
-            return False
-        self._uow.venues.delete(venue_pk)
-        return True
-
-    def delete_area(self, area_pk: int) -> bool:
-        """Delete an area if it has no scheduled sessions in any space.
-
-        Args:
-            area_pk: The area primary key.
-
-        Returns:
-            True if deleted, False if area has sessions.
-        """
-        if self._uow.areas.has_sessions(area_pk):
-            return False
-        self._uow.areas.delete(area_pk)
-        return True
-
-    def delete_space(self, space_pk: int) -> bool:
-        """Delete a space if it has no scheduled sessions.
-
-        Args:
-            space_pk: The space primary key.
-
-        Returns:
-            True if deleted, False if space has sessions.
-        """
-        if self._uow.spaces.has_sessions(space_pk):
-            return False
-        self._uow.spaces.delete(space_pk)
-        return True
 
     def get_event_stats(self, event_id: int) -> PanelStatsDTO:
         """Calculate panel statistics for an event.
@@ -324,6 +240,97 @@ class PanelService:
             total_count=result.total_count,
             filtered_count=filtered_count,
         )
+
+
+class SafeDeleteService:
+    """Service for safe deletion of entities with dependency checks."""
+
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+
+    def delete_category(self, category_pk: int) -> bool:
+        """Delete a proposal category if it has no proposals.
+
+        Args:
+            category_pk: The category primary key.
+
+        Returns:
+            True if deleted, False if category has proposals.
+        """
+        if self._uow.proposal_categories.has_proposals(category_pk):
+            return False
+        self._uow.proposal_categories.delete(category_pk)
+        return True
+
+    def delete_personal_data_field(self, field_pk: int) -> bool:
+        """Delete a personal data field if not used by session types.
+
+        Args:
+            field_pk: The field primary key.
+
+        Returns:
+            True if deleted, False if field has requirements.
+        """
+        if self._uow.personal_data_fields.has_requirements(field_pk):
+            return False
+        self._uow.personal_data_fields.delete(field_pk)
+        return True
+
+    def delete_session_field(self, field_pk: int) -> bool:
+        """Delete a session field if not used by session types.
+
+        Args:
+            field_pk: The field primary key.
+
+        Returns:
+            True if deleted, False if field has requirements.
+        """
+        if self._uow.session_fields.has_requirements(field_pk):
+            return False
+        self._uow.session_fields.delete(field_pk)
+        return True
+
+    def delete_venue(self, venue_pk: int) -> bool:
+        """Delete a venue if it has no scheduled sessions.
+
+        Args:
+            venue_pk: The venue primary key.
+
+        Returns:
+            True if deleted, False if venue has sessions.
+        """
+        if self._uow.venues.has_sessions(venue_pk):
+            return False
+        self._uow.venues.delete(venue_pk)
+        return True
+
+    def delete_area(self, area_pk: int) -> bool:
+        """Delete an area if it has no scheduled sessions in any space.
+
+        Args:
+            area_pk: The area primary key.
+
+        Returns:
+            True if deleted, False if area has sessions.
+        """
+        if self._uow.areas.has_sessions(area_pk):
+            return False
+        self._uow.areas.delete(area_pk)
+        return True
+
+    def delete_space(self, space_pk: int) -> bool:
+        """Delete a space if it has no scheduled sessions.
+
+        Args:
+            space_pk: The space primary key.
+
+        Returns:
+            True if deleted, False if space has sessions.
+        """
+        if self._uow.spaces.has_sessions(space_pk):
+            return False
+        self._uow.spaces.delete(space_pk)
+        return True
 
 
 def _refresh_user_config_from_api(
