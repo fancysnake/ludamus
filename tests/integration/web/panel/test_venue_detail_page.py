@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Area, Venue
-from ludamus.pacts import AreaDTO, EventDTO, VenueDTO
+from ludamus.pacts import AreaDTO, AreaListItemDTO, EventDTO, VenueDTO
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -159,7 +159,9 @@ class TestVenueDetailPageView:
 
         areas = response.context["areas"]
         assert len(areas) == 1
-        assert areas[0] == AreaDTO.model_validate(area)
+        assert areas[0] == AreaListItemDTO(
+            **AreaDTO.model_validate(area).model_dump(), spaces_count=0
+        )
 
     def test_only_shows_areas_for_current_venue(
         self, authenticated_client, active_user, sphere, event

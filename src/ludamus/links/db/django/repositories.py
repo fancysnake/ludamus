@@ -39,6 +39,7 @@ from ludamus.pacts import (
     AgendaItemData,
     AgendaItemRepositoryProtocol,
     AreaDTO,
+    AreaListItemDTO,
     AreaRepositoryProtocol,
     CategoryStats,
     ConnectedUserRepositoryProtocol,
@@ -81,6 +82,7 @@ from ludamus.pacts import (
     UserRepositoryProtocol,
     UserType,
     VenueDTO,
+    VenueListItemDTO,
     VenueRepositoryProtocol,
 )
 
@@ -618,11 +620,11 @@ class VenueRepository(VenueRepositoryProtocol):
         """
         return AgendaItem.objects.filter(space__area__venue_id=pk).exists()
 
-    def list_by_event(self, event_pk: int) -> list[VenueDTO]:
+    def list_by_event(self, event_pk: int) -> list[VenueListItemDTO]:
         """List all venues for an event, ordered by order then name.
 
         Returns:
-            List of VenueDTO objects for the event.
+            List of VenueListItemDTO objects for the event.
         """
         if not (collection := self._storage.venues_by_event[event_pk]):
             venues = (
@@ -633,7 +635,7 @@ class VenueRepository(VenueRepositoryProtocol):
             for venue in venues:
                 collection[venue.pk] = venue
 
-        return [VenueDTO.model_validate(venue) for venue in collection.values()]
+        return [VenueListItemDTO.model_validate(venue) for venue in collection.values()]
 
     def read_by_slug(self, event_pk: int, slug: str) -> VenueDTO:
         """Read a venue by slug.
@@ -967,11 +969,11 @@ class AreaRepository(AreaRepositoryProtocol):
         """
         return AgendaItem.objects.filter(space__area_id=pk).exists()
 
-    def list_by_venue(self, venue_pk: int) -> list[AreaDTO]:
+    def list_by_venue(self, venue_pk: int) -> list[AreaListItemDTO]:
         """List all areas for a venue, ordered by order then name.
 
         Returns:
-            List of AreaDTO objects for the venue.
+            List of AreaListItemDTO objects for the venue.
         """
         if not (collection := self._storage.areas_by_venue[venue_pk]):
             areas = (
@@ -982,7 +984,7 @@ class AreaRepository(AreaRepositoryProtocol):
             for area in areas:
                 collection[area.pk] = area
 
-        return [AreaDTO.model_validate(area) for area in collection.values()]
+        return [AreaListItemDTO.model_validate(area) for area in collection.values()]
 
     def read_by_slug(self, venue_pk: int, slug: str) -> AreaDTO:
         """Read an area by slug.
