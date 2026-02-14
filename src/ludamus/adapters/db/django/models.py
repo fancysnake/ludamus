@@ -83,6 +83,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         default="",
         help_text=_("Profile avatar URL (e.g. from Auth0)"),
     )
+    use_gravatar = models.BooleanField(
+        _("Use Gravatar"),
+        default=False,
+        help_text=_("Use Gravatar instead of provider avatar"),
+    )
 
     objects = UserManager()
 

@@ -53,6 +53,7 @@ from ludamus.adapters.web.django.entities import (
     TagWithCategory,
     UserInfo,
 )
+from ludamus.links.gravatar import gravatar_url
 from ludamus.mills import (
     AcceptProposalService,
     AnonymousEnrollmentService,
@@ -649,6 +650,32 @@ class ProfileConnectedUserDeleteActionView(
         )
         messages.success(self.request, _("Connected user deleted successfully."))
         return HttpResponseRedirect(success_url)
+
+
+class ProfileAvatarPageView(LoginRequiredMixin, View):
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def get(request: AuthenticatedRootRequest) -> TemplateResponse:
+        user = request.di.uow.active_users.read(request.context.current_user_slug)
+        return TemplateResponse(
+            request,
+            "crowd/user/avatar.html",
+            {
+                "user": user,
+                "gravatar_url": gravatar_url(user.email),
+                "has_auth0_avatar": bool(user.avatar_url),
+            },
+        )
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest) -> HttpResponse:
+        use_gravatar = request.POST.get("use_gravatar") == "true"
+        request.di.uow.active_users.update(
+            request.context.current_user_slug, UserData(use_gravatar=use_gravatar)
+        )
+        messages.success(request, _("Avatar preference updated successfully!"))
+        return redirect("web:crowd:profile-avatar")
 
 
 class UserDiscordUsernameComponentView(View):

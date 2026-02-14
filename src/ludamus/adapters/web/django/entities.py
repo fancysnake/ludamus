@@ -49,7 +49,11 @@ class UserInfo:
     @classmethod
     def from_user_dto(cls, user_dto: UserDTO) -> Self:
         return cls(
-            avatar_url=user_dto.avatar_url or gravatar_url(user_dto.email),
+            avatar_url=(
+                gravatar_url(user_dto.email)
+                if user_dto.use_gravatar
+                else user_dto.avatar_url or gravatar_url(user_dto.email)
+            ),
             discord_username=user_dto.discord_username,
             full_name=user_dto.full_name,
             name=user_dto.name,

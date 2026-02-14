@@ -30,7 +30,7 @@
                                 class="w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center cursor-pointer transition-all duration-150 ring-2 ring-transparent hover:ring-coral-500/30 focus:outline-none focus:ring-coral-500/50"
                                 aria-haspopup="true"
                                 aria-expanded="false">
-                            {% include "components/avatar.html" with user=request.user size="size-10" %}
+                            {% include "components/avatar.html" with user=current_user_info size="size-10" %}
                         </button>
                         <!-- Dropdown panel -->
                         <div class="absolute right-0 top-full pt-2 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 transition-all duration-150 ease-out z-50">

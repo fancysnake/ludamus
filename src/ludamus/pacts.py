@@ -209,6 +209,7 @@ class UserDTO(BaseModel):
     name: str
     pk: int
     slug: str
+    use_gravatar: bool
     user_type: UserType
     username: str
 
@@ -267,6 +268,7 @@ class UserData(TypedDict, total=False):
     name: str
     password: str
     slug: str
+    use_gravatar: bool
     user_type: UserType
     username: str
 
