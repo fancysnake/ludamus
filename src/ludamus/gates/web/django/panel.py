@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
 import re
 from collections import defaultdict
@@ -34,6 +33,7 @@ from ludamus.gates.web.django.forms import (
     EventSettingsForm,
     PersonalDataFieldForm,
     ProposalCategoryForm,
+    ProposalFilterForm,
     SessionFieldForm,
     SpaceForm,
     VenueDuplicateForm,
@@ -41,17 +41,12 @@ from ludamus.gates.web.django.forms import (
     create_venue_copy_form,
 )
 from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
-from ludamus.pacts import (
-    DependencyInjectorProtocol,
-    NotFoundError,
-    ProposalActionError,
-    ProposalListFilters,
-)
+from ludamus.pacts import DependencyInjectorProtocol, NotFoundError, ProposalActionError
 
 if TYPE_CHECKING:
     from django import forms
 
-    from ludamus.pacts import AuthenticatedRequestContext, EventDTO
+    from ludamus.pacts import AuthenticatedRequestContext, EventDTO, ProposalListFilters
 
 
 class _FieldDTO(Protocol):
@@ -992,30 +987,30 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        filters = self._parse_filters()
+        form = ProposalFilterForm(data=self.request.GET)
+        form.is_valid()
+        filters = cast("ProposalListFilters", form.cleaned_data)
+
         service = PanelService(self.request.di.uow)
         result = service.list_proposals(current_event.pk, filters)
 
-        page = max(1, filters.get("page", 1))
-        page_size = filters.get("page_size", 10)
+        page = filters["page"]
+        page_size = filters["page_size"]
         filtered_count = result.filtered_count
         total_pages = max(1, (filtered_count + page_size - 1) // page_size)
-
-        # Ensure all filter keys are present for template access
-        template_filters = {
-            "q": filters.get("q", ""),
-            "statuses": filters.get("statuses", []),
-            "category_ids": filters.get("category_ids", []),
-            "sort": filters.get("sort", "newest"),
-            "page_size": page_size,
-        }
 
         context["active_nav"] = "proposals"
         context["proposals"] = result.proposals
         context["status_counts"] = result.status_counts
         context["total_count"] = result.total_count
         context["filtered_count"] = filtered_count
-        context["filters"] = template_filters
+        context["filters"] = {
+            "q": filters["q"],
+            "statuses": filters["statuses"],
+            "category_ids": filters["category_ids"],
+            "sort": filters["sort"],
+            "page_size": page_size,
+        }
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
         )
@@ -1024,32 +1019,6 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
         context["has_previous"] = page > 1
         context["has_next"] = page < total_pages
         return TemplateResponse(self.request, "panel/proposals.html", context)
-
-    def _parse_filters(self) -> ProposalListFilters:
-        params = self.request.GET
-        filters = ProposalListFilters()
-        if statuses := [s for s in params.getlist("status") if s]:
-            filters["statuses"] = statuses
-        if category_ids := params.getlist("category"):
-            parsed_ids = []
-            for c in category_ids:
-                try:
-                    parsed_ids.append(int(c))
-                except ValueError:
-                    continue
-            if parsed_ids:
-                filters["category_ids"] = parsed_ids
-        if q := params.get("q", "").strip():
-            filters["q"] = q
-        if sort := params.get("sort"):
-            filters["sort"] = sort
-        if page := params.get("page", "").strip():
-            with contextlib.suppress(ValueError):
-                filters["page"] = int(page)
-        if page_size := params.get("page_size", "").strip():
-            with contextlib.suppress(ValueError):
-                filters["page_size"] = max(1, min(int(page_size), 100))
-        return filters
 
 
 class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):

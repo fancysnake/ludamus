@@ -1,9 +1,52 @@
 """Django forms for panel views."""
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
+
+from ludamus.pacts import ProposalStatus
+
+
+class _IntListField(forms.Field):
+    """Multi-value integer field that silently skips non-integer values."""
+
+    widget = forms.SelectMultiple
+
+    def clean(self, value: list[str]) -> list[int]:
+        super().clean(value)
+        if not value:
+            return []
+        result = []
+        for v in value:
+            try:
+                result.append(int(v))
+            except ValueError, TypeError:
+                continue
+        return result
+
+
+class ProposalFilterForm(forms.Form):
+    q = forms.CharField(required=False, strip=True)
+    status = forms.MultipleChoiceField(
+        required=False, choices=[(s.value, s.value) for s in ProposalStatus]
+    )
+    category = _IntListField(required=False)
+    sort = forms.ChoiceField(
+        required=False, choices=[("newest", "newest"), ("title", "title")]
+    )
+    page = forms.IntegerField(required=False, min_value=1)
+    page_size = forms.IntegerField(required=False, min_value=1, max_value=100)
+
+    def clean(self) -> dict[str, Any]:
+        data = super().clean() or {}
+        data["q"] = data.get("q") or ""
+        data["sort"] = data.get("sort") or "newest"
+        data["page"] = data.get("page") or 1
+        data["page_size"] = data.get("page_size") or 10
+        data["statuses"] = data.pop("status", [])
+        data["category_ids"] = data.pop("category", [])
+        return data
 
 
 class EventSettingsForm(forms.Form):
