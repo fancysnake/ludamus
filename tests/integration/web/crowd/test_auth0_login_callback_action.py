@@ -290,6 +290,35 @@ class TestAuth0LoginCallbackActionView:
         assert user.avatar_url == "https://example.com/new.png"
         assert user.name == "New Name"
 
+    @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
+    def test_ok_updates_email_without_name(
+        self, authorize_access_token_mock, client, complete_user_factory, faker
+    ):
+        sub = faker.uuid4()
+        username = f"auth0|{sub}"
+        complete_user_factory(
+            username=username,
+            slug=slugify(username),
+            name="Existing Name",
+            email="old@example.com",
+        )
+        authorize_access_token_mock.return_value = {
+            "userinfo": {"sub": sub, "email": "new@example.com"}
+        }
+        state_token = self._setup_valid_state()
+
+        response = client.get(self.URL, {"state": state_token})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url="http://testserver/",
+            messages=[(messages.SUCCESS, "Welcome!")],
+        )
+        user = User.objects.get(username=username)
+        assert user.email == "new@example.com"
+        assert user.name == "Existing Name"
+
     @patch("ludamus.adapters.web.django.views.oauth.auth0.userinfo")
     @patch("ludamus.adapters.web.django.views.oauth.auth0.authorize_access_token")
     def test_ok_token_not_dict(
