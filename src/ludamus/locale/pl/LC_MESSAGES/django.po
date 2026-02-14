@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-14 16:04+0100\n"
+"POT-Creation-Date: 2026-02-14 16:07+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -89,7 +89,7 @@ msgstr "Użyj Gravatara"
 
 #: src/ludamus/adapters/db/django/models.py:89
 msgid "Use Gravatar instead of provider avatar"
-msgstr "Użyj Gravatara zamiast awatara dostawcy"
+msgstr "Użyj Gravatara zamiast awatara z konta"
 
 #: src/ludamus/adapters/db/django/models.py:112
 msgid "user"
@@ -2387,43 +2387,47 @@ msgstr "Dane osobiste"
 msgid "Connected users"
 msgstr "Powiązane osoby"
 
-#: src/ludamus/templates/crowd/user/avatar.html:42
-#: src/ludamus/templates/crowd/user/avatar.html:47
+#: src/ludamus/templates/crowd/user/avatar.html:43
+#: src/ludamus/templates/crowd/user/avatar.html:48
 msgid "Provider avatar"
-msgstr "Awatar dostawcy"
+msgstr "Awatar z konta"
 
-#: src/ludamus/templates/crowd/user/avatar.html:55
-#: src/ludamus/templates/crowd/user/avatar.html:90
+#: src/ludamus/templates/crowd/user/avatar.html:49
+msgid "Imported from your social login account."
+msgstr "Zaimportowany z Twojego konta logowania społecznościowego."
+
+#: src/ludamus/templates/crowd/user/avatar.html:57
+#: src/ludamus/templates/crowd/user/avatar.html:94
 msgid "Use this avatar"
 msgstr "Użyj tego awatara"
 
-#: src/ludamus/templates/crowd/user/avatar.html:80
+#: src/ludamus/templates/crowd/user/avatar.html:84
 msgid "Based on your email address."
 msgstr "Na podstawie Twojego adresu email."
 
-#: src/ludamus/templates/crowd/user/avatar.html:81
-#: src/ludamus/templates/crowd/user/avatar.html:120
+#: src/ludamus/templates/crowd/user/avatar.html:85
+#: src/ludamus/templates/crowd/user/avatar.html:125
 msgid "Change it on gravatar.com"
 msgstr "Zmień go na gravatar.com"
 
-#: src/ludamus/templates/crowd/user/avatar.html:97
+#: src/ludamus/templates/crowd/user/avatar.html:102
 #: src/ludamus/templates/panel/cfp-edit.html:26
 #: src/ludamus/templates/panel/personal-data-field-edit.html:66
 #: src/ludamus/templates/panel/session-field-edit.html:66
 msgid "Save"
 msgstr "Zapisz"
 
-#: src/ludamus/templates/crowd/user/avatar.html:119
+#: src/ludamus/templates/crowd/user/avatar.html:124
 msgid "Your avatar is provided by Gravatar, based on your email address."
 msgstr "Twój awatar pochodzi z Gravatara, na podstawie Twojego adresu email."
 
-#: src/ludamus/templates/crowd/user/avatar.html:123
+#: src/ludamus/templates/crowd/user/avatar.html:128
 msgid ""
 "No provider avatar is available. Log in with a provider that supports "
 "avatars to get more options."
 msgstr ""
-"Brak awatara dostawcy. Zaloguj się przez dostawcę obsługującego awatary, "
-"aby uzyskać więcej opcji."
+"Brak awatara z konta. Zaloguj się kontem obsługującym awatary, aby uzyskać "
+"więcej opcji."
 
 #: src/ludamus/templates/crowd/user/connected.html:39
 msgid ""
