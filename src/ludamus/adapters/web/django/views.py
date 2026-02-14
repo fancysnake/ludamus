@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
 from secrets import token_urlsafe
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Self
 from urllib.parse import quote_plus, urlencode, urlparse
 
@@ -45,6 +44,7 @@ from ludamus.adapters.db.django.models import (
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
+    HostData,
     SessionData,
     SessionUserParticipationData,
     TagCategoryData,
@@ -1012,19 +1012,29 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 session.agenda_item.space, "area", None
             )  # TODO(fancysnake): Fix after merging venues
             presenter_name = session.presenter_name or ""
-            presenter = SimpleNamespace(
-                full_name=presenter_name,
-                name=presenter_name,
-                username=presenter_name,
-                avatar_url=None,
-                gravatar_url=None,
-            )
+            if proposal_exists := Proposal.objects.filter(session=session).exists():
+                proposal_host = session.proposal.host
+                host = HostData(
+                    full_name=proposal_host.full_name,
+                    name=proposal_host.name,
+                    username=proposal_host.username,
+                    avatar_url=proposal_host.avatar_url or None,
+                    gravatar_url=proposal_host.gravatar_url,
+                )
+            else:
+                host = HostData(
+                    full_name=presenter_name,
+                    name=presenter_name,
+                    username=presenter_name,
+                    avatar_url=None,
+                    gravatar_url=None,
+                )
             sessions_data[session.id] = SessionData(
                 effective_participants_limit=session.effective_participants_limit,
                 full_participant_info=session.full_participant_info,
                 agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
                 session=SessionDTO.model_validate(session),
-                presenter=presenter,
+                host=host,
                 tags=[
                     TagWithCategory(
                         category=TagCategoryData(
@@ -1039,7 +1049,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 ],
                 proposal=(
                     ProposalDTO.model_validate(session.proposal)
-                    if Proposal.objects.filter(session=session).exists()
+                    if proposal_exists
                     else None
                 ),
                 is_enrollment_available=session.is_enrollment_available,
