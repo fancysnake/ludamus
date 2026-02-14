@@ -15,8 +15,8 @@
          data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
-         data-venue="{% if data.loc.area %}{{ data.loc.venue.slug }}{% endif %}"
-         data-venue-name="{% if data.loc.area %}{{ data.loc.venue.name }}{% endif %}"
+         data-venue="{{ data.loc.venue.slug }}"
+         data-venue-name="{{ data.loc.venue.name }}"
          style="border-color: var(--theme-border)">
         <a href="?session={{ data.session.pk }}"
            class="session-card-link absolute inset-0 z-10 rounded-2xl"
@@ -35,6 +35,18 @@
                 <span class="text-base font-medium text-foreground-secondary">
                     {% translate "Hosted by" %} {{ data.session.presenter_name }}
                 </span>
+            </div>
+            <div class="flex items-center gap-1.5 mb-3 text-sm text-foreground-secondary">
+                {% heroicon_mini "map-pin" class="size-4 shrink-0" %}
+                {% if data.loc.space %}
+                    <span>
+                        {{ data.loc.venue.name }} ›
+                        {{ data.loc.area.name }} ›
+                        {{ data.loc.space.name }}
+                    </span>
+                {% else %}
+                    <span style="color: var(--color-foreground-muted)">{% translate "TBA" %}</span>
+                {% endif %}
             </div>
             {% if data.session.description %}
                 <p class="text-sm mb-4 line-clamp-3 text-foreground-primary">{{ data.session.description }}</p>

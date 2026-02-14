@@ -812,10 +812,8 @@
                             <div class="text-sm mb-1" style="color: var(--color-foreground-muted)">{% translate "Location" %}</div>
                             <div class="font-medium" style="color: var(--color-foreground)">
                                 {% if data.loc.space %}
-                                    {% if data.loc.area %}
-                                        {{ data.loc.venue.name }} ›
-                                        {{ data.loc.area.name }} ›
-                                    {% endif %}
+                                    {{ data.loc.venue.name }} ›
+                                    {{ data.loc.area.name }} ›
                                     {{ data.loc.space.name }}
                                 {% else %}
                                     <span style="color: var(--color-foreground-muted)">{% translate "TBA" %}</span>
