@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load avatar_tags i18n %}
 {% block title %}
     {% translate "Avatar" %}
 {% endblock title %}
@@ -72,11 +72,13 @@
                                                              width="96"
                                                              height="96">
                                                     {% else %}
-                                                        <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center"
-                                                             style="width: 96px;
-                                                                    height: 96px">
-                                                            <i class="bi bi-person-fill text-white fs-1"></i>
-                                                        </div>
+                                                        {% with name_value=user.full_name|default:user.name|default:user.username|default:"" %}
+                                                            <div class="size-24 rounded-full shrink-0 relative overflow-hidden d-inline-block">
+                                                                <div class="absolute inset-0 {{ name_value|avatar_bg_class }} flex items-center justify-center">
+                                                                    <span class="text-2xl font-semibold text-white">{{ name_value|slice:":2"|upper }}</span>
+                                                                </div>
+                                                            </div>
+                                                        {% endwith %}
                                                     {% endif %}
                                                 </div>
                                                 <h6 class="card-title">Gravatar</h6>
@@ -112,11 +114,13 @@
                                          width="96"
                                          height="96">
                                 {% else %}
-                                    <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mx-auto"
-                                         style="width: 96px;
-                                                height: 96px">
-                                        <i class="bi bi-person-fill text-white fs-1"></i>
-                                    </div>
+                                    {% with name_value=user.full_name|default:user.name|default:user.username|default:"" %}
+                                        <div class="size-24 rounded-full shrink-0 relative overflow-hidden d-inline-block">
+                                            <div class="absolute inset-0 {{ name_value|avatar_bg_class }} flex items-center justify-center">
+                                                <span class="text-2xl font-semibold text-white">{{ name_value|slice:":2"|upper }}</span>
+                                            </div>
+                                        </div>
+                                    {% endwith %}
                                 {% endif %}
                             </div>
                             <h6>Gravatar</h6>
