@@ -7,8 +7,8 @@
     "build": "npm run build:clean && npm run build:tailwind && npm run build:js",
     "build:clean": "rimraf ../../static/css/dist",
     "build:tailwind": "NODE_ENV=production postcss ./src/index.css -o ../../../../../static/css/output.css --minify",
-    "build:js": "cp ./src/*.js ../../../../../static/js/",
-    "dev:js": "for f in ./src/*.js; do ln -sf \"$(pwd)/$f\" ../../../../../static/js/\"$(basename $f)\"; done",
+    "build:js": "mkdir -p ../../../../../static/js/; cp ./src/*.js ../../../../../static/js/",
+    "dev:js": "mkdir -p ../../../../../static/js/; for f in ./src/*.js; do ln -sf \"$(pwd)/$f\" ../../../../../static/js/\"$(basename $f)\"; done",
     "dev": "npm run dev:js && NODE_ENV=development postcss ./src/index.css -o ../../../../../static/css/output.css --watch",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write src"

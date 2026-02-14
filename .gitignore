@@ -216,3 +216,7 @@ src/ludamus/static/css/dist/
 .django_tailwind_cli/
 screenshots/
 tmp
+
+# Generated with tailwind build
+src/ludamus/static/js/modal.js
+src/ludamus/static/js/tabs.js
