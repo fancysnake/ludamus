@@ -76,7 +76,6 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from ludamus.adapters.db.django.models import User
-    from ludamus.links.db.django.storage import Storage
 else:
     from django.contrib.auth import get_user_model
 
@@ -84,58 +83,47 @@ else:
 
 
 class SphereRepository(SphereRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
-    def read_by_domain(self, domain: str) -> SphereDTO:
+    @staticmethod
+    def read_by_domain(domain: str) -> SphereDTO:
         try:
             sphere = Sphere.objects.get(site__domain=domain)
         except Sphere.DoesNotExist as exception:
             raise NotFoundError from exception
 
-        self._storage.spheres[sphere.pk] = sphere
+        return SphereDTO.model_validate(sphere)
+
+    @staticmethod
+    def read(pk: int) -> SphereDTO:
+        try:
+            sphere = Sphere.objects.select_related("site").get(id=pk)
+        except Sphere.DoesNotExist as exception:
+            raise NotFoundError from exception
 
         return SphereDTO.model_validate(sphere)
 
-    def read(self, pk: int) -> SphereDTO:
-        if not (sphere := self._storage.spheres.get(pk)):
-            try:
-                sphere = Sphere.objects.select_related("site").get(id=pk)
-            except Sphere.DoesNotExist as exception:
-                raise NotFoundError from exception
-            self._storage.spheres[pk] = sphere
+    @staticmethod
+    def read_site(sphere_id: int) -> SiteDTO:
+        sphere = Sphere.objects.select_related("site").get(id=sphere_id)
+        return SiteDTO.model_validate(sphere.site)
 
-        return SphereDTO.model_validate(sphere)
-
-    def read_site(self, sphere_id: int) -> SiteDTO:
-        sphere_orm = self._storage.spheres[sphere_id]
-        return SiteDTO.model_validate(sphere_orm.site)
-
-    def is_manager(self, sphere_id: int, user_slug: str) -> bool:
-        if not self._storage.sphere_managers[sphere_id]:
-            for manager in self._storage.spheres[sphere_id].managers.all():
-                self._storage.sphere_managers[sphere_id][manager.slug] = manager
-
-        return user_slug in self._storage.sphere_managers[sphere_id]
+    @staticmethod
+    def is_manager(sphere_id: int, user_slug: str) -> bool:
+        return Sphere.objects.filter(id=sphere_id, managers__slug=user_slug).exists()
 
 
 class UserRepository(UserRepositoryProtocol):
-    def __init__(self, storage: Storage, user_type: UserType) -> None:
-        self._storage = storage
-        self._collection = storage.users[user_type]
+    def __init__(self, user_type: UserType) -> None:
         self._user_type = user_type
 
-    def create(self, user_data: UserData) -> None:
-        user = User.objects.create(**user_data)
-        self._collection[user_data["slug"]] = user
+    @staticmethod
+    def create(user_data: UserData) -> None:
+        User.objects.create(**user_data)
 
     def read(self, slug: str) -> UserDTO:
-        if not (user := self._collection.get(slug)):
-            try:
-                user = User.objects.get(slug=slug, user_type=self._user_type)
-            except User.DoesNotExist as exception:
-                raise NotFoundError from exception
-            self._collection[slug] = user
+        try:
+            user = User.objects.get(slug=slug, user_type=self._user_type)
+        except User.DoesNotExist as exception:
+            raise NotFoundError from exception
 
         return UserDTO.model_validate(user)
 
@@ -144,13 +132,11 @@ class UserRepository(UserRepositoryProtocol):
             user = User.objects.get(username=username, user_type=self._user_type)
         except User.DoesNotExist as exception:
             raise NotFoundError from exception
-        self._collection[user.slug] = user
         return UserDTO.model_validate(user)
 
-    def update(self, user_slug: str, user_data: UserData) -> None:
+    @staticmethod
+    def update(user_slug: str, user_data: UserData) -> None:
         User.objects.filter(slug=user_slug).update(**user_data)
-        user = User.objects.get(slug=user_slug)
-        self._collection[user_slug] = user
 
     @staticmethod
     def email_exists(email: str, exclude_slug: str | None = None) -> bool:
@@ -165,98 +151,78 @@ class UserRepository(UserRepositoryProtocol):
 
 
 class ProposalRepository(ProposalRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
-    def read(self, pk: int) -> ProposalDTO:
-        if not (proposal := self._storage.proposals.get(pk)):
-            try:
-                proposal = Proposal.objects.select_related("category").get(id=pk)
-            except Proposal.DoesNotExist as exception:
-                raise NotFoundError from exception
-
-            self._storage.proposals[pk] = proposal
+    @staticmethod
+    def read(pk: int) -> ProposalDTO:
+        try:
+            proposal = Proposal.objects.select_related("category").get(id=pk)
+        except Proposal.DoesNotExist as exception:
+            raise NotFoundError from exception
 
         return ProposalDTO.model_validate(proposal)
 
-    def update(self, proposal_dto: ProposalDTO) -> None:
+    @staticmethod
+    def update(proposal_dto: ProposalDTO) -> None:
         proposal = Proposal.objects.get(id=proposal_dto.pk)
         for key, value in proposal_dto.model_dump().items():
             setattr(proposal, key, value)
         proposal.save()
 
-        self._storage.proposals[proposal.pk] = proposal
-
-    def read_event(self, proposal_id: int) -> EventDTO:
-        proposal = self._storage.proposals[proposal_id]
-        if not (event := self._storage.events.get(proposal.category.event_id)):
-            try:
-                event = Event.objects.get(id=proposal.category.event_id)
-            except Event.DoesNotExist as exception:
-                raise NotFoundError from exception
-
-            self._storage.events[proposal.category.event_id] = event
+    @staticmethod
+    def read_event(proposal_id: int) -> EventDTO:
+        try:
+            event = Event.objects.get(proposal_categories__proposals__id=proposal_id)
+        except Event.DoesNotExist as exception:
+            raise NotFoundError from exception
 
         return EventDTO.model_validate(event)
 
-    def read_time_slots(self, proposal_id: int) -> list[TimeSlotDTO]:
-        proposal = self._storage.proposals[proposal_id]
-        event_id = proposal.category.event_id
-        collection = self._storage.time_slots_by_event[event_id]
-        if not (time_slots := collection.values()):
-            for time_slot in TimeSlot.objects.filter(event_id=event_id):
-                collection[time_slot.id] = time_slot
-
+    @staticmethod
+    def read_time_slots(proposal_id: int) -> list[TimeSlotDTO]:
+        event_id = Proposal.objects.values_list("category__event_id", flat=True).get(
+            id=proposal_id
+        )
+        time_slots = TimeSlot.objects.filter(event_id=event_id)
         return [TimeSlotDTO.model_validate(time_slot) for time_slot in time_slots]
 
-    def read_spaces(self, proposal_id: int) -> list[SpaceDTO]:
-        proposal = self._storage.proposals[proposal_id]
-        event_id = proposal.category.event_id
+    @staticmethod
+    def read_spaces(proposal_id: int) -> list[SpaceDTO]:
+        event_id = Proposal.objects.values_list("category__event_id", flat=True).get(
+            id=proposal_id
+        )
         spaces = Space.objects.filter(area__venue__event_id=event_id)
         return [SpaceDTO.model_validate(space) for space in spaces]
 
-    def read_tag_ids(self, proposal_id: int) -> list[int]:
-        proposal = self._storage.proposals[proposal_id]
-        collection = self._storage.tags_by_proposal[proposal_id]
-        if not (tags := collection.values()):
-            for tag in proposal.tags.all():
-                collection[tag.id] = tag
+    @staticmethod
+    def read_tag_ids(proposal_id: int) -> list[int]:
+        return list(
+            Proposal.objects.get(id=proposal_id).tags.values_list("id", flat=True)
+        )
 
-        return [tag.pk for tag in tags]
+    @staticmethod
+    def read_host(proposal_id: int) -> UserDTO:
+        proposal = Proposal.objects.select_related("host").get(id=proposal_id)
+        return UserDTO.model_validate(proposal.host)
 
-    def read_host(self, proposal_id: int) -> UserDTO:
-        proposal = self._storage.proposals[proposal_id]
-        if not (host := self._storage.users[UserType.ACTIVE].get(proposal.host.slug)):
-            host = proposal.host
-            self._storage.users[UserType.ACTIVE][host.slug] = host
-
-        return UserDTO.model_validate(host)
-
-    def read_time_slot(self, proposal_id: int, time_slot_id: int) -> TimeSlotDTO:
-        proposal = self._storage.proposals[proposal_id]
-        event_id = proposal.category.event_id
-        collection = self._storage.time_slots_by_event[event_id]
-        if not (time_slot := collection.get(time_slot_id)):
-            time_slot = proposal.category.event.time_slots.get(id=time_slot_id)
-            collection[time_slot.id] = time_slot
-
+    @staticmethod
+    def read_time_slot(proposal_id: int, time_slot_id: int) -> TimeSlotDTO:
+        event_id = Proposal.objects.values_list("category__event_id", flat=True).get(
+            id=proposal_id
+        )
+        time_slot = TimeSlot.objects.get(id=time_slot_id, event_id=event_id)
         return TimeSlotDTO.model_validate(time_slot)
 
     @staticmethod
     def count_by_category(category_id: int) -> int:
         return Proposal.objects.filter(category_id=category_id).count()
 
-    def read_tags(self, proposal_id: int) -> list[TagDTO]:
-        proposal = self._storage.proposals[proposal_id]
-        collection = self._storage.tags_by_proposal[proposal_id]
-        if not (tags := collection.values()):
-            for tag in proposal.tags.all():
-                collection[tag.id] = tag
+    @staticmethod
+    def read_tags(proposal_id: int) -> list[TagDTO]:
+        proposal = Proposal.objects.get(id=proposal_id)
+        return [TagDTO.model_validate(tag) for tag in proposal.tags.all()]
 
-        return [TagDTO.model_validate(tag) for tag in tags]
-
-    def read_tag_categories(self, proposal_id: int) -> list[TagCategoryDTO]:
-        proposal = self._storage.proposals[proposal_id]
+    @staticmethod
+    def read_tag_categories(proposal_id: int) -> list[TagCategoryDTO]:
+        proposal = Proposal.objects.select_related("category").get(id=proposal_id)
 
         return [
             TagCategoryDTO.model_validate(tag)
@@ -265,107 +231,74 @@ class ProposalRepository(ProposalRepositoryProtocol):
 
 
 class SessionRepository(SessionRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
-    def create(self, session_data: SessionData, tag_ids: Iterable[int]) -> int:
+    @staticmethod
+    def create(session_data: SessionData, tag_ids: Iterable[int]) -> int:
         session = Session.objects.create(**session_data)
 
         session.tags.set(tag_ids)
-
-        self._storage.sessions[session.pk] = session
 
         return session.pk
 
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
-    def create(self, agenda_item_data: AgendaItemData) -> None:
-        agenda_item = AgendaItem.objects.create(**agenda_item_data)
-        self._storage.agenda_items[agenda_item.pk] = agenda_item
+    @staticmethod
+    def create(agenda_item_data: AgendaItemData) -> None:
+        AgendaItem.objects.create(**agenda_item_data)
 
 
 class ConnectedUserRepository(ConnectedUserRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
-    def read_all(self, manager_slug: str) -> list[UserDTO]:
-        if not (user := self._storage.users[UserType.ACTIVE].get(manager_slug)):
-            try:
-                user = User.objects.get(user_type=UserType.ACTIVE, slug=manager_slug)
-            except User.DoesNotExist as exception:
-                raise NotFoundError from exception
-
-            self._storage.users[UserType.ACTIVE][user.slug] = user
-
-        collection = self._storage.connected_users_by_user[manager_slug]
-        if not (connected_users := collection.values()):
-            for connected_user in user.connected.all():
-                collection[connected_user.slug] = connected_user
+    @staticmethod
+    def read_all(manager_slug: str) -> list[UserDTO]:
+        try:
+            manager = User.objects.get(user_type=UserType.ACTIVE, slug=manager_slug)
+        except User.DoesNotExist as exception:
+            raise NotFoundError from exception
 
         return [
-            UserDTO.model_validate(connected_user) for connected_user in connected_users
+            UserDTO.model_validate(connected_user)
+            for connected_user in manager.connected.all()
         ]
 
-    def create(self, manager_slug: str, user_data: UserData) -> None:
-        collection = self._storage.connected_users_by_user[manager_slug]
-        manager = self._storage.users[UserType.ACTIVE][manager_slug]
-        connected_user = User.objects.create(manager=manager, **user_data)
-        collection[connected_user.slug] = connected_user
+    @staticmethod
+    def create(manager_slug: str, user_data: UserData) -> None:
+        manager = User.objects.get(user_type=UserType.ACTIVE, slug=manager_slug)
+        User.objects.create(manager=manager, **user_data)
 
     def read(self, manager_slug: str, user_slug: str) -> UserDTO:
         connected_user = self._read_user(manager_slug, user_slug)
         return UserDTO.model_validate(connected_user)
 
-    def _read_user(self, manager_slug: str, user_slug: str) -> User:
-        if not (manager := self._storage.users[UserType.ACTIVE].get(manager_slug)):
-            try:
-                manager = User.objects.get(slug=manager_slug)
-            except User.DoesNotExist as exception:
-                raise NotFoundError from exception
+    @staticmethod
+    def _read_user(manager_slug: str, user_slug: str) -> User:
+        try:
+            return User.objects.get(slug=user_slug, manager__slug=manager_slug)
+        except User.DoesNotExist as exception:
+            raise NotFoundError from exception
 
-            self._storage.users[UserType.ACTIVE][manager.slug] = manager
-
-        collection = self._storage.connected_users_by_user[manager_slug]
-        if not (connected_user := collection.get(user_slug)):
-            connected_user = manager.connected.get(slug=user_slug)
-            collection[connected_user.slug] = connected_user
-        return connected_user
-
-    def update(self, manager_slug: str, user_slug: str, user_data: UserData) -> None:
-        collection = self._storage.connected_users_by_user[manager_slug]
-        self._read_user(manager_slug, user_slug)  # Ensure user is in storage
+    @staticmethod
+    def update(manager_slug: str, user_slug: str, user_data: UserData) -> None:
         User.objects.filter(slug=user_slug, manager__slug=manager_slug).update(
             **user_data
-        )
-        collection[user_slug] = User.objects.get(
-            slug=user_slug, manager__slug=manager_slug
         )
 
     def delete(self, manager_slug: str, user_slug: str) -> None:
         user = self._read_user(manager_slug, user_slug)
         user.delete()
-        del self._storage.connected_users_by_user[manager_slug][user_slug]
 
 
 class EventRepository(EventRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
-    def list_by_sphere(self, sphere_id: int) -> list[EventDTO]:
+    @staticmethod
+    def list_by_sphere(sphere_id: int) -> list[EventDTO]:
         """List all events for a sphere, ordered by start time descending.
 
         Returns:
             List of EventDTO objects for the sphere.
         """
         events = Event.objects.filter(sphere_id=sphere_id).order_by("-start_time")
-        for event in events:
-            self._storage.events[event.pk] = event
         return [EventDTO.model_validate(event) for event in events]
 
-    def read(self, pk: int) -> EventDTO:
+    @staticmethod
+    def read(pk: int) -> EventDTO:
         """Read an event by primary key.
 
         Returns:
@@ -374,15 +307,14 @@ class EventRepository(EventRepositoryProtocol):
         Raises:
             NotFoundError: If the event does not exist.
         """
-        if not (event := self._storage.events.get(pk)):
-            try:
-                event = Event.objects.get(id=pk)
-            except Event.DoesNotExist as exception:
-                raise NotFoundError from exception
-            self._storage.events[pk] = event
+        try:
+            event = Event.objects.get(id=pk)
+        except Event.DoesNotExist as exception:
+            raise NotFoundError from exception
         return EventDTO.model_validate(event)
 
-    def read_by_slug(self, slug: str, sphere_id: int) -> EventDTO:
+    @staticmethod
+    def read_by_slug(slug: str, sphere_id: int) -> EventDTO:
         """Read an event by slug within a sphere.
 
         Returns:
@@ -391,28 +323,19 @@ class EventRepository(EventRepositoryProtocol):
         Raises:
             NotFoundError: If the event does not exist.
         """
-        for event in self._storage.events.values():
-            if event.slug == slug and event.sphere_id == sphere_id:
-                return EventDTO.model_validate(event)
-
         try:
             event = Event.objects.get(slug=slug, sphere_id=sphere_id)
         except Event.DoesNotExist as exception:
             raise NotFoundError from exception
-        self._storage.events[event.pk] = event
         return EventDTO.model_validate(event)
 
-    def get_stats_data(self, event_id: int) -> EventStatsData:
+    @staticmethod
+    def get_stats_data(event_id: int) -> EventStatsData:
         """Get raw statistics data for an event.
 
         Returns:
             EventStatsData with raw counts and IDs for business logic processing.
         """
-        # Ensure event is cached in storage
-        if event_id not in self._storage.events:
-            event = Event.objects.get(id=event_id)
-            self._storage.events[event_id] = event
-
         proposals = Proposal.objects.filter(category__event_id=event_id)
         sessions = Session.objects.filter(
             agenda_item__space__area__venue__event_id=event_id
@@ -427,22 +350,18 @@ class EventRepository(EventRepositoryProtocol):
             rooms_count=spaces.count(),
         )
 
-    def update_name(self, event_id: int, name: str) -> None:
-        if not (event := self._storage.events.get(event_id)):
-            try:
-                event = Event.objects.get(id=event_id)
-            except Event.DoesNotExist as exception:
-                raise NotFoundError from exception
+    @staticmethod
+    def update_name(event_id: int, name: str) -> None:
+        try:
+            event = Event.objects.get(id=event_id)
+        except Event.DoesNotExist as exception:
+            raise NotFoundError from exception
 
         event.name = name
         event.save()
-        self._storage.events[event_id] = event
 
 
 class VenueRepository(VenueRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
     @transaction.atomic
     def create(self, event_id: int, name: str, address: str = "") -> VenueDTO:
         """Create a new venue for an event.
@@ -475,11 +394,11 @@ class VenueRepository(VenueRepositoryProtocol):
             address=address,
             order=max_order + 1,
         )
-        self._storage.venues_by_event[event_id][venue.pk] = venue
 
         return VenueDTO.model_validate(venue)
 
-    def delete(self, pk: int) -> None:
+    @staticmethod
+    def delete(pk: int) -> None:
         """Delete a venue.
 
         Args:
@@ -490,11 +409,7 @@ class VenueRepository(VenueRepositoryProtocol):
         except Venue.DoesNotExist:
             return
 
-        event_id = venue.event_id
         venue.delete()
-
-        # Remove from storage cache
-        self._storage.venues_by_event[event_id].pop(pk, None)
 
     @staticmethod
     def has_sessions(pk: int) -> bool:
@@ -508,24 +423,23 @@ class VenueRepository(VenueRepositoryProtocol):
         """
         return AgendaItem.objects.filter(space__area__venue_id=pk).exists()
 
-    def list_by_event(self, event_pk: int) -> list[VenueDTO]:
+    @staticmethod
+    def list_by_event(event_pk: int) -> list[VenueDTO]:
         """List all venues for an event, ordered by order then name.
 
         Returns:
             List of VenueDTO objects for the event.
         """
-        if not (collection := self._storage.venues_by_event[event_pk]):
-            venues = (
-                Venue.objects.filter(event_id=event_pk)
-                .annotate(areas_count=Count("areas"))
-                .order_by("order", "name")
-            )
-            for venue in venues:
-                collection[venue.pk] = venue
+        venues = (
+            Venue.objects.filter(event_id=event_pk)
+            .annotate(areas_count=Count("areas"))
+            .order_by("order", "name")
+        )
 
-        return [VenueDTO.model_validate(venue) for venue in collection.values()]
+        return [VenueDTO.model_validate(venue) for venue in venues]
 
-    def read_by_slug(self, event_pk: int, slug: str) -> VenueDTO:
+    @staticmethod
+    def read_by_slug(event_pk: int, slug: str) -> VenueDTO:
         """Read a venue by slug.
 
         Args:
@@ -538,22 +452,16 @@ class VenueRepository(VenueRepositoryProtocol):
         Raises:
             NotFoundError: If the venue is not found.
         """
-        # Check storage first
-        for venue in self._storage.venues_by_event[event_pk].values():
-            if venue.slug == slug:
-                return VenueDTO.model_validate(venue)
-
-        # Query database
         try:
             venue = Venue.objects.get(event_id=event_pk, slug=slug)
         except Venue.DoesNotExist as err:
             msg = f"Venue with slug '{slug}' not found"
             raise NotFoundError(msg) from err
 
-        self._storage.venues_by_event[event_pk][venue.pk] = venue
         return VenueDTO.model_validate(venue)
 
-    def reorder(self, event_id: int, venue_pks: list[int]) -> None:
+    @staticmethod
+    def reorder(event_id: int, venue_pks: list[int]) -> None:
         """Reorder venues for an event.
 
         Args:
@@ -573,8 +481,6 @@ class VenueRepository(VenueRepositoryProtocol):
             if venue.order != order:
                 venue.order = order
                 venue.save(update_fields=["order"])
-                # Update storage cache
-                self._storage.venues_by_event[event_id][pk] = venue
 
     @transaction.atomic
     def update(self, pk: int, name: str, address: str = "") -> VenueDTO:
@@ -614,7 +520,6 @@ class VenueRepository(VenueRepositoryProtocol):
 
         if needs_save:
             venue.save()
-            self._storage.venues_by_event[venue.event_id][venue.pk] = venue
 
         return VenueDTO.model_validate(venue)
 
@@ -677,7 +582,6 @@ class VenueRepository(VenueRepositoryProtocol):
             address=venue.address,
             order=max_order + 1,
         )
-        self._storage.venues_by_event[venue.event_id][new_venue.pk] = new_venue
 
         # Copy areas and spaces (event lock serializes all slug generation)
         areas = Area.objects.filter(venue_id=pk).order_by("order")
@@ -750,7 +654,6 @@ class VenueRepository(VenueRepositoryProtocol):
             address=venue.address,
             order=max_order + 1,
         )
-        self._storage.venues_by_event[target_event_id][new_venue.pk] = new_venue
 
         # Copy areas and spaces (event lock serializes all slug generation)
         areas = Area.objects.filter(venue_id=pk).order_by("order")
@@ -782,9 +685,6 @@ class VenueRepository(VenueRepositoryProtocol):
 
 
 class AreaRepository(AreaRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
     @transaction.atomic
     def create(self, venue_id: int, name: str, description: str = "") -> AreaDTO:
         """Create a new area for a venue.
@@ -798,7 +698,7 @@ class AreaRepository(AreaRepositoryProtocol):
             AreaDTO of the created area.
         """
         # Lock venue to serialize slug generation
-        venue = Venue.objects.select_for_update().get(pk=venue_id)
+        Venue.objects.select_for_update().get(pk=venue_id)
 
         base_slug = slugify(name)
         slug = self.generate_unique_slug(venue_id, base_slug)
@@ -817,33 +717,22 @@ class AreaRepository(AreaRepositoryProtocol):
             description=description,
             order=max_order + 1,
         )
-        self._storage.areas_by_venue[venue_id][area.pk] = area
-
-        # Invalidate cached venue to refresh areas_count
-        self._storage.venues_by_event[venue.event_id].pop(venue_id, None)
 
         return AreaDTO.model_validate(area)
 
-    def delete(self, pk: int) -> None:
+    @staticmethod
+    def delete(pk: int) -> None:
         """Delete an area.
 
         Args:
             pk: The area primary key.
         """
         try:
-            area = Area.objects.select_related("venue").get(pk=pk)
+            area = Area.objects.get(pk=pk)
         except Area.DoesNotExist:
             return
 
-        venue_id = area.venue_id
-        event_id = area.venue.event_id
         area.delete()
-
-        # Remove from storage cache
-        self._storage.areas_by_venue[venue_id].pop(pk, None)
-
-        # Invalidate cached venue to refresh areas_count
-        self._storage.venues_by_event[event_id].pop(venue_id, None)
 
     @staticmethod
     def has_sessions(pk: int) -> bool:
@@ -857,24 +746,23 @@ class AreaRepository(AreaRepositoryProtocol):
         """
         return AgendaItem.objects.filter(space__area_id=pk).exists()
 
-    def list_by_venue(self, venue_pk: int) -> list[AreaDTO]:
+    @staticmethod
+    def list_by_venue(venue_pk: int) -> list[AreaDTO]:
         """List all areas for a venue, ordered by order then name.
 
         Returns:
             List of AreaDTO objects for the venue.
         """
-        if not (collection := self._storage.areas_by_venue[venue_pk]):
-            areas = (
-                Area.objects.filter(venue_id=venue_pk)
-                .annotate(spaces_count=Count("spaces"))
-                .order_by("order", "name")
-            )
-            for area in areas:
-                collection[area.pk] = area
+        areas = (
+            Area.objects.filter(venue_id=venue_pk)
+            .annotate(spaces_count=Count("spaces"))
+            .order_by("order", "name")
+        )
 
-        return [AreaDTO.model_validate(area) for area in collection.values()]
+        return [AreaDTO.model_validate(area) for area in areas]
 
-    def read_by_slug(self, venue_pk: int, slug: str) -> AreaDTO:
+    @staticmethod
+    def read_by_slug(venue_pk: int, slug: str) -> AreaDTO:
         """Read an area by slug.
 
         Args:
@@ -887,22 +775,16 @@ class AreaRepository(AreaRepositoryProtocol):
         Raises:
             NotFoundError: If the area is not found.
         """
-        # Check storage first
-        for area in self._storage.areas_by_venue[venue_pk].values():
-            if area.slug == slug:
-                return AreaDTO.model_validate(area)
-
-        # Query database
         try:
             area = Area.objects.get(venue_id=venue_pk, slug=slug)
         except Area.DoesNotExist as err:
             msg = f"Area with slug '{slug}' not found"
             raise NotFoundError(msg) from err
 
-        self._storage.areas_by_venue[venue_pk][area.pk] = area
         return AreaDTO.model_validate(area)
 
-    def reorder(self, venue_id: int, area_pks: list[int]) -> None:
+    @staticmethod
+    def reorder(venue_id: int, area_pks: list[int]) -> None:
         """Reorder areas for a venue.
 
         Args:
@@ -922,8 +804,6 @@ class AreaRepository(AreaRepositoryProtocol):
             if area.order != order:
                 area.order = order
                 area.save(update_fields=["order"])
-                # Update storage cache
-                self._storage.areas_by_venue[venue_id][pk] = area
 
     @transaction.atomic
     def update(self, pk: int, name: str, description: str = "") -> AreaDTO:
@@ -963,7 +843,6 @@ class AreaRepository(AreaRepositoryProtocol):
 
         if needs_save:
             area.save()
-            self._storage.areas_by_venue[area.venue_id][area.pk] = area
 
         return AreaDTO.model_validate(area)
 
@@ -985,9 +864,6 @@ class AreaRepository(AreaRepositoryProtocol):
 
 
 class SpaceRepository(SpaceRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
     @transaction.atomic
     def create(self, area_id: int, name: str, capacity: int | None = None) -> SpaceDTO:
         """Create a new space for an area.
@@ -1020,11 +896,11 @@ class SpaceRepository(SpaceRepositoryProtocol):
             capacity=capacity,
             order=max_order + 1,
         )
-        self._storage.spaces_by_area[area_id][space.pk] = space
 
         return SpaceDTO.model_validate(space)
 
-    def delete(self, pk: int) -> None:
+    @staticmethod
+    def delete(pk: int) -> None:
         """Delete a space.
 
         Args:
@@ -1035,12 +911,7 @@ class SpaceRepository(SpaceRepositoryProtocol):
         except Space.DoesNotExist:
             return
 
-        area_id = space.area_id
         space.delete()
-
-        # Remove from storage cache
-        if area_id:
-            self._storage.spaces_by_area[area_id].pop(pk, None)
 
     @staticmethod
     def has_sessions(pk: int) -> bool:
@@ -1054,20 +925,19 @@ class SpaceRepository(SpaceRepositoryProtocol):
         """
         return AgendaItem.objects.filter(space_id=pk).exists()
 
-    def list_by_area(self, area_pk: int) -> list[SpaceDTO]:
+    @staticmethod
+    def list_by_area(area_pk: int) -> list[SpaceDTO]:
         """List all spaces for an area, ordered by order then name.
 
         Returns:
             List of SpaceDTO objects for the area.
         """
-        if not (collection := self._storage.spaces_by_area[area_pk]):
-            spaces = Space.objects.filter(area_id=area_pk).order_by("order", "name")
-            for space in spaces:
-                collection[space.pk] = space
+        spaces = Space.objects.filter(area_id=area_pk).order_by("order", "name")
 
-        return [SpaceDTO.model_validate(space) for space in collection.values()]
+        return [SpaceDTO.model_validate(space) for space in spaces]
 
-    def read_by_slug(self, area_pk: int, slug: str) -> SpaceDTO:
+    @staticmethod
+    def read_by_slug(area_pk: int, slug: str) -> SpaceDTO:
         """Read a space by slug.
 
         Args:
@@ -1080,22 +950,16 @@ class SpaceRepository(SpaceRepositoryProtocol):
         Raises:
             NotFoundError: If the space is not found.
         """
-        # Check storage first
-        for space in self._storage.spaces_by_area[area_pk].values():
-            if space.slug == slug:
-                return SpaceDTO.model_validate(space)
-
-        # Query database
         try:
             space = Space.objects.get(area_id=area_pk, slug=slug)
         except Space.DoesNotExist as err:
             msg = f"Space with slug '{slug}' not found"
             raise NotFoundError(msg) from err
 
-        self._storage.spaces_by_area[area_pk][space.pk] = space
         return SpaceDTO.model_validate(space)
 
-    def reorder(self, area_id: int, space_pks: list[int]) -> None:
+    @staticmethod
+    def reorder(area_id: int, space_pks: list[int]) -> None:
         """Reorder spaces for an area.
 
         Args:
@@ -1115,8 +979,6 @@ class SpaceRepository(SpaceRepositoryProtocol):
             if space.order != order:
                 space.order = order
                 space.save(update_fields=["order"])
-                # Update storage cache
-                self._storage.spaces_by_area[area_id][pk] = space
 
     @transaction.atomic
     def update(self, pk: int, name: str, capacity: int | None = None) -> SpaceDTO:
@@ -1156,7 +1018,6 @@ class SpaceRepository(SpaceRepositoryProtocol):
 
         if needs_save:
             space.save()
-            self._storage.spaces_by_area[space.area_id][space.pk] = space
 
         return SpaceDTO.model_validate(space)
 
@@ -1178,9 +1039,6 @@ class SpaceRepository(SpaceRepositoryProtocol):
 
 
 class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
     def create(self, event_id: int, name: str) -> ProposalCategoryDTO:
         base_slug = slugify(name)
         slug = self.generate_unique_slug(event_id, base_slug)
@@ -1188,29 +1046,23 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         category = ProposalCategory.objects.create(
             event_id=event_id, name=name, slug=slug
         )
-        self._storage.proposal_categories[category.pk] = category
 
         return ProposalCategoryDTO.model_validate(category)
 
-    def read_by_slug(self, event_id: int, slug: str) -> ProposalCategoryDTO:
-        for category in self._storage.proposal_categories.values():
-            if category.slug == slug and category.event_id == event_id:
-                return ProposalCategoryDTO.model_validate(category)
-
+    @staticmethod
+    def read_by_slug(event_id: int, slug: str) -> ProposalCategoryDTO:
         try:
             category = ProposalCategory.objects.get(event_id=event_id, slug=slug)
         except ProposalCategory.DoesNotExist as exception:
             raise NotFoundError from exception
 
-        self._storage.proposal_categories[category.pk] = category
         return ProposalCategoryDTO.model_validate(category)
 
     def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO:
-        if not (category := self._storage.proposal_categories.get(pk)):
-            try:
-                category = ProposalCategory.objects.get(id=pk)
-            except ProposalCategory.DoesNotExist as exception:
-                raise NotFoundError from exception
+        try:
+            category = ProposalCategory.objects.get(id=pk)
+        except ProposalCategory.DoesNotExist as exception:
+            raise NotFoundError from exception
 
         needs_save = False
 
@@ -1239,18 +1091,16 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
         if needs_save:
             category.save()
 
-        self._storage.proposal_categories[pk] = category
         return ProposalCategoryDTO.model_validate(category)
 
-    def delete(self, pk: int) -> None:
-        if not (category := self._storage.proposal_categories.get(pk)):
-            try:
-                category = ProposalCategory.objects.get(id=pk)
-            except ProposalCategory.DoesNotExist as exception:
-                raise NotFoundError from exception
+    @staticmethod
+    def delete(pk: int) -> None:
+        try:
+            category = ProposalCategory.objects.get(id=pk)
+        except ProposalCategory.DoesNotExist as exception:
+            raise NotFoundError from exception
 
         category.delete()
-        self._storage.proposal_categories.pop(pk, None)
 
     @staticmethod
     def get_category_stats(event_id: int) -> dict[int, CategoryStats]:
@@ -1279,10 +1129,9 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
     def has_proposals(pk: int) -> bool:
         return Proposal.objects.filter(category_id=pk).exists()
 
-    def list_by_event(self, event_id: int) -> list[ProposalCategoryDTO]:
+    @staticmethod
+    def list_by_event(event_id: int) -> list[ProposalCategoryDTO]:
         categories = ProposalCategory.objects.filter(event_id=event_id).order_by("name")
-        for category in categories:
-            self._storage.proposal_categories[category.pk] = category
         return [ProposalCategoryDTO.model_validate(c) for c in categories]
 
     @staticmethod
@@ -1405,9 +1254,6 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
 
 
 class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
     def create(  # noqa: PLR0913
         self,
         event_id: int,
@@ -1433,7 +1279,6 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
             is_multiple=actual_is_multiple,
             allow_custom=actual_allow_custom,
         )
-        self._storage.personal_data_fields[field.pk] = field
 
         if field_type == "select" and options:
             for order, raw_option in enumerate(options):
@@ -1444,11 +1289,9 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def delete(self, pk: int) -> None:
-        if field := self._storage.personal_data_fields.pop(pk, None):
-            field.delete()
-        else:
-            PersonalDataField.objects.filter(pk=pk).delete()
+    @staticmethod
+    def delete(pk: int) -> None:
+        PersonalDataField.objects.filter(pk=pk).delete()
 
     @staticmethod
     def has_requirements(pk: int) -> bool:
@@ -1463,15 +1306,9 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         fields = PersonalDataField.objects.filter(event_id=event_id).prefetch_related(
             "options"
         )
-        for field in fields:
-            self._storage.personal_data_fields[field.pk] = field
         return [self._to_dto(f) for f in fields]
 
     def read_by_slug(self, event_id: int, slug: str) -> PersonalDataFieldDTO:
-        for field in self._storage.personal_data_fields.values():
-            if field.slug == slug and field.event_id == event_id:
-                return self._to_dto(field)
-
         try:
             field = PersonalDataField.objects.prefetch_related("options").get(
                 event_id=event_id, slug=slug
@@ -1479,15 +1316,13 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         except PersonalDataField.DoesNotExist as exc:
             raise NotFoundError from exc
 
-        self._storage.personal_data_fields[field.pk] = field
         return self._to_dto(field)
 
     def update(self, pk: int, name: str) -> PersonalDataFieldDTO:
-        if not (field := self._storage.personal_data_fields.get(pk)):
-            try:
-                field = PersonalDataField.objects.get(pk=pk)
-            except PersonalDataField.DoesNotExist as exc:
-                raise NotFoundError from exc
+        try:
+            field = PersonalDataField.objects.get(pk=pk)
+        except PersonalDataField.DoesNotExist as exc:
+            raise NotFoundError from exc
 
         base_slug = slugify(name)
         slug = self.generate_unique_slug(field.event_id, base_slug, exclude_pk=pk)
@@ -1495,7 +1330,6 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         field.name = name
         field.slug = slug
         field.save()
-        self._storage.personal_data_fields[field.pk] = field
 
         return self._to_dto(field)
 
@@ -1533,9 +1367,6 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
 
 
 class SessionFieldRepository(SessionFieldRepositoryProtocol):
-    def __init__(self, storage: Storage) -> None:
-        self._storage = storage
-
     def create(  # noqa: PLR0913
         self,
         event_id: int,
@@ -1561,7 +1392,6 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             is_multiple=actual_is_multiple,
             allow_custom=actual_allow_custom,
         )
-        self._storage.session_fields[field.pk] = field
 
         if field_type == "select" and options:
             for order, raw_option in enumerate(options):
@@ -1572,11 +1402,9 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def delete(self, pk: int) -> None:
-        if field := self._storage.session_fields.pop(pk, None):
-            field.delete()
-        else:
-            SessionField.objects.filter(pk=pk).delete()
+    @staticmethod
+    def delete(pk: int) -> None:
+        SessionField.objects.filter(pk=pk).delete()
 
     @staticmethod
     def has_requirements(pk: int) -> bool:
@@ -1591,15 +1419,9 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         fields = SessionField.objects.filter(event_id=event_id).prefetch_related(
             "options"
         )
-        for field in fields:
-            self._storage.session_fields[field.pk] = field
         return [self._to_dto(f) for f in fields]
 
     def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO:
-        for field in self._storage.session_fields.values():
-            if field.slug == slug and field.event_id == event_id:
-                return self._to_dto(field)
-
         try:
             field = SessionField.objects.prefetch_related("options").get(
                 event_id=event_id, slug=slug
@@ -1607,15 +1429,13 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         except SessionField.DoesNotExist as exc:
             raise NotFoundError from exc
 
-        self._storage.session_fields[field.pk] = field
         return self._to_dto(field)
 
     def update(self, pk: int, name: str) -> SessionFieldDTO:
-        if not (field := self._storage.session_fields.get(pk)):
-            try:
-                field = SessionField.objects.get(pk=pk)
-            except SessionField.DoesNotExist as exc:
-                raise NotFoundError from exc
+        try:
+            field = SessionField.objects.get(pk=pk)
+        except SessionField.DoesNotExist as exc:
+            raise NotFoundError from exc
 
         base_slug = slugify(name)
         slug = self.generate_unique_slug(field.event_id, base_slug, exclude_pk=pk)
@@ -1623,7 +1443,6 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         field.name = name
         field.slug = slug
         field.save()
-        self._storage.session_fields[field.pk] = field
 
         return self._to_dto(field)
 
