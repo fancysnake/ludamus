@@ -23,7 +23,9 @@ test.describe('Event detail page', () => {
     await expect(megaStrategyCard).toContainText('Convention Center ›');
     await expect(megaStrategyCard).toContainText('Main Hall ›');
     await expect(megaStrategyCard).toContainText('East Wing');
-    await megaStrategyCard.click();
+
+    // Navigate with query param to open the modal via syncModalsFromUrl
+    await page.goto('/chronology/event/autumn-open/?session=1');
 
     const detailDialog = page.getByRole('dialog', { name: 'Mega Strategy Lab' });
     await expect(detailDialog).toBeVisible();
