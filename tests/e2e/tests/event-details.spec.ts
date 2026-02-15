@@ -25,7 +25,7 @@ test.describe('Event detail page', () => {
     await expect(megaStrategyCard).toContainText('East Wing');
     await megaStrategyCard.click();
 
-    const detailDialog = page.locator('dialog', { hasText: 'Mega Strategy Lab' });
+    const detailDialog = page.getByRole('dialog', { name: 'Mega Strategy Lab' });
     await expect(detailDialog).toBeVisible();
     await expect(detailDialog).toContainText('Alex Morgan');
 
