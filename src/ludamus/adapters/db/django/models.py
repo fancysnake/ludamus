@@ -77,6 +77,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         help_text=_("Your Discord username for session coordination"),
     )
+    avatar_url = models.URLField(
+        _("Avatar URL"),
+        blank=True,
+        default="",
+        help_text=_("Profile avatar URL (e.g. from Auth0)"),
+    )
+    use_gravatar = models.BooleanField(
+        _("Use Gravatar"),
+        default=False,
+        help_text=_("Use Gravatar instead of provider avatar"),
+    )
 
     objects = UserManager()
 

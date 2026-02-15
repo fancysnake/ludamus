@@ -2,8 +2,10 @@ from datetime import UTC, datetime
 from http import HTTPStatus
 from unittest.mock import ANY
 
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.urls import reverse
 
+from ludamus.adapters.web.django.views import EVENT_PLACEHOLDER_IMAGES, EventInfo
 from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
 
@@ -27,7 +29,19 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventInfo.from_event(
+                        event=event,
+                        session_count=0,
+                        cover_image_url=staticfiles_storage.url(
+                            EVENT_PLACEHOLDER_IMAGES[0]
+                        ),
+                    )
+                ],
+                "view": ANY,
+            },
             template_name=["index.html"],
         )
 
@@ -43,7 +57,19 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventInfo.from_event(
+                        event=event,
+                        session_count=0,
+                        cover_image_url=staticfiles_storage.url(
+                            EVENT_PLACEHOLDER_IMAGES[0]
+                        ),
+                    )
+                ],
+                "view": ANY,
+            },
             template_name=["index.html"],
         )
 
@@ -59,7 +85,19 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventInfo.from_event(
+                        event=event,
+                        session_count=0,
+                        cover_image_url=staticfiles_storage.url(
+                            EVENT_PLACEHOLDER_IMAGES[0]
+                        ),
+                    )
+                ],
+                "view": ANY,
+            },
             template_name=["index.html"],
         )
 
@@ -75,7 +113,19 @@ class TestIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"past_events": [], "upcoming_events": [event], "view": ANY},
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventInfo.from_event(
+                        event=event,
+                        session_count=0,
+                        cover_image_url=staticfiles_storage.url(
+                            EVENT_PLACEHOLDER_IMAGES[0]
+                        ),
+                    )
+                ],
+                "view": ANY,
+            },
             template_name=["index.html"],
         )
 

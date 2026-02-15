@@ -95,6 +95,9 @@ django-admin tailwind install
 django-admin tailwind build
 """
 
+[tasks.ts-check]
+run = "cd src/ludamus/gates/web/django/theme/static_src && npm typecheck"
+
 [tasks.kill]
 description = "Kill dev servers (Django on :8000, Tailwind watch)"
 run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch' 2>/dev/null; echo 'Dev servers killed'"

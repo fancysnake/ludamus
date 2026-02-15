@@ -210,6 +210,13 @@ worktrees/
 
 # Tailwind CSS
 src/ludamus/static/css/output.css
+# kinda worrying there are two, do we need both?
+src/static/css/output.css
 src/ludamus/static/css/dist/
 .django_tailwind_cli/
 screenshots/
+tmp
+
+# Generated with tailwind build
+src/ludamus/static/js/modal.js
+src/ludamus/static/js/tabs.js

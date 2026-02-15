@@ -1,4 +1,5 @@
 import json
+import logging
 from collections import defaultdict
 from contextlib import suppress
 from dataclasses import dataclass
@@ -27,6 +28,8 @@ from django.utils.translation import gettext as _
 from django.views.generic.base import ContextMixin, RedirectView, TemplateView, View
 from django.views.generic.detail import DetailView, SingleObjectTemplateResponseMixin
 from django.views.generic.edit import FormMixin, ProcessFormView
+from pydantic import BaseModel, ConfigDict
+from pydantic import ValidationError as PydanticValidationError
 
 from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
@@ -42,11 +45,15 @@ from ludamus.adapters.db.django.models import (
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
+    EventInfo,
+    ParticipationInfo,
     SessionData,
     SessionUserParticipationData,
     TagCategoryData,
     TagWithCategory,
+    UserInfo,
 )
+from ludamus.links.gravatar import gravatar_url
 from ludamus.mills import (
     AcceptProposalService,
     AnonymousEnrollmentService,
@@ -70,7 +77,6 @@ from ludamus.pacts import (
     TagDTO,
     UserData,
     UserDTO,
-    UserParticipation,
     VenueDTO,
 )
 
@@ -83,6 +89,8 @@ from .forms import (
     create_session_proposal_form,
     get_tag_data_from_form,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -154,6 +162,57 @@ class Auth0LoginActionView(View):
         )
 
 
+class Auth0UserInfo(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    email: str = ""
+    family_name: str = ""
+    given_name: str = ""
+    name: str = ""
+    nickname: str = ""
+    picture: str = ""
+    preferred_username: str = ""
+    sub: str
+
+    @property
+    def display_name(self) -> str | None:
+        if self.name.strip():
+            return self.name.strip()
+        parts = [p.strip() for p in (self.given_name, self.family_name) if p.strip()]
+        if parts:
+            return " ".join(parts)
+        if self.nickname.strip():
+            return self.nickname.strip()
+        if self.preferred_username.strip():
+            return self.preferred_username.strip()
+        return None
+
+    @property
+    def username(self) -> str:
+        return f"auth0|{self.sub}"
+
+    def to_create_data(self, *, slug: str, password: str) -> UserData:
+        return UserData(
+            slug=slug,
+            username=self.username,
+            password=password,
+            email=self.email or "",
+            avatar_url=self.picture or "",
+            name=self.display_name or "",
+        )
+
+    def to_update_data(self, user: UserDTO) -> UserData:
+        data: UserData = {}
+        if self.email and user.email != self.email:
+            data["email"] = self.email
+        if self.picture and user.avatar_url != self.picture:
+            data["avatar_url"] = self.picture
+        display_name = self.display_name
+        if display_name and not (user.name or "").strip():
+            data["name"] = display_name
+        return data
+
+
 class Auth0LoginCallbackActionView(RedirectView):
     request: RootRequest
 
@@ -196,45 +255,86 @@ class Auth0LoginCallbackActionView(RedirectView):
             messages.error(self.request, _("Invalid authentication state"))
             return self.request.build_absolute_uri(reverse("web:index"))
 
+        if self.request.context.current_user_slug:
+            return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
+
+        userinfo = self._get_userinfo()
+
         # Handle login/signup
-        if not self.request.context.current_user_slug:
-            username = self._get_username()
-            try:
-                user = self.request.di.uow.active_users.read_by_username(username)
-            except NotFoundError:
-                slug = slugify(username)
-                self.request.di.uow.active_users.create(
-                    UserData(slug=slug, username=username, password=make_password(None))
+        try:
+            user = self.request.di.uow.active_users.read_by_username(userinfo.username)
+        except NotFoundError:
+            create_data = userinfo.to_create_data(
+                slug=slugify(userinfo.username), password=make_password(None)
+            )
+            if self.request.di.uow.active_users.email_exists(
+                create_data.get("email", "")
+            ):
+                create_data["email"] = ""
+            self.request.di.uow.active_users.create(create_data)
+            user = self.request.di.uow.active_users.read_by_username(userinfo.username)
+
+        # Log the user in
+        self.request.di.uow.login_user(self.request, user.slug)
+        if self.request.session.get("anonymous_enrollment_active"):
+            self.request.session.pop("anonymous_user_code", None)
+            self.request.session.pop("anonymous_enrollment_active", None)
+            self.request.session.pop("anonymous_event_id", None)
+        messages.success(self.request, _("Welcome!"))
+
+        if update_data := userinfo.to_update_data(user):
+            if (
+                "email" in update_data
+                and self.request.di.uow.active_users.email_exists(
+                    update_data["email"], exclude_slug=user.slug
                 )
-                user = self.request.di.uow.active_users.read_by_username(username)
+            ):
+                del update_data["email"]
+            if update_data:
+                self.request.di.uow.active_users.update(user.slug, update_data)
 
-            # Log the user in
-            self.request.di.uow.login_user(self.request, user.slug)
-            if self.request.session.get("anonymous_enrollment_active"):
-                self.request.session.pop("anonymous_user_code", None)
-                self.request.session.pop("anonymous_enrollment_active", None)
-                self.request.session.pop("anonymous_event_id", None)
-            messages.success(self.request, _("Welcome!"))
+            if "name" in update_data:
+                user = self.request.di.uow.active_users.read(user.slug)
 
-            # Check if profile needs completion
-            if not user.name:
-                messages.success(self.request, _("Please complete your profile."))
-                if redirect_to:
-                    parsed = urlparse(redirect_to)
-                    return f'{parsed.scheme}://{parsed.netloc}{reverse("web:crowd:profile")}'
-                return self.request.build_absolute_uri(reverse("web:crowd:profile"))
+        if not (user.name or "").strip():
+            messages.success(self.request, _("Please complete your profile."))
+            if redirect_to:
+                parsed = urlparse(redirect_to)
+                return (
+                    f'{parsed.scheme}://{parsed.netloc}{reverse("web:crowd:profile")}'
+                )
+            return self.request.build_absolute_uri(reverse("web:crowd:profile"))
 
         return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
 
-    def _get_username(self) -> str:
+    def _get_userinfo(self) -> Auth0UserInfo:
         token = oauth.auth0.authorize_access_token(self.request)
-
+        raw: dict[str, Any] = {}
+        source = "token"
+        if isinstance(token, dict):
+            raw = token.get("userinfo") or {}
+        if not raw:
+            source = "/userinfo"
+            try:
+                result = oauth.auth0.userinfo(token=token)
+            except Exception as exc:
+                raise RedirectError(
+                    reverse("web:index"), error=_("Authentication failed")
+                ) from exc
+            raw = result if isinstance(result, dict) else {}
         try:
-            return f'auth0|{token["userinfo"]["sub"]}'
-        except KeyError, TypeError:
+            userinfo = Auth0UserInfo.model_validate(raw)
+        except PydanticValidationError as exc:
             raise RedirectError(
                 reverse("web:index"), error=_("Authentication failed")
-            ) from None
+            ) from exc
+        logger.info(
+            "Auth0 userinfo from %s: sub=%s has_name=%s",
+            source,
+            userinfo.sub,
+            bool(userinfo.name),
+        )
+        return userinfo
 
 
 class Auth0LogoutActionView(RedirectView):
@@ -341,12 +441,19 @@ class IndexPageView(TemplateView):
             .order_by("start_time")
             .all()
         )
+        event_datas: list[EventInfo] = []
         # Assign placeholder images based on index
         for i, event in enumerate(all_events):
             img = EVENT_PLACEHOLDER_IMAGES[i % len(EVENT_PLACEHOLDER_IMAGES)]
-            event.cover_image_url = staticfiles_storage.url(img)  # type: ignore[attr-defined]
-        context["upcoming_events"] = [e for e in all_events if not e.is_ended]
-        context["past_events"] = [e for e in all_events if e.is_ended]
+            event_datas.append(
+                EventInfo.from_event(
+                    event=event,
+                    session_count=event.session_count,
+                    cover_image_url=staticfiles_storage.url(img),
+                )
+            )
+        context["upcoming_events"] = [e for e in event_datas if not e.is_ended]
+        context["past_events"] = [e for e in event_datas if e.is_ended]
         return context
 
 
@@ -545,6 +652,32 @@ class ProfileConnectedUserDeleteActionView(
         return HttpResponseRedirect(success_url)
 
 
+class ProfileAvatarPageView(LoginRequiredMixin, View):
+    request: AuthenticatedRootRequest
+
+    @staticmethod
+    def get(request: AuthenticatedRootRequest) -> TemplateResponse:
+        user = request.di.uow.active_users.read(request.context.current_user_slug)
+        return TemplateResponse(
+            request,
+            "crowd/user/avatar.html",
+            {
+                "user": user,
+                "gravatar_url": gravatar_url(user.email),
+                "has_auth0_avatar": bool(user.avatar_url),
+            },
+        )
+
+    @staticmethod
+    def post(request: AuthenticatedRootRequest) -> HttpResponse:
+        use_gravatar = request.POST.get("use_gravatar") == "true"
+        request.di.uow.active_users.update(
+            request.context.current_user_slug, UserData(use_gravatar=use_gravatar)
+        )
+        messages.success(request, _("Avatar preference updated successfully!"))
+        return redirect("web:crowd:profile-avatar")
+
+
 class UserDiscordUsernameComponentView(View):
     """Return Discord username HTML fragment via htmx."""
 
@@ -648,6 +781,10 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 "ended_hour_data": dict(ended_hour_data),
                 "current_hour_data": dict(current_hour_data),
                 "future_unavailable_hour_data": dict(future_unavailable_hour_data),
+                "total_enrolled": sum(s.enrolled_count for s in sessions_data.values()),
+                "user_enrolled_sessions": [
+                    s for s in sessions_data.values() if s.user_enrolled
+                ],
             }
         )
 
@@ -882,11 +1019,27 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             area = getattr(
                 session.agenda_item.space, "area", None
             )  # TODO(fancysnake): Fix after merging venues
+            presenter_name = session.presenter_name or ""
+            if proposal_exists := Proposal.objects.filter(session=session).exists():
+                proposal_dto = self.request.di.uow.proposals.read(session.proposal.pk)
+                host_dto = self.request.di.uow.proposals.read_host(proposal_dto.pk)
+                host = UserInfo.from_user_dto(host_dto)
+            else:
+                host = UserInfo(
+                    avatar_url=None,
+                    discord_username="",
+                    full_name=presenter_name,
+                    name=presenter_name,
+                    pk=0,
+                    slug="",
+                    username=presenter_name,
+                )
             sessions_data[session.id] = SessionData(
                 effective_participants_limit=session.effective_participants_limit,
                 full_participant_info=session.full_participant_info,
                 agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
                 session=SessionDTO.model_validate(session),
+                presenter=host,
                 tags=[
                     TagWithCategory(
                         category=TagCategoryData(
@@ -901,7 +1054,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 ],
                 proposal=(
                     ProposalDTO.model_validate(session.proposal)
-                    if Proposal.objects.filter(session=session).exists()
+                    if proposal_exists
                     else None
                 ),
                 is_enrollment_available=session.is_enrollment_available,
@@ -917,8 +1070,14 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 ),
                 enrolled_count=session.enrolled_count,
                 session_participations=[
-                    UserParticipation.model_validate(sp)
-                    for sp in session.session_participations.all()
+                    ParticipationInfo(
+                        user=UserInfo.from_user_dto(UserDTO.model_validate(sp.user)),
+                        status=sp.status,
+                        creation_time=sp.creation_time,
+                    )
+                    for sp in session.session_participations.select_related(
+                        "user"
+                    ).all()
                 ],
             )
 

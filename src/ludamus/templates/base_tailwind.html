@@ -109,9 +109,7 @@
         {% block extra_head %}
         {% endblock extra_head %}
     </head>
-    <body class="flex flex-col min-h-screen font-sans antialiased"
-          style="background-color: var(--color-background);
-                 color: var(--color-foreground)">
+    <body class="relative flex flex-col min-h-screen font-sans antialiased bg-background text-foreground">
         {% include "components/navbar.html" %}
         <!-- Flash Messages -->
         {% if messages %}

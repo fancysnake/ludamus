@@ -16,21 +16,36 @@ from ludamus.adapters.db.django.models import (
     UserEnrollmentConfig,
 )
 from ludamus.adapters.web.django.entities import (
+    ParticipationInfo,
     SessionData,
     TagCategoryData,
     TagWithCategory,
+    UserInfo,
 )
 from ludamus.pacts import (
     AgendaItemDTO,
     AreaDTO,
     LocationData,
+    ProposalDTO,
     SessionDTO,
     SpaceDTO,
-    UserParticipation,
+    UserDTO,
     VenueDTO,
     VirtualEnrollmentConfig,
 )
 from tests.integration.utils import assert_response
+
+
+def _fallback_presenter(name: str) -> UserInfo:
+    return UserInfo(
+        avatar_url=None,
+        discord_username="",
+        full_name=name,
+        name=name,
+        pk=0,
+        slug="",
+        username=name,
+    )
 
 
 class TestEventPageView:
@@ -56,6 +71,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -84,6 +101,8 @@ class TestEventPageView:
                 "proposals": [proposal],
                 "sessions": [],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -125,9 +144,18 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=False,
             proposal=None,
+            presenter=_fallback_presenter(session.presenter_name),
             session_participations=[
-                UserParticipation.model_validate(part1),
-                UserParticipation.model_validate(part2),
+                ParticipationInfo(
+                    user=UserInfo.from_user_dto(UserDTO.model_validate(part1.user)),
+                    status=part1.status,
+                    creation_time=part1.creation_time,
+                ),
+                ParticipationInfo(
+                    user=UserInfo.from_user_dto(UserDTO.model_validate(part2.user)),
+                    status=part2.status,
+                    creation_time=part2.creation_time,
+                ),
             ],
             session=SessionDTO.model_validate(session),
             should_show_as_inactive=False,
@@ -157,6 +185,65 @@ class TestEventPageView:
                 "proposals": [proposal],
                 "sessions": [session_data],
                 "user_enrollment_config": None,
+                "total_enrolled": 1,
+                "user_enrolled_sessions": [session_data],
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
+    def test_ok_session_with_linked_proposal(
+        self, active_user, agenda_item, client, event, proposal, session
+    ):
+        proposal.session = session
+        proposal.save()
+
+        proposal_dto = ProposalDTO.model_validate(proposal)
+        host = UserInfo.from_user_dto(UserDTO.model_validate(active_user))
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            proposal=proposal_dto,
+            presenter=host,
+            session_participations=[],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            tags=[],
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        response = client.get(self._get_url(event.slug))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": False,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {
+                    agenda_item.start_time: [session_data]
+                },
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "sessions": [session_data],
+                "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -179,6 +266,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -205,6 +293,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [session_data],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -227,6 +317,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -253,6 +344,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [session_data],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -282,6 +375,8 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -321,6 +416,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -351,6 +448,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -385,6 +484,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -418,6 +519,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -454,6 +557,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -493,7 +598,16 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=False,
             proposal=None,
-            session_participations=[UserParticipation.model_validate(participation)],
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            session_participations=[
+                ParticipationInfo(
+                    user=UserInfo.from_user_dto(
+                        UserDTO.model_validate(participation.user)
+                    ),
+                    status=participation.status,
+                    creation_time=participation.creation_time,
+                )
+            ],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
             loc=LocationData(
@@ -523,6 +637,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [session_data],
                 "user_enrollment_config": None,
+                "total_enrolled": 1,
+                "user_enrolled_sessions": [session_data],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -549,6 +665,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=True,
@@ -575,6 +692,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [session_data],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -630,6 +749,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -656,6 +776,8 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=7 + 8, has_domain_config=False, has_user_config=True
                 ),
@@ -702,6 +824,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -728,6 +851,8 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=slots, has_domain_config=False, has_user_config=True
                 ),
@@ -778,6 +903,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -804,6 +930,8 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=slots, has_domain_config=True, has_user_config=False
                 ),
@@ -851,6 +979,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -877,6 +1006,8 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=primary_slots + domain_slots,
                     has_domain_config=True,
@@ -926,6 +1057,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -953,6 +1085,8 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -997,6 +1131,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1024,6 +1159,8 @@ class TestEventPageView:
                 "proposals": [],
                 "sessions": [session_data],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -1080,6 +1217,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1106,6 +1244,8 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=slots, has_domain_config=False, has_user_config=True
                 ),
@@ -1155,6 +1295,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1184,6 +1325,8 @@ class TestEventPageView:
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=0, has_domain_config=False, has_user_config=True
                 ),
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],
@@ -1239,6 +1382,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1265,6 +1409,8 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=0, has_domain_config=False, has_user_config=True
                 ),
@@ -1317,6 +1463,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=True,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1343,6 +1490,8 @@ class TestEventPageView:
                 "object": event,
                 "proposals": [],
                 "sessions": [session_data],
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=0, has_domain_config=False, has_user_config=True
                 ),
@@ -1387,6 +1536,7 @@ class TestEventPageView:
             is_full=False,
             is_ongoing=False,
             proposal=None,
+            presenter=_fallback_presenter(agenda_item.session.presenter_name),
             session_participations=[],
             session=SessionDTO.model_validate(session),
             should_show_as_inactive=False,
@@ -1415,6 +1565,8 @@ class TestEventPageView:
                 "object": event,
                 "sessions": [session_data],
                 "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
                 "view": ANY,
             },
             template_name=["chronology/event.html"],

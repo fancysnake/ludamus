@@ -184,7 +184,7 @@ urlpatterns: list[URLResolver | URLPattern] = [
 ]
 
 
-if settings.DEBUG:
+if settings.DEBUG:  # pragma: no cover
     urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]
 
     # Debug URLs to test error pages

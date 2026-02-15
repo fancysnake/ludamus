@@ -1,6 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
-@import "../../../../../../static/css/progressive-blur.css";
+
+@import "./progressive-blur.css";
+@import "./modal.css";
+@import "./filters.css";
+@import "./tabs.css";
+
 @plugin "@tailwindcss/typography";
 
 @source "../../../../../../**/*.{html,py,js}";
@@ -31,6 +36,7 @@
   --color-coral-700: #c13118;
   --color-coral-800: #9f2c18;
   --color-coral-900: #842a1b;
+  --color-coral-950: #4a1610;
 
   --color-teal-50: #f0fdfa;
   --color-teal-100: #ccfbef;
@@ -63,10 +69,33 @@
 
   --color-background: #f0f1f3;
 
+  --ease-spring-a-bit: linear(
+    0 0%,
+    0.5007 7.21%,
+    0.7803 12.29%,
+    0.8883 14.93%,
+    0.9724 17.63%,
+    1.0343 20.44%,
+    1.0754 23.44%,
+    1.0898 25.22%,
+    1.0984 27.11%,
+    1.1014 29.15%,
+    1.0989 31.4%,
+    1.0854 35.23%,
+    1.0196 48.86%,
+    1.0043 54.06%,
+    0.9956 59.6%,
+    0.9925 68.11%,
+    1 100%
+  );
+
   --color-foreground: #252220;
   --color-foreground-secondary: #5c534a;
   --color-foreground-muted: #737373;
   --color-foreground-inverse: #ffffff;
+
+  --color-bg-secondary: #fdfcfb;
+  --color-bg-tertiary: #f7f5f3;
 
   --color-primary: #f85a3c;
   --color-secondary: #14b89b;
@@ -84,7 +113,7 @@ html {
   height: 100%;
 }
 
-a {
+a, button {
   cursor: pointer;
 }
 
@@ -92,6 +121,7 @@ a {
   --theme-bg-secondary: #fdfcfb;
   --theme-bg-tertiary: #f7f5f3;
   --theme-border: #e4ddd6;
+  --color-border: #e4ddd6;
   --theme-border-light: #f0ece8;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
@@ -126,12 +156,15 @@ a {
   :root:not(.light) {
     --color-background: #0a0a0a;
     --theme-bg-secondary: #171717;
+    --color-bg-secondary: #171717;
     --theme-bg-tertiary: #262626;
+    --color-bg-tertiary: #262626;
     --color-foreground: #fafafa;
     --color-foreground-secondary: #d4d4d4;
     --color-foreground-muted: #737373;
     --color-foreground-inverse: #0a0a0a;
     --theme-border: #404040;
+    --color-border: #404040;
     --theme-border-light: #262626;
     --theme-border-focus: #f85a3c;
     --theme-primary: #f85a3c;
@@ -140,6 +173,22 @@ a {
     --theme-secondary: #2dd4b3;
     --theme-secondary-hover: #5fe9cb;
     --theme-secondary-light: #134e45;
+    --theme-success: #2dd4b3;
+    --theme-success-light: #134e45;
+    --theme-success-bg: #052e24;
+    --theme-success-text: #5fe9cb;
+    --theme-warning: #fbbf24;
+    --theme-warning-light: #44380f;
+    --theme-warning-bg: #292211;
+    --theme-warning-text: #fbbf24;
+    --theme-danger: #f87171;
+    --theme-danger-light: #450a0a;
+    --theme-danger-bg: #2d0808;
+    --theme-danger-text: #fca5a5;
+    --theme-info: #60a5fa;
+    --theme-info-light: #1e3a5f;
+    --theme-info-bg: #0c1e36;
+    --theme-info-text: #93c5fd;
     --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
     --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
   }
@@ -148,12 +197,15 @@ a {
 .dark {
   --color-background: #0a0a0a;
   --theme-bg-secondary: #171717;
+  --color-bg-secondary: #171717;
   --theme-bg-tertiary: #262626;
+  --color-bg-tertiary: #262626;
   --color-foreground: #fafafa;
   --color-foreground-secondary: #d4d4d4;
   --color-foreground-muted: #737373;
   --color-foreground-inverse: #0a0a0a;
   --theme-border: #404040;
+  --color-border: #404040;
   --theme-border-light: #262626;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
@@ -162,6 +214,22 @@ a {
   --theme-secondary: #2dd4b3;
   --theme-secondary-hover: #5fe9cb;
   --theme-secondary-light: #134e45;
+  --theme-success: #2dd4b3;
+  --theme-success-light: #134e45;
+  --theme-success-bg: #052e24;
+  --theme-success-text: #5fe9cb;
+  --theme-warning: #fbbf24;
+  --theme-warning-light: #44380f;
+  --theme-warning-bg: #292211;
+  --theme-warning-text: #fbbf24;
+  --theme-danger: #f87171;
+  --theme-danger-light: #450a0a;
+  --theme-danger-bg: #2d0808;
+  --theme-danger-text: #fca5a5;
+  --theme-info: #60a5fa;
+  --theme-info-light: #1e3a5f;
+  --theme-info-bg: #0c1e36;
+  --theme-info-text: #93c5fd;
 }
 
 .no-transitions,
@@ -184,25 +252,9 @@ a {
   border-radius: 9999px 9999px 0 0;
 }
 
-.session-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.session-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
-}
 
 .live-dot {
   animation: pulse 1.5s ease-in-out infinite;
-}
-
-.tag-pill {
-  transition: all 0.2s ease;
-}
-
-.tag-pill:hover {
-  transform: scale(1.05);
 }
 
 .blob {
@@ -314,6 +366,16 @@ a {
   padding: 1.5rem;
 }
 
+/* Select dropdown chevron fix */
+select:not([multiple]):not([size]) {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem;
+  padding-right: 2rem;
+}
+
 :focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--theme-primary);
@@ -324,3 +386,8 @@ textarea:focus-visible,
 select:focus-visible {
   border-color: var(--theme-border-focus) !important;
 }
+
+button:active {
+  @apply scale-97;  
+}
+

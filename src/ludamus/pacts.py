@@ -196,6 +196,7 @@ class UserType(StrEnum):
 class UserDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    avatar_url: str
     date_joined: datetime
     discord_username: str
     email: str
@@ -208,6 +209,7 @@ class UserDTO(BaseModel):
     name: str
     pk: int
     slug: str
+    use_gravatar: bool
     user_type: UserType
     username: str
 
@@ -259,12 +261,14 @@ class EnrollmentConfigDTO(BaseModel):
 
 
 class UserData(TypedDict, total=False):
+    avatar_url: str
     discord_username: str
     email: str
     is_active: bool
     name: str
     password: str
     slug: str
+    use_gravatar: bool
     user_type: UserType
     username: str
 

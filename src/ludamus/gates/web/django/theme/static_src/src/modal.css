@@ -1,0 +1,46 @@
+.modal {
+  margin: auto;
+  opacity: 0;
+  transform: scale(0.9) translateY(16px);
+  height: fit-content;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  @apply shadow-lg;
+  transition:
+    opacity 0.35s var(--ease-spring-a-bit),
+    transform 0.35s var(--ease-spring-a-bit),
+    overlay 0.35s allow-discrete,
+    display 0.35s allow-discrete;
+}
+
+.modal[open] {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+@starting-style {
+  .modal[open] {
+    opacity: 0;
+    transform: scale(0.9) translateY(16px);
+  }
+}
+
+.modal::backdrop {
+  background-color: transparent;
+  transition:
+    display 0.15s allow-discrete,
+    overlay 0.15s allow-discrete,
+    background-color 0.15s;
+}
+
+.modal[open]::backdrop {
+  background-color: color-mix(in srgb, var(--color-background) 50%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+@starting-style {
+  .modal[open]::backdrop {
+    background-color: transparent;
+  }
+}
