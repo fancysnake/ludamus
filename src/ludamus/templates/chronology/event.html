@@ -211,10 +211,14 @@
             </div>
         </div>
         <!-- Anonymous Code Entry Modal -->
-        <dialog id="anonymousCodeModal" class="modal p-0">
+        <dialog id="anonymousCodeModal"
+                class="modal p-0"
+                aria-labelledby="anonymousCodeModal-title">
             <div class="px-6 py-4 border-b flex items-center justify-between"
                  style="border-color: var(--theme-border)">
-                <h3 class="font-semibold" style="color: var(--color-foreground)">{% translate "Enter Different Code" %}</h3>
+                <h3 id="anonymousCodeModal-title"
+                    class="font-semibold"
+                    style="color: var(--color-foreground)">{% translate "Enter Different Code" %}</h3>
                 <button data-modal-close="anonymousCodeModal"
                         class="p-1 rounded-lg hover:opacity-70"
                         style="color: var(--color-foreground-muted)"
@@ -625,10 +629,14 @@
         </div>
         <!-- Proposal Review Modals -->
         {% for proposal in proposals %}
-            <dialog id="proposalModal{{ proposal.pk }}" class="modal">
+            <dialog id="proposalModal{{ proposal.pk }}"
+                    class="modal"
+                    aria-labelledby="proposalModal{{ proposal.pk }}-title">
                 <div class="px-6 py-4 border-b flex items-center justify-between"
                      style="border-color: var(--theme-border)">
-                    <h3 class="text-lg font-semibold" style="color: var(--color-foreground)">{{ proposal.title }}</h3>
+                    <h3 id="proposalModal{{ proposal.pk }}-title"
+                        class="text-lg font-semibold"
+                        style="color: var(--color-foreground)">{{ proposal.title }}</h3>
                     <button data-modal-close="proposalModal{{ proposal.pk }}"
                             class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700"
                             style="color: var(--color-foreground-muted)">
@@ -716,11 +724,14 @@
     <!-- Session Detail Modals -->
     {% for data in sessions %}
         <dialog id="session-{{ data.session.pk }}"
-                class="modal bg-transparent h-600 max-h-[90vh]">
+                class="modal bg-transparent h-600 max-h-[90vh]"
+                aria-labelledby="session-{{ data.session.pk }}-title">
             <!-- Header -->
             <div class="px-6 py-4 border-b flex items-center justify-between"
                  style="border-color: var(--theme-border)">
-                <h3 class="text-lg font-semibold" style="color: var(--color-foreground)">{{ data.session.title }}</h3>
+                <h3 id="session-{{ data.session.pk }}-title"
+                    class="text-lg font-semibold"
+                    style="color: var(--color-foreground)">{{ data.session.title }}</h3>
                 <button data-modal-close="session-{{ data.session.pk }}"
                         class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700"
                         style="color: var(--color-foreground-muted)">

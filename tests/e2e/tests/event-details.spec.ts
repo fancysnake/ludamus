@@ -6,9 +6,8 @@ test.describe('Event detail page', () => {
   });
 
   test('shows event information and enrollment banner', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Event Information' })).toBeVisible();
-    await expect(page.getByText('Start Time')).toBeVisible();
-    await expect(page.getByText('End Time')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Autumn Open Playtest' })).toBeVisible();
+    await expect(page.getByText('Upcoming')).toBeVisible();
 
     const banner = page.getByRole('alert').filter({
       hasText: 'Enrollment is open—grab a slot before we fill up!',
@@ -24,7 +23,8 @@ test.describe('Event detail page', () => {
     await expect(megaStrategyCard).toContainText('Convention Center ›');
     await expect(megaStrategyCard).toContainText('Main Hall ›');
     await expect(megaStrategyCard).toContainText('East Wing');
-    await megaStrategyCard.click();
+
+    await megaStrategyCard.getByRole('link', { name: 'Open details for Mega Strategy Lab' }).click();
 
     const detailDialog = page.getByRole('dialog', { name: 'Mega Strategy Lab' });
     await expect(detailDialog).toBeVisible();

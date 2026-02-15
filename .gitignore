@@ -218,5 +218,3 @@ screenshots/
 tmp
 
 # Generated with tailwind build
-src/ludamus/static/js/modal.js
-src/ludamus/static/js/tabs.js
