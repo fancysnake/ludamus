@@ -808,18 +808,16 @@
                                 {{ data.agenda_item.start_time|time:"G:i" }} - {{ data.agenda_item.end_time|time:"G:i" }}
                             </div>
                         </div>
+                        {% if data.loc.space %}
                         <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
                             <div class="text-sm mb-1" style="color: var(--color-foreground-muted)">{% translate "Location" %}</div>
                             <div class="font-medium" style="color: var(--color-foreground)">
-                                {% if data.loc.space %}
-                                    {{ data.loc.venue.name }} ›
-                                    {{ data.loc.area.name }} ›
-                                    {{ data.loc.space.name }}
-                                {% else %}
-                                    <span style="color: var(--color-foreground-muted)">{% translate "TBA" %}</span>
-                                {% endif %}
+                                {{ data.loc.venue.name }} ›
+                                {{ data.loc.area.name }} ›
+                                {{ data.loc.space.name }}
                             </div>
                         </div>
+                        {% endif %}
                         <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
                             <div class="text-sm mb-1" style="color: var(--color-foreground-muted)">{% translate "Capacity" %}</div>
                             <div class="font-medium flex flex-wrap items-center gap-1.5"
