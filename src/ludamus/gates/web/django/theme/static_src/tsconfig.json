@@ -1,13 +1,21 @@
 {
   "compilerOptions": {
-    "noEmit": true,
-    "allowJs": true,
-    "checkJs": true,
     "strict": true,
     "target": "es2024",
     "module": "es2022",
     "moduleResolution": "bundler",
-    "lib": ["es2024", "DOM", "DOM.Iterable"]
+    "lib": [
+      "es2024",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "outDir": "../../../../../static/js",
+    "rootDir": "src",
+    "declaration": false,
+    "sourceMap": false,
+    "skipLibCheck": true
   },
-  "include": ["src/**/*.js"]
+  "include": [
+    "src/**/*.ts"
+  ]
 }
