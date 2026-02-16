@@ -19,11 +19,14 @@ mise run start    # Run Django dev server
 
 ### Tailwind CSS
 
-Uses [django-tailwind](https://github.com/timonweb/django-tailwind) with npm-based build.
+Uses [django-tailwind][dt] with npm-based build.
+
+[dt]: https://github.com/timonweb/django-tailwind
 
 `mise run start` runs Django + Tailwind watch together via `tailwind dev`.
 
 **Deployment:**
+
 ```bash
-mise run build-tailwind  # Build production CSS (run before collectstatic)
+mise run build-frontend  # Build frontend (CSS + JS)
 ```

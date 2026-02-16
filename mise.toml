@@ -85,11 +85,11 @@ run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template
 
 # Dev server (Django + Tailwind watch via django-tailwind)
 [tasks.start]
-description = "Start Django + Tailwind watch mode"
+description = "Start Django dev server with frontend watch"
 run = "django-admin tailwind dev"
 
-[tasks.build-tailwind]
-description = "Build Tailwind CSS (production)"
+[tasks.build-frontend]
+description = "Build frontend assets (CSS + JS)"
 run = """
 django-admin tailwind install
 django-admin tailwind build
@@ -103,6 +103,19 @@ description = "Kill dev servers (Django on :8000, Tailwind watch)"
 run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch' 2>/dev/null; echo 'Dev servers killed'"
 
 # Composite tasks
+
+[tasks.e2e]
+description = "Run end-to-end Playwright tests (chromium)"
+run = "cd tests/e2e && npx playwright test --project=chromium"
+env.ROOT_DOMAIN = "localhost:8000"
+env.ALLOWED_HOSTS = ".localhost"
+env.AUTH0_CLIENT_ID = "test_auth0_client_id"
+env.AUTH0_CLIENT_SECRET = "test_auth0_client_secret"
+env.AUTH0_DOMAIN = "auth0.example.com"
+env.MEMBERSHIP_API_BASE_URL = "https://example.com/api/v1/membership"
+env.MEMBERSHIP_API_TOKEN = "abcdefg"
+env.CI = "true"
+
 [tasks.check]
 depends = [
     "black",

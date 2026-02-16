@@ -1,0 +1,1 @@
+../../gates/web/django/theme/static_src/src/tabs.js

@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * Generic tabs — driven by `aria-controls` on triggers and `id` on panels.
  *
@@ -13,8 +11,8 @@
  *     <div class="tab-panel" role="tabpanel" id="panel-b" inert>…</div>
  *   </div>
  */
-/** @param {Element} trigger */
-function activateTab(trigger) {
+
+function activateTab(trigger: Element): void {
   const tablist = trigger.closest(".tab-list");
   if (!tablist) return;
 
@@ -39,23 +37,23 @@ function activateTab(trigger) {
     active.setAttribute("data-active", "");
     active.removeAttribute("inert");
   }
-  /** @type {HTMLElement} */ (trigger).focus();
+  (trigger as HTMLElement).focus();
 }
 
 document.addEventListener("click", (e) => {
-  const trigger = /** @type {Element | null} */ (e.target)?.closest(".tab-trigger");
+  const trigger = (e.target as Element | null)?.closest(".tab-trigger");
   if (trigger) activateTab(trigger);
 });
 
 document.addEventListener("keydown", (e) => {
-  const trigger = /** @type {Element | null} */ (e.target)?.closest(".tab-trigger");
+  const trigger = (e.target as Element | null)?.closest(".tab-trigger");
   if (!trigger) return;
 
   const tablist = trigger.closest(".tab-list");
   if (!tablist) return;
 
-  const tabs = /** @type {HTMLElement[]} */ ([...tablist.querySelectorAll(".tab-trigger")]);
-  const idx = tabs.indexOf(/** @type {HTMLElement} */ (trigger));
+  const tabs = [...tablist.querySelectorAll(".tab-trigger")] as HTMLElement[];
+  const idx = tabs.indexOf(trigger as HTMLElement);
 
   let next = -1;
   if (e.key === "ArrowRight") next = (idx + 1) % tabs.length;
