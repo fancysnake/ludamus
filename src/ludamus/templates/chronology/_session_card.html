@@ -36,18 +36,16 @@
                     {% translate "Hosted by" %} {{ data.session.presenter_name }}
                 </span>
             </div>
+            {% if data.loc.space %}
             <div class="flex items-center gap-1.5 mb-3 text-sm text-foreground-secondary">
                 {% heroicon_mini "map-pin" class="size-4 shrink-0" %}
-                {% if data.loc.space %}
-                    <span>
-                        {{ data.loc.venue.name }} ›
-                        {{ data.loc.area.name }} ›
-                        {{ data.loc.space.name }}
-                    </span>
-                {% else %}
-                    <span style="color: var(--color-foreground-muted)">{% translate "TBA" %}</span>
-                {% endif %}
+                <span>
+                    {{ data.loc.venue.name }} ›
+                    {{ data.loc.area.name }} ›
+                    {{ data.loc.space.name }}
+                </span>
             </div>
+            {% endif %}
             {% if data.session.description %}
                 <p class="text-sm mb-4 line-clamp-3 text-foreground-primary">{{ data.session.description }}</p>
             {% endif %}
