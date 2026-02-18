@@ -193,7 +193,11 @@ class Event(models.Model):
         return [config for config in self.enrollment_configs.all() if config.is_active]
 
     def get_setting(self, key: str) -> object:
-        """Get a setting value, falling back to kind defaults."""
+        """Get a setting value, falling back to kind defaults.
+
+        Returns:
+            The setting value or None.
+        """
         return get_setting(self, key)
 
     def get_most_liberal_config(self, session: Session) -> EnrollmentConfig | None:
@@ -220,6 +224,9 @@ def get_setting(event: Event, key: str) -> object:
 
     Checks EventSettings first; if the value is None or no settings exist,
     falls back to KIND_DEFAULTS for the event's kind.
+
+    Returns:
+        The setting value or None.
     """
     try:
         settings = event.settings
@@ -236,7 +243,9 @@ def get_setting(event: Event, key: str) -> object:
 class EventSettings(models.Model):
     """Per-event settings with kind-based defaults."""
 
-    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name="settings")
+    event = models.OneToOneField(
+        Event, on_delete=models.CASCADE, related_name="settings"
+    )
     allow_session_images = models.BooleanField(null=True, blank=True)
     filterable_tag_categories: models.ManyToManyField[TagCategory, Never] = (
         models.ManyToManyField(
