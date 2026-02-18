@@ -1,8 +1,8 @@
 from ludamus.adapters.db.django.models import (
+    KIND_DEFAULTS,
     Event,
     EventKind,
     EventSettings,
-    KIND_DEFAULTS,
     get_setting,
 )
 
@@ -31,10 +31,7 @@ class TestKindDefaults:
 class TestEventSettings:
     def test_str(self, faker):
         name = faker.word()
-        assert (
-            str(EventSettings(event=Event(name=name)))
-            == f"Settings for {name}"
-        )
+        assert str(EventSettings(event=Event(name=name))) == f"Settings for {name}"
 
 
 class TestGetSetting:

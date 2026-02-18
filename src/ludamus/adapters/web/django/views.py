@@ -940,8 +940,9 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         # Set filterable tags and display status for each session
         try:
             filterable_categories = set(
-                self.object.settings.filterable_tag_categories.all()
-                .values_list("id", flat=True)
+                self.object.settings.filterable_tag_categories.all().values_list(
+                    "id", flat=True
+                )
             )
         except EventSettings.DoesNotExist:
             filterable_categories = set()

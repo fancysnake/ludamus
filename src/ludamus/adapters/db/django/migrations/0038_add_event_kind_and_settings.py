@@ -1,5 +1,5 @@
-from django.db import migrations, models
 import django.db.models.deletion
+from django.db import migrations, models
 
 
 def migrate_filterable_tag_categories(apps, schema_editor):
@@ -15,9 +15,7 @@ def migrate_filterable_tag_categories(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [
-        ("django", "0037_remove_space_event_fk"),
-    ]
+    dependencies = [("django", "0037_remove_space_event_fk")]
 
     operations = [
         # 1. Add kind field to Event
@@ -43,10 +41,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                (
-                    "allow_session_images",
-                    models.BooleanField(blank=True, null=True),
-                ),
+                ("allow_session_images", models.BooleanField(blank=True, null=True)),
                 (
                     "event",
                     models.OneToOneField(
@@ -64,18 +59,12 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={
-                "db_table": "event_settings",
-            },
+            options={"db_table": "event_settings"},
         ),
         # 3. Data migration: move filterable_tag_categories
         migrations.RunPython(
-            migrate_filterable_tag_categories,
-            migrations.RunPython.noop,
+            migrate_filterable_tag_categories, migrations.RunPython.noop
         ),
         # 4. Remove filterable_tag_categories from Event
-        migrations.RemoveField(
-            model_name="event",
-            name="filterable_tag_categories",
-        ),
+        migrations.RemoveField(model_name="event", name="filterable_tag_categories"),
     ]

@@ -137,9 +137,7 @@ class Event(models.Model):
     slug = models.SlugField()
     description = models.TextField(default="", blank=True)
     kind = models.CharField(
-        max_length=20,
-        choices=EventKind.choices,
-        default=EventKind.MEETUP,
+        max_length=20, choices=EventKind.choices, default=EventKind.MEETUP
     )
     # Time - start and end
     start_time = models.DateTimeField()
@@ -149,6 +147,7 @@ class Event(models.Model):
     # Proposal times
     proposal_start_time = models.DateTimeField(blank=True, null=True)
     proposal_end_time = models.DateTimeField(blank=True, null=True)
+
     class Meta:
         db_table = "event"
         constraints = (
@@ -213,10 +212,12 @@ class Event(models.Model):
         return max(eligible_configs, key=lambda c: c.percentage_slots)
 
 
-KIND_DEFAULTS: dict[str, dict[str, bool]] = {
-    EventKind.MEETUP: {"allow_session_images": True},
-    EventKind.CONVENTION: {"allow_session_images": False},
-}
+KIND_DEFAULTS: dict[str, dict[str, bool]] = (
+    {  # pylint: disable=consider-using-namedtuple-or-dataclass
+        EventKind.MEETUP: {"allow_session_images": True},
+        EventKind.CONVENTION: {"allow_session_images": False},
+    }
+)
 
 
 def get_setting(event: Event, key: str) -> object:
@@ -230,8 +231,7 @@ def get_setting(event: Event, key: str) -> object:
     """
     try:
         settings = event.settings
-        value = getattr(settings, key, None)
-        if value is not None:
+        if (value := getattr(settings, key, None)) is not None:
             return value
     except EventSettings.DoesNotExist:
         pass
