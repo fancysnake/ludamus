@@ -124,6 +124,11 @@ class Sphere(models.Model):
         return self.name
 
 
+class EventKind(models.TextChoices):
+    MEETUP = "meetup", "Meetup"
+    CONVENTION = "convention", "Convention"
+
+
 class Event(models.Model):
     # Owner
     sphere = models.ForeignKey(Sphere, on_delete=models.CASCADE, related_name="events")
@@ -131,6 +136,11 @@ class Event(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(default="", blank=True)
+    kind = models.CharField(
+        max_length=20,
+        choices=EventKind.choices,
+        default=EventKind.MEETUP,
+    )
     # Time - start and end
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -139,15 +149,6 @@ class Event(models.Model):
     # Proposal times
     proposal_start_time = models.DateTimeField(blank=True, null=True)
     proposal_end_time = models.DateTimeField(blank=True, null=True)
-    # Filterable tag categories for session list
-    filterable_tag_categories: models.ManyToManyField[TagCategory, Never] = (
-        models.ManyToManyField(
-            "TagCategory",
-            blank=True,
-            help_text="Tag categories that will appear as filters in the session list",
-        )
-    )
-
     class Meta:
         db_table = "event"
         constraints = (
@@ -191,6 +192,10 @@ class Event(models.Model):
     def get_active_enrollment_configs(self) -> list[EnrollmentConfig]:
         return [config for config in self.enrollment_configs.all() if config.is_active]
 
+    def get_setting(self, key: str) -> object:
+        """Get a setting value, falling back to kind defaults."""
+        return get_setting(self, key)
+
     def get_most_liberal_config(self, session: Session) -> EnrollmentConfig | None:
         eligible_configs = [
             config
@@ -202,6 +207,50 @@ class Event(models.Model):
             return None
 
         return max(eligible_configs, key=lambda c: c.percentage_slots)
+
+
+KIND_DEFAULTS: dict[str, dict[str, bool]] = {
+    EventKind.MEETUP: {"allow_session_images": True},
+    EventKind.CONVENTION: {"allow_session_images": False},
+}
+
+
+def get_setting(event: Event, key: str) -> object:
+    """Get a setting value for an event.
+
+    Checks EventSettings first; if the value is None or no settings exist,
+    falls back to KIND_DEFAULTS for the event's kind.
+    """
+    try:
+        settings = event.settings
+        value = getattr(settings, key, None)
+        if value is not None:
+            return value
+    except EventSettings.DoesNotExist:
+        pass
+
+    kind_defaults = KIND_DEFAULTS.get(event.kind, {})
+    return kind_defaults.get(key)
+
+
+class EventSettings(models.Model):
+    """Per-event settings with kind-based defaults."""
+
+    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name="settings")
+    allow_session_images = models.BooleanField(null=True, blank=True)
+    filterable_tag_categories: models.ManyToManyField[TagCategory, Never] = (
+        models.ManyToManyField(
+            "TagCategory",
+            blank=True,
+            help_text="Tag categories that will appear as filters in the session list",
+        )
+    )
+
+    class Meta:
+        db_table = "event_settings"
+
+    def __str__(self) -> str:
+        return f"Settings for {self.event.name}"
 
 
 class EnrollmentConfig(models.Model):

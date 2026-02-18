@@ -32,12 +32,14 @@ from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
     EnrollmentConfig,
     Event,
+    EventSettings,
     Proposal,
     ProposalCategory,
     Session,
     SessionParticipation,
     SessionParticipationStatus,
     Tag,
+    TagCategory,
     can_enroll_users,
 )
 from ludamus.adapters.oauth import oauth
@@ -580,7 +582,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 "venues__areas__spaces__agenda_items__session__session_participations__user",
                 "venues__areas__spaces__agenda_items__session__proposal",
                 "enrollment_configs",
-                "filterable_tag_categories",
+                "settings__filterable_tag_categories",
             )
         )
 
@@ -730,7 +732,10 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 self.request.session.pop("anonymous_site_id", None)
 
         # Add filterable tag categories for this event
-        filterable_categories = self.object.filterable_tag_categories.all()
+        try:
+            filterable_categories = self.object.settings.filterable_tag_categories.all()
+        except EventSettings.DoesNotExist:
+            filterable_categories = TagCategory.objects.none()
         context["filterable_tag_categories"] = list(filterable_categories)
 
         # Add proposals for superusers, sphere managers, and proposal authors
@@ -933,9 +938,12 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             earliest_limit_end_time = min(config.end_time for config in limit_configs)
 
         # Set filterable tags and display status for each session
-        filterable_categories = set(
-            self.object.filterable_tag_categories.all().values_list("id", flat=True)
-        )
+        try:
+            filterable_categories = set(
+                self.object.settings.filterable_tag_categories.all().values_list("id", flat=True)
+            )
+        except EventSettings.DoesNotExist:
+            filterable_categories = set()
         for session_data in sessions_data.values():
             session_data.filterable_tags = [
                 tag
