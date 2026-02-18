@@ -4,8 +4,8 @@ from django.db import migrations, models
 
 def migrate_filterable_tag_categories(apps, schema_editor):
     """Move filterable_tag_categories from Event to EventSettings."""
-    Event = apps.get_model("django", "Event")
-    EventSettings = apps.get_model("django", "EventSettings")
+    Event = apps.get_model("db_main", "Event")
+    EventSettings = apps.get_model("db_main", "EventSettings")
 
     for event in Event.objects.all():
         tag_categories = list(event.filterable_tag_categories.all())
@@ -15,7 +15,7 @@ def migrate_filterable_tag_categories(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("django", "0037_remove_space_event_fk")]
+    dependencies = [("db_main", "0037_remove_space_event_fk")]
 
     operations = [
         # 1. Add kind field to Event
@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="settings",
-                        to="django.event",
+                        to="db_main.event",
                     ),
                 ),
                 (
@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                     models.ManyToManyField(
                         blank=True,
                         help_text="Tag categories that will appear as filters in the session list",
-                        to="django.tagcategory",
+                        to="db_main.tagcategory",
                     ),
                 ),
             ],
