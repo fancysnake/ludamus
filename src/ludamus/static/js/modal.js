@@ -1,1 +1,0 @@
-../../gates/web/django/theme/static_src/src/modal.js
