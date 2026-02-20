@@ -9,6 +9,7 @@ from django.urls import reverse
 from ludamus.adapters.db.django.models import (
     DomainEnrollmentConfig,
     EnrollmentConfig,
+    EventSettings,
     SessionParticipation,
     SessionParticipationStatus,
     Tag,
@@ -1363,7 +1364,8 @@ class TestEventPageView:
         tag = Tag.objects.create(name="RPG", category=tag_category)
         session = agenda_item.session
         session.tags.add(tag)
-        event.filterable_tag_categories.add(tag_category)
+        event_settings, _ = EventSettings.objects.get_or_create(event=event)
+        event_settings.filterable_tag_categories.add(tag_category)
 
         response = client.get(self._get_url(event.slug))
 
