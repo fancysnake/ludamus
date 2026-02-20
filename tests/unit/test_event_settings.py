@@ -1,3 +1,5 @@
+import pytest
+
 from ludamus.adapters.db.django.models import (
     KIND_DEFAULTS,
     Event,
@@ -58,3 +60,21 @@ class TestGetSetting:
     def test_event_default_kind_is_meetup(self):
         event = Event()
         assert event.kind == EventKind.MEETUP
+
+    @pytest.mark.django_db
+    def test_returns_settings_value_when_exists(self):
+        from tests.integration.conftest import EventFactory
+
+        event = EventFactory(kind=EventKind.MEETUP)
+        EventSettings.objects.create(event=event, allow_session_images=False)
+        result = get_setting(event, "allow_session_images")
+        assert result is False
+
+    @pytest.mark.django_db
+    def test_falls_back_to_kind_default_when_settings_value_is_none(self):
+        from tests.integration.conftest import EventFactory
+
+        event = EventFactory(kind=EventKind.MEETUP)
+        EventSettings.objects.create(event=event, allow_session_images=None)
+        result = get_setting(event, "allow_session_images")
+        assert result is True  # meetup default
