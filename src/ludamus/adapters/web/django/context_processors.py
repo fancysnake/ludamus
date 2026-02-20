@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 
+from ludamus.adapters.web.django.entities import UserInfo
+
 if TYPE_CHECKING:
     from django.http import HttpRequest
 
@@ -57,11 +59,14 @@ def current_user(request: RootRepositoryRequest) -> dict[str, Any]:
     ):
         return {"current_user": None, "current_connected_users": []}
 
+    user_dto = request.di.uow.active_users.read(request.context.current_user_slug)
     return {
-        "current_user": request.di.uow.active_users.read(
-            request.context.current_user_slug
-        ),
-        "current_connected_users": request.di.uow.connected_users.read_all(
-            request.context.current_user_slug
-        ),
+        "current_user": user_dto,
+        "current_user_info": UserInfo.from_user_dto(user_dto),
+        "current_connected_users": [
+            UserInfo.from_user_dto(u)
+            for u in request.di.uow.connected_users.read_all(
+                request.context.current_user_slug
+            )
+        ],
     }

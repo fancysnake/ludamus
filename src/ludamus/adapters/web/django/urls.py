@@ -28,6 +28,9 @@ crowd_urls: list[URLPattern | URLResolver] = [
     ),
     path("profile/", views.ProfilePageView.as_view(), name="profile"),
     path(
+        "profile/avatar/", views.ProfileAvatarPageView.as_view(), name="profile-avatar"
+    ),
+    path(
         "profile/connected-users/",
         views.ProfileConnectedUsersPageView.as_view(),
         name="profile-connected-users",

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}
+    {% translate "Avatar" %}
+{% endblock title %}
+{% block body %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'web:crowd:profile' %}">
+                                <i class="bi bi-person"></i>
+                                {% translate "Personal Information" %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'web:crowd:profile-connected-users' %}">
+                                <i class="bi bi-people"></i>
+                                {% translate "Connected users" %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'web:crowd:profile-avatar' %}">
+                                <i class="bi bi-image"></i>
+                                {% translate "Avatar" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    {% if has_auth0_avatar %}
+                        <form action="{% url 'web:crowd:profile-avatar' %}" method="post">
+                            {% csrf_token %}
+                            <div class="row g-4">
+                                <div class="col-sm-6">
+                                    <label for="avatar-auth0" class="d-block h-100" style="cursor: pointer">
+                                        <div class="card h-100 {% if not user.use_gravatar %}border-primary{% endif %}">
+                                            <div class="card-body text-center">
+                                                <div class="mb-3">
+                                                    <img src="{{ user.avatar_url }}"
+                                                         alt="{% translate "Provider avatar" %}"
+                                                         class="rounded-circle"
+                                                         width="96"
+                                                         height="96">
+                                                </div>
+                                                <h6 class="card-title">{% translate "Provider avatar" %}</h6>
+                                                <p class="card-text text-muted small">{% translate "Imported from your social login account." %}</p>
+                                                <div class="form-check d-flex justify-content-center mt-3">
+                                                    <input class="form-check-input"
+                                                           type="radio"
+                                                           name="use_gravatar"
+                                                           id="avatar-auth0"
+                                                           value="false"
+                                                           {% if not user.use_gravatar %}checked{% endif %}>
+                                                    <span class="form-check-label ms-2">{% translate "Use this avatar" %}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label for="avatar-gravatar" class="d-block h-100" style="cursor: pointer">
+                                        <div class="card h-100 {% if user.use_gravatar %}border-primary{% endif %}">
+                                            <div class="card-body text-center">
+                                                <div class="mb-3">
+                                                    <img src="{{ gravatar_url }}"
+                                                         alt="Gravatar"
+                                                         class="rounded-circle"
+                                                         width="96"
+                                                         height="96">
+                                                </div>
+                                                <h6 class="card-title">Gravatar</h6>
+                                                <p class="card-text text-muted small">
+                                                    {% translate "Based on your email address." %}
+                                                    <a href="https://gravatar.com" target="_blank" rel="noopener">{% translate "Change it on gravatar.com" %}</a>
+                                                </p>
+                                                <div class="form-check d-flex justify-content-center mt-3">
+                                                    <input class="form-check-input"
+                                                           type="radio"
+                                                           name="use_gravatar"
+                                                           id="avatar-gravatar"
+                                                           value="true"
+                                                           {% if user.use_gravatar %}checked{% endif %}>
+                                                    <span class="form-check-label ms-2">{% translate "Use this avatar" %}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <div class="mb-3">
+                                <img src="{{ gravatar_url }}"
+                                     alt="Gravatar"
+                                     class="rounded-circle"
+                                     width="96"
+                                     height="96">
+                            </div>
+                            <h6>Gravatar</h6>
+                            <p class="text-muted">
+                                {% translate "Your avatar is provided by Gravatar, based on your email address." %}
+                                <a href="https://gravatar.com" target="_blank" rel="noopener">{% translate "Change it on gravatar.com" %}</a>
+                            </p>
+                            <p class="text-muted small">
+                                {% translate "No provider avatar is available. Log in with a provider that supports avatars to get more options." %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
