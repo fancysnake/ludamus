@@ -82,6 +82,7 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 
 [tasks."install:playwright"]
 run = """
+npm install
 npx playwright install --with-deps
 """
 description = "Install Playwright"
@@ -144,3 +145,15 @@ run = '''
 GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}
 docker-compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_args")}}
 '''
+
+[tasks."boot-e2e"]
+depends = [
+    "dj migrate --noinput",
+    "dj createcachetable",
+    "dj downloadvendor",
+    "p run python tests/e2e/scripts/bootstrap_data.py",
+    "dj tailwind install",
+    "dj tailwind build",
+    "dj tailwind dev",
+]
+env = { _.file = '.env.e2e' }

@@ -23,7 +23,7 @@ loadEnv(path.join(repoRoot, '.env'));
 
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:8000`;
 
-const WEB_COMMAND = 'mise start';
+const WEB_COMMAND = 'mise boot-e2e';
 
 export default defineConfig({
   testDir: './tests',
