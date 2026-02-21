@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load django_bootstrap5 %}
+{% load heroicons %}
 {% block title %}
     {% translate "Anonymous Enrollment" %} - {{ session.title }}
 {% endblock title %}
@@ -11,167 +11,148 @@
     {% translate "Enroll anonymously in" %} {{ session.title }}
 {% endblock description %}
 {% block body %}
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Anonymous Code Display -->
-            <div class="alert alert-info mb-4" role="alert">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <i class="bi bi-key"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="mb-1">{% translate "Your Anonymous Code" %}</h6>
-                        <p class="mb-0">
-                            <strong class="fs-4">{{ anonymous_code }}</strong>
-                        </p>
-                        <small class="text-muted">{% translate "Save this code to manage your enrollment later" %}</small>
-                    </div>
-                </div>
+    <div class="max-w-3xl mx-auto">
+        {# Anonymous Code Display #}
+        <div class="alert alert-info flex items-start gap-3 mb-4">
+            {% heroicon_outline "key" class="w-5 h-5 shrink-0 mt-0.5" %}
+            <div>
+                <h6 class="font-semibold mb-1">{% translate "Your Anonymous Code" %}</h6>
+                <p class="mb-0">
+                    <strong class="text-2xl">{{ anonymous_code }}</strong>
+                </p>
+                <small class="text-foreground-muted">{% translate "Save this code to manage your enrollment later" %}</small>
             </div>
-            <!-- Session Details Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calendar-event"></i> {{ session.title }}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>{% translate "Host" %}</h6>
-                            <p>{{ session.presenter_name }}</p>
-                            <h6>{% translate "Participants" %}</h6>
-                            <p>
-                                {{ session.enrolled_count }}/{{ session.effective_participants_limit }}
-                                {% if session.waiting_count > 0 %}
-                                    (+{{ session.waiting_count }} {% translate "waiting" %})
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>{% translate "Time" %}</h6>
-                            <p>
-                                {{ session.agenda_item.start_time|date:"l, F j, Y" }}
-                                <br>
-                                <small class="text-muted">{{ session.agenda_item.start_time|date:"G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}</small>
-                            </p>
-                            {% if session.agenda_item.space %}
-                                <h6>{% translate "Space" %}</h6>
-                                <p>{{ session.agenda_item.space.name }}</p>
+        </div>
+        {# Session Details Card #}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white flex items-center gap-2">
+                {% heroicon_outline "calendar" class="w-5 h-5" %}
+                <h5 class="font-semibold mb-0">{{ session.title }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Host" %}</h6>
+                        <p class="mb-3">{{ session.presenter_name }}</p>
+                        <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Participants" %}</h6>
+                        <p class="mb-3">
+                            {{ session.enrolled_count }}/{{ session.effective_participants_limit }}
+                            {% if session.waiting_count > 0 %}
+                                (+{{ session.waiting_count }} {% translate "waiting" %})
                             {% endif %}
-                            {% if session.min_age > 0 %}
-                                <h6>{% translate "Minimum Age" %}</h6>
-                                <p>
-                                    <span class="badge bg-info text-dark">{{ session.min_age }}+ {% translate "years" %}</span>
-                                </p>
-                            {% endif %}
-                        </div>
+                        </p>
                     </div>
-                    {% if session.description %}
-                        <div class="mt-3">
-                            <h6>{% translate "Description" %}</h6>
-                            <p>{{ session.description }}</p>
+                    <div>
+                        <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Time" %}</h6>
+                        <p class="mb-3">
+                            {{ session.agenda_item.start_time|date:"l, F j, Y" }}
+                            <br>
+                            <small class="text-foreground-muted">{{ session.agenda_item.start_time|date:"G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}</small>
+                        </p>
+                        {% if session.agenda_item.space %}
+                            <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Space" %}</h6>
+                            <p class="mb-3">{{ session.agenda_item.space.name }}</p>
+                        {% endif %}
+                        {% if session.min_age > 0 %}
+                            <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Minimum Age" %}</h6>
+                            <p class="mb-3">
+                                <span class="inline-flex items-center rounded-full bg-info/10 text-info px-2.5 py-0.5 text-xs font-medium">{{ session.min_age }}+ {% translate "years" %}</span>
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if session.description %}
+                    <div class="mt-3">
+                        <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Description" %}</h6>
+                        <p>{{ session.description }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {# Enrollment Form #}
+        <div class="card">
+            <div class="card-header {% if is_enrolled %}bg-[var(--theme-warning)] text-white{% else %}bg-[var(--theme-success)] text-white{% endif %} flex items-center gap-2">
+                {% if is_enrolled %}
+                    {% heroicon_outline "cog-6-tooth" class="w-5 h-5" %}
+                    <h5 class="font-semibold mb-0">{% translate "Manage Enrollment" %}</h5>
+                {% else %}
+                    {% heroicon_outline "user-plus" class="w-5 h-5" %}
+                    <h5 class="font-semibold mb-0">{% translate "Enroll in Session" %}</h5>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% if is_enrolled %}
+                        <div class="alert alert-success flex items-start gap-3">
+                            {% heroicon_solid "check-circle" class="w-5 h-5 shrink-0 mt-0.5" %}
+                            <div>
+                                <strong>{{ anonymous_user.full_name }}</strong> {% translate "is already enrolled in this session." %}
+                                {% if existing_enrollment.status == "waiting" %}
+                                    <br>
+                                    <small class="text-foreground-muted">{% translate "Status: On waiting list" %}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% elif needs_user_data %}
+                        <div class="alert alert-warning flex items-start gap-3">
+                            {% heroicon_outline "exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" %}
+                            <div>{% translate "Please provide your name to complete the enrollment." %}</div>
+                        </div>
+                        <div class="max-w-md mb-4">
+                            <label for="name" class="block text-sm font-medium mb-1">
+                                {% translate "Name" %} <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
+                                   id="name"
+                                   name="name"
+                                   value="{{ anonymous_user.full_name }}"
+                                   required>
+                            <p class="mt-1 text-xs text-foreground-muted">
+                                {% translate "Your public display name that others will see. This can be a nickname and does not need to be your legal name." %}
+                            </p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info flex items-start gap-3">
+                            {% heroicon_solid "information-circle" class="w-5 h-5 shrink-0 mt-0.5" %}
+                            <div>
+                                {% translate "Click below to enroll" %} <strong>{{ anonymous_user.full_name }}</strong> {% translate "in this session." %}
+                            </div>
                         </div>
                     {% endif %}
-                </div>
-            </div>
-            <!-- Enrollment Form -->
-            <div class="card shadow-sm">
-                <div class="card-header {% if is_enrolled %}bg-warning{% else %}bg-success{% endif %} text-white">
-                    <h5 class="mb-0">
+                    <div class="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+                        <a href="{% url 'web:chronology:event' slug=event.slug %}"
+                           class="btn btn-secondary">
+                            {% heroicon_outline "arrow-left" class="w-4 h-4" %}
+                            {% translate "Back to Event" %}
+                        </a>
                         {% if is_enrolled %}
-                            <i class="bi bi-gear"></i> {% translate "Manage Enrollment" %}
+                            <button type="submit" name="action" value="cancel" class="btn btn-primary" style="background-color: var(--theme-danger); color: white;">
+                                {% heroicon_outline "user-minus" class="w-4 h-4" %}
+                                {% translate "Cancel Enrollment" %}
+                            </button>
                         {% else %}
-                            <i class="bi bi-person-plus"></i> {% translate "Enroll in Session" %}
+                            <button type="submit" name="action" value="enroll" class="btn btn-teal">
+                                {% heroicon_outline "user-plus" class="w-4 h-4" %}
+                                {% if needs_user_data %}
+                                    {% translate "Complete Enrollment" %}
+                                {% else %}
+                                    {% translate "Enroll Now" %}
+                                {% endif %}
+                            </button>
                         {% endif %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        {% if is_enrolled %}
-                            <div class="alert alert-success" role="alert">
-                                <div class="d-flex">
-                                    <div class="flex-shrink-0">
-                                        <i class="bi bi-check-circle"></i>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <strong>{{ anonymous_user.full_name }}</strong> {% translate "is already enrolled in this session." %}
-                                        {% if existing_enrollment.status == "waiting" %}
-                                            <br>
-                                            <small class="text-muted">{% translate "Status: On waiting list" %}</small>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% elif needs_user_data %}
-                            <div class="alert alert-warning" role="alert">
-                                <div class="d-flex">
-                                    <div class="flex-shrink-0">
-                                        <i class="bi bi-exclamation-triangle"></i>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">{% translate "Please provide your name to complete the enrollment." %}</div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="name" class="form-label">
-                                        {% translate "Name" %} <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="name"
-                                           name="name"
-                                           value="{{ anonymous_user.full_name }}"
-                                           required>
-                                    <div class="form-text">
-                                        {% translate "Your public display name that others will see. This can be a nickname and does not need to be your legal name." %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="alert alert-info" role="alert">
-                                <div class="d-flex">
-                                    <div class="flex-shrink-0">
-                                        <i class="bi bi-info-circle"></i>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        {% translate "Click below to enroll" %} <strong>{{ anonymous_user.full_name }}</strong> {% translate "in this session." %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'web:chronology:event' slug=event.slug %}"
-                               class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> {% translate "Back to Event" %}
-                            </a>
-                            {% if is_enrolled %}
-                                <button type="submit" name="action" value="cancel" class="btn btn-danger">
-                                    <i class="bi bi-person-dash"></i> {% translate "Cancel Enrollment" %}
-                                </button>
-                            {% else %}
-                                <button type="submit" name="action" value="enroll" class="btn btn-success">
-                                    <i class="bi bi-person-plus"></i>
-                                    {% if needs_user_data %}
-                                        {% translate "Complete Enrollment" %}
-                                    {% else %}
-                                        {% translate "Enroll Now" %}
-                                    {% endif %}
-                                </button>
-                            {% endif %}
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
-            <!-- Additional Actions -->
-            <div class="text-center mt-4">
-                <small class="text-muted">
-                    {% translate "Your code" %}: <strong>{{ anonymous_code }}</strong>
-                    <br>
-                    {% translate "Save this code to access your enrollments later" %}
-                </small>
-            </div>
+        </div>
+        {# Additional Actions #}
+        <div class="text-center mt-6">
+            <small class="text-foreground-muted">
+                {% translate "Your code" %}: <strong>{{ anonymous_code }}</strong>
+                <br>
+                {% translate "Save this code to access your enrollments later" %}
+            </small>
         </div>
     </div>
 {% endblock body %}
