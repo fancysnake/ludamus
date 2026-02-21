@@ -80,10 +80,17 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 
 # Composite tasks
 
+[tasks."install:playwright"]
+description = "Run Playwright"
+run = "npx playwright install --with-deps"
+env = { _.file = '.env.e2e' }
+dir = "tests/e2e"
+
 [tasks.e2e]
 description = "Run end-to-end Playwright tests (chromium)"
-run = "cd tests/e2e && npx playwright test --project=chromium"
+run = "npx playwright test --project=chromium"
 env = { _.file = '.env.e2e' }
+dir = "tests/e2e"
 
 [tasks.check]
 depends = [
