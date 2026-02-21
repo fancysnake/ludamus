@@ -82,7 +82,8 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 
 [tasks."install:playwright"]
 run = """
-npm install
+django-admin tailwind install
+django-admin tailwind build
 npx playwright install --with-deps
 """
 description = "Install Playwright"
