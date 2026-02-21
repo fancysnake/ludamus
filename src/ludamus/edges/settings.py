@@ -133,6 +133,9 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+            "libraries": {
+                "avatar_tags": "ludamus.gates.web.django.templatetags.avatar_tags"
+            },
             "debug": DEBUG,
             "string_if_invalid": "ERROR: Missing variable %s",
         },

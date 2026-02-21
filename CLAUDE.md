@@ -51,6 +51,8 @@ Strict rules:
   per-case approval.
 - NEVER add noqa/type ignore/pylint comments or directives without explicit
   per-case approval.
+- When making UI changes, use agent-browser to take screenshots of affected
+  pages and include before/after images in the PR description
 
 ## Details
 

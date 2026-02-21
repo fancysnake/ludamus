@@ -1,0 +1,16 @@
+{% load i18n %}
+<div class="flex flex-wrap gap-2 mb-4 grow">
+    {% for tag in data.tags %}
+        <span class="px-3 py-1 rounded-2xl text-sm font-medium filterable-tag bg-warm-200/80 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
+              title="{{ tag.name }}">{{ tag.name }}</span>
+    {% endfor %}
+    {% if data.session.min_age > 0 %}
+        <span class="px-2 py-1 rounded-lg text-xs font-medium bg-warm-200/90 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
+              title="{% translate "Minimum age" %}: {{ data.session.min_age }} {% translate "years" %}">
+            {{ data.session.min_age }}+
+        </span>
+    {% else %}
+        <span class="px-2 py-1 rounded-lg text-xs font-medium bg-teal-100/90 dark:bg-teal-900/40 text-teal-700 h-fit dark:text-teal-400"
+              title="{% translate "All ages welcome" %}">{% translate "All ages" %}</span>
+    {% endif %}
+</div>

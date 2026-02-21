@@ -30,44 +30,35 @@
                                 class="w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center cursor-pointer transition-all duration-150 ring-2 ring-transparent hover:ring-coral-500/30 focus:outline-none focus:ring-coral-500/50"
                                 aria-haspopup="true"
                                 aria-expanded="false">
-                            <span class="text-sm text-white font-semibold tracking-tight">
-                                {{ request.user.full_name|default:request.user.email|slice:":2"|upper }}
-                            </span>
+                            {% include "components/avatar.html" with user=current_user_info size="size-10" %}
                         </button>
                         <!-- Dropdown panel -->
                         <div class="absolute right-0 top-full pt-2 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 transition-all duration-150 ease-out z-50">
-                            <div class="w-48 rounded-lg shadow-lg border overflow-hidden"
+                            <div class="w-48 rounded-lg shadow-lg border"
                                  style="background-color: var(--theme-bg-secondary);
                                         border-color: var(--theme-border);
                                         box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15)">
                                 <!-- User info header -->
-                                <div class="px-3.5 py-2.5 border-b"
+                                <div class="px-3.5 py-2.5 border-b rounded-t-lg"
                                      style="border-color: var(--theme-border)">
-                                    <p class="text-sm font-medium truncate"
-                                       style="color: var(--color-foreground)">
-                                        {{ request.user.full_name|default:"User" }}
-                                    </p>
+                                    <p class="text-sm font-medium truncate text-foreground-primary">{{ request.user.full_name|default:"User" }}</p>
                                     <p class="text-xs truncate mt-0.5"
                                        style="color: var(--color-foreground-secondary)">{{ request.user.email }}</p>
                                 </div>
                                 {% if is_sphere_manager %}
                                     <a href="{% url 'panel:index' %}"
-                                       class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
-                                       style="color: var(--color-foreground-secondary)">
+                                       class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary">
                                         {% heroicon_outline "squares-2x2" class="w-4 h-4 opacity-60" %}
                                         {% translate "Panel" %}
                                     </a>
                                 {% endif %}
                                 <a href="{% url 'web:crowd:profile' %}"
-                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
-                                   style="color: var(--color-foreground-secondary)">
+                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary">
                                     {% heroicon_outline "user-circle" class="w-4 h-4 opacity-60" %}
                                     {% translate "Edit profile" %}
                                 </a>
                                 <a href="{% url 'web:crowd:auth0:logout' %}"
-                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm border-t transition-colors duration-150 hover:bg-coral-50 dark:hover:bg-coral-950/20"
-                                   style="color: var(--color-foreground-secondary);
-                                          border-color: var(--theme-border)">
+                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm border-t rounded-b-lg transition-colors duration-150 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary border-(--theme-border)">
                                     {% heroicon_outline "arrow-right-on-rectangle" class="w-4 h-4 opacity-60" %}
                                     {% translate "Log out" %}
                                 </a>

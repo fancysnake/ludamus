@@ -5,7 +5,8 @@
 {# Optional: 'variant' can be "past" for muted styling #}
 <a href="{% url 'web:chronology:event' slug=event.slug %}"
    class="progressive-blur relative aspect-5/3 flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background"
-   style="--pb-image: url('{{ event.cover_image_url }}'){% if variant == 'past' %}; filter: saturate(0.7){% endif %}">
+   style="--pb-image: url('{{ event.cover_image_url }}'){% if variant == 'past' %};
+          filter: saturate(0.7){% endif %}">
     {# Progressive blur layers #}
     <div class="pb-layers">
         <div class="pb-layer" style="--i:0"></div>

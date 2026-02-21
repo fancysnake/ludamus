@@ -44,7 +44,7 @@ TAILWIND_APP_NAME = "ludamus.gates.web.django.theme"
 description = "Start Django + Tailwind watch mode"
 run = "django-admin tailwind dev"
 
-[tasks.build-tailwind]
+[tasks.build-frontend]
 description = "Build Tailwind CSS (production)"
 run = "django-admin tailwind build"
 ```
@@ -151,7 +151,7 @@ Replace Bootstrap Icons with heroicons (already installed):
 ## Verification
 
 1. `mise run start` - runs Django + Tailwind watch
-2. `mise run build-tailwind` - generates styles.css
+2. `mise run build-tailwind` - build frontend assets (CSS + JS)
 3. Visual check: pages render with new design
 4. `mise run test` - all tests pass
 5. `docker build .` - builds successfully
