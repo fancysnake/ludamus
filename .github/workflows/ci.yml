@@ -41,7 +41,6 @@ jobs:
       - uses: jdx/mise-action@v2
       - run: mise install
       - run: mise run p install
-      - run: mise run build-frontend
 
         # per the docs: "caching browser binaries is not recommended,
         # since the amount of time it takes to restore the cache is
