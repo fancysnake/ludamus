@@ -4,7 +4,6 @@
       "Bash(mise run check:*)",
       "Bash(mise run djlint:*)",
       "Bash(mise run mypy:*)",
-      "Bash(mise run prcheck)",
       "Bash(mise run ruff-fix:*)",
       "Bash(mise run test:*)",
       "Bash(mise run black:*)",

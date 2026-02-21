@@ -9,7 +9,7 @@
     "build:tailwind": "NODE_ENV=production postcss ./src/index.css -o ../../../../../static/css/output.css --minify",
     "build:js": "tsc",
     "dev:js": "tsc --watch",
-    "dev": "npm run dev:js && NODE_ENV=development postcss ./src/index.css -o ../../../../../static/css/output.css --watch",
+    "dev": "NODE_ENV=development postcss ./src/index.css -o ../../../../../static/css/output.css --watch",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write src"
   },

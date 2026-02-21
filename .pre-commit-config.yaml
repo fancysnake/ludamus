@@ -8,7 +8,6 @@ repos:
       - id: check-merge-conflict
       - id: check-toml
       - id: check-yaml
-      - id: check-yaml
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -49,3 +48,17 @@ repos:
     rev: v1.36.4
     hooks:
       - id: djlint-django
+  - repo: https://github.com/reteps/dockerfmt
+    rev: v0.3.9
+    hooks:
+      - id: dockerfmt
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint
+  - repo: https://github.com/docker-compose-linter/pre-commit-dclint
+    rev: v3.1.0
+    hooks:
+      - id: dclint
+        files: ^docker/compose/.*\.ya?ml$
+        args: [--fix]

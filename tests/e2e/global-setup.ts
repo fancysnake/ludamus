@@ -7,8 +7,6 @@ const scriptPath = path.join('tests', 'e2e', 'scripts', 'bootstrap_data.py');
 
 const baseEnv = {
   ...process.env,
-  DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE ?? 'ludamus.edges.settings',
-  PYTHONPATH: process.env.PYTHONPATH ?? path.join(repoRoot, 'src'),
 };
 
 const run = (command: string) =>
@@ -19,16 +17,9 @@ const run = (command: string) =>
   });
 
 export default async function globalSetup(_config: FullConfig) {
-  const useDocker = process.env.CI !== 'true';
-
-  if (useDocker) {
-    run(
-      'docker compose run --rm -T web sh -c "cd src && django-admin migrate --noinput && django-admin createcachetable && python /app/tests/e2e/scripts/bootstrap_data.py"',
-    );
-    return;
-  }
-
-  run('poetry run django-admin migrate --noinput');
-  run('poetry run django-admin createcachetable');
-  run(`poetry run python ${scriptPath}`);
+  run('mise run dj migrate --noinput');
+  run('mise run dj createcachetable');
+  run('mise run dj downloadvendor');
+  run(`mise run p run python ${scriptPath}`);
+  run('mise run build-frontend');
 }

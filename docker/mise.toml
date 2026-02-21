@@ -1,0 +1,15 @@
+[settings]
+# Sequential execution to avoid race conditions in parallel tests
+jobs = 1
+
+[tools]
+python = "3.14"
+node = "v25.6.1"
+poetry = { version = "2.3.2", pyproject = "/app/pyproject.toml" }
+
+[env]
+# Mise creates and activates this virtualenv automatically
+_.python.venv = { path = ".venv", create = true }
+
+[task_config]
+includes = ["/app/tasks.toml"]

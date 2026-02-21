@@ -131,8 +131,9 @@ celerybeat.pid
 
 # Environments
 .env
-!.env.example
-!.env.dev
+!.env.*.example
+!.env.test
+!.env.e2e
 .venv
 env/
 venv/
@@ -210,11 +211,10 @@ worktrees/
 
 # Tailwind CSS
 src/ludamus/static/css/output.css
-# kinda worrying there are two, do we need both?
-src/static/css/output.css
 src/ludamus/static/css/dist/
 .django_tailwind_cli/
 screenshots/
 tmp
 
-# Generated with tailwind build
+# TypeScript compiled output
+src/ludamus/static/js/*.js

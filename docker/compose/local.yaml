@@ -1,0 +1,72 @@
+---
+name: ludamus
+
+services:
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    env_file:
+      - ../../.env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    cap_drop:
+      - ALL
+    expose:
+      - '${DB_PORT}'
+    security_opt:
+      - no-new-privileges:true
+
+  web:
+    build:
+      context: ../../
+      dockerfile: docker/Dockerfile
+      target: dev
+      args:
+        DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+        ENV: ${ENV}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../../src:/app/src
+      - ../../tests:/app/tests
+      - ../../pyproject.toml:/app/pyproject.toml
+      - ../../.pylintrc:/app/.pylintrc
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    environment:
+      MISE_TRUSTED_CONFIG_PATHS: /app/mise.toml
+    env_file:
+      - ../../.env
+    ports:
+      - '0.0.0.0:8000:8000'
+    command: >
+      run dj migrate ::: dj createcachetable ::: dj downloadvendor ::: start
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

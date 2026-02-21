@@ -4,12 +4,6 @@ import path from 'node:path';
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 
-// Ensure Django can find settings and source modules when Playwright spawns
-// helper processes (global setup and the webServer command) on CI, where the
-// environment is otherwise bare.
-process.env.DJANGO_SETTINGS_MODULE ||= 'ludamus.edges.settings';
-process.env.PYTHONPATH ||= path.join(repoRoot, 'src');
-
 const loadEnv = (filePath: string) => {
   if (!fs.existsSync(filePath)) return;
 
@@ -29,9 +23,7 @@ loadEnv(path.join(repoRoot, '.env'));
 
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:8000`;
 
-const WEB_COMMAND = process.env.CI
-  ? 'poetry run sh -c "django-admin migrate --noinput && django-admin createcachetable && django-admin downloadvendor && python tests/e2e/scripts/bootstrap_data.py && django-admin tailwind install && django-admin tailwind build && django-admin runserver --insecure 0.0.0.0:8000"'
-  : 'docker compose up';
+const WEB_COMMAND = 'mise start';
 
 export default defineConfig({
   testDir: './tests',
@@ -80,10 +72,7 @@ export default defineConfig({
     command: WEB_COMMAND,
     url: BASE_URL,
     env: {
-      ...process.env,
-      DJANGO_SETTINGS_MODULE: process.env.DJANGO_SETTINGS_MODULE!,
-      PYTHONPATH: process.env.PYTHONPATH!,
-      DEBUG: "false"
+      ...process.env
     },
     reuseExistingServer: !process.env.CI,
     timeout: 180 * 1000,

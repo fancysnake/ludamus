@@ -4,25 +4,17 @@ jobs = 1
 
 [tools]
 python = "3.14"
-poetry = { version = "latest", pyproject = "{{ config_root }}/pyproject.toml" }
+node = "v25.6.1"
+poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 
 [env]
 # Mise creates and activates this virtualenv automatically
 _.python.venv = { path = ".venv", create = true }
+_.file = ".env"
 
-# Common environment variables
-PYTHONPATH = "src"
-DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
-DEBUG = "true"
-USE_POSTGRES = "false"
-SECRET_KEY = "dev-secret-key-12345"
-ROOT_DOMAIN = "localhost:8000"
-ALLOWED_HOSTS = ".localhost"
+[task_config]
+includes = ["tasks.toml"]
 
-[tasks.p]
-run = "poetry"
-
-# Code quality tools
 [tasks.black]
 run = "black src tests"
 
@@ -45,6 +37,7 @@ run = "djlint src --reformat --format-css --format-js --profile=django"
 run = "lint-imports --config=pyproject.toml"
 
 [tasks.mypy]
+env = { _.file = '.env.test' }
 run = "mypy src"
 
 [tasks.pylint]
@@ -56,24 +49,12 @@ run = "ruff check src tests"
 [tasks.ruff-fix]
 run = "ruff check --fix src tests"
 
-# Django commands
-[tasks.dj]
-run = "django-admin"
-
 # Base test task with test environment
 # Child tasks call this via "mise run" to inherit env vars
 [tasks._pytest]
 description = "Base pytest runner with test env (internal)"
 run = "pytest"
-env.ROOT_DOMAIN = "testserver"
-env.ALLOWED_HOSTS = ".testserver"
-env.TESTING = "true"
-env.AUTH0_CLIENT_ID = "test_auth0_client_id"
-env.AUTH0_CLIENT_SECRET = "test_auth0_client_secret"
-env.AUTH0_DOMAIN = "auth0.example.com"
-env.MEMBERSHIP_API_BASE_URL = "https://example.com/api/v1/membership"
-env.MEMBERSHIP_API_TOKEN = "abcdefg"
-
+env = { _.file = '.env.test' }
 
 [tasks.unittest]
 description = "Run unit tests"
@@ -82,11 +63,6 @@ run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-t
 [tasks.test]
 description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
-
-# Dev server (Django + Tailwind watch via django-tailwind)
-[tasks.start]
-description = "Start Django dev server with frontend watch"
-run = "django-admin tailwind dev"
 
 [tasks.build-frontend]
 description = "Build frontend assets (CSS + JS)"
@@ -107,14 +83,7 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 [tasks.e2e]
 description = "Run end-to-end Playwright tests (chromium)"
 run = "cd tests/e2e && npx playwright test --project=chromium"
-env.ROOT_DOMAIN = "localhost:8000"
-env.ALLOWED_HOSTS = ".localhost"
-env.AUTH0_CLIENT_ID = "test_auth0_client_id"
-env.AUTH0_CLIENT_SECRET = "test_auth0_client_secret"
-env.AUTH0_DOMAIN = "auth0.example.com"
-env.MEMBERSHIP_API_BASE_URL = "https://example.com/api/v1/membership"
-env.MEMBERSHIP_API_TOKEN = "abcdefg"
-env.CI = "true"
+env = { _.file = '.env.e2e' }
 
 [tasks.check]
 depends = [
@@ -141,3 +110,28 @@ deptry .
 pip-audit .
 poetry show -o
 """
+
+[tasks.gunicorn]
+run = """
+gunicorn \
+    --bind 0.0.0.0:8000 \
+    --workers 4 \
+    --threads 2 \
+    --worker-class sync \
+    --worker-tmp-dir /dev/shm \
+    --access-logfile - \
+    --error-logfile - \
+    --chdir /app/src ludamus.edges.wsgi:application
+"""
+
+[tasks.dc]
+usage = '''
+arg "<environment>" help="Target environment" {
+  choices "local" "prod"
+}
+arg "[dc_args]" var=#true double_dash="optional"
+'''
+run = '''
+GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}
+docker-compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_args")}}
+'''
