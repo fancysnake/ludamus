@@ -4,7 +4,7 @@ jobs = 1
 
 [tools]
 python = "3.14"
-bun = "1.3.9"
+node = "v25.6.1"
 poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 
 [env]
@@ -81,17 +81,17 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 # Composite tasks
 
 [tasks."install:playwright"]
-description = "Run Playwright"
 run = """
-bun install
-bun playwright install --with-deps
+npm install
+npx playwright install --with-deps
 """
+description = "Install Playwright"
 env = { _.file = '.env.e2e' }
 dir = "tests/e2e"
 
 [tasks.e2e]
 description = "Run end-to-end Playwright tests (chromium)"
-run = "bun playwright test --project=chromium"
+run = "npx playwright test --project=chromium"
 env = { _.file = '.env.e2e' }
 dir = "tests/e2e"
 
