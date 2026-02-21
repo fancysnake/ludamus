@@ -50,6 +50,7 @@ services:
       - media_volume:/app/media
     environment:
       MISE_TRUSTED_CONFIG_PATHS: /app/mise.toml
+      TS_OUTDIR: /app/staticfiles/js
     env_file:
       - ../../.env
     ports:

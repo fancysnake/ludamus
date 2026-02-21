@@ -9,7 +9,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "outDir": "/app/staticfiles/js",
+    "outDir": "../../../../../static/js",
     "rootDir": "src",
     "declaration": false,
     "sourceMap": false,
