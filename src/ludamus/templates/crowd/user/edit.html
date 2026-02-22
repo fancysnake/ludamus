@@ -1,52 +1,63 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load django_bootstrap5 %}
+{% load heroicons %}
 {% block title %}
     {% translate "Edit profile" %}
 {% endblock title %}
 {% block body %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <ul class="nav nav-tabs card-header-tabs">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="{% url 'web:crowd:profile' %}">
-                                <i class="bi bi-person"></i>
-                                {% translate "Personal Information" %}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'web:crowd:profile-connected-users' %}">
-                                <i class="bi bi-people"></i>
-                                {% translate "Connected users" %}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'web:crowd:profile-avatar' %}">
-                                <i class="bi bi-image"></i>
-                                {% translate "Avatar" %}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    {% if user.confirmed_participations_count > 0 %}
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-calendar-check"></i>
+    <div class="max-w-3xl mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <nav class="flex gap-4 border-b border-[var(--theme-border)] -mb-px">
+                    <a class="inline-flex items-center gap-1.5 border-b-2 border-[var(--theme-accent)] px-1 pb-2 text-sm font-medium text-[var(--theme-accent)]"
+                       href="{% url 'web:crowd:profile' %}">
+                        {% heroicon_outline "user" class="w-4 h-4" %}
+                        {% translate "Personal Information" %}
+                    </a>
+                    <a class="inline-flex items-center gap-1.5 border-b-2 border-transparent px-1 pb-2 text-sm font-medium text-foreground-secondary hover:text-foreground hover:border-[var(--theme-border)]"
+                       href="{% url 'web:crowd:profile-connected-users' %}">
+                        {% heroicon_outline "users" class="w-4 h-4" %}
+                        {% translate "Connected users" %}
+                    </a>
+                    <a class="inline-flex items-center gap-1.5 border-b-2 border-transparent px-1 pb-2 text-sm font-medium text-foreground-secondary hover:text-foreground hover:border-[var(--theme-border)]"
+                       href="{% url 'web:crowd:profile-avatar' %}">
+                        {% heroicon_outline "photo" class="w-4 h-4" %}
+                        {% translate "Avatar" %}
+                    </a>
+                </nav>
+            </div>
+            <div class="card-body">
+                {% if user.confirmed_participations_count > 0 %}
+                    <div class="flex items-start gap-2 rounded-lg bg-[var(--theme-info-bg,rgba(59,130,246,0.1))] border border-[var(--theme-info-border,rgba(59,130,246,0.3))] p-3 mb-4 text-sm">
+                        {% heroicon_outline "calendar-days" class="w-5 h-5 text-[var(--theme-info,#3b82f6)] shrink-0 mt-0.5" %}
+                        <span>
                             {% blocktranslate count counter=user.confirmed_participations_count %}
                                 You have {{ counter }} confirmed session participation.
                             {% plural %}
                                 You have {{ counter }} confirmed session participations.
                             {% endblocktranslate %}
+                        </span>
+                    </div>
+                {% endif %}
+                <form action="{% url 'web:crowd:profile' %}" method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-4">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-1">
+                                {{ field.label }}
+                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <p class="mt-1 text-xs text-foreground-muted">{{ field.help_text }}</p>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <p class="mt-1 text-xs text-danger">{{ error }}</p>
+                            {% endfor %}
                         </div>
-                    {% endif %}
-                    <form action="{% url 'web:crowd:profile' %}" method="post">
-                        {% csrf_token %}
-                        {% bootstrap_form form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}
-                        {% bootstrap_button button_type="submit" content="OK" %}
-                    </form>
-                </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">OK</button>
+                </form>
             </div>
         </div>
     </div>
