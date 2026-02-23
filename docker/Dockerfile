@@ -51,6 +51,8 @@ CMD ["mise", "run", "start"]
 # Production stage without dev dependencies
 FROM base AS prod
 
+COPY docker/Procfile.tailwind /app/
+
 # Switch to non-root user
 USER appuser
 
