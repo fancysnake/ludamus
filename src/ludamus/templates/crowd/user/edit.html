@@ -48,12 +48,8 @@
                                 {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                             </label>
                             {{ field }}
-                            {% if field.help_text %}
-                                <p class="mt-1 text-xs text-foreground-muted">{{ field.help_text }}</p>
-                            {% endif %}
-                            {% for error in field.errors %}
-                                <p class="mt-1 text-xs text-danger">{{ error }}</p>
-                            {% endfor %}
+                            {% if field.help_text %}<p class="mt-1 text-xs text-foreground-muted">{{ field.help_text }}</p>{% endif %}
+                            {% for error in field.errors %}<p class="mt-1 text-xs text-danger">{{ error }}</p>{% endfor %}
                         </div>
                     {% endfor %}
                     <button type="submit" class="btn btn-primary">OK</button>

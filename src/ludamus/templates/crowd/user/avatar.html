@@ -35,8 +35,10 @@
                                 <div class="card h-full {% if not user.use_gravatar %}border-[var(--theme-accent)] ring-1 ring-[var(--theme-accent)]{% endif %}">
                                     <div class="card-body text-center flex flex-col items-center gap-3">
                                         <img src="{{ user.avatar_url }}"
-                                             alt="{% translate 'Provider avatar' %}"
-                                             class="rounded-full w-24 h-24">
+                                             alt="{% translate "Provider avatar" %}"
+                                             class="rounded-full"
+                                             width="96"
+                                             height="96">
                                         <h6 class="font-semibold text-sm">{% translate "Provider avatar" %}</h6>
                                         <p class="text-foreground-muted text-xs">{% translate "Imported from your social login account." %}</p>
                                         <div class="flex items-center gap-2">
@@ -55,11 +57,16 @@
                                     <div class="card-body text-center flex flex-col items-center gap-3">
                                         <img src="{{ gravatar_url }}"
                                              alt="Gravatar"
-                                             class="rounded-full w-24 h-24">
+                                             class="rounded-full"
+                                             width="96"
+                                             height="96">
                                         <h6 class="font-semibold text-sm">Gravatar</h6>
                                         <p class="text-foreground-muted text-xs">
                                             {% translate "Based on your email address." %}
-                                            <a href="https://gravatar.com" target="_blank" rel="noopener" class="text-[var(--theme-accent)] hover:underline">{% translate "Change it on gravatar.com" %}</a>
+                                            <a href="https://gravatar.com"
+                                               target="_blank"
+                                               rel="noopener"
+                                               class="text-[var(--theme-accent)] hover:underline">{% translate "Change it on gravatar.com" %}</a>
                                         </p>
                                         <div class="flex items-center gap-2">
                                             <input type="radio"
@@ -81,11 +88,16 @@
                     <div class="text-center py-6 flex flex-col items-center gap-3">
                         <img src="{{ gravatar_url }}"
                              alt="Gravatar"
-                             class="rounded-full w-24 h-24">
+                             class="rounded-full"
+                             width="96"
+                             height="96">
                         <h6 class="font-semibold">Gravatar</h6>
                         <p class="text-foreground-secondary text-sm">
                             {% translate "Your avatar is provided by Gravatar, based on your email address." %}
-                            <a href="https://gravatar.com" target="_blank" rel="noopener" class="text-[var(--theme-accent)] hover:underline">{% translate "Change it on gravatar.com" %}</a>
+                            <a href="https://gravatar.com"
+                               target="_blank"
+                               rel="noopener"
+                               class="text-[var(--theme-accent)] hover:underline">{% translate "Change it on gravatar.com" %}</a>
                         </p>
                         <p class="text-foreground-muted text-xs">
                             {% translate "No provider avatar is available. Log in with a provider that supports avatars to get more options." %}

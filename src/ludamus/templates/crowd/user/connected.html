@@ -34,7 +34,6 @@
                         {% translate "Connected people are family members or friends that you can enroll in events. They won't have their own login accounts - you'll handle all their event registrations for them" %}
                     </p>
                 </div>
-
                 {# Add form #}
                 {% if connected_users|length < max_connected_users %}
                     <div class="rounded-lg bg-[var(--theme-bg-secondary)] p-4 mb-6">
@@ -51,12 +50,8 @@
                                         {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                                     </label>
                                     {{ field }}
-                                    {% if field.help_text %}
-                                        <p class="mt-1 text-xs text-foreground-muted">{{ field.help_text }}</p>
-                                    {% endif %}
-                                    {% for error in field.errors %}
-                                        <p class="mt-1 text-xs text-danger">{{ error }}</p>
-                                    {% endfor %}
+                                    {% if field.help_text %}<p class="mt-1 text-xs text-foreground-muted">{{ field.help_text }}</p>{% endif %}
+                                    {% for error in field.errors %}<p class="mt-1 text-xs text-danger">{{ error }}</p>{% endfor %}
                                 </div>
                             {% endfor %}
                             <button type="submit" class="btn btn-primary">OK</button>
@@ -70,7 +65,6 @@
                         </p>
                     </div>
                 {% endif %}
-
                 {# Connected users list #}
                 <div class="border-t border-[var(--theme-border)] pt-4">
                     <h6 class="flex items-center gap-1.5 font-semibold text-sm mb-3">
@@ -104,7 +98,9 @@
                                             </form>
                                         </div>
                                     </div>
-                                    <div class="item-edit" id="edit-{{ forloop.counter }}" style="display:none">
+                                    <div class="item-edit"
+                                         id="edit-{{ forloop.counter }}"
+                                         style="display:none">
                                         <form action="{% url 'web:crowd:profile-connected-users-update' slug=connected.user.slug %}"
                                               method="post">
                                             {% csrf_token %}
@@ -115,12 +111,8 @@
                                                         {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                                                     </label>
                                                     {{ field }}
-                                                    {% if field.help_text %}
-                                                        <p class="mt-1 text-xs text-foreground-muted">{{ field.help_text }}</p>
-                                                    {% endif %}
-                                                    {% for error in field.errors %}
-                                                        <p class="mt-1 text-xs text-danger">{{ error }}</p>
-                                                    {% endfor %}
+                                                    {% if field.help_text %}<p class="mt-1 text-xs text-foreground-muted">{{ field.help_text }}</p>{% endif %}
+                                                    {% for error in field.errors %}<p class="mt-1 text-xs text-danger">{{ error }}</p>{% endfor %}
                                                 </div>
                                             {% endfor %}
                                             <div class="flex gap-2">

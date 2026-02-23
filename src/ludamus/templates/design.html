@@ -29,7 +29,9 @@
                     <div class="card-body flex flex-col gap-2">
                         <span class="uppercase text-foreground-muted text-xs tracking-wide">{% translate "Component" %}</span>
                         <h3 class="text-base font-semibold">{% translate "Sample card" %}</h3>
-                        <p class="text-sm text-foreground-secondary">{% translate "Use this layout for reference when styling new UI blocks." %}</p>
+                        <p class="text-sm text-foreground-secondary">
+                            {% translate "Use this layout for reference when styling new UI blocks." %}
+                        </p>
                         <div class="flex gap-2">
                             <button class="btn btn-primary" type="button">{% translate "Primary action" %}</button>
                             <button class="btn btn-outline-secondary" type="button">{% translate "Ghost" %}</button>
@@ -42,7 +44,9 @@
                             <h3 class="text-base font-semibold">{% translate "Stateful block" %}</h3>
                             <span class="badge badge-success">{% translate "Ready" %}</span>
                         </div>
-                        <p class="text-sm text-foreground-secondary">{% translate "Pair badges with compact headlines to highlight status." %}</p>
+                        <p class="text-sm text-foreground-secondary">
+                            {% translate "Pair badges with compact headlines to highlight status." %}
+                        </p>
                         <div class="flex items-center gap-2">
                             <span class="font-semibold text-sm">{% translate "Label" %}</span>
                             <span class="text-sm text-foreground-muted">{% translate "Value" %}</span>
@@ -60,7 +64,7 @@
                            name="design-input-text"
                            class="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
                            type="text"
-                           placeholder="{% translate 'Placeholder' %}"
+                           placeholder="{% translate "Placeholder" %}"
                            disabled>
                 </div>
                 <div class="flex items-center gap-2">
