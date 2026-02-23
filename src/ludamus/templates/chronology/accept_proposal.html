@@ -86,7 +86,9 @@
                             {% translate "Time Slot" %} <span class="text-danger">*</span>
                         </label>
                         <select class="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
-                                id="time_slot" name="time_slot" required>
+                                id="time_slot"
+                                name="time_slot"
+                                required>
                             <option value="">{% translate "Select a time slot..." %}</option>
                             {% for slot in time_slots %}
                                 <option value="{{ slot.pk }}"

@@ -31,7 +31,9 @@
                                    placeholder="{% translate "Enter your code" %}"
                                    required
                                    maxlength="6">
-                            <p class="mt-1 text-xs text-foreground-muted">{% translate "Enter the code you received when you enrolled (e.g., ab3x)" %}</p>
+                            <p class="mt-1 text-xs text-foreground-muted">
+                                {% translate "Enter the code you received when you enrolled (e.g., ab3x)" %}
+                            </p>
                         </div>
                         <button type="submit" class="btn btn-primary">
                             {% heroicon_outline "magnifying-glass" class="w-4 h-4" %}
@@ -113,8 +115,7 @@
                                 {% translate "View Event" %}
                             </a>
                         {% endif %}
-                        <a href="{% url 'web:anonymous-manage' %}"
-                           class="btn btn-secondary">
+                        <a href="{% url 'web:anonymous-manage' %}" class="btn btn-secondary">
                             {% heroicon_outline "arrow-left" class="w-4 h-4" %}
                             {% translate "Enter Different Code" %}
                         </a>

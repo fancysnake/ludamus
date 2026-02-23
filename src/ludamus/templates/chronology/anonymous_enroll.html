@@ -128,7 +128,12 @@
                             {% translate "Back to Event" %}
                         </a>
                         {% if is_enrolled %}
-                            <button type="submit" name="action" value="cancel" class="btn btn-primary" style="background-color: var(--theme-danger); color: white;">
+                            <button type="submit"
+                                    name="action"
+                                    value="cancel"
+                                    class="btn btn-primary"
+                                    style="background-color: var(--theme-danger);
+                                           color: white">
                                 {% heroicon_outline "user-minus" class="w-4 h-4" %}
                                 {% translate "Cancel Enrollment" %}
                             </button>
