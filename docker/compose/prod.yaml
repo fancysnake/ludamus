@@ -7,6 +7,9 @@ services:
       context: ../../
       dockerfile: docker/Dockerfile
       target: prod
+      args:
+        DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+        ENV: ${ENV}
     depends_on:
       migrations:
         condition: service_completed_successfully
@@ -56,6 +59,9 @@ services:
       context: ../../
       dockerfile: docker/Dockerfile
       target: prod
+      args:
+        DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+        ENV: ${ENV}
     depends_on:
       db:
         condition: service_healthy
