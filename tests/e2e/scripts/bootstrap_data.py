@@ -34,6 +34,7 @@ from ludamus.adapters.db.django.models import (  # noqa: E402
     Session,
     Space,
     Sphere,
+    User,
     Venue,
 )
 
@@ -150,6 +151,56 @@ def _create_session(
     return session
 
 
+def _create_test_user() -> "User":
+    """Create a test user and persist a session cookie file for Playwright."""
+    import json
+
+    from django.contrib.sessions.backends.db import SessionStore
+
+    user = User.objects.create_user(
+        username="e2e-tester",
+        email="e2e@test.local",
+        password="e2e-password-123",
+        name="E2E Tester",
+        slug="e2e-tester",
+        avatar_url="https://i.pravatar.cc/96?u=e2e",
+    )
+
+    # Create a Django session for this user
+    session = SessionStore()
+    session["_auth_user_id"] = str(user.pk)
+    session["_auth_user_backend"] = "django.contrib.auth.backends.ModelBackend"
+    session["_auth_user_hash"] = user.get_session_auth_hash()
+    session.create()
+
+    # Write Playwright storageState JSON
+    base_url = os.environ.get("E2E_BASE_URL", "http://localhost:8000")
+    from urllib.parse import urlparse
+
+    parsed = urlparse(base_url)
+    domain = parsed.hostname or "localhost"
+
+    storage_state = {
+        "cookies": [
+            {
+                "name": "sessionid",
+                "value": session.session_key,
+                "domain": domain,
+                "path": "/",
+                "httpOnly": True,
+                "secure": False,
+                "sameSite": "Lax",
+            }
+        ],
+        "origins": [],
+    }
+
+    state_path = REPO_ROOT / "tests" / "e2e" / ".auth-state.json"
+    state_path.write_text(json.dumps(storage_state, indent=2))
+
+    return user
+
+
 def main() -> None:
     call_command("flush", verbosity=0, interactive=False)
 
@@ -163,6 +214,9 @@ def main() -> None:
     site, sphere = _create_site(sphere_domain, name="E2E Test")
 
     _ensure_spheres_for_all_sites()
+
+    # Test user for authenticated e2e tests
+    _create_test_user()
 
     # Flatpages
     _create_flatpage(
