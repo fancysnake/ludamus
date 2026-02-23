@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import timedelta
@@ -20,8 +21,11 @@ import django  # noqa: E402
 
 django.setup()
 
+from urllib.parse import urlparse  # noqa: E402
+
 from django.conf import settings  # noqa: E402
 from django.contrib.flatpages.models import FlatPage  # noqa: E402
+from django.contrib.sessions.backends.db import SessionStore  # noqa: E402
 from django.contrib.sites.models import Site  # noqa: E402
 from django.core.management import call_command  # noqa: E402
 from django.utils import timezone  # noqa: E402
@@ -151,12 +155,12 @@ def _create_session(
     return session
 
 
-def _create_test_user() -> "User":
-    """Create a test user and persist a session cookie file for Playwright."""
-    import json
+def _create_test_user() -> User:
+    """Create a test user and persist a session cookie file for Playwright.
 
-    from django.contrib.sessions.backends.db import SessionStore
-
+    Returns:
+        The created User instance.
+    """
     user = User.objects.create_user(
         username="e2e-tester",
         email="e2e@test.local",
@@ -175,7 +179,6 @@ def _create_test_user() -> "User":
 
     # Write Playwright storageState JSON
     base_url = os.environ.get("E2E_BASE_URL", "http://localhost:8000")
-    from urllib.parse import urlparse
 
     parsed = urlparse(base_url)
     domain = parsed.hostname or "localhost"
