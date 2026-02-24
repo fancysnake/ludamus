@@ -15,6 +15,11 @@ class TestDesignPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"view": ANY},
+            context_data={
+                "view": ANY,
+                "design_event": ANY,
+                "design_session_data": ANY,
+                "design_session_data_ended": ANY,
+            },
             template_name=["design.html"],
         )
