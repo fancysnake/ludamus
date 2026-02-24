@@ -455,13 +455,31 @@ def _design_mock_session_data() -> SessionData:
     creation = datetime.now(UTC) - timedelta(days=30)
     category_themes = TagCategoryData(icon="", name="Themes", pk=1)
     tag_names = [
-        "horror", "mystery", "18+", "one-shot", "PbtA", "cooperative",
-        "extra tag for popover", "fantasy", "sci-fi", "comedy", "drama",
-        "sandbox", "narrative", "GM-less", "2-4h", "beginner-friendly",
-        "mature themes", "improvisation", "pre-generated", "homebrew",
+        "horror",
+        "mystery",
+        "18+",
+        "one-shot",
+        "PbtA",
+        "cooperative",
+        "extra tag for popover",
+        "fantasy",
+        "sci-fi",
+        "comedy",
+        "drama",
+        "sandbox",
+        "narrative",
+        "GM-less",
+        "2-4h",
+        "beginner-friendly",
+        "mature themes",
+        "improvisation",
+        "pre-generated",
+        "homebrew",
     ]
     tags = [
-        TagWithCategory(category=category_themes, category_id=1, confirmed=True, name=name, pk=i)
+        TagWithCategory(
+            category=category_themes, category_id=1, confirmed=True, name=name, pk=i
+        )
         for i, name in enumerate(tag_names, start=1)
     ]
     presenter = UserInfo(
@@ -474,8 +492,24 @@ def _design_mock_session_data() -> SessionData:
         username="alex",
     )
     participant_users = [
-        UserInfo(avatar_url=None, discord_username="", full_name="Sam Player", name="Sam Player", pk=10, slug="sam-player", username="sam"),
-        UserInfo(avatar_url=None, discord_username="", full_name="Jordan Gamer", name="Jordan Gamer", pk=11, slug="jordan-gamer", username="jordan"),
+        UserInfo(
+            avatar_url=None,
+            discord_username="",
+            full_name="Sam Player",
+            name="Sam Player",
+            pk=10,
+            slug="sam-player",
+            username="sam",
+        ),
+        UserInfo(
+            avatar_url=None,
+            discord_username="",
+            full_name="Jordan Gamer",
+            name="Jordan Gamer",
+            pk=11,
+            slug="jordan-gamer",
+            username="jordan",
+        ),
     ]
     session_participations = [
         ParticipationInfo(user=u, status="confirmed", creation_time=creation)
@@ -493,10 +527,7 @@ def _design_mock_session_data() -> SessionData:
     loc: LocationData = {"venue": venue, "area": None, "space": None}
     return SessionData(
         agenda_item=AgendaItemDTO(
-            end_time=end,
-            pk=1,
-            session_confirmed=True,
-            start_time=start,
+            end_time=end, pk=1, session_confirmed=True, start_time=start
         ),
         is_enrollment_available=True,
         proposal=None,
@@ -542,9 +573,33 @@ def _design_mock_session_data_ended() -> SessionData:
     )
     loc: LocationData = {"venue": venue, "area": None, "space": None}
     ended_participants = [
-        UserInfo(avatar_url=None, discord_username="", full_name="Sam Player", name="Sam Player", pk=10, slug="sam-player", username="sam"),
-        UserInfo(avatar_url=None, discord_username="", full_name="Jordan Gamer", name="Jordan Gamer", pk=11, slug="jordan-gamer", username="jordan"),
-        UserInfo(avatar_url=None, discord_username="", full_name="Casey Demo", name="Casey Demo", pk=12, slug="casey-demo", username="casey"),
+        UserInfo(
+            avatar_url=None,
+            discord_username="",
+            full_name="Sam Player",
+            name="Sam Player",
+            pk=10,
+            slug="sam-player",
+            username="sam",
+        ),
+        UserInfo(
+            avatar_url=None,
+            discord_username="",
+            full_name="Jordan Gamer",
+            name="Jordan Gamer",
+            pk=11,
+            slug="jordan-gamer",
+            username="jordan",
+        ),
+        UserInfo(
+            avatar_url=None,
+            discord_username="",
+            full_name="Casey Demo",
+            name="Casey Demo",
+            pk=12,
+            slug="casey-demo",
+            username="casey",
+        ),
     ]
     ended_participations = [
         ParticipationInfo(user=u, status="confirmed", creation_time=creation)
@@ -552,10 +607,7 @@ def _design_mock_session_data_ended() -> SessionData:
     ]
     return SessionData(
         agenda_item=AgendaItemDTO(
-            end_time=end,
-            pk=2,
-            session_confirmed=True,
-            start_time=start,
+            end_time=end, pk=2, session_confirmed=True, start_time=start
         ),
         is_enrollment_available=False,
         proposal=None,

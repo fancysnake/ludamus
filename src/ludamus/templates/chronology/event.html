@@ -725,7 +725,7 @@
     <!-- Session Detail Modals -->
     {% for data in sessions %}
         <dialog id="session-{{ data.session.pk }}"
-                class="modal bg-transparent h-600 max-h-[90vh]"
+                class="modal max-w-[800px] w-full bg-transparent h-600 max-h-[90vh]"
                 aria-labelledby="session-{{ data.session.pk }}-title">
             <!-- Header -->
             <div class="px-6 py-4 border-b flex items-center justify-between"
@@ -1473,7 +1473,6 @@
             top: anchor(bottom);
             right: anchor(right);
             width: 28rem;
-            right: anchor(right);
             margin-top: 4px;
             display: block;
             min-width: 0;
@@ -1484,10 +1483,13 @@
             border-radius: 1rem;
             background: var(--color-bg-secondary);
             box-shadow: var(--theme-shadow-lg);
-            transition: opacity 0.15s ease;
             opacity: 0;
             pointer-events: none;
             filter: none;
+            transform: scale(0.9) translateY(-16px);
+            transition:
+                opacity 0.35s var(--ease-spring-a-bit),
+                transform 0.35s var(--ease-spring-a-bit);
             padding: 0.75rem;
             padding-top: 0;
         }
@@ -1505,6 +1507,7 @@
         .filters-popover-wrapper .filter-panel.is-open {
             opacity: 1;
             pointer-events: auto;
+            transform: scale(1) translateY(0);
         }
     </style>
 {% endblock extra_head %}
