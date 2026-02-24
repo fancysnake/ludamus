@@ -137,6 +137,7 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
             effective_participants_limit=10,
             enrolled_count=1,
+            waiting_count=1,
             filterable_tags=[],
             full_participant_info="1/10, 1 waiting",
             has_any_enrollments=True,

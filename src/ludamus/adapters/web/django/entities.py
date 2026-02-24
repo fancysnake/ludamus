@@ -88,6 +88,7 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     user_enrolled: bool = False
     user_waiting: bool = False
     filterable_tags: list[TagWithCategory] = field(default_factory=list)
+    waiting_count: int = 0
     is_ongoing: bool = False  # True if session has already started
     should_show_as_inactive: bool = (
         False  # True if should be displayed as inactive due to limit_to_end_time
@@ -96,6 +97,20 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     @property
     def spots_left(self) -> int:
         return max(0, self.effective_participants_limit - self.enrolled_count)
+
+    _SCARCE_THRESHOLD = 0.2
+
+    @property
+    def spots_scarce(self) -> bool:
+        """Check whether less than 20% of spots remain.
+
+        Returns:
+            Whether spots are running low.
+        """
+        if self.effective_participants_limit == 0:
+            return False
+        ratio = self.spots_left / self.effective_participants_limit
+        return ratio < self._SCARCE_THRESHOLD
 
 
 @dataclass

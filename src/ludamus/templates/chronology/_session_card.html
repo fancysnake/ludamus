@@ -52,13 +52,7 @@
             {% include "chronology/session_tags.html" %}
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    {% if data.enrolled_count == 0 %}
-                        {% if not ended %}
-                            <span class="text-sm font-medium text-teal-700 dark:text-teal-400">
-                                {% blocktranslate count counter=data.spots_left %}{{ counter }} slot open{% plural %}{{ counter }} slots open{% endblocktranslate %}
-                            </span>
-                        {% endif %}
-                    {% else %}
+                    {% if data.enrolled_count > 0 %}
                         <div class="flex -space-x-2">
                             {% for p in data.session_participations|dictsort:"status"|slice:":3" %}
                                 {% if p.status == 'confirmed' %}
@@ -66,19 +60,15 @@
                                 {% endif %}
                             {% endfor %}
                         </div>
-                        {% if not ended %}
-                            <span class="text-sm font-medium text-teal-700 dark:text-teal-400">
-                                {% blocktranslate count counter=data.spots_left %}{{ counter }} slot open{% plural %}{{ counter }} slots open{% endblocktranslate %}
-                            </span>
-                        {% endif %}
-                    {% endif %}
-                    {% if data.session.waiting_count > 0 %}
-                        <span class="text-xs font-medium" style="color: var(--theme-warning)">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>
                     {% endif %}
                 </div>
                 {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
-                    {% if not data.is_full %}
-                        <span class="text-[1.05rem] font-semibold text-coral-600 dark:text-coral-400">
+                    {% if data.is_full %}
+                        {% if data.waiting_count > 0 %}
+                            <span class="text-sm font-medium" style="color: #B8B0A6">{{ data.waiting_count }} {% translate "waiting" %}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-sm font-semibold {% if data.spots_scarce %}text-coral-600 dark:text-coral-400{% else %}text-teal-700 dark:text-teal-400{% endif %}">
                             {% blocktranslate count counter=data.spots_left %}{{ counter }} spot left{% plural %}{{ counter }} spots left{% endblocktranslate %}
                         </span>
                     {% endif %}
