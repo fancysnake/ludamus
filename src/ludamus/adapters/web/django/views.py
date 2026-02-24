@@ -1069,6 +1069,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                     ),
                 ),
                 enrolled_count=session.enrolled_count,
+                waiting_count=session.waiting_count,
                 session_participations=[
                     ParticipationInfo(
                         user=UserInfo.from_user_dto(UserDTO.model_validate(sp.user)),
@@ -1792,6 +1793,9 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
             "event": event,
             "spaces": proposal_repository.read_spaces(proposal.pk),
             "time_slots": proposal_repository.read_time_slots(proposal.pk),
+            "preferred_time_slot_ids": proposal_repository.read_preferred_time_slot_ids(
+                proposal.pk
+            ),
             "form": form,
             "proposal_host": proposal_repository.read_host(proposal.pk),
             "tags": [
@@ -1848,6 +1852,9 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                     "event": event,
                     "spaces": proposal_repository.read_spaces(proposal.pk),
                     "time_slots": proposal_repository.read_time_slots(proposal.pk),
+                    "preferred_time_slot_ids": (
+                        proposal_repository.read_preferred_time_slot_ids(proposal.pk)
+                    ),
                     "form": form,
                     "proposal_host": proposal_repository.read_host(proposal.pk),
                     "tags": [

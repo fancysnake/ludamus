@@ -85,10 +85,10 @@
                                         <p class="text-sm mb-1">
                                             <strong>{% translate "Space" %}:</strong> {{ enrollment.session.agenda_item.space.name }}
                                         </p>
+                                        <small class="text-foreground-muted">
+                                            <strong>{% translate "Event" %}:</strong> {{ enrollment.session.agenda_item.space.area.venue.event.name }}
+                                        </small>
                                     {% endif %}
-                                    <small class="text-foreground-muted">
-                                        <strong>{% translate "Event" %}:</strong> {{ enrollment.session.agenda_item.space.event.name }}
-                                    </small>
                                 </div>
                             {% endfor %}
                         </div>

@@ -53,6 +53,7 @@ class TestProposalAcceptPageView:
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "proposal_host": UserDTO.model_validate(proposal.host),
                 "tags": [],
+                "preferred_time_slot_ids": [],
             },
             template_name="chronology/accept_proposal.html",
         )
@@ -177,6 +178,7 @@ class TestProposalAcceptPageView:
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "proposal_host": UserDTO.model_validate(proposal.host),
                 "tags": [],
+                "preferred_time_slot_ids": [],
             },
             template_name="chronology/accept_proposal.html",
         )
@@ -270,6 +272,7 @@ class TestProposalAcceptPageView:
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "proposal_host": UserDTO.model_validate(proposal.host),
                 "tags": [],
+                "preferred_time_slot_ids": [],
             },
             template_name="chronology/accept_proposal.html",
         )

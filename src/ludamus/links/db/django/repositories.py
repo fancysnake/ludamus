@@ -209,6 +209,10 @@ class ProposalRepository(ProposalRepositoryProtocol):
 
         return [TimeSlotDTO.model_validate(time_slot) for time_slot in time_slots]
 
+    def read_preferred_time_slot_ids(self, proposal_id: int) -> list[int]:
+        proposal = self._storage.proposals[proposal_id]
+        return list(proposal.time_slots.values_list("id", flat=True))
+
     def read_spaces(self, proposal_id: int) -> list[SpaceDTO]:
         proposal = self._storage.proposals[proposal_id]
         event_id = proposal.category.event_id
