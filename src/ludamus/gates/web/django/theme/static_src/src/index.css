@@ -394,6 +394,7 @@ button:active {
 .session-tags-more:hover .session-tags-popover {
   opacity: 1;
   pointer-events: auto;
+  transform: translateX(-50%) scale(1) translateY(0);
 }
 
 .session-tags-popover {
@@ -401,11 +402,15 @@ button:active {
   bottom: 100%;
   left: 50%;
   margin-bottom: 8px;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(0.9) translateY(16px);
   width: max-content;
   min-width: 12rem;
   max-width: 18rem;
   z-index: 50;
+  opacity: 0;
+  transition:
+    opacity 0.35s var(--ease-spring-a-bit),
+    transform 0.35s var(--ease-spring-a-bit);
 }
 
 .session-tags-popover::after {
