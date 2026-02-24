@@ -202,12 +202,10 @@ class ProposalRepository(ProposalRepositoryProtocol):
     def read_time_slots(self, proposal_id: int) -> list[TimeSlotDTO]:
         proposal = self._storage.proposals[proposal_id]
         event_id = proposal.category.event_id
-        collection = self._storage.time_slots_by_event[event_id]
-        if not (time_slots := collection.values()):
+        if not (collection := self._storage.time_slots_by_event[event_id]):
             for time_slot in TimeSlot.objects.filter(event_id=event_id):
                 collection[time_slot.id] = time_slot
-
-        return [TimeSlotDTO.model_validate(time_slot) for time_slot in time_slots]
+        return [TimeSlotDTO.model_validate(ts) for ts in collection.values()]
 
     def read_preferred_time_slot_ids(self, proposal_id: int) -> list[int]:
         proposal = self._storage.proposals[proposal_id]
