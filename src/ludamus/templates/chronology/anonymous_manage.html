@@ -109,7 +109,7 @@
                 <div class="card-body">
                     <div class="flex flex-col sm:flex-row justify-center gap-2">
                         {% if enrollments %}
-                            <a href="{% url 'web:chronology:event' slug=enrollments.0.session.agenda_item.space.event.slug %}"
+                            <a href="{% url 'web:chronology:event' slug=enrollments.0.session.agenda_item.space.area.venue.event.slug %}"
                                class="btn btn-primary">
                                 {% heroicon_outline "calendar" class="w-4 h-4" %}
                                 {% translate "View Event" %}
