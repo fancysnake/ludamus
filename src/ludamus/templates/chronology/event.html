@@ -303,69 +303,71 @@
                         <div id="filter-panel" class="filter-panel shadow-xl">
                             <div class="overflow-hidden">
                                 <div class="flex flex-wrap gap-3 grow pt-3.5">
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
-                                       for="status-filter">{% translate "Status" %}</label>
-                                <select id="status-filter"
-                                        class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
-                                        style="border-color: var(--theme-border)">
-                                    <option value="">{% translate "All statuses" %}</option>
-                                    <option value="available">{% translate "Available spots" %}</option>
-                                    <option value="full">{% translate "Full" %}</option>
-                                    <option value="in-progress">{% translate "In progress" %}</option>
-                                    <option value="unavailable">{% translate "Enrollment unavailable" %}</option>
-                                    <option value="ended">{% translate "Ended" %}</option>
-                                    <option value="my-enrolled">{% translate "I am enrolled" %}</option>
-                                    <option value="my-waiting">{% translate "I am waiting" %}</option>
-                                </select>
-                            </div>
-                            <div id="venue-filter-group" class="flex flex-col gap-1.5 hidden">
-                                <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
-                                       for="venue-filter">{% translate "Venue" %}</label>
-                                <select id="venue-filter"
-                                        class="filter-input grow w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
-                                        style="border-color: var(--theme-border)">
-                                    <option value="">{% translate "All venues" %}</option>
-                                </select>
-                            </div>
-                            <div class="flex flex-col gap-1.5 grow">
-                                <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted">
-                                    {% translate "Age range" %}
-                                </label>
-                                <div class="flex items-center gap-2">
-                                    <input type="number"
-                                           class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] grow font-medium bg-bg-secondary text-foreground transition-all duration-150"
-                                           style="border-color: var(--theme-border)"
-                                           id="min-age-filter"
-                                           placeholder="{% translate "Min" %}"
-                                           min="0"
-                                           max="99">
-                                    <span class="text-xs font-bold text-foreground-muted">–</span>
-                                    <input type="number"
-                                           class="filter-input w-full py-2 px-3 rounded-xl grow border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
-                                           style="border-color: var(--theme-border)"
-                                           id="max-age-filter"
-                                           placeholder="{% translate "Max" %}"
-                                           min="0"
-                                           max="99">
-                                </div>
-                            </div>
-                            <div id="tag-filters" class="contents">
-                                {% for category in filterable_tag_categories %}
-                                    <div class="flex flex-col gap-1.5 grow">
-                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest grow text-foreground-muted"
-                                               for="tag-filter-{{ category.name|slugify }}">{{ category.name }}</label>
-                                        <select class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
-                                                style="border-color: var(--theme-border)"
-                                                data-category="{{ category.name|slugify }}"
-                                                id="tag-filter-{{ category.name|slugify }}">
-                                            <option value="">{% translate "All" %} {{ category.name }}</option>
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
+                                               for="status-filter">{% translate "Status" %}</label>
+                                        <select id="status-filter"
+                                                class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                                style="border-color: var(--theme-border)">
+                                            <option value="">{% translate "All statuses" %}</option>
+                                            <option value="available">{% translate "Available spots" %}</option>
+                                            <option value="full">{% translate "Full" %}</option>
+                                            <option value="in-progress">{% translate "In progress" %}</option>
+                                            <option value="unavailable">{% translate "Enrollment unavailable" %}</option>
+                                            <option value="ended">{% translate "Ended" %}</option>
+                                            <option value="my-enrolled">{% translate "I am enrolled" %}</option>
+                                            <option value="my-waiting">{% translate "I am waiting" %}</option>
                                         </select>
                                     </div>
-                                {% endfor %}
+                                    <div id="venue-filter-group" class="flex flex-col gap-1.5 hidden">
+                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
+                                               for="venue-filter">{% translate "Venue" %}</label>
+                                        <select id="venue-filter"
+                                                class="filter-input grow w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                                style="border-color: var(--theme-border)">
+                                            <option value="">{% translate "All venues" %}</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex flex-col gap-1.5 grow">
+                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted">
+                                            {% translate "Age range" %}
+                                        </label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="number"
+                                                   class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] grow font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                                   style="border-color: var(--theme-border)"
+                                                   id="min-age-filter"
+                                                   placeholder="{% translate "Min" %}"
+                                                   min="0"
+                                                   max="99">
+                                            <span class="text-xs font-bold text-foreground-muted">–</span>
+                                            <input type="number"
+                                                   class="filter-input w-full py-2 px-3 rounded-xl grow border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                                   style="border-color: var(--theme-border)"
+                                                   id="max-age-filter"
+                                                   placeholder="{% translate "Max" %}"
+                                                   min="0"
+                                                   max="99">
+                                        </div>
+                                    </div>
+                                    <div id="tag-filters" class="contents">
+                                        {% for category in filterable_tag_categories %}
+                                            <div class="flex flex-col gap-1.5 grow">
+                                                <label class="text-[0.625rem] font-bold uppercase tracking-widest grow text-foreground-muted"
+                                                       for="tag-filter-{{ category.name|slugify }}">
+                                                    {{ category.name }}
+                                                </label>
+                                                <select class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
+                                                        style="border-color: var(--theme-border)"
+                                                        data-category="{{ category.name|slugify }}"
+                                                        id="tag-filter-{{ category.name|slugify }}">
+                                                    <option value="">{% translate "All" %} {{ category.name }}</option>
+                                                </select>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
                         </div>
                     </div>
                 </div>
@@ -769,15 +771,23 @@
                      role="tabpanel"
                      class="tab-panel"
                      data-active>
-                    <!-- Host info -->
-                    <div class="flex items-center gap-3 mb-6">
+                    <!-- Host & location -->
+                    <div class="flex items-center gap-3 mb-6 flex-wrap">
                         {% include "components/avatar.html" with user=data.presenter size="size-10" %}
-                        <div>
+                        <div class="flex items-center gap-3 flex-wrap min-w-0">
                             <div class="font-medium" style="color: var(--color-foreground)">{{ data.presenter.full_name }}</div>
+                            {% if data.location_label %}
+                                <span class="flex items-center gap-1.5 text-sm min-w-0"
+                                      style="color: var(--color-foreground-muted)">
+                                    {% heroicon_mini "map-pin" class="size-4 shrink-0 opacity-80" %}
+                                    <span class="truncate" title="{{ data.location_label }}">{{ data.location_label }}</span>
+                                </span>
+                            {% endif %}
                             {% if data.proposal %}
                                 {% with host=data.presenter %}
                                     {% if host and host.slug and host.discord_username %}
-                                        <button class="btn btn-secondary text-xs mt-1 reveal-discord-btn"
+                                        <span class="text-foreground-muted/70 select-none" aria-hidden="true">·</span>
+                                        <button class="btn btn-secondary text-xs reveal-discord-btn"
                                                 hx-get="{% url 'web:crowd:user-discord-username' user_slug=host.slug %}"
                                                 hx-swap="outerHTML"
                                                 hx-trigger="click once">
@@ -820,12 +830,6 @@
                                 {{ data.agenda_item.start_time|time:"G:i" }} - {{ data.agenda_item.end_time|time:"G:i" }}
                             </div>
                         </div>
-                        {% if data.location_label %}
-                            <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                                <div class="text-sm mb-1" style="color: var(--color-foreground-muted)">{% translate "Location" %}</div>
-                                <div class="font-medium" style="color: var(--color-foreground)">{{ data.location_label }}</div>
-                            </div>
-                        {% endif %}
                         <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
                             <div class="text-sm mb-1" style="color: var(--color-foreground-muted)">{% translate "Capacity" %}</div>
                             <div class="font-medium flex flex-wrap items-center gap-1.5"

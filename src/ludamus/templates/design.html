@@ -59,7 +59,9 @@
         </section>
         <section class="flex flex-col gap-3">
             <h2 class="text-lg font-semibold">{% translate "Event card" %}</h2>
-            <p class="text-sm text-foreground-muted">{% translate "Chronology event card for the index / event list. Debug in isolation." %}</p>
+            <p class="text-sm text-foreground-muted">
+                {% translate "Chronology event card for the index / event list. Debug in isolation." %}
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% if design_event %}
                     {% include "components/event_card.html" with event=design_event %}
@@ -69,7 +71,9 @@
         </section>
         <section class="flex flex-col gap-3">
             <h2 class="text-lg font-semibold">{% translate "Session card" %}</h2>
-            <p class="text-sm text-foreground-muted">{% translate "Session card used on the event page. Upcoming (with spots) and ended variants." %}</p>
+            <p class="text-sm text-foreground-muted">
+                {% translate "Session card used on the event page. Upcoming (with spots) and ended variants." %}
+            </p>
             <div class="session-grid grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {% if design_session_data %}
                     {% include "chronology/_session_card.html" with data=design_session_data ended=False %}
