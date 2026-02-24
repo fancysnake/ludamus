@@ -1,16 +1,30 @@
 {% load i18n %}
-<div class="flex flex-wrap gap-2 mb-4 grow">
-    {% for tag in data.tags %}
-        <span class="px-3 py-1 rounded-2xl text-sm font-medium filterable-tag bg-warm-200/80 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
+<div class="flex flex-wrap gap-2 mt-2 session-tags-row">
+    {% for tag in data.tags|slice:":6" %}
+        <span class="px-3 py-1 rounded-2xl text-sm font-medium filterable-tag max-w-[200px] truncate bg-warm-200/80 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
               title="{{ tag.name }}">{{ tag.name }}</span>
     {% endfor %}
     {% if data.session.min_age > 0 %}
-        <span class="px-2 py-1 rounded-lg text-xs font-medium bg-warm-200/90 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
+        <span class="px-3 py-1 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-200 dark:bg-coral-900 text-coral-700 h-fit dark:text-coral-300"
               title="{% translate "Minimum age" %}: {{ data.session.min_age }} {% translate "years" %}">
             {{ data.session.min_age }}+
         </span>
     {% else %}
-        <span class="px-2 py-1 rounded-lg text-xs font-medium bg-teal-100/90 dark:bg-teal-900/40 text-teal-700 h-fit dark:text-teal-400"
+        <span class="px-3 py-1 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-200/80 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
               title="{% translate "All ages welcome" %}">{% translate "All ages" %}</span>
     {% endif %}
+    {% with overflow=data.tags|slice:"6:" %}
+        {% if overflow %}
+            <div class="session-tags-more relative inline-block">
+                <div class="session-tags-popover absolute left-1/2 -translate-x-1/2 bottom-full z-30 mb-2 min-w-[12rem] max-w-[18rem] rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800 p-2 shadow-lg opacity-0 pointer-events-none transition-opacity duration-150 flex flex-wrap gap-2">
+                    {% for tag in overflow %}
+                        <span class="px-3 py-1 rounded-2xl text-sm font-medium filterable-tag max-w-[200px] truncate bg-warm-200/80 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
+                              title="{{ tag.name }}">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+                <span class="session-tags-more-trigger text-sm font-medium text-foreground-muted hover:text-foreground-secondary cursor-help border-b border-dotted border-foreground-muted hover:border-foreground-secondary"
+                      title="{% blocktranslate count counter=overflow|length %}{{ counter }} more tag{% plural %}{{ counter }} more tags{% endblocktranslate %}">+{{ overflow|length }}</span>
+            </div>
+        {% endif %}
+    {% endwith %}
 </div>

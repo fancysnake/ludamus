@@ -262,7 +262,7 @@
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
                 <h2 class="text-xl font-bold" style="color: var(--color-foreground)">{% translate "Sessions" %}</h2>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-coral-100 dark:bg-coral-900/30 text-coral-700 dark:text-coral-400">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-base translate-y-[.5px] font-semibold bg-coral-100 dark:bg-coral-900/30 text-coral-700 dark:text-coral-400">
                     {{ sessions|length }}
                 </span>
             </div>
@@ -288,25 +288,21 @@
                                placeholder="{% translate "Filter by title or host..." %}"
                                autocomplete="off">
                     </div>
-                    <button type="button"
-                            class="filter-toggle inline-flex items-center gap-2 px-5 rounded-2xl text-sm font-semibold border whitespace-nowrap cursor-pointer bg-bg-secondary text-foreground-muted transition-all duration-150"
-                            style="border-color: var(--theme-border)"
-                            id="filter-toggle"
-                            aria-expanded="false"
-                            aria-controls="filter-panel">
-                        <span class="hidden sm:inline">{% translate "Filters" %}</span>
-                        {% heroicon_mini "adjustments-horizontal" class="w-5 h-5" %}
-                        <span id="active-filter-count"
-                              class="filter-badge hidden min-w-5 h-5 px-1.5 rounded-full text-[0.6875rem] font-bold leading-5 text-center bg-primary text-white"></span>
-                    </button>
-                </div>
-                <div id="active-filter-chips"
-                     class="filter-chips-bar"
-                     data-remove-filter-label="{% translate "Remove filter" %}"
-                     data-clear-all-label="{% translate "Clear all" %}"></div>
-                <div id="filter-panel" class="filter-panel">
-                    <div class="overflow-hidden">
-                        <div class="flex flex-wrap gap-3 pt-3.5">
+                    <div class="filters-popover-wrapper relative overflow-visible">
+                        <button type="button"
+                                class="filter-toggle filter-toggle-anchor inline-flex items-center gap-2 p-3 rounded-2xl text-sm font-semibold border whitespace-nowrap cursor-pointer bg-bg-secondary text-foreground-muted transition-all duration-150"
+                                style="border-color: var(--theme-border)"
+                                id="filter-toggle"
+                                aria-expanded="false"
+                                aria-controls="filter-panel">
+                            <span class="hidden sm:inline">{% translate "Filters" %}</span>
+                            {% heroicon_mini "adjustments-horizontal" class="w-5 h-5" %}
+                            <span id="active-filter-count"
+                                  class="filter-badge hidden min-w-5 h-5 px-1.5 rounded-full text-[0.6875rem] font-bold leading-5 text-center bg-primary text-white"></span>
+                        </button>
+                        <div id="filter-panel" class="filter-panel">
+                            <div class="overflow-hidden">
+                                <div class="flex flex-wrap gap-3 pt-3.5">
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
                                        for="status-filter">{% translate "Status" %}</label>
@@ -370,7 +366,13 @@
                             </div>
                         </div>
                     </div>
+                        </div>
+                    </div>
                 </div>
+                <div id="active-filter-chips"
+                     class="filter-chips-bar"
+                     data-remove-filter-label="{% translate "Remove filter" %}"
+                     data-clear-all-label="{% translate "Clear all" %}"></div>
             </div>
             <div id="filter-no-results"
                  class="text-center py-12 px-4 text-foreground-muted"
@@ -1459,6 +1461,71 @@
         /* Style future unavailable sessions with warning border */
         .time-slot-section[data-time-slot*="future"] .session-card {
             border-left: 3px solid var(--theme-warning);
+        }
+
+        .session-tags-more:hover .session-tags-popover {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .session-tags-popover::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -5px;
+            margin-left: -5px;
+            border: 5px solid transparent;
+            border-top-color: rgb(250 250 250);
+        }
+
+        .dark .session-tags-popover::after {
+            border-top-color: rgb(38 38 38);
+        }
+
+        .session-tags-more {
+            position: relative;
+            z-index: 20;
+        }
+
+        .filters-popover-wrapper .filter-toggle-anchor {
+            anchor-name: --filter-trigger;
+        }
+
+        .filters-popover-wrapper .filter-panel {
+            position: absolute;
+            position-anchor: --filter-trigger;
+            top: anchor(bottom);
+            right: anchor(right);
+            left: max(1rem, calc(anchor(right) - 20rem));
+            margin-top: 4px;
+            display: block;
+            min-width: 0;
+            max-height: min(70vh, 32rem);
+            overflow-y: auto;
+            z-index: 50;
+            border: 1px solid var(--theme-border);
+            border-radius: 1rem;
+            background: var(--color-bg-secondary);
+            box-shadow: var(--theme-shadow-lg);
+            transition: opacity 0.15s ease;
+            opacity: 0;
+            pointer-events: none;
+            filter: none;
+        }
+
+        @supports not (anchor-name: --filter-trigger) {
+            .filters-popover-wrapper .filter-panel {
+                top: 100%;
+                right: 0;
+                left: auto;
+                width: 20rem;
+                position-anchor: unset;
+            }
+        }
+
+        .filters-popover-wrapper .filter-panel.is-open {
+            opacity: 1;
+            pointer-events: auto;
         }
     </style>
 {% endblock extra_head %}
