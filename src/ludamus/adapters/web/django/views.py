@@ -473,6 +473,14 @@ def _design_mock_session_data() -> SessionData:
         slug="alex-designer",
         username="alex",
     )
+    participant_users = [
+        UserInfo(avatar_url=None, discord_username="", full_name="Sam Player", name="Sam Player", pk=10, slug="sam-player", username="sam"),
+        UserInfo(avatar_url=None, discord_username="", full_name="Jordan Gamer", name="Jordan Gamer", pk=11, slug="jordan-gamer", username="jordan"),
+    ]
+    session_participations = [
+        ParticipationInfo(user=u, status="confirmed", creation_time=creation)
+        for u in participant_users
+    ]
     venue = VenueDTO(
         address="",
         creation_time=creation,
@@ -510,7 +518,7 @@ def _design_mock_session_data() -> SessionData:
         full_participant_info="4/6",
         effective_participants_limit=6,
         enrolled_count=2,
-        session_participations=[],
+        session_participations=session_participations,
         loc=loc,
     )
 
@@ -533,6 +541,15 @@ def _design_mock_session_data_ended() -> SessionData:
         slug="main-hall",
     )
     loc: LocationData = {"venue": venue, "area": None, "space": None}
+    ended_participants = [
+        UserInfo(avatar_url=None, discord_username="", full_name="Sam Player", name="Sam Player", pk=10, slug="sam-player", username="sam"),
+        UserInfo(avatar_url=None, discord_username="", full_name="Jordan Gamer", name="Jordan Gamer", pk=11, slug="jordan-gamer", username="jordan"),
+        UserInfo(avatar_url=None, discord_username="", full_name="Casey Demo", name="Casey Demo", pk=12, slug="casey-demo", username="casey"),
+    ]
+    ended_participations = [
+        ParticipationInfo(user=u, status="confirmed", creation_time=creation)
+        for u in ended_participants
+    ]
     return SessionData(
         agenda_item=AgendaItemDTO(
             end_time=end,
@@ -560,7 +577,7 @@ def _design_mock_session_data_ended() -> SessionData:
         full_participant_info="6/6",
         effective_participants_limit=6,
         enrolled_count=6,
-        session_participations=[],
+        session_participations=ended_participations,
         loc=loc,
     )
 
