@@ -112,6 +112,21 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
         ratio = self.spots_left / self.effective_participants_limit
         return ratio < self._SCARCE_THRESHOLD
 
+    @property
+    def location_label(self) -> str:
+        """Comma-separated location from venue, area, space."""
+        parts: list[str] = []
+        venue = self.loc.get("venue")
+        if venue and venue.name.strip():
+            parts.append(venue.name)
+        area = self.loc.get("area")
+        if area and area.name.strip():
+            parts.append(area.name)
+        space = self.loc.get("space")
+        if space and space.name.strip():
+            parts.append(space.name)
+        return ", ".join(parts)
+
 
 @dataclass
 class EventInfo:  # pylint: disable=too-many-instance-attributes
