@@ -756,10 +756,10 @@
                         class="tab-trigger px-4 py-3 text-sm font-medium flex items-center gap-1.5">
                     {% heroicon_mini "users" class="w-4 h-4" %} {% translate "Participants" %}
                     <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-coral-100 dark:bg-coral-900/30 text-coral-700 dark:text-coral-400">{{ data.enrolled_count }}</span>
-                    {% if data.session.waiting_count > 0 %}
+                    {% if data.waiting_count > 0 %}
                         <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold"
                               style="background-color: var(--theme-warning-light);
-                                     color: var(--theme-warning-text)">+{{ data.session.waiting_count }}</span>
+                                     color: var(--theme-warning-text)">+{{ data.waiting_count }}</span>
                     {% endif %}
                 </button>
             </div>
@@ -837,10 +837,10 @@
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
                                     {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
                                 </span>
-                                {% if data.session.waiting_count > 0 %}
+                                {% if data.waiting_count > 0 %}
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
                                           style="background-color: var(--theme-warning-light);
-                                                 color: var(--theme-warning-text)">+{{ data.session.waiting_count }}</span>
+                                                 color: var(--theme-warning-text)">+{{ data.waiting_count }}</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -952,7 +952,7 @@
                         {% endif %}
                     {% endwith %}
                     <!-- Waiting List -->
-                    {% if data.session.waiting_count > 0 %}
+                    {% if data.waiting_count > 0 %}
                         <h3 class="font-semibold mb-3"
                             style="color: var(--color-foreground-secondary)">{% translate "Waiting List" %}</h3>
                         <div class="space-y-2">
