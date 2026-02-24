@@ -93,7 +93,7 @@ chronology_urls = [
 
 urlpatterns = [
     path("", views.IndexPageView.as_view(), name="index"),
-    path("design/", TemplateView.as_view(template_name="design.html"), name="design"),
+    path("design/", views.DesignPageView.as_view(), name="design"),
     path(
         "design/tailwind/",
         TemplateView.as_view(template_name="design_tailwind.html"),
