@@ -136,25 +136,5 @@
             white-space: nowrap;
             display: inline-block;
         }
-        .session-tags-more:hover .session-tags-popover {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .session-tags-popover::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            bottom: -5px;
-            margin-left: -5px;
-            border: 5px solid transparent;
-            border-top-color: rgb(250 250 250);
-        }
-        .dark .session-tags-popover::after {
-            border-top-color: rgb(38 38 38);
-        }
-        .session-tags-more {
-            position: relative;
-            z-index: 20;
-        }
     </style>
 {% endblock extra_head %}
