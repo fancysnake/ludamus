@@ -434,7 +434,10 @@ def _design_mock_event_info() -> EventInfo:
     end = start + timedelta(hours=6)
     return EventInfo(
         cover_image_url=staticfiles_storage.url(EVENT_PLACEHOLDER_IMAGES[0]),
-        description="Design system preview event. Use this to debug the event card in isolation.",
+        description=(
+            "Design system preview event. Use this to debug the "
+            "event card in isolation."
+        ),
         end_time=end,
         is_ended=False,
         is_live=False,
@@ -447,8 +450,6 @@ def _design_mock_event_info() -> EventInfo:
 
 
 def _design_mock_session_data() -> SessionData:
-    from ludamus.pacts import AgendaItemDTO, SessionDTO, VenueDTO
-
     base_time = datetime.now(UTC) + timedelta(days=7)
     start = base_time.replace(hour=14, minute=0, second=0, microsecond=0)
     end = start + timedelta(hours=2)
@@ -524,7 +525,17 @@ def _design_mock_session_data() -> SessionData:
         pk=1,
         slug="main-hall",
     )
-    loc: LocationData = {"venue": venue, "area": None, "space": None}
+    space = SpaceDTO(
+        area_id=None,
+        capacity=None,
+        creation_time=creation,
+        modification_time=creation,
+        name="Table 1",
+        order=0,
+        pk=1,
+        slug="table-1",
+    )
+    loc: LocationData = {"venue": venue, "area": None, "space": space}
     return SessionData(
         agenda_item=AgendaItemDTO(
             end_time=end, pk=1, session_confirmed=True, start_time=start
@@ -534,7 +545,9 @@ def _design_mock_session_data() -> SessionData:
         presenter=presenter,
         session=SessionDTO(
             creation_time=creation,
-            description="A sample session for the design page. Host and tags are mock data.",
+            description=(
+                "A sample session for the design page. Host and tags are mock data."
+            ),
             min_age=16,
             modification_time=creation,
             participants_limit=6,
@@ -555,8 +568,6 @@ def _design_mock_session_data() -> SessionData:
 
 
 def _design_mock_session_data_ended() -> SessionData:
-    from ludamus.pacts import AgendaItemDTO, SessionDTO, VenueDTO
-
     data = _design_mock_session_data()
     base_time = datetime.now(UTC) - timedelta(hours=2)
     start = base_time.replace(hour=10, minute=0, second=0, microsecond=0)
@@ -571,7 +582,17 @@ def _design_mock_session_data_ended() -> SessionData:
         pk=1,
         slug="main-hall",
     )
-    loc: LocationData = {"venue": venue, "area": None, "space": None}
+    space = SpaceDTO(
+        area_id=None,
+        capacity=None,
+        creation_time=creation,
+        modification_time=creation,
+        name="Table 1",
+        order=0,
+        pk=1,
+        slug="table-1",
+    )
+    loc: LocationData = {"venue": venue, "area": None, "space": space}
     ended_participants = [
         UserInfo(
             avatar_url=None,
