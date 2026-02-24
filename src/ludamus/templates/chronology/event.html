@@ -300,9 +300,9 @@
                             <span id="active-filter-count"
                                   class="filter-badge hidden min-w-5 h-5 px-1.5 rounded-full text-[0.6875rem] font-bold leading-5 text-center bg-primary text-white"></span>
                         </button>
-                        <div id="filter-panel" class="filter-panel">
+                        <div id="filter-panel" class="filter-panel shadow-xl">
                             <div class="overflow-hidden">
-                                <div class="flex flex-wrap gap-3 pt-3.5">
+                                <div class="flex flex-wrap gap-3 grow pt-3.5">
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
                                        for="status-filter">{% translate "Status" %}</label>
@@ -323,18 +323,18 @@
                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
                                        for="venue-filter">{% translate "Venue" %}</label>
                                 <select id="venue-filter"
-                                        class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                        class="filter-input grow w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                         style="border-color: var(--theme-border)">
                                     <option value="">{% translate "All venues" %}</option>
                                 </select>
                             </div>
-                            <div class="flex flex-col gap-1.5">
+                            <div class="flex flex-col gap-1.5 grow">
                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted">
                                     {% translate "Age range" %}
                                 </label>
                                 <div class="flex items-center gap-2">
                                     <input type="number"
-                                           class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                           class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] grow font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                            style="border-color: var(--theme-border)"
                                            id="min-age-filter"
                                            placeholder="{% translate "Min" %}"
@@ -342,7 +342,7 @@
                                            max="99">
                                     <span class="text-xs font-bold text-foreground-muted">–</span>
                                     <input type="number"
-                                           class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                           class="filter-input w-full py-2 px-3 rounded-xl grow border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                            style="border-color: var(--theme-border)"
                                            id="max-age-filter"
                                            placeholder="{% translate "Max" %}"
@@ -352,8 +352,8 @@
                             </div>
                             <div id="tag-filters" class="contents">
                                 {% for category in filterable_tag_categories %}
-                                    <div class="flex flex-col gap-1.5">
-                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
+                                    <div class="flex flex-col gap-1.5 grow">
+                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest grow text-foreground-muted"
                                                for="tag-filter-{{ category.name|slugify }}">{{ category.name }}</label>
                                         <select class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
                                                 style="border-color: var(--theme-border)"
@@ -609,7 +609,7 @@
                                           style="color: var(--color-foreground-secondary)">{{ proposal.participants_limit }}</span>
                                 </td>
                                 <td class="py-3 px-4">
-                                    <div class="flex flex-col gap-1.5">
+                                    <div class="flex flex-col gap-1.5 grow">
                                         <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}"
                                            class="btn btn-teal text-xs py-1.5 px-3">
                                             {% heroicon_mini "check" class="w-3.5 h-3.5" %} {% translate "Accept" %}
@@ -1463,30 +1463,6 @@
             border-left: 3px solid var(--theme-warning);
         }
 
-        .session-tags-more:hover .session-tags-popover {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .session-tags-popover::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            bottom: -5px;
-            margin-left: -5px;
-            border: 5px solid transparent;
-            border-top-color: rgb(250 250 250);
-        }
-
-        .dark .session-tags-popover::after {
-            border-top-color: rgb(38 38 38);
-        }
-
-        .session-tags-more {
-            position: relative;
-            z-index: 20;
-        }
-
         .filters-popover-wrapper .filter-toggle-anchor {
             anchor-name: --filter-trigger;
         }
@@ -1496,7 +1472,8 @@
             position-anchor: --filter-trigger;
             top: anchor(bottom);
             right: anchor(right);
-            left: max(1rem, calc(anchor(right) - 20rem));
+            width: 28rem;
+            right: anchor(right);
             margin-top: 4px;
             display: block;
             min-width: 0;
@@ -1511,6 +1488,8 @@
             opacity: 0;
             pointer-events: none;
             filter: none;
+            padding: 0.75rem;
+            padding-top: 0;
         }
 
         @supports not (anchor-name: --filter-trigger) {
@@ -1518,7 +1497,7 @@
                 top: 100%;
                 right: 0;
                 left: auto;
-                width: 20rem;
+                width: 28rem;
                 position-anchor: unset;
             }
         }
