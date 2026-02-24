@@ -16,7 +16,7 @@
     {% with overflow=data.tags|slice:"6:" %}
         {% if overflow %}
             <div class="session-tags-more relative inline-block">
-                <div class="session-tags-popover absolute z-30 min-w-[12rem] max-w-[18rem] rounded-xl border border-neutral-200/10 dark:border-neutral-600/10 bg-neutral-50 dark:bg-neutral-800 p-2 shadow-xl opacity-0 pointer-events-none transition-opacity duration-150 flex flex-wrap gap-2">
+                <div class="session-tags-popover absolute z-30 min-w-[14rem] max-w-[20rem] rounded-xl border border-neutral-200/25 dark:border-neutral-600/25 bg-neutral-50 dark:bg-neutral-800 p-2 shadow-xl opacity-0 pointer-events-none transition-opacity duration-150 flex flex-wrap gap-2">
                     {% for tag in overflow %}
                         <span class="px-3 py-1 rounded-2xl text-sm font-medium filterable-tag max-w-[200px] truncate bg-warm-200/80 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
                               title="{{ tag.name }}">{{ tag.name }}</span>
