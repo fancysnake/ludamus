@@ -1,0 +1,26 @@
+name: Deploy on staging
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Rebuild and upstart dockers
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@master
+        env:
+          GITHUB_COMMIT_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_DEPLOY_KEY }}
+          script_stop: true
+          envs: GITHUB_COMMIT_SHA
+          script: |
+            set -ex
+            cd ludamus/
+            git fetch
+            git checkout $GITHUB_COMMIT_SHA
+            docker compose --env-file .env -p ludamus-staging -f docker/compose/prod.yaml up --build -d
