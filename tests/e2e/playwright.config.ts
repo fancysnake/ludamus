@@ -18,17 +18,15 @@ const loadEnv = (filePath: string) => {
   }
 };
 
-loadEnv(path.join(repoRoot, '.env'));
-// We do not load .env.ci here. It's not meant for our end-to-end tests.
+loadEnv(path.join(repoRoot, '.env.e2e'));
 
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:8000`;
 
-const WEB_COMMAND = 'mise boot-e2e';
+const WEB_COMMAND = 'mise run boot-e2e';
 
 export default defineConfig({
   testDir: './tests',
   outputDir: 'test-results',
-  globalSetup: './global-setup.ts',
   /* Timeout per test */
   timeout: 120 * 1000,
   expect: {

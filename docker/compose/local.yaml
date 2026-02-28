@@ -10,8 +10,6 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    env_file:
-      - ../../.env
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 10s
@@ -25,8 +23,6 @@ services:
       - SETUID
     cap_drop:
       - ALL
-    expose:
-      - '${DB_PORT}'
     security_opt:
       - no-new-privileges:true
 
@@ -55,8 +51,8 @@ services:
       - ../../.env
     ports:
       - '127.0.0.1:8000:8000'
-    command: >
-      run dj migrate ::: dj createcachetable ::: dj downloadvendor ::: start
+    command: [ "dj", "migrate", "--noinput", ":::", "dj", "createcachetable", ":::", "dj", "downloadvendor", ":::", "start" ]
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8000/healthz/ || exit 1" ]
       interval: 30s

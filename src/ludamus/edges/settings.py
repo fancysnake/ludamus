@@ -21,17 +21,13 @@ env = environ.Env(
     # Domains
     ALLOWED_HOSTS=(list, ["localhost"]),
     ROOT_DOMAIN=(str, ""),
-    SESSION_COOKIE_DOMAIN=(str, ""),
+    SESSION_COOKIE_DOMAIN=(str, None),
     # Auth0
     AUTH0_CLIENT_ID=(str, ""),
     AUTH0_CLIENT_SECRET=(str, ""),
     AUTH0_DOMAIN=(str, ""),
     # Database
-    DB_HOST=(str, ""),
-    DB_NAME=(str, ""),  # Database name or file
-    DB_PASSWORD=str,
-    DB_PORT=(str, ""),
-    DB_USER=(str, ""),
+    DB_NAME=(str, ""),  # Database name or file path
     USE_POSTGRES=(bool, False),
     # Static files
     GIT_COMMIT_SHA=(str, "1"),
@@ -64,7 +60,7 @@ DEBUG = env("DEBUG")
 
 # Parse comma-separated allowed hosts for production
 ALLOWED_HOSTS: list[str] = env("ALLOWED_HOSTS")
-SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN")
+SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN") or None
 
 # Application definition
 
@@ -145,17 +141,16 @@ WSGI_APPLICATION = "ludamus.edges.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Production Database Settings
 DATABASES = (
     {
         "default": {
             "ATOMIC_REQUESTS": True,
             "ENGINE": "django.db.backends.postgresql",
             "NAME": env("DB_NAME"),
-            "USER": env("DB_USER"),
-            "PASSWORD": env("DB_PASSWORD"),
-            "HOST": env("DB_HOST"),
-            "PORT": env("DB_PORT"),
+            "USER": env.str("DB_USER"),
+            "PASSWORD": env.str("DB_PASSWORD"),
+            "HOST": env.str("DB_HOST"),
+            "PORT": env.str("DB_PORT"),
             "CONN_MAX_AGE": 600,
             "CONN_HEALTH_CHECKS": True,
             "OPTIONS": {"connect_timeout": 10},
@@ -273,12 +268,18 @@ if IS_PRODUCTION:
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_SAMESITE = "Lax"  # Changed from Strict to allow OAuth callbacks
-    CSRF_TRUSTED_ORIGINS = [f"https://{host.lstrip('.')}" for host in ALLOWED_HOSTS]
+    CSRF_TRUSTED_ORIGINS = []
+    for host in ALLOWED_HOSTS:
+        if host.startswith("."):
+            bare = host[1:]
+            CSRF_TRUSTED_ORIGINS.extend([f"https://{bare}", f"https://*.{bare}"])
+        else:
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
 
     # Additional Security Settings
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
-    SECURE_REDIRECT_EXEMPT: list[str] = []
+    SECURE_REDIRECT_EXEMPT = [r"^healthz/"]
 
     # File Upload Security
     FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
@@ -375,12 +376,36 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
         "sha384": "kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4",
     },
     {
+        "name": "bootstrap-js-map",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js.map"
+        ),
+        "filename": "bootstrap.bundle.min.js.map",
+        "sha384": "we5r5uLo9BDuUFnhbIA867SiyKJxIM9BKsQV4AiBc0gbyDfY2I6TJa5OAU2zIcFL",
+    },
+    {
+        "name": "bootstrap-css-map",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css.map"
+        ),
+        "filename": "bootstrap.min.css.map",
+        "sha384": "S1xwa26oop5+fLMjyiyuVSmE3mCovI0Qe5d5COG6iQCKuIxgYw35mpnxNPhWp5NX",
+    },
+    {
         "name": "popperjs",
         "url": (
             "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
         ),
         "filename": "popper.min.js",
         "sha384": "oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3",
+    },
+    {
+        "name": "popperjs-map",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js.map"
+        ),
+        "filename": "popper.min.js.map",
+        "sha384": "cGZ11hmqUooIlGMY+Y+gi+8AhjA4H/Qa29LQBPWKKzhmbsxvNpyWrPuBJCprTsil",
     },
     {
         "name": "bootstrap-icons",

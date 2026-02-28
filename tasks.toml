@@ -4,21 +4,6 @@ run = "poetry"
 [dj]
 run = "django-admin"
 
-# Dev server (Django + Tailwind watch via django-tailwind)
-
 [start]
 description = "Start Django dev server with frontend watch"
 run = "django-admin tailwind dev"
-
-[gunicorn]
-run = """
-gunicorn \
-    --bind 0.0.0.0:8000 \
-    --workers 4 \
-    --threads 2 \
-    --worker-class sync \
-    --worker-tmp-dir /dev/shm \
-    --access-logfile - \
-    --error-logfile - \
-    --chdir /app/src ludamus.edges.wsgi:application
-"""

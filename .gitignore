@@ -132,7 +132,7 @@ celerybeat.pid
 # Environments
 .env
 !.env.*.example
-!.env.test
+!.env.dev
 !.env.e2e
 .venv
 env/

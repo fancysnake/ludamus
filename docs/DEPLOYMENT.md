@@ -132,7 +132,7 @@ Scopes: **L** = local, **D** = docker local, **P** = prod.
 
 **Core** (all scopes):
 
-- `ENV` — `development` or `production` *(required)* — L D P
+- `ENV` — `local` or `production` *(required)* — L D P
 - `SECRET_KEY` — Django secret key — L D P
 - `DEBUG` — enable debug mode, default `false` — L D P
 - `DJANGO_SETTINGS_MODULE` — settings path *(required)* — L D P

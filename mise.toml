@@ -10,10 +10,21 @@ poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 [env]
 # Mise creates and activates this virtualenv automatically
 _.python.venv = { path = ".venv", create = true }
-_.file = ".env"
+_.file = ".env.dev"
 
 [task_config]
 includes = ["tasks.toml"]
+
+# Overrides tasks.toml to load .env for local development (tasks.toml is
+# shared with docker/mise.toml which does not use .env files).
+[tasks.dj]
+env = { _.file = ".env" }
+run = "django-admin"
+
+[tasks.start]
+env = { _.file = ".env" }
+description = "Start Django dev server with frontend watch"
+run = "django-admin tailwind dev"
 
 [tasks.black]
 run = "black src tests"
@@ -37,7 +48,6 @@ run = "djlint src --reformat --format-css --format-js --profile=django"
 run = "lint-imports --config=pyproject.toml"
 
 [tasks.mypy]
-env = { _.file = '.env.test' }
 run = "mypy src"
 
 [tasks.pylint]
@@ -54,7 +64,6 @@ run = "ruff check --fix src tests"
 [tasks._pytest]
 description = "Base pytest runner with test env (internal)"
 run = "pytest"
-env = { _.file = '.env.test' }
 
 [tasks.unittest]
 description = "Run unit tests"
@@ -97,14 +106,14 @@ dir = "tests/e2e"
 
 [tasks.check]
 depends = [
-    "black",
-    "ruff-fix",
-    "codespell",
-    "mypy",
-    "il",
-    "djlint",
-    "djlint-format",
-    "pylint",
+  "black",
+  "ruff-fix",
+  "codespell",
+  "mypy",
+  "il",
+  "djlint",
+  "djlint-format",
+  "pylint",
 ]
 
 [tasks.prcheck]
@@ -122,6 +131,7 @@ poetry show -o
 """
 
 [tasks.dc]
+env = { _.file = '.env' }
 usage = '''
 arg "<environment>" help="Target environment" {
   choices "local" "prod"
@@ -134,13 +144,14 @@ docker compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_arg
 '''
 
 [tasks."boot-e2e"]
-depends = [
-    "dj migrate --noinput",
-    "dj createcachetable",
-    "dj downloadvendor",
-    "p run python tests/e2e/scripts/bootstrap_data.py",
-    "dj tailwind install",
-    "dj tailwind build",
-    "dj tailwind dev",
-]
+description = "Bootstrap and start dev server for e2e tests"
+run = """
+django-admin migrate --noinput
+django-admin createcachetable
+django-admin downloadvendor
+python tests/e2e/scripts/bootstrap_data.py
+django-admin tailwind install
+django-admin tailwind build
+honcho -f Procfile.tailwind -e .env.e2e start
+"""
 env = { _.file = '.env.e2e' }

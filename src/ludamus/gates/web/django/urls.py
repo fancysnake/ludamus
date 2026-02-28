@@ -1,11 +1,14 @@
 """URL configuration for gates/web/django views."""
 
+import time
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib import admin
+from django.db import connection
 from django.http import JsonResponse
 from django.urls import include, path
+from django.views.decorators.cache import never_cache
 
 from ludamus.gates.web.django import panel
 
@@ -20,6 +23,27 @@ handler404 = (  # pylint: disable=invalid-name
 handler500 = (  # pylint: disable=invalid-name
     "ludamus.adapters.web.django.error_views.custom_500"
 )
+
+_HEALTHZ_INTERVAL = 5  # seconds between actual DB checks (per worker)
+_healthz_cache: dict[str, object] = {"time": 0.0, "ok": True}
+
+
+@never_cache
+def healthz(request: HttpRequest) -> JsonResponse:  # noqa: ARG001
+    now = time.monotonic()
+    if now - _healthz_cache["time"] < _HEALTHZ_INTERVAL:  # type: ignore[operator]
+        if _healthz_cache["ok"]:
+            return JsonResponse({"status": "ok"})
+        return JsonResponse({"status": "error"}, status=503)
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        _healthz_cache.update(time=now, ok=True)
+    except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
+        _healthz_cache.update(time=now, ok=False)
+        return JsonResponse({"status": "error"}, status=503)
+    return JsonResponse({"status": "ok"})
 
 
 panel_urlpatterns = [
@@ -178,7 +202,7 @@ panel_urlpatterns = [
 
 
 urlpatterns: list[URLResolver | URLPattern] = [
-    path("healthz/", lambda _: JsonResponse({"status": "ok"})),
+    path("healthz/", healthz),
     path("", include("ludamus.adapters.web.django.urls", namespace="web")),
     path("panel/", include((panel_urlpatterns, "panel"), namespace="panel")),
     path("admin/", admin.site.urls),

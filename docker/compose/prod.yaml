@@ -12,6 +12,8 @@ x-app-defaults: &app-defaults
   <<: *app-build
   env_file:
     - ../../.env
+  environment:
+    GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-1}
   networks:
     - backend
   cap_drop:
@@ -27,8 +29,8 @@ services:
         condition: service_completed_successfully
     volumes:
       - static_volume:/app/staticfiles
-    command: >
-      run dj downloadvendor ::: dj collectstatic --noinput --clear
+    command: [ "run", "dj", "downloadvendor", ":::", "dj", "collectstatic", "--noinput", "--clear" ]
+    restart: "no"
     <<: *app-defaults
 
   db:
@@ -39,8 +41,6 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    env_file:
-      - ../../.env
     networks:
       - backend
     restart: always
@@ -57,6 +57,11 @@ services:
       - SETUID
     cap_drop:
       - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 384M
     security_opt:
       - no-new-privileges:true
 
@@ -64,8 +69,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: >
-      run dj migrate --noinput ::: dj createcachetable
+    command: [ "run", "dj", "migrate", "--noinput", ":::", "dj", "createcachetable" ]
+    restart: "no"
     <<: *app-defaults
 
   web:
@@ -83,12 +88,17 @@ services:
       - '127.0.0.1:${WEB_PORT:-8000}:8000'
     restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8000/healthz/ || exit 1" ]
+      test: [ "CMD-SHELL", 'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:8000/healthz/'')"' ]
       interval: 30s
       timeout: 10s
       start_period: 40s
       retries: 3
     <<: *app-defaults
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
 networks:
   backend:
     driver: bridge

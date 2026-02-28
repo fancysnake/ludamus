@@ -4,7 +4,8 @@
 FROM jdxcode/mise:2026.2 AS base
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends gettext=0.23.1-2 curl=8.14.1-2+deb13u2 && rm -rf /var/lib/apt/lists/*
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends gettext curl && rm -rf /var/lib/apt/lists/*
 
 ARG DJANGO_SETTINGS_MODULE
 ARG ENV
@@ -14,18 +15,19 @@ ENV ENV=${ENV}
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=src
 ENV PYTHONUNBUFFERED=1
+# Build-only: Django settings need these to load for tailwind/compilemessages.
+# Overridden at runtime by env_file / environment in compose.
+ENV SECRET_KEY=build-only-not-used-at-runtime
+ENV DB_NAME=:memory:
 
 # Set work directory
 WORKDIR /app
 
-# Copy dependency files
+# Copy dependency files first for layer caching
 COPY tasks.toml pyproject.toml poetry.lock docker/mise.toml /app/
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser
-
-# Copy application code
-COPY src ./src
 
 # Create necessary directories and set ownership
 RUN mkdir -p staticfiles media logs \
@@ -40,26 +42,39 @@ COPY docker/Procfile.tailwind /app/
 # Switch to non-root user
 USER appuser
 
-RUN mise trust && mise install && mise run p install ::: dj tailwind install ::: dj compilemessages
+# Install toolchain and Python dependencies (cached independently of src changes)
+RUN mise trust && mise install && mise run p install
+
+# Copy application code
+COPY --chown=appuser:appuser src ./src
+
+# Run Django commands that need source code
+RUN mise run dj tailwind install && mise run dj tailwind build && mise run dj compilemessages
 
 # Expose port
 EXPOSE 8000
 
 # Development command - runserver with reload
-CMD ["mise", "run", "start"]
+# Base image (jdxcode/mise) sets ENTRYPOINT ["mise"]
+CMD ["run", "start"]
 
 # Production stage without dev dependencies
 FROM base AS prod
 
-COPY docker/Procfile.tailwind /app/
-
 # Switch to non-root user
 USER appuser
 
-RUN mise trust && mise install && mise run p install --only main ::: dj tailwind install ::: dj compilemessages
+# Install toolchain and production Python dependencies (cached independently of src changes)
+RUN mise trust && mise install && mise run p install --only main
+
+# Copy application code
+COPY --chown=appuser:appuser src ./src
+
+# Run Django commands that need source code
+RUN mise run dj tailwind install && mise run dj tailwind build && mise run dj compilemessages
 
 # Expose port
 EXPOSE 8000
 
-# Run migrations on startup, then start gunicorn
+# Start gunicorn (migrations are handled by the compose migrations service)
 CMD ["run", "gunicorn"]
