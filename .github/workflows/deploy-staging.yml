@@ -9,14 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: executing remote ssh commands using password
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1
         env:
           GITHUB_COMMIT_SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_DEPLOY_KEY }}
-          script_stop: true
           envs: GITHUB_COMMIT_SHA
           script: |
             set -ex
