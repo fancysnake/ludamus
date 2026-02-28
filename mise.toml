@@ -121,19 +121,6 @@ pip-audit .
 poetry show -o
 """
 
-[tasks.gunicorn]
-run = """
-gunicorn \
-    --bind 0.0.0.0:8000 \
-    --workers 4 \
-    --threads 2 \
-    --worker-class sync \
-    --worker-tmp-dir /dev/shm \
-    --access-logfile - \
-    --error-logfile - \
-    --chdir /app/src ludamus.edges.wsgi:application
-"""
-
 [tasks.dc]
 usage = '''
 arg "<environment>" help="Target environment" {

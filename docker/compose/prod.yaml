@@ -20,7 +20,7 @@ services:
     networks:
       - backend
     command: >
-      run dj downloadvendor ::: dj collectstatic
+      run dj downloadvendor ::: dj collectstatic --noinput
     cap_drop:
       - ALL
     security_opt:
@@ -84,6 +84,7 @@ services:
       args:
         DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
         ENV: ${ENV}
+        STATIC_ROOT: ${STATIC_ROOT}
     depends_on:
       collectstatic:
         condition: service_completed_successfully
@@ -97,7 +98,7 @@ services:
     env_file:
       - ../../.env
     ports:
-      - '127.0.0.1:8000:8000'
+      - '127.0.0.1:${WEB_PORT:-8000}:8000'
     networks:
       - backend
     restart: always

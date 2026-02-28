@@ -62,4 +62,4 @@ RUN mise trust && mise install && mise run p install --only main ::: dj tailwind
 EXPOSE 8000
 
 # Run migrations on startup, then start gunicorn
-CMD ["mise", "run", "gunicorn"]
+CMD ["run", "gunicorn"]
