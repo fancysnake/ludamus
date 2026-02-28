@@ -130,7 +130,7 @@ arg "[dc_args]" var=#true double_dash="optional"
 '''
 run = '''
 GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}
-docker-compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_args")}}
+docker compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_args")}}
 '''
 
 [tasks."boot-e2e"]

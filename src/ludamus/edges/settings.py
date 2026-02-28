@@ -29,7 +29,7 @@ env = environ.Env(
     # Database
     DB_HOST=(str, ""),
     DB_NAME=(str, ""),  # Database name or file
-    DB_PASSWORD=(str, ""),
+    DB_PASSWORD=str,
     DB_PORT=(str, ""),
     DB_USER=(str, ""),
     USE_POSTGRES=(bool, False),
@@ -45,7 +45,7 @@ env = environ.Env(
     # Other
     DEBUG=(bool, False),
     ENV=str,
-    SECRET_KEY=(str, ""),
+    SECRET_KEY=str,
     SUPPORT_EMAIL=(str, "support@example.com"),
 )
 
@@ -134,7 +134,7 @@ TEMPLATES = [
                 "avatar_tags": "ludamus.gates.web.django.templatetags.avatar_tags"
             },
             "debug": DEBUG,
-            "string_if_invalid": "ERROR: Missing variable %s",
+            "string_if_invalid": "" if IS_PRODUCTION else "ERROR: Missing variable %s",
         },
     }
 ]
@@ -204,7 +204,13 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # URL prefixes that skip middleware processing (UoW injection, context setup)
-MIDDLEWARE_SKIP_PREFIXES = (STATIC_URL, "/admin/", "/__debug__/", "/__reload__/")
+MIDDLEWARE_SKIP_PREFIXES = (
+    STATIC_URL,
+    "/admin/",
+    "/__debug__/",
+    "/__reload__/",
+    "/healthz/",
+)
 
 # Cache busting version for static files (set via GIT_COMMIT_SHA env var during build)
 STATIC_VERSION = env("GIT_COMMIT_SHA")[:8]
@@ -248,7 +254,6 @@ if IS_PRODUCTION:
     USE_X_FORWARDED_PORT = True
 
     # Security Headers
-    SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
 
@@ -268,6 +273,7 @@ if IS_PRODUCTION:
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_SAMESITE = "Lax"  # Changed from Strict to allow OAuth callbacks
+    CSRF_TRUSTED_ORIGINS = [f"https://{host.lstrip('.')}" for host in ALLOWED_HOSTS]
 
     # Additional Security Settings
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
@@ -290,9 +296,11 @@ else:
 # Static files configuration for production
 if IS_PRODUCTION:
     STATIC_ROOT = env("STATIC_ROOT")
-    STATICFILES_STORAGE = (
-        "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
-    )
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+        }
+    }
 
     # Media files
     MEDIA_ROOT = env("MEDIA_ROOT")

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 
 from ludamus.gates.web.django import panel
@@ -177,6 +178,7 @@ panel_urlpatterns = [
 
 
 urlpatterns: list[URLResolver | URLPattern] = [
+    path("healthz/", lambda _: JsonResponse({"status": "ok"})),
     path("", include("ludamus.adapters.web.django.urls", namespace="web")),
     path("panel/", include((panel_urlpatterns, "panel"), namespace="panel")),
     path("admin/", admin.site.urls),

@@ -23,3 +23,4 @@ jobs:
             git fetch
             git checkout $GITHUB_COMMIT_SHA
             docker compose --env-file .env -p ludamus-staging -f docker/compose/prod.yaml up --build -d
+            docker image prune -f

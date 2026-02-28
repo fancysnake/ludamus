@@ -1,30 +1,36 @@
 ---
+x-app-build: &app-build
+  build:
+    context: ../../
+    dockerfile: docker/Dockerfile
+    target: prod
+    args:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+      ENV: ${ENV}
+
+x-app-defaults: &app-defaults
+  <<: *app-build
+  env_file:
+    - ../../.env
+  networks:
+    - backend
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
 name: ludamus
 
 services:
   collectstatic:
-    build:
-      context: ../../
-      dockerfile: docker/Dockerfile
-      target: prod
-      args:
-        DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
-        ENV: ${ENV}
     depends_on:
       migrations:
         condition: service_completed_successfully
     volumes:
       - static_volume:/app/staticfiles
-    env_file:
-      - ../../.env
-    networks:
-      - backend
     command: >
-      run dj downloadvendor ::: dj collectstatic --noinput
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
+      run dj downloadvendor ::: dj collectstatic --noinput --clear
+    <<: *app-defaults
+
   db:
     image: postgres:16-alpine
     volumes:
@@ -55,36 +61,14 @@ services:
       - no-new-privileges:true
 
   migrations:
-    build:
-      context: ../../
-      dockerfile: docker/Dockerfile
-      target: prod
-      args:
-        DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
-        ENV: ${ENV}
     depends_on:
       db:
         condition: service_healthy
-    env_file:
-      - ../../.env
-    networks:
-      - backend
     command: >
       run dj migrate --noinput ::: dj createcachetable
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
+    <<: *app-defaults
 
   web:
-    build:
-      context: ../../
-      dockerfile: docker/Dockerfile
-      target: prod
-      args:
-        DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
-        ENV: ${ENV}
-        STATIC_ROOT: ${STATIC_ROOT}
     depends_on:
       collectstatic:
         condition: service_completed_successfully
@@ -95,23 +79,16 @@ services:
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-    env_file:
-      - ../../.env
     ports:
       - '127.0.0.1:${WEB_PORT:-8000}:8000'
-    networks:
-      - backend
     restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8000/ || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/healthz/ || exit 1" ]
       interval: 30s
       timeout: 10s
       start_period: 40s
       retries: 3
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
+    <<: *app-defaults
 networks:
   backend:
     driver: bridge

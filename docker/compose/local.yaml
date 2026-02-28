@@ -54,13 +54,14 @@ services:
     env_file:
       - ../../.env
     ports:
-      - '0.0.0.0:8000:8000'
+      - '127.0.0.1:8000:8000'
     command: >
       run dj migrate ::: dj createcachetable ::: dj downloadvendor ::: start
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8000/ || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/healthz/ || exit 1" ]
       interval: 30s
       timeout: 10s
+      start_period: 40s
       retries: 3
     cap_drop:
       - ALL
