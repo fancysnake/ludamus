@@ -152,6 +152,6 @@ django-admin downloadvendor
 python tests/e2e/scripts/bootstrap_data.py
 django-admin tailwind install
 django-admin tailwind build
-honcho -f Procfile.tailwind -e .env.e2e start
+django-admin runserver --insecure
 """
 env = { _.file = '.env.e2e' }
