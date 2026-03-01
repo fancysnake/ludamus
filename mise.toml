@@ -10,99 +10,64 @@ poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 [env]
 # Mise creates and activates this virtualenv automatically
 _.python.venv = { path = ".venv", create = true }
-_.file = ".env.dev"
+_.file = ".env"
 
 [task_config]
 includes = ["tasks.toml"]
 
-# Overrides tasks.toml to load .env for local development (tasks.toml is
-# shared with docker/mise.toml which does not use .env files).
-[tasks.dj]
-env = { _.file = ".env" }
-run = "django-admin"
+[tasks.update]
+run = """
+pre-commit autoupdate
+pip install -U pip
+pip install -U poetry
+poetry update
+deptry .
+pip-audit .
+poetry show -o
+"""
 
-[tasks.start]
-env = { _.file = ".env" }
-description = "Start Django dev server with frontend watch"
-run = "django-admin tailwind dev"
+# LINT
+
+[tasks._lint]
+description = "Base env vars for lint tasks"
+run = ""
+env.DB_NAME = ":memory:"
+env.ENV = "local"
+env.PYTHONPATH = "src"
+env.SECRET_KEY = "dev-secret-key"
 
 [tasks.black]
-run = "black src tests"
+run = "mise run _lint -- black src tests"
 
 [tasks.black-check]
-run = "black --check src tests"
+run = "mise run _lint -- black --check src tests"
 
 [tasks.codespell]
-run = "codespell src tests/unit tests/integration"
+run = "mise run _lint -- codespell src tests/unit tests/integration"
 
 [tasks.deptry]
-run = "deptry src tests"
+run = "mise run _lint -- deptry src tests"
 
 [tasks.djlint]
-run = "djlint src --profile=django"
+run = "mise run _lint -- djlint src --profile=django"
 
 [tasks.djlint-format]
-run = "djlint src --reformat --format-css --format-js --profile=django"
+run = "mise run _lint -- djlint src --reformat --format-css --format-js --profile=django"
 
 [tasks.il]
-run = "lint-imports --config=pyproject.toml"
+run = "mise run _lint -- lint-imports --config=pyproject.toml"
 
 [tasks.mypy]
-run = "mypy src"
+run = "mise run _lint -- mypy src"
 
 [tasks.pylint]
-run = "pylint src tests"
+run = "mise run _lint -- pylint src tests"
 
 [tasks.ruff]
-run = "ruff check src tests"
+run = "mise run _lint -- ruff check src tests"
 
 [tasks.ruff-fix]
-run = "ruff check --fix src tests"
-
-# Base test task with test environment
-# Child tasks call this via "mise run" to inherit env vars
-[tasks._pytest]
-description = "Base pytest runner with test env (internal)"
-run = "pytest"
-
-[tasks.unittest]
-description = "Run unit tests"
-run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-template-vars"
-
-[tasks.test]
-description = "Run all tests"
-run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
-
-[tasks.build-frontend]
-description = "Build frontend assets (CSS + JS)"
-run = """
-django-admin tailwind install
-django-admin tailwind build
-"""
-
-[tasks.ts-check]
-run = "cd src/ludamus/gates/web/django/theme/static_src && npm typecheck"
-
-[tasks.kill]
-description = "Kill dev servers (Django on :8000, Tailwind watch)"
-run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch' 2>/dev/null; echo 'Dev servers killed'"
-
-# Composite tasks
-
-[tasks."install:playwright"]
-run = """
-npm install
-npx playwright install --with-deps
-"""
-description = "Install Playwright"
-env = { _.file = '.env.e2e' }
-dir = "tests/e2e"
-
-[tasks.e2e]
-description = "Run end-to-end Playwright tests (chromium)"
-run = "npx playwright test --project=chromium"
-env = { _.file = '.env.e2e' }
-dir = "tests/e2e"
+run = "mise run _lint -- ruff check --fix src tests"
 
 [tasks.check]
 depends = [
@@ -119,19 +84,91 @@ depends = [
 [tasks.prcheck]
 depends = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint"]
 
-[tasks.update]
+# DJANGO
+
+[tasks.dj]
+run = "django-admin"
+
+[tasks.start]
+description = "Start Django dev server with frontend watch"
+run = "django-admin tailwind dev"
+
+[tasks.build-frontend]
+description = "Build frontend assets (CSS + JS)"
 run = """
-pre-commit autoupdate
-pip install -U pip
-pip install -U poetry
-poetry update
-deptry .
-pip-audit .
-poetry show -o
+django-admin tailwind install
+django-admin tailwind build
 """
 
+# PYTEST
+
+[tasks._pytest]
+description = "Base pytest runner with test env (internal)"
+run = "mise run _lint -- pytest"
+env.ALLOWED_HOSTS = ".testserver"
+env.AUTH0_CLIENT_ID = "test-auth0-client-id"
+env.AUTH0_CLIENT_SECRET = "test-auth0-client-secret"
+env.AUTH0_DOMAIN = "auth0.example.com"
+env.DB_NAME = "dev.sqlite3"
+env.MEMBERSHIP_API_BASE_URL = "https://membership-test.example.com/api/v1/endpoint"
+env.MEMBERSHIP_API_TOKEN = "membership-test-token"
+env.ROOT_DOMAIN = "testserver"
+env.SESSION_COOKIE_DOMAIN = ".testserver"
+
+[tasks.unittest]
+description = "Run unit tests"
+run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-template-vars"
+
+[tasks.test]
+description = "Run all tests"
+run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
+
+# E2E
+
+[tasks._e2e]
+run = ''
+env.ALLOWED_HOSTS = ".localhost"
+env.AUTH0_CLIENT_ID = "test-auth0-client-id"
+env.AUTH0_CLIENT_SECRET = "test-auth0-client-secret"
+env.AUTH0_DOMAIN = "auth0.example.com"
+env.DB_NAME = "dev.e2e.sqlite3"
+env.DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
+env.ENV = "local"
+env.MEMBERSHIP_API_BASE_URL = "https://membership-test.example.com/api/v1/endpoint"
+env.MEMBERSHIP_API_TOKEN = "membership-test-token"
+env.PYTHONPATH = "src"
+env.ROOT_DOMAIN = "localhost:8000"
+env.SECRET_KEY = "e2e-secret-key"
+env.SESSION_COOKIE_DOMAIN = ".localhost"
+
+[tasks."install:playwright"]
+run = """
+npm install
+npx playwright install --with-deps
+"""
+description = "Install Playwright"
+dir = "tests/e2e"
+
+[tasks.e2e]
+description = "Run end-to-end Playwright tests (chromium)"
+run = "npx playwright test --project=chromium"
+dir = "tests/e2e"
+
+[tasks."boot-e2e"]
+description = "Bootstrap and start dev server for e2e tests"
+run = """
+mise run _e2e -- django-admin migrate --noinput
+mise run _e2e -- django-admin createcachetable
+mise run _e2e -- django-admin downloadvendor
+mise run _e2e -- python tests/e2e/scripts/bootstrap_data.py
+mise run _e2e -- django-admin tailwind install
+mise run _e2e -- django-admin tailwind build
+mise run _e2e -- django-admin runserver --insecure
+"""
+
+# DEPLOYMENT
+
 [tasks.dc]
-env = { _.file = '.env' }
 usage = '''
 arg "<environment>" help="Target environment" {
   choices "local" "prod"
@@ -143,15 +180,11 @@ GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}
 docker compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_args")}}
 '''
 
-[tasks."boot-e2e"]
-description = "Bootstrap and start dev server for e2e tests"
-run = """
-django-admin migrate --noinput
-django-admin createcachetable
-django-admin downloadvendor
-python tests/e2e/scripts/bootstrap_data.py
-django-admin tailwind install
-django-admin tailwind build
-django-admin runserver --insecure
-"""
-env = { _.file = '.env.e2e' }
+[tasks.kill]
+description = "Kill dev servers (Django on :8000, Tailwind watch)"
+run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch' 2>/dev/null; echo 'Dev servers killed'"
+
+# FRONTEND
+
+[tasks.ts-check]
+run = "cd src/ludamus/gates/web/django/theme/static_src && npm typecheck"
