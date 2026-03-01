@@ -79,6 +79,12 @@ class LocationData(TypedDict):
     venue: VenueDTO | None  # TODO(fancysnake): Fix after merging venues
 
 
+class SessionStatus(StrEnum):
+    ACCEPTED = auto()
+    REJECTED = auto()
+    SCHEDULED = auto()
+
+
 class SessionParticipationStatus(StrEnum):
     CONFIRMED = auto()
     WAITING = auto()
