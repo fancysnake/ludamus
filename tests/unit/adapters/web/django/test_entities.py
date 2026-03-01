@@ -129,10 +129,6 @@ class TestSessionDataLocationLabel:
 
         assert data.location_label == "Default Venue, Default Area, Stół nr 3"
 
-    def test_all_segments_present(self):
-        data = _make_session_data(loc=_loc("Default Venue", "Piętro 2", "Stół 5"))
-        assert data.location_label == "Default Venue, Piętro 2, Stół 5"
-
     def test_none_venue_and_area(self):
         data = _make_session_data(loc=_loc(space_name="Stół 1"))
 
@@ -143,12 +139,15 @@ class TestSessionDataLocationLabel:
 
         assert data.location_label == "Hotel Mariot"
 
-    def test_all_names_present_returns_all(self):
-        data = _make_session_data(
-            loc=_loc("Default Venue", "Default Area", "Default Space")
-        )
+    def test_whitespace_only_name_is_skipped(self):
+        data = _make_session_data(loc=_loc(venue_name="  ", area_name="Area"))
 
-        assert data.location_label == "Default Venue, Default Area, Default Space"
+        assert data.location_label == "Area"
+
+    def test_only_area(self):
+        data = _make_session_data(loc=_loc(area_name="Floor 2"))
+
+        assert data.location_label == "Floor 2"
 
     def test_all_none_returns_empty(self):
         data = _make_session_data(loc=_loc())

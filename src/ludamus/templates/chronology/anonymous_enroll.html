@@ -23,55 +23,10 @@
                 <small class="text-foreground-muted">{% translate "Save this code to manage your enrollment later" %}</small>
             </div>
         </div>
-        {# Session Details Card #}
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white flex items-center gap-2">
-                {% heroicon_outline "calendar" class="w-5 h-5" %}
-                <h5 class="font-semibold mb-0">{{ session.title }}</h5>
-            </div>
-            <div class="card-body">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Host" %}</h6>
-                        <p class="mb-3">{{ session.presenter_name }}</p>
-                        <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Participants" %}</h6>
-                        <p class="mb-3">
-                            {{ session.enrolled_count }}/{{ session.effective_participants_limit }}
-                            {% if session.waiting_count > 0 %}
-                                (+{{ session.waiting_count }} {% translate "waiting" %})
-                            {% endif %}
-                        </p>
-                    </div>
-                    <div>
-                        <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Time" %}</h6>
-                        <p class="mb-3">
-                            {{ session.agenda_item.start_time|date:"l, F j, Y" }}
-                            <br>
-                            <small class="text-foreground-muted">{{ session.agenda_item.start_time|date:"G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}</small>
-                        </p>
-                        {% if session.agenda_item.space %}
-                            <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Space" %}</h6>
-                            <p class="mb-3">{{ session.agenda_item.space.name }}</p>
-                        {% endif %}
-                        {% if session.min_age > 0 %}
-                            <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Minimum Age" %}</h6>
-                            <p class="mb-3">
-                                <span class="inline-flex items-center rounded-full bg-info/10 text-info px-2.5 py-0.5 text-xs font-medium">{{ session.min_age }}+ {% translate "years" %}</span>
-                            </p>
-                        {% endif %}
-                    </div>
-                </div>
-                {% if session.description %}
-                    <div class="mt-3">
-                        <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Description" %}</h6>
-                        <p>{{ session.description }}</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+        {% include "chronology/_session_info_card.html" %}
         {# Enrollment Form #}
         <div class="card">
-            <div class="card-header {% if is_enrolled %}bg-[var(--theme-warning)] text-white{% else %}bg-[var(--theme-success)] text-white{% endif %} flex items-center gap-2">
+            <div class="card-header {% if is_enrolled %}bg-warning text-white{% else %}bg-success text-white{% endif %} flex items-center gap-2">
                 {% if is_enrolled %}
                     {% heroicon_outline "cog-6-tooth" class="w-5 h-5" %}
                     <h5 class="font-semibold mb-0">{% translate "Manage Enrollment" %}</h5>
@@ -104,7 +59,7 @@
                                 {% translate "Name" %} <span class="text-danger">*</span>
                             </label>
                             <input type="text"
-                                   class="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
+                                   class="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm focus:border-border-focus focus:outline-none"
                                    id="name"
                                    name="name"
                                    value="{{ anonymous_user.full_name }}"
@@ -128,12 +83,7 @@
                             {% translate "Back to Event" %}
                         </a>
                         {% if is_enrolled %}
-                            <button type="submit"
-                                    name="action"
-                                    value="cancel"
-                                    class="btn btn-primary"
-                                    style="background-color: var(--theme-danger);
-                                           color: white">
+                            <button type="submit" name="action" value="cancel" class="btn btn-danger">
                                 {% heroicon_outline "user-minus" class="w-4 h-4" %}
                                 {% translate "Cancel Enrollment" %}
                             </button>

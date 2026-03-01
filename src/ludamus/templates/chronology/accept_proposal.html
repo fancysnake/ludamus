@@ -33,7 +33,7 @@
                             <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Tags" %}</h6>
                             <div class="flex flex-wrap gap-1 mb-3">
                                 {% for tag in tags %}
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-[var(--theme-bg-tertiary)] px-2.5 py-0.5 text-xs font-medium">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-bg-tertiary px-2.5 py-0.5 text-xs font-medium">
                                         {{ tag.name }}
                                     </span>
                                 {% endfor %}
@@ -58,7 +58,7 @@
                     <div class="flex flex-wrap gap-1">
                         {% for slot in time_slots %}
                             {% if slot.pk in preferred_time_slot_ids %}
-                                <span class="inline-flex items-center rounded-full bg-[var(--theme-bg-tertiary)] px-2.5 py-0.5 text-xs font-medium">{{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}</span>
+                                <span class="inline-flex items-center rounded-full bg-bg-tertiary px-2.5 py-0.5 text-xs font-medium">{{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}</span>
                             {% endif %}
                         {% endfor %}
                     </div>
@@ -67,7 +67,7 @@
         </div>
         {# Assignment Form Card #}
         <div class="card">
-            <div class="card-header bg-[var(--theme-success)] text-white flex items-center gap-2">
+            <div class="card-header bg-success text-white flex items-center gap-2">
                 {% heroicon_outline "calendar-days" class="w-5 h-5" %}
                 <h5 class="font-semibold mb-0">{% translate "Assign to Schedule" %}</h5>
             </div>
@@ -87,7 +87,7 @@
                             {% heroicon_outline "clock" class="w-4 h-4 inline" %}
                             {% translate "Time Slot" %} <span class="text-danger">*</span>
                         </label>
-                        <select class="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
+                        <select class="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm focus:border-border-focus focus:outline-none"
                                 id="time_slot"
                                 name="time_slot"
                                 required>

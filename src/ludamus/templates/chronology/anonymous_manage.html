@@ -25,7 +25,7 @@
                         <div class="mb-4">
                             <label for="code" class="block text-sm font-medium mb-1">{% translate "Anonymous Enrollment Code" %}</label>
                             <input type="text"
-                                   class="w-full max-w-xs rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
+                                   class="w-full max-w-xs rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm focus:border-border-focus focus:outline-none"
                                    id="code"
                                    name="code"
                                    placeholder="{% translate "Enter your code" %}"
@@ -51,7 +51,7 @@
                     <p class="mb-0">
                         {% translate "Showing enrollments for" %}: <strong>{{ anonymous_user.full_name }}</strong>
                         <br>
-                        <small class="text-foreground-muted">{% translate "Code" %}: <code class="bg-[var(--theme-bg-tertiary)] px-1.5 py-0.5 rounded text-xs">{{ anonymous_code }}</code></small>
+                        <small class="text-foreground-muted">{% translate "Code" %}: <code class="bg-bg-tertiary px-1.5 py-0.5 rounded text-xs">{{ anonymous_code }}</code></small>
                     </p>
                 </div>
             </div>
@@ -62,15 +62,15 @@
                         <h5 class="font-semibold mb-0">{% translate "Your Enrollments" %}</h5>
                     </div>
                     <div class="card-body p-0">
-                        <div class="divide-y divide-[var(--theme-border)]">
+                        <div class="divide-y divide-border">
                             {% for enrollment in enrollments %}
                                 <div class="p-4">
                                     <div class="flex items-start justify-between mb-1">
                                         <h6 class="font-semibold">{{ enrollment.session.title }}</h6>
                                         {% if enrollment.status == "confirmed" %}
-                                            <span class="inline-flex items-center rounded-full bg-[var(--theme-success-bg)] text-[var(--theme-success-text)] px-2.5 py-0.5 text-xs font-medium">{% translate "Enrolled" %}</span>
+                                            <span class="inline-flex items-center rounded-full bg-success-bg text-success-text px-2.5 py-0.5 text-xs font-medium">{% translate "Enrolled" %}</span>
                                         {% elif enrollment.status == "waiting" %}
-                                            <span class="inline-flex items-center rounded-full bg-[var(--theme-warning-bg)] text-[var(--theme-warning-text)] px-2.5 py-0.5 text-xs font-medium">{% translate "Waiting" %}</span>
+                                            <span class="inline-flex items-center rounded-full bg-warning-bg text-warning-text px-2.5 py-0.5 text-xs font-medium">{% translate "Waiting" %}</span>
                                         {% endif %}
                                     </div>
                                     <p class="text-sm mb-1">

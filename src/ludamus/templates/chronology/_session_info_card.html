@@ -1,0 +1,48 @@
+{% load i18n %}
+{% load heroicons %}
+{# Session Details Card — shared by enroll_select and anonymous_enroll #}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white flex items-center gap-2">
+        {% heroicon_outline "calendar" class="w-5 h-5" %}
+        <h5 class="font-semibold mb-0">{{ session.title }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Host" %}</h6>
+                <p class="mb-3">{{ session.presenter_name }}</p>
+                <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Participants" %}</h6>
+                <p class="mb-3">
+                    {{ session.enrolled_count }}/{{ session.effective_participants_limit }}
+                    {% if session.waiting_count > 0 %}
+                        (+{{ session.waiting_count }} {% translate "waiting" %})
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Time" %}</h6>
+                <p class="mb-3">
+                    {{ session.agenda_item.start_time|date:"l, F j, Y" }}
+                    <br>
+                    <small class="text-foreground-muted">{{ session.agenda_item.start_time|date:"G:i" }} - {{ session.agenda_item.end_time|date:"G:i" }}</small>
+                </p>
+                {% if session.agenda_item.space %}
+                    <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Space" %}</h6>
+                    <p class="mb-3">{{ session.agenda_item.space.name }}</p>
+                {% endif %}
+                <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Minimum Age" %}</h6>
+                <p class="mb-3">
+                    {% if session.min_age > 0 %}
+                        <span class="inline-flex items-center rounded-full bg-info/10 text-info px-2.5 py-0.5 text-xs font-medium">{{ session.min_age }}+ {% translate "years" %}</span>
+                    {% else %}
+                        <span class="text-foreground-muted">{% translate "All ages welcome" %}</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        {% if session.description %}
+            <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Description" %}</h6>
+            <p>{{ session.description }}</p>
+        {% endif %}
+    </div>
+</div>

@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load heroicons %}
 <article class="session-card-wrapper">
-    <div class="session-card relative block w-full h-full rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background {% if not data.is_enrollment_available or data.should_show_as_inactive %}{% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
+    <div class="session-card relative block w-full h-full rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-border ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background {% if not data.is_enrollment_available or data.should_show_as_inactive %}{% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
          data-title="{{ data.session.title|lower }}"
          data-session-id="{{ data.session.pk }}"
          data-host="{{ data.session.presenter_name }}"
@@ -16,8 +16,7 @@
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
          data-venue="{{ data.loc.venue.slug }}"
-         data-venue-name="{{ data.loc.venue.name }}"
-         style="border-color: var(--theme-border)">
+         data-venue-name="{{ data.loc.venue.name }}">
         <div class="relative z-10 flex h-full flex-col px-5 pb-5">
             <a href="?session={{ data.session.pk }}"
                class="session-card-link absolute inset-0 z-10 rounded-2xl"
@@ -58,7 +57,7 @@
                     {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
                         {% if data.is_full %}
                             {% if data.waiting_count > 0 %}
-                                <span class="text-sm font-medium" style="color: #B8B0A6">{{ data.waiting_count }} {% translate "waiting" %}</span>
+                                <span class="text-sm font-medium text-foreground-muted">{{ data.waiting_count }} {% translate "waiting" %}</span>
                             {% endif %}
                         {% else %}
                             <span class="text-sm font-semibold {% if data.spots_scarce %}text-coral-600 dark:text-coral-400{% else %}text-teal-700 dark:text-teal-400{% endif %}">
@@ -66,8 +65,7 @@
                             </span>
                         {% endif %}
                     {% else %}
-                        <span class="text-xs font-medium"
-                              style="color: var(--color-foreground-muted)">
+                        <span class="text-xs font-medium text-foreground-muted">
                             {% if ended %}
                                 {% translate "Ended" %}
                             {% elif data.should_show_as_inactive %}

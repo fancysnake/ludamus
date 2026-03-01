@@ -1,0 +1,19 @@
+{% load i18n %}
+{% load heroicons %}
+<nav class="flex gap-4 border-b border-border -mb-px">
+    <a class="inline-flex items-center gap-1.5 border-b-2 {% if active_tab == 'edit' %}border-accent text-accent{% else %}border-transparent text-foreground-secondary hover:text-foreground hover:border-border{% endif %} px-1 pb-2 text-sm font-medium"
+       href="{% url 'web:crowd:profile' %}">
+        {% heroicon_outline "user" class="w-4 h-4" %}
+        {% translate "Personal Information" %}
+    </a>
+    <a class="inline-flex items-center gap-1.5 border-b-2 {% if active_tab == 'connected' %}border-accent text-accent{% else %}border-transparent text-foreground-secondary hover:text-foreground hover:border-border{% endif %} px-1 pb-2 text-sm font-medium"
+       href="{% url 'web:crowd:profile-connected-users' %}">
+        {% heroicon_outline "users" class="w-4 h-4" %}
+        {% translate "Connected users" %}
+    </a>
+    <a class="inline-flex items-center gap-1.5 border-b-2 {% if active_tab == 'avatar' %}border-accent text-accent{% else %}border-transparent text-foreground-secondary hover:text-foreground hover:border-border{% endif %} px-1 pb-2 text-sm font-medium"
+       href="{% url 'web:crowd:profile-avatar' %}">
+        {% heroicon_outline "photo" class="w-4 h-4" %}
+        {% translate "Avatar" %}
+    </a>
+</nav>

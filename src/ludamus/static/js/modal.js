@@ -42,7 +42,13 @@ const getLinkableByModalId = (id) => {
     return { paramName, paramValue };
 };
 const openModal = (id, { updateUrl = true, replaceHistory = false } = {}) => {
-    const dialog = getDialog(id);
+    let dialog;
+    try {
+        dialog = getDialog(id);
+    }
+    catch {
+        return;
+    }
     if (!dialog.open) {
         dialog.showModal();
     }
@@ -56,7 +62,13 @@ const openModal = (id, { updateUrl = true, replaceHistory = false } = {}) => {
     }
 };
 const closeModal = (id, { updateUrl = true, replaceHistory = false } = {}) => {
-    const dialog = getDialog(id);
+    let dialog;
+    try {
+        dialog = getDialog(id);
+    }
+    catch {
+        return;
+    }
     if (dialog.open) {
         dialog.close();
     }
@@ -142,7 +154,21 @@ document.addEventListener("click", (event) => {
             return;
         }
     }
-    // Fallback link interception handled by setupFallbackLinkHandlers below.
+    if (!navigation) {
+        const link = eventTarget.closest("a[href][aria-controls]");
+        if (link) {
+            const modalId = link.getAttribute("aria-controls");
+            if (modalId) {
+                const target = document.getElementById(modalId);
+                if (target instanceof HTMLDialogElement &&
+                    target.classList.contains("modal")) {
+                    event.preventDefault();
+                    openModal(modalId);
+                    return;
+                }
+            }
+        }
+    }
     if (!(eventTarget instanceof HTMLDialogElement) ||
         !eventTarget.classList.contains("modal"))
         return;
@@ -156,23 +182,4 @@ document.addEventListener("click", (event) => {
 });
 window.addEventListener("popstate", syncModalsFromUrl);
 syncModalsFromUrl();
-// In browsers without Navigation API (WebKit, older Firefox), attach click
-// handlers directly to modal-trigger links so preventDefault fires before
-// the browser starts navigation.
-const setupFallbackLinkHandlers = () => {
-    document.querySelectorAll("a[href][aria-controls]").forEach((link) => {
-        const modalId = link.getAttribute("aria-controls");
-        if (!modalId)
-            return;
-        const target = document.getElementById(modalId);
-        if (!(target instanceof HTMLDialogElement) ||
-            !target.classList.contains("modal"))
-            return;
-        link.addEventListener("click", (e) => {
-            e.preventDefault();
-            openModal(modalId);
-        });
-    });
-};
-setupFallbackLinkHandlers();
 export { closeModal };

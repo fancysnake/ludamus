@@ -7,29 +7,11 @@
 {% block body %}
     <div class="max-w-3xl mx-auto">
         <div class="card">
-            <div class="card-header">
-                <nav class="flex gap-4 border-b border-[var(--theme-border)] -mb-px">
-                    <a class="inline-flex items-center gap-1.5 border-b-2 border-[var(--theme-accent)] px-1 pb-2 text-sm font-medium text-[var(--theme-accent)]"
-                       href="{% url 'web:crowd:profile' %}">
-                        {% heroicon_outline "user" class="w-4 h-4" %}
-                        {% translate "Personal Information" %}
-                    </a>
-                    <a class="inline-flex items-center gap-1.5 border-b-2 border-transparent px-1 pb-2 text-sm font-medium text-foreground-secondary hover:text-foreground hover:border-[var(--theme-border)]"
-                       href="{% url 'web:crowd:profile-connected-users' %}">
-                        {% heroicon_outline "users" class="w-4 h-4" %}
-                        {% translate "Connected users" %}
-                    </a>
-                    <a class="inline-flex items-center gap-1.5 border-b-2 border-transparent px-1 pb-2 text-sm font-medium text-foreground-secondary hover:text-foreground hover:border-[var(--theme-border)]"
-                       href="{% url 'web:crowd:profile-avatar' %}">
-                        {% heroicon_outline "photo" class="w-4 h-4" %}
-                        {% translate "Avatar" %}
-                    </a>
-                </nav>
-            </div>
+            <div class="card-header">{% include "crowd/user/_profile_tabs.html" with active_tab="edit" %}</div>
             <div class="card-body">
                 {% if user.confirmed_participations_count > 0 %}
-                    <div class="flex items-start gap-2 rounded-lg bg-[var(--theme-info-bg,rgba(59,130,246,0.1))] border border-[var(--theme-info-border,rgba(59,130,246,0.3))] p-3 mb-4 text-sm">
-                        {% heroicon_outline "calendar-days" class="w-5 h-5 text-[var(--theme-info,#3b82f6)] shrink-0 mt-0.5" %}
+                    <div class="flex items-start gap-2 rounded-lg bg-info-bg border border-info-light p-3 mb-4 text-sm">
+                        {% heroicon_outline "calendar-days" class="w-5 h-5 text-info shrink-0 mt-0.5" %}
                         <span>
                             {% blocktranslate count counter=user.confirmed_participations_count %}
                                 You have {{ counter }} confirmed session participation.

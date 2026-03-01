@@ -68,7 +68,12 @@ const openModal = (
   id: string,
   { updateUrl = true, replaceHistory = false } = {},
 ): void => {
-  const dialog = getDialog(id);
+  let dialog: HTMLDialogElement;
+  try {
+    dialog = getDialog(id);
+  } catch {
+    return;
+  }
   if (!dialog.open) {
     dialog.showModal();
   }
@@ -87,7 +92,12 @@ const closeModal = (
   id: string,
   { updateUrl = true, replaceHistory = false } = {},
 ): void => {
-  const dialog = getDialog(id);
+  let dialog: HTMLDialogElement;
+  try {
+    dialog = getDialog(id);
+  } catch {
+    return;
+  }
   if (dialog.open) {
     dialog.close();
   }
@@ -200,7 +210,23 @@ document.addEventListener("click", (event) => {
     }
   }
 
-  // Fallback link interception handled by setupFallbackLinkHandlers below.
+  if (!navigation) {
+    const link = eventTarget.closest("a[href][aria-controls]");
+    if (link) {
+      const modalId = link.getAttribute("aria-controls");
+      if (modalId) {
+        const target = document.getElementById(modalId);
+        if (
+          target instanceof HTMLDialogElement &&
+          target.classList.contains("modal")
+        ) {
+          event.preventDefault();
+          openModal(modalId);
+          return;
+        }
+      }
+    }
+  }
 
   if (
     !(eventTarget instanceof HTMLDialogElement) ||
@@ -221,30 +247,5 @@ document.addEventListener("click", (event) => {
 window.addEventListener("popstate", syncModalsFromUrl);
 
 syncModalsFromUrl();
-
-// In browsers without Navigation API (WebKit, older Firefox), attach click
-// handlers directly to modal-trigger links so preventDefault fires before
-// the browser starts navigation.
-const setupFallbackLinkHandlers = (): void => {
-
-  document.querySelectorAll("a[href][aria-controls]").forEach((link) => {
-    const modalId = link.getAttribute("aria-controls");
-    if (!modalId) return;
-
-    const target = document.getElementById(modalId);
-    if (
-      !(target instanceof HTMLDialogElement) ||
-      !target.classList.contains("modal")
-    )
-      return;
-
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      openModal(modalId);
-    });
-  });
-};
-
-setupFallbackLinkHandlers();
 
 export { closeModal };
