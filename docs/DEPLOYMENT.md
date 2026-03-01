@@ -171,8 +171,9 @@ Scopes: **L** = local, **D** = docker local, **P** = prod.
 - `MEMBERSHIP_API_TIMEOUT` — timeout in seconds, default `30` — P(opt)
 - `MEMBERSHIP_API_CHECK_INTERVAL` — minutes, default `15` — P(opt)
 
-**Docker bind mounts** (prod only, from `prod.yaml`):
+**Docker Compose** (prod only, from `prod.yaml`):
 
+- `WEB_PORT` — host port for web service, default `8000` — P(opt)
 - `POSTGRES_DATA_PATH` — default `/var/lib/ludamus/postgres_data` — P
 - `STATIC_DATA_PATH` — default `/var/lib/ludamus/static` — P
 - `MEDIA_DATA_PATH` — default `/var/lib/ludamus/media` — P
