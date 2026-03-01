@@ -26,26 +26,15 @@ from ludamus.pacts import (
     AgendaItemDTO,
     AreaDTO,
     LocationData,
-    ProposalDTO,
+    PendingSessionDTO,
     SessionDTO,
     SpaceDTO,
     UserDTO,
     VenueDTO,
     VirtualEnrollmentConfig,
 )
+from tests.integration.conftest import AgendaItemFactory, SessionFactory
 from tests.integration.utils import assert_response
-
-
-def _fallback_presenter(name: str) -> UserInfo:
-    return UserInfo(
-        avatar_url=None,
-        discord_username="",
-        full_name=name,
-        name=name,
-        pk=0,
-        slug="",
-        username=name,
-    )
 
 
 class TestEventPageView:
@@ -79,13 +68,25 @@ class TestEventPageView:
         )
 
     def test_ok_superuser_proposal(
-        self, authenticated_client, event, active_user, proposal
+        self, authenticated_client, event, active_user, pending_session
     ):
         active_user.is_staff = True
         active_user.is_superuser = True
         active_user.save()
         response = authenticated_client.get(self._get_url(event.slug))
 
+        expected_pending = PendingSessionDTO(
+            creation_time=pending_session.creation_time,
+            description=pending_session.description,
+            needs=pending_session.needs,
+            participants_limit=pending_session.participants_limit,
+            pk=pending_session.pk,
+            presenter_name=pending_session.presenter_name,
+            requirements=pending_session.requirements,
+            tags=[],
+            time_slots=[],
+            title=pending_session.title,
+        )
         assert_response(
             response,
             HTTPStatus.OK,
@@ -98,7 +99,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {},
                 "object": event,
-                "proposals": [proposal],
+                "pending_sessions": [expected_pending],
                 "sessions": [],
                 "user_enrollment_config": None,
                 "total_enrolled": 0,
@@ -113,7 +114,6 @@ class TestEventPageView:
         authenticated_client,
         event,
         active_user,
-        proposal,
         session,
         connected_user,
         agenda_item,
@@ -143,8 +143,7 @@ class TestEventPageView:
             is_enrollment_available=False,
             is_full=False,
             is_ongoing=False,
-            proposal=None,
-            presenter=_fallback_presenter(session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[
                 ParticipationInfo(
                     user=UserInfo.from_user_dto(UserDTO.model_validate(part1.user)),
@@ -182,7 +181,7 @@ class TestEventPageView:
                 },
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [proposal],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "user_enrollment_config": None,
                 "total_enrolled": 1,
@@ -193,12 +192,8 @@ class TestEventPageView:
         )
 
     def test_ok_session_with_linked_proposal(
-        self, active_user, agenda_item, client, event, proposal, session
+        self, active_user, agenda_item, client, event, session
     ):
-        proposal.session = session
-        proposal.save()
-
-        proposal_dto = ProposalDTO.model_validate(proposal)
         host = UserInfo.from_user_dto(UserDTO.model_validate(active_user))
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
@@ -210,7 +205,6 @@ class TestEventPageView:
             is_enrollment_available=False,
             is_full=False,
             is_ongoing=False,
-            proposal=proposal_dto,
             presenter=host,
             session_participations=[],
             session=SessionDTO.model_validate(session),
@@ -249,7 +243,74 @@ class TestEventPageView:
             template_name=["chronology/event.html"],
         )
 
-    def test_ok_ended_session(self, agenda_item, client, event, faker):
+    def test_ok_session_without_presenter_user(self, client, event, space, sphere):
+        presenter_name = "External Presenter"
+        session = SessionFactory(
+            presenter=None,
+            presenter_name=presenter_name,
+            sphere=sphere,
+            participants_limit=10,
+            min_age=0,
+        )
+        agenda_item = AgendaItemFactory(session=session, space=space)
+
+        response = client.get(self._get_url(event.slug))
+
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            presenter=UserInfo(
+                avatar_url=None,
+                discord_username="",
+                full_name=presenter_name,
+                name=presenter_name,
+                pk=0,
+                slug="",
+                username=presenter_name,
+            ),
+            session_participations=[],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            tags=[],
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": False,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {
+                    agenda_item.start_time: [session_data]
+                },
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "sessions": [session_data],
+                "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
+    def test_ok_ended_session(self, active_user, agenda_item, client, event, faker):
         agenda_item.start_time = faker.date_time_between("-20d", "-10d", tzinfo=UTC)
         agenda_item.end_time = faker.date_time_between("-9d", "-1d", tzinfo=UTC)
         agenda_item.save()
@@ -265,8 +326,7 @@ class TestEventPageView:
             is_enrollment_available=False,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -300,7 +360,7 @@ class TestEventPageView:
             template_name=["chronology/event.html"],
         )
 
-    def test_ok_current_session(self, agenda_item, client, event, faker):
+    def test_ok_current_session(self, active_user, agenda_item, client, event, faker):
         agenda_item.start_time = faker.date_time_between("-10d", "-1d", tzinfo=UTC)
         agenda_item.end_time = faker.date_time_between("+1d", "+10d", tzinfo=UTC)
         agenda_item.save()
@@ -316,8 +376,7 @@ class TestEventPageView:
             is_enrollment_available=False,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -372,7 +431,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [],
                 "user_enrollment_config": None,
                 "total_enrolled": 0,
@@ -569,7 +628,7 @@ class TestEventPageView:
         assert not client.session.get("anonymous_site_id")
 
     def test_ok_anonymous_enrollment_with_participation(
-        self, agenda_item, anonymous_user_factory, client, event, settings
+        self, active_user, agenda_item, anonymous_user_factory, client, event, settings
     ):
         session = client.session
         user = anonymous_user_factory()
@@ -597,8 +656,7 @@ class TestEventPageView:
             is_enrollment_available=False,
             is_full=False,
             is_ongoing=False,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[
                 ParticipationInfo(
                     user=UserInfo.from_user_dto(
@@ -645,7 +703,7 @@ class TestEventPageView:
         )
 
     def test_ok_current_session_enrollment_config_limit(
-        self, agenda_item, client, enrollment_config, event, faker
+        self, active_user, agenda_item, client, enrollment_config, event, faker
     ):
         enrollment_config.limit_to_end_time = True
         enrollment_config.save()
@@ -664,8 +722,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=True,
@@ -748,8 +805,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -774,7 +830,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "total_enrolled": 0,
                 "user_enrolled_sessions": [],
@@ -823,8 +879,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -849,7 +904,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "total_enrolled": 0,
                 "user_enrolled_sessions": [],
@@ -902,8 +957,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -928,7 +982,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "total_enrolled": 0,
                 "user_enrolled_sessions": [],
@@ -978,8 +1032,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1004,7 +1057,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "total_enrolled": 0,
                 "user_enrolled_sessions": [],
@@ -1056,8 +1109,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1082,7 +1134,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "user_enrollment_config": None,
                 "total_enrolled": 0,
@@ -1130,8 +1182,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1156,7 +1207,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "user_enrollment_config": None,
                 "total_enrolled": 0,
@@ -1216,8 +1267,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1242,7 +1292,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "total_enrolled": 0,
                 "user_enrolled_sessions": [],
@@ -1294,8 +1344,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1320,7 +1369,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "user_enrollment_config": VirtualEnrollmentConfig(
                     allowed_slots=0, has_domain_config=False, has_user_config=True
@@ -1381,8 +1430,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1407,7 +1455,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "total_enrolled": 0,
                 "user_enrolled_sessions": [],
@@ -1462,8 +1510,7 @@ class TestEventPageView:
             is_enrollment_available=True,
             is_full=False,
             is_ongoing=True,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(agenda_item.session),
             should_show_as_inactive=False,
@@ -1488,7 +1535,7 @@ class TestEventPageView:
                 "future_unavailable_hour_data": {},
                 "hour_data": {agenda_item.start_time: [session_data]},
                 "object": event,
-                "proposals": [],
+                "pending_sessions": [],
                 "sessions": [session_data],
                 "total_enrolled": 0,
                 "user_enrolled_sessions": [],
@@ -1500,7 +1547,9 @@ class TestEventPageView:
             template_name=["chronology/event.html"],
         )
 
-    def test_ok_session_with_filterable_tags(self, agenda_item, client, event):
+    def test_ok_session_with_filterable_tags(
+        self, active_user, agenda_item, client, event
+    ):
         """Regression test: session tags are displayed when category is filterable.
 
         Previously, values_list("id") returned tuples like [(1,)] instead of
@@ -1535,8 +1584,7 @@ class TestEventPageView:
             is_enrollment_available=False,
             is_full=False,
             is_ongoing=False,
-            proposal=None,
-            presenter=_fallback_presenter(agenda_item.session.presenter_name),
+            presenter=UserInfo.from_user_dto(UserDTO.model_validate(active_user)),
             session_participations=[],
             session=SessionDTO.model_validate(session),
             should_show_as_inactive=False,
