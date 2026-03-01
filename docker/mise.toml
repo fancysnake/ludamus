@@ -1,0 +1,37 @@
+[settings]
+# Sequential execution to avoid race conditions in parallel tests
+jobs = 1
+
+[tools]
+python = "3.14"
+node = "v25.6.1"
+poetry = { version = "2.3.2", pyproject = "/app/pyproject.toml" }
+
+[env]
+# Mise creates and activates this virtualenv automatically
+_.python.venv = { path = ".venv", create = true }
+
+[task_config]
+includes = ["/app/tasks.toml"]
+
+# Overrides tasks.toml: env vars come from Docker env/env_file, not .env files.
+[tasks.dj]
+run = "django-admin"
+
+[tasks.start]
+description = "Start Django dev server with frontend watch"
+run = "django-admin tailwind dev"
+
+
+[tasks.gunicorn]
+run = """
+gunicorn \
+    --bind 0.0.0.0:8000 \
+    --workers 4 \
+    --threads 2 \
+    --worker-class gthread \
+    --worker-tmp-dir /dev/shm \
+    --access-logfile - \
+    --error-logfile - \
+    --chdir /app/src ludamus.edges.wsgi:application
+"""

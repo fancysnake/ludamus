@@ -1,0 +1,124 @@
+---
+x-app-build: &app-build
+  build:
+    context: ../../
+    dockerfile: docker/Dockerfile
+    target: prod
+    args:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+      ENV: ${ENV}
+
+x-app-defaults: &app-defaults
+  <<: *app-build
+  env_file:
+    - ../../.env
+  environment:
+    GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-1}
+  networks:
+    - backend
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+name: ludamus
+
+services:
+  collectstatic:
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    volumes:
+      - static_volume:/app/staticfiles
+    command: [ "run", "dj", "downloadvendor", ":::", "dj", "collectstatic", "--noinput", "--clear" ]
+    restart: "no"
+    <<: *app-defaults
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - backend
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 384M
+    security_opt:
+      - no-new-privileges:true
+
+  migrations:
+    depends_on:
+      db:
+        condition: service_healthy
+    command: [ "run", "dj", "migrate", "--noinput", ":::", "dj", "createcachetable" ]
+    restart: "no"
+    <<: *app-defaults
+
+  web:
+    depends_on:
+      collectstatic:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8000}:8000'
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", 'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:8000/healthz/'')"' ]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+    <<: *app-defaults
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${POSTGRES_DATA_PATH:-/var/lib/ludamus/postgres_data}
+  static_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${STATIC_DATA_PATH:-/var/lib/ludamus/static}
+  media_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MEDIA_DATA_PATH:-/var/lib/ludamus/media}

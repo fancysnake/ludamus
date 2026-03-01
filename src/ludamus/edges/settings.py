@@ -7,67 +7,60 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
-
-Environment Variables:
-    Required:
-        - ENV: Environment name ('local' or 'production')
-        - SECRET_KEY: Django secret key
-        - ROOT_DOMAIN: Root domain for multi-site support
-        - AUTH0_CLIENT_ID: Auth0 client ID
-        - AUTH0_CLIENT_SECRET: Auth0 client secret
-        - AUTH0_DOMAIN: Auth0 domain
-
-    Production Only (when ENV=production):
-        - ALLOWED_HOSTS: Comma-separated list of allowed hosts
-        - DB_NAME: PostgreSQL database name
-        - DB_USER: PostgreSQL username
-        - DB_PASSWORD: PostgreSQL password
-        - DB_HOST: PostgreSQL host (default: localhost)
-        - DB_PORT: PostgreSQL port (default: 5432)
-
-    Optional:
-        - SESSION_COOKIE_DOMAIN: Session cookie domain
-        - SUPPORT_EMAIL: Support email address
-        - STATIC_ROOT: Static files root directory
-        - MEDIA_ROOT: Media files root directory
-        - MEMBERSHIP_API_BASE_URL: Base URL for membership API
-        - MEMBERSHIP_API_TOKEN: Authentication token for membership API
-        - MEMBERSHIP_API_TIMEOUT: Request timeout in seconds (default: 30)
-        - MEMBERSHIP_API_CHECK_INTERVAL: Check interval in minutes (default: 15)
 """
 
-import os
 from pathlib import Path
-from typing import Any
 
 import environ
-
-env = environ.Env(DEBUG=(bool, False), USE_POSTGRES=(bool, False))
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+env = environ.Env(
+    # Domains
+    ALLOWED_HOSTS=(list, ["localhost"]),
+    ROOT_DOMAIN=(str, ""),
+    SESSION_COOKIE_DOMAIN=(str, None),
+    # Auth0
+    AUTH0_CLIENT_ID=(str, ""),
+    AUTH0_CLIENT_SECRET=(str, ""),
+    AUTH0_DOMAIN=(str, ""),
+    # Database
+    DB_NAME=(str, ""),  # Database name or file path
+    USE_POSTGRES=(bool, False),
+    # Static files
+    GIT_COMMIT_SHA=(str, "1"),
+    MEDIA_ROOT=(str, str(BASE_DIR / "media")),
+    STATIC_ROOT=(str, str(BASE_DIR / "staticfiles")),
+    # Membership API
+    MEMBERSHIP_API_BASE_URL=(str, ""),
+    MEMBERSHIP_API_CHECK_INTERVAL=(int, 15),
+    MEMBERSHIP_API_TIMEOUT=(int, 30),
+    MEMBERSHIP_API_TOKEN=(str, ""),
+    # Other
+    DEBUG=(bool, False),
+    ENV=str,
+    SECRET_KEY=str,
+    SUPPORT_EMAIL=(str, "support@example.com"),
+)
+
+
 # Environment configuration
-ENV = os.getenv("ENV", "local")
+ENV = env("ENV")
 IS_PRODUCTION = ENV == "production"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-SECRET_KEY = os.environ["SECRET_KEY"]
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
 
 # Parse comma-separated allowed hosts for production
-ALLOWED_HOSTS: list[str] = []
-if allowed_hosts := os.getenv("ALLOWED_HOSTS", ""):
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts.split(",")]
-elif DEBUG:
-    ALLOWED_HOSTS = ["localhost", "[::1]"]
-
-SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN", "")
+ALLOWED_HOSTS: list[str] = env("ALLOWED_HOSTS")
+SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN") or None
 
 # Application definition
 
@@ -137,7 +130,7 @@ TEMPLATES = [
                 "avatar_tags": "ludamus.gates.web.django.templatetags.avatar_tags"
             },
             "debug": DEBUG,
-            "string_if_invalid": "ERROR: Missing variable %s",
+            "string_if_invalid": "" if IS_PRODUCTION else "ERROR: Missing variable %s",
         },
     }
 ]
@@ -148,16 +141,23 @@ WSGI_APPLICATION = "ludamus.edges.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-TESTING = os.getenv("TESTING", "")
-DATABASES: dict[str, dict[str, Any]] = (  # pylint: disable=invalid-name
-    {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
-    if TESTING
-    else {
+DATABASES = (
+    {
         "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": str(BASE_DIR / "dev.sqlite3"),
+            "ATOMIC_REQUESTS": True,
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("DB_NAME"),
+            "USER": env.str("DB_USER"),
+            "PASSWORD": env.str("DB_PASSWORD"),
+            "HOST": env.str("DB_HOST"),
+            "PORT": env.str("DB_PORT"),
+            "CONN_MAX_AGE": 600,
+            "CONN_HEALTH_CHECKS": True,
+            "OPTIONS": {"connect_timeout": 10},
         }
     }
+    if env("USE_POSTGRES")
+    else {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": env("DB_NAME")}}
 )
 
 
@@ -199,10 +199,16 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # URL prefixes that skip middleware processing (UoW injection, context setup)
-MIDDLEWARE_SKIP_PREFIXES = (STATIC_URL, "/admin/", "/__debug__/", "/__reload__/")
+MIDDLEWARE_SKIP_PREFIXES = (
+    STATIC_URL,
+    "/admin/",
+    "/__debug__/",
+    "/__reload__/",
+    "/healthz/",
+)
 
 # Cache busting version for static files (set via GIT_COMMIT_SHA env var during build)
-STATIC_VERSION = os.getenv("GIT_COMMIT_SHA", "1")[:8]
+STATIC_VERSION = env("GIT_COMMIT_SHA")[:8]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -216,17 +222,17 @@ LOGIN_URL = "/crowd/login-required/"
 
 # Sites
 
-ROOT_DOMAIN = os.environ["ROOT_DOMAIN"]
+ROOT_DOMAIN = env("ROOT_DOMAIN")
 
 # Auth0
 
-AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
-AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
-AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
+AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
+AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
+AUTH0_DOMAIN = env("AUTH0_DOMAIN")
 
 # Support
 
-SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support@example.com")
+SUPPORT_EMAIL = env("SUPPORT_EMAIL")
 
 INTERNAL_IPS = [
     # ...
@@ -243,7 +249,6 @@ if IS_PRODUCTION:
     USE_X_FORWARDED_PORT = True
 
     # Security Headers
-    SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
 
@@ -263,11 +268,18 @@ if IS_PRODUCTION:
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_SAMESITE = "Lax"  # Changed from Strict to allow OAuth callbacks
+    CSRF_TRUSTED_ORIGINS = []
+    for host in ALLOWED_HOSTS:
+        if host.startswith("."):
+            bare = host[1:]
+            CSRF_TRUSTED_ORIGINS.extend([f"https://{bare}", f"https://*.{bare}"])
+        else:
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
 
     # Additional Security Settings
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
-    SECURE_REDIRECT_EXEMPT: list[str] = []
+    SECURE_REDIRECT_EXEMPT = [r"^healthz/"]
 
     # File Upload Security
     FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
@@ -281,33 +293,18 @@ else:
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_SAMESITE = "Lax"
 
-# Production Database Settings
-if env("USE_POSTGRES"):
-    DATABASES = {  # pylint: disable=invalid-name
-        "default": {
-            "ATOMIC_REQUESTS": True,
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ["DB_NAME"],
-            "USER": os.environ["DB_USER"],
-            "PASSWORD": os.environ["DB_PASSWORD"],
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "5432"),
-            "CONN_MAX_AGE": 600,
-            "CONN_HEALTH_CHECKS": True,
-            "OPTIONS": {"connect_timeout": 10},
-        }
-    }
-
 
 # Static files configuration for production
 if IS_PRODUCTION:
-    STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
-    STATICFILES_STORAGE = (
-        "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
-    )
+    STATIC_ROOT = env("STATIC_ROOT")
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+        }
+    }
 
     # Media files
-    MEDIA_ROOT = os.getenv("MEDIA_ROOT", str(BASE_DIR / "media"))
+    MEDIA_ROOT = env("MEDIA_ROOT")
     MEDIA_URL = "/media/"
 else:
     # Development email backend
@@ -353,15 +350,13 @@ LOGGING = {
 }
 
 # Membership API Configuration
-MEMBERSHIP_API_BASE_URL = os.getenv("MEMBERSHIP_API_BASE_URL", "")
-MEMBERSHIP_API_TOKEN = os.getenv("MEMBERSHIP_API_TOKEN", "")
-MEMBERSHIP_API_TIMEOUT = int(os.getenv("MEMBERSHIP_API_TIMEOUT", "30"))
-MEMBERSHIP_API_CHECK_INTERVAL = int(
-    os.getenv("MEMBERSHIP_API_CHECK_INTERVAL", "15")
-)  # minutes
+MEMBERSHIP_API_BASE_URL = env("MEMBERSHIP_API_BASE_URL")
+MEMBERSHIP_API_TOKEN = env("MEMBERSHIP_API_TOKEN")
+MEMBERSHIP_API_TIMEOUT = env("MEMBERSHIP_API_TIMEOUT")
+MEMBERSHIP_API_CHECK_INTERVAL = env("MEMBERSHIP_API_CHECK_INTERVAL")
 
 # Vendor Dependencies Configuration
-# Download with: mise dj downloadvendor
+# Download with: mise run dj downloadvendor
 # SHA-384 hashes use base64 encoding (SRI format)
 VENDOR_DEPENDENCIES: list[dict[str, str]] = [
     {
@@ -381,12 +376,36 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
         "sha384": "kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4",
     },
     {
+        "name": "bootstrap-js-map",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js.map"
+        ),
+        "filename": "bootstrap.bundle.min.js.map",
+        "sha384": "we5r5uLo9BDuUFnhbIA867SiyKJxIM9BKsQV4AiBc0gbyDfY2I6TJa5OAU2zIcFL",
+    },
+    {
+        "name": "bootstrap-css-map",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css.map"
+        ),
+        "filename": "bootstrap.min.css.map",
+        "sha384": "S1xwa26oop5+fLMjyiyuVSmE3mCovI0Qe5d5COG6iQCKuIxgYw35mpnxNPhWp5NX",
+    },
+    {
         "name": "popperjs",
         "url": (
             "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
         ),
         "filename": "popper.min.js",
         "sha384": "oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3",
+    },
+    {
+        "name": "popperjs-map",
+        "url": (
+            "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js.map"
+        ),
+        "filename": "popper.min.js.map",
+        "sha384": "cGZ11hmqUooIlGMY+Y+gi+8AhjA4H/Qa29LQBPWKKzhmbsxvNpyWrPuBJCprTsil",
     },
     {
         "name": "bootstrap-icons",

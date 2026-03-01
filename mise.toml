@@ -4,25 +4,28 @@ jobs = 1
 
 [tools]
 python = "3.14"
-poetry = { version = "latest", pyproject = "{{ config_root }}/pyproject.toml" }
+node = "v25.6.1"
+poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 
 [env]
 # Mise creates and activates this virtualenv automatically
 _.python.venv = { path = ".venv", create = true }
+_.file = ".env.dev"
 
-# Common environment variables
-PYTHONPATH = "src"
-DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
-DEBUG = "true"
-USE_POSTGRES = "false"
-SECRET_KEY = "dev-secret-key-12345"
-ROOT_DOMAIN = "localhost:8000"
-ALLOWED_HOSTS = ".localhost"
+[task_config]
+includes = ["tasks.toml"]
 
-[tasks.p]
-run = "poetry"
+# Overrides tasks.toml to load .env for local development (tasks.toml is
+# shared with docker/mise.toml which does not use .env files).
+[tasks.dj]
+env = { _.file = ".env" }
+run = "django-admin"
 
-# Code quality tools
+[tasks.start]
+env = { _.file = ".env" }
+description = "Start Django dev server with frontend watch"
+run = "django-admin tailwind dev"
+
 [tasks.black]
 run = "black src tests"
 
@@ -56,24 +59,11 @@ run = "ruff check src tests"
 [tasks.ruff-fix]
 run = "ruff check --fix src tests"
 
-# Django commands
-[tasks.dj]
-run = "django-admin"
-
 # Base test task with test environment
 # Child tasks call this via "mise run" to inherit env vars
 [tasks._pytest]
 description = "Base pytest runner with test env (internal)"
 run = "pytest"
-env.ROOT_DOMAIN = "testserver"
-env.ALLOWED_HOSTS = ".testserver"
-env.TESTING = "true"
-env.AUTH0_CLIENT_ID = "test_auth0_client_id"
-env.AUTH0_CLIENT_SECRET = "test_auth0_client_secret"
-env.AUTH0_DOMAIN = "auth0.example.com"
-env.MEMBERSHIP_API_BASE_URL = "https://example.com/api/v1/membership"
-env.MEMBERSHIP_API_TOKEN = "abcdefg"
-
 
 [tasks.unittest]
 description = "Run unit tests"
@@ -82,11 +72,6 @@ run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-t
 [tasks.test]
 description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
-
-# Dev server (Django + Tailwind watch via django-tailwind)
-[tasks.start]
-description = "Start Django dev server with frontend watch"
-run = "django-admin tailwind dev"
 
 [tasks.build-frontend]
 description = "Build frontend assets (CSS + JS)"
@@ -104,28 +89,31 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 
 # Composite tasks
 
+[tasks."install:playwright"]
+run = """
+npm install
+npx playwright install --with-deps
+"""
+description = "Install Playwright"
+env = { _.file = '.env.e2e' }
+dir = "tests/e2e"
+
 [tasks.e2e]
 description = "Run end-to-end Playwright tests (chromium)"
-run = "cd tests/e2e && npx playwright test --project=chromium"
-env.ROOT_DOMAIN = "localhost:8000"
-env.ALLOWED_HOSTS = ".localhost"
-env.AUTH0_CLIENT_ID = "test_auth0_client_id"
-env.AUTH0_CLIENT_SECRET = "test_auth0_client_secret"
-env.AUTH0_DOMAIN = "auth0.example.com"
-env.MEMBERSHIP_API_BASE_URL = "https://example.com/api/v1/membership"
-env.MEMBERSHIP_API_TOKEN = "abcdefg"
-env.CI = "true"
+run = "npx playwright test --project=chromium"
+env = { _.file = '.env.e2e' }
+dir = "tests/e2e"
 
 [tasks.check]
 depends = [
-    "black",
-    "ruff-fix",
-    "codespell",
-    "mypy",
-    "il",
-    "djlint",
-    "djlint-format",
-    "pylint",
+  "black",
+  "ruff-fix",
+  "codespell",
+  "mypy",
+  "il",
+  "djlint",
+  "djlint-format",
+  "pylint",
 ]
 
 [tasks.prcheck]
@@ -141,3 +129,29 @@ deptry .
 pip-audit .
 poetry show -o
 """
+
+[tasks.dc]
+env = { _.file = '.env' }
+usage = '''
+arg "<environment>" help="Target environment" {
+  choices "local" "prod"
+}
+arg "[dc_args]" var=#true double_dash="optional"
+'''
+run = '''
+GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}
+docker compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_args")}}
+'''
+
+[tasks."boot-e2e"]
+description = "Bootstrap and start dev server for e2e tests"
+run = """
+django-admin migrate --noinput
+django-admin createcachetable
+django-admin downloadvendor
+python tests/e2e/scripts/bootstrap_data.py
+django-admin tailwind install
+django-admin tailwind build
+django-admin runserver --insecure
+"""
+env = { _.file = '.env.e2e' }

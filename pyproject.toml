@@ -145,11 +145,6 @@ ignore_missing_imports = true
 module = ["environ"]
 ignore_missing_imports = true
 
-# PYTEST
-
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
-
 # RUFF
 
 [tool.ruff]
@@ -207,6 +202,10 @@ allow-star-arg-any = true
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
 
+# PYTEST
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
 
 # IMPORT LINTER
 

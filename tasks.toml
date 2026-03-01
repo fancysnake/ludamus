@@ -1,0 +1,9 @@
+[p]
+run = "poetry"
+
+[dj]
+run = "django-admin"
+
+[start]
+description = "Start Django dev server with frontend watch"
+run = "django-admin tailwind dev"
