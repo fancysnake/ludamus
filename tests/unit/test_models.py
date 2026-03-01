@@ -27,6 +27,7 @@ from ludamus.adapters.db.django.models import (
     Tag,
     TagCategory,
     TimeSlot,
+    TimeSlotRequirement,
     User,
     UserEnrollmentConfig,
     Venue,
@@ -332,6 +333,26 @@ class TestSessionFieldOption:
         label = faker.word()
 
         assert str(SessionFieldOption(label=label)) == label
+
+
+class TestTimeSlotRequirement:
+    def test_str_required(self, faker):
+        category_name = faker.word()
+
+        requirement = TimeSlotRequirement(
+            category=ProposalCategory(name=category_name), is_required=True
+        )
+
+        assert str(requirement) == f"Time slot (required) for {category_name}"
+
+    def test_str_optional(self, faker):
+        category_name = faker.word()
+
+        requirement = TimeSlotRequirement(
+            category=ProposalCategory(name=category_name), is_required=False
+        )
+
+        assert str(requirement) == f"Time slot (optional) for {category_name}"
 
 
 class TestSessionFieldRequirement:

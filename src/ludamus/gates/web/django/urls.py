@@ -142,6 +142,26 @@ panel_urlpatterns = [
         panel.SpaceReorderActionView.as_view(),
         name="space-reorder",
     ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/",
+        panel.TimeSlotsPageView.as_view(),
+        name="time-slots",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/create/",
+        panel.TimeSlotCreatePageView.as_view(),
+        name="time-slot-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/<int:pk>/edit/",
+        panel.TimeSlotEditPageView.as_view(),
+        name="time-slot-edit",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/<int:pk>/do/delete",
+        panel.TimeSlotDeleteActionView.as_view(),
+        name="time-slot-delete",
+    ),
     path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
     path(
         "event/<slug:slug>/cfp/create/",

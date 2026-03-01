@@ -126,6 +126,13 @@ run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-t
 description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
 
+[tasks.diff-cover]
+run = """
+mise run test --cov
+coverage xml
+diff-cover coverage.xml --compare-branch=main
+"""
+
 # E2E
 
 [tasks._e2e]
@@ -191,3 +198,9 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 
 [tasks.ts-check]
 run = "cd src/ludamus/gates/web/django/theme/static_src && npm typecheck"
+
+
+# OTHER
+
+[tasks.shitcheck]
+run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY)'"

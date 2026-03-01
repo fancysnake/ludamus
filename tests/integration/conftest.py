@@ -259,10 +259,13 @@ def non_root_sphere(settings, faker):
 @pytest.fixture(name="event")
 def event_fixture(sphere):
     now = datetime.now(UTC)
+    midnight = (now + timedelta(days=7)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     return EventFactory(
         sphere=sphere,
-        start_time=now + timedelta(days=7),
-        end_time=now + timedelta(days=7, hours=8),
+        start_time=midnight,
+        end_time=midnight + timedelta(hours=23, minutes=59, seconds=59),
         proposal_start_time=now - timedelta(days=10),
         proposal_end_time=now - timedelta(days=3),
     )

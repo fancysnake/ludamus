@@ -24,6 +24,7 @@ from ludamus.adapters.db.django.models import (
     Sphere,
     Tag,
     TimeSlot,
+    TimeSlotRequirement,
     UserEnrollmentConfig,
     Venue,
 )
@@ -62,6 +63,7 @@ from ludamus.pacts import (
     TagCategoryDTO,
     TagDTO,
     TimeSlotDTO,
+    TimeSlotRepositoryProtocol,
     UserData,
     UserDTO,
     UserEnrollmentConfigData,
@@ -1238,6 +1240,53 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
             )
 
     @staticmethod
+    def get_time_slot_requirements(category_id: int) -> dict[int, bool]:
+        """Get time slot requirements for a category.
+
+        Returns:
+            Dict mapping time_slot_id to is_required boolean.
+        """
+        requirements = TimeSlotRequirement.objects.filter(category_id=category_id)
+        return {req.time_slot_id: req.is_required for req in requirements}
+
+    @staticmethod
+    def get_time_slot_order(category_id: int) -> list[int]:
+        """Get ordered list of time slot IDs for a category.
+
+        Returns:
+            List of time slot IDs ordered by their order field.
+        """
+        requirements = TimeSlotRequirement.objects.filter(
+            category_id=category_id
+        ).order_by("order")
+        return [req.time_slot_id for req in requirements]
+
+    @staticmethod
+    def set_time_slot_requirements(
+        category_id: int, requirements: dict[int, bool], order: list[int] | None = None
+    ) -> None:
+        """Set time slot requirements for a category.
+
+        Replaces all existing requirements with the provided ones.
+
+        Args:
+            category_id: The category to set requirements for.
+            requirements: Dict mapping time_slot_id to is_required boolean.
+            order: Optional list of time slot IDs defining the order.
+        """
+        TimeSlotRequirement.objects.filter(category_id=category_id).delete()
+
+        order_map = {ts_id: idx for idx, ts_id in enumerate(order or [])}
+
+        for time_slot_id, is_required in requirements.items():
+            TimeSlotRequirement.objects.create(
+                category_id=category_id,
+                time_slot_id=time_slot_id,
+                is_required=is_required,
+                order=order_map.get(time_slot_id, 0),
+            )
+
+    @staticmethod
     def generate_unique_slug(
         event_id: int, base_slug: str, exclude_pk: int | None = None
     ) -> str:
@@ -1528,3 +1577,56 @@ class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):
         ).first()
 
         return DomainEnrollmentConfigDTO.model_validate(config) if config else None
+
+
+class TimeSlotRepository(TimeSlotRepositoryProtocol):
+    @staticmethod
+    def create(event_id: int, start_time: datetime, end_time: datetime) -> TimeSlotDTO:
+        time_slot = TimeSlot.objects.create(
+            event_id=event_id, start_time=start_time, end_time=end_time
+        )
+        return TimeSlotDTO.model_validate(time_slot)
+
+    @staticmethod
+    def delete(pk: int) -> None:
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist:
+            return
+        time_slot.delete()
+
+    @staticmethod
+    def has_proposals(pk: int) -> bool:
+        return Proposal.objects.filter(time_slots=pk).exists()
+
+    @staticmethod
+    def list_by_event(event_id: int) -> list[TimeSlotDTO]:
+        time_slots = TimeSlot.objects.filter(event_id=event_id).order_by("start_time")
+        return [TimeSlotDTO.model_validate(ts) for ts in time_slots]
+
+    @staticmethod
+    def read(pk: int) -> TimeSlotDTO:
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return TimeSlotDTO.model_validate(time_slot)
+
+    @staticmethod
+    def read_by_event(event_id: int, pk: int) -> TimeSlotDTO:
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk, event_id=event_id)
+        except TimeSlot.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return TimeSlotDTO.model_validate(time_slot)
+
+    @staticmethod
+    def update(pk: int, start_time: datetime, end_time: datetime) -> TimeSlotDTO:
+        try:
+            time_slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist as exc:
+            raise NotFoundError from exc
+        time_slot.start_time = start_time
+        time_slot.end_time = end_time
+        time_slot.save()
+        return TimeSlotDTO.model_validate(time_slot)
