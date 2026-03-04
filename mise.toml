@@ -104,15 +104,18 @@ django-admin tailwind build
 
 [tasks._pytest]
 description = "Base pytest runner with test env (internal)"
-run = "mise run _lint -- pytest"
+run = "pytest"
 env.ALLOWED_HOSTS = ".testserver"
 env.AUTH0_CLIENT_ID = "test-auth0-client-id"
 env.AUTH0_CLIENT_SECRET = "test-auth0-client-secret"
 env.AUTH0_DOMAIN = "auth0.example.com"
-env.DB_NAME = "dev.sqlite3"
+env.DB_NAME = ":memory:"
+env.ENV = "local"
 env.MEMBERSHIP_API_BASE_URL = "https://membership-test.example.com/api/v1/endpoint"
 env.MEMBERSHIP_API_TOKEN = "membership-test-token"
+env.PYTHONPATH = "src"
 env.ROOT_DOMAIN = "testserver"
+env.SECRET_KEY = "dev-secret-key"
 env.SESSION_COOKIE_DOMAIN = ".testserver"
 
 [tasks.unittest]
