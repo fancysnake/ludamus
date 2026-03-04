@@ -994,6 +994,33 @@ class SessionFieldRequirement(models.Model):
         return f"{self.field.name} ({req}) for {self.category.name}"
 
 
+class TimeSlotRequirement(models.Model):
+    """Specifies which time slots are available for a proposal category."""
+
+    category = models.ForeignKey(
+        ProposalCategory,
+        on_delete=models.CASCADE,
+        related_name="time_slot_requirements",
+    )
+    time_slot = models.ForeignKey(
+        TimeSlot, on_delete=models.CASCADE, related_name="category_requirements"
+    )
+    is_required = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "time_slot_requirement"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("category", "time_slot"), name="unique_time_slot_per_category"
+            ),
+        )
+
+    def __str__(self) -> str:
+        req = "required" if self.is_required else "optional"
+        return f"Time slot ({req}) for {self.category.name}"
+
+
 def can_enroll_users(
     *,
     users: list[UserDTO],

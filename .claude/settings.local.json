@@ -12,7 +12,8 @@
       "Bash(mise run dj compilemessages:*)",
       "Bash(mise run ruff-check:*)",
       "Bash(mise run:*)",
-      "Skill(gloria)"
+      "Skill(gloria)",
+      "Skill(manuel)"
     ]
   }
 }
