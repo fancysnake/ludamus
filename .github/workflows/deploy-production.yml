@@ -1,0 +1,27 @@
+name: Deploy on production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Rebuild and upstart dockers
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1
+        env:
+          GITHUB_COMMIT_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_DEPLOY_KEY }}
+          envs: GITHUB_COMMIT_SHA
+          script: |
+            set -ex
+            cd ludamus/
+            git fetch
+            git checkout $GITHUB_COMMIT_SHA
+            export GIT_COMMIT_SHA=$(git rev-parse --short HEAD)
+            docker compose --env-file .env -p ludamus -f docker/compose/prod.yaml up --build --pull always -d
+            docker image prune -f
