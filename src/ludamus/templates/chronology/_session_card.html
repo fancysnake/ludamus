@@ -29,7 +29,6 @@
             <div class="-mx-5 bg-transparent px-5 pb-6 pt-5">
                 <h3 class="text-3xl font-bold leading-tight tracking-tight text-foreground-primary">{{ data.session.title }}</h3>
             </div>
-            <div class="flex-1"></div>
             <div class="flex items-center gap-2 mb-3">
                 {% include "components/avatar.html" with user=data.presenter size="size-8" %}
                 <span class="text-base font-medium text-foreground-secondary">
@@ -52,13 +51,7 @@
             {% include "chronology/session_tags.html" %}
             <div class="mt-auto flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    {% if data.enrolled_count == 0 %}
-                        {% if not ended %}
-                            <span class="text-sm font-medium text-teal-700 dark:text-teal-400">
-                                {% blocktranslate count counter=data.spots_left %}{{ counter }} slot open{% plural %}{{ counter }} slots open{% endblocktranslate %}
-                            </span>
-                        {% endif %}
-                    {% else %}
+                    {% if data.enrolled_count > 0 %}
                         <div class="flex -space-x-2">
                             {% for p in data.session_participations|dictsort:"status"|slice:":3" %}
                                 {% if p.status == 'confirmed' %}
@@ -66,11 +59,6 @@
                                 {% endif %}
                             {% endfor %}
                         </div>
-                        {% if not ended %}
-                            <span class="text-sm font-medium text-teal-700 dark:text-teal-400">
-                                {% blocktranslate count counter=data.spots_left %}{{ counter }} slot open{% plural %}{{ counter }} slots open{% endblocktranslate %}
-                            </span>
-                        {% endif %}
                     {% endif %}
                     {% if data.session.waiting_count > 0 %}
                         <span class="text-xs font-medium" style="color: var(--theme-warning)">+{{ data.session.waiting_count }} {% translate "waiting" %}</span>

@@ -1,9 +1,16 @@
 {% load i18n %}
 <div class="flex flex-wrap gap-2 mb-4 grow">
-    {% for tag in data.tags %}
+    {% for tag in data.filterable_tags|slice:":3" %}
         <span class="px-3 py-1 rounded-2xl text-sm font-medium filterable-tag bg-warm-200/80 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
               title="{{ tag.name }}">{{ tag.name }}</span>
     {% endfor %}
+    {% with extra=data.filterable_tags|length %}
+        {% if extra > 3 %}
+            <span class="px-2 py-1 rounded-2xl text-xs font-medium bg-warm-200/60 dark:bg-neutral-700/60 text-warm-600 h-fit dark:text-neutral-400">
+                +{{ extra|add:"-3" }} more
+            </span>
+        {% endif %}
+    {% endwith %}
     {% if data.session.min_age > 0 %}
         <span class="px-2 py-1 rounded-lg text-xs font-medium bg-warm-200/90 dark:bg-neutral-700 text-warm-700 h-fit dark:text-neutral-300"
               title="{% translate "Minimum age" %}: {{ data.session.min_age }} {% translate "years" %}">
