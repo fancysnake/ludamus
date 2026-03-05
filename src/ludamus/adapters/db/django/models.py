@@ -1049,6 +1049,32 @@ class TimeSlotRequirement(models.Model):
         return f"Time slot ({req}) for {self.category.name}"
 
 
+class SessionFieldValue(models.Model):
+    """Stores a field value for a session."""
+
+    session = models.ForeignKey(
+        Session, on_delete=models.CASCADE, related_name="field_values"
+    )
+    field = models.ForeignKey(
+        SessionField, on_delete=models.CASCADE, related_name="values"
+    )
+    value = models.TextField(blank=True, default="")
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "session_field_value"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("session", "field", "value"),
+                name="unique_session_field_value_combo",
+            ),
+        )
+
+    def __str__(self) -> str:
+        return f"{self.field.name}: {self.value} (session {self.session_id})"
+
+
 def can_enroll_users(
     *,
     users: list[UserDTO],

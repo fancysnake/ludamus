@@ -20,6 +20,7 @@ from ludamus.adapters.db.django.models import (
     SessionField,
     SessionFieldOption,
     SessionFieldRequirement,
+    SessionFieldValue,
     Space,
     Sphere,
     Tag,
@@ -58,6 +59,7 @@ from ludamus.pacts import (
     SessionFieldDTO,
     SessionFieldOptionDTO,
     SessionFieldRepositoryProtocol,
+    SessionFieldValueDTO,
     SessionRepositoryProtocol,
     SessionStatus,
     SessionUpdateData,
@@ -1668,6 +1670,26 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             slug = f"{base_slug}-{token_urlsafe(3)}"
 
         return slug
+
+    @staticmethod
+    def read_values_by_session(session_id: int) -> list[SessionFieldValueDTO]:
+        return [
+            SessionFieldValueDTO.model_validate(v)
+            for v in SessionFieldValue.objects.filter(session_id=session_id)
+        ]
+
+    @staticmethod
+    def set_values(session_id: int, field_id: int, values: list[str]) -> None:
+        SessionFieldValue.objects.filter(
+            session_id=session_id, field_id=field_id
+        ).delete()
+        SessionFieldValue.objects.bulk_create(
+            [
+                SessionFieldValue(session_id=session_id, field_id=field_id, value=v)
+                for v in values
+                if v
+            ]
+        )
 
     @staticmethod
     def _to_dto(field: SessionField) -> SessionFieldDTO:
