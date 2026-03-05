@@ -1679,6 +1679,7 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         ]
 
     @staticmethod
+    @transaction.atomic
     def set_values(session_id: int, field_id: int, values: list[str]) -> None:
         SessionFieldValue.objects.filter(
             session_id=session_id, field_id=field_id

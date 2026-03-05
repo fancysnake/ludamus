@@ -395,8 +395,8 @@ class SessionFieldValueDTO(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    field_id: int
     pk: int
+    field_id: int
     session_id: int
     value: str
 
