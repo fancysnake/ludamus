@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 from freezegun import freeze_time
 
-from ludamus.adapters.db.django.models import Proposal, ProposalCategory, Session
+from ludamus.adapters.db.django.models import ProposalCategory, Session
 from ludamus.pacts import EventDTO, ProposalCategoryDTO
 from tests.integration.utils import assert_response
 
@@ -316,22 +316,33 @@ class TestCFPPageView:
     ):
         sphere.managers.add(active_user)
         category = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
-        # Create 3 proposals (2 pending, 1 accepted)
-        Proposal.objects.create(
-            category=category, host=active_user, title="Pending 1", participants_limit=5
-        )
-        Proposal.objects.create(
-            category=category, host=active_user, title="Pending 2", participants_limit=5
-        )
-        session = Session.objects.create(
-            title="Accepted", slug="accepted", sphere=sphere, participants_limit=5
-        )
-        Proposal.objects.create(
+        # Create 3 sessions (2 pending, 1 accepted)
+        Session.objects.create(
             category=category,
-            host=active_user,
-            title="Accepted",
+            presenter=active_user,
+            title="Pending 1",
+            slug="pending-1",
+            sphere=sphere,
             participants_limit=5,
-            session=session,
+            status="pending",
+        )
+        Session.objects.create(
+            category=category,
+            presenter=active_user,
+            title="Pending 2",
+            slug="pending-2",
+            sphere=sphere,
+            participants_limit=5,
+            status="pending",
+        )
+        Session.objects.create(
+            category=category,
+            presenter=active_user,
+            title="Accepted",
+            slug="accepted",
+            sphere=sphere,
+            participants_limit=5,
+            status="accepted",
         )
 
         response = authenticated_client.get(self.get_url(event))
@@ -382,29 +393,34 @@ class TestCFPPageView:
         category2 = ProposalCategory.objects.create(
             event=event, name="Workshops", slug="workshops"
         )
-        # Category1: 2 proposals, 1 accepted
-        Proposal.objects.create(
-            category=category1, host=active_user, title="RPG 1", participants_limit=5
+        # Category1: 2 sessions, 1 accepted
+        Session.objects.create(
+            category=category1,
+            presenter=active_user,
+            title="RPG 1",
+            slug="rpg-1",
+            sphere=sphere,
+            participants_limit=5,
+            status="pending",
         )
-        session1 = Session.objects.create(
+        Session.objects.create(
+            category=category1,
+            presenter=active_user,
             title="RPG Accepted",
             slug="rpg-accepted",
             sphere=sphere,
             participants_limit=5,
+            status="accepted",
         )
-        Proposal.objects.create(
-            category=category1,
-            host=active_user,
-            title="RPG 2",
-            participants_limit=5,
-            session=session1,
-        )
-        # Category2: 1 proposal, 0 accepted
-        Proposal.objects.create(
+        # Category2: 1 session, 0 accepted
+        Session.objects.create(
             category=category2,
-            host=active_user,
+            presenter=active_user,
             title="Workshop 1",
+            slug="workshop-1",
+            sphere=sphere,
             participants_limit=5,
+            status="pending",
         )
 
         response = authenticated_client.get(self.get_url(event))

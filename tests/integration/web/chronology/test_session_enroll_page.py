@@ -1053,6 +1053,8 @@ class TestSessionEnrollPageView:
     def test_post_ok_move_to_waiting_list(
         self, active_user, agenda_item, authenticated_client, event
     ):
+        agenda_item.session.presenter = None
+        agenda_item.session.save(update_fields=["presenter_id"])
         SessionParticipation.objects.create(
             user=active_user,
             session=agenda_item.session,
@@ -1175,6 +1177,8 @@ class TestSessionEnrollPageView:
     def test_post_unknown_current_participation_status(
         self, active_user, agenda_item, authenticated_client, event
     ):
+        agenda_item.session.presenter = None
+        agenda_item.session.save(update_fields=["presenter_id"])
         SessionParticipation.objects.create(
             user=active_user, session=agenda_item.session, status="purchased"
         )

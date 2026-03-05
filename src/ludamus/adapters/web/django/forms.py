@@ -10,7 +10,6 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
 from ludamus.adapters.db.django.models import (
-    Proposal,
     Session,
     SessionParticipation,
     SessionParticipationStatus,
@@ -433,7 +432,7 @@ def create_session_proposal_form(
         help_text=_("Select the appropriate age rating for this session"),
     )
 
-    def clean_title(self: forms.ModelForm[Proposal]) -> str:
+    def clean_title(self: forms.ModelForm[Session]) -> str:
         title: str = self.cleaned_data["title"]
         return title.strip()
 
@@ -443,7 +442,7 @@ def create_session_proposal_form(
             "Meta",
             (),
             {
-                "model": Proposal,
+                "model": Session,
                 "fields": (
                     "title",
                     "description",

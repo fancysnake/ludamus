@@ -42,6 +42,9 @@ from ludamus.pacts import (
     EventRepositoryProtocol,
     EventStatsData,
     NotFoundError,
+    PendingSessionDTO,
+    PendingSessionTagDTO,
+    PendingSessionTimeSlotDTO,
     PersonalDataFieldDTO,
     PersonalDataFieldOptionDTO,
     PersonalDataFieldRepositoryProtocol,
@@ -51,10 +54,13 @@ from ludamus.pacts import (
     ProposalDTO,
     ProposalRepositoryProtocol,
     SessionData,
+    SessionDTO,
     SessionFieldDTO,
     SessionFieldOptionDTO,
     SessionFieldRepositoryProtocol,
     SessionRepositoryProtocol,
+    SessionStatus,
+    SessionUpdateData,
     SiteDTO,
     SpaceDTO,
     SpaceRepositoryProtocol,
@@ -232,12 +238,158 @@ class ProposalRepository(ProposalRepositoryProtocol):
 
 class SessionRepository(SessionRepositoryProtocol):
     @staticmethod
-    def create(session_data: SessionData, tag_ids: Iterable[int]) -> int:
+    def create(
+        session_data: SessionData,
+        tag_ids: Iterable[int],
+        time_slot_ids: Iterable[int] = (),
+    ) -> int:
         session = Session.objects.create(**session_data)
-
         session.tags.set(tag_ids)
-
+        if time_slot_ids:
+            session.time_slots.set(time_slot_ids)
         return session.pk
+
+    @staticmethod
+    def read(pk: int) -> SessionDTO:
+        try:
+            session = Session.objects.select_related("category").get(id=pk)
+        except Session.DoesNotExist as exception:
+            raise NotFoundError from exception
+        return SessionDTO.model_validate(session)
+
+    @staticmethod
+    def update(pk: int, data: SessionUpdateData) -> None:
+        Session.objects.filter(id=pk).update(**data)
+
+    @staticmethod
+    def read_event(session_id: int) -> EventDTO:
+        try:
+            event = Event.objects.get(proposal_categories__sessions__id=session_id)
+        except Event.DoesNotExist as exception:
+            raise NotFoundError from exception
+        return EventDTO.model_validate(event)
+
+    @staticmethod
+    def read_presenter(session_id: int) -> UserDTO:
+        try:
+            session = Session.objects.select_related("presenter").get(id=session_id)
+        except Session.DoesNotExist as exception:
+            raise NotFoundError from exception
+        if session.presenter is None:
+            raise NotFoundError
+        return UserDTO.model_validate(session.presenter)
+
+    @staticmethod
+    def read_spaces(session_id: int) -> list[SpaceDTO]:
+        spaces = Space.objects.filter(
+            area__venue__event__proposal_categories__sessions__id=session_id
+        )
+        return [SpaceDTO.model_validate(space) for space in spaces]
+
+    @staticmethod
+    def read_time_slots(session_id: int) -> list[TimeSlotDTO]:
+        time_slots = TimeSlot.objects.filter(
+            event__proposal_categories__sessions__id=session_id
+        )
+        return [TimeSlotDTO.model_validate(ts) for ts in time_slots]
+
+    @staticmethod
+    def read_time_slot(session_id: int, time_slot_id: int) -> TimeSlotDTO:
+        try:
+            time_slot = TimeSlot.objects.get(
+                id=time_slot_id, event__proposal_categories__sessions__id=session_id
+            )
+        except TimeSlot.DoesNotExist as exception:
+            raise NotFoundError from exception
+        return TimeSlotDTO.model_validate(time_slot)
+
+    @staticmethod
+    def read_tag_ids(session_id: int) -> list[int]:
+        return list(
+            Tag.objects.filter(session__id=session_id).values_list("id", flat=True)
+        )
+
+    @staticmethod
+    def read_tags(session_id: int) -> list[TagDTO]:
+        session = Session.objects.get(id=session_id)
+        return [TagDTO.model_validate(tag) for tag in session.tags.all()]
+
+    @staticmethod
+    def read_tag_categories(session_id: int) -> list[TagCategoryDTO]:
+        try:
+            session = Session.objects.select_related("category").get(id=session_id)
+        except Session.DoesNotExist as exception:
+            raise NotFoundError from exception
+        if session.category is None:
+            return []
+        return [
+            TagCategoryDTO.model_validate(tc)
+            for tc in session.category.tag_categories.all()
+        ]
+
+    @staticmethod
+    def count_by_category(category_id: int) -> int:
+        return Session.objects.filter(category_id=category_id).count()
+
+    @staticmethod
+    def read_pending_by_event(event_id: int) -> list[PendingSessionDTO]:
+        sessions = (
+            Session.objects.filter(
+                category__event_id=event_id, status=SessionStatus.PENDING
+            )
+            .prefetch_related("tags", "time_slots")
+            .order_by("-creation_time")
+        )
+        return [
+            PendingSessionDTO(
+                creation_time=s.creation_time,
+                description=s.description,
+                needs=s.needs,
+                participants_limit=s.participants_limit,
+                pk=s.pk,
+                presenter_name=s.presenter_name,
+                requirements=s.requirements,
+                tags=[PendingSessionTagDTO.model_validate(t) for t in s.tags.all()],
+                time_slots=[
+                    PendingSessionTimeSlotDTO.model_validate(ts)
+                    for ts in s.time_slots.all()
+                ],
+                title=s.title,
+            )
+            for s in sessions
+        ]
+
+    @staticmethod
+    def read_pending_by_event_for_user(
+        event_id: int, presenter_id: int
+    ) -> list[PendingSessionDTO]:
+        sessions = (
+            Session.objects.filter(
+                category__event_id=event_id,
+                status=SessionStatus.PENDING,
+                presenter_id=presenter_id,
+            )
+            .prefetch_related("tags", "time_slots")
+            .order_by("-creation_time")
+        )
+        return [
+            PendingSessionDTO(
+                creation_time=s.creation_time,
+                description=s.description,
+                needs=s.needs,
+                participants_limit=s.participants_limit,
+                pk=s.pk,
+                presenter_name=s.presenter_name,
+                requirements=s.requirements,
+                tags=[PendingSessionTagDTO.model_validate(t) for t in s.tags.all()],
+                time_slots=[
+                    PendingSessionTimeSlotDTO.model_validate(ts)
+                    for ts in s.time_slots.all()
+                ],
+                title=s.title,
+            )
+            for s in sessions
+        ]
 
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):
@@ -339,17 +491,22 @@ class EventRepository(EventRepositoryProtocol):
         Returns:
             EventStatsData with raw counts and IDs for business logic processing.
         """
-        proposals = Proposal.objects.filter(category__event_id=event_id)
-        sessions = Session.objects.filter(
+        # Ensure event is cached in storage
+        sessions = Session.objects.filter(category__event_id=event_id)
+        scheduled = Session.objects.filter(
             agenda_item__space__area__venue__event_id=event_id
         )
         spaces = Space.objects.filter(area__venue__event_id=event_id)
 
         return EventStatsData(
-            pending_proposals=proposals.filter(session__isnull=True).count(),
-            scheduled_sessions=sessions.count(),
-            total_proposals=proposals.count(),
-            unique_host_ids=set(proposals.values_list("host_id", flat=True)),
+            pending_proposals=sessions.filter(status=SessionStatus.PENDING).count(),
+            scheduled_sessions=scheduled.count(),
+            total_proposals=sessions.count(),
+            unique_host_ids=set(
+                sessions.exclude(presenter_id__isnull=True).values_list(
+                    "presenter_id", flat=True
+                )
+            ),
             rooms_count=spaces.count(),
         )
 
@@ -1111,12 +1268,12 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
 
         Returns:
             Dict mapping category ID to CategoryStats with proposals_count
-            and accepted_count (proposals with session assigned).
+            and accepted_count.
         """
         categories = ProposalCategory.objects.filter(event_id=event_id).annotate(
-            proposals_count=Count("proposals"),
+            proposals_count=Count("sessions"),
             accepted_count=Count(
-                "proposals", filter=Q(proposals__session__isnull=False)
+                "sessions", filter=~Q(sessions__status=SessionStatus.PENDING)
             ),
         )
 

@@ -61,15 +61,49 @@ class AgendaItemDTO(BaseModel):
 class SessionDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    category_id: int | None
     creation_time: datetime
     description: str
     min_age: int
     modification_time: datetime
+    needs: str
+    participants_limit: int
+    pk: int
+    presenter_id: int | None
+    presenter_name: str
+    requirements: str
+    slug: str
+    status: SessionStatus
+    title: str
+
+
+class PendingSessionTagDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    pk: int
+
+
+class PendingSessionTimeSlotDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    end_time: datetime
+    pk: int
+    start_time: datetime
+
+
+class PendingSessionDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    description: str
+    needs: str
     participants_limit: int
     pk: int
     presenter_name: str
     requirements: str
-    slug: str
+    tags: list[PendingSessionTagDTO]
+    time_slots: list[PendingSessionTimeSlotDTO]
     title: str
 
 
@@ -80,6 +114,7 @@ class LocationData(TypedDict):
 
 
 class SessionStatus(StrEnum):
+    PENDING = auto()
     ACCEPTED = auto()
     REJECTED = auto()
     SCHEDULED = auto()
@@ -174,15 +209,25 @@ class TagDTO(BaseModel):
     pk: int
 
 
-class SessionData(TypedDict):
+class SessionData(TypedDict, total=False):
+    category_id: int | None
     description: str
     min_age: int
+    needs: str
     participants_limit: int
+    presenter_id: int | None
     presenter_name: str
     requirements: str
     slug: str
     sphere_id: int
+    status: SessionStatus
     title: str
+
+
+class SessionUpdateData(TypedDict, total=False):
+    presenter_name: str
+    slug: str
+    status: SessionStatus
 
 
 class AgendaItemData(TypedDict):
@@ -455,7 +500,39 @@ class ProposalRepositoryProtocol(Protocol):
 
 class SessionRepositoryProtocol(Protocol):
     @staticmethod
-    def create(session_data: SessionData, tag_ids: Iterable[int]) -> int: ...
+    def create(
+        session_data: SessionData,
+        tag_ids: Iterable[int],
+        time_slot_ids: Iterable[int] = (),
+    ) -> int: ...
+    @staticmethod
+    def read(pk: int) -> SessionDTO: ...
+    @staticmethod
+    def update(pk: int, data: SessionUpdateData) -> None: ...
+    @staticmethod
+    def read_event(session_id: int) -> EventDTO: ...
+    @staticmethod
+    def read_presenter(session_id: int) -> UserDTO: ...
+    @staticmethod
+    def read_spaces(session_id: int) -> list[SpaceDTO]: ...
+    @staticmethod
+    def read_time_slot(session_id: int, time_slot_id: int) -> TimeSlotDTO: ...
+    @staticmethod
+    def read_time_slots(session_id: int) -> list[TimeSlotDTO]: ...
+    @staticmethod
+    def read_tag_ids(session_id: int) -> list[int]: ...
+    @staticmethod
+    def read_tags(session_id: int) -> list[TagDTO]: ...
+    @staticmethod
+    def read_tag_categories(session_id: int) -> list[TagCategoryDTO]: ...
+    @staticmethod
+    def count_by_category(category_id: int) -> int: ...
+    @staticmethod
+    def read_pending_by_event(event_id: int) -> list[PendingSessionDTO]: ...
+    @staticmethod
+    def read_pending_by_event_for_user(
+        event_id: int, presenter_id: int
+    ) -> list[PendingSessionDTO]: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):

@@ -22,7 +22,7 @@ from ludamus.pacts import (
     SessionFieldDTO,
     TimeSlotDTO,
 )
-from tests.integration.conftest import ProposalFactory, UserFactory
+from tests.integration.conftest import ProposalFactory, SessionFactory, UserFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -1813,9 +1813,9 @@ class TestCFPEditPageView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
-        ProposalFactory.create(category=category)
-        ProposalFactory.create(category=category)
-        ProposalFactory.create(category=category)
+        SessionFactory.create(category=category, sphere=sphere, status="pending")
+        SessionFactory.create(category=category, sphere=sphere, status="pending")
+        SessionFactory.create(category=category, sphere=sphere, status="pending")
 
         response = authenticated_client.get(self.get_url(event, category))
 
@@ -1828,8 +1828,8 @@ class TestCFPEditPageView:
                 "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
                 "stats": {
-                    "hosts_count": 1 + 1 + 1,  # 3 unique hosts from ProposalFactory
-                    "pending_proposals": 1 + 1 + 1,  # 3 proposals, no sessions
+                    "hosts_count": 1 + 1 + 1,  # 3 unique presenters
+                    "pending_proposals": 1 + 1 + 1,  # 3 pending sessions
                     "rooms_count": 0,
                     "scheduled_sessions": 0,
                     "total_proposals": 1 + 1 + 1,
@@ -1848,7 +1848,7 @@ class TestCFPEditPageView:
                 "time_slot_requirements": {},
                 "time_slot_order": [],
                 "durations": [],
-                "proposal_count": 1 + 1 + 1,  # 3 proposals created
+                "proposal_count": 1 + 1 + 1,  # 3 sessions created for this category
             },
         )
 
@@ -1862,9 +1862,9 @@ class TestCFPEditPageView:
         other_category = ProposalCategory.objects.create(
             event=event, name="Workshops", slug="workshops"
         )
-        ProposalFactory.create(category=category)
-        ProposalFactory.create(category=category)
-        ProposalFactory.create(category=other_category)  # Different category
+        SessionFactory.create(category=category, sphere=sphere, status="pending")
+        SessionFactory.create(category=category, sphere=sphere, status="pending")
+        SessionFactory.create(category=other_category, sphere=sphere, status="pending")
 
         response = authenticated_client.get(self.get_url(event, category))
 
@@ -1877,8 +1877,8 @@ class TestCFPEditPageView:
                 "events": [EventDTO.model_validate(event)],
                 "is_proposal_active": False,
                 "stats": {
-                    "hosts_count": 1 + 1 + 1,  # 3 unique hosts from ProposalFactory
-                    "pending_proposals": 1 + 1 + 1,  # 3 proposals total, no sessions
+                    "hosts_count": 1 + 1 + 1,  # 3 unique presenters
+                    "pending_proposals": 1 + 1 + 1,  # 3 pending sessions total
                     "rooms_count": 0,
                     "scheduled_sessions": 0,
                     "total_proposals": 1 + 1 + 1,

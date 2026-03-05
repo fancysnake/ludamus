@@ -489,7 +489,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["time_slot_order"] = time_slot_order
 
         context["durations"] = category.durations
-        context["proposal_count"] = self.request.di.uow.proposals.count_by_category(
+        context["proposal_count"] = self.request.di.uow.sessions.count_by_category(
             category.pk
         )
         return TemplateResponse(self.request, "panel/cfp-edit.html", context)
@@ -570,7 +570,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             context["time_slot_requirements"] = time_slot_requirements
             context["time_slot_order"] = time_slot_order
             context["durations"] = category.durations
-            context["proposal_count"] = self.request.di.uow.proposals.count_by_category(
+            context["proposal_count"] = self.request.di.uow.sessions.count_by_category(
                 category.pk
             )
             context["active_nav"] = "cfp"

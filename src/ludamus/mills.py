@@ -12,8 +12,9 @@ from ludamus.pacts import (
     EventStatsData,
     MembershipAPIError,
     PanelStatsDTO,
-    ProposalDTO,
-    SessionData,
+    SessionDTO,
+    SessionStatus,
+    SessionUpdateData,
     TicketAPIProtocol,
     UnitOfWorkProtocol,
     UserData,
@@ -89,46 +90,36 @@ class AcceptProposalService:
             self._context.current_sphere_id, self._context.current_user_slug
         )
 
-    def accept_proposal(
+    def accept_session(
         self,
         *,
-        proposal: ProposalDTO,
+        session: SessionDTO,
         slugifier: Callable[[str], str],
         space_id: int,
         time_slot_id: int,
     ) -> None:
-        host = self._uow.proposals.read_host(proposal.pk)
-        proposal_repository = self._uow.proposals
-        tag_ids = proposal_repository.read_tag_ids(proposal.pk)
-        time_slot = self._uow.proposals.read_time_slot(proposal.pk, time_slot_id)
+        presenter = self._uow.sessions.read_presenter(session.pk)
+        time_slot = self._uow.sessions.read_time_slot(session.pk, time_slot_id)
 
         with self._uow.atomic():
-            session_id = self._uow.sessions.create(
-                SessionData(
-                    sphere_id=self._context.current_sphere_id,
-                    presenter_name=host.name,
-                    title=proposal.title,
-                    description=proposal.description,
-                    requirements=proposal.requirements,
-                    participants_limit=proposal.participants_limit,
-                    min_age=proposal.min_age,
-                    slug=slugifier(proposal.title),
+            self._uow.sessions.update(
+                session.pk,
+                SessionUpdateData(
+                    status=SessionStatus.ACCEPTED,
+                    presenter_name=presenter.name,
+                    slug=slugifier(session.title),
                 ),
-                tag_ids=tag_ids,
             )
 
             self._uow.agenda_items.create(
                 AgendaItemData(
                     space_id=space_id,
-                    session_id=session_id,
+                    session_id=session.pk,
                     session_confirmed=True,
                     start_time=time_slot.start_time,
                     end_time=time_slot.end_time,
                 )
             )
-
-            proposal.session_id = session_id
-            proposal_repository.update(proposal)
 
 
 class PanelService:

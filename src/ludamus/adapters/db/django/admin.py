@@ -61,6 +61,9 @@ class SpaceAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = ("title", "status", "presenter_name", "category", "sphere")
+    list_filter = ("status", "sphere")
+    search_fields = ("title", "presenter_name")
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("title",)}
 
 
