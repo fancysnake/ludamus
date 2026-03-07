@@ -390,6 +390,17 @@ class SessionFieldDTO(BaseModel):
     slug: str
 
 
+class SessionFieldValueDTO(BaseModel):
+    """A stored value for a session field."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    field_id: int
+    session_id: int
+    value: str
+
+
 @dataclass
 class RequestContext:
     current_site_id: int
@@ -691,6 +702,10 @@ class SessionFieldRepositoryProtocol(Protocol):
     def has_requirements(pk: int) -> bool: ...
     def list_by_event(self, event_id: int) -> list[SessionFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO: ...
+    @staticmethod
+    def read_values_by_session(session_id: int) -> list[SessionFieldValueDTO]: ...
+    @staticmethod
+    def set_values(session_id: int, field_id: int, values: list[str]) -> None: ...
     def update(self, pk: int, name: str) -> SessionFieldDTO: ...
 
 
