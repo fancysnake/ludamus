@@ -850,6 +850,7 @@ class PersonalDataField(models.Model):
         default=PersonalDataFieldType.TEXT,
     )
     is_multiple = models.BooleanField(default=False)
+    is_public = models.BooleanField(default=False)
     allow_custom = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
@@ -960,7 +961,9 @@ class SessionField(models.Model):
     field_type = models.CharField(
         max_length=20, choices=SessionFieldType.choices, default=SessionFieldType.TEXT
     )
+    icon = models.CharField(max_length=50, blank=True)
     is_multiple = models.BooleanField(default=False)
+    is_public = models.BooleanField(default=False)
     allow_custom = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
@@ -1047,6 +1050,19 @@ class TimeSlotRequirement(models.Model):
     def __str__(self) -> str:
         req = "required" if self.is_required else "optional"
         return f"Time slot ({req}) for {self.category.name}"
+
+
+class EventSettings(models.Model):
+    event = models.OneToOneField(
+        Event, on_delete=models.CASCADE, related_name="settings"
+    )
+    filterable_session_fields = models.ManyToManyField(SessionField, blank=True)
+
+    class Meta:
+        db_table = "event_settings"
+
+    def __str__(self) -> str:
+        return f"Settings for {self.event.name}"
 
 
 def can_enroll_users(

@@ -15,16 +15,14 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
-           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
-            {% translate "Cancel" %}
-        </a>
+           class="btn btn-secondary">{% translate "Cancel" %}</a>
     {% endif %}
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
         <form method="post" class="max-w-2xl">
             {% csrf_token %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
+            <div class="card p-6">
                 <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Field Details" %}</h3>
                 <div class="space-y-6">
                     <div>
@@ -54,6 +52,16 @@
                                 {% translate "Select" %}
                             </option>
                         </select>
+                    </div>
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox"
+                                   name="is_public"
+                                   id="id_is_public"
+                                   {% if form.is_public.value %}checked{% endif %}
+                                   class="rounded border-neutral-300 text-primary focus:ring-primary">
+                            <span class="ml-2 text-sm text-neutral-700">{% translate "Show on public session card" %}</span>
+                        </label>
                     </div>
                     <div id="options-container" class="hidden">
                         <label class="block text-sm font-medium text-neutral-700 mb-2"
@@ -97,9 +105,8 @@
                     });
                 </script>
                 <div class="mt-6 flex justify-end">
-                    <button type="submit"
-                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-                        {% icon "plus" class="w-4 h-4 mr-2" %}
+                    <button type="submit" class="btn btn-primary">
+                        {% icon "plus" class="w-4 h-4" %}
                         {% translate "Create" %}
                     </button>
                 </div>

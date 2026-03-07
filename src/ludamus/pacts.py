@@ -296,6 +296,24 @@ class EventDTO(BaseModel):
     start_time: datetime
 
 
+class EventSettingsDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    filterable_session_field_ids: list[int] = []
+    pk: int
+
+
+class EventUpdateData(TypedDict, total=False):
+    description: str
+    end_time: datetime
+    name: str
+    proposal_end_time: datetime | None
+    proposal_start_time: datetime | None
+    publication_time: datetime | None
+    slug: str
+    start_time: datetime
+
+
 class EnrollmentConfigDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -357,6 +375,7 @@ class PersonalDataFieldDTO(BaseModel):
     allow_custom: bool = False
     field_type: Literal["text", "select"]
     is_multiple: bool = False
+    is_public: bool = False
     name: str
     options: list[PersonalDataFieldOptionDTO] = []
     order: int
@@ -382,7 +401,9 @@ class SessionFieldDTO(BaseModel):
 
     allow_custom: bool = False
     field_type: Literal["text", "select"]
+    icon: str = ""
     is_multiple: bool = False
+    is_public: bool = False
     name: str
     options: list[SessionFieldOptionDTO] = []
     order: int
@@ -563,7 +584,7 @@ class EventRepositoryProtocol(Protocol):
     @staticmethod
     def get_stats_data(event_id: int) -> EventStatsData: ...
     @staticmethod
-    def update_name(event_id: int, name: str) -> None: ...
+    def update(event_id: int, data: EventUpdateData) -> None: ...
 
 
 class VenueRepositoryProtocol(Protocol):
@@ -671,7 +692,9 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
     def has_requirements(pk: int) -> bool: ...
     def list_by_event(self, event_id: int) -> list[PersonalDataFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> PersonalDataFieldDTO: ...
-    def update(self, pk: int, name: str) -> PersonalDataFieldDTO: ...
+    def update(
+        self, pk: int, name: str, *, is_public: bool = False
+    ) -> PersonalDataFieldDTO: ...
 
 
 class SessionFieldRepositoryProtocol(Protocol):
@@ -684,6 +707,8 @@ class SessionFieldRepositoryProtocol(Protocol):
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        icon: str = "",
+        is_public: bool = False,
     ) -> SessionFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -691,7 +716,16 @@ class SessionFieldRepositoryProtocol(Protocol):
     def has_requirements(pk: int) -> bool: ...
     def list_by_event(self, event_id: int) -> list[SessionFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO: ...
-    def update(self, pk: int, name: str) -> SessionFieldDTO: ...
+    def update(
+        self, pk: int, name: str, icon: str = "", *, is_public: bool = False
+    ) -> SessionFieldDTO: ...
+
+
+class EventSettingsRepositoryProtocol(Protocol):
+    @staticmethod
+    def read_or_create(event_id: int) -> EventSettingsDTO: ...
+    @staticmethod
+    def update_filterable_fields(event_id: int, field_ids: list[int]) -> None: ...
 
 
 class TimeSlotRepositoryProtocol(Protocol):
@@ -747,6 +781,8 @@ class UnitOfWorkProtocol(Protocol):
     def anonymous_users(self) -> UserRepositoryProtocol: ...
     @property
     def connected_users(self) -> ConnectedUserRepositoryProtocol: ...
+    @property
+    def event_settings(self) -> EventSettingsRepositoryProtocol: ...
     @property
     def events(self) -> EventRepositoryProtocol: ...
     @property

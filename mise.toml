@@ -207,4 +207,4 @@ dir = "src/ludamus/gates/web/django/theme/static_src"
 # OTHER
 
 [tasks.shitcheck]
-run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY)'"
+run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pragma)'"

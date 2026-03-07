@@ -1,0 +1,72 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% block title %}
+    {% translate "Display Settings" %} - Ludamus Backoffice
+{% endblock title %}
+{% block page_title %}
+    {% translate "Display Settings" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Configuration" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'panel:event-settings' slug=current_event.slug %}"
+               class="btn btn-secondary">
+                {% icon "arrow-left" class="w-4 h-4" %}
+                {% translate "Back to Settings" %}
+            </a>
+            <button type="submit" form="display-settings-form" class="btn btn-primary">
+                {% icon "check" class="w-4 h-4" %}
+                {% translate "Save" %}
+            </button>
+        </div>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        <form id="display-settings-form"
+              method="post"
+              action="{% url 'panel:event-display-settings' slug=current_event.slug %}"
+              class="max-w-2xl">
+            {% csrf_token %}
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-neutral-900 mb-2">{% translate "Filterable Session Fields" %}</h3>
+                <p class="text-sm text-neutral-500 mb-6">
+                    {% translate "Choose which session fields appear as filters on the public session list." %}
+                </p>
+                {% if session_fields %}
+                    <div class="space-y-3">
+                        {% for field in session_fields %}
+                            <label class="flex items-center">
+                                <input type="checkbox"
+                                       name="filterable_session_fields"
+                                       value="{{ field.pk }}"
+                                       {% if field.pk in filterable_field_ids %}checked{% endif %}
+                                       class="rounded border-neutral-300 text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm text-neutral-700 flex items-center gap-1">
+                                    {% if field.icon %}
+                                        {% icon field.icon class="w-4 h-4 text-neutral-400" %}
+                                    {% endif %}
+                                    {{ field.name }}
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-sm text-neutral-400">
+                        {% translate "No session fields defined. Create session fields in CFP settings first." %}
+                    </p>
+                {% endif %}
+            </div>
+        </form>
+    {% else %}
+        <div class="card p-8 text-center">
+            <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
+        </div>
+    {% endif %}
+{% endblock content %}
