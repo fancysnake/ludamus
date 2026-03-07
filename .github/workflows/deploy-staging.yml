@@ -7,6 +7,9 @@ jobs:
   build:
     name: Rebuild and upstart dockers
     runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://test.zagrajmy.net
     steps:
       - name: executing remote ssh commands using password
         uses: appleboy/ssh-action@v1
