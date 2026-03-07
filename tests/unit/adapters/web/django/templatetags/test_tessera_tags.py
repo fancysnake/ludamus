@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 import pytest
-from django.template import Context, Template
+from django.template import Context, Template, TemplateSyntaxError
 from heroicons import IconDoesNotExist
 
 
@@ -184,3 +184,9 @@ class TestTabs:
         )
         html = tpl.render(Context({"bad_url": '"><script>alert(1)</script>'}))
         assert "<script>" not in html
+
+    def test_tab_missing_key_raises(self) -> None:
+        with pytest.raises(TemplateSyntaxError, match="requires at least a key"):
+            Template(
+                "{% load tessera %}{% tabs %}{% tab %}X{% end_tab %}{% end_tabs %}"
+            )
