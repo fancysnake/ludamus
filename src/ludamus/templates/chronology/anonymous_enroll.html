@@ -103,12 +103,7 @@
                             <label for="name" class="block text-sm font-medium mb-1">
                                 {% translate "Name" %} <span class="text-danger">*</span>
                             </label>
-                            <input type="text"
-                                   class="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
-                                   id="name"
-                                   name="name"
-                                   value="{{ anonymous_user.full_name }}"
-                                   required>
+                            {% include "components/text-field.html" with id="name" name="name" value=anonymous_user.full_name required=True only %}
                             <p class="mt-1 text-xs text-foreground-muted">
                                 {% translate "Your public display name that others will see. This can be a nickname and does not need to be your legal name." %}
                             </p>

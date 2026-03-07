@@ -229,21 +229,12 @@
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="modalCode"
-                               class="block text-sm font-medium mb-1"
-                               style="color: var(--color-foreground)">{% translate "Anonymous Code" %}</label>
-                        <input type="text"
-                               class="w-full rounded-xl border px-3 py-2 text-sm"
-                               style="background-color: var(--theme-bg-secondary);
-                                      border-color: var(--theme-border);
-                                      color: var(--color-foreground)"
-                               id="modalCode"
-                               name="code"
-                               placeholder="{% translate "Enter your code" %}"
-                               required
-                               maxlength="6">
-                        <p class="text-xs mt-1" style="color: var(--color-foreground-muted)">
-                            {% translate "This will replace your current anonymous session" %}
-                        </p>
+                               class="block text-sm font-medium text-foreground-secondary mb-1">
+                            {% translate "Anonymous Code" %}
+                        </label>
+                        {% translate "Enter your code" as code_placeholder %}
+                        {% include "components/text-field.html" with id="modalCode" name="code" placeholder=code_placeholder required=True maxlength="6" only %}
+                        <p class="text-xs mt-1 text-foreground-muted">{% translate "This will replace your current anonymous session" %}</p>
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t flex justify-end gap-2"
@@ -421,7 +412,7 @@
                             {% heroicon_mini "clock" class="w-4 h-4" %}
                             {{ hour|date:"l, F j" }} – {{ hour|time:"H:i" }}
                         </div>
-                        <div class="h-px grow" style="background: var(--theme-accent-gradient)"></div>
+                        <hr />
                         {% if event.is_live and forloop.first %}
                             <span class="text-sm text-teal-600 dark:text-teal-400 font-medium flex items-center gap-1.5">
                                 <span class="w-2 h-2 bg-teal-500 rounded-full live-dot"></span>
@@ -556,7 +547,7 @@
                     <tbody>
                         {% for pending in pending_sessions %}
                             <tr class="hover:bg-warm-50 dark:hover:bg-neutral-800"
-                                style="border-bottom: 1px solid var(--theme-border-light)">
+                                style="border-bottom: 1px solid var(--color-border)">
                                 <td class="py-3 px-4">
                                     <div>
                                         <span class="font-medium" style="color: var(--color-foreground)">{{ pending.title }}</span>
@@ -567,9 +558,7 @@
                                         {% if pending.tags %}
                                             <div class="flex flex-wrap gap-1 mt-1">
                                                 {% for tag in pending.tags %}
-                                                    <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700 proposal-tag"
-                                                          style="color: var(--color-foreground-secondary)"
-                                                          title="{{ tag.name }}">{{ tag.name }}</span>
+                                                    {% include "components/tag.html" with tag=tag size="sm" %}
                                                 {% endfor %}
                                             </div>
                                         {% endif %}
@@ -667,9 +656,7 @@
                                         style="color: var(--color-foreground-secondary)">{% translate "Tags" %}</h4>
                                     <div class="flex flex-wrap gap-1.5">
                                         {% for tag in pending.tags %}
-                                            <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
-                                                  style="color: var(--color-foreground-secondary)"
-                                                  title="{{ tag.name }}">{{ tag.name }}</span>
+                                            {% include "components/tag.html" with tag=tag size="sm" %}
                                         {% endfor %}
                                     </div>
                                 </div>
@@ -814,9 +801,7 @@
                         <!-- Tags -->
                         <div class="flex flex-wrap gap-2 mb-6">
                             {% for tag in data.tags %}
-                                <span class="tag-pill px-3 py-1.5 rounded-lg text-sm font-medium bg-warm-200 dark:bg-neutral-700 session-detail-tag"
-                                      style="color: var(--color-foreground-secondary)"
-                                      title="{{ tag.name }} ({{ tag.category.name }})">{{ tag.name }}</span>
+                                {% include "components/tag.html" with tag=tag %}
                             {% endfor %}
                         </div>
                     {% endif %}
@@ -1326,6 +1311,21 @@
                 filterToggle.setAttribute('aria-expanded', String(isOpen));
             });
 
+            // Close filter panel when clicking outside or focus leaves
+            const filtersWrapper = filterToggle.closest('.filters-popover-wrapper');
+            document.addEventListener('click', (e) => {
+                if (filterPanel.classList.contains('is-open') && !filtersWrapper.contains(e.target)) {
+                    filterPanel.classList.remove('is-open');
+                    filterToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+            filtersWrapper.addEventListener('focusout', (e) => {
+                if (!filtersWrapper.contains(e.relatedTarget)) {
+                    filterPanel.classList.remove('is-open');
+                    filterToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+
             if (clearFiltersFromNoResults) {
                 clearFiltersFromNoResults.addEventListener('click', clearAllFilters);
             }
@@ -1430,18 +1430,6 @@
 {% endblock extra_scripts %}
 {% block extra_head %}
     <style>
-        /* Tag styling */
-        .filterable-tag,
-        .proposal-tag,
-        .modal-tag,
-        .session-detail-tag {
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            display: inline-block;
-        }
-
         /* Tag filter container styling */
         .tag-filter-container {
             width: 18vw;

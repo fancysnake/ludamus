@@ -24,13 +24,10 @@
                         {% csrf_token %}
                         <div class="mb-4">
                             <label for="code" class="block text-sm font-medium mb-1">{% translate "Anonymous Enrollment Code" %}</label>
-                            <input type="text"
-                                   class="w-full max-w-xs rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
-                                   id="code"
-                                   name="code"
-                                   placeholder="{% translate "Enter your code" %}"
-                                   required
-                                   maxlength="6">
+                            {% translate "Enter your code" as code_placeholder %}
+                            <div class="max-w-xs">
+                                {% include "components/text-field.html" with id="code" name="code" placeholder=code_placeholder required=True maxlength="6" only %}
+                            </div>
                             <p class="mt-1 text-xs text-foreground-muted">
                                 {% translate "Enter the code you received when you enrolled (e.g., ab3x)" %}
                             </p>

@@ -143,14 +143,8 @@
                                 </label>
                                 <span class="text-sm text-foreground-muted">{% translate "How many players can join your session?" %}</span>
                             </div>
-                            <input type="text"
-                                   inputmode="numeric"
-                                   pattern="[0-9]*"
-                                   class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted"
-                                   id="participants_limit"
-                                   name="participants_limit"
-                                   placeholder="{% translate "e.g. 5" %}"
-                                   required>
+                            {% translate "e.g. 5" as participants_placeholder %}
+                            {% include "components/text-field.html" with id="participants_limit" name="participants_limit" placeholder=participants_placeholder required=True inputmode="numeric" pattern="[0-9]*" only %}
                         </div>
                         <div>
                             <label for="min_age"

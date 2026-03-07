@@ -122,7 +122,6 @@ a, button {
   --theme-bg-tertiary: #f7f5f3;
   --theme-border: #e4ddd6;
   --color-border: #e4ddd6;
-  --theme-border-light: #f0ece8;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
   --theme-primary-hover: #e53e20;
@@ -165,7 +164,6 @@ a, button {
     --color-foreground-inverse: #0a0a0a;
     --theme-border: #404040;
     --color-border: #404040;
-    --theme-border-light: #262626;
     --theme-border-focus: #f85a3c;
     --theme-primary: #f85a3c;
     --theme-primary-hover: #e53e20;
@@ -206,7 +204,6 @@ a, button {
   --color-foreground-inverse: #0a0a0a;
   --theme-border: #404040;
   --color-border: #404040;
-  --theme-border-light: #262626;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
   --theme-primary-hover: #e53e20;

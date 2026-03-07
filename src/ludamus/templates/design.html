@@ -85,21 +85,43 @@
         </section>
         <section class="flex flex-col gap-3">
             <h2 class="text-lg font-semibold">{% translate "Form controls" %}</h2>
+            <p class="text-sm text-foreground-muted">
+                {% translate "Partials:" %} <code>components/</code> text-field, textarea, label, tag. Select: <code>{% templatetag openblock %} load ds {% templatetag closeblock %}</code>.
+            </p>
             <form class="flex flex-col gap-4 max-w-md" action="#" method="post">
                 <div class="flex flex-col gap-1">
-                    <label class="text-sm font-medium" for="design-input-text">{% translate "Text field" %}</label>
+                    <label class="block text-sm font-medium text-foreground-secondary"
+                           for="design-input-text">{% translate "Text field" %}</label>
                     <input id="design-input-text"
                            name="design-input-text"
-                           class="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-sm focus:border-[var(--theme-border-focus)] focus:outline-none"
+                           class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted"
                            type="text"
-                           placeholder="{% translate "Placeholder" %}"
-                           disabled>
+                           placeholder="{% translate "Placeholder" %}">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="block text-sm font-medium text-foreground-secondary"
+                           for="design-textarea">{% translate "Textarea" %}</label>
+                    <textarea id="design-textarea"
+                              name="design-textarea"
+                              class="w-full px-3 py-2 text-sm leading-relaxed rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted"
+                              rows="3"
+                              placeholder="{% translate "Placeholder" %}"></textarea>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="block text-sm font-medium text-foreground-secondary"
+                           for="design-select">{% translate "Select" %}</label>
+                    <select id="design-select"
+                            name="design-select"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground">
+                        <option value="">{% translate "Choose an option..." %}</option>
+                        <option value="a">{% translate "Option A" %}</option>
+                        <option value="b">{% translate "Option B" %}</option>
+                    </select>
                 </div>
                 <div class="flex items-center gap-2">
                     <input class="rounded border-[var(--theme-border)]"
                            type="checkbox"
                            id="design-checkbox"
-                           disabled
                            checked>
                     <label class="text-sm" for="design-checkbox">{% translate "Checkbox" %}</label>
                 </div>
@@ -108,7 +130,6 @@
                            type="radio"
                            name="design-radio"
                            id="design-radio-a"
-                           disabled
                            checked>
                     <label class="text-sm" for="design-radio-a">{% translate "Radio A" %}</label>
                 </div>
@@ -116,8 +137,7 @@
                     <input class="border-[var(--theme-border)]"
                            type="radio"
                            name="design-radio"
-                           id="design-radio-b"
-                           disabled>
+                           id="design-radio-b">
                     <label class="text-sm" for="design-radio-b">{% translate "Radio B" %}</label>
                 </div>
                 <div class="flex gap-2">
@@ -128,17 +148,3 @@
         </section>
     </div>
 {% endblock body %}
-{% block extra_head %}
-    <style>
-        .filterable-tag,
-        .proposal-tag,
-        .modal-tag,
-        .session-detail-tag {
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            display: inline-block;
-        }
-    </style>
-{% endblock extra_head %}

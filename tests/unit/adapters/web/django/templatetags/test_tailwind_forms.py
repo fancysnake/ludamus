@@ -4,15 +4,19 @@ from django import forms
 from django.forms.widgets import CheckboxSelectMultiple, RadioSelect
 
 from ludamus.adapters.web.django.templatetags.tailwind_forms import (
-    _render_errors,  # noqa: PLC2701
-    _render_help_text,  # noqa: PLC2701
-    _render_label,  # noqa: PLC2701
-    _render_multi_choice_field,  # noqa: PLC2701
     tw_button,
     tw_errors,
     tw_field,
     tw_form,
 )
+from ludamus.adapters.web.django.templatetags.tailwind_forms.checkbox import (
+    render_multi_choice_field,
+)
+from ludamus.adapters.web.django.templatetags.tailwind_forms.errors import (
+    render_errors,
+    render_help_text,
+)
+from ludamus.adapters.web.django.templatetags.tailwind_forms.label import render_label
 
 
 class SimpleForm(forms.Form):
@@ -150,11 +154,11 @@ class TestRenderLabel:
         form = SimpleForm()
         field = form["name"]
         field.label = ""
-        assert not _render_label(field)
+        assert not render_label(field)
 
     def test_escapes_xss_in_label(self) -> None:
         form = XSSForm()
-        html = _render_label(form["malicious"])
+        html = render_label(form["malicious"])
         assert "<script>" not in html
         assert "&lt;script&gt;" in html
 
@@ -162,11 +166,11 @@ class TestRenderLabel:
 class TestRenderHelpText:
     def test_empty_when_no_help_text(self) -> None:
         form = SimpleForm()
-        assert not _render_help_text(form["name"])
+        assert not render_help_text(form["name"])
 
     def test_escapes_xss_in_help_text(self) -> None:
         form = XSSForm()
-        html = _render_help_text(form["malicious"])
+        html = render_help_text(form["malicious"])
         assert "<img" not in html or "onerror" not in html
         assert "&lt;img" in html or "&lt;" in html
 
@@ -174,14 +178,14 @@ class TestRenderHelpText:
 class TestRenderErrors:
     def test_empty_when_no_errors(self) -> None:
         form = SimpleForm()
-        assert not _render_errors(form["name"])
+        assert not render_errors(form["name"])
 
     def test_escapes_xss_in_field_errors(self) -> None:
         form = SimpleForm(data={"name": ""})
         form.is_valid()
         # Inject XSS into error
         form["name"].form.errors["name"] = ['<script>alert("xss")</script>']
-        html = _render_errors(form["name"])
+        html = render_errors(form["name"])
         assert "<script>" not in html
         assert "&lt;script&gt;" in html
 
@@ -189,42 +193,42 @@ class TestRenderErrors:
 class TestRenderMultiChoiceField:
     def test_renders_radio_buttons(self) -> None:
         form = ChoiceForm()
-        html = _render_multi_choice_field(form["color"], is_radio=True)
+        html = render_multi_choice_field(form["color"], is_radio=True)
         assert 'type="radio"' in html
         assert "Red" in html
         assert "Blue" in html
 
     def test_renders_checkboxes(self) -> None:
         form = ChoiceForm()
-        html = _render_multi_choice_field(form["toppings"], is_radio=False)
+        html = render_multi_choice_field(form["toppings"], is_radio=False)
         assert 'type="checkbox"' in html
         assert "Cheese" in html
         assert "Pepperoni" in html
 
     def test_escapes_xss_in_choice_values(self) -> None:
         form = XSSChoiceForm()
-        html = _render_multi_choice_field(form["xss_radio"], is_radio=True)
+        html = render_multi_choice_field(form["xss_radio"], is_radio=True)
         # Value should be escaped
         assert '<script>alert("v")</script>' not in html
         assert "onclick" not in html or "&quot;" in html
 
     def test_escapes_xss_in_choice_labels(self) -> None:
         form = XSSChoiceForm()
-        html = _render_multi_choice_field(form["xss_radio"], is_radio=True)
+        html = render_multi_choice_field(form["xss_radio"], is_radio=True)
         # Label should be escaped
         assert 'onerror="alert(1)"' not in html
 
     def test_escapes_attribute_injection_in_values(self) -> None:
         form = XSSChoiceForm()
-        html = _render_multi_choice_field(form["xss_checkbox"], is_radio=False)
+        html = render_multi_choice_field(form["xss_checkbox"], is_radio=False)
         # The value tries to break out of the attribute
         # Should NOT result in onclick attribute being injected
         assert 'onclick="alert(1)"' not in html
 
     def test_checked_state_preserved(self) -> None:
         form = ChoiceForm(data={"color": "red", "toppings": ["cheese"]})
-        radio_html = _render_multi_choice_field(form["color"], is_radio=True)
-        checkbox_html = _render_multi_choice_field(form["toppings"], is_radio=False)
+        radio_html = render_multi_choice_field(form["color"], is_radio=True)
+        checkbox_html = render_multi_choice_field(form["toppings"], is_radio=False)
         # Both should have checked items
         assert "checked" in radio_html
         assert "checked" in checkbox_html
