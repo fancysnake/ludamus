@@ -81,7 +81,7 @@
                             {% translate "Call for Proposals" %}
                         </a>
                         <a href="{% url 'panel:venues' slug=current_event.slug %}"
-                           class="flex items-center px-4 py-3 {% if active_nav == 'venues' %}text-white bg-gray-800{% else %}text-gray-300 hover:bg-gray-800{% endif %} rounded-lg transition">
+                           class="flex items-center px-4 py-3 {% if active_nav == 'venues' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
                             {% icon "building-office-2" class="w-5 h-5 mr-3" %}
                             {% translate "Venues" %}
                         </a>
@@ -141,7 +141,7 @@
                                         {% translate "Event:" %} <strong>{{ current_event.start_time|date:"d M" }} - {{ current_event.end_time|date:"d M Y" }}</strong>
                                     </span>
                                     {% if is_proposal_active %}
-                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full whitespace-nowrap">{% translate "Proposals Open" %}</span>
+                                        <span class="px-3 py-1 bg-[--theme-success-bg] text-[--theme-success-text] text-sm rounded-full whitespace-nowrap">{% translate "Proposals Open" %}</span>
                                     {% else %}
                                         <span class="px-3 py-1 bg-neutral-100 text-neutral-700 text-sm rounded-full whitespace-nowrap">{% translate "Proposals Closed" %}</span>
                                     {% endif %}
@@ -154,7 +154,7 @@
                 {% if messages %}
                     <div class="p-3 sm:p-4 lg:px-8 lg:pt-4 lg:pb-0 space-y-2">
                         {% for message in messages %}
-                            <div class="{% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-800{% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %} border rounded-lg p-4 flex items-start">
+                            <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} flex items-start">
                                 {% if message.tags == 'error' %}
                                     {% icon "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
                                 {% elif message.tags == 'warning' %}

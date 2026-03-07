@@ -15,35 +15,35 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:cfp' slug=current_event.slug %}"
-           class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
-            {% icon "arrow-left" class="w-4 h-4 mr-2" %}
+           class="btn btn-secondary">
+            {% icon "arrow-left" class="w-4 h-4" %}
             {% translate "Back to CFP" %}
         </a>
         <a href="{% url 'panel:session-field-create' slug=current_event.slug %}"
-           class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-            {% icon "plus" class="w-4 h-4 mr-2" %}
+           class="btn btn-primary">
+            {% icon "plus" class="w-4 h-4" %}
             {% translate "New Session Field" %}
         </a>
     {% endif %}
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <div class="bg-[--theme-info-bg] border border-[--theme-info-light] rounded-xl p-4 mb-6">
             <div class="flex items-start gap-3">
-                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% icon "information-circle" class="w-5 h-5" %}</span>
+                <span class="text-[--theme-info-base] flex-shrink-0 mt-0.5">{% icon "information-circle" class="w-5 h-5" %}</span>
                 <div>
-                    <p class="text-sm font-medium text-blue-800">{% translate "What are Session Fields?" %}</p>
-                    <p class="text-sm text-blue-700 mt-1">
+                    <p class="text-sm font-medium text-[--theme-info-text]">{% translate "What are Session Fields?" %}</p>
+                    <p class="text-sm text-[--theme-info-text] mt-1">
                         {% translate "Session fields collect information about each session proposal. Examples: game system, genre, difficulty level, language. Unlike host data, session fields are filled separately for each proposal." %}
                     </p>
-                    <p class="text-sm text-blue-700 mt-2">
+                    <p class="text-sm text-[--theme-info-text] mt-2">
                         {% translate "After creating fields here, configure which ones are required or optional in each session type's settings." %}
                     </p>
                 </div>
             </div>
         </div>
         {% if fields %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+            <div class="card overflow-hidden">
                 <table class="min-w-full divide-y divide-neutral-200">
                     <thead class="bg-neutral-50">
                         <tr>
@@ -64,18 +64,30 @@
                     <tbody class="bg-white divide-y divide-neutral-200">
                         {% for field in fields %}
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ field.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
+                                    <span class="flex items-center gap-2">
+                                        {% if field.icon %}
+                                            {% icon field.icon class="w-4 h-4 text-neutral-400" %}
+                                        {% endif %}
+                                        {{ field.name }}
+                                        {% if field.is_public %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                                                {% translate "Public" %}
+                                            </span>
+                                        {% endif %}
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                                     {% if field.field_type == "select" %}
                                         {% translate "Select" %}
                                         <span class="text-neutral-400">({{ field.options|length }})</span>
                                         {% if field.is_multiple %}
-                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[--theme-info-bg] text-[--theme-info-text]">
                                                 {% translate "Multiple" %}
                                             </span>
                                         {% endif %}
                                         {% if field.allow_custom %}
-                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[--theme-success-bg] text-[--theme-success-text]">
                                                 {% translate "Custom" %}
                                             </span>
                                         {% endif %}
@@ -100,12 +112,12 @@
                 </table>
             </div>
         {% else %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+            <div class="card p-8 text-center">
                 <p class="text-neutral-500">{% translate "No session fields defined. Add fields to classify sessions." %}</p>
             </div>
         {% endif %}
     {% else %}
-        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+        <div class="card p-8 text-center">
             <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}

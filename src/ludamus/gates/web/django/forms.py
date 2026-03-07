@@ -5,6 +5,19 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+_DATETIME_LOCAL_FORMATS = ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"]
+_DATETIME_LOCAL_ATTRS = {
+    "type": "datetime-local",
+    "class": (
+        "w-full border border-neutral-300 rounded-lg px-4 py-2"
+        " focus:outline-none focus:ring-2 focus:ring-primary"
+    ),
+}
+
+
+def _datetime_local_widget() -> forms.DateTimeInput:
+    return forms.DateTimeInput(attrs=_DATETIME_LOCAL_ATTRS, format="%Y-%m-%dT%H:%M")
+
 
 class EventSettingsForm(forms.Form):
     """Form for event settings."""
@@ -16,6 +29,33 @@ class EventSettingsForm(forms.Form):
             "max_length": _("Event name is too long (max 255 characters)."),
             "required": _("Event name is required."),
         },
+    )
+    slug = forms.SlugField(
+        max_length=50, error_messages={"required": _("Event slug is required.")}
+    )
+    description = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 3})
+    )
+    start_time = forms.DateTimeField(
+        input_formats=_DATETIME_LOCAL_FORMATS, widget=_datetime_local_widget()
+    )
+    end_time = forms.DateTimeField(
+        input_formats=_DATETIME_LOCAL_FORMATS, widget=_datetime_local_widget()
+    )
+    publication_time = forms.DateTimeField(
+        required=False,
+        input_formats=_DATETIME_LOCAL_FORMATS,
+        widget=_datetime_local_widget(),
+    )
+    proposal_start_time = forms.DateTimeField(
+        required=False,
+        input_formats=_DATETIME_LOCAL_FORMATS,
+        widget=_datetime_local_widget(),
+    )
+    proposal_end_time = forms.DateTimeField(
+        required=False,
+        input_formats=_DATETIME_LOCAL_FORMATS,
+        widget=_datetime_local_widget(),
     )
 
 
@@ -60,6 +100,7 @@ class PersonalDataFieldForm(forms.Form):
         initial=False,
         help_text=_("Allow selecting multiple options (for Select fields only)."),
     )
+    is_public = forms.BooleanField(required=False, initial=False)
     allow_custom = forms.BooleanField(
         required=False,
         initial=False,
@@ -83,6 +124,7 @@ class SessionFieldForm(forms.Form):
     field_type = forms.ChoiceField(
         choices=FIELD_TYPE_CHOICES, initial="text", required=False
     )
+    icon = forms.CharField(max_length=50, required=False)
     options = forms.CharField(
         required=False,
         widget=forms.Textarea,
@@ -93,6 +135,7 @@ class SessionFieldForm(forms.Form):
         initial=False,
         help_text=_("Allow selecting multiple options (for Select fields only)."),
     )
+    is_public = forms.BooleanField(required=False, initial=False)
     allow_custom = forms.BooleanField(
         required=False,
         initial=False,

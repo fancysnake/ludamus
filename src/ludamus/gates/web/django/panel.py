@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -28,6 +28,7 @@ from django.template.response import TemplateResponse
 from django.utils.timezone import get_current_timezone, localtime
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
+from heroicons import IconDoesNotExist
 
 from ludamus.gates.web.django.forms import (
     AreaForm,
@@ -41,14 +42,20 @@ from ludamus.gates.web.django.forms import (
     VenueForm,
     create_venue_copy_form,
 )
-from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
-from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
+from ludamus.mills import PanelService, is_proposal_active
+from ludamus.pacts import DependencyInjectorProtocol, EventUpdateData, NotFoundError
 
 if TYPE_CHECKING:
 
     from django import forms
 
-    from ludamus.pacts import AuthenticatedRequestContext, EventDTO, TimeSlotDTO
+    from ludamus.pacts import (
+        AuthenticatedRequestContext,
+        EventDTO,
+        PersonalDataFieldDTO,
+        SessionFieldDTO,
+        TimeSlotDTO,
+    )
 
 
 class _FieldDTO(Protocol):
@@ -278,28 +285,38 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
     request: PanelRequest
 
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display event settings form.
-
-        Returns:
-            TemplateResponse with the settings form.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
 
         context["active_nav"] = "settings"
-        context["days_to_event"] = get_days_to_event(current_event)
-        context["current_event_is_ended"] = current_event.end_time < datetime.now(
-            tz=UTC
+        context["form"] = EventSettingsForm(
+            initial={
+                "name": current_event.name,
+                "slug": current_event.slug,
+                "description": current_event.description,
+                "start_time": localtime(current_event.start_time),
+                "end_time": localtime(current_event.end_time),
+                "publication_time": (
+                    localtime(current_event.publication_time)
+                    if current_event.publication_time
+                    else None
+                ),
+                "proposal_start_time": (
+                    localtime(current_event.proposal_start_time)
+                    if current_event.proposal_start_time
+                    else None
+                ),
+                "proposal_end_time": (
+                    localtime(current_event.proposal_end_time)
+                    if current_event.proposal_end_time
+                    else None
+                ),
+            }
         )
         return TemplateResponse(self.request, "panel/settings.html", context)
 
     def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Handle event settings form submission.
-
-        Returns:
-            Redirect response to panel:event-settings.
-        """
         sphere_id = self.request.context.current_sphere_id
 
         try:
@@ -308,23 +325,95 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Event not found."))
             return redirect("panel:index")
 
-        # Validate form
         form = EventSettingsForm(self.request.POST)
         if not form.is_valid():
             for field_errors in form.errors.values():
                 messages.error(self.request, str(field_errors[0]))
             return redirect("panel:event-settings", slug=slug)
 
-        # Update event via repository
-        new_name = form.cleaned_data["name"]
+        if (new_slug := form.cleaned_data["slug"]) != current_event.slug:
+            try:
+                self.request.di.uow.events.read_by_slug(
+                    new_slug, current_event.sphere_id
+                )
+                messages.error(
+                    self.request, _("An event with this slug already exists.")
+                )
+                return redirect("panel:event-settings", slug=slug)
+            except NotFoundError:
+                pass
+
+        data: EventUpdateData = {
+            "name": form.cleaned_data["name"],
+            "slug": new_slug,
+            "description": form.cleaned_data.get("description") or "",
+            "start_time": form.cleaned_data["start_time"],
+            "end_time": form.cleaned_data["end_time"],
+            "publication_time": form.cleaned_data.get("publication_time"),
+            "proposal_start_time": form.cleaned_data.get("proposal_start_time"),
+            "proposal_end_time": form.cleaned_data.get("proposal_end_time"),
+        }
+
         try:
-            self.request.di.uow.events.update_name(current_event.pk, new_name)
+            self.request.di.uow.events.update(current_event.pk, data)
         except NotFoundError:
             messages.error(self.request, _("Event not found."))
             return redirect("panel:event-settings", slug=slug)
 
         messages.success(self.request, _("Event settings saved successfully."))
-        return redirect("panel:event-settings", slug=slug)
+        return redirect("panel:event-settings", slug=new_slug)
+
+
+class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
+    """Display settings page (filterable session fields)."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "display-settings"
+        session_fields = self.request.di.uow.session_fields.list_by_event(
+            current_event.pk
+        )
+        event_settings = self.request.di.uow.event_settings.read_or_create(
+            current_event.pk
+        )
+        context["session_fields"] = session_fields
+        context["filterable_field_ids"] = event_settings.filterable_session_field_ids
+        return TemplateResponse(self.request, "panel/display-settings.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        sphere_id = self.request.context.current_sphere_id
+
+        try:
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
+        except NotFoundError:
+            messages.error(self.request, _("Event not found."))
+            return redirect("panel:index")
+
+        try:
+            filterable_ids = [
+                int(x) for x in self.request.POST.getlist("filterable_session_fields")
+            ]
+        except ValueError:
+            messages.error(self.request, _("Invalid field selection."))
+            return redirect("panel:event-display-settings", slug=slug)
+
+        valid_ids = {
+            f.pk
+            for f in self.request.di.uow.session_fields.list_by_event(current_event.pk)
+        }
+        filterable_ids = [fid for fid in filterable_ids if fid in valid_ids]
+
+        self.request.di.uow.event_settings.update_filterable_fields(
+            current_event.pk, filterable_ids
+        )
+
+        messages.success(self.request, _("Display settings saved successfully."))
+        return redirect("panel:event-display-settings", slug=slug)
 
 
 class CFPPageView(PanelAccessMixin, EventContextMixin, View):
@@ -753,18 +842,23 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         try:
-            field = self._read_field_or_redirect(
-                self.request.di.uow.personal_data_fields,
-                current_event.pk,
-                field_slug,
-                _("Personal data field not found."),
+            field = cast(
+                "PersonalDataFieldDTO",
+                self._read_field_or_redirect(
+                    self.request.di.uow.personal_data_fields,
+                    current_event.pk,
+                    field_slug,
+                    _("Personal data field not found."),
+                ),
             )
         except NotFoundError:
             return redirect("panel:personal-data-fields", slug=slug)
 
         context["active_nav"] = "cfp"
         context["field"] = field
-        context["form"] = PersonalDataFieldForm(initial={"name": field.name})
+        context["form"] = PersonalDataFieldForm(
+            initial={"name": field.name, "is_public": field.is_public}
+        )
         return TemplateResponse(
             self.request, "panel/personal-data-field-edit.html", context
         )
@@ -799,7 +893,10 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             )
 
         name = form.cleaned_data["name"]
-        self.request.di.uow.personal_data_fields.update(field.pk, name)
+        is_public = form.cleaned_data.get("is_public") or False
+        self.request.di.uow.personal_data_fields.update(
+            field.pk, name, is_public=is_public
+        )
 
         messages.success(self.request, _("Personal data field updated successfully."))
         return redirect("panel:personal-data-fields", slug=slug)
@@ -907,6 +1004,9 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
             form
         )
 
+        icon = form.cleaned_data.get("icon") or ""
+        is_public = form.cleaned_data.get("is_public") or False
+
         self.request.di.uow.session_fields.create(
             current_event.pk,
             name,
@@ -914,6 +1014,8 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
             options,
             is_multiple=is_multiple,
             allow_custom=allow_custom,
+            icon=icon,
+            is_public=is_public,
         )
 
         messages.success(self.request, _("Session field created successfully."))
@@ -936,18 +1038,27 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         try:
-            field = self._read_field_or_redirect(
-                self.request.di.uow.session_fields,
-                current_event.pk,
-                field_slug,
-                _("Session field not found."),
+            field = cast(
+                "SessionFieldDTO",
+                self._read_field_or_redirect(
+                    self.request.di.uow.session_fields,
+                    current_event.pk,
+                    field_slug,
+                    _("Session field not found."),
+                ),
             )
         except NotFoundError:
             return redirect("panel:session-fields", slug=slug)
 
         context["active_nav"] = "cfp"
         context["field"] = field
-        context["form"] = SessionFieldForm(initial={"name": field.name})
+        context["form"] = SessionFieldForm(
+            initial={
+                "name": field.name,
+                "icon": field.icon,
+                "is_public": field.is_public,
+            }
+        )
         return TemplateResponse(self.request, "panel/session-field-edit.html", context)
 
     def post(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
@@ -980,7 +1091,11 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             )
 
         name = form.cleaned_data["name"]
-        self.request.di.uow.session_fields.update(field.pk, name)
+        icon = form.cleaned_data.get("icon") or ""
+        is_public = form.cleaned_data.get("is_public") or False
+        self.request.di.uow.session_fields.update(
+            field.pk, name, icon, is_public=is_public
+        )
 
         messages.success(self.request, _("Session field updated successfully."))
         return redirect("panel:session-fields", slug=slug)
@@ -2259,3 +2374,23 @@ class TimeSlotDeleteActionView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Time slot deleted successfully."))
         return redirect("panel:time-slots", slug=slug)
+
+
+class IconPreviewPartView(PanelAccessMixin, View):
+    """HTMX partial: render a Heroicon outline preview by name."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest) -> HttpResponse:
+        if not (icon_name := self.request.GET.get("icon", "").strip()):
+            return HttpResponse("")
+
+        try:
+            response = TemplateResponse(
+                self.request, "panel/parts/icon_preview.html", {"icon_name": icon_name}
+            )
+            response.render()
+        except IconDoesNotExist:
+            return HttpResponse("")
+
+        return response

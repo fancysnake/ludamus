@@ -11,6 +11,7 @@ from ludamus.adapters.db.django.models import (
     DomainEnrollmentConfig,
     EnrollmentConfig,
     Event,
+    EventSettings,
     PersonalDataField,
     PersonalDataFieldOption,
     PersonalDataFieldRequirement,
@@ -40,7 +41,10 @@ from ludamus.pacts import (
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventRepositoryProtocol,
+    EventSettingsDTO,
+    EventSettingsRepositoryProtocol,
     EventStatsData,
+    EventUpdateData,
     NotFoundError,
     PendingSessionDTO,
     PendingSessionTagDTO,
@@ -510,14 +514,15 @@ class EventRepository(EventRepositoryProtocol):
         )
 
     @staticmethod
-    def update_name(event_id: int, name: str) -> None:
+    def update(event_id: int, data: EventUpdateData) -> None:
         try:
             event = Event.objects.get(id=event_id)
         except Event.DoesNotExist as exception:
             raise NotFoundError from exception
 
-        event.name = name
-        event.save()
+        for key, value in data.items():
+            setattr(event, key, value)
+        event.save(update_fields=list(data.keys()))
 
 
 class VenueRepository(VenueRepositoryProtocol):
@@ -1524,7 +1529,9 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def update(self, pk: int, name: str) -> PersonalDataFieldDTO:
+    def update(
+        self, pk: int, name: str, *, is_public: bool = False
+    ) -> PersonalDataFieldDTO:
         try:
             field = PersonalDataField.objects.get(pk=pk)
         except PersonalDataField.DoesNotExist as exc:
@@ -1535,6 +1542,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
 
         field.name = name
         field.slug = slug
+        field.is_public = is_public
         field.save()
 
         return self._to_dto(field)
@@ -1564,6 +1572,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
             allow_custom=field.allow_custom,
             field_type=cast("Literal['text', 'select']", field.field_type),
             is_multiple=field.is_multiple,
+            is_public=field.is_public,
             name=field.name,
             options=options,
             order=field.order,
@@ -1582,6 +1591,8 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        icon: str = "",
+        is_public: bool = False,
     ) -> SessionFieldDTO:
         base_slug = slugify(name)
         slug = self.generate_unique_slug(event_id, base_slug)
@@ -1595,7 +1606,9 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             name=name,
             slug=slug,
             field_type=field_type,
+            icon=icon,
             is_multiple=actual_is_multiple,
+            is_public=is_public,
             allow_custom=actual_allow_custom,
         )
 
@@ -1637,7 +1650,9 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def update(self, pk: int, name: str) -> SessionFieldDTO:
+    def update(
+        self, pk: int, name: str, icon: str = "", *, is_public: bool = False
+    ) -> SessionFieldDTO:
         try:
             field = SessionField.objects.get(pk=pk)
         except SessionField.DoesNotExist as exc:
@@ -1648,6 +1663,8 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
 
         field.name = name
         field.slug = slug
+        field.icon = icon
+        field.is_public = is_public
         field.save()
 
         return self._to_dto(field)
@@ -1674,13 +1691,30 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         return SessionFieldDTO(
             allow_custom=field.allow_custom,
             field_type=cast("Literal['text', 'select']", field.field_type),
+            icon=field.icon,
             is_multiple=field.is_multiple,
+            is_public=field.is_public,
             name=field.name,
             options=options,
             order=field.order,
             pk=field.pk,
             slug=field.slug,
         )
+
+
+class EventSettingsRepository(EventSettingsRepositoryProtocol):
+    @staticmethod
+    def read_or_create(event_id: int) -> EventSettingsDTO:
+        settings, _ = EventSettings.objects.get_or_create(event_id=event_id)
+        field_ids = list(
+            settings.filterable_session_fields.values_list("pk", flat=True)
+        )
+        return EventSettingsDTO(pk=settings.pk, filterable_session_field_ids=field_ids)
+
+    @staticmethod
+    def update_filterable_fields(event_id: int, field_ids: list[int]) -> None:
+        settings, _ = EventSettings.objects.get_or_create(event_id=event_id)
+        settings.filterable_session_fields.set(field_ids)
 
 
 class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):

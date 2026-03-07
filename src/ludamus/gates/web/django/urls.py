@@ -48,11 +48,19 @@ def healthz(request: HttpRequest) -> JsonResponse:  # noqa: ARG001
 
 panel_urlpatterns = [
     path("", panel.PanelIndexRedirectView.as_view(), name="index"),
+    path(
+        "parts/icon-preview/", panel.IconPreviewPartView.as_view(), name="icon-preview"
+    ),
     path("event/<slug:slug>/", panel.EventIndexPageView.as_view(), name="event-index"),
     path(
         "event/<slug:slug>/settings/",
         panel.EventSettingsPageView.as_view(),
         name="event-settings",
+    ),
+    path(
+        "event/<slug:slug>/settings/display/",
+        panel.EventDisplaySettingsPageView.as_view(),
+        name="event-display-settings",
     ),
     path("event/<slug:slug>/venues/", panel.VenuesPageView.as_view(), name="venues"),
     path(

@@ -15,16 +15,14 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
-           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
-            {% translate "Cancel" %}
-        </a>
+           class="btn btn-secondary">{% translate "Cancel" %}</a>
     {% endif %}
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
         <form method="post" class="max-w-2xl">
             {% csrf_token %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
+            <div class="card p-6">
                 <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Field Details" %}</h3>
                 <div class="space-y-6">
                     <div>
@@ -54,6 +52,34 @@
                                 {% translate "Select" %}
                             </option>
                         </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2" for="id_icon">{% translate "Icon" %}</label>
+                        <div class="flex items-center gap-3">
+                            <input type="text"
+                                   name="icon"
+                                   id="id_icon"
+                                   value="{{ form.icon.value|default:'' }}"
+                                   class="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                                   placeholder="{% translate "e.g., puzzle-piece, star" %}"
+                                   hx-get="{% url 'panel:icon-preview' %}"
+                                   hx-trigger="input changed delay:300ms, load"
+                                   hx-target="#icon-preview"
+                                   hx-swap="innerHTML"
+                                   hx-include="#id_icon">
+                            <span id="icon-preview" class="flex-shrink-0 w-6 h-6 text-neutral-500"></span>
+                        </div>
+                        <p class="mt-1 text-sm text-neutral-500">{% translate "Optional Heroicon name for visual identification." %}</p>
+                    </div>
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox"
+                                   name="is_public"
+                                   id="id_is_public"
+                                   {% if form.is_public.value %}checked{% endif %}
+                                   class="rounded border-neutral-300 text-primary focus:ring-primary">
+                            <span class="ml-2 text-sm text-neutral-700">{% translate "Show on public session card" %}</span>
+                        </label>
                     </div>
                     <div id="options-container" class="hidden">
                         <label class="block text-sm font-medium text-neutral-700 mb-2"
@@ -97,9 +123,8 @@
                     });
                 </script>
                 <div class="mt-6 flex justify-end">
-                    <button type="submit"
-                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-                        {% icon "plus" class="w-4 h-4 mr-2" %}
+                    <button type="submit" class="btn btn-primary">
+                        {% icon "plus" class="w-4 h-4" %}
                         {% translate "Create" %}
                     </button>
                 </div>

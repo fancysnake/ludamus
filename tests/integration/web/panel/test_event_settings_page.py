@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 from django.contrib import messages
@@ -43,8 +43,6 @@ class TestEventSettingsPageViewGet:
 
         response = authenticated_client.get(self.get_url(event))
 
-        is_proposal_active = response.context["is_proposal_active"]
-        days_to_event = response.context["days_to_event"]
         assert_response(
             response,
             HTTPStatus.OK,
@@ -52,8 +50,7 @@ class TestEventSettingsPageViewGet:
             context_data={
                 "current_event": EventDTO.model_validate(event),
                 "events": [EventDTO.model_validate(event)],
-                "is_proposal_active": is_proposal_active,
-                "current_event_is_ended": False,
+                "is_proposal_active": response.context["is_proposal_active"],
                 "stats": {
                     "hosts_count": 0,
                     "pending_proposals": 0,
@@ -63,7 +60,7 @@ class TestEventSettingsPageViewGet:
                     "total_sessions": 0,
                 },
                 "active_nav": "settings",
-                "days_to_event": days_to_event,
+                "form": ANY,
             },
         )
 
@@ -91,17 +88,14 @@ class TestEventSettingsPageViewGet:
 
         response = authenticated_client.get(self.get_url(event2))
 
-        is_proposal_active = response.context["is_proposal_active"]
-        days_to_event = response.context["days_to_event"]
-        events = response.context["events"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/settings.html",
             context_data={
                 "current_event": EventDTO.model_validate(event2),
-                "events": events,
-                "is_proposal_active": is_proposal_active,
+                "events": response.context["events"],
+                "is_proposal_active": response.context["is_proposal_active"],
                 "stats": {
                     "hosts_count": 0,
                     "pending_proposals": 0,
@@ -111,8 +105,7 @@ class TestEventSettingsPageViewGet:
                     "total_sessions": 0,
                 },
                 "active_nav": "settings",
-                "days_to_event": days_to_event,
-                "current_event_is_ended": False,
+                "form": ANY,
             },
         )
 
@@ -165,7 +158,13 @@ class TestEventSettingsPageViewPost:
         new_name = faker.sentence(nb_words=3)
 
         response = authenticated_client.post(
-            self.get_url(event), data={"name": new_name}
+            self.get_url(event),
+            data={
+                "name": new_name,
+                "slug": event.slug,
+                "start_time": event.start_time.strftime("%Y-%m-%dT%H:%M"),
+                "end_time": event.end_time.strftime("%Y-%m-%dT%H:%M"),
+            },
         )
 
         assert_response(
@@ -183,7 +182,14 @@ class TestEventSettingsPageViewPost:
         sphere.managers.add(active_user)
         original_name = event.name
 
-        response = authenticated_client.post(self.get_url(event), data={})
+        response = authenticated_client.post(
+            self.get_url(event),
+            data={
+                "slug": event.slug,
+                "start_time": event.start_time.strftime("%Y-%m-%dT%H:%M"),
+                "end_time": event.end_time.strftime("%Y-%m-%dT%H:%M"),
+            },
+        )
 
         assert_response(
             response,
@@ -202,7 +208,13 @@ class TestEventSettingsPageViewPost:
         long_name = "x" * 256
 
         response = authenticated_client.post(
-            self.get_url(event), data={"name": long_name}
+            self.get_url(event),
+            data={
+                "name": long_name,
+                "slug": event.slug,
+                "start_time": event.start_time.strftime("%Y-%m-%dT%H:%M"),
+                "end_time": event.end_time.strftime("%Y-%m-%dT%H:%M"),
+            },
         )
 
         assert_response(
@@ -214,17 +226,49 @@ class TestEventSettingsPageViewPost:
         event.refresh_from_db()
         assert event.name == original_name
 
+    def test_error_on_duplicate_slug(
+        self, authenticated_client, active_user, sphere, event, faker
+    ):
+        sphere.managers.add(active_user)
+        other_event = EventFactory(sphere=sphere, slug=faker.slug())
+        original_slug = event.slug
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            data={
+                "name": event.name,
+                "slug": other_event.slug,
+                "start_time": event.start_time.strftime("%Y-%m-%dT%H:%M"),
+                "end_time": event.end_time.strftime("%Y-%m-%dT%H:%M"),
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "An event with this slug already exists.")],
+            url=f"/panel/event/{original_slug}/settings/",
+        )
+        event.refresh_from_db()
+        assert event.slug == original_slug
+
     def test_error_event_not_found_during_update(
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        # Mock update_name to raise NotFoundError (simulates race condition)
+        # Mock update to raise NotFoundError (simulates race condition)
         with patch(
-            "ludamus.links.db.django.repositories.EventRepository.update_name",
+            "ludamus.links.db.django.repositories.EventRepository.update",
             side_effect=NotFoundError,
         ):
             response = authenticated_client.post(
-                self.get_url(event), data={"name": "New Name"}
+                self.get_url(event),
+                data={
+                    "name": "New Name",
+                    "slug": event.slug,
+                    "start_time": event.start_time.strftime("%Y-%m-%dT%H:%M"),
+                    "end_time": event.end_time.strftime("%Y-%m-%dT%H:%M"),
+                },
             )
 
         assert_response(
