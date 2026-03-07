@@ -1,0 +1,11 @@
+{% load heroicons %}
+{# Tag pill. #}
+{# Variables: tag (object with .name, .category.icon, .category.name), size ("sm"|"md", default "md") #}
+{# "sm" = text-xs px-2 py-0.5,  "md" = text-sm px-2.5 py-1 #}
+<span class="inline-flex items-center gap-1 rounded-2xl font-medium max-w-[200px] bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300{% if size == 'sm' %} text-xs px-2 py-0.5{% else %} text-sm px-2.5 py-1{% endif %}"
+      title="{{ tag.name }}{% if tag.category.name %} ({{ tag.category.name }}){% endif %}">
+    {% if tag.category.icon %}
+        {% heroicon_mini tag.category.icon class="size-4 shrink-0 opacity-80" %}
+    {% endif %}
+    <span class="truncate">{{ tag.name }}</span>
+</span>
