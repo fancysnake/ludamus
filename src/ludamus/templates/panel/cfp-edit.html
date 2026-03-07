@@ -282,6 +282,45 @@
                        class="text-sm text-primary hover:text-primary/80">{% translate "Configure session fields" %}</a>
                 </div>
             {% endif %}
+            {% if available_time_slots %}
+                <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-neutral-900 mb-2">{% translate "Time Slots" %}</h3>
+                    <p class="text-sm text-neutral-500 mb-6">
+                        {% translate "Select which time slots are available for this session type. Drag to reorder." %}
+                    </p>
+                    <input type="hidden"
+                           name="time_slot_order"
+                           id="time-slot-order"
+                           value="{{ time_slot_order|join:',' }}">
+                    <div id="time-slots-list" class="space-y-2">
+                        {% for slot in available_time_slots %}
+                            <div class="field-item flex items-center gap-3 py-2 px-3 bg-neutral-50 rounded-lg cursor-move"
+                                 draggable="true"
+                                 data-field-id="{{ slot.pk }}">
+                                <span class="drag-handle text-neutral-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
+                                <span class="text-sm font-medium text-neutral-700 flex-1">{{ slot.start_time|date:"D d M" }} · {{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}</span>
+                                <select name="time_slot_{{ slot.pk }}"
+                                        class="field-select border border-neutral-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="none"
+                                            {% if slot.pk not in time_slot_requirements %}selected{% endif %}>
+                                        {% translate "Not included" %}
+                                    </option>
+                                    <option value="required"
+                                            {% if slot.pk in time_slot_requirements %}selected{% endif %}>
+                                        {% translate "Included" %}
+                                    </option>
+                                </select>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="bg-neutral-50 rounded-xl border border-neutral-200 p-6 mt-6 text-center">
+                    <p class="text-sm text-neutral-500 mb-2">{% translate "No time slots defined for this event." %}</p>
+                    <a href="{% url 'panel:time-slots' slug=current_event.slug %}"
+                       class="text-sm text-primary hover:text-primary/80">{% translate "Configure time slots" %}</a>
+                </div>
+            {% endif %}
             <script>
                 (function() {
                     function updateOrderForList(listId, orderInputId) {
@@ -351,6 +390,7 @@
 
                     setupSortable('host-fields-list', 'field-order');
                     setupSortable('session-fields-list', 'session-field-order');
+                    setupSortable('time-slots-list', 'time-slot-order');
 
                     // Ensure order is synced before form submission
                     const form = document.getElementById('cfp-edit-form');
@@ -358,6 +398,7 @@
                         form.addEventListener('submit', () => {
                             updateOrderForList('host-fields-list', 'field-order');
                             updateOrderForList('session-fields-list', 'session-field-order');
+                            updateOrderForList('time-slots-list', 'time-slot-order');
                         });
                     }
                 })();

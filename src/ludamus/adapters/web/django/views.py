@@ -68,10 +68,10 @@ from ludamus.pacts import (
     LocationData,
     NotFoundError,
     ProposalCategoryDTO,
-    ProposalDTO,
-    ProposalRepositoryProtocol,
     RequestContext,
     SessionDTO,
+    SessionRepositoryProtocol,
+    SessionStatus,
     SpaceDTO,
     TagCategoryDTO,
     TagDTO,
@@ -79,6 +79,7 @@ from ludamus.pacts import (
     UserDTO,
     VenueDTO,
 )
+from ludamus.pacts import SessionData as SessionCreateData
 
 from .exceptions import RedirectError
 from .forms import (
@@ -541,7 +542,6 @@ def _design_mock_session_data() -> SessionData:
             end_time=end, pk=1, session_confirmed=True, start_time=start
         ),
         is_enrollment_available=True,
-        proposal=None,
         presenter=presenter,
         session=SessionDTO(
             creation_time=creation,
@@ -556,6 +556,10 @@ def _design_mock_session_data() -> SessionData:
             requirements="",
             slug="design-session",
             title="Design System Session Card",
+            category_id=17,
+            needs="Lots of space",
+            presenter_id=18,
+            status=SessionStatus.ACCEPTED,
         ),
         tags=tags,
         is_full=False,
@@ -631,7 +635,6 @@ def _design_mock_session_data_ended() -> SessionData:
             end_time=end, pk=2, session_confirmed=True, start_time=start
         ),
         is_enrollment_available=False,
-        proposal=None,
         presenter=data.presenter,
         session=SessionDTO(
             creation_time=creation,
@@ -644,6 +647,10 @@ def _design_mock_session_data_ended() -> SessionData:
             requirements="",
             slug="design-session-ended",
             title="Ended Session (Design Preview)",
+            category_id=17,
+            needs="Lots of space",
+            presenter_id=18,
+            status=SessionStatus.ACCEPTED,
         ),
         tags=data.tags[:3],
         is_full=True,
@@ -1109,7 +1116,10 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         context["filterable_tag_categories"] = list(filterable_categories)
 
         # Add proposals for superusers, sphere managers, and proposal authors
-        if self.request.context.current_user_slug:
+        if (
+            self.request.context.current_user_slug
+            and self.request.context.current_user_id is not None
+        ):
             # Check if user is a sphere manager for this event's sphere
             is_sphere_manager = self.object.sphere.managers.filter(
                 id=self.request.context.current_user_id
@@ -1121,27 +1131,16 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 ).is_superuser
                 or is_sphere_manager
             ):
-                # Show all unaccepted proposals for superusers and sphere managers
-                context["proposals"] = list(
-                    Proposal.objects.filter(
-                        category__event=self.object,
-                        session__isnull=True,  # Only unaccepted proposals
-                    )
-                    .select_related("host", "category")
-                    .prefetch_related("tags", "time_slots")
-                    .order_by("-creation_time")
+                # Show all pending sessions for superusers and sphere managers
+                context["pending_sessions"] = (
+                    self.request.di.uow.sessions.read_pending_by_event(self.object.pk)
                 )
             else:
-                # Show only the user's own proposals
-                context["proposals"] = list(
-                    Proposal.objects.filter(
-                        category__event=self.object,
-                        session__isnull=True,  # Only unaccepted proposals
-                        host_id=self.request.context.current_user_id,
+                # Show only the user's own pending sessions
+                context["pending_sessions"] = (
+                    self.request.di.uow.sessions.read_pending_by_event_for_user(
+                        self.object.pk, self.request.context.current_user_id
                     )
-                    .select_related("host", "category")
-                    .prefetch_related("tags", "time_slots")
-                    .order_by("-creation_time")
                 )
 
         return context
@@ -1257,13 +1256,12 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             area = getattr(
                 session.agenda_item.space, "area", None
             )  # TODO(fancysnake): Fix after merging venues
-            presenter_name = session.presenter_name or ""
-            if proposal_exists := Proposal.objects.filter(session=session).exists():
-                proposal_dto = self.request.di.uow.proposals.read(session.proposal.pk)
-                host_dto = self.request.di.uow.proposals.read_host(proposal_dto.pk)
-                host = UserInfo.from_user_dto(host_dto)
+            if session.presenter_id:
+                presenter_dto = UserDTO.model_validate(session.presenter)
+                presenter = UserInfo.from_user_dto(presenter_dto)
             else:
-                host = UserInfo(
+                presenter_name = session.presenter_name or ""
+                presenter = UserInfo(
                     avatar_url=None,
                     discord_username="",
                     full_name=presenter_name,
@@ -1277,7 +1275,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 full_participant_info=session.full_participant_info,
                 agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
                 session=SessionDTO.model_validate(session),
-                presenter=host,
+                presenter=presenter,
                 tags=[
                     TagWithCategory(
                         category=TagCategoryData(
@@ -1290,11 +1288,6 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                     )
                     for t in session.tags.select_related("category").all()
                 ],
-                proposal=(
-                    ProposalDTO.model_validate(session.proposal)
-                    if proposal_exists
-                    else None
-                ),
                 is_enrollment_available=session.is_enrollment_available,
                 is_full=session.is_full,
                 loc=LocationData(
@@ -1710,10 +1703,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
         req: EnrollmentRequest, session: Session, enrollments: Enrollments
     ) -> None:
         # Check if user is the session presenter
-        if (
-            Proposal.objects.filter(session=session).exists()
-            and req.user.pk == session.proposal.host.id
-        ):
+        if session.presenter_id and req.user.pk == session.presenter_id:
             enrollments.skipped_users.append(f"{req.name} ({_('session host')!s})")
             return
 
@@ -1907,7 +1897,39 @@ class EventProposalPageView(LoginRequiredMixin, View):
                 },
             )
 
-        # Create the proposal using form data
+        # Collect tags
+        tags = list(
+            self._get_tags(get_tag_data_from_form(form.cleaned_data), proposal_category)
+        )
+        tag_ids = [t.pk for t in tags]
+
+        # Collect time_slot_ids from form if present
+        time_slot_ids: list[int] = []
+
+        # Create Session with status=PENDING via repository
+        current_user = self.request.di.uow.active_users.read(
+            self.request.context.current_user_slug
+        )
+        session_id = self.request.di.uow.sessions.create(
+            SessionCreateData(
+                sphere_id=event.sphere_id,
+                presenter_id=current_user.pk,
+                presenter_name=current_user.name,
+                category_id=proposal_category.pk,
+                title=form.cleaned_data["title"],
+                slug=slugify(form.cleaned_data["title"]),
+                description=form.cleaned_data["description"],
+                requirements=form.cleaned_data["requirements"],
+                needs=form.cleaned_data["needs"],
+                participants_limit=form.cleaned_data["participants_limit"],
+                min_age=form.cleaned_data["min_age"],
+                status=SessionStatus.PENDING,
+            ),
+            tag_ids=tag_ids,
+            time_slot_ids=time_slot_ids,
+        )
+
+        # TODO(deploy-3): Remove Proposal dual-write after migration completes.
         proposal = Proposal.objects.create(
             category=proposal_category,
             host_id=self.request.context.current_user_id,
@@ -1917,11 +1939,9 @@ class EventProposalPageView(LoginRequiredMixin, View):
             needs=form.cleaned_data["needs"],
             participants_limit=form.cleaned_data["participants_limit"],
             min_age=form.cleaned_data["min_age"],
+            session_id=session_id,
         )
-
-        for tag in self._get_tags(
-            get_tag_data_from_form(form.cleaned_data), proposal_category
-        ):
+        for tag in tags:
             proposal.tags.add(tag)
 
         messages.success(
@@ -1985,25 +2005,27 @@ class EventProposalPageView(LoginRequiredMixin, View):
 
 
 class ProposalAcceptPageView(LoginRequiredMixin, View):
-    def get(self, request: AuthenticatedRootRequest, proposal_id: int) -> HttpResponse:
-        proposal_repository = request.di.uow.proposals
+    @staticmethod
+    def _get_session_and_event(
+        request: AuthenticatedRootRequest, session_id: int
+    ) -> tuple[SessionDTO, EventDTO]:
+        session_repository = request.di.uow.sessions
         try:
-            proposal = proposal_repository.read(proposal_id)
+            session = session_repository.read(session_id)
         except NotFoundError as exception:
             raise RedirectError(
-                reverse("web:index"), error=_("Proposal not found.")
+                reverse("web:index"), error=_("Session not found.")
             ) from exception
 
-        event = proposal_repository.read_event(proposal.pk)
-        # Check if proposal is already accepted
-        if proposal.session_id:
+        event = session_repository.read_event(session.pk)
+
+        if session.status != SessionStatus.PENDING:
             raise RedirectError(
                 reverse("web:chronology:event", kwargs={"slug": event.slug}),
                 warning=_("This proposal has already been accepted."),
             )
 
         service = AcceptProposalService(request.di.uow, context=request.context)
-        # Check permissions
         if not service.can_accept_proposals():
             raise RedirectError(
                 reverse("web:chronology:event", kwargs={"slug": event.slug}),
@@ -2012,101 +2034,67 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                 ),
             )
 
-        # Get available spaces and time slots for the event
-        self._check_spaces(proposal, proposal_repository)
-        self._check_time_slots(proposal, proposal_repository)
+        return session, event
 
-        # Create the form
-        form_class = create_proposal_acceptance_form(event)
-        form = form_class()
-
-        tags = proposal_repository.read_tags(proposal.pk)
+    @staticmethod
+    def _build_context(
+        request: AuthenticatedRootRequest,
+        session: SessionDTO,
+        event: EventDTO,
+        form: forms.Form,
+    ) -> dict[str, Any]:
+        session_repository = request.di.uow.sessions
+        tags = session_repository.read_tags(session.pk)
         tag_categories = {
-            tc.pk: tc for tc in proposal_repository.read_tag_categories(proposal.pk)
+            tc.pk: tc for tc in session_repository.read_tag_categories(session.pk)
         }
-
-        context = {
-            "proposal": proposal,
-            "host": proposal_repository.read_host(proposal.pk),
+        return {
+            "session": session,
+            "presenter": session_repository.read_presenter(session.pk),
             "event": event,
-            "spaces": proposal_repository.read_spaces(proposal.pk),
-            "time_slots": proposal_repository.read_time_slots(proposal.pk),
-            "preferred_time_slot_ids": proposal_repository.read_preferred_time_slot_ids(
-                proposal.pk
+            "spaces": session_repository.read_spaces(session.pk),
+            "time_slots": session_repository.read_time_slots(session.pk),
+            "preferred_time_slot_ids": session_repository.read_preferred_time_slot_ids(
+                session.pk
             ),
             "form": form,
-            "proposal_host": proposal_repository.read_host(proposal.pk),
             "tags": [
                 {"category_icon": tag_categories[tag.category_id], "name": tag.name}
                 for tag in tags
             ],
         }
 
-        return TemplateResponse(request, "chronology/accept_proposal.html", context)
+    def get(self, request: AuthenticatedRootRequest, session_id: int) -> HttpResponse:
+        session, event = self._get_session_and_event(request, session_id)
+        session_repository = request.di.uow.sessions
 
-    def post(self, request: AuthenticatedRootRequest, proposal_id: int) -> HttpResponse:
-        proposal_repository = request.di.uow.proposals
-        try:
-            proposal = proposal_repository.read(proposal_id)
-        except NotFoundError as exception:
-            raise RedirectError(
-                reverse("web:index"), error=_("Proposal not found.")
-            ) from exception
+        self._check_spaces(session, session_repository)
+        self._check_time_slots(session, session_repository)
 
-        event = proposal_repository.read_event(proposal.pk)
-        # Check if proposal is already accepted
-        if proposal.session_id:
-            raise RedirectError(
-                reverse("web:chronology:event", kwargs={"slug": event.slug}),
-                warning=_("This proposal has already been accepted."),
-            )
+        form_class = create_proposal_acceptance_form(event)
+        form = form_class()
 
-        service = AcceptProposalService(request.di.uow, context=request.context)
-        # Check permissions
-        if not service.can_accept_proposals():
-            raise RedirectError(
-                reverse("web:chronology:event", kwargs={"slug": event.slug}),
-                error=_(
-                    "You don't have permission to accept proposals for this event."
-                ),
-            )
+        return TemplateResponse(
+            request,
+            "chronology/accept_proposal.html",
+            self._build_context(request, session, event, form),
+        )
 
-        # Initialize form with POST data
+    def post(self, request: AuthenticatedRootRequest, session_id: int) -> HttpResponse:
+        session, event = self._get_session_and_event(request, session_id)
+
         form_class = create_proposal_acceptance_form(event)
         form = form_class(data=request.POST)
         if not form.is_valid():
-            # Re-render with form errors
-            tags = proposal_repository.read_tags(proposal.pk)
-            tag_categories = {
-                tc.pk: tc for tc in proposal_repository.read_tag_categories(proposal.pk)
-            }
-
             return TemplateResponse(
                 request,
                 "chronology/accept_proposal.html",
-                {
-                    "proposal": proposal,
-                    "host": proposal_repository.read_host(proposal.pk),
-                    "event": event,
-                    "spaces": proposal_repository.read_spaces(proposal.pk),
-                    "time_slots": proposal_repository.read_time_slots(proposal.pk),
-                    "preferred_time_slot_ids": (
-                        proposal_repository.read_preferred_time_slot_ids(proposal.pk)
-                    ),
-                    "form": form,
-                    "proposal_host": proposal_repository.read_host(proposal.pk),
-                    "tags": [
-                        {
-                            "category_icon": tag_categories[tag.category_id],
-                            "name": tag.name,
-                        }
-                        for tag in tags
-                    ],
-                },
+                self._build_context(request, session, event, form),
             )
 
-        service.accept_proposal(
-            proposal=proposal,
+        service = AcceptProposalService(request.di.uow, context=request.context)
+        service.accept_session(
+            session=session,
             slugifier=slugify,
             space_id=form.cleaned_data["space"].id,
             time_slot_id=form.cleaned_data["time_slot"].id,
@@ -2115,20 +2103,20 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         messages.success(
             self.request,
             _("Proposal '{}' has been accepted and added to the agenda.").format(
-                proposal.title
+                session.title
             ),
         )
         return redirect("web:chronology:event", slug=event.slug)
 
     @staticmethod
     def _check_spaces(
-        proposal: ProposalDTO, proposal_repository: ProposalRepositoryProtocol
+        session: SessionDTO, session_repository: SessionRepositoryProtocol
     ) -> None:
-        if not proposal_repository.read_spaces(proposal.pk):
+        if not session_repository.read_spaces(session.pk):
             raise RedirectError(
                 reverse(
                     "web:chronology:event",
-                    kwargs={"slug": proposal_repository.read_event(proposal.pk).slug},
+                    kwargs={"slug": session_repository.read_event(session.pk).slug},
                 ),
                 error=_(
                     "No spaces configured for this event. Please create spaces first."
@@ -2137,13 +2125,13 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
 
     @staticmethod
     def _check_time_slots(
-        proposal: ProposalDTO, proposal_repository: ProposalRepositoryProtocol
+        session: SessionDTO, session_repository: SessionRepositoryProtocol
     ) -> None:
-        if not proposal_repository.read_time_slots(proposal.pk):
+        if not session_repository.read_time_slots(session.pk):
             raise RedirectError(
                 reverse(
                     "web:chronology:event",
-                    kwargs={"slug": proposal_repository.read_event(proposal.pk).slug},
+                    kwargs={"slug": session_repository.read_event(session.pk).slug},
                 ),
                 error=_(
                     "No time slots configured for this event. "

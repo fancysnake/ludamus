@@ -52,6 +52,19 @@ def get_item(dictionary: dict[Any, Any], key: Any) -> Any:  # type: ignore[misc]
 
 
 @register.filter
+def is_continuation(continuation_set: set[tuple[int, str]], slot_and_date: str) -> bool:
+    """Check if a (slot_pk, date_iso) pair is in the continuation set.
+
+    Returns:
+        True if the slot is a continuation entry for that date.
+    """
+    if not continuation_set:
+        return False
+    slot_pk, date_iso = slot_and_date.split(",")
+    return (int(slot_pk), date_iso) in continuation_set
+
+
+@register.filter
 def format_duration(iso_duration: str) -> str:
     """Format ISO 8601 duration string to human-readable format.
 

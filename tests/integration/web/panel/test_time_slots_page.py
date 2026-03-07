@@ -1,0 +1,297 @@
+from datetime import timedelta
+from http import HTTPStatus
+
+from django.contrib import messages
+from django.urls import reverse
+
+from ludamus.adapters.db.django.models import TimeSlot
+from ludamus.pacts import EventDTO, TimeSlotDTO
+from tests.integration.utils import assert_response
+
+PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+class TestTimeSlotsPageView:
+    """Tests for /panel/event/<slug>/cfp/time-slots/ page."""
+
+    @staticmethod
+    def get_url(event):
+        return reverse("panel:time-slots", kwargs={"slug": event.slug})
+
+    def test_get_redirects_anonymous_user_to_login(self, client, event):
+        url = self.get_url(event)
+
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
+
+    def test_get_redirects_non_manager_user(self, authenticated_client, event):
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, PERMISSION_ERROR)],
+            url="/",
+        )
+
+    def test_get_ok_for_sphere_manager(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/time-slots.html",
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "cfp",
+                "time_slots": [],
+                "days": {event.start_time.date().isoformat(): []},
+                "orphaned_slots": [],
+                "continuation_slots": set(),
+                "event_days": [event.start_time.date()],
+                "page": 0,
+                "has_prev": False,
+                "has_next": False,
+                "total_pages": 1,
+            },
+        )
+
+    def test_get_returns_empty_state_when_no_slots(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert response.context["time_slots"] == []
+
+    def test_get_returns_time_slots_grouped_by_date(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        day1 = event.start_time.replace(hour=10, minute=0, second=0, microsecond=0)
+        TimeSlot.objects.create(
+            event=event, start_time=day1, end_time=day1 + timedelta(hours=2)
+        )
+        TimeSlot.objects.create(
+            event=event,
+            start_time=day1 + timedelta(hours=3),
+            end_time=day1 + timedelta(hours=5),
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert len(response.context["time_slots"]) == 1 + 1
+        days = response.context["days"]
+        date_key = day1.date().isoformat()
+        assert len(days[date_key]) == 1 + 1
+
+    def test_get_groups_slots_across_multiple_days(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        event.end_time = event.start_time + timedelta(days=2)
+        event.save()
+        day1 = event.start_time.replace(hour=10, minute=0, second=0, microsecond=0)
+        day2 = day1 + timedelta(days=1)
+        TimeSlot.objects.create(
+            event=event, start_time=day1, end_time=day1 + timedelta(hours=2)
+        )
+        TimeSlot.objects.create(
+            event=event, start_time=day2, end_time=day2 + timedelta(hours=2)
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        days = response.context["days"]
+        assert day1.date().isoformat() in days
+        assert day2.date().isoformat() in days
+
+    def test_get_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:time-slots", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
+        )
+
+    def test_get_returns_event_days_in_context(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        event.end_time = event.start_time + timedelta(days=2)
+        event.save()
+
+        response = authenticated_client.get(self.get_url(event))
+
+        event_days = response.context["event_days"]
+        assert len(event_days) == 1 + 2
+        assert event_days[0] == event.start_time.date()
+        assert event_days[1] == event.start_time.date() + timedelta(days=1)
+        assert event_days[2] == event.start_time.date() + timedelta(days=2)
+
+    def test_get_paginates_when_more_than_3_days(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        event.end_time = event.start_time + timedelta(days=4)
+        event.save()
+
+        response = authenticated_client.get(self.get_url(event))
+
+        start = event.start_time.date()
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/time-slots.html",
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "cfp",
+                "time_slots": [],
+                "days": {(start + timedelta(days=i)).isoformat(): [] for i in range(3)},
+                "orphaned_slots": [],
+                "continuation_slots": set(),
+                "event_days": [start + timedelta(days=i) for i in range(3)],
+                "page": 0,
+                "has_prev": False,
+                "has_next": True,
+                "total_pages": 1 + 1,
+            },
+        )
+
+    def test_get_second_page_shows_remaining_days(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        event.end_time = event.start_time + timedelta(days=4)
+        event.save()
+
+        response = authenticated_client.get(self.get_url(event) + "?page=1")
+
+        start = event.start_time.date()
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/time-slots.html",
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "cfp",
+                "time_slots": [],
+                "days": {
+                    (start + timedelta(days=i)).isoformat(): [] for i in range(3, 5)
+                },
+                "orphaned_slots": [],
+                "continuation_slots": set(),
+                "event_days": [start + timedelta(days=i) for i in range(3, 5)],
+                "page": 1,
+                "has_prev": True,
+                "has_next": False,
+                "total_pages": 1 + 1,
+            },
+        )
+
+    def test_get_shows_orphaned_slots_before_event_start(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        before_event = event.start_time - timedelta(days=1)
+        slot = TimeSlot.objects.create(
+            event=event,
+            start_time=before_event.replace(hour=10, minute=0, second=0, microsecond=0),
+            end_time=before_event.replace(hour=12, minute=0, second=0, microsecond=0),
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        orphaned = response.context["orphaned_slots"]
+        assert len(orphaned) == 1
+        assert orphaned[0] == TimeSlotDTO.model_validate(slot)
+        day_key = event.start_time.date().isoformat()
+        assert all(s.pk != slot.pk for s in response.context["days"][day_key])
+
+    def test_get_shows_orphaned_slots_after_event_end(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        after_event = event.end_time + timedelta(days=1)
+        slot = TimeSlot.objects.create(
+            event=event,
+            start_time=after_event.replace(hour=10, minute=0, second=0, microsecond=0),
+            end_time=after_event.replace(hour=12, minute=0, second=0, microsecond=0),
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        orphaned = response.context["orphaned_slots"]
+        assert len(orphaned) == 1
+        assert orphaned[0] == TimeSlotDTO.model_validate(slot)
+        for slots in response.context["days"].values():
+            assert all(s.pk != slot.pk for s in slots)
+
+    def test_get_multi_day_slot_appears_in_both_day_columns(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        event.end_time = event.start_time + timedelta(days=1)
+        event.save()
+        day1 = event.start_time.replace(hour=22, minute=0, second=0, microsecond=0)
+        day2_end = (event.start_time + timedelta(days=1)).replace(
+            hour=2, minute=0, second=0, microsecond=0
+        )
+        slot = TimeSlot.objects.create(event=event, start_time=day1, end_time=day2_end)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        days = response.context["days"]
+        day1_key = day1.date().isoformat()
+        day2_key = day2_end.date().isoformat()
+        slot_dto = TimeSlotDTO.model_validate(slot)
+        assert slot_dto in days[day1_key]
+        assert slot_dto in days[day2_key]
+        continuation = response.context["continuation_slots"]
+        assert (slot.pk, day2_key) in continuation
+        assert (slot.pk, day1_key) not in continuation

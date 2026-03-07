@@ -5,14 +5,16 @@ from typing import TYPE_CHECKING
 from ludamus.pacts import (
     AgendaItemData,
     AuthenticatedRequestContext,
+    DateTimeRangeProtocol,
     EnrollmentConfigDTO,
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventStatsData,
     MembershipAPIError,
     PanelStatsDTO,
-    ProposalDTO,
-    SessionData,
+    SessionDTO,
+    SessionStatus,
+    SessionUpdateData,
     TicketAPIProtocol,
     UnitOfWorkProtocol,
     UserData,
@@ -25,7 +27,7 @@ from ludamus.pacts import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
 
 def is_proposal_active(event: EventDTO) -> bool:
@@ -88,46 +90,36 @@ class AcceptProposalService:
             self._context.current_sphere_id, self._context.current_user_slug
         )
 
-    def accept_proposal(
+    def accept_session(
         self,
         *,
-        proposal: ProposalDTO,
+        session: SessionDTO,
         slugifier: Callable[[str], str],
         space_id: int,
         time_slot_id: int,
     ) -> None:
-        host = self._uow.proposals.read_host(proposal.pk)
-        proposal_repository = self._uow.proposals
-        tag_ids = proposal_repository.read_tag_ids(proposal.pk)
-        time_slot = self._uow.proposals.read_time_slot(proposal.pk, time_slot_id)
+        presenter = self._uow.sessions.read_presenter(session.pk)
+        time_slot = self._uow.sessions.read_time_slot(session.pk, time_slot_id)
 
         with self._uow.atomic():
-            session_id = self._uow.sessions.create(
-                SessionData(
-                    sphere_id=self._context.current_sphere_id,
-                    presenter_name=host.name,
-                    title=proposal.title,
-                    description=proposal.description,
-                    requirements=proposal.requirements,
-                    participants_limit=proposal.participants_limit,
-                    min_age=proposal.min_age,
-                    slug=slugifier(proposal.title),
+            self._uow.sessions.update(
+                session.pk,
+                SessionUpdateData(
+                    status=SessionStatus.ACCEPTED,
+                    presenter_name=presenter.name,
+                    slug=slugifier(session.title),
                 ),
-                tag_ids=tag_ids,
             )
 
             self._uow.agenda_items.create(
                 AgendaItemData(
                     space_id=space_id,
-                    session_id=session_id,
+                    session_id=session.pk,
                     session_confirmed=True,
                     start_time=time_slot.start_time,
                     end_time=time_slot.end_time,
                 )
             )
-
-            proposal.session_id = session_id
-            proposal_repository.update(proposal)
 
 
 class PanelService:
@@ -206,6 +198,20 @@ class PanelService:
         self._uow.areas.delete(area_pk)
         return True
 
+    def delete_time_slot(self, time_slot_pk: int) -> bool:
+        """Delete a time slot if not used in any proposals.
+
+        Args:
+            time_slot_pk: The time slot primary key.
+
+        Returns:
+            True if deleted, False if time slot has proposals.
+        """
+        if self._uow.time_slots.has_proposals(time_slot_pk):
+            return False
+        self._uow.time_slots.delete(time_slot_pk)
+        return True
+
     def delete_space(self, space_pk: int) -> bool:
         """Delete a space if it has no scheduled sessions.
 
@@ -242,6 +248,28 @@ class PanelService:
             rooms_count=stats_data.rooms_count,
             total_proposals=stats_data.total_proposals,
         )
+
+    @staticmethod
+    def validate_time_slot(
+        start: datetime,
+        end: datetime,
+        event: EventDTO,
+        existing_slots: Sequence[DateTimeRangeProtocol],
+    ) -> list[str]:
+        errors: list[str] = []
+
+        if start >= end:
+            errors.append("Start must be before end.")
+
+        if start < event.start_time or end > event.end_time:
+            errors.append("Time slot must be within event dates.")
+
+        for slot in existing_slots:
+            if start < slot.end_time and end > slot.start_time:
+                errors.append("Time slot overlaps with an existing slot.")
+                break
+
+        return errors
 
 
 def _refresh_user_config_from_api(

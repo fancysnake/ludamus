@@ -523,7 +523,7 @@
         </div>
     {% endif %}
     <!-- Proposals Section (Superuser Only) -->
-    {% if user.is_superuser and event.is_proposal_active and proposals %}
+    {% if user.is_superuser and event.is_proposal_active and pending_sessions %}
         <div class="card mt-8" style="border-color: var(--theme-warning)">
             <div class="px-6 py-4 flex items-center gap-3"
                  style="background-color: var(--theme-warning-bg);
@@ -532,7 +532,7 @@
                     style="color: var(--theme-warning-text)">
                     {% heroicon_mini "clipboard-document-check" class="w-5 h-5" %}
                     {% translate "Pending Proposals" %}
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-800 text-warm-100">{{ proposals|length }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-800 text-warm-100">{{ pending_sessions|length }}</span>
                 </h3>
             </div>
             <div class="overflow-x-auto">
@@ -554,29 +554,29 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for proposal in proposals %}
+                        {% for pending in pending_sessions %}
                             <tr class="hover:bg-warm-50 dark:hover:bg-neutral-800"
                                 style="border-bottom: 1px solid var(--theme-border-light)">
                                 <td class="py-3 px-4">
                                     <div>
-                                        <span class="font-medium" style="color: var(--color-foreground)">{{ proposal.title }}</span>
-                                        {% if proposal.description %}
+                                        <span class="font-medium" style="color: var(--color-foreground)">{{ pending.title }}</span>
+                                        {% if pending.description %}
                                             <br>
-                                            <span class="text-xs" style="color: var(--color-foreground-muted)">{{ proposal.description|truncatechars:100 }}</span>
+                                            <span class="text-xs" style="color: var(--color-foreground-muted)">{{ pending.description|truncatechars:100 }}</span>
                                         {% endif %}
-                                        {% if proposal.tags.exists %}
+                                        {% if pending.tags %}
                                             <div class="flex flex-wrap gap-1 mt-1">
-                                                {% for tag in proposal.tags.all %}
+                                                {% for tag in pending.tags %}
                                                     <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700 proposal-tag"
                                                           style="color: var(--color-foreground-secondary)"
                                                           title="{{ tag.name }}">{{ tag.name }}</span>
                                                 {% endfor %}
                                             </div>
                                         {% endif %}
-                                        {% if proposal.needs %}
+                                        {% if pending.needs %}
                                             <div class="mt-1 text-xs flex items-center gap-1"
                                                  style="color: var(--theme-info)">
-                                                {% heroicon_mini "information-circle" class="w-3.5 h-3.5" %} {{ proposal.needs|truncatechars:50 }}
+                                                {% heroicon_mini "information-circle" class="w-3.5 h-3.5" %} {{ pending.needs|truncatechars:50 }}
                                             </div>
                                         {% endif %}
                                     </div>
@@ -584,22 +584,22 @@
                                 <td class="py-3 px-4">
                                     <div class="flex items-center gap-2">
                                         <span style="color: var(--color-foreground-muted)">{% heroicon_mini "user-circle" class="w-4 h-4" %}</span>
-                                        <span>{{ proposal.host.name }}</span>
+                                        <span>{{ pending.presenter_name }}</span>
                                     </div>
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
-                                    <span class="text-xs" style="color: var(--color-foreground-muted)">{{ proposal.creation_time|date:"M j" }}</span>
+                                    <span class="text-xs" style="color: var(--color-foreground-muted)">{{ pending.creation_time|date:"M j" }}</span>
                                     <br>
-                                    {{ proposal.creation_time|date:"G:i" }}
+                                    {{ pending.creation_time|date:"G:i" }}
                                 </td>
                                 <td class="py-3 px-4">
-                                    {% if proposal.time_slots.exists %}
+                                    {% if pending.time_slots %}
                                         <div class="text-xs space-y-0.5">
-                                            {% for slot in proposal.time_slots.all|slice:":2" %}
+                                            {% for slot in pending.time_slots|slice:":2" %}
                                                 <div class="whitespace-nowrap">{{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}</div>
                                             {% endfor %}
-                                            {% if proposal.time_slots.count > 2 %}
-                                                <span style="color: var(--color-foreground-muted)">+{{ proposal.time_slots.count|add:"-2" }} more</span>
+                                            {% if pending.time_slots|length > 2 %}
+                                                <span style="color: var(--color-foreground-muted)">+{{ pending.time_slots|length|add:"-2" }} more</span>
                                             {% endif %}
                                         </div>
                                     {% else %}
@@ -608,17 +608,17 @@
                                 </td>
                                 <td class="py-3 px-4">
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-200 dark:bg-neutral-700"
-                                          style="color: var(--color-foreground-secondary)">{{ proposal.participants_limit }}</span>
+                                          style="color: var(--color-foreground-secondary)">{{ pending.participants_limit }}</span>
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="flex flex-col gap-1.5 grow">
-                                        <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}"
+                                        <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
                                            class="btn btn-teal text-xs py-1.5 px-3">
                                             {% heroicon_mini "check" class="w-3.5 h-3.5" %} {% translate "Accept" %}
                                         </a>
-                                        <a href="?proposal={{ proposal.pk }}"
+                                        <a href="?proposal={{ pending.pk }}"
                                            class="btn btn-secondary text-xs py-1.5 px-3"
-                                           aria-controls="proposalModal{{ proposal.pk }}"
+                                           aria-controls="proposalModal{{ pending.pk }}"
                                            aria-haspopup="dialog">
                                             {% heroicon_mini "eye" class="w-3.5 h-3.5" %} {% translate "Review" %}
                                         </a>
@@ -631,16 +631,16 @@
             </div>
         </div>
         <!-- Proposal Review Modals -->
-        {% for proposal in proposals %}
-            <dialog id="proposalModal{{ proposal.pk }}"
+        {% for pending in pending_sessions %}
+            <dialog id="proposalModal{{ pending.pk }}"
                     class="modal"
-                    aria-labelledby="proposalModal{{ proposal.pk }}-title">
+                    aria-labelledby="proposalModal{{ pending.pk }}-title">
                 <div class="px-6 py-4 border-b flex items-center justify-between"
                      style="border-color: var(--theme-border)">
-                    <h3 id="proposalModal{{ proposal.pk }}-title"
+                    <h3 id="proposalModal{{ pending.pk }}-title"
                         class="text-lg font-semibold"
-                        style="color: var(--color-foreground)">{{ proposal.title }}</h3>
-                    <button data-modal-close="proposalModal{{ proposal.pk }}"
+                        style="color: var(--color-foreground)">{{ pending.title }}</h3>
+                    <button data-modal-close="proposalModal{{ pending.pk }}"
                             class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700"
                             style="color: var(--color-foreground-muted)">
                         {% heroicon_mini "x-mark" class="w-5 h-5" %}
@@ -652,21 +652,21 @@
                             <div>
                                 <h4 class="text-sm font-semibold mb-1"
                                     style="color: var(--color-foreground-secondary)">{% translate "Host" %}</h4>
-                                <p>{{ proposal.host.name|default:proposal.host.name }}</p>
+                                <p>{{ pending.presenter_name }}</p>
                             </div>
                             <div>
                                 <h4 class="text-sm font-semibold mb-1"
                                     style="color: var(--color-foreground-secondary)">
                                     {% translate "Participants Limit" %}
                                 </h4>
-                                <p>{{ proposal.participants_limit }}</p>
+                                <p>{{ pending.participants_limit }}</p>
                             </div>
-                            {% if proposal.tags.exists %}
+                            {% if pending.tags %}
                                 <div>
                                     <h4 class="text-sm font-semibold mb-1"
                                         style="color: var(--color-foreground-secondary)">{% translate "Tags" %}</h4>
                                     <div class="flex flex-wrap gap-1.5">
-                                        {% for tag in proposal.tags.all %}
+                                        {% for tag in pending.tags %}
                                             <span class="tag-pill px-2 py-0.5 rounded-lg text-xs font-medium bg-warm-200 dark:bg-neutral-700"
                                                   style="color: var(--color-foreground-secondary)"
                                                   title="{{ tag.name }}">{{ tag.name }}</span>
@@ -679,46 +679,46 @@
                             <div>
                                 <h4 class="text-sm font-semibold mb-1"
                                     style="color: var(--color-foreground-secondary)">{% translate "Submitted" %}</h4>
-                                <p>{{ proposal.creation_time|date:"F j, Y G:i" }}</p>
+                                <p>{{ pending.creation_time|date:"F j, Y G:i" }}</p>
                             </div>
-                            {% if proposal.time_slots.exists %}
+                            {% if pending.time_slots %}
                                 <div>
                                     <h4 class="text-sm font-semibold mb-1"
                                         style="color: var(--color-foreground-secondary)">
                                         {% translate "Preferred Time Slots" %}
                                     </h4>
-                                    {% for slot in proposal.time_slots.all %}<div class="text-sm">{{ slot }}</div>{% endfor %}
+                                    {% for slot in pending.time_slots %}<div class="text-sm">{{ slot }}</div>{% endfor %}
                                 </div>
                             {% endif %}
                         </div>
                     </div>
-                    {% if proposal.description %}
+                    {% if pending.description %}
                         <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
                             <h4 class="text-sm font-semibold mb-1"
                                 style="color: var(--color-foreground-secondary)">{% translate "Description" %}</h4>
-                            <p>{{ proposal.description }}</p>
+                            <p>{{ pending.description }}</p>
                         </div>
                     {% endif %}
-                    {% if proposal.requirements %}
+                    {% if pending.requirements %}
                         <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
                             <h4 class="text-sm font-semibold mb-1"
                                 style="color: var(--color-foreground-secondary)">{% translate "Requirements" %}</h4>
-                            <p>{{ proposal.requirements }}</p>
+                            <p>{{ pending.requirements }}</p>
                         </div>
                     {% endif %}
-                    {% if proposal.needs %}
+                    {% if pending.needs %}
                         <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
                             <h4 class="text-sm font-semibold mb-1"
                                 style="color: var(--color-foreground-secondary)">{% translate "Special Needs" %}</h4>
-                            <p>{{ proposal.needs }}</p>
+                            <p>{{ pending.needs }}</p>
                         </div>
                     {% endif %}
                 </div>
                 <div class="px-6 py-4 flex justify-end gap-2"
                      style="border-top: 1px solid var(--theme-border)">
-                    <button data-modal-close="proposalModal{{ proposal.pk }}"
+                    <button data-modal-close="proposalModal{{ pending.pk }}"
                             class="btn btn-secondary text-sm">{% translate "Close" %}</button>
-                    <a href="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}"
+                    <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
                        class="btn btn-teal text-sm">{% heroicon_mini "check" class="w-4 h-4" %} {% translate "Accept Proposal" %}</a>
                 </div>
             </dialog>
@@ -783,7 +783,7 @@
                                     <span class="truncate" title="{{ data.location_label }}">{{ data.location_label }}</span>
                                 </span>
                             {% endif %}
-                            {% if data.proposal %}
+                            {% if data.presenter.pk %}
                                 {% with host=data.presenter %}
                                     {% if host and host.slug and host.discord_username %}
                                         <span class="text-foreground-muted/70 select-none" aria-hidden="true">·</span>

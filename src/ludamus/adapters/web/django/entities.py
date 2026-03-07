@@ -7,13 +7,7 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from ludamus.adapters.db.django.models import Event
-    from ludamus.pacts import (
-        AgendaItemDTO,
-        LocationData,
-        ProposalDTO,
-        SessionDTO,
-        UserDTO,
-    )
+    from ludamus.pacts import AgendaItemDTO, LocationData, SessionDTO, UserDTO
 
 
 @dataclass
@@ -74,7 +68,6 @@ class ParticipationInfo:
 class SessionData:  # pylint: disable=too-many-instance-attributes
     agenda_item: AgendaItemDTO
     is_enrollment_available: bool
-    proposal: ProposalDTO | None
     presenter: UserInfo
     session: SessionDTO
     tags: list[TagWithCategory]

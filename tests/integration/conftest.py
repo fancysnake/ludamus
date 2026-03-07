@@ -162,9 +162,12 @@ class SessionFactory(DjangoModelFactory):
     title = Faker("sentence", nb_words=5)
     slug = Faker("slug")
     description = Faker("text")
+    presenter = SubFactory(UserFactory)
     presenter_name = Faker("name")
+    category = SubFactory("tests.integration.conftest.ProposalCategoryFactory")
     participants_limit = Faker("random_int", min=2, max=20)
     sphere = SubFactory(SphereFactory)
+    status = "accepted"
 
 
 class SessionParticipationFactory(DjangoModelFactory):
@@ -259,10 +262,13 @@ def non_root_sphere(settings, faker):
 @pytest.fixture(name="event")
 def event_fixture(sphere):
     now = datetime.now(UTC)
+    midnight = (now + timedelta(days=7)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     return EventFactory(
         sphere=sphere,
-        start_time=now + timedelta(days=7),
-        end_time=now + timedelta(days=7, hours=8),
+        start_time=midnight,
+        end_time=midnight + timedelta(hours=23, minutes=59, seconds=59),
         proposal_start_time=now - timedelta(days=10),
         proposal_end_time=now - timedelta(days=3),
     )
@@ -306,6 +312,7 @@ def time_slot(event):
 @pytest.fixture(name="session")
 def session_fixture(active_user, sphere):
     return SessionFactory(
+        presenter=active_user,
         presenter_name=active_user.full_name,
         sphere=sphere,
         participants_limit=10,
@@ -321,6 +328,19 @@ def proposal_category_fixture(event):
 @pytest.fixture
 def proposal(proposal_category, active_user):
     return ProposalFactory(category=proposal_category, host=active_user)
+
+
+@pytest.fixture(name="pending_session")
+def pending_session_fixture(proposal_category, active_user, sphere):
+    return SessionFactory(
+        category=proposal_category,
+        presenter=active_user,
+        presenter_name=active_user.name,
+        sphere=sphere,
+        participants_limit=10,
+        min_age=0,
+        status="pending",
+    )
 
 
 @pytest.fixture

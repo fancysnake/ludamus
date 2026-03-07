@@ -14,7 +14,12 @@ from django.utils import timezone
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
-from ludamus.pacts import SessionParticipationStatus, UserType, VirtualEnrollmentConfig
+from ludamus.pacts import (
+    SessionParticipationStatus,
+    SessionStatus,
+    UserType,
+    VirtualEnrollmentConfig,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -572,13 +577,36 @@ class Session(models.Model):
     sphere = models.ForeignKey(
         "Sphere", on_delete=models.CASCADE, related_name="sessions"
     )
+    presenter = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="presented_sessions",
+    )
     presenter_name = models.CharField(max_length=255)
+    category = models.ForeignKey(
+        "ProposalCategory",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="sessions",
+    )
     # ID
     title = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(default="", blank=True)
     requirements = models.TextField(blank=True)
+    needs = models.TextField(default="", blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    # Preferences
+    time_slots = models.ManyToManyField(TimeSlot, blank=True)
+    # Status
+    status = models.CharField(
+        max_length=15,
+        choices=[(item.value, item.name) for item in SessionStatus],
+        default=SessionStatus.ACCEPTED,
+    )
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
@@ -992,6 +1020,33 @@ class SessionFieldRequirement(models.Model):
     def __str__(self) -> str:
         req = "required" if self.is_required else "optional"
         return f"{self.field.name} ({req}) for {self.category.name}"
+
+
+class TimeSlotRequirement(models.Model):
+    """Specifies which time slots are available for a proposal category."""
+
+    category = models.ForeignKey(
+        ProposalCategory,
+        on_delete=models.CASCADE,
+        related_name="time_slot_requirements",
+    )
+    time_slot = models.ForeignKey(
+        TimeSlot, on_delete=models.CASCADE, related_name="category_requirements"
+    )
+    is_required = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "time_slot_requirement"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("category", "time_slot"), name="unique_time_slot_per_category"
+            ),
+        )
+
+    def __str__(self) -> str:
+        req = "required" if self.is_required else "optional"
+        return f"Time slot ({req}) for {self.category.name}"
 
 
 def can_enroll_users(

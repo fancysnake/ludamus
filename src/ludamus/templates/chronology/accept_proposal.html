@@ -2,13 +2,13 @@
 {% load i18n %}
 {% load heroicons %}
 {% block title %}
-    {% translate "Accept Proposal" %} - {{ proposal.title }}
+    {% translate "Accept Proposal" %} - {{ session.title }}
 {% endblock title %}
 {% block header %}
     {% translate "Accept Proposal" %}
 {% endblock header %}
 {% block description %}
-    {% translate "Select space and time slot for" %} {{ proposal.title }}
+    {% translate "Select space and time slot for" %} {{ session.title }}
 {% endblock description %}
 {% block body %}
     <div class="max-w-3xl mx-auto">
