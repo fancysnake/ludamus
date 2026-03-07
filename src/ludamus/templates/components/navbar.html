@@ -37,7 +37,7 @@
                             <div class="w-48 rounded-lg shadow-lg border"
                                  style="background-color: var(--theme-bg-secondary);
                                         border-color: var(--theme-border);
-                                        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15)">
+                                        box-shadow: var(--theme-shadow-lg)">
                                 <!-- User info header -->
                                 <div class="px-3.5 py-2.5 border-b rounded-t-lg"
                                      style="border-color: var(--theme-border)">
@@ -47,18 +47,18 @@
                                 </div>
                                 {% if is_sphere_manager %}
                                     <a href="{% url 'panel:index' %}"
-                                       class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary">
+                                       class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-[var(--theme-bg-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary">
                                         {% icon "squares-2x2" class="w-4 h-4 opacity-60" %}
                                         {% translate "Panel" %}
                                     </a>
                                 {% endif %}
                                 <a href="{% url 'web:crowd:profile' %}"
-                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary">
+                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-[var(--theme-bg-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary">
                                     {% icon "user-circle" class="w-4 h-4 opacity-60" %}
                                     {% translate "Edit profile" %}
                                 </a>
                                 <a href="{% url 'web:crowd:auth0:logout' %}"
-                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm border-t rounded-b-lg transition-colors duration-150 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary border-(--theme-border)">
+                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm border-t rounded-b-lg transition-colors duration-150 hover:bg-[var(--theme-bg-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary border-(--theme-border)">
                                     {% icon "arrow-right-on-rectangle" class="w-4 h-4 opacity-60" %}
                                     {% translate "Log out" %}
                                 </a>
