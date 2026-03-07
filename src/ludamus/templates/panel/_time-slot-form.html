@@ -1,5 +1,5 @@
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% load tz %}
 <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
     <div class="flex items-center justify-between mb-6">
@@ -59,7 +59,7 @@
     <div class="mt-6 flex justify-end">
         <button type="submit"
                 class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-            {% heroicon_outline submit_icon class="w-4 h-4 mr-2" %}
+            {% icon submit_icon class="w-4 h-4 mr-2" %}
             {{ submit_label }}
         </button>
     </div>

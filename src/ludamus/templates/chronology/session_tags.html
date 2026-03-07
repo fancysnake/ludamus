@@ -1,5 +1,5 @@
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 <div class="flex flex-wrap gap-2 mt-2 session-tags-row">
     {% for tag in data.tags|slice:":5" %}
         {% include "components/tag.html" with tag=tag %}

@@ -1,7 +1,7 @@
 {% extends "base_tailwind.html" %}
 {% load i18n %}
 {% load date_tags %}
-{% load heroicons %}
+{% load tessera %}
 {% block title %}
     {% translate "Design" %}
 {% endblock title %}
@@ -86,7 +86,7 @@
         <section class="flex flex-col gap-3">
             <h2 class="text-lg font-semibold">{% translate "Form controls" %}</h2>
             <p class="text-sm text-foreground-muted">
-                {% translate "Partials:" %} <code>components/</code> text-field, textarea, label, tag. Select: <code>{% templatetag openblock %} load ds {% templatetag closeblock %}</code>.
+                {% translate "Partials:" %} <code>components/</code> text-field, textarea, label, tag. Select: <code>{% templatetag openblock %} load tessera {% templatetag closeblock %}</code>.
             </p>
             <form class="flex flex-col gap-4 max-w-md" action="#" method="post">
                 <div class="flex flex-col gap-1">

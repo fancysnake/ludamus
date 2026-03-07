@@ -1,7 +1,7 @@
 {% extends "panel/base.html" %}
 {% load cfp_tags %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% block title %}
     {% translate "Time Slots" %} - Ludamus Backoffice
 {% endblock title %}
@@ -17,12 +17,12 @@
     {% if current_event %}
         <a href="{% url 'panel:cfp' slug=current_event.slug %}"
            class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
-            {% heroicon_outline "arrow-left" class="w-4 h-4 mr-2" %}
+            {% icon "arrow-left" class="w-4 h-4 mr-2" %}
             {% translate "Back to CFP" %}
         </a>
         <a href="{% url 'panel:time-slot-create' slug=current_event.slug %}"
            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-            {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+            {% icon "plus" class="w-4 h-4 mr-2" %}
             {% translate "Add Time Slot" %}
         </a>
     {% endif %}
@@ -31,7 +31,7 @@
     {% if current_event %}
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
             <div class="flex items-start gap-3">
-                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% heroicon_outline "information-circle" class="w-5 h-5" %}</span>
+                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% icon "information-circle" class="w-5 h-5" %}</span>
                 <div>
                     <p class="text-sm font-medium text-blue-800">{% translate "What are Time Slots?" %}</p>
                     <p class="text-sm text-blue-700 mt-1">
@@ -47,7 +47,7 @@
                         {% if has_prev %}
                             <a href="?page={{ page|add:"-1" }}"
                                class="px-3 py-1.5 text-sm border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition flex items-center">
-                                {% heroicon_outline "chevron-left" class="w-4 h-4 mr-1" %}
+                                {% icon "chevron-left" class="w-4 h-4 mr-1" %}
                                 {% translate "Previous" %}
                             </a>
                         {% endif %}
@@ -60,7 +60,7 @@
                             <a href="?page={{ page|add:"1" }}"
                                class="px-3 py-1.5 text-sm border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition flex items-center">
                                 {% translate "Next" %}
-                                {% heroicon_outline "chevron-right" class="w-4 h-4 ml-1" %}
+                                {% icon "chevron-right" class="w-4 h-4 ml-1" %}
                             </a>
                         {% endif %}
                     </div>
@@ -124,7 +124,7 @@
                         <div class="px-4 pb-4">
                             <a href="{% url 'panel:time-slot-create' slug=current_event.slug %}?date={{ day|date:'Y-m-d' }}"
                                class="w-full px-3 py-2 text-sm border border-dashed border-neutral-300 text-neutral-600 rounded-lg hover:bg-neutral-50 transition flex items-center justify-center">
-                                {% heroicon_outline "plus" class="w-4 h-4 mr-1" %}
+                                {% icon "plus" class="w-4 h-4 mr-1" %}
                                 {% translate "Add" %}
                             </a>
                         </div>
@@ -134,7 +134,7 @@
             {% if orphaned_slots %}
                 <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
                     <div class="flex items-start gap-3 mb-4">
-                        <span class="text-amber-600 flex-shrink-0 mt-0.5">{% heroicon_outline "exclamation-triangle" class="w-5 h-5" %}</span>
+                        <span class="text-amber-600 flex-shrink-0 mt-0.5">{% icon "exclamation-triangle" class="w-5 h-5" %}</span>
                         <div>
                             <p class="text-sm font-medium text-amber-800">{% translate "Orphaned Time Slots" %}</p>
                             <p class="text-sm text-amber-700 mt-1">

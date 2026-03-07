@@ -1,6 +1,6 @@
 {% load i18n %}
 {% load date_tags %}
-{% load heroicons %}
+{% load tessera %}
 {# Event card component - expects 'event' in context #}
 {# Optional: 'variant' can be "past" for muted styling #}
 <a href="{% url 'web:chronology:event' slug=event.slug %}"
@@ -31,7 +31,7 @@
                       style="background: #fff;
                              color: #5c534a;
                              padding-left: 7px">
-                    {% heroicon_mini "pencil-square" class="h-3.5 w-3.5" %}
+                    {% icon "pencil-square" class="h-3.5 w-3.5" variant="mini" %}
                     {% translate "Proposals open" %}
                 </span>
             {% endif %}
@@ -52,11 +52,11 @@
         {% endif %}
         <div class="flex items-center justify-between border-t border-neutral-200/50 dark:border-neutral-700/50 pt-3 text-sm text-neutral-800 dark:text-neutral-200">
             <div class="flex items-center gap-1.5">
-                {% heroicon_outline "calendar" class="h-4 w-4" %}
+                {% icon "calendar" class="h-4 w-4" %}
                 <span>{{ event|format_datetime_range }}</span>
             </div>
             <div class="flex items-center gap-1.5">
-                {% heroicon_outline "squares-2x2" class="h-4 w-4" %}
+                {% icon "squares-2x2" class="h-4 w-4" %}
                 <span>
                     {% blocktranslate count counter=event.session_count|default:0 %}
                         {{ counter }} session

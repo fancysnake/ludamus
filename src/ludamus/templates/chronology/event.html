@@ -1,6 +1,6 @@
 {% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% load static %}
 {% block title %}
     {{ event.name }}
@@ -38,18 +38,18 @@
                         </div>
                     {% elif event.is_ended %}
                         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700/30 rounded-full text-sm font-medium mb-4 text-foreground-secondary">
-                            {% heroicon_mini "check-circle" class="w-4 h-4" %}
+                            {% icon "check-circle" class="w-4 h-4" variant="mini" %}
                             {% translate "Completed" %}
                         </div>
                     {% else %}
                         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-warm-200 dark:bg-warm-800/30 text-warm-700 dark:text-warm-400 rounded-full text-sm font-medium mb-4">
-                            {% heroicon_mini "clock" class="w-4 h-4" %}
+                            {% icon "clock" class="w-4 h-4" variant="mini" %}
                             {% translate "Upcoming" %}
                         </div>
                     {% endif %}
                     {% if event.is_proposal_active %}
                         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4 ml-2">
-                            {% heroicon_mini "light-bulb" class="w-4 h-4" %}
+                            {% icon "light-bulb" class="w-4 h-4" variant="mini" %}
                             {% translate "Proposals Open" %}
                         </div>
                     {% endif %}
@@ -63,7 +63,7 @@
                     <div class="flex flex-wrap gap-4 text-sm">
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-8 bg-coral-100 dark:bg-coral-900/30 rounded-lg flex items-center justify-center">
-                                {% heroicon_mini "calendar-days" class="w-4 h-4 text-coral-600" %}
+                                {% icon "calendar-days" class="w-4 h-4 text-coral-600" variant="mini" %}
                             </div>
                             <div>
                                 <div class="font-medium" style="color: var(--color-foreground)">{{ event.start_time|date:"l, F j" }}</div>
@@ -97,7 +97,7 @@
         {% if enrollment_config.banner_text %}
             <div class="alert alert-info mb-4" role="alert">
                 <div class="flex">
-                    <div class="shrink-0">{% heroicon_solid "information-circle" class="w-5 h-5" %}</div>
+                    <div class="shrink-0">{% icon "information-circle" class="w-5 h-5" %}</div>
                     <div class="grow ml-3">{{ enrollment_config.banner_text|linebreaks }}</div>
                 </div>
             </div>
@@ -107,7 +107,7 @@
     {% if current_user and event.get_active_enrollment_configs and enrollment_requires_slots %}
         <div class="alert alert-success mb-4" role="alert">
             <div class="flex">
-                <div class="shrink-0">{% heroicon_solid "key" class="w-5 h-5" %}</div>
+                <div class="shrink-0">{% icon "key" class="w-5 h-5" %}</div>
                 <div class="grow ml-3">
                     <h6 class="alert-heading mb-2">{% translate "Your Enrollment Access" %}</h6>
                     {% if user_enrollment_config %}
@@ -162,7 +162,7 @@
                  style="background-color: var(--theme-bg-secondary)">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div class="w-12 h-12 bg-coral-100 dark:bg-coral-900/30 rounded-xl flex items-center justify-center shrink-0">
-                        {% heroicon_mini "check-circle" class="w-6 h-6 text-coral-600 dark:text-coral-400" %}
+                        {% icon "check-circle" class="w-6 h-6 text-coral-600 dark:text-coral-400" variant="mini" %}
                     </div>
                     <div class="flex-1">
                         <h3 class="font-semibold" style="color: var(--color-foreground)">
@@ -187,7 +187,7 @@
     {% if request.session.anonymous_enrollment_active and not current_user %}
         <div class="alert alert-warning mb-4" role="alert">
             <div class="flex">
-                <div class="shrink-0">{% heroicon_outline "eye-slash" class="w-5 h-5" %}</div>
+                <div class="shrink-0">{% icon "eye-slash" class="w-5 h-5" %}</div>
                 <div class="grow ml-3">
                     <h6 class="font-semibold mb-2">{% translate "Anonymous Mode Active" %}</h6>
                     <p class="mb-2">
@@ -200,11 +200,11 @@
                            class="btn btn-secondary text-sm"
                            aria-controls="anonymousCodeModal"
                            aria-haspopup="dialog">
-                            {% heroicon_mini "key" class="w-4 h-4" %} {% translate "Enter Different Code" %}
+                            {% icon "key" class="w-4 h-4" variant="mini" %} {% translate "Enter Different Code" %}
                         </a>
                         <a href="{% url 'web:chronology:anonymous-reset' %}"
                            class="btn btn-primary text-sm">
-                            {% heroicon_mini "check-circle" class="w-4 h-4" %} {% translate "Finish" %}
+                            {% icon "check-circle" class="w-4 h-4" variant="mini" %} {% translate "Finish" %}
                         </a>
                     </div>
                 </div>
@@ -222,7 +222,7 @@
                 <button data-modal-close="anonymousCodeModal"
                         class="p-1 rounded-lg hover:opacity-70"
                         style="color: var(--color-foreground-muted)"
-                        aria-label="Close">{% heroicon_mini "x-mark" class="w-5 h-5" %}</button>
+                        aria-label="Close">{% icon "x-mark" class="w-5 h-5" variant="mini" %}</button>
             </div>
             <form method="post" action="{% url 'web:chronology:anonymous-load' %}">
                 <div class="px-6 py-4">
@@ -260,7 +260,7 @@
             {% if event.is_proposal_active %}
                 <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
                    class="btn btn-primary text-sm">
-                    {% heroicon_mini "plus" class="w-4 h-4" %} {% translate "Propose Session" %}
+                    {% icon "plus" class="w-4 h-4" variant="mini" %} {% translate "Propose Session" %}
                 </a>
             {% endif %}
         </div>
@@ -270,7 +270,7 @@
                 <div class="flex gap-2 items-stretch">
                     <div class="relative flex-1">
                         <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground-muted">
-                            {% heroicon_mini "magnifying-glass" class="w-5 h-5" %}
+                            {% icon "magnifying-glass" class="w-5 h-5" variant="mini" %}
                         </span>
                         <input type="text"
                                class="filter-input w-full pl-11 pr-4 py-3 rounded-2xl border text-sm font-medium bg-bg-secondary text-foreground placeholder:text-foreground-muted placeholder:font-normal transition-all duration-150"
@@ -287,7 +287,7 @@
                                 aria-expanded="false"
                                 aria-controls="filter-panel">
                             <span class="hidden sm:inline">{% translate "Filters" %}</span>
-                            {% heroicon_mini "adjustments-horizontal" class="w-5 h-5" %}
+                            {% icon "adjustments-horizontal" class="w-5 h-5" variant="mini" %}
                             <span id="active-filter-count"
                                   class="filter-badge hidden min-w-5 h-5 px-1.5 rounded-full text-[0.6875rem] font-bold leading-5 text-center bg-primary text-white"></span>
                         </button>
@@ -370,7 +370,7 @@
             <div id="filter-no-results"
                  class="text-center py-12 px-4 text-foreground-muted"
                  style="display: none">
-                {% heroicon_outline "funnel" class="w-8 h-8 mx-auto mb-2" %}
+                {% icon "funnel" class="w-8 h-8 mx-auto mb-2" %}
                 <p class="font-medium">{% translate "No sessions match your filters" %}</p>
                 <button type="button"
                         id="clear-filters-from-no-results"
@@ -387,7 +387,7 @@
                         <div class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold"
                              style="background-color: var(--theme-bg-tertiary);
                                     color: var(--color-foreground-muted)">
-                            {% heroicon_mini "clock" class="w-4 h-4" %}
+                            {% icon "clock" class="w-4 h-4" variant="mini" %}
                             {{ hour|date:"l, j F" }}, {{ hour|time:"H:i" }}
                             <span class="text-xs font-normal">({% translate "Completed" %})</span>
                         </div>
@@ -409,7 +409,7 @@
                     <!-- Time Slot Header -->
                     <div class="flex items-center gap-4 mb-4">
                         <div class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-warm-800 text-warm-100 dark:bg-neutral-200 dark:text-neutral-800">
-                            {% heroicon_mini "clock" class="w-4 h-4" %}
+                            {% icon "clock" class="w-4 h-4" variant="mini" %}
                             {{ hour|date:"l, F j" }} – {{ hour|time:"H:i" }}
                         </div>
                         <hr />
@@ -423,7 +423,7 @@
                         {% if event.is_proposal_active %}
                             <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
                                class="btn btn-teal text-xs py-1.5 px-3 shrink-0">
-                                {% heroicon_mini "plus" class="w-4 h-4" %} {% translate "Propose" %}
+                                {% icon "plus" class="w-4 h-4" variant="mini" %} {% translate "Propose" %}
                             </a>
                         {% endif %}
                     </div>
@@ -456,7 +456,7 @@
                         <div class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold"
                              style="background-color: var(--theme-warning-bg);
                                     color: var(--theme-warning-text)">
-                            {% heroicon_mini "clock" class="w-4 h-4" %}
+                            {% icon "clock" class="w-4 h-4" variant="mini" %}
                             {{ hour|date:"l, F j" }} – {{ hour|time:"H:i" }}
                             <span class="text-xs font-normal">({% translate "Not Yet Available" %})</span>
                         </div>
@@ -473,9 +473,7 @@
             {% endfor %}
             {% if not ended_hour_data and not current_hour_data and not future_unavailable_hour_data %}
                 <div class="text-center py-12">
-                    <div class="mb-3" style="color: var(--color-foreground-muted)">
-                        {% heroicon_outline "calendar" class="w-10 h-10 mx-auto" %}
-                    </div>
+                    <div class="mb-3" style="color: var(--color-foreground-muted)">{% icon "calendar" class="w-10 h-10 mx-auto" %}</div>
                     <h5 class="text-lg font-semibold mb-2"
                         style="color: var(--color-foreground-muted)">
                         {% translate "No sessions or time slots available yet" %}
@@ -498,7 +496,7 @@
                  style="background: linear-gradient(135deg, var(--theme-bg-tertiary), var(--theme-bg-secondary));
                         border-color: var(--theme-border)">
                 <div class="w-16 h-16 bg-coral-100 dark:bg-coral-900/30 rounded-2xl flex items-center justify-center mb-4 rotate-3">
-                    {% heroicon_outline "plus" class="w-8 h-8 text-coral-500" %}
+                    {% icon "plus" class="w-8 h-8 text-coral-500" %}
                 </div>
                 <h3 class="text-xl font-bold mb-2" style="color: var(--color-foreground)">
                     {% translate "Want to host a session?" %}
@@ -521,7 +519,7 @@
                         border-bottom: 1px solid var(--theme-warning-light)">
                 <h3 class="text-base font-semibold flex items-center gap-2"
                     style="color: var(--theme-warning-text)">
-                    {% heroicon_mini "clipboard-document-check" class="w-5 h-5" %}
+                    {% icon "clipboard-document-check" class="w-5 h-5" variant="mini" %}
                     {% translate "Pending Proposals" %}
                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-800 text-warm-100">{{ pending_sessions|length }}</span>
                 </h3>
@@ -565,14 +563,14 @@
                                         {% if pending.needs %}
                                             <div class="mt-1 text-xs flex items-center gap-1"
                                                  style="color: var(--theme-info)">
-                                                {% heroicon_mini "information-circle" class="w-3.5 h-3.5" %} {{ pending.needs|truncatechars:50 }}
+                                                {% icon "information-circle" class="w-3.5 h-3.5" variant="mini" %} {{ pending.needs|truncatechars:50 }}
                                             </div>
                                         {% endif %}
                                     </div>
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="flex items-center gap-2">
-                                        <span style="color: var(--color-foreground-muted)">{% heroicon_mini "user-circle" class="w-4 h-4" %}</span>
+                                        <span style="color: var(--color-foreground-muted)">{% icon "user-circle" class="w-4 h-4" variant="mini" %}</span>
                                         <span>{{ pending.presenter_name }}</span>
                                     </div>
                                 </td>
@@ -603,13 +601,13 @@
                                     <div class="flex flex-col gap-1.5 grow">
                                         <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
                                            class="btn btn-teal text-xs py-1.5 px-3">
-                                            {% heroicon_mini "check" class="w-3.5 h-3.5" %} {% translate "Accept" %}
+                                            {% icon "check" class="w-3.5 h-3.5" variant="mini" %} {% translate "Accept" %}
                                         </a>
                                         <a href="?proposal={{ pending.pk }}"
                                            class="btn btn-secondary text-xs py-1.5 px-3"
                                            aria-controls="proposalModal{{ pending.pk }}"
                                            aria-haspopup="dialog">
-                                            {% heroicon_mini "eye" class="w-3.5 h-3.5" %} {% translate "Review" %}
+                                            {% icon "eye" class="w-3.5 h-3.5" variant="mini" %} {% translate "Review" %}
                                         </a>
                                     </div>
                                 </td>
@@ -632,7 +630,7 @@
                     <button data-modal-close="proposalModal{{ pending.pk }}"
                             class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700"
                             style="color: var(--color-foreground-muted)">
-                        {% heroicon_mini "x-mark" class="w-5 h-5" %}
+                        {% icon "x-mark" class="w-5 h-5" variant="mini" %}
                     </button>
                 </div>
                 <div class="px-6 py-4" style="color: var(--color-foreground)">
@@ -706,7 +704,7 @@
                     <button data-modal-close="proposalModal{{ pending.pk }}"
                             class="btn btn-secondary text-sm">{% translate "Close" %}</button>
                     <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
-                       class="btn btn-teal text-sm">{% heroicon_mini "check" class="w-4 h-4" %} {% translate "Accept Proposal" %}</a>
+                       class="btn btn-teal text-sm">{% icon "check" class="w-4 h-4" variant="mini" %} {% translate "Accept Proposal" %}</a>
                 </div>
             </dialog>
         {% endfor %}
@@ -725,7 +723,7 @@
                 <button data-modal-close="session-{{ data.session.pk }}"
                         class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700"
                         style="color: var(--color-foreground-muted)">
-                    {% heroicon_mini "x-mark" class="w-5 h-5" %}
+                    {% icon "x-mark" class="w-5 h-5" variant="mini" %}
                 </button>
             </div>
             <!-- Tabs -->
@@ -734,14 +732,14 @@
                         aria-selected="true"
                         aria-controls="info-{{ data.session.pk }}"
                         class="tab-trigger px-4 py-3 text-sm font-medium flex items-center gap-1.5">
-                    {% heroicon_mini "information-circle" class="w-4 h-4" %} {% translate "Information" %}
+                    {% icon "information-circle" class="w-4 h-4" variant="mini" %} {% translate "Information" %}
                 </button>
                 <button tabIndex="-1"
                         role="tab"
                         aria-selected="false"
                         aria-controls="participants-{{ data.session.pk }}"
                         class="tab-trigger px-4 py-3 text-sm font-medium flex items-center gap-1.5">
-                    {% heroicon_mini "users" class="w-4 h-4" %} {% translate "Participants" %}
+                    {% icon "users" class="w-4 h-4" variant="mini" %} {% translate "Participants" %}
                     <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-coral-100 dark:bg-coral-900/30 text-coral-700 dark:text-coral-400">{{ data.enrolled_count }}</span>
                     {% if data.waiting_count > 0 %}
                         <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold"
@@ -766,7 +764,7 @@
                             {% if data.location_label %}
                                 <span class="flex items-center gap-1.5 text-sm min-w-0"
                                       style="color: var(--color-foreground-muted)">
-                                    {% heroicon_mini "map-pin" class="size-4 shrink-0 opacity-80" %}
+                                    {% icon "map-pin" class="size-4 shrink-0 opacity-80" variant="mini" %}
                                     <span class="truncate" title="{{ data.location_label }}">{{ data.location_label }}</span>
                                 </span>
                             {% endif %}
@@ -778,7 +776,7 @@
                                                 hx-get="{% url 'web:crowd:user-discord-username' user_slug=host.slug %}"
                                                 hx-swap="outerHTML"
                                                 hx-trigger="click once">
-                                            {% heroicon_mini "chat-bubble-left-right" class="w-3.5 h-3.5" %} {% translate "Show Discord" %}
+                                            {% icon "chat-bubble-left-right" class="w-3.5 h-3.5" variant="mini" %} {% translate "Show Discord" %}
                                         </button>
                                     {% endif %}
                                 {% endwith %}
@@ -853,13 +851,13 @@
                     {% if current_user and data.user_enrolled %}
                         <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
                             <div class="alert alert-success inline-flex items-center gap-2 text-sm">
-                                {% heroicon_mini "check-circle" class="w-4 h-4" %} {% translate "You are enrolled in this session" %}
+                                {% icon "check-circle" class="w-4 h-4" variant="mini" %} {% translate "You are enrolled in this session" %}
                             </div>
                         </div>
                     {% elif current_user and data.user_waiting %}
                         <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
                             <div class="alert alert-warning inline-flex items-center gap-2 text-sm">
-                                {% heroicon_mini "clock" class="w-4 h-4" %} {% translate "You are on the waiting list" %}
+                                {% icon "clock" class="w-4 h-4" variant="mini" %} {% translate "You are on the waiting list" %}
                             </div>
                         </div>
                     {% endif %}
@@ -922,7 +920,7 @@
                                                                 hx-get="{% url 'web:crowd:user-discord-username' user_slug=user.slug %}"
                                                                 hx-swap="outerHTML"
                                                                 hx-trigger="click once">
-                                                            {% heroicon_mini "chat-bubble-left-right" class="w-3.5 h-3.5" %}
+                                                            {% icon "chat-bubble-left-right" class="w-3.5 h-3.5" variant="mini" %}
                                                         </button>
                                                     {% endif %}
                                                 {% endwith %}
@@ -982,13 +980,13 @@
                                class="btn text-sm"
                                style="background-color: var(--theme-warning);
                                       color: white">
-                                {% heroicon_mini "cog-6-tooth" class="w-4 h-4" %} {% translate "Manage Enrollment" %}
+                                {% icon "cog-6-tooth" class="w-4 h-4" variant="mini" %} {% translate "Manage Enrollment" %}
                             </a>
                         {% else %}
                             {% if current_user.user_type == 'connected' or current_user.user_type == 'active' %}
                                 <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
                                    class="btn btn-teal text-sm">
-                                    {% heroicon_mini "user-plus" class="w-4 h-4" %} {% translate "Enroll Now" %}
+                                    {% icon "user-plus" class="w-4 h-4" variant="mini" %} {% translate "Enroll Now" %}
                                 </a>
                             {% endif %}
                         {% endif %}
@@ -998,18 +996,18 @@
                                class="btn text-sm"
                                style="background-color: var(--theme-warning);
                                       color: white">
-                                {% heroicon_mini "cog-6-tooth" class="w-4 h-4" %} {% translate "Manage Enrollment" %}
+                                {% icon "cog-6-tooth" class="w-4 h-4" variant="mini" %} {% translate "Manage Enrollment" %}
                             </a>
                         {% else %}
                             <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
                                class="btn btn-teal text-sm">
-                                {% heroicon_mini "user-plus" class="w-4 h-4" %} {% translate "Enroll Anonymously" %}
+                                {% icon "user-plus" class="w-4 h-4" variant="mini" %} {% translate "Enroll Anonymously" %}
                             </a>
                         {% endif %}
                     {% else %}
                         <a href="{% url 'web:crowd:auth0:login' %}?next={{ request.build_absolute_uri }}"
                            class="btn btn-primary text-sm">
-                            {% heroicon_mini "arrow-right-on-rectangle" class="w-4 h-4" %} {% translate "Login to Enroll" %}
+                            {% icon "arrow-right-on-rectangle" class="w-4 h-4" variant="mini" %} {% translate "Login to Enroll" %}
                         </a>
                     {% endif %}
                 {% endif %}
@@ -1019,7 +1017,7 @@
     <!-- Back to Events List -->
     <div class="mt-8">
         <a href="{% url 'web:index' %}" class="btn btn-secondary">
-            {% heroicon_mini "arrow-left" class="w-4 h-4" %} {% translate "Back to Events" %}
+            {% icon "arrow-left" class="w-4 h-4" variant="mini" %} {% translate "Back to Events" %}
         </a>
     </div>
 {% endblock body %}

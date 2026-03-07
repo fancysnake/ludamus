@@ -1,6 +1,6 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% block title %}
     {% translate "Venue Structure" %} - Ludamus Backoffice
 {% endblock title %}
@@ -16,12 +16,12 @@
     {% if current_event %}
         <a href="{% url 'panel:venues' slug=current_event.slug %}"
            class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
-            {% heroicon_outline "list-bullet" class="w-4 h-4 mr-2" %}
+            {% icon "list-bullet" class="w-4 h-4 mr-2" %}
             {% translate "List View" %}
         </a>
         <a href="{% url 'panel:venue-create' slug=current_event.slug %}"
            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-            {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+            {% icon "plus" class="w-4 h-4 mr-2" %}
             {% translate "New Venue" %}
         </a>
     {% endif %}
@@ -41,7 +41,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-4">
                 <div class="flex items-center">
-                    {% heroicon_outline "building-office-2" class="w-8 h-8 text-primary mr-3" %}
+                    {% icon "building-office-2" class="w-8 h-8 text-primary mr-3" %}
                     <div>
                         <p class="text-2xl font-bold text-neutral-900">{{ total_venues }}</p>
                         <p class="text-sm text-neutral-500">{% translate "Venues" %}</p>
@@ -50,7 +50,7 @@
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-4">
                 <div class="flex items-center">
-                    {% heroicon_outline "rectangle-group" class="w-8 h-8 text-blue-500 mr-3" %}
+                    {% icon "rectangle-group" class="w-8 h-8 text-blue-500 mr-3" %}
                     <div>
                         <p class="text-2xl font-bold text-neutral-900">{{ total_areas }}</p>
                         <p class="text-sm text-neutral-500">{% translate "Areas" %}</p>
@@ -59,7 +59,7 @@
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-4">
                 <div class="flex items-center">
-                    {% heroicon_outline "square-3-stack-3d" class="w-8 h-8 text-green-500 mr-3" %}
+                    {% icon "square-3-stack-3d" class="w-8 h-8 text-green-500 mr-3" %}
                     <div>
                         <p class="text-2xl font-bold text-neutral-900">{{ total_spaces }}</p>
                         <p class="text-sm text-neutral-500">{% translate "Spaces" %}</p>
@@ -74,7 +74,7 @@
                         <div class="bg-neutral-50 px-6 py-4 border-b border-neutral-200">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center">
-                                    {% heroicon_outline "building-office-2" class="w-5 h-5 text-primary mr-3" %}
+                                    {% icon "building-office-2" class="w-5 h-5 text-primary mr-3" %}
                                     <div>
                                         <a href="{% url 'panel:venue-detail' slug=current_event.slug venue_slug=venue_item.venue.slug %}"
                                            class="text-lg font-semibold text-neutral-900 hover:text-primary">
@@ -89,7 +89,7 @@
                                     </span>
                                     <a href="{% url 'panel:venue-edit' slug=current_event.slug venue_slug=venue_item.venue.slug %}"
                                        class="p-2 text-neutral-400 hover:text-primary rounded-lg hover:bg-neutral-100">
-                                        {% heroicon_outline "pencil-square" class="w-4 h-4" %}
+                                        {% icon "pencil-square" class="w-4 h-4" %}
                                     </a>
                                 </div>
                             </div>
@@ -101,7 +101,7 @@
                                         <div class="border border-neutral-200 rounded-lg p-4">
                                             <div class="flex items-center justify-between mb-3">
                                                 <div class="flex items-center">
-                                                    {% heroicon_outline "rectangle-group" class="w-4 h-4 text-blue-500 mr-2" %}
+                                                    {% icon "rectangle-group" class="w-4 h-4 text-blue-500 mr-2" %}
                                                     <a href="{% url 'panel:area-detail' slug=current_event.slug venue_slug=venue_item.venue.slug area_slug=area_item.area.slug %}"
                                                        class="font-medium text-neutral-900 hover:text-primary">
                                                         {{ area_item.area.name }}
@@ -113,7 +113,7 @@
                                                     </span>
                                                     <a href="{% url 'panel:area-edit' slug=current_event.slug venue_slug=venue_item.venue.slug area_slug=area_item.area.slug %}"
                                                        class="p-1 text-neutral-400 hover:text-primary rounded hover:bg-neutral-100">
-                                                        {% heroicon_outline "pencil-square" class="w-3 h-3" %}
+                                                        {% icon "pencil-square" class="w-3 h-3" %}
                                                     </a>
                                                 </div>
                                             </div>
@@ -124,7 +124,7 @@
                                                 <div class="flex flex-wrap gap-2">
                                                     {% for space in area_item.spaces %}
                                                         <span class="inline-flex items-center px-3 py-1 bg-neutral-100 text-neutral-700 text-sm rounded-full">
-                                                            {% heroicon_outline "square-3-stack-3d" class="w-3 h-3 mr-1 text-green-500" %}
+                                                            {% icon "square-3-stack-3d" class="w-3 h-3 mr-1 text-green-500" %}
                                                             {{ space.name }}
                                                             <span class="ml-1 text-neutral-400">(
                                                                 {% if space.capacity %}
@@ -151,13 +151,13 @@
             </div>
         {% else %}
             <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
-                <div class="mb-4">{% heroicon_outline "building-office-2" class="w-12 h-12 text-neutral-300 mx-auto" %}</div>
+                <div class="mb-4">{% icon "building-office-2" class="w-12 h-12 text-neutral-300 mx-auto" %}</div>
                 <p class="text-neutral-500 mb-4">
                     {% translate "No venues yet. Create a venue to start building your event structure." %}
                 </p>
                 <a href="{% url 'panel:venue-create' slug=current_event.slug %}"
                    class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
-                    {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+                    {% icon "plus" class="w-4 h-4 mr-2" %}
                     {% translate "Create First Venue" %}
                 </a>
             </div>

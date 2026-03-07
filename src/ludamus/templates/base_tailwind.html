@@ -1,6 +1,6 @@
 {% load i18n %}
 {% load static %}
-{% load heroicons %}
+{% load tessera %}
 {% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
@@ -133,15 +133,15 @@
                                 color: var(--color-foreground-secondary);
                                 {% endif %}">
                         {% if message.tags == 'error' %}
-                            {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                            {% icon "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
                         {% elif message.tags == 'warning' %}
-                            {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                            {% icon "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
                         {% elif message.tags == 'success' %}
-                            {% heroicon_outline "check-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                            {% icon "check-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
                         {% elif message.tags == 'info' %}
-                            {% heroicon_outline "information-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                            {% icon "information-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
                         {% else %}
-                            {% heroicon_outline "chat-bubble-left-ellipsis" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                            {% icon "chat-bubble-left-ellipsis" class="w-5 h-5 mr-3 flex-shrink-0" %}
                         {% endif %}
                         <span class="text-sm">{{ message }}</span>
                     </div>

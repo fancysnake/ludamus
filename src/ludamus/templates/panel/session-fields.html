@@ -1,6 +1,6 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% block title %}
     {% translate "Session Fields" %} - Ludamus Backoffice
 {% endblock title %}
@@ -16,12 +16,12 @@
     {% if current_event %}
         <a href="{% url 'panel:cfp' slug=current_event.slug %}"
            class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
-            {% heroicon_outline "arrow-left" class="w-4 h-4 mr-2" %}
+            {% icon "arrow-left" class="w-4 h-4 mr-2" %}
             {% translate "Back to CFP" %}
         </a>
         <a href="{% url 'panel:session-field-create' slug=current_event.slug %}"
            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-            {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+            {% icon "plus" class="w-4 h-4 mr-2" %}
             {% translate "New Session Field" %}
         </a>
     {% endif %}
@@ -30,7 +30,7 @@
     {% if current_event %}
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
             <div class="flex items-start gap-3">
-                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% heroicon_outline "information-circle" class="w-5 h-5" %}</span>
+                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% icon "information-circle" class="w-5 h-5" %}</span>
                 <div>
                     <p class="text-sm font-medium text-blue-800">{% translate "What are Session Fields?" %}</p>
                     <p class="text-sm text-blue-700 mt-1">

@@ -1,18 +1,4 @@
-"""Design-system component tags.
-
-Usage:
-    {% load ds %}
-
-    {% select id="color" name="color" required=True %}
-        <option value="">Pick one...</option>
-        <option value="red">Red</option>
-    {% end_select %}
-
-    {% tabs %}
-        {% tab "home" icon="home" href="/home/" active=True %}Home{% end_tab %}
-        {% tab "settings" icon="cog-6-tooth" href="/settings/" %}Settings{% end_tab %}
-    {% end_tabs %}
-"""
+"""{% tabs %} / {% tab %} template tags — navigation tab components."""
 
 from __future__ import annotations
 
@@ -21,14 +7,12 @@ from typing import TYPE_CHECKING
 from django import template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
-from heroicons.templatetags.heroicons import heroicon_outline
 
-from ludamus.adapters.web.django.form_styles import SELECT_CLASS
+from ._registry import register
+from .icon import icon
 
 if TYPE_CHECKING:
     from django.template.base import FilterExpression, Parser, Token
-
-register = template.Library()
 
 TAB_NAV_CLASS = "flex border-b border-[var(--theme-border)]"
 _TAB_BASE = (
@@ -41,72 +25,6 @@ TAB_INACTIVE_CLASS = (
     f"{_TAB_BASE} border-transparent text-foreground-muted"
     " hover:text-foreground hover:border-[var(--theme-border)]"
 )
-
-
-class SelectNode(template.Node):
-    """Renders a themed ``<select>`` wrapping slot content."""
-
-    def __init__(
-        self, nodelist: template.NodeList, attrs: dict[str, FilterExpression]
-    ) -> None:
-        self.nodelist = nodelist
-        self.attrs = attrs
-
-    def render(self, context: template.Context) -> str:
-        """Render the select element.
-
-        Returns:
-            HTML string of the themed ``<select>`` element.
-        """
-        resolved: dict[str, object] = {
-            k: v.resolve(context) for k, v in self.attrs.items()
-        }
-
-        extra_class = resolved.pop("class", "")
-        classes = (
-            f"{SELECT_CLASS} {extra_class}".strip() if extra_class else SELECT_CLASS
-        )
-
-        parts = [f'<select class="{classes}"']
-        parts.extend(
-            f' {a}="{escape(str(v))}"'
-            for a in ("id", "name", "size")
-            if (v := resolved.get(a))
-        )
-
-        if resolved.get("multiple"):
-            parts.append(" multiple")
-        if resolved.get("required"):
-            parts.append(" required")
-
-        parts.extend((">", self.nodelist.render(context), "</select>"))
-
-        return mark_safe("".join(parts))  # noqa: S308
-
-
-@register.tag("select")
-def do_select(parser: Parser, token: Token) -> SelectNode:
-    """Parse ``{% select ... %}...{% end_select %}``.
-
-    Returns:
-        A SelectNode that renders a themed ``<select>`` wrapping its body.
-    """
-    bits = token.split_contents()[1:]
-    attrs: dict[str, FilterExpression] = {}
-
-    for bit in bits:
-        key, _, value = bit.partition("=")
-        attrs[key] = parser.compile_filter(value)
-
-    nodelist = parser.parse(("end_select",))
-    parser.delete_first_token()
-
-    return SelectNode(nodelist, attrs)
-
-
-# ---------------------------------------------------------------------------
-# {% tabs %} ... {% end_tabs %}
-# ---------------------------------------------------------------------------
 
 
 class TabsNode(template.Node):
@@ -148,11 +66,6 @@ def do_tabs(parser: Parser, token: Token) -> TabsNode:
     return TabsNode(nodelist, attrs)
 
 
-# ---------------------------------------------------------------------------
-# {% tab "key" icon="name" href=url active=True %} label {% end_tab %}
-# ---------------------------------------------------------------------------
-
-
 class TabNode(template.Node):
     """Renders a single ``<a>`` tab trigger."""
 
@@ -171,15 +84,15 @@ class TabNode(template.Node):
             k: v.resolve(context) for k, v in self.attrs.items()
         }
         active = bool(resolved.pop("active", False))
-        icon = resolved.pop("icon", None)
+        tab_icon = resolved.pop("icon", None)
         href = resolved.pop("href", "#")
 
         classes = TAB_ACTIVE_CLASS if active else TAB_INACTIVE_CLASS
         label = self.nodelist.render(context)
 
         icon_html = ""
-        if icon:
-            icon_html = heroicon_outline(str(icon), size=None, **{"class": "w-4 h-4"})
+        if tab_icon:
+            icon_html = icon(str(tab_icon), **{"class": "w-4 h-4"})
 
         return mark_safe(  # noqa: S308
             f'<a class="{classes}" aria-selected="{"true" if active else "false"}"'

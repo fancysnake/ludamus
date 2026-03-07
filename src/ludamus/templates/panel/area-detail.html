@@ -1,6 +1,6 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% block title %}
     {{ area.name }} - {% translate "Areas" %} - Ludamus Backoffice
 {% endblock title %}
@@ -16,12 +16,12 @@
     {% if current_event %}
         <a href="{% url 'panel:area-edit' slug=current_event.slug venue_slug=venue.slug area_slug=area.slug %}"
            class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
-            {% heroicon_outline "pencil" class="w-4 h-4 mr-2" %}
+            {% icon "pencil" class="w-4 h-4 mr-2" %}
             {% translate "Edit Area" %}
         </a>
         <a href="{% url 'panel:space-create' slug=current_event.slug venue_slug=venue.slug area_slug=area.slug %}"
            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-            {% heroicon_outline "plus" class="w-4 h-4 mr-2" %}
+            {% icon "plus" class="w-4 h-4 mr-2" %}
             {% translate "New Space" %}
         </a>
     {% endif %}
@@ -46,7 +46,7 @@
         {% if area.description %}
             <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-4 mb-6">
                 <div class="flex items-start">
-                    {% heroicon_outline "document-text" class="w-5 h-5 text-neutral-400 mr-2 mt-0.5" %}
+                    {% icon "document-text" class="w-5 h-5 text-neutral-400 mr-2 mt-0.5" %}
                     <div>
                         <h3 class="text-sm font-medium text-neutral-500">{% translate "Description" %}</h3>
                         <p class="text-neutral-900">{{ area.description }}</p>
@@ -56,7 +56,7 @@
         {% endif %}
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div class="flex">
-                {% heroicon_outline "information-circle" class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" %}
+                {% icon "information-circle" class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" %}
                 <div class="text-sm text-blue-700">
                     <p class="font-medium">{% translate "What are spaces?" %}</p>
                     <p class="mt-1">
@@ -90,20 +90,20 @@
                             <tr class="space-row hover:bg-neutral-50 cursor-move"
                                 draggable="true"
                                 data-space-id="{{ space.pk }}">
-                                <td class="px-3 py-4 text-neutral-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</td>
+                                <td class="px-3 py-4 text-neutral-400">{% icon "bars-3" class="w-4 h-4" %}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ space.name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ space.capacity|default:"—" }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <a href="{% url 'panel:space-edit' slug=current_event.slug venue_slug=venue.slug area_slug=area.slug space_slug=space.slug %}"
                                        class="text-primary hover:text-primary/80 mr-4 inline-flex items-center">
-                                        {% heroicon_outline "pencil-square" class="w-4 h-4 mr-1" %}
+                                        {% icon "pencil-square" class="w-4 h-4 mr-1" %}
                                         {% translate "Edit" %}
                                     </a>
                                     <div class="relative inline-block">
                                         <button type="button"
                                                 class="action-dropdown-toggle p-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 inline-flex items-center"
                                                 aria-haspopup="true">
-                                            {% heroicon_outline "ellipsis-horizontal" class="w-4 h-4" %}
+                                            {% icon "ellipsis-horizontal" class="w-4 h-4" %}
                                         </button>
                                         <div class="action-dropdown-menu hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-neutral-200 z-10">
                                             <form method="post"
@@ -112,7 +112,7 @@
                                                 {% csrf_token %}
                                                 <button type="submit"
                                                         class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg">
-                                                    {% heroicon_outline "trash" class="w-4 h-4 mr-2" %}
+                                                    {% icon "trash" class="w-4 h-4 mr-2" %}
                                                     {% translate "Delete" %}
                                                 </button>
                                             </form>

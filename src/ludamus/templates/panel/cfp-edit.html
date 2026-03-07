@@ -1,6 +1,6 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% load cfp_tags %}
 {% block title %}
     {% translate "Configure Session Type" %} - Ludamus Backoffice
@@ -22,7 +22,7 @@
         <button type="submit"
                 form="cfp-edit-form"
                 class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-            {% heroicon_outline "check" class="w-4 h-4 mr-2" %}
+            {% icon "check" class="w-4 h-4 mr-2" %}
             {% translate "Save" %}
         </button>
     {% endif %}
@@ -91,7 +91,7 @@
                     <button type="button"
                             id="add-duration-btn"
                             class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition text-sm flex items-center">
-                        {% heroicon_outline "plus" class="w-4 h-4 mr-1" %}
+                        {% icon "plus" class="w-4 h-4 mr-1" %}
                         {% translate "Add" %}
                     </button>
                 </div>
@@ -102,7 +102,7 @@
                             <input type="hidden" name="durations" value="{{ duration }}">
                             <button type="button"
                                     class="remove-duration text-neutral-400 hover:text-red-500 transition">
-                                {% heroicon_outline "x-mark" class="w-4 h-4" %}
+                                {% icon "x-mark" class="w-4 h-4" %}
                             </button>
                         </div>
                     {% empty %}
@@ -184,7 +184,7 @@
             {% if proposal_count > 0 and available_fields or proposal_count > 0 and available_session_fields %}
                 <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-6">
                     <div class="flex items-start gap-3">
-                        <span class="text-amber-600 flex-shrink-0 mt-0.5">{% heroicon_outline "exclamation-triangle" class="w-5 h-5" %}</span>
+                        <span class="text-amber-600 flex-shrink-0 mt-0.5">{% icon "exclamation-triangle" class="w-5 h-5" %}</span>
                         <div>
                             <p class="text-sm font-medium text-amber-800">
                                 {% blocktranslate count count=proposal_count %}There is {{ count }} existing proposal for this session type.{% plural %}There are {{ count }} existing proposals for this session type.{% endblocktranslate %}
@@ -211,7 +211,7 @@
                             <div class="field-item flex items-center gap-3 py-2 px-3 bg-neutral-50 rounded-lg cursor-move"
                                  draggable="true"
                                  data-field-id="{{ field.pk }}">
-                                <span class="drag-handle text-neutral-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
+                                <span class="drag-handle text-neutral-400">{% icon "bars-3" class="w-4 h-4" %}</span>
                                 <span class="text-sm font-medium text-neutral-700 flex-1">{{ field.name }}</span>
                                 <select name="field_{{ field.pk }}"
                                         class="field-select border border-neutral-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
@@ -254,7 +254,7 @@
                             <div class="field-item flex items-center gap-3 py-2 px-3 bg-neutral-50 rounded-lg cursor-move"
                                  draggable="true"
                                  data-field-id="{{ field.pk }}">
-                                <span class="drag-handle text-neutral-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
+                                <span class="drag-handle text-neutral-400">{% icon "bars-3" class="w-4 h-4" %}</span>
                                 <span class="text-sm font-medium text-neutral-700 flex-1">{{ field.name }}</span>
                                 <select name="session_field_{{ field.pk }}"
                                         class="field-select border border-neutral-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
@@ -297,7 +297,7 @@
                             <div class="field-item flex items-center gap-3 py-2 px-3 bg-neutral-50 rounded-lg cursor-move"
                                  draggable="true"
                                  data-field-id="{{ slot.pk }}">
-                                <span class="drag-handle text-neutral-400">{% heroicon_outline "bars-3" class="w-4 h-4" %}</span>
+                                <span class="drag-handle text-neutral-400">{% icon "bars-3" class="w-4 h-4" %}</span>
                                 <span class="text-sm font-medium text-neutral-700 flex-1">{{ slot.start_time|date:"D d M" }} · {{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}</span>
                                 <select name="time_slot_{{ slot.pk }}"
                                         class="field-select border border-neutral-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">

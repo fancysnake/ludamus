@@ -1,6 +1,6 @@
 {% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% block title %}
     {% translate "Enroll in Session" %} - {{ session.title }}
 {% endblock title %}
@@ -15,7 +15,7 @@
         {# Session Details Card #}
         <div class="card mb-4">
             <div class="card-header bg-[var(--theme-primary)] text-white flex items-center gap-2">
-                {% heroicon_outline "calendar" class="w-5 h-5" %}
+                {% icon "calendar" class="w-5 h-5" %}
                 <h5 class="font-semibold mb-0">{{ session.title }}</h5>
             </div>
             <div class="card-body">
@@ -61,7 +61,7 @@
         {# Enrollment Form Card #}
         <div class="card">
             <div class="card-header bg-[var(--theme-success)] text-white flex items-center gap-2">
-                {% heroicon_outline "user-plus" class="w-5 h-5" %}
+                {% icon "user-plus" class="w-5 h-5" %}
                 <h5 class="font-semibold mb-0">{% translate "Enrollment Options" %}</h5>
             </div>
             <div class="card-body">
@@ -69,7 +69,7 @@
                     {% csrf_token %}
                     <div class="mb-4">
                         <label class="flex items-center gap-1.5 text-sm font-medium mb-3">
-                            {% heroicon_outline "users" class="w-4 h-4" %}
+                            {% icon "users" class="w-4 h-4" %}
                             {% translate "Select enrollment options for each user" %}
                         </label>
                         <div class="overflow-x-auto">
@@ -89,10 +89,10 @@
                                             <td class="px-3 py-2.5">
                                                 <div class="flex items-center gap-2">
                                                     {% if user_data.user.pk == request.user.pk %}
-                                                        {% heroicon_outline "user-circle" class="w-4 h-4 text-foreground-muted" %}
+                                                        {% icon "user-circle" class="w-4 h-4 text-foreground-muted" %}
                                                         <span>{% translate "Myself" %} ({{ user.full_name }})</span>
                                                     {% else %}
-                                                        {% heroicon_outline "heart" class="w-4 h-4 text-foreground-muted" %}
+                                                        {% icon "heart" class="w-4 h-4 text-foreground-muted" %}
                                                         <span>{{ user_data.user.full_name }}</span>
                                                     {% endif %}
                                                 </div>
@@ -160,7 +160,7 @@
                             </table>
                         </div>
                         <div class="alert alert-info flex items-center gap-2 mt-3 text-sm">
-                            {% heroicon_solid "information-circle" class="w-4 h-4 shrink-0" %}
+                            {% icon "information-circle" class="w-4 h-4 shrink-0" %}
                             <span>
                                 <strong>{% translate "Session capacity" %}:</strong> {{ session.enrolled_count }}/{{ session.effective_participants_limit }} {% translate "enrolled" %}
                                 {% if session.waiting_count > 0 %}
@@ -171,12 +171,12 @@
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <button type="submit" class="btn btn-teal">
-                            {% heroicon_outline "user-plus" class="w-4 h-4" %}
+                            {% icon "user-plus" class="w-4 h-4" %}
                             {% translate "Enroll Selected Users" %}
                         </button>
                         <a href="{% url 'web:chronology:event' slug=event.slug %}"
                            class="btn btn-secondary">
-                            {% heroicon_outline "arrow-left" class="w-4 h-4" %}
+                            {% icon "arrow-left" class="w-4 h-4" %}
                             {% translate "Back to Event" %}
                         </a>
                     </div>
