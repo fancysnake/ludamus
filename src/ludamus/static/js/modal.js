@@ -1,4 +1,10 @@
-/** ~16% lack Navigation API (Firefox on Android, IE11, older Safari). Click interception only in old browsers. */
+/**
+ * URL-driven modal system using <dialog>.
+ * Hand-written vanilla JS — not compiled from TypeScript.
+ *
+ * ~16% lack Navigation API (Firefox on Android, IE11, older Safari).
+ * Click interception only in old browsers.
+ */
 const navigation = globalThis.navigation;
 const getDialog = (id) => {
     const element = document.getElementById(id);

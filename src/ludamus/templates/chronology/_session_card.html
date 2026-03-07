@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load heroicons %}
 <article class="session-card-wrapper">
-    <div class="session-card relative block w-full h-full rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background {% if not data.is_enrollment_available or data.should_show_as_inactive %}{% endif %}{% if data.user_enrolled %} ring-2 ring-coral-400{% endif %}"
+    <div class="session-card relative block w-full h-full rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background {% if data.user_enrolled %}ring-2 ring-coral-400{% endif %}"
          data-title="{{ data.session.title|lower }}"
          data-session-id="{{ data.session.pk }}"
          data-host="{{ data.session.presenter_name }}"
