@@ -420,11 +420,7 @@ button:active {
   bottom: -5px;
   margin-left: -5px;
   border: 5px solid transparent;
-  border-top-color: rgb(250 250 250);
-}
-
-.dark .session-tags-popover::after {
-  border-top-color: rgb(38 38 38);
+  border-top-color: var(--color-bg-secondary);
 }
 
 .session-tags-more {

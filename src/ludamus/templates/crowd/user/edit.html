@@ -9,7 +9,7 @@
         <div class="card">
             <div class="card-header">
                 <nav class="flex gap-4 border-b border-[var(--theme-border)] -mb-px">
-                    <a class="inline-flex items-center gap-1.5 border-b-2 border-[var(--theme-accent)] px-1 pb-2 text-sm font-medium text-[var(--theme-accent)]"
+                    <a class="inline-flex items-center gap-1.5 border-b-2 border-[var(--theme-primary)] px-1 pb-2 text-sm font-medium text-[var(--theme-primary)]"
                        href="{% url 'web:crowd:profile' %}">
                         {% heroicon_outline "user" class="w-4 h-4" %}
                         {% translate "Personal Information" %}
@@ -28,8 +28,8 @@
             </div>
             <div class="card-body">
                 {% if user.confirmed_participations_count > 0 %}
-                    <div class="flex items-start gap-2 rounded-lg bg-[var(--theme-info-bg,rgba(59,130,246,0.1))] border border-[var(--theme-info-border,rgba(59,130,246,0.3))] p-3 mb-4 text-sm">
-                        {% heroicon_outline "calendar-days" class="w-5 h-5 text-[var(--theme-info,#3b82f6)] shrink-0 mt-0.5" %}
+                    <div class="alert alert-info flex items-start gap-3 mb-4">
+                        {% heroicon_outline "calendar-days" class="w-5 h-5 shrink-0 mt-0.5" %}
                         <span>
                             {% blocktranslate count counter=user.confirmed_participations_count %}
                                 You have {{ counter }} confirmed session participation.

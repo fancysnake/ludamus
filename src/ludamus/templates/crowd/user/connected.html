@@ -14,7 +14,7 @@
                         {% heroicon_outline "user" class="w-4 h-4" %}
                         {% translate "Personal Information" %}
                     </a>
-                    <a class="inline-flex items-center gap-1.5 border-b-2 border-[var(--theme-accent)] px-1 pb-2 text-sm font-medium text-[var(--theme-accent)]"
+                    <a class="inline-flex items-center gap-1.5 border-b-2 border-[var(--theme-primary)] px-1 pb-2 text-sm font-medium text-[var(--theme-primary)]"
                        href="{% url 'web:crowd:profile-connected-users' %}">
                         {% heroicon_outline "users" class="w-4 h-4" %}
                         {% translate "Connected users" %}
@@ -28,8 +28,8 @@
             </div>
             <div class="card-body">
                 {# Info banner #}
-                <div class="flex items-start gap-3 rounded-lg bg-[var(--theme-info-bg,rgba(59,130,246,0.1))] border border-[var(--theme-info-border,rgba(59,130,246,0.3))] p-3 mb-4 text-sm">
-                    {% heroicon_solid "information-circle" class="w-5 h-5 text-[var(--theme-info,#3b82f6)] shrink-0 mt-0.5" %}
+                <div class="alert alert-info flex items-start gap-3 mb-4">
+                    {% heroicon_solid "information-circle" class="w-5 h-5 shrink-0 mt-0.5" %}
                     <p>
                         {% translate "Connected people are family members or friends that you can enroll in events. They won't have their own login accounts - you'll handle all their event registrations for them" %}
                     </p>
@@ -58,8 +58,8 @@
                         </form>
                     </div>
                 {% else %}
-                    <div class="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 mb-6 text-sm">
-                        {% heroicon_solid "exclamation-triangle" class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" %}
+                    <div class="alert alert-warning flex items-start gap-3 mb-6">
+                        {% heroicon_solid "exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" %}
                         <p>
                             {% blocktranslate %}You have reached the maximum limit of {{ max_connected_users }} connected users.{% endblocktranslate %}
                         </p>

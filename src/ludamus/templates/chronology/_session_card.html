@@ -58,7 +58,8 @@
                     {% if not ended and data.is_enrollment_available and not data.should_show_as_inactive %}
                         {% if data.is_full %}
                             {% if data.waiting_count > 0 %}
-                                <span class="text-sm font-medium" style="color: #B8B0A6">{{ data.waiting_count }} {% translate "waiting" %}</span>
+                                <span class="text-sm font-medium"
+                                      style="color: var(--color-foreground-muted)">{{ data.waiting_count }} {% translate "waiting" %}</span>
                             {% endif %}
                         {% else %}
                             <span class="text-sm font-semibold {% if data.spots_scarce %}text-coral-600 dark:text-coral-400{% else %}text-teal-700 dark:text-teal-400{% endif %}">
