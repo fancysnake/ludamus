@@ -137,6 +137,7 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
             effective_participants_limit=10,
             enrolled_count=1,
+            waiting_count=1,
             filterable_tags=[],
             full_participant_info="1/10, 1 waiting",
             has_any_enrollments=True,
@@ -1556,7 +1557,9 @@ class TestEventPageView:
         flat integers [1], causing the tag filter comparison to always fail.
         """
         tag_category = TagCategory.objects.create(
-            name="Game Type", input_type=TagCategory.InputType.SELECT, icon="dice"
+            name="Game Type",
+            input_type=TagCategory.InputType.SELECT,
+            icon="puzzle-piece",
         )
         tag = Tag.objects.create(name="RPG", category=tag_category)
         session = agenda_item.session

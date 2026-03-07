@@ -1,6 +1,6 @@
 {% extends "base_tailwind.html" %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% block title %}
     {% translate "Events" %}
 {% endblock title %}
@@ -28,7 +28,7 @@
         {% else %}
             <div class="text-center py-16">
                 <div class="text-foreground-muted">
-                    <div class="mb-4">{% heroicon_outline "calendar-days" class="w-16 h-16 mx-auto opacity-50" %}</div>
+                    <div class="mb-4">{% icon "calendar-days" class="w-16 h-16 mx-auto opacity-50" %}</div>
                     <p class="text-xl font-medium mb-2">{% translate "No events available" %}</p>
                     <p class="text-sm">{% translate "There are currently no events scheduled. Please check back later!" %}</p>
                 </div>

@@ -1,6 +1,6 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
-{% load heroicons %}
+{% load tessera %}
 {% block title %}
     {% translate "Edit Personal Data Field" %} - Ludamus Backoffice
 {% endblock title %}
@@ -62,7 +62,7 @@
                 <div class="mt-6 flex justify-end">
                     <button type="submit"
                             class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-                        {% heroicon_outline "check" class="w-4 h-4 mr-2" %}
+                        {% icon "check" class="w-4 h-4 mr-2" %}
                         {% translate "Save" %}
                     </button>
                 </div>

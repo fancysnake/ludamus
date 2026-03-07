@@ -1,53 +1,38 @@
-{% extends "base.html" %}
-{% load i18n %}
-{% load django_bootstrap5 %}
+{% extends "base_tailwind.html" %}
+{% load i18n tessera tailwind_forms %}
 {% block title %}
     {% translate "Edit profile" %}
 {% endblock title %}
 {% block body %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <ul class="nav nav-tabs card-header-tabs">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="{% url 'web:crowd:profile' %}">
-                                <i class="bi bi-person"></i>
-                                {% translate "Personal Information" %}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'web:crowd:profile-connected-users' %}">
-                                <i class="bi bi-people"></i>
-                                {% translate "Connected users" %}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'web:crowd:profile-avatar' %}">
-                                <i class="bi bi-image"></i>
-                                {% translate "Avatar" %}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    {% if user.confirmed_participations_count > 0 %}
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-calendar-check"></i>
-                            {% blocktranslate count counter=user.confirmed_participations_count %}
+    <div class="max-w-3xl mx-auto">
+        <div class="card">
+            {% url 'web:crowd:profile' as profile_url %}
+            {% url 'web:crowd:profile-connected-users' as connected_url %}
+            {% url 'web:crowd:profile-avatar' as avatar_url %}
+            {% tabs class="px-6 pt-4" %}
+            {% tab "profile" icon="user" href=profile_url active=True %}{% translate "Personal Information" %}{% end_tab %}
+            {% tab "connected" icon="users" href=connected_url %}{% translate "Connected users" %}{% end_tab %}
+            {% tab "avatar" icon="photo" href=avatar_url %}{% translate "Avatar" %}{% end_tab %}
+        {% end_tabs %}
+        <div class="card-body">
+            {% if user.confirmed_participations_count > 0 %}
+                <div class="alert alert-info flex items-start gap-3 mb-4">
+                    {% icon "calendar-days" class="w-5 h-5 shrink-0 mt-0.5" %}
+                    <span>
+                        {% blocktranslate count counter=user.confirmed_participations_count %}
                                 You have {{ counter }} confirmed session participation.
                             {% plural %}
                                 You have {{ counter }} confirmed session participations.
                             {% endblocktranslate %}
-                        </div>
-                    {% endif %}
-                    <form action="{% url 'web:crowd:profile' %}" method="post">
-                        {% csrf_token %}
-                        {% bootstrap_form form layout="horizontal" horizontal_label_class="col-sm-2" horizontal_field_class="col-sm-4" %}
-                        {% bootstrap_button button_type="submit" content="OK" %}
-                    </form>
+                    </span>
                 </div>
-            </div>
+            {% endif %}
+            <form action="{% url 'web:crowd:profile' %}" method="post">
+                {% csrf_token %}
+                {% tw_form form %}
+                {% tw_button "OK" %}
+            </form>
         </div>
     </div>
+</div>
 {% endblock body %}

@@ -54,6 +54,7 @@ class TestProposalAcceptPageView:
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "tags": [],
+                "preferred_time_slot_ids": [],
             },
             template_name="chronology/accept_proposal.html",
         )
@@ -179,6 +180,7 @@ class TestProposalAcceptPageView:
                 "spaces": [],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "tags": [],
+                "preferred_time_slot_ids": [],
             },
             template_name="chronology/accept_proposal.html",
         )
@@ -267,6 +269,7 @@ class TestProposalAcceptPageView:
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "tags": [],
+                "preferred_time_slot_ids": [],
             },
             template_name="chronology/accept_proposal.html",
         )

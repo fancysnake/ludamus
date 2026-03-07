@@ -20,8 +20,8 @@ test.describe('Event detail page', () => {
     await expect(sessionCards).toHaveCount(2);
 
     const megaStrategyCard = sessionCards.filter({ hasText: 'Mega Strategy Lab' });
-    await expect(megaStrategyCard).toContainText('Convention Center ›');
-    await expect(megaStrategyCard).toContainText('Main Hall ›');
+    await expect(megaStrategyCard).toContainText('Convention Center');
+    await expect(megaStrategyCard).toContainText('Main Hall');
     await expect(megaStrategyCard).toContainText('East Wing');
 
     await megaStrategyCard.getByRole('link', { name: 'Open details for Mega Strategy Lab' }).click();

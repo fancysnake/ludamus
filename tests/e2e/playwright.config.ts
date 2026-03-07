@@ -55,15 +55,27 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /.*\.auth\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox',
+      testIgnore: /.*\.auth\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
+      testIgnore: /.*\.auth\.spec\.ts/,
       use: { ...devices['iPhone 14 Pro'] },
+    },
+    /* Authenticated browser for profile/user tests */
+    {
+      name: 'chromium-auth',
+      testMatch: /.*\.auth\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: path.join(__dirname, '.auth-state.json'),
+      },
     },
   ],
   webServer: {

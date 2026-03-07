@@ -68,6 +68,7 @@
   --color-stone-*: initial;
 
   --color-background: #f0f1f3;
+  --color-border: #e4ddd6;
 
   --ease-spring-a-bit: linear(
     0 0%,
@@ -121,8 +122,6 @@ a, button {
   --theme-bg-secondary: #fdfcfb;
   --theme-bg-tertiary: #f7f5f3;
   --theme-border: #e4ddd6;
-  --color-border: #e4ddd6;
-  --theme-border-light: #f0ece8;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
   --theme-primary-hover: #e53e20;
@@ -165,7 +164,6 @@ a, button {
     --color-foreground-inverse: #0a0a0a;
     --theme-border: #404040;
     --color-border: #404040;
-    --theme-border-light: #262626;
     --theme-border-focus: #f85a3c;
     --theme-primary: #f85a3c;
     --theme-primary-hover: #e53e20;
@@ -206,7 +204,6 @@ a, button {
   --color-foreground-inverse: #0a0a0a;
   --theme-border: #404040;
   --color-border: #404040;
-  --theme-border-light: #262626;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
   --theme-primary-hover: #e53e20;
@@ -391,3 +388,48 @@ button:active {
   @apply scale-97;  
 }
 
+.session-tags-more:hover .session-tags-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) scale(1) translateY(0);
+}
+
+.session-tags-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 8px;
+  transform: translateX(-50%) scale(0.9) translateY(16px);
+  width: max-content;
+  min-width: 12rem;
+  max-width: 18rem;
+  z-index: 50;
+  opacity: 0;
+  transition:
+    opacity 0.35s var(--ease-spring-a-bit),
+    transform 0.35s var(--ease-spring-a-bit);
+}
+
+.session-tags-popover::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: var(--color-bg-secondary);
+}
+
+.session-tags-more {
+  position: relative;
+  z-index: 20;
+}
+
+hr {
+  border-top: 1px solid var(--color-warm-400);
+  flex-grow: 1;
+}
+
+.dark hr {
+  border-top-color: var(--color-neutral-700);
+}

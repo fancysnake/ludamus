@@ -186,13 +186,6 @@ class ProposalRepository(ProposalRepositoryProtocol):
         return EventDTO.model_validate(event)
 
     @staticmethod
-    def read_time_slots(proposal_id: int) -> list[TimeSlotDTO]:
-        time_slots = TimeSlot.objects.filter(
-            event__proposal_categories__proposals__id=proposal_id
-        )
-        return [TimeSlotDTO.model_validate(time_slot) for time_slot in time_slots]
-
-    @staticmethod
     def read_spaces(proposal_id: int) -> list[SpaceDTO]:
         spaces = Space.objects.filter(
             area__venue__event__proposal_categories__proposals__id=proposal_id
@@ -390,6 +383,12 @@ class SessionRepository(SessionRepositoryProtocol):
             )
             for s in sessions
         ]
+
+    @staticmethod
+    def read_preferred_time_slot_ids(session_id: int) -> list[int]:
+        return list(
+            TimeSlot.objects.filter(session__id=session_id).values_list("id", flat=True)
+        )
 
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):

@@ -81,6 +81,7 @@ from ludamus.pacts import (
 )
 from ludamus.pacts import SessionData as SessionCreateData
 
+from .design_fixtures import mock_event_info, mock_session_data, mock_session_data_ended
 from .exceptions import RedirectError
 from .forms import (
     ConnectedUserForm,
@@ -428,6 +429,18 @@ EVENT_PLACEHOLDER_IMAGES = [
     "placeholder-images/09.jpg",  # controller
     "placeholder-images/10.png",  # arcade
 ]
+
+
+class DesignPageView(TemplateView):
+    request: RootRequest
+    template_name = "design.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["design_event"] = mock_event_info()
+        context["design_session_data"] = mock_session_data()
+        context["design_session_data_ended"] = mock_session_data_ended()
+        return context
 
 
 class IndexPageView(TemplateView):
@@ -1056,6 +1069,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                     ),
                 ),
                 enrolled_count=session.enrolled_count,
+                waiting_count=session.waiting_count,
                 session_participations=[
                     ParticipationInfo(
                         user=UserInfo.from_user_dto(UserDTO.model_validate(sp.user)),
@@ -1801,7 +1815,8 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         session_repository = request.di.uow.sessions
         tags = session_repository.read_tags(session.pk)
         tag_categories = {
-            tc.pk: tc for tc in session_repository.read_tag_categories(session.pk)
+            tc.pk: TagCategoryData(icon=tc.icon, name=tc.name, pk=tc.pk)
+            for tc in session_repository.read_tag_categories(session.pk)
         }
         return {
             "session": session,
@@ -1809,9 +1824,18 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
             "event": event,
             "spaces": session_repository.read_spaces(session.pk),
             "time_slots": session_repository.read_time_slots(session.pk),
+            "preferred_time_slot_ids": session_repository.read_preferred_time_slot_ids(
+                session.pk
+            ),
             "form": form,
             "tags": [
-                {"category_icon": tag_categories[tag.category_id], "name": tag.name}
+                TagWithCategory(
+                    category=tag_categories[tag.category_id],
+                    category_id=tag.category_id,
+                    confirmed=tag.confirmed,
+                    name=tag.name,
+                    pk=tag.pk,
+                )
                 for tag in tags
             ],
         }
