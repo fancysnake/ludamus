@@ -33,6 +33,12 @@ class TestIcon:
         html = tpl.render(Context())
         assert "color: var(--x)" in html
 
+    def test_escapes_xss_in_style_kwarg(self) -> None:
+        tpl = Template('{% load tessera %}{% icon "clock" style=bad_style %}')
+        html = tpl.render(Context({"bad_style": '" onload="alert(1)'}))
+        assert 'onload="alert(1)"' not in html
+        assert "&quot;" in html
+
     @patch("ludamus.adapters.web.django.templatetags.tessera.icon.settings")
     def test_missing_icon_raises_in_debug(self, mock_settings: object) -> None:
         mock_settings.DEBUG = True  # type: ignore[attr-defined]
