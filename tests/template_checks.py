@@ -10,7 +10,10 @@ See: https://code.djangoproject.com/ticket/11909
 See: https://adamj.eu/tech/2022/03/30/how-to-make-django-error-for-undefined-template-variables/
 """
 
+import inspect
 import logging
+
+from django.template.base import FilterExpression
 
 MIN_ARGS = 2
 
@@ -53,6 +56,9 @@ class MissingTemplateVariableFilter(logging.Filter):
             if lookup_info and lookup_info in self.ignored_lookups:
                 return False
 
+            if self._has_default_filter_on_simple_var():
+                return True
+
             # Extract additional context from the exception
             context = self._extract_exception_context(record)
             raise MissingTemplateVariableError(
@@ -60,6 +66,18 @@ class MissingTemplateVariableFilter(logging.Filter):
                 template_name=template_name,
                 context=context,
             ) from None
+        return False
+
+    def _has_default_filter_on_simple_var(self) -> bool:
+        for frame_info in inspect.stack():
+            local_self = frame_info.frame.f_locals.get("self")
+            if isinstance(local_self, FilterExpression):
+                var = local_self.var
+                if hasattr(var, "lookups") and var.lookups and len(var.lookups) == 1:
+                    for func, _args in local_self.filters:
+                        if func.__name__ == "default":
+                            return True
+                break
         return False
 
     def _get_lookup_info(self, record: logging.LogRecord) -> tuple[str, str] | None:
