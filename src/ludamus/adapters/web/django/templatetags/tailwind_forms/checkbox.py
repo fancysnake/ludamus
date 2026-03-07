@@ -47,20 +47,20 @@ def render_multi_choice_field(field: BoundField, *, is_radio: bool = False) -> s
     for i, (value, label) in enumerate(field.field.choices):  # type: ignore[attr-defined]
         input_type = "radio" if is_radio else "checkbox"
         input_id = f"{field.id_for_label}_{i}"
-        checked = ""
+        is_checked = False
 
         if field.value():
             if is_radio:
-                checked = "checked" if str(value) == str(field.value()) else ""
+                is_checked = str(value) == str(field.value())
             else:
                 values = (
                     field.value()
                     if isinstance(field.value(), list)
                     else [field.value()]
                 )
-                checked = "checked" if str(value) in [str(v) for v in values] else ""
+                is_checked = str(value) in [str(v) for v in values]
 
-        checked_attr = "checked" if checked else ""
+        checked_attr = "checked" if is_checked else ""
         parts.append(
             format_html(
                 '<label class="flex items-center cursor-pointer">'

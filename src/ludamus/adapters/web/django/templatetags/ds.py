@@ -69,7 +69,9 @@ class SelectNode(template.Node):
 
         parts = [f'<select class="{classes}"']
         parts.extend(
-            f' {a}="{v}"' for a in ("id", "name", "size") if (v := resolved.get(a))
+            f' {a}="{escape(str(v))}"'
+            for a in ("id", "name", "size")
+            if (v := resolved.get(a))
         )
 
         if resolved.get("multiple"):
