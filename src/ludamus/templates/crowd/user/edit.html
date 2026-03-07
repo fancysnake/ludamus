@@ -1,5 +1,5 @@
 {% extends "base_tailwind.html" %}
-{% load i18n heroicons ds %}
+{% load i18n heroicons ds tailwind_forms %}
 {% block title %}
     {% translate "Edit profile" %}
 {% endblock title %}
@@ -29,18 +29,8 @@
             {% endif %}
             <form action="{% url 'web:crowd:profile' %}" method="post">
                 {% csrf_token %}
-                {% for field in form %}
-                    <div class="mb-4">
-                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-1">
-                            {{ field.label }}
-                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                        </label>
-                        {{ field }}
-                        {% if field.help_text %}<p class="mt-1 text-xs text-foreground-muted">{{ field.help_text }}</p>{% endif %}
-                        {% for error in field.errors %}<p class="mt-1 text-xs text-danger">{{ error }}</p>{% endfor %}
-                    </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-primary">OK</button>
+                {% tw_form form %}
+                {% tw_button "OK" %}
             </form>
         </div>
     </div>
