@@ -74,7 +74,6 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.flatpages",
     # Third Party
-    "django_bootstrap5",
     "django_extensions",
     "tailwind",
     "ludamus.gates.web.django.theme",
@@ -360,38 +359,6 @@ MEMBERSHIP_API_CHECK_INTERVAL = env("MEMBERSHIP_API_CHECK_INTERVAL")
 # SHA-384 hashes use base64 encoding (SRI format)
 VENDOR_DEPENDENCIES: list[dict[str, str]] = [
     {
-        "name": "bootstrap-css",
-        "url": (
-            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
-        ),
-        "filename": "bootstrap.min.css",
-        "sha384": "rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65",
-    },
-    {
-        "name": "bootstrap-js",
-        "url": (
-            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
-        ),
-        "filename": "bootstrap.bundle.min.js",
-        "sha384": "kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4",
-    },
-    {
-        "name": "bootstrap-js-map",
-        "url": (
-            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js.map"
-        ),
-        "filename": "bootstrap.bundle.min.js.map",
-        "sha384": "we5r5uLo9BDuUFnhbIA867SiyKJxIM9BKsQV4AiBc0gbyDfY2I6TJa5OAU2zIcFL",
-    },
-    {
-        "name": "bootstrap-css-map",
-        "url": (
-            "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css.map"
-        ),
-        "filename": "bootstrap.min.css.map",
-        "sha384": "S1xwa26oop5+fLMjyiyuVSmE3mCovI0Qe5d5COG6iQCKuIxgYw35mpnxNPhWp5NX",
-    },
-    {
         "name": "popperjs",
         "url": (
             "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
@@ -408,34 +375,10 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
         "sha384": "cGZ11hmqUooIlGMY+Y+gi+8AhjA4H/Qa29LQBPWKKzhmbsxvNpyWrPuBJCprTsil",
     },
     {
-        "name": "bootstrap-icons",
-        "url": (
-            "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
-        ),
-        "filename": "bootstrap-icons.min.css",
-        "sha384": "CK2SzKma4jA5H/MXDUU7i1TqZlCFaD4T01vtyDFvPlD97JQyS+IsSh1nI2EFbpyk",
-    },
-    {
         "name": "htmx",
         "url": "https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js",
         "filename": "htmx.min.js",
         "sha384": "/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz",
-    },
-    {
-        "name": "bootstrap-icons-woff2",
-        "url": (
-            "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/fonts/bootstrap-icons.woff2"
-        ),
-        "filename": "fonts/bootstrap-icons.woff2",
-        "sha384": "xEoI56EFpIZiDZZKBZxsn3gO3u/FvXtOpHbtkMWmSdfzDw3x9XdVc3i70O9hm4SC",
-    },
-    {
-        "name": "bootstrap-icons-woff",
-        "url": (
-            "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/fonts/bootstrap-icons.woff"
-        ),
-        "filename": "fonts/bootstrap-icons.woff",
-        "sha384": "IYfD9pNP/nesQsPyYtTdGCb4uhEWUmNF8GxaCvqcJFH+Of3c1b0VbH6hdHUonDSC",
     },
 ]
 
