@@ -48,6 +48,24 @@ class TestIcon:
         assert not html.strip()
 
 
+class TestDsClasses:
+    def test_returns_input_class(self) -> None:
+        tpl = Template('{% load tessera %}{% ds_classes "input" as cls %}[{{ cls }}]')
+        html = tpl.render(Context())
+        assert "border-border" in html
+        assert "bg-bg-secondary" in html
+
+    def test_returns_label_class(self) -> None:
+        tpl = Template('{% load tessera %}{% ds_classes "label" as cls %}[{{ cls }}]')
+        html = tpl.render(Context())
+        assert "text-foreground-secondary" in html
+
+    def test_unknown_name_raises(self) -> None:
+        tpl = Template('{% load tessera %}{% ds_classes "nope" %}')
+        with pytest.raises(KeyError):
+            tpl.render(Context())
+
+
 class TestSelect:
     def test_renders_select_with_options(self) -> None:
         tpl = Template(

@@ -1,8 +1,8 @@
 """Tailwind CSS classes for form elements.
 
 Single source of truth for form styling. Used by:
-- templatetags/tailwind_forms.py (Django form rendering)
-- templates/components/*.html (HTML partials — keep in sync manually)
+- templatetags/tailwind_forms/ (Django form rendering)
+- templatetags/tessera/ ({% ds_classes %} tag exposes these to templates)
 """
 
 INPUT_CLASS = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted disabled:opacity-50 disabled:cursor-not-allowed"  # noqa: E501

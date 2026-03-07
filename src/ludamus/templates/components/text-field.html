@@ -1,9 +1,10 @@
 {# Text input field. Always pass `name`. Other vars are optional — use `only` in includes. #}
-{# Optional: id, placeholder, value, required, maxlength, inputmode, pattern #}
-{# Classes kept in sync with form_styles.INPUT_CLASS #}
+{# Optional: id, placeholder, value, required, maxlength, inputmode, pattern, autocomplete #}
+{% load tessera %}
+{% ds_classes "input" as cls %}
 <input type="text"
        autocomplete="{{ autocomplete|default:'off' }}"
-       class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted disabled:opacity-50 disabled:cursor-not-allowed"
+       class="{{ cls }}"
        name="{{ name }}"
        id="{{ id|default:'' }}"
        placeholder="{{ placeholder|default:'' }}"

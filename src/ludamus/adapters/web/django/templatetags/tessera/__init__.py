@@ -16,6 +16,7 @@ Usage:
 """
 
 from ._registry import register
+from .ds_classes import ds_classes
 from .icon import icon
 from .select import SelectNode, do_select
 from .tabs import (
@@ -38,6 +39,7 @@ __all__ = [
     "do_select",
     "do_tab",
     "do_tabs",
+    "ds_classes",
     "icon",
     "register",
 ]
