@@ -385,9 +385,10 @@ class SessionRepository(SessionRepositoryProtocol):
         ]
 
     @staticmethod
-    def read_preferred_time_slot_ids(proposal_id: int) -> list[int]:
-        proposal = Proposal.objects.get(id=proposal_id)
-        return list(proposal.time_slots.values_list("id", flat=True))
+    def read_preferred_time_slot_ids(session_id: int) -> list[int]:
+        return list(
+            TimeSlot.objects.filter(session__id=session_id).values_list("id", flat=True)
+        )
 
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):

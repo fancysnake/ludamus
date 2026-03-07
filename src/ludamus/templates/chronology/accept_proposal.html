@@ -16,19 +16,19 @@
         <div class="card mb-4">
             <div class="card-header bg-info text-white flex items-center gap-2">
                 {% heroicon_outline "light-bulb" class="w-5 h-5" %}
-                <h5 class="font-semibold mb-0">{{ proposal.title }}</h5>
+                <h5 class="font-semibold mb-0">{{ session.title }}</h5>
             </div>
             <div class="card-body">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Host" %}</h6>
-                        <p class="mb-3">{{ proposal_host.name }}</p>
+                        <p class="mb-3">{{ presenter.name }}</p>
                         <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Participants Limit" %}</h6>
-                        <p class="mb-3">{{ proposal.participants_limit }}</p>
+                        <p class="mb-3">{{ session.participants_limit }}</p>
                     </div>
                     <div>
                         <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Submitted" %}</h6>
-                        <p class="mb-3">{{ proposal.creation_time|date:"M j, Y G:i" }}</p>
+                        <p class="mb-3">{{ session.creation_time|date:"M j, Y G:i" }}</p>
                         {% if tags %}
                             <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Tags" %}</h6>
                             <div class="flex flex-wrap gap-1 mb-3">
@@ -41,17 +41,17 @@
                         {% endif %}
                     </div>
                 </div>
-                {% if proposal.description %}
+                {% if session.description %}
                     <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Description" %}</h6>
-                    <p class="mb-3">{{ proposal.description }}</p>
+                    <p class="mb-3">{{ session.description }}</p>
                 {% endif %}
-                {% if proposal.requirements %}
+                {% if session.requirements %}
                     <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Requirements" %}</h6>
-                    <p class="mb-3">{{ proposal.requirements }}</p>
+                    <p class="mb-3">{{ session.requirements }}</p>
                 {% endif %}
-                {% if proposal.needs %}
+                {% if session.needs %}
                     <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Special Needs" %}</h6>
-                    <p class="mb-3">{{ proposal.needs }}</p>
+                    <p class="mb-3">{{ session.needs }}</p>
                 {% endif %}
                 {% if preferred_time_slot_ids %}
                     <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Preferred Time Slots" %}</h6>
@@ -73,7 +73,7 @@
             </div>
             <div class="card-body">
                 <form method="post"
-                      action="{% url 'web:chronology:proposal-accept' proposal_id=proposal.pk %}">
+                      action="{% url 'web:chronology:session-accept' session_id=session.pk %}">
                     {% csrf_token %}
                     <div class="mb-4">
                         <label for="space" class="block text-sm font-medium mb-1">

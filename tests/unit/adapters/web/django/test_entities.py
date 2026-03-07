@@ -11,7 +11,6 @@ def _make_session_data(
     defaults = {
         "agenda_item": MagicMock(),
         "is_enrollment_available": True,
-        "proposal": None,
         "presenter": MagicMock(),
         "session": MagicMock(),
         "tags": [],
