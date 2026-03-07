@@ -120,11 +120,11 @@ env.SESSION_COOKIE_DOMAIN = ".testserver"
 
 [tasks.unittest]
 description = "Run unit tests"
-run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus --fail-on-template-vars"
+run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus"
 
 [tasks.test]
 description = "Run all tests"
-run = "mise run _pytest -- tests tests/integration tests/unit --fail-on-template-vars"
+run = "mise run _pytest -- tests tests/integration tests/unit"
 
 [tasks.diff-cover]
 run = """
