@@ -5,7 +5,7 @@ Single source of truth for form styling. Used by:
 - templates/components/*.html (HTML partials — keep in sync manually)
 """
 
-INPUT_CLASS = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted disabled:opacity-50 disabled:cursor-not-allowed" # noqa: E501
+INPUT_CLASS = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted disabled:opacity-50 disabled:cursor-not-allowed"  # noqa: E501
 
 TEXTAREA_CLASS = (
     "w-full px-3 py-2 text-sm leading-relaxed rounded-lg border "
