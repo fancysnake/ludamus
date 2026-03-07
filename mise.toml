@@ -200,6 +200,10 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 run = "cd src/ludamus/gates/web/django/theme/static_src && npm typecheck"
 
 
+[tasks.npm]
+run = "npm"
+dir = "src/ludamus/gates/web/django/theme/static_src"
+
 # OTHER
 
 [tasks.shitcheck]
