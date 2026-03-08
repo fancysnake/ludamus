@@ -5,8 +5,8 @@
             border-color: var(--theme-border)">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-14">
-            <div class="flex items-center">
-                <a href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}"
+            <div class="flex items-center gap-6">
+                <a href="{{ request.scheme }}://{{ current_site.domain }}{% if current_sphere.default_page == 'encounters' %}{% url 'web:notice-board:index' %}{% else %}{% url 'web:index' %}{% endif %}"
                    class="flex items-center space-x-2">
                     <svg viewBox="0 0 100 100"
                          fill="none"
@@ -20,6 +20,24 @@
                         <span class="text-neutral-800 dark:text-neutral-200">{{ current_sphere.name }}</span>
                     </span>
                 </a>
+                {% if current_sphere.enabled_pages|length > 1 %}
+                    {% with ns=request.resolver_match.namespace %}
+                        <div class="hidden sm:flex items-center gap-1">
+                            {% if "events" in current_sphere.enabled_pages %}
+                                <a href="{% url 'web:index' %}"
+                                   class="px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' not in ns %}text-foreground font-medium bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
+                                    {% translate "Events" %}
+                                </a>
+                            {% endif %}
+                            {% if "encounters" in current_sphere.enabled_pages %}
+                                <a href="{% url 'web:notice-board:index' %}"
+                                   class="px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' in ns %}text-foreground font-medium bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
+                                    {% translate "Encounters" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endwith %}
+                {% endif %}
             </div>
             <div class="flex items-center">
                 {% if request.user.is_authenticated %}
@@ -47,18 +65,18 @@
                                 </div>
                                 {% if is_sphere_manager %}
                                     <a href="{% url 'panel:index' %}"
-                                       class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-[var(--theme-bg-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary">
+                                       class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-bg-tertiary text-foreground-secondary">
                                         {% icon "squares-2x2" class="w-4 h-4 opacity-60" %}
                                         {% translate "Panel" %}
                                     </a>
                                 {% endif %}
                                 <a href="{% url 'web:crowd:profile' %}"
-                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-[var(--theme-bg-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary">
+                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm transition-colors duration-150 hover:bg-bg-tertiary text-foreground-secondary">
                                     {% icon "user-circle" class="w-4 h-4 opacity-60" %}
                                     {% translate "Edit profile" %}
                                 </a>
                                 <a href="{% url 'web:crowd:auth0:logout' %}"
-                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm border-t rounded-b-lg transition-colors duration-150 hover:bg-[var(--theme-bg-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-coral-500 text-foreground-secondary border-(--theme-border)">
+                                   class="flex items-center gap-1.5 px-3.5 py-3 text-sm border-t rounded-b-lg transition-colors duration-150 hover:bg-bg-tertiary text-foreground-secondary border-[var(--theme-border)]">
                                     {% icon "arrow-right-on-rectangle" class="w-4 h-4 opacity-60" %}
                                     {% translate "Log out" %}
                                 </a>

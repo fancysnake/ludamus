@@ -17,6 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from ludamus.pacts import (
     SessionParticipationStatus,
     SessionStatus,
+    SpherePage,
     UserType,
     VirtualEnrollmentConfig,
 )
@@ -132,6 +133,15 @@ class Sphere(models.Model):
     name = models.CharField(max_length=255)
     site = models.OneToOneField(Site, on_delete=models.PROTECT, related_name="sphere")
     managers = models.ManyToManyField(User)
+    enabled_pages = models.JSONField(
+        default=SpherePage.all_values,
+        help_text="List of enabled page identifiers, e.g. ['events', 'encounters']",
+    )
+    default_page = models.CharField(
+        max_length=20,
+        choices=[(p.value, p.name.title()) for p in SpherePage],
+        default=SpherePage.EVENTS,
+    )
 
     class Meta:
         db_table = "sphere"
@@ -1047,6 +1057,59 @@ class TimeSlotRequirement(models.Model):
     def __str__(self) -> str:
         req = "required" if self.is_required else "optional"
         return f"Time slot ({req}) for {self.category.name}"
+
+
+class Encounter(models.Model):
+    sphere = models.ForeignKey(
+        Sphere, on_delete=models.CASCADE, related_name="encounters"
+    )
+    creator = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="encounters"
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(default="", blank=True)
+    game = models.CharField(max_length=255, default="", blank=True)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(blank=True, null=True)
+    place = models.CharField(max_length=255, default="", blank=True)
+    max_participants = models.PositiveIntegerField(default=0)
+    share_code = models.CharField(max_length=6, unique=True)
+    header_image = models.ImageField(upload_to="encounters/", blank=True)
+    creation_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "encounter"
+        constraints = (
+            models.CheckConstraint(
+                condition=Q(end_time__isnull=True) | Q(start_time__lt=F("end_time")),
+                name="encounter_start_before_end",
+            ),
+        )
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class EncounterRSVP(models.Model):
+    encounter = models.ForeignKey(
+        Encounter, on_delete=models.CASCADE, related_name="rsvps"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="encounter_rsvps"
+    )
+    ip_address = models.GenericIPAddressField()
+    creation_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "encounter_rsvp"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("encounter", "user"), name="encounter_rsvp_unique_user"
+            ),
+        )
+
+    def __str__(self) -> str:
+        return str(self.user)
 
 
 def can_enroll_users(

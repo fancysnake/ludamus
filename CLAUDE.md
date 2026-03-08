@@ -47,6 +47,8 @@ Strict rules:
 - Views return DTOs to templates, never models
 - Never touch `.env*` files
 - Use `assert_response` utility for view tests, never manual assertions
+- In tests, NEVER use ANY for simple values ([], {}, booleans, strings, ints).
+  Only use ANY for forms/views. See docs/agents/testing-assertions.md.
 - NEVER modify, create, or delete configuration files without explicit
   per-case approval.
 - NEVER add noqa/type ignore/pylint comments or directives without explicit

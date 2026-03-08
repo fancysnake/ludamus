@@ -8,6 +8,8 @@ from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
     DomainEnrollmentConfig,
+    Encounter,
+    EncounterRSVP,
     EnrollmentConfig,
     Event,
     HostPersonalData,
@@ -353,6 +355,20 @@ class TestTimeSlotRequirement:
         )
 
         assert str(requirement) == f"Time slot (optional) for {category_name}"
+
+
+class TestEncounter:
+    def test_str(self, faker):
+        title = faker.word()
+
+        assert str(Encounter(title=title)) == title
+
+
+class TestEncounterRSVP:
+    def test_str(self):
+        user = User(name="John Smith", email="john@example.com")
+
+        assert str(EncounterRSVP(user=user)) == str(user)
 
 
 class TestSessionFieldRequirement:

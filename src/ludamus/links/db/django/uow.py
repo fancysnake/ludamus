@@ -85,5 +85,13 @@ class UnitOfWork(UnitOfWorkProtocol):
         return repositories.TimeSlotRepository()
 
     @cached_property
+    def encounters(self) -> repositories.EncounterRepository:
+        return repositories.EncounterRepository()
+
+    @cached_property
+    def encounter_rsvps(self) -> repositories.EncounterRSVPRepository:
+        return repositories.EncounterRSVPRepository()
+
+    @cached_property
     def enrollment_configs(self) -> repositories.EnrollmentConfigRepository:
         return repositories.EnrollmentConfigRepository()
