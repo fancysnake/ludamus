@@ -1,4 +1,6 @@
 import io
+import random
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 import segno
@@ -9,6 +11,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from django.views.generic.base import TemplateView, View
 
 from ludamus.gates.web.django.entities import UserInfo
@@ -28,7 +31,107 @@ from .helpers import build_attendee_list
 if TYPE_CHECKING:
     from datetime import datetime
 
+    from django.utils.functional import _StrPromise
+
     from ludamus.gates.web.django.entities import AuthenticatedRootRequest, RootRequest
+
+    type _LazyStr = str | _StrPromise
+
+
+@dataclass(frozen=True)
+class _SampleEncounter:
+    title: _LazyStr
+    game: str
+    date: _LazyStr
+    place: _LazyStr
+    rsvp_count: int
+    max_participants: int
+
+
+_SAMPLE_ENCOUNTERS: tuple[_SampleEncounter, ...] = (
+    _SampleEncounter(
+        title=gettext_lazy("Friday Gloomhaven"),
+        game="Gloomhaven",
+        date=gettext_lazy("Friday, 7:00 PM"),
+        place=gettext_lazy("Mike's place"),
+        rsvp_count=3,
+        max_participants=4,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("D&D One-Shot"),
+        game="Dungeons & Dragons",
+        date=gettext_lazy("Sunday, 4:00 PM"),
+        place=gettext_lazy("Community center"),
+        rsvp_count=4,
+        max_participants=5,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("Call of Cthulhu Night"),
+        game="Call of Cthulhu",
+        date=gettext_lazy("Saturday, 7:00 PM"),
+        place=gettext_lazy("The Game Room"),
+        rsvp_count=3,
+        max_participants=5,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("Pathfinder Campaign"),
+        game="Pathfinder 2e",
+        date=gettext_lazy("Thursday, 6:30 PM"),
+        place=gettext_lazy("Anna's apartment"),
+        rsvp_count=4,
+        max_participants=6,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("Blades in the Dark"),
+        game="Blades in the Dark",
+        date=gettext_lazy("Wednesday, 8:00 PM"),
+        place=gettext_lazy("Kate's house"),
+        rsvp_count=3,
+        max_participants=4,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("Space Cowboys"),
+        game="Fate Core",
+        date=gettext_lazy("Friday, 6:00 PM"),
+        place=gettext_lazy("Tom's place"),
+        rsvp_count=3,
+        max_participants=5,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("Savage Worlds Oneshot"),
+        game="Savage Worlds",
+        date=gettext_lazy("Saturday, 2:00 PM"),
+        place=gettext_lazy("Board Game Café"),
+        rsvp_count=2,
+        max_participants=4,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("Catan Tournament"),
+        game="Catan",
+        date=gettext_lazy("Sunday, 1:00 PM"),
+        place=gettext_lazy("Geek Hideout"),
+        rsvp_count=5,
+        max_participants=6,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("Terraforming Mars Night"),
+        game="Terraforming Mars",
+        date=gettext_lazy("Tuesday, 6:00 PM"),
+        place=gettext_lazy("Library game room"),
+        rsvp_count=3,
+        max_participants=4,
+    ),
+    _SampleEncounter(
+        title=gettext_lazy("Root & Lost Ruins"),
+        game="Root",
+        date=gettext_lazy("Saturday, 3:00 PM"),
+        place=gettext_lazy("Dave's garage"),
+        rsvp_count=3,
+        max_participants=4,
+    ),
+)
+
+SAMPLE_COUNT = 3
 
 
 class EncountersIndexPageView(TemplateView):
@@ -43,6 +146,9 @@ class EncountersIndexPageView(TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         if not self.request.user.is_authenticated:
+            context["sample_encounters"] = random.sample(
+                _SAMPLE_ENCOUNTERS, SAMPLE_COUNT
+            )
             return context
         service = EncounterService(self.request.di.uow)
         result = service.build_index(

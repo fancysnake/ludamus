@@ -4,6 +4,7 @@ from unittest.mock import ANY
 
 from django.urls import reverse
 
+from ludamus.gates.web.django.notice_board.views import SAMPLE_COUNT
 from ludamus.pacts import EncounterDTO, EncounterIndexItem
 from tests.integration.conftest import (
     EncounterFactory,
@@ -22,9 +23,10 @@ class TestEncountersIndexPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"view": ANY},
+            context_data={"sample_encounters": ANY, "view": ANY},
             template_name=["notice_board/landing.html"],
         )
+        assert len(response.context_data["sample_encounters"]) == SAMPLE_COUNT
 
     def test_ok_empty(self, authenticated_client):
         response = authenticated_client.get(self.URL)

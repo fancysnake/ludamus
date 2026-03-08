@@ -7,7 +7,7 @@
 {% block header_section %}
 {% endblock header_section %}
 {% block body %}
-    <div class="flex flex-col items-center justify-center py-10 sm:py-14 text-center">
+    <div class="flex flex-col items-center justify-center pt-10 sm:pt-14 pb-4 text-center">
         <h1 class="text-3xl sm:text-4xl font-bold text-foreground leading-tight">
             {% translate "Organize game nights" %}
             <br>
@@ -23,34 +23,34 @@
                class="btn btn-secondary text-base px-6 py-2.5">{% translate "Log in" %}</a>
         </div>
     </div>
-    <div class="pt-8 pb-4">
+    <div class="pt-2 pb-4">
         <h2 class="text-xl font-bold text-teal-600 dark:text-teal-400 text-center mb-6">
-            {% translate "How does it work?" %}
+            {% translate "Example encounters" %}
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-            <div class="text-center">
-                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white mb-3">
-                    <span class="text-base font-bold">1</span>
+            {% for encounter in sample_encounters %}
+                <div class="card flex flex-col">
+                    <div class="block p-4 flex-1 rounded-2xl">
+                        <h3 class="font-semibold text-foreground mb-1">{{ encounter.title }}</h3>
+                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
+                            {% icon "puzzle-piece" class="h-4 w-4 flex-shrink-0" %}
+                            <span>{{ encounter.game }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
+                            {% icon "calendar" class="h-4 w-4 flex-shrink-0" %}
+                            <span>{{ encounter.date }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
+                            {% icon "map-pin" class="h-4 w-4 flex-shrink-0" %}
+                            <span>{{ encounter.place }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted">
+                            {% icon "users" class="h-4 w-4 flex-shrink-0" %}
+                            <span>{{ encounter.rsvp_count }} / {{ encounter.max_participants }}</span>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="font-semibold text-foreground mb-1">{% translate "Create an encounter" %}</h3>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                    {% translate "Enter the game, date, place, and number of players" %}
-                </p>
-            </div>
-            <div class="text-center">
-                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white mb-3">
-                    <span class="text-base font-bold">2</span>
-                </div>
-                <h3 class="font-semibold text-foreground mb-1">{% translate "Share the link" %}</h3>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">{% translate "Send a short link to your friends" %}</p>
-            </div>
-            <div class="text-center">
-                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white mb-3">
-                    <span class="text-base font-bold">3</span>
-                </div>
-                <h3 class="font-semibold text-foreground mb-1">{% translate "Play" %}</h3>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">{% translate "Everyone sees the details in one place" %}</p>
-            </div>
+            {% endfor %}
         </div>
     </div>
 {% endblock body %}

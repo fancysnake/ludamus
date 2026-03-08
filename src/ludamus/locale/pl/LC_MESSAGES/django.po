@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-08 15:50+0100\n"
+"POT-Creation-Date: 2026-03-08 16:31+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1081,31 +1081,151 @@ msgstr "Obraz jest za duży. Maksymalny rozmiar to 2 MB."
 msgid "End time must be after start time."
 msgstr "Czas zakończenia musi być po czasie rozpoczęcia."
 
-#: src/ludamus/gates/web/django/notice_board/views.py:155
+#: src/ludamus/gates/web/django/notice_board/views.py:53
+msgid "Friday Gloomhaven"
+msgstr "Piątkowy Gloomhaven"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:55
+msgid "Friday, 7:00 PM"
+msgstr "Piątek, 19:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:56
+msgid "Mike's place"
+msgstr "U Michała"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:61
+msgid "D&D One-Shot"
+msgstr "D&D One-Shot"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:63
+msgid "Sunday, 4:00 PM"
+msgstr "Niedziela, 16:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:64
+msgid "Community center"
+msgstr "Dom kultury"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:69
+msgid "Call of Cthulhu Night"
+msgstr "Wieczór z Cthulhu"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:71
+msgid "Saturday, 7:00 PM"
+msgstr "Sobota, 19:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:72
+msgid "The Game Room"
+msgstr "Pokój gier"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:77
+msgid "Pathfinder Campaign"
+msgstr "Kampania Pathfindera"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:79
+msgid "Thursday, 6:30 PM"
+msgstr "Czwartek, 18:30"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:80
+msgid "Anna's apartment"
+msgstr "U Ani"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:85
+msgid "Blades in the Dark"
+msgstr "Blades in the Dark"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:87
+msgid "Wednesday, 8:00 PM"
+msgstr "Środa, 20:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:88
+msgid "Kate's house"
+msgstr "U Kasi"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:93
+msgid "Space Cowboys"
+msgstr "Kosmiczni kowboje"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:95
+msgid "Friday, 6:00 PM"
+msgstr "Piątek, 18:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:96
+msgid "Tom's place"
+msgstr "U Tomka"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:101
+msgid "Savage Worlds Oneshot"
+msgstr "Savage Worlds Oneshot"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:103
+msgid "Saturday, 2:00 PM"
+msgstr "Sobota, 14:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:104
+msgid "Board Game Café"
+msgstr "Kawiarnia planszówkowa"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:109
+msgid "Catan Tournament"
+msgstr "Turniej Catana"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:111
+msgid "Sunday, 1:00 PM"
+msgstr "Niedziela, 13:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:112
+msgid "Geek Hideout"
+msgstr "Geekowa kryjówka"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:117
+msgid "Terraforming Mars Night"
+msgstr "Wieczór z Terraformacją Marsa"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:119
+msgid "Tuesday, 6:00 PM"
+msgstr "Wtorek, 18:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:120
+msgid "Library game room"
+msgstr "Sala gier w bibliotece"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:125
+msgid "Root & Lost Ruins"
+msgstr "Root i Zaginione Ruiny"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:127
+msgid "Saturday, 3:00 PM"
+msgstr "Sobota, 15:00"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:128
+msgid "Dave's garage"
+msgstr "Garaż Dawida"
+
+#: src/ludamus/gates/web/django/notice_board/views.py:261
 msgid "Encounter updated."
 msgstr "Spotkanie zaktualizowane."
 
-#: src/ludamus/gates/web/django/notice_board/views.py:176
+#: src/ludamus/gates/web/django/notice_board/views.py:282
 msgid "Encounter deleted."
 msgstr "Spotkanie usunięte."
 
-#: src/ludamus/gates/web/django/notice_board/views.py:253
+#: src/ludamus/gates/web/django/notice_board/views.py:359
 msgid "This encounter is full."
 msgstr "To spotkanie jest pełne."
 
-#: src/ludamus/gates/web/django/notice_board/views.py:259
+#: src/ludamus/gates/web/django/notice_board/views.py:365
 msgid "Please wait a moment before signing up again."
 msgstr "Poczekaj chwilę przed ponownym zapisem."
 
-#: src/ludamus/gates/web/django/notice_board/views.py:265
+#: src/ludamus/gates/web/django/notice_board/views.py:371
 msgid "You have already signed up."
 msgstr "Już się zapisałeś/aś."
 
-#: src/ludamus/gates/web/django/notice_board/views.py:269
+#: src/ludamus/gates/web/django/notice_board/views.py:375
 msgid "You have signed up!"
 msgstr "Zapisano!"
 
-#: src/ludamus/gates/web/django/notice_board/views.py:290
+#: src/ludamus/gates/web/django/notice_board/views.py:396
 msgid "You have been removed from this encounter."
 msgstr "Zostałeś/aś wypisany/a z tego spotkania."
 
@@ -2881,33 +3001,9 @@ msgstr "Koniec z 'hej, kiedy gramy?' na grupowym czacie."
 msgid "Sign up"
 msgstr "Zarejestruj się"
 
-#: src/ludamus/templates/notice_board/landing.html:27
-msgid "How does it work?"
-msgstr "Jak to działa?"
-
-#: src/ludamus/templates/notice_board/landing.html:33
-msgid "Create an encounter"
-msgstr "Stwórz spotkanie"
-
-#: src/ludamus/templates/notice_board/landing.html:34
-msgid "Enter the game, date, place, and number of players"
-msgstr "Podaj grę, datę, miejsce i liczbę graczy"
-
-#: src/ludamus/templates/notice_board/landing.html:40
-msgid "Share the link"
-msgstr "Udostępnij link"
-
-#: src/ludamus/templates/notice_board/landing.html:41
-msgid "Send a short link to your friends"
-msgstr "Wyślij krótki link znajomym"
-
-#: src/ludamus/templates/notice_board/landing.html:47
-msgid "Play"
-msgstr "Grajcie"
-
-#: src/ludamus/templates/notice_board/landing.html:48
-msgid "Everyone sees the details in one place"
-msgstr "Wszyscy widzą szczegóły w jednym miejscu"
+#: src/ludamus/templates/notice_board/landing.html:28
+msgid "Example encounters"
+msgstr "Przykładowe spotkania"
 
 #: src/ludamus/templates/panel/_time-slot-form.html:6
 msgid "Time Slot Details"
