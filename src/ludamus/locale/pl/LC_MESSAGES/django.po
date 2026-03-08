@@ -2234,15 +2234,13 @@ msgid "Minimum age"
 msgstr "Minimalny wiek"
 
 #: src/ludamus/templates/chronology/session_tags.html:25
-#, fuzzy, python-format
-#| msgid "%(counter)s area"
-#| msgid_plural "%(counter)s areas"
+#, python-format
 msgid "%(counter)s more tag"
 msgid_plural "%(counter)s more tags"
-msgstr[0] "%(counter)s strefa"
-msgstr[1] "%(counter)s strefy"
-msgstr[2] "%(counter)s stref"
-msgstr[3] "%(counter)s stref"
+msgstr[0] "%(counter)s kolejny tag"
+msgstr[1] "%(counter)s kolejne tagi"
+msgstr[2] "%(counter)s kolejnych tagów"
+msgstr[3] "%(counter)s kolejnych tagów"
 
 #: src/ludamus/templates/components/encounter_card.html:12
 msgid "You organize"
@@ -2296,10 +2294,8 @@ msgstr[3] ""
 
 # Login Required Page
 #: src/ludamus/templates/components/label.html:9
-#, fuzzy
-#| msgid "(required)"
 msgid "required"
-msgstr "(wymagane)"
+msgstr "wymagane"
 
 #: src/ludamus/templates/components/login_button.html:8
 msgid "Log in"
@@ -2599,21 +2595,16 @@ msgid "Value"
 msgstr "Wartość"
 
 #: src/ludamus/templates/design.html:61
-#, fuzzy
-#| msgid "Event Name"
 msgid "Event card"
-msgstr "Nazwa wydarzenia"
+msgstr "Karta wydarzenia"
 
 #: src/ludamus/templates/design.html:63
 msgid "Chronology event card for the index / event list. Debug in isolation."
 msgstr ""
 
 #: src/ludamus/templates/design.html:73
-#, fuzzy
-#| msgid "Session"
-#| msgid_plural "Sessions"
 msgid "Session card"
-msgstr "Punkt programu"
+msgstr "Karta punktu programu"
 
 #: src/ludamus/templates/design.html:75
 msgid "Session card used on the event page. Upcoming (with spots) and ended variants."
@@ -2624,10 +2615,8 @@ msgid "Form controls"
 msgstr "Kontrolki formularza"
 
 #: src/ludamus/templates/design.html:89
-#, fuzzy
-#| msgid "Participants"
 msgid "Partials:"
-msgstr "Uczestnicy"
+msgstr "Fragmenty:"
 
 #: src/ludamus/templates/design.html:94
 msgid "Text field"
@@ -2638,26 +2627,20 @@ msgid "Placeholder"
 msgstr "Tekst zastępczy"
 
 #: src/ludamus/templates/design.html:103
-#, fuzzy
-#| msgid "Text"
 msgid "Textarea"
-msgstr "Tekst"
+msgstr "Pole tekstowe"
 
 #: src/ludamus/templates/design.html:116
 msgid "Choose an option..."
 msgstr ""
 
 #: src/ludamus/templates/design.html:117
-#, fuzzy
-#| msgid "Options"
 msgid "Option A"
-msgstr "Opcje"
+msgstr "Opcja A"
 
 #: src/ludamus/templates/design.html:118
-#, fuzzy
-#| msgid "Options"
 msgid "Option B"
-msgstr "Opcje"
+msgstr "Opcja B"
 
 #: src/ludamus/templates/design.html:126
 msgid "Checkbox"
@@ -3781,100 +3764,3 @@ msgstr "Kopiuj"
 #: src/ludamus/templates/panel/venues.html:196
 msgid "No venues yet. Venues will be managed here once available."
 msgstr "Brak lokalizacji. Lokalizacje będą tutaj zarządzane po ich utworzeniu."
-
-#~ msgid "Please enter your name."
-#~ msgstr "Podaj swoje imię."
-
-#, fuzzy
-#~| msgid "Max"
-#~ msgid "max"
-#~ msgstr "Max"
-
-#~ msgid "Your name"
-#~ msgstr "Twoje imię"
-
-#~ msgid "Sign up anonymously"
-#~ msgstr "Zapisz się anonimowo"
-
-#~ msgid "Done"
-#~ msgstr "Gotowe"
-
-#~ msgid "Title"
-#~ msgstr "Tytuł"
-
-#~ msgid "Start time"
-#~ msgstr "Czas rozpoczęcia"
-
-#~ msgid "End time"
-#~ msgstr "Czas zakończenia"
-
-#~ msgid "Place"
-#~ msgstr "Miejsce"
-
-#~ msgid "Max participants"
-#~ msgstr "Maks. uczestników"
-
-#~ msgid "Header image"
-#~ msgstr "Zdjęcie nagłówkowe"
-
-#~ msgid "Max 2 MB. JPG, PNG, or WebP."
-#~ msgstr "Maks. 2 MB. JPG, PNG lub WebP."
-
-#~ msgid "Enter 0 for no participant limit."
-#~ msgstr "Wpisz 0, aby nie ograniczać liczby uczestników."
-
-#~ msgid "Supports Markdown formatting."
-#~ msgstr "Obsługuje formatowanie Markdown."
-
-#~ msgid "My Encounters"
-#~ msgstr "Moje spotkania"
-
-#~ msgid "You haven't created any encounters yet."
-#~ msgstr "Nie utworzyłeś/aś jeszcze żadnych spotkań."
-
-#~ msgid "No upcoming encounters you've RSVP'd to."
-#~ msgstr "Brak nadchodzących spotkań, na które się zapisałeś/aś."
-
-#~ msgid "Proposal not found."
-#~ msgstr "Zgłoszenie nie zostało znalezione."
-
-#~ msgid "Edit Profile"
-#~ msgstr "Edycja danych"
-
-#~ msgid "Logout"
-#~ msgstr "Wyloguj"
-
-#~ msgid "Login"
-#~ msgstr "Zaloguj"
-
-#~ msgid "Contact me"
-#~ msgstr "Kontakt"
-
-#~ msgid "Hosted by"
-#~ msgstr "Prowadzący"
-
-#, python-format
-#~ msgid "%(counter)s slot open"
-#~ msgid_plural "%(counter)s slots open"
-#~ msgstr[0] "%(counter)s otwarty termin"
-#~ msgstr[1] "%(counter)s otwarte terminy"
-#~ msgstr[2] "%(counter)s otwartych terminów"
-#~ msgstr[3] "%(counter)s otwartych terminów"
-
-#~ msgid "Location"
-#~ msgstr "Miejsce"
-
-#~ msgid "TBA"
-#~ msgstr "Do ustalenia"
-
-#~ msgid "Min age"
-#~ msgstr "Min wiek"
-
-#~ msgid "Enrollment Status"
-#~ msgstr "Status zapisu"
-
-#~ msgid "Your Status"
-#~ msgstr "Twój status"
-
-#~ msgid "Connected Users Status"
-#~ msgstr "Status powiązanych użytkowników"
