@@ -73,6 +73,7 @@ from ludamus.pacts import (
     SessionRepositoryProtocol,
     SessionStatus,
     SpaceDTO,
+    SpherePage,
     TagCategoryDTO,
     TagDTO,
     UserData,
@@ -433,7 +434,19 @@ class DesignPageView(TemplateView):
         return context
 
 
-class IndexPageView(TemplateView):
+class IndexRedirectView(View):
+    request: RootRequest
+
+    def get(self, _request: RootRequest) -> HttpResponse:
+        sphere = self.request.di.uow.spheres.read(
+            self.request.context.current_sphere_id
+        )
+        if sphere.default_page == SpherePage.ENCOUNTERS:
+            return redirect("web:notice-board:index")
+        return redirect("web:events")
+
+
+class EventsPageView(TemplateView):
     request: RootRequest
     template_name = "index.html"
 

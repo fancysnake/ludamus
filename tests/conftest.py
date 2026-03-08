@@ -35,3 +35,8 @@ def time_zone(settings):
 @pytest.fixture(autouse=True)
 def english_language(settings):
     settings.LANGUAGE_CODE = "en"
+
+
+@pytest.fixture(autouse=True)
+def _media_root(settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path / "media")

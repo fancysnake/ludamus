@@ -1,5 +1,5 @@
 import io
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import segno
 from django.contrib import messages
@@ -31,15 +31,23 @@ if TYPE_CHECKING:
     from ludamus.gates.web.django.entities import AuthenticatedRootRequest, RootRequest
 
 
-class EncountersIndexPageView(LoginRequiredMixin, TemplateView):
-    request: AuthenticatedRootRequest
+class EncountersIndexPageView(TemplateView):
+    request: RootRequest
     template_name = "notice_board/index.html"
+
+    def get_template_names(self) -> list[str]:
+        if not self.request.user.is_authenticated:
+            return ["notice_board/landing.html"]
+        return [self.template_name]
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+        if not self.request.user.is_authenticated:
+            return context
         service = EncounterService(self.request.di.uow)
         result = service.build_index(
-            self.request.context.current_sphere_id, self.request.context.current_user_id
+            self.request.context.current_sphere_id,
+            cast("int", self.request.context.current_user_id),
         )
         context["upcoming_encounters"] = result.upcoming
         context["past_encounters"] = result.past

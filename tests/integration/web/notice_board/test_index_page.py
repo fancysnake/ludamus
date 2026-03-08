@@ -16,11 +16,14 @@ from tests.integration.utils import assert_response
 class TestEncountersIndexPageView:
     URL = reverse("web:notice-board:index")
 
-    def test_login_required(self, client):
+    def test_anonymous_sees_landing_page(self, client):
         response = client.get(self.URL)
 
         assert_response(
-            response, HTTPStatus.FOUND, url="/crowd/login-required/?next=/encounters/"
+            response,
+            HTTPStatus.OK,
+            context_data={"view": ANY},
+            template_name=["notice_board/landing.html"],
         )
 
     def test_ok_empty(self, authenticated_client):

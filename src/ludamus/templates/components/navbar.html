@@ -6,7 +6,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-14">
             <div class="flex items-center gap-6">
-                <a href="{{ request.scheme }}://{{ current_site.domain }}{% if current_sphere.default_page == 'encounters' %}{% url 'web:notice-board:index' %}{% else %}{% url 'web:index' %}{% endif %}"
+                <a href="{{ request.scheme }}://{{ current_site.domain }}{% url 'web:index' %}"
                    class="flex items-center space-x-2">
                     <svg viewBox="0 0 100 100"
                          fill="none"
@@ -24,7 +24,7 @@
                     {% with ns=request.resolver_match.namespace %}
                         <div class="hidden sm:flex items-center gap-1">
                             {% if "events" in current_sphere.enabled_pages %}
-                                <a href="{% url 'web:index' %}"
+                                <a href="{% url 'web:events' %}"
                                    class="px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' not in ns %}text-foreground font-medium bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
                                     {% translate "Events" %}
                                 </a>

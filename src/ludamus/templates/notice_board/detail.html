@@ -296,18 +296,19 @@
         })();
 
         function closeAllMenus() {
-            document.querySelectorAll('#share-menu, .calendar-menu').forEach(function(m) {
+            document.querySelectorAll('.share-menu, .calendar-menu').forEach(function(m) {
                 m.classList.add('hidden');
             });
         }
 
-        function toggleMenu(id) {
-            var menu = document.getElementById(id);
-            if (!menu) return;
-            var isHidden = menu.classList.contains('hidden');
-            closeAllMenus();
-            if (isHidden) menu.classList.remove('hidden');
-        }
+        document.querySelectorAll('.share-toggle-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var menu = btn.closest('.share-menu-wrapper').querySelector('.share-menu');
+                var isHidden = menu.classList.contains('hidden');
+                closeAllMenus();
+                if (isHidden) menu.classList.remove('hidden');
+            });
+        });
         document.querySelectorAll('.calendar-toggle-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var menu = btn.closest('.calendar-menu-wrapper').querySelector('.calendar-menu');
@@ -317,44 +318,44 @@
             });
         });
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('#share-menu-wrapper') && !e.target.closest('.calendar-menu-wrapper')) {
+            if (!e.target.closest('.share-menu-wrapper') && !e.target.closest('.calendar-menu-wrapper')) {
                 closeAllMenus();
             }
         });
         (function() {
-            var copyLinkBtn = document.getElementById('copy-link-btn');
-            if (copyLinkBtn) {
-                copyLinkBtn.addEventListener('click', function() {
-                    var urlEl = document.getElementById('share-url');
-                    if (!urlEl) return;
-                    navigator.clipboard.writeText(urlEl.value).then(function() {
-                        var orig = copyLinkBtn.textContent;
-                        copyLinkBtn.textContent = copyLinkBtn.dataset.copiedText;
+            var shareUrl = document.getElementById('share-url');
+            var shareData = document.getElementById('share-info-data');
+
+            document.querySelectorAll('.copy-link-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    if (!shareUrl) return;
+                    navigator.clipboard.writeText(shareUrl.value).then(function() {
+                        var orig = btn.textContent;
+                        btn.textContent = btn.dataset.copiedText;
                         setTimeout(function() {
-                            copyLinkBtn.textContent = orig;
+                            btn.textContent = orig;
                         }, 2000);
                     });
                     closeAllMenus();
                 });
-            }
-            var copyInfoBtn = document.getElementById('copy-info-btn');
-            if (copyInfoBtn) {
-                copyInfoBtn.addEventListener('click', function() {
-                    var d = document.getElementById('share-info-data').dataset;
+            });
+            document.querySelectorAll('.copy-info-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    if (!shareData) return;
+                    var d = shareData.dataset;
                     var lines = [d.title, d.time];
                     if (d.place) lines.push(d.place);
                     lines.push(d.url);
                     navigator.clipboard.writeText(lines.join('\n'));
                     closeAllMenus();
                 });
-            }
-            var showQrBtn = document.getElementById('show-qr-btn');
-            if (showQrBtn) {
-                showQrBtn.addEventListener('click', function() {
+            });
+            document.querySelectorAll('.show-qr-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
                     document.getElementById('qr-modal').showModal();
                     closeAllMenus();
                 });
-            }
+            });
             var qrModal = document.getElementById('qr-modal');
             if (qrModal) {
                 qrModal.addEventListener('click', function(e) {

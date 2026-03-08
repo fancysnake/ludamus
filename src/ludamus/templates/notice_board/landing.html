@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% block title %}
+    {{ current_sphere.name }}
+{% endblock title %}
+{% block header_section %}
+{% endblock header_section %}
+{% block body %}
+    <div class="flex flex-col items-center justify-center py-10 sm:py-14 text-center">
+        <h1 class="text-3xl sm:text-4xl font-bold text-foreground leading-tight">
+            {% translate "Organize game nights" %}
+            <br>
+            <span class="text-teal-600 dark:text-teal-400">{% translate "with friends" %}</span>
+        </h1>
+        <p class="mt-4 text-lg text-foreground-muted max-w-md">
+            {% translate "No more 'hey, when are we playing?' in the group chat." %}
+        </p>
+        <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <a href="{% url 'web:crowd:auth0:login' %}?screen_hint=signup&next={% url 'web:notice-board:index' %}"
+               class="btn btn-primary text-base px-6 py-2.5">{% translate "Sign up" %}</a>
+            <a href="{% url 'web:crowd:auth0:login' %}?next={% url 'web:notice-board:index' %}"
+               class="btn btn-secondary text-base px-6 py-2.5">{% translate "Log in" %}</a>
+        </div>
+    </div>
+    <div class="pt-8 pb-4">
+        <h2 class="text-xl font-bold text-teal-600 dark:text-teal-400 text-center mb-6">
+            {% translate "How does it work?" %}
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white mb-3">
+                    <span class="text-base font-bold">1</span>
+                </div>
+                <h3 class="font-semibold text-foreground mb-1">{% translate "Create an encounter" %}</h3>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                    {% translate "Enter the game, date, place, and number of players" %}
+                </p>
+            </div>
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white mb-3">
+                    <span class="text-base font-bold">2</span>
+                </div>
+                <h3 class="font-semibold text-foreground mb-1">{% translate "Share the link" %}</h3>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">{% translate "Send a short link to your friends" %}</p>
+            </div>
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white mb-3">
+                    <span class="text-base font-bold">3</span>
+                </div>
+                <h3 class="font-semibold text-foreground mb-1">{% translate "Play" %}</h3>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">{% translate "Everyone sees the details in one place" %}</p>
+            </div>
+        </div>
+    </div>
+{% endblock body %}

@@ -99,7 +99,8 @@ chronology_urls = [
 ]
 
 urlpatterns = [
-    path("", views.IndexPageView.as_view(), name="index"),
+    path("", views.IndexRedirectView.as_view(), name="index"),
+    path("events/", views.EventsPageView.as_view(), name="events"),
     path("design/", views.DesignPageView.as_view(), name="design"),
     path(
         "design/tailwind/",
