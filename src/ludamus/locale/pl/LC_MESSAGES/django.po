@@ -2971,7 +2971,7 @@ msgstr "Czym są spotkania?"
 
 #: src/ludamus/templates/notice_board/index.html:19
 msgid "Encounters are small private meetups you can organize and share via a short link. Create one, invite friends, and play!"
-msgstr "Spotkania to małe prywatne spotkania, które możesz organizować i udostępniać za pomocą krótkiego linku. Stwórz jedno, zaproś znajomych i grajcie!"
+msgstr "Spotkania to małe prywatne wydarzenia, które możesz organizować i udostępniać za pomocą krótkiego linku. Stwórz jedno, zaproś znajomych i grajcie!"
 
 #: src/ludamus/templates/notice_board/index.html:45
 msgid "No upcoming encounters."
