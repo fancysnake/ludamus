@@ -226,7 +226,7 @@ class EncounterRSVPFactory(DjangoModelFactory):
         model = EncounterRSVP
 
     encounter = SubFactory(EncounterFactory)
-    name = Faker("name")
+    user = SubFactory(UserFactory)
     ip_address = Faker("ipv4")
 
 

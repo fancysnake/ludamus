@@ -1873,11 +1873,9 @@ class EncounterRepository(EncounterRepositoryProtocol):
 
 class EncounterRSVPRepository(EncounterRSVPRepositoryProtocol):
     @staticmethod
-    def create(
-        encounter_id: int, ip_address: str, user_id: int | None = None, name: str = ""
-    ) -> EncounterRSVPDTO:
+    def create(encounter_id: int, ip_address: str, user_id: int) -> EncounterRSVPDTO:
         rsvp = EncounterRSVP.objects.create(
-            encounter_id=encounter_id, ip_address=ip_address, user_id=user_id, name=name
+            encounter_id=encounter_id, ip_address=ip_address, user_id=user_id
         )
         return EncounterRSVPDTO.model_validate(rsvp)
 

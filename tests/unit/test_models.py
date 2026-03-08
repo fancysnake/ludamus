@@ -365,15 +365,10 @@ class TestEncounter:
 
 
 class TestEncounterRSVP:
-    def test_str_with_name(self, faker):
-        name = faker.word()
-
-        assert str(EncounterRSVP(name=name)) == name
-
-    def test_str_with_user(self):
+    def test_str(self):
         user = User(name="John Smith", email="john@example.com")
 
-        assert str(EncounterRSVP(name="", user=user)) == str(user)
+        assert str(EncounterRSVP(user=user)) == str(user)
 
 
 class TestSessionFieldRequirement:

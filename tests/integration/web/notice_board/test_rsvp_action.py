@@ -14,36 +14,18 @@ class TestEncounterRSVPActionView:
             "web:notice-board:encounter-rsvp", kwargs={"share_code": share_code}
         )
 
-    def test_requires_post(self, client, encounter):
-        response = client.get(self._url(encounter.share_code))
+    def test_requires_post(self, authenticated_client, encounter):
+        response = authenticated_client.get(self._url(encounter.share_code))
 
         assert_response(response, HTTPStatus.METHOD_NOT_ALLOWED)
 
-    def test_anonymous_with_name(self, client, encounter):
-        response = client.post(self._url(encounter.share_code), {"name": "Alice"})
+    def test_login_required(self, client, encounter):
+        response = client.post(self._url(encounter.share_code))
 
         assert_response(
             response,
             HTTPStatus.FOUND,
-            messages=((constants.SUCCESS, "You have signed up!"),),
-            url=reverse(
-                "web:notice-board:encounter-detail",
-                kwargs={"share_code": encounter.share_code},
-            ),
-        )
-        assert EncounterRSVP.objects.filter(encounter=encounter, name="Alice").exists()
-
-    def test_anonymous_without_name(self, client, encounter):
-        response = client.post(self._url(encounter.share_code), {"name": ""})
-
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=((constants.ERROR, "Please enter your name."),),
-            url=reverse(
-                "web:notice-board:encounter-detail",
-                kwargs={"share_code": encounter.share_code},
-            ),
+            url=f"/crowd/login-required/?next=/encounters/{encounter.share_code}/do/rsvp",
         )
         assert not EncounterRSVP.objects.filter(encounter=encounter).exists()
 
@@ -80,11 +62,11 @@ class TestEncounterRSVPActionView:
         ).count()
         assert rsvp_count == 1
 
-    def test_full_encounter(self, client, sphere):
+    def test_full_encounter(self, authenticated_client, sphere, user):
         encounter = EncounterFactory(sphere=sphere, max_participants=1)
         EncounterRSVPFactory(encounter=encounter)
 
-        response = client.post(self._url(encounter.share_code), {"name": "Late Comer"})
+        response = authenticated_client.post(self._url(encounter.share_code))
 
         assert_response(
             response,
@@ -95,13 +77,11 @@ class TestEncounterRSVPActionView:
                 kwargs={"share_code": encounter.share_code},
             ),
         )
-        assert not EncounterRSVP.objects.filter(name="Late Comer").exists()
+        assert not EncounterRSVP.objects.filter(encounter=encounter, user=user).exists()
 
-    def test_rsvp_with_x_forwarded_for(self, client, encounter):
-        response = client.post(
-            self._url(encounter.share_code),
-            {"name": "Forwarded"},
-            HTTP_X_FORWARDED_FOR="203.0.113.50",
+    def test_rsvp_with_x_forwarded_for(self, authenticated_client, encounter, user):
+        response = authenticated_client.post(
+            self._url(encounter.share_code), HTTP_X_FORWARDED_FOR="203.0.113.50"
         )
 
         assert_response(
@@ -110,16 +90,14 @@ class TestEncounterRSVPActionView:
             messages=((constants.SUCCESS, "You have signed up!"),),
             url=f"/e/{encounter.share_code}/",
         )
-        rsvp = EncounterRSVP.objects.get(name="Forwarded")
+        rsvp = EncounterRSVP.objects.get(user=user)
         assert rsvp.ip_address == "203.0.113.50"
 
-    def test_ip_throttle(self, client, encounter):
+    def test_ip_throttle(self, authenticated_client, encounter):
         EncounterRSVPFactory(encounter=encounter, ip_address="10.0.0.1")
 
-        response = client.post(
-            self._url(encounter.share_code),
-            {"name": "Throttled"},
-            REMOTE_ADDR="10.0.0.1",
+        response = authenticated_client.post(
+            self._url(encounter.share_code), REMOTE_ADDR="10.0.0.1"
         )
 
         assert_response(
@@ -133,12 +111,10 @@ class TestEncounterRSVPActionView:
                 kwargs={"share_code": encounter.share_code},
             ),
         )
-        assert not EncounterRSVP.objects.filter(name="Throttled").exists()
 
-    def test_not_found(self, client):
-        response = client.post(
-            reverse("web:notice-board:encounter-rsvp", kwargs={"share_code": "XXXXXX"}),
-            {"name": "Nobody"},
+    def test_not_found(self, authenticated_client):
+        response = authenticated_client.post(
+            reverse("web:notice-board:encounter-rsvp", kwargs={"share_code": "XXXXXX"})
         )
 
         assert_response_404(response)

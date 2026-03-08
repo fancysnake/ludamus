@@ -1095,32 +1095,21 @@ class EncounterRSVP(models.Model):
         Encounter, on_delete=models.CASCADE, related_name="rsvps"
     )
     user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name="encounter_rsvps",
+        User, on_delete=models.CASCADE, related_name="encounter_rsvps"
     )
-    name = models.CharField(max_length=255, blank=True)
     ip_address = models.GenericIPAddressField()
     creation_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "encounter_rsvp"
         constraints = (
-            models.CheckConstraint(
-                condition=Q(user__isnull=False) | ~Q(name=""),
-                name="encounter_rsvp_user_or_name",
-            ),
             models.UniqueConstraint(
-                fields=("encounter", "user"),
-                condition=Q(user__isnull=False),
-                name="encounter_rsvp_unique_user",
+                fields=("encounter", "user"), name="encounter_rsvp_unique_user"
             ),
         )
 
     def __str__(self) -> str:
-        return self.name or str(self.user)
+        return str(self.user)
 
 
 def can_enroll_users(

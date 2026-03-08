@@ -141,8 +141,8 @@
                             {% include "notice_board/_organizer_actions.html" %}
                         {% endif %}
                     </div>
-                    {# Calendar button — mobile only, for non-attendees and creators #}
-                    {% if not user_has_rsvpd or is_creator %}
+                    {# Calendar button — mobile only, for authenticated non-attendees and creators #}
+                    {% if user.is_authenticated and not user_has_rsvpd or is_creator %}
                         <div class="lg:hidden">{% include "notice_board/_calendar_inline.html" %}</div>
                     {% endif %}
                     {# Description #}
@@ -162,8 +162,8 @@
                     {% include "notice_board/_organizer_actions.html" %}
                 {% endif %}
             </div>
-            {# Calendar button — desktop only, for non-attendees and creators #}
-            {% if not user_has_rsvpd or is_creator %}
+            {# Calendar button — desktop only, for authenticated non-attendees and creators #}
+            {% if user.is_authenticated and not user_has_rsvpd or is_creator %}
                 <div class="hidden lg:block">{% include "notice_board/_calendar_inline.html" %}</div>
             {% endif %}
             {# Participants list #}
@@ -176,15 +176,8 @@
                         <ul class="space-y-2">
                             {% for attendee in attendees %}
                                 <li class="flex items-center gap-2 text-sm">
-                                    {% if attendee.pk %}
-                                        {% include "components/avatar.html" with user=attendee size="size-6" %}
-                                        <span class="text-foreground">{{ attendee.full_name|default:attendee.name }}</span>
-                                    {% else %}
-                                        <div class="size-6 rounded-full shrink-0 bg-bg-tertiary border border-border flex items-center justify-center">
-                                            {% icon "user" class="h-3.5 w-3.5 text-foreground-secondary" variant="mini" %}
-                                        </div>
-                                        <span class="text-foreground-secondary italic">{{ attendee.name }}</span>
-                                    {% endif %}
+                                    {% include "components/avatar.html" with user=attendee size="size-6" %}
+                                    <span class="text-foreground">{{ attendee.full_name|default:attendee.name }}</span>
                                 </li>
                             {% endfor %}
                         </ul>

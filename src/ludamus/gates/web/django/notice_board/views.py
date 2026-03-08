@@ -224,10 +224,10 @@ def _get_client_ip(request: HttpRequest) -> str:
     return str(request.META.get("REMOTE_ADDR", ""))
 
 
-class EncounterRSVPActionView(View):
-    request: RootRequest
+class EncounterRSVPActionView(LoginRequiredMixin, View):
+    request: AuthenticatedRootRequest
 
-    def post(self, request: RootRequest, share_code: str) -> HttpResponse:
+    def post(self, request: AuthenticatedRootRequest, share_code: str) -> HttpResponse:
         uow = self.request.di.uow
 
         try:
@@ -251,20 +251,13 @@ class EncounterRSVPActionView(View):
             messages.error(request, _("Please wait a moment before signing up again."))
             return redirect(detail_url)
 
-        # Authenticated user: check duplicate
-        if request.user.is_authenticated:
-            if uow.encounter_rsvps.user_has_rsvpd(encounter.pk, request.user.pk):
-                messages.warning(request, _("You have already signed up."))
-                return redirect(detail_url)
-            uow.encounter_rsvps.create(
-                encounter.pk, ip_address, user_id=request.user.pk
-            )
-        elif not (name := request.POST.get("name", "").strip()):
-            messages.error(request, _("Please enter your name."))
+        # Check duplicate
+        user_id = request.context.current_user_id
+        if uow.encounter_rsvps.user_has_rsvpd(encounter.pk, user_id):
+            messages.warning(request, _("You have already signed up."))
             return redirect(detail_url)
-        else:
-            uow.encounter_rsvps.create(encounter.pk, ip_address, name=name)
 
+        uow.encounter_rsvps.create(encounter.pk, ip_address, user_id=user_id)
         messages.success(request, _("You have signed up!"))
         return redirect(detail_url)
 

@@ -336,9 +336,8 @@ class EncounterRSVPDTO(BaseModel):
     creation_time: datetime
     encounter_id: int
     ip_address: str
-    name: str
     pk: int
-    user_id: int | None
+    user_id: int
 
 
 class EncounterData(TypedDict, total=False):
@@ -846,7 +845,7 @@ class EncounterRepositoryProtocol(Protocol):
 class EncounterRSVPRepositoryProtocol(Protocol):
     @staticmethod
     def create(
-        encounter_id: int, ip_address: str, user_id: int | None = None, name: str = ""
+        encounter_id: int, ip_address: str, user_id: int
     ) -> EncounterRSVPDTO: ...
     @staticmethod
     def list_by_encounter(encounter_id: int) -> list[EncounterRSVPDTO]: ...

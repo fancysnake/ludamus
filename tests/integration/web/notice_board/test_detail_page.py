@@ -127,13 +127,13 @@ class TestEncounterDetailPageView:
         )
         attendees = [
             UserInfo(
-                avatar_url=None,
-                discord_username="",
-                full_name="",
-                name=r.name,
-                pk=0,
-                slug="",
-                username="",
+                avatar_url=gravatar_url(r.user.email),
+                discord_username=r.user.discord_username,
+                full_name=r.user.full_name,
+                name=r.user.name,
+                pk=r.user.pk,
+                slug=r.user.slug,
+                username=r.user.username,
             )
             for r in rsvps
         ]
@@ -184,7 +184,7 @@ class TestEncounterDetailPageView:
             username="rsvpuser", email="rsvp@example.com", name="RSVP User"
         )
         encounter = EncounterFactory(sphere=sphere, max_participants=6)
-        EncounterRSVPFactory(encounter=encounter, user=rsvp_user, name="")
+        EncounterRSVPFactory(encounter=encounter, user=rsvp_user)
         url = reverse(
             "web:notice-board:encounter-detail",
             kwargs={"share_code": encounter.share_code},
