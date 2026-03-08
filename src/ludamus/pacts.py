@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -123,6 +123,15 @@ class SessionStatus(StrEnum):
 class SessionParticipationStatus(StrEnum):
     CONFIRMED = auto()
     WAITING = auto()
+
+
+class SpherePage(StrEnum):
+    EVENTS = "events"
+    ENCOUNTERS = "encounters"
+
+    @classmethod
+    def all_values(cls) -> list[str]:
+        return [p.value for p in cls]
 
 
 class SessionParticipationDTO(BaseModel):
@@ -276,6 +285,8 @@ class SiteDTO(BaseModel):
 class SphereDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    default_page: SpherePage
+    enabled_pages: list[SpherePage]
     name: str
     pk: int
     site_id: int
@@ -294,6 +305,80 @@ class EventDTO(BaseModel):
     slug: str
     sphere_id: int
     start_time: datetime
+
+
+class EncounterDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    creator_id: int
+    description: str
+    end_time: datetime | None
+    game: str
+    header_image: str
+    max_participants: int
+    pk: int
+    place: str
+    share_code: str
+    sphere_id: int
+    start_time: datetime
+    title: str
+
+    @field_validator("header_image", mode="before")
+    @classmethod
+    def _coerce_header_image(cls, v: object) -> str:
+        return str(v) if v else ""
+
+
+class EncounterRSVPDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    encounter_id: int
+    ip_address: str
+    name: str
+    pk: int
+    user_id: int | None
+
+
+class EncounterData(TypedDict, total=False):
+    creator_id: int
+    description: str
+    end_time: datetime | None
+    game: str
+    header_image: str
+    max_participants: int
+    place: str
+    share_code: str
+    sphere_id: int
+    start_time: datetime
+    title: str
+
+
+@dataclass
+class EncounterDetailResult:  # pylint: disable=too-many-instance-attributes
+    encounter: EncounterDTO
+    creator: UserDTO
+    rsvps: list[EncounterRSVPDTO]
+    rsvp_count: int
+    is_full: bool
+    spots_remaining: int | None
+    is_creator: bool
+    user_has_rsvpd: bool
+
+
+@dataclass
+class EncounterIndexItem:
+    encounter: EncounterDTO
+    rsvp_count: int
+    is_mine: bool
+    organizer_name: str
+
+
+@dataclass
+class EncounterIndexResult:
+    upcoming: list[EncounterIndexItem]
+    past: list[EncounterIndexItem]
 
 
 class EnrollmentConfigDTO(BaseModel):
@@ -466,6 +551,7 @@ class UserRepositoryProtocol(Protocol):
     @staticmethod
     def create(user_data: UserData) -> None: ...
     def read(self, slug: str) -> UserDTO: ...
+    def read_by_id(self, pk: int) -> UserDTO: ...
     def read_by_username(self, username: str) -> UserDTO: ...
     @staticmethod
     def update(user_slug: str, user_data: UserData) -> None: ...
@@ -734,6 +820,46 @@ class EnrollmentConfigRepositoryProtocol(Protocol):
     ) -> DomainEnrollmentConfigDTO | None: ...
 
 
+class EncounterRepositoryProtocol(Protocol):
+    @staticmethod
+    def create(data: EncounterData) -> EncounterDTO: ...
+    @staticmethod
+    def read(pk: int) -> EncounterDTO: ...
+    @staticmethod
+    def read_by_share_code(share_code: str) -> EncounterDTO: ...
+    @staticmethod
+    def list_by_creator(sphere_id: int, creator_id: int) -> list[EncounterDTO]: ...
+    @staticmethod
+    def list_upcoming_by_creator(
+        sphere_id: int, creator_id: int
+    ) -> list[EncounterDTO]: ...
+    @staticmethod
+    def list_upcoming_rsvpd(sphere_id: int, user_id: int) -> list[EncounterDTO]: ...
+    @staticmethod
+    def list_past(sphere_id: int) -> list[EncounterDTO]: ...
+    @staticmethod
+    def update(pk: int, data: EncounterData) -> None: ...
+    @staticmethod
+    def delete(pk: int) -> None: ...
+
+
+class EncounterRSVPRepositoryProtocol(Protocol):
+    @staticmethod
+    def create(
+        encounter_id: int, ip_address: str, user_id: int | None = None, name: str = ""
+    ) -> EncounterRSVPDTO: ...
+    @staticmethod
+    def list_by_encounter(encounter_id: int) -> list[EncounterRSVPDTO]: ...
+    @staticmethod
+    def count_by_encounter(encounter_id: int) -> int: ...
+    @staticmethod
+    def recent_rsvp_exists(ip_address: str, seconds: int = 60) -> bool: ...
+    @staticmethod
+    def user_has_rsvpd(encounter_id: int, user_id: int) -> bool: ...
+    @staticmethod
+    def delete_by_user(encounter_id: int, user_id: int) -> None: ...
+
+
 class UnitOfWorkProtocol(Protocol):
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
@@ -770,6 +896,10 @@ class UnitOfWorkProtocol(Protocol):
     @property
     def time_slots(self) -> TimeSlotRepositoryProtocol: ...
     @property
+    def encounters(self) -> EncounterRepositoryProtocol: ...
+    @property
+    def encounter_rsvps(self) -> EncounterRSVPRepositoryProtocol: ...
+    @property
     def enrollment_configs(self) -> EnrollmentConfigRepositoryProtocol: ...
 
 
@@ -782,6 +912,8 @@ class DependencyInjectorProtocol(Protocol):
     def uow(self) -> UnitOfWorkProtocol: ...
     @property
     def ticket_api(self) -> TicketAPIProtocol: ...
+    @staticmethod
+    def gravatar_url(email: str) -> str | None: ...
 
 
 class RootRequestProtocol(Protocol):

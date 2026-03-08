@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Self
-
-from ludamus.links.gravatar import gravatar_url
 
 if TYPE_CHECKING:
     from datetime import datetime
 
     from ludamus.adapters.db.django.models import Event
+    from ludamus.gates.web.django.entities import UserInfo
     from ludamus.pacts import AgendaItemDTO, LocationData, SessionDTO, UserDTO
 
 
@@ -28,33 +29,6 @@ class TagWithCategory:
     confirmed: bool
     name: str
     pk: int
-
-
-@dataclass
-class UserInfo:
-    avatar_url: str | None
-    discord_username: str
-    full_name: str
-    name: str
-    pk: int
-    slug: str
-    username: str
-
-    @classmethod
-    def from_user_dto(cls, user_dto: UserDTO) -> Self:
-        return cls(
-            avatar_url=(
-                gravatar_url(user_dto.email)
-                if user_dto.use_gravatar
-                else user_dto.avatar_url or gravatar_url(user_dto.email)
-            ),
-            discord_username=user_dto.discord_username,
-            full_name=user_dto.full_name,
-            name=user_dto.name,
-            pk=user_dto.pk,
-            slug=user_dto.slug,
-            username=user_dto.username,
-        )
 
 
 @dataclass

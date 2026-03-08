@@ -13,7 +13,12 @@
       "Bash(mise run ruff-check:*)",
       "Bash(mise run:*)",
       "Skill(gloria)",
-      "Skill(manuel)"
+      "Skill(manuel)",
+      "Skill(tessa)",
+      "Bash(DJANGO_SETTINGS_MODULE=ludamus.edges.settings PYTHONPATH=src .venv/bin/python:*)"
+    ],
+    "deny": [
+      "Edit(./tests/integration/utils.py)"
     ]
   }
 }

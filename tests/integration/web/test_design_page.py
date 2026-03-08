@@ -12,8 +12,8 @@ from ludamus.adapters.web.django.entities import (
     SessionData,
     TagCategoryData,
     TagWithCategory,
-    UserInfo,
 )
+from ludamus.gates.web.django.entities import UserInfo
 from ludamus.pacts import AgendaItemDTO, SessionDTO, SessionStatus, SpaceDTO, VenueDTO
 from tests.integration.utils import assert_response
 

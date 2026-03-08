@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from secrets import token_urlsafe
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -11,6 +12,8 @@ from pytest_factoryboy import register
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
+    Encounter,
+    EncounterRSVP,
     EnrollmentConfig,
     Event,
     Proposal,
@@ -202,6 +205,31 @@ class ProposalFactory(DjangoModelFactory):
     category = SubFactory(ProposalCategoryFactory)
 
 
+class EncounterFactory(DjangoModelFactory):
+    class Meta:
+        model = Encounter
+
+    title = Faker("sentence", nb_words=4)
+    description = Faker("text")
+    game = Faker("word")
+    sphere = SubFactory(SphereFactory)
+    creator = SubFactory(UserFactory)
+    start_time = LazyAttribute(lambda __: datetime.now(UTC) + timedelta(days=7))
+    end_time = LazyAttribute(lambda o: o.start_time + timedelta(hours=3))
+    place = Faker("city")
+    max_participants = 6
+    share_code = LazyAttribute(lambda __: token_urlsafe(4)[:6])
+
+
+class EncounterRSVPFactory(DjangoModelFactory):
+    class Meta:
+        model = EncounterRSVP
+
+    encounter = SubFactory(EncounterFactory)
+    name = Faker("name")
+    ip_address = Faker("ipv4")
+
+
 class AgendaItemFactory(DjangoModelFactory):
     class Meta:
         model = AgendaItem
@@ -370,3 +398,21 @@ def faker_fixture():
 
     fake.date_time_between = date_time_between_tz
     return fake
+
+
+@pytest.fixture(name="user")
+def user_fixture(active_user):
+    return active_user
+
+
+@pytest.fixture(name="encounter")
+def encounter_fixture(sphere):
+    return EncounterFactory(sphere=sphere)
+
+
+@pytest.fixture
+def encounter_with_rsvps(sphere):
+    encounter = EncounterFactory(sphere=sphere, max_participants=6)
+    EncounterRSVPFactory(encounter=encounter)
+    EncounterRSVPFactory(encounter=encounter)
+    return encounter

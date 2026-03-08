@@ -92,7 +92,7 @@ class TestVenueReorderActionView:
             url, data=json.dumps({"venue_ids": []}), content_type="application/json"
         )
 
-        assert_response(response, HTTPStatus.NOT_FOUND)
+        assert_response(response, status_code=HTTPStatus.NOT_FOUND)
         assert response.json() == {"error": "Event not found"}
 
     def test_post_ignores_venue_ids_from_other_events(

@@ -1,13 +1,14 @@
-{% load i18n %}
+{% load i18n tessera %}
 {% if discord_username %}
-    <div class="d-flex align-items-center gap-1">
-        <code>@{{ discord_username }}</code>
-        <button class="btn btn-sm btn-outline-secondary p-1 copy-discord"
+    <span class="inline-flex items-center gap-1.5 text-sm">
+        <code class="text-foreground">@{{ discord_username }}</code>
+        <button class="btn btn-secondary text-xs py-0.5 px-1.5 copy-discord"
                 data-discord="@{{ discord_username }}"
-                title="{% translate "Copy to clipboard" %}">
-            <i class="bi bi-clipboard"></i>
+                title="{% translate "Copy to clipboard" %}"
+                onclick="navigator.clipboard.writeText(this.dataset.discord)">
+            {% icon "clipboard" class="w-3.5 h-3.5" variant="mini" %}
         </button>
-    </div>
+    </span>
 {% else %}
-    <span class="text-muted">—</span>
+    <span class="text-foreground-secondary">—</span>
 {% endif %}

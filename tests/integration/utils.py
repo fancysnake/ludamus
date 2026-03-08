@@ -1,10 +1,11 @@
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from unittest.mock import ANY
 
 from django.contrib.messages import get_messages
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from http import HTTPStatus
 
     from django.http import HttpResponse
 
@@ -30,3 +31,25 @@ def assert_response(
     default_fields = {"context_data": None, "template_name": None, "url": None}
     for key, value in (default_fields | response_fields).items():
         assert getattr(response, key, None) == value
+
+
+def assert_response_404(
+    response: HttpResponse,
+    *,
+    messages: Iterable[tuple[int, str]] = (),
+    **response_fields: Any,
+) -> None:
+    assert_response(
+        response,
+        status_code=HTTPStatus.NOT_FOUND,
+        context_data={
+            "error_code": HTTPStatus.NOT_FOUND,
+            "title": ANY,
+            "message": ANY,
+            "subtitle": ANY,
+            "icon": ANY,
+        },
+        template_name="404_dynamic.html",
+        messages=messages,
+        **response_fields,
+    )

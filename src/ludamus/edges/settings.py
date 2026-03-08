@@ -118,10 +118,11 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
-                "ludamus.adapters.web.django.context_processors.sites",
-                "ludamus.adapters.web.django.context_processors.support",
-                "ludamus.adapters.web.django.context_processors.static_version",
-                "ludamus.adapters.web.django.context_processors.current_user",
+                "django.template.context_processors.media",
+                "ludamus.gates.web.django.context_processors.sites",
+                "ludamus.gates.web.django.context_processors.support",
+                "ludamus.gates.web.django.context_processors.static_version",
+                "ludamus.gates.web.django.context_processors.current_user",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
@@ -204,6 +205,7 @@ MIDDLEWARE_SKIP_PREFIXES = (
     "/__debug__/",
     "/__reload__/",
     "/healthz/",
+    "/media/",
 )
 
 # Cache busting version for static files (set via GIT_COMMIT_SHA env var during build)
@@ -308,6 +310,8 @@ if IS_PRODUCTION:
 else:
     # Development email backend
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    MEDIA_ROOT = env("MEDIA_ROOT")
+    MEDIA_URL = "/media/"
 
 # Cache configuration
 CACHES = (

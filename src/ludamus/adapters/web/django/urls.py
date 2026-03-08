@@ -1,6 +1,13 @@
 from django.urls import URLPattern, URLResolver, include, path
 from django.views.generic.base import TemplateView
 
+from ludamus.gates.web.django.notice_board.urls import (
+    authenticated_urlpatterns as encounter_authenticated,
+)
+from ludamus.gates.web.django.notice_board.urls import (
+    public_urlpatterns as encounter_public,
+)
+
 from . import views
 
 app_name = "web"  # pylint: disable=invalid-name
@@ -103,4 +110,17 @@ urlpatterns = [
         "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
     path("crowd/", include((crowd_urls, "crowd"), namespace="crowd")),
+    path(
+        "",
+        include(
+            (
+                [
+                    path("e/", include(encounter_public)),
+                    path("encounters/", include(encounter_authenticated)),
+                ],
+                "notice-board",
+            ),
+            namespace="notice-board",
+        ),
+    ),
 ]
