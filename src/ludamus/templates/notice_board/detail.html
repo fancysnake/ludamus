@@ -7,7 +7,9 @@
     {{ encounter.title }}
 {% endblock og_title %}
 {% block og_description %}
-    {{ encounter.description|truncatewords:30 }}
+    {{ encounter.start_time|date:"DATE_FORMAT" }}, {{ encounter.start_time|time:"TIME_FORMAT" }}
+    {% if encounter.place %}— {{ encounter.place }}{% endif %}
+    {% if encounter.description %}| {{ encounter.description|truncatewords:25 }}{% endif %}
 {% endblock og_description %}
 {% block og_image %}
     {% if encounter.header_image %}
@@ -20,7 +22,9 @@
     {{ encounter.title }}
 {% endblock twitter_title %}
 {% block twitter_description %}
-    {{ encounter.description|truncatewords:30 }}
+    {{ encounter.start_time|date:"DATE_FORMAT" }}, {{ encounter.start_time|time:"TIME_FORMAT" }}
+    {% if encounter.place %}— {{ encounter.place }}{% endif %}
+    {% if encounter.description %}| {{ encounter.description|truncatewords:25 }}{% endif %}
 {% endblock twitter_description %}
 {% block twitter_image %}
     {% if encounter.header_image %}
