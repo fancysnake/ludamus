@@ -762,3 +762,351 @@ class TestProposeSessionPageView:
         msgs = list(messages.get_messages(response.wsgi_request))
         assert len(msgs) == 1
         assert "Test Session" in str(msgs[0])
+
+    # -- Coverage: error paths and edge cases --
+
+    def test_get_nonexistent_event_redirects(
+        self, authenticated_client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+
+        response = authenticated_client.get(self._get_url("nonexistent-slug"))
+
+        assert response.status_code == HTTPStatus.FOUND
+
+    def test_post_category_invalid_id_redirects(
+        self, authenticated_client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "category", "category_id": 99999}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+
+    def test_post_unknown_step_falls_back_to_category(
+        self, authenticated_client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "garbage"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={"event": event, "step": "category"},
+            template_name="chronology/propose/base.html",
+        )
+
+    def test_post_personal_skips_when_no_requirements(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "personal"}
+        )
+
+        # No personal requirements — skips to session step (no timeslots either)
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/step_session.html"
+
+    def test_post_step_without_wizard_category_redirects(
+        self, authenticated_client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "personal"}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+
+    def test_post_step_with_deleted_category_redirects(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+        proposal_category.delete()
+
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "personal"}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+
+    def test_post_personal_field_with_allow_custom(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Diet",
+            slug="diet",
+            field_type="select",
+            allow_custom=True,
+        )
+        PersonalDataFieldOption.objects.create(
+            field=field, label="Vegan", value="vegan", order=0
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_url(event.slug),
+            {"step": "category", "category_id": proposal_category.pk},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        descriptors = response.context["field_descriptors"]
+        assert len(descriptors) == 1
+        assert "custom_bound_field" in descriptors[0]
+
+    def test_post_session_field_with_allow_custom(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="System",
+            slug="system",
+            field_type="select",
+            allow_custom=True,
+        )
+        SessionFieldOption.objects.create(
+            field=field, label="D&D", value="dnd", order=0
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        # Submit invalid to re-render form with descriptors
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "session"}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        descriptors = response.context["field_descriptors"]
+        assert len(descriptors) == 1
+        assert "custom_bound_field" in descriptors[0]
+
+    def test_submit_without_title_redirects(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        session = authenticated_client.session
+        session[f"propose_{event.slug}"] = {
+            "category_id": proposal_category.pk,
+            "session_data": {"participants_limit": 6},
+        }
+        session.save()
+
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "submit"}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+
+    def test_submit_with_slug_collision(
+        self,
+        authenticated_client,
+        event,
+        faker,
+        time_zone,
+        proposal_category,
+        active_user,
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        # Pre-create a session with the same slug
+        Session.objects.create(
+            sphere=event.sphere,
+            presenter=active_user,
+            presenter_name="Other",
+            category=proposal_category,
+            title="Test Session",
+            slug="test-session",
+            status="pending",
+            participants_limit=6,
+        )
+        self._set_wizard_full(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "submit"}
+        )
+
+        assert response.status_code == HTTPStatus.FOUND
+        # A second session was created with a suffixed slug
+        assert (
+            Session.objects.filter(sphere=event.sphere).count() == 1 + 1
+        )  # original + new
+
+    def test_submit_via_htmx_returns_hx_redirect(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_url(event.slug),
+            {"step": "submit"},
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert "HX-Redirect" in response
+
+    def test_submit_with_custom_session_field_key_skipped(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_rpg_custom": "should be skipped",
+            },
+        )
+
+        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+
+        session = Session.objects.get(title="Test Session")
+        assert SessionFieldValue.objects.filter(session=session).count() == 0
+
+    def test_submit_with_nonexistent_session_field_skipped(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_nonexistent": "should be skipped",
+            },
+        )
+
+        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+
+        session = Session.objects.get(title="Test Session")
+        assert SessionFieldValue.objects.filter(session=session).count() == 0
+
+    def test_submit_with_custom_personal_field_key_skipped(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            personal_data={"personal_diet_custom": "should be skipped"},
+        )
+
+        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+
+        assert HostPersonalData.objects.count() == 0
+
+    def test_submit_with_nonexistent_personal_field_skipped(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            personal_data={"personal_nonexistent": "should be skipped"},
+        )
+
+        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+
+        assert HostPersonalData.objects.count() == 0
+
+    def test_post_personal_multiple_select_field(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Allergies",
+            slug="allergies",
+            field_type="select",
+            is_multiple=True,
+        )
+        PersonalDataFieldOption.objects.create(
+            field=field, label="Nuts", value="nuts", order=0
+        )
+        PersonalDataFieldOption.objects.create(
+            field=field, label="Dairy", value="dairy", order=1
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_url(event.slug),
+            {"step": "category", "category_id": proposal_category.pk},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        descriptors = response.context["field_descriptors"]
+        assert len(descriptors) == 1
+        assert descriptors[0]["is_multiple"] is True
+
+    def test_post_session_multiple_select_field(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="Themes",
+            slug="themes",
+            field_type="select",
+            is_multiple=True,
+        )
+        SessionFieldOption.objects.create(
+            field=field, label="Horror", value="horror", order=0
+        )
+        SessionFieldOption.objects.create(
+            field=field, label="Comedy", value="comedy", order=1
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        # Submit invalid to render session form with descriptors
+        response = authenticated_client.post(
+            self._get_url(event.slug), {"step": "session"}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        descriptors = response.context["field_descriptors"]
+        assert len(descriptors) == 1
+        assert descriptors[0]["is_multiple"] is True
+
+    def test_submit_personal_data_with_non_personal_key_skipped(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            personal_data={"other_key": "should be skipped"},
+        )
+
+        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+
+        assert HostPersonalData.objects.count() == 0

@@ -22,6 +22,7 @@ from ludamus.adapters.db.django.models import (
     SessionField,
     SessionFieldOption,
     SessionFieldRequirement,
+    SessionFieldValue,
     SessionParticipation,
     SessionParticipationStatus,
     Space,
@@ -335,6 +336,16 @@ class TestSessionFieldOption:
         label = faker.word()
 
         assert str(SessionFieldOption(label=label)) == label
+
+
+class TestSessionFieldValue:
+    def test_str(self, faker):
+        field_name = faker.word()
+        value = faker.sentence()
+
+        sfv = SessionFieldValue(field=SessionField(name=field_name), value=value)
+
+        assert str(sfv) == f"{field_name}: {value}"
 
 
 class TestTimeSlotRequirement:
