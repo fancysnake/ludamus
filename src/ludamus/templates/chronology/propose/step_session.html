@@ -20,7 +20,7 @@
                            name="title"
                            id="id_title"
                            value="{{ form.title.value|default_if_none:'' }}"
-                           class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground"
+                           class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                            required
                            maxlength="255">
                     {% if form.title.errors %}<p class="text-sm text-danger mt-1">{{ form.title.errors.0 }}</p>{% endif %}
@@ -33,7 +33,7 @@
                     <textarea name="description"
                               id="id_description"
                               rows="4"
-                              class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground">{{ form.description.value|default_if_none:'' }}</textarea>
+                              class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary">{{ form.description.value|default_if_none:'' }}</textarea>
                     {% if form.description.errors %}<p class="text-sm text-danger mt-1">{{ form.description.errors.0 }}</p>{% endif %}
                 </div>
                 <div>
@@ -46,7 +46,7 @@
                            name="participants_limit"
                            id="id_participants_limit"
                            value="{{ form.participants_limit.value|default_if_none:'' }}"
-                           class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground"
+                           class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                            required
                            min="1">
                     {% if form.participants_limit.errors %}
@@ -79,7 +79,7 @@
                         {% elif desc.field_type == "select" %}
                             <select name="{{ desc.key }}"
                                     id="id_{{ desc.key }}"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground"
+                                    class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                     {% if desc.is_required %}required{% endif %}>
                                 {% for choice in desc.bound_field.field.choices %}
                                     <option value="{{ choice.0 }}"
@@ -93,7 +93,7 @@
                                    name="{{ desc.key }}"
                                    id="id_{{ desc.key }}"
                                    value="{{ desc.bound_field.value|default_if_none:'' }}"
-                                   class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted"
+                                   class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-primary"
                                    {% if desc.is_required %}required{% endif %}>
                         {% endif %}
                         {% if desc.bound_field.errors %}<p class="text-sm text-danger mt-1">{{ desc.bound_field.errors.0 }}</p>{% endif %}
@@ -103,7 +103,7 @@
                                        name="{{ desc.key }}_custom"
                                        value="{{ desc.custom_bound_field.value|default_if_none:'' }}"
                                        placeholder="{% translate "Or type a custom value" %}"
-                                       class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted">
+                                       class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-primary">
                             </div>
                         {% endif %}
                     </div>
