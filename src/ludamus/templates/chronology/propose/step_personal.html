@@ -11,11 +11,11 @@
               hx-swap="outerHTML">
             {% csrf_token %}
             <input type="hidden" name="step" value="personal">
-            <div class="space-y-5">
+            <div class="space-y-6">
                 {% for desc in field_descriptors %}
                     <div>
                         <label for="id_{{ desc.key }}"
-                               class="block text-sm font-medium text-foreground-secondary mb-1.5">
+                               class="block text-sm font-medium text-foreground-secondary mb-2">
                             {{ desc.name }}
                             {% if desc.is_required %}
                                 <span class="text-danger" aria-hidden="true">*</span>

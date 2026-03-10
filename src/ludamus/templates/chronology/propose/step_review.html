@@ -4,11 +4,11 @@
         <h2 class="text-lg font-semibold mb-1">{% translate "Review & Submit" %}</h2>
         <p class="text-sm text-foreground-muted mb-5">{% translate "Please review your proposal before submitting." %}</p>
         <div class="space-y-4">
-            <div class="border border-border rounded-xl p-5">
+            <div class="border border-border rounded-2xl p-5">
                 <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Category" %}</h3>
                 <p class="text-foreground">{{ review.category_name }}</p>
             </div>
-            <div class="border border-border rounded-xl p-5">
+            <div class="border border-border rounded-2xl p-5">
                 <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Session" %}</h3>
                 <dl class="space-y-2">
                     <div>
@@ -42,7 +42,7 @@
                 </dl>
             </div>
             {% if review.personal_fields %}
-                <div class="border border-border rounded-xl p-5">
+                <div class="border border-border rounded-2xl p-5">
                     <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Your Information" %}</h3>
                     <dl class="space-y-2">
                         {% for field in review.personal_fields %}
@@ -57,7 +57,7 @@
                 </div>
             {% endif %}
             {% if review.time_slots %}
-                <div class="border border-border rounded-xl p-5">
+                <div class="border border-border rounded-2xl p-5">
                     <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Preferred Time Slots" %}</h3>
                     <ul class="space-y-1 text-sm text-foreground">
                         {% for slot in review.time_slots %}
