@@ -8,14 +8,11 @@ from django.utils.translation import gettext_lazy as _
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from ludamus.adapters.db.django.models import (
-        PersonalDataFieldRequirement,
-        SessionFieldRequirement,
-    )
+    from ludamus.pacts import PersonalFieldRequirementDTO, SessionFieldRequirementDTO
 
 
 def build_personal_data_form(
-    requirements: Sequence[PersonalDataFieldRequirement],
+    requirements: Sequence[PersonalFieldRequirementDTO],
 ) -> type[forms.Form]:
     fields: dict[str, forms.Field] = {}
 
@@ -24,7 +21,7 @@ def build_personal_data_form(
         field_key = f"personal_{field_def.slug}"
 
         if field_def.field_type == "select":
-            options = list(field_def.options.all().order_by("order", "label"))
+            options = sorted(field_def.options, key=lambda o: (o.order, o.label))
             choices = [("", "---")] + [(opt.value, opt.label) for opt in options]
 
             if field_def.is_multiple:
@@ -52,7 +49,7 @@ def build_personal_data_form(
 
 
 def build_session_details_form(
-    requirements: Sequence[SessionFieldRequirement],
+    requirements: Sequence[SessionFieldRequirementDTO],
 ) -> type[forms.Form]:
     fields: dict[str, forms.Field] = {
         "title": forms.CharField(label=_("Title"), max_length=255),
@@ -71,7 +68,7 @@ def build_session_details_form(
         field_key = f"session_{field_def.slug}"
 
         if field_def.field_type == "select":
-            options = list(field_def.options.all().order_by("order", "label"))
+            options = sorted(field_def.options, key=lambda o: (o.order, o.label))
             choices = [("", "---")] + [(opt.value, opt.label) for opt in options]
 
             if field_def.is_multiple:

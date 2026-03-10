@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
 
-class UnitOfWork(UnitOfWorkProtocol):
+class UnitOfWork(UnitOfWorkProtocol):  # noqa: PLR0904
     @staticmethod
     def atomic() -> AbstractContextManager[None]:
         return transaction.atomic()
@@ -95,3 +95,7 @@ class UnitOfWork(UnitOfWorkProtocol):
     @cached_property
     def enrollment_configs(self) -> repositories.EnrollmentConfigRepository:
         return repositories.EnrollmentConfigRepository()
+
+    @cached_property
+    def host_personal_data(self) -> repositories.HostPersonalDataRepository:
+        return repositories.HostPersonalDataRepository()

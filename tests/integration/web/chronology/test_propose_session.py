@@ -17,6 +17,7 @@ from ludamus.adapters.db.django.models import (
     SessionFieldValue,
     TimeSlotRequirement,
 )
+from ludamus.pacts import EventDTO, ProposalCategoryDTO
 from tests.integration.conftest import ProposalCategoryFactory, TimeSlotFactory
 from tests.integration.utils import assert_response
 
@@ -77,8 +78,11 @@ class TestProposeSessionPageView:
             response,
             HTTPStatus.OK,
             context_data={
-                "event": event,
-                "categories": [cat1, cat2],
+                "event": EventDTO.model_validate(event),
+                "categories": [
+                    ProposalCategoryDTO.model_validate(cat1),
+                    ProposalCategoryDTO.model_validate(cat2),
+                ],
                 "step": "category",
             },
             template_name="chronology/propose/base.html",
@@ -95,8 +99,8 @@ class TestProposeSessionPageView:
             response,
             HTTPStatus.OK,
             context_data={
-                "event": event,
-                "category": proposal_category,
+                "event": EventDTO.model_validate(event),
+                "category": ProposalCategoryDTO.model_validate(proposal_category),
                 "step": "category",
                 "auto_advance": True,
             },
@@ -797,7 +801,7 @@ class TestProposeSessionPageView:
         assert_response(
             response,
             HTTPStatus.OK,
-            context_data={"event": event, "step": "category"},
+            context_data={"event": EventDTO.model_validate(event), "step": "category"},
             template_name="chronology/propose/base.html",
         )
 
