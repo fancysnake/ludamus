@@ -1249,6 +1249,10 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
             category.slug = slug
             needs_save = True
 
+        if "description" in data and category.description != data["description"]:
+            category.description = data["description"]
+            needs_save = True
+
         if "start_time" in data and category.start_time != data["start_time"]:
             category.start_time = data["start_time"]
             needs_save = True

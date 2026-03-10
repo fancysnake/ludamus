@@ -431,6 +431,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["form"] = ProposalCategoryForm(
             initial={
                 "name": category.name,
+                "description": category.description,
                 "start_time": category.start_time,
                 "end_time": category.end_time,
             }
@@ -586,6 +587,7 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
             category.pk,
             {
                 "name": form.cleaned_data["name"],
+                "description": form.cleaned_data["description"],
                 "start_time": form.cleaned_data["start_time"],
                 "end_time": form.cleaned_data["end_time"],
                 "durations": durations,

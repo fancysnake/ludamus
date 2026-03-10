@@ -30,6 +30,9 @@ class ProposalCategoryForm(forms.Form):
             "required": _("Category name is required."),
         },
     )
+    description = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 3})
+    )
     start_time = forms.DateTimeField(required=False)
     end_time = forms.DateTimeField(required=False)
 

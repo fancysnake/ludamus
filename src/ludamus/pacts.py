@@ -24,6 +24,7 @@ class DateTimeRangeProtocol(Protocol):
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    description: str
     durations: list[str]
     end_time: datetime | None
     max_participants_limit: int
@@ -409,6 +410,7 @@ class UserData(TypedDict, total=False):
 
 
 class ProposalCategoryData(TypedDict, total=False):
+    description: str
     durations: list[str]
     end_time: datetime | None
     name: str
