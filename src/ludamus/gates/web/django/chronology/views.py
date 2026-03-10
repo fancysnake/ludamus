@@ -11,9 +11,8 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
 
-from ludamus.adapters.web.django.exceptions import RedirectError
 from ludamus.mills import ProposeSessionService, is_proposal_active
-from ludamus.pacts import NotFoundError
+from ludamus.pacts import NotFoundError, RedirectError
 
 from .forms import build_personal_data_form, build_session_details_form
 
@@ -34,35 +33,16 @@ def _session_key(event_slug: str) -> str:
     return f"propose_{event_slug}"
 
 
-def _personal_field_descriptors(
-    requirements: Sequence[PersonalFieldRequirementDTO], form: object
+def _field_descriptors(
+    prefix: str,
+    requirements: (
+        Sequence[PersonalFieldRequirementDTO] | Sequence[SessionFieldRequirementDTO]
+    ),
+    form: object,
 ) -> list[dict[str, object]]:
     descriptors = []
     for req in requirements:
-        field_key = f"personal_{req.field.slug}"
-        bound_field = form[field_key]  # type: ignore[index]
-        desc = {
-            "key": field_key,
-            "bound_field": bound_field,
-            "name": req.field.name,
-            "slug": req.field.slug,
-            "field_type": req.field.field_type,
-            "is_required": req.is_required,
-            "is_multiple": req.field.is_multiple,
-            "allow_custom": req.field.allow_custom,
-        }
-        if req.field.allow_custom:
-            desc["custom_bound_field"] = form[f"{field_key}_custom"]  # type: ignore[index]
-        descriptors.append(desc)
-    return descriptors
-
-
-def _session_field_descriptors(
-    requirements: Sequence[SessionFieldRequirementDTO], form: object
-) -> list[dict[str, object]]:
-    descriptors = []
-    for req in requirements:
-        field_key = f"session_{req.field.slug}"
+        field_key = f"{prefix}_{req.field.slug}"
         bound_field = form[field_key]  # type: ignore[index]
         desc = {
             "key": field_key,
@@ -206,8 +186,8 @@ class ProposeSessionPageView(LoginRequiredMixin, View):
                     "event": event,
                     "category": category,
                     "form": form,
-                    "field_descriptors": _personal_field_descriptors(
-                        requirements, form
+                    "field_descriptors": _field_descriptors(
+                        "personal", requirements, form
                     ),
                 },
             )
@@ -279,7 +259,9 @@ class ProposeSessionPageView(LoginRequiredMixin, View):
                     "event": event,
                     "category": category,
                     "form": form,
-                    "field_descriptors": _session_field_descriptors(requirements, form),
+                    "field_descriptors": _field_descriptors(
+                        "session", requirements, form
+                    ),
                 },
             )
 
@@ -376,7 +358,7 @@ class ProposeSessionPageView(LoginRequiredMixin, View):
                 "event": event,
                 "category": category,
                 "form": form,
-                "field_descriptors": _personal_field_descriptors(requirements, form),
+                "field_descriptors": _field_descriptors("personal", requirements, form),
             },
         )
 
@@ -428,7 +410,7 @@ class ProposeSessionPageView(LoginRequiredMixin, View):
                 "event": event,
                 "category": category,
                 "form": form,
-                "field_descriptors": _session_field_descriptors(requirements, form),
+                "field_descriptors": _field_descriptors("session", requirements, form),
             },
         )
 

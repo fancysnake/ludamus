@@ -5,14 +5,13 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Sphere
-from ludamus.adapters.web.django.exceptions import RedirectError
 from ludamus.adapters.web.django.middlewares import (
     RedirectErrorMiddleware,
     RequestContextMiddleware,
 )
 from ludamus.inits import DependencyInjector, RepositoryInjectionMiddleware
 from ludamus.links.db.django.uow import UnitOfWork
-from ludamus.pacts import RequestContext
+from ludamus.pacts import RedirectError, RequestContext
 
 
 @pytest.fixture(name="get_response_mock")

@@ -1,4 +1,6 @@
+import re
 import string
+import unicodedata
 from datetime import UTC, datetime, timedelta
 from secrets import choice as _secret_choice
 from secrets import token_urlsafe
@@ -42,6 +44,7 @@ from ludamus.pacts import (
     UserRepositoryProtocol,
     UserType,
     VirtualEnrollmentConfig,
+    WizardData,
 )
 
 _BASE62_CHARS = string.ascii_letters + string.digits
@@ -240,6 +243,17 @@ class ProposeSessionService:
         self._uow = uow
         self._context = context
 
+    def _generate_unique_slug(self, sphere_id: int, title: str) -> str:
+        value = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
+        base_slug = re.sub(r"[^\w\s-]", "", value.lower())
+        base_slug = re.sub(r"[-\s]+", "-", base_slug).strip("-")
+        slug = base_slug
+        for _ in range(4):
+            if not self._uow.sessions.slug_exists(sphere_id, slug):
+                break
+            slug = f"{base_slug}-{token_urlsafe(3)}"
+        return slug
+
     def get_event(self, slug: str) -> EventDTO:
         return self._uow.events.read_by_slug(slug, self._context.current_sphere_id)
 
@@ -273,23 +287,17 @@ class ProposeSessionService:
             self._context.current_user_id, event_id
         )
 
-    def submit(
-        self, event: EventDTO, wizard_data: dict[str, object]
-    ) -> ProposeSessionResult:
-        raw_session = wizard_data.get("session_data", {})
-        session_data: dict[str, object] = (
-            raw_session if isinstance(raw_session, dict) else {}
-        )
+    def submit(self, event: EventDTO, wizard_data: WizardData) -> ProposeSessionResult:
+        session_data = wizard_data.get("session_data", {})
         title = str(session_data["title"])
         description = str(session_data.get("description", ""))
         participants_limit = int(session_data["participants_limit"])  # type: ignore[call-overload]
-        category_id = int(wizard_data["category_id"])  # type: ignore[call-overload]
-        raw_slots = wizard_data.get("time_slot_ids", [])
-        time_slot_ids: list[int] = raw_slots if isinstance(raw_slots, list) else []
+        category_id = wizard_data["category_id"]
+        time_slot_ids = wizard_data.get("time_slot_ids", [])
 
         current_user = self._uow.active_users.read(self._context.current_user_slug)
 
-        slug = self._uow.sessions.generate_unique_slug(event.sphere_id, title)
+        slug = self._generate_unique_slug(event.sphere_id, title)
 
         create_data = SessionData(
             sphere_id=event.sphere_id,
@@ -306,18 +314,19 @@ class ProposeSessionService:
             status=SessionStatus.PENDING,
         )
 
-        session_id = self._uow.sessions.create(
-            create_data, tag_ids=[], time_slot_ids=time_slot_ids
-        )
+        with self._uow.atomic():
+            session_id = self._uow.sessions.create(
+                create_data, tag_ids=[], time_slot_ids=time_slot_ids
+            )
 
-        self._uow.proposals.create_from_session(
-            category_id, self._context.current_user_id, session_id, create_data
-        )
+            self._uow.proposals.create_from_session(
+                category_id, self._context.current_user_id, session_id, create_data
+            )
 
-        self._save_session_field_values(session_id, event.pk, session_data)
+            self._save_session_field_values(session_id, event.pk, session_data)
 
-        if personal_data := wizard_data.get("personal_data", {}):
-            self._save_personal_data(event.pk, personal_data)  # type: ignore[arg-type]
+            if personal_data := wizard_data.get("personal_data", {}):
+                self._save_personal_data(event.pk, personal_data)
 
         return ProposeSessionResult(session_id=session_id, title=title)
 

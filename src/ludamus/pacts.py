@@ -14,6 +14,15 @@ class NotFoundError(Exception):
     pass
 
 
+class RedirectError(Exception):
+    def __init__(
+        self, url: str, *, error: str | None = None, warning: str | None = None
+    ) -> None:
+        self.url = url
+        self.error = error
+        self.warning = warning
+
+
 class DateTimeRangeProtocol(Protocol):
     """Protocol for objects with start_time and end_time datetime fields."""
 
@@ -508,6 +517,13 @@ class HostPersonalDataEntry(TypedDict):
     value: str
 
 
+class WizardData(TypedDict, total=False):
+    category_id: int
+    personal_data: dict[str, str]
+    session_data: dict[str, object]
+    time_slot_ids: list[int]
+
+
 @dataclass
 class ProposeSessionResult:
     session_id: int
@@ -664,8 +680,6 @@ class SessionRepositoryProtocol(Protocol):
     def read_preferred_time_slot_ids(session_id: int) -> list[int]: ...
     @staticmethod
     def slug_exists(sphere_id: int, slug: str) -> bool: ...
-    @staticmethod
-    def generate_unique_slug(sphere_id: int, title: str) -> str: ...
     @staticmethod
     def save_field_values(
         session_id: int, values: list[SessionFieldValueData]
