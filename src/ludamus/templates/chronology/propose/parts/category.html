@@ -5,11 +5,10 @@
     {% if error|default:"" %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
     {% if categories|default:"" %}
         <form method="post"
-              hx-post=""
+              hx-post="{% url 'web:chronology:session-propose-category' event_slug=event.slug %}"
               hx-target="#wizard-content"
               hx-swap="outerHTML">
             {% csrf_token %}
-            <input type="hidden" name="step" value="category">
             <div class="space-y-3">
                 {% for cat in categories %}
                     <label class="block cursor-pointer">
@@ -33,10 +32,10 @@
         <p class="text-sm text-foreground-muted mb-4">
             {% translate "Category:" %} <strong>{{ category.name }}</strong>
         </p>
-        <div hx-post=""
+        <div hx-post="{% url 'web:chronology:session-propose-category' event_slug=event.slug %}"
              hx-target="#wizard-content"
              hx-swap="outerHTML"
              hx-trigger="load"
-             hx-vals='{"step": "category", "category_id": "{{ category.pk }}"}'></div>
+             hx-vals='{"category_id": "{{ category.pk }}"}'></div>
     {% endif %}
 </div>

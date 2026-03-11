@@ -7,11 +7,10 @@
         </p>
         {% if error|default:"" %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
         <form method="post"
-              hx-post=""
+              hx-post="{% url 'web:chronology:session-propose-timeslots' event_slug=event.slug %}"
               hx-target="#wizard-content"
               hx-swap="outerHTML">
             {% csrf_token %}
-            <input type="hidden" name="step" value="timeslots">
             <div class="space-y-2">
                 {% for slot in slot_descriptors %}
                     <label class="block cursor-pointer">
@@ -30,10 +29,10 @@
             <div class="flex flex-col-reverse sm:grid sm:grid-cols-2 gap-3 pt-6">
                 <button type="button"
                         class="btn btn-secondary py-3"
-                        hx-post=""
+                        hx-post="{% url 'web:chronology:session-propose-personal' event_slug=event.slug %}"
                         hx-target="#wizard-content"
                         hx-swap="outerHTML"
-                        hx-vals='{"step": "back_to_personal"}'>← {% translate "Back" %}</button>
+                        hx-vals='{"back": "1"}'>← {% translate "Back" %}</button>
                 <button type="submit" class="btn btn-primary py-3">{% translate "Continue" %} →</button>
             </div>
         </form>

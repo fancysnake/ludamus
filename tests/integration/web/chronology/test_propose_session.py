@@ -28,6 +28,37 @@ class TestProposeSessionPageView:
     def _get_url(self, event_slug: str) -> str:
         return reverse(self.URL_NAME, kwargs={"event_slug": event_slug})
 
+    def _get_category_url(self, event_slug: str) -> str:
+        return reverse(
+            "web:chronology:session-propose-category", kwargs={"event_slug": event_slug}
+        )
+
+    def _get_personal_url(self, event_slug: str) -> str:
+        return reverse(
+            "web:chronology:session-propose-personal", kwargs={"event_slug": event_slug}
+        )
+
+    def _get_timeslots_url(self, event_slug: str) -> str:
+        return reverse(
+            "web:chronology:session-propose-timeslots",
+            kwargs={"event_slug": event_slug},
+        )
+
+    def _get_details_url(self, event_slug: str) -> str:
+        return reverse(
+            "web:chronology:session-propose-details", kwargs={"event_slug": event_slug}
+        )
+
+    def _get_review_url(self, event_slug: str) -> str:
+        return reverse(
+            "web:chronology:session-propose-review", kwargs={"event_slug": event_slug}
+        )
+
+    def _get_submit_url(self, event_slug: str) -> str:
+        return reverse(
+            "web:chronology:session-propose-submit", kwargs={"event_slug": event_slug}
+        )
+
     def _activate_proposals(self, event, faker, time_zone):
         event.proposal_start_time = faker.date_time_between(
             "-10d", "-1d", tzinfo=time_zone
@@ -127,7 +158,7 @@ class TestProposeSessionPageView:
         ProposalCategoryFactory(event=event, name="Workshop")
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "category", "category_id": cat.pk}
+            self._get_category_url(event.slug), {"category_id": cat.pk}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -140,9 +171,7 @@ class TestProposeSessionPageView:
         self._activate_proposals(event, faker, time_zone)
         ProposalCategoryFactory(event=event)
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "category"}
-        )
+        response = authenticated_client.post(self._get_category_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.OK
         assert response.context["error"]
@@ -161,7 +190,7 @@ class TestProposeSessionPageView:
         )
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "category", "category_id": cat.pk}
+            self._get_category_url(event.slug), {"category_id": cat.pk}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -177,14 +206,14 @@ class TestProposeSessionPageView:
         ProposalCategoryFactory(event=event, name="Workshop")
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "category", "category_id": cat.pk}
+            self._get_category_url(event.slug), {"category_id": cat.pk}
         )
 
         # Skips personal step (no fields), skips timeslots (no requirements),
         # renders session details form
         assert response.status_code == HTTPStatus.OK
         assert response.context["form"] is not None
-        assert response.template_name == "chronology/propose/step_session.html"
+        assert response.template_name == "chronology/propose/parts/details.html"
 
     # -- Personal data POST tests --
 
@@ -201,7 +230,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "personal", "personal_phone": "+48 123"}
+            self._get_personal_url(event.slug), {"personal_phone": "+48 123"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -221,7 +250,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "personal"}  # missing required phone
+            self._get_personal_url(event.slug), {}  # missing required phone
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -246,7 +275,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "personal", "personal_tshirt": "M"}
+            self._get_personal_url(event.slug), {"personal_tshirt": "M"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -278,8 +307,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
-            {"step": "category", "category_id": proposal_category.pk},
+            self._get_category_url(event.slug), {"category_id": proposal_category.pk}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -301,7 +329,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "personal", "personal_phone": "+48 123"}
+            self._get_personal_url(event.slug), {"personal_phone": "+48 123"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -322,8 +350,8 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
-            {"step": "timeslots", "time_slot_ids": [str(slot1.pk), str(slot2.pk)]},
+            self._get_timeslots_url(event.slug),
+            {"time_slot_ids": [str(slot1.pk), str(slot2.pk)]},
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -340,9 +368,7 @@ class TestProposeSessionPageView:
         TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "timeslots"}
-        )
+        response = authenticated_client.post(self._get_timeslots_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.OK
         assert response.context["error"]
@@ -356,8 +382,8 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
-            {"step": "timeslots", "time_slot_ids": [str(slot.pk), "99999"]},
+            self._get_timeslots_url(event.slug),
+            {"time_slot_ids": [str(slot.pk), "99999"]},
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -370,14 +396,12 @@ class TestProposeSessionPageView:
         self._activate_proposals(event, faker, time_zone)
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "timeslots"}
-        )
+        response = authenticated_client.post(self._get_timeslots_url(event.slug), {})
 
         # No time slot requirements — skips to session details
         assert response.status_code == HTTPStatus.OK
         assert response.context["form"] is not None
-        assert response.template_name == "chronology/propose/step_session.html"
+        assert response.template_name == "chronology/propose/parts/details.html"
 
     def test_post_timeslots_preserves_selection(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -401,7 +425,7 @@ class TestProposeSessionPageView:
 
         # Navigate back to timeslots step
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "back_to_personal"}
+            self._get_personal_url(event.slug), {"back": "1"}
         )
 
         # Since no personal fields, it should render timeslots
@@ -416,9 +440,8 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
+            self._get_details_url(event.slug),
             {
-                "step": "session",
                 "title": "My RPG Session",
                 "description": "A great adventure",
                 "participants_limit": "6",
@@ -438,8 +461,8 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
-            {"step": "session"},  # missing required title and participants_limit
+            self._get_details_url(event.slug),
+            {},  # missing required title and participants_limit
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -458,9 +481,8 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
+            self._get_details_url(event.slug),
             {
-                "step": "session",
                 "title": "My Session",
                 "participants_limit": "4",
                 "session_rpg_system": "D&D 5e",
@@ -490,9 +512,8 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
+            self._get_details_url(event.slug),
             {
-                "step": "session",
                 "title": "Space Opera",
                 "participants_limit": "5",
                 "session_genre": "scifi",
@@ -517,7 +538,7 @@ class TestProposeSessionPageView:
 
         # Submit invalid to re-render the form with descriptors
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "session"}  # missing required fields
+            self._get_details_url(event.slug), {}  # missing required fields
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -537,7 +558,7 @@ class TestProposeSessionPageView:
 
         # back_to_timeslots with no timeslots skips to session step
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "back_to_timeslots"}
+            self._get_timeslots_url(event.slug), {"back": "1"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -553,7 +574,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "back_to_category"}
+            self._get_category_url(event.slug), {"back": "1"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -572,7 +593,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "back_to_personal"}
+            self._get_personal_url(event.slug), {"back": "1"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -587,7 +608,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "back_to_timeslots"}
+            self._get_timeslots_url(event.slug), {"back": "1"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -600,7 +621,7 @@ class TestProposeSessionPageView:
         self._set_wizard_full(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "back_to_session"}
+            self._get_details_url(event.slug), {"back": "1"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -615,13 +636,13 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
-            {"step": "session", "title": "My Session", "participants_limit": "4"},
+            self._get_details_url(event.slug),
+            {"title": "My Session", "participants_limit": "4"},
         )
 
         assert response.status_code == HTTPStatus.OK
         assert response.context["review"]["title"] == "My Session"
-        assert response.template_name == "chronology/propose/step_review.html"
+        assert response.template_name == "chronology/propose/parts/review.html"
 
     def test_review_shows_all_wizard_data(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -645,9 +666,8 @@ class TestProposeSessionPageView:
 
         # Navigate to review via back_to_session then re-submit
         response = authenticated_client.post(
-            self._get_url(event.slug),
+            self._get_details_url(event.slug),
             {
-                "step": "session",
                 "title": "Full Session",
                 "participants_limit": "5",
                 "description": "Full description",
@@ -668,9 +688,7 @@ class TestProposeSessionPageView:
         self._activate_proposals(event, faker, time_zone)
         self._set_wizard_full(authenticated_client, event, proposal_category)
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "submit"}
-        )
+        response = authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.FOUND
         session = Session.objects.get(title="Test Session")
@@ -696,7 +714,7 @@ class TestProposeSessionPageView:
             personal_data={"personal_phone": "+48 555"},
         )
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         hpd = HostPersonalData.objects.get(event=event, field=field)
         assert hpd.value == "+48 555"
@@ -711,7 +729,7 @@ class TestProposeSessionPageView:
             authenticated_client, event, proposal_category, time_slot_ids=[slot.pk]
         )
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         session = Session.objects.get(title="Test Session")
         assert list(session.time_slots.values_list("pk", flat=True)) == [slot.pk]
@@ -737,7 +755,7 @@ class TestProposeSessionPageView:
             },
         )
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         session = Session.objects.get(title="Test Session")
         sfv = SessionFieldValue.objects.get(session=session, field=field)
@@ -749,7 +767,7 @@ class TestProposeSessionPageView:
         self._activate_proposals(event, faker, time_zone)
         self._set_wizard_full(authenticated_client, event, proposal_category)
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert f"propose_{event.slug}" not in authenticated_client.session
 
@@ -759,9 +777,7 @@ class TestProposeSessionPageView:
         self._activate_proposals(event, faker, time_zone)
         self._set_wizard_full(authenticated_client, event, proposal_category)
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "submit"}
-        )
+        response = authenticated_client.post(self._get_submit_url(event.slug), {})
 
         msgs = list(messages.get_messages(response.wsgi_request))
         assert len(msgs) == 1
@@ -784,26 +800,10 @@ class TestProposeSessionPageView:
         self._activate_proposals(event, faker, time_zone)
 
         response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "category", "category_id": 99999}
+            self._get_category_url(event.slug), {"category_id": 99999}
         )
 
         assert response.status_code == HTTPStatus.FOUND
-
-    def test_post_unknown_step_falls_back_to_category(
-        self, authenticated_client, event, faker, time_zone
-    ):
-        self._activate_proposals(event, faker, time_zone)
-
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "garbage"}
-        )
-
-        assert_response(
-            response,
-            HTTPStatus.OK,
-            context_data={"event": EventDTO.model_validate(event), "step": "category"},
-            template_name="chronology/propose/base.html",
-        )
 
     def test_post_personal_skips_when_no_requirements(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -811,22 +811,18 @@ class TestProposeSessionPageView:
         self._activate_proposals(event, faker, time_zone)
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "personal"}
-        )
+        response = authenticated_client.post(self._get_personal_url(event.slug), {})
 
         # No personal requirements — skips to session step (no timeslots either)
         assert response.status_code == HTTPStatus.OK
-        assert response.template_name == "chronology/propose/step_session.html"
+        assert response.template_name == "chronology/propose/parts/details.html"
 
     def test_post_step_without_wizard_category_redirects(
         self, authenticated_client, event, faker, time_zone
     ):
         self._activate_proposals(event, faker, time_zone)
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "personal"}
-        )
+        response = authenticated_client.post(self._get_personal_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.FOUND
 
@@ -837,9 +833,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
         proposal_category.delete()
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "personal"}
-        )
+        response = authenticated_client.post(self._get_personal_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.FOUND
 
@@ -863,8 +857,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
-            {"step": "category", "category_id": proposal_category.pk},
+            self._get_category_url(event.slug), {"category_id": proposal_category.pk}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -892,9 +885,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         # Submit invalid to re-render form with descriptors
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "session"}
-        )
+        response = authenticated_client.post(self._get_details_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.OK
         descriptors = response.context["field_descriptors"]
@@ -912,9 +903,7 @@ class TestProposeSessionPageView:
         }
         session.save()
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "submit"}
-        )
+        response = authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.FOUND
 
@@ -941,9 +930,7 @@ class TestProposeSessionPageView:
         )
         self._set_wizard_full(authenticated_client, event, proposal_category)
 
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "submit"}
-        )
+        response = authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.FOUND
         # A second session was created with a suffixed slug
@@ -958,9 +945,7 @@ class TestProposeSessionPageView:
         self._set_wizard_full(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
-            {"step": "submit"},
-            headers={"HX-Request": "true"},
+            self._get_submit_url(event.slug), {}, headers={"HX-Request": "true"}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -981,7 +966,7 @@ class TestProposeSessionPageView:
             },
         )
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         session = Session.objects.get(title="Test Session")
         assert SessionFieldValue.objects.filter(session=session).count() == 0
@@ -1001,7 +986,7 @@ class TestProposeSessionPageView:
             },
         )
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         session = Session.objects.get(title="Test Session")
         assert SessionFieldValue.objects.filter(session=session).count() == 0
@@ -1017,7 +1002,7 @@ class TestProposeSessionPageView:
             personal_data={"personal_diet_custom": "should be skipped"},
         )
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert HostPersonalData.objects.count() == 0
 
@@ -1032,7 +1017,7 @@ class TestProposeSessionPageView:
             personal_data={"personal_nonexistent": "should be skipped"},
         )
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert HostPersonalData.objects.count() == 0
 
@@ -1059,8 +1044,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_url(event.slug),
-            {"step": "category", "category_id": proposal_category.pk},
+            self._get_category_url(event.slug), {"category_id": proposal_category.pk}
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -1091,9 +1075,7 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         # Submit invalid to render session form with descriptors
-        response = authenticated_client.post(
-            self._get_url(event.slug), {"step": "session"}
-        )
+        response = authenticated_client.post(self._get_details_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.OK
         descriptors = response.context["field_descriptors"]
@@ -1111,6 +1093,6 @@ class TestProposeSessionPageView:
             personal_data={"other_key": "should be skipped"},
         )
 
-        authenticated_client.post(self._get_url(event.slug), {"step": "submit"})
+        authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert HostPersonalData.objects.count() == 0
