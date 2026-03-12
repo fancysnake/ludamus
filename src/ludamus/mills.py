@@ -289,6 +289,9 @@ class ProposeSessionService:
 
     def submit(self, event: EventDTO, wizard_data: WizardData) -> ProposeSessionResult:
         session_data = wizard_data.get("session_data", {})
+        if "title" not in session_data or "participants_limit" not in session_data:
+            msg = "session_data must contain 'title' and 'participants_limit'"
+            raise ValueError(msg)
         title = str(session_data["title"])
         description = str(session_data.get("description", ""))
         participants_limit = int(session_data["participants_limit"])  # type: ignore[call-overload]

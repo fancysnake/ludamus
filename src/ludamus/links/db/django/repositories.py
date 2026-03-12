@@ -434,16 +434,6 @@ class SessionRepository(SessionRepositoryProtocol):
         return Session.objects.filter(sphere_id=sphere_id, slug=slug).exists()
 
     @staticmethod
-    def generate_unique_slug(sphere_id: int, title: str) -> str:
-        base_slug = slugify(title)
-        slug = base_slug
-        for _ in range(4):
-            if not Session.objects.filter(sphere_id=sphere_id, slug=slug).exists():
-                break
-            slug = f"{base_slug}-{token_urlsafe(3)}"
-        return slug
-
-    @staticmethod
     def save_field_values(session_id: int, values: list[SessionFieldValueData]) -> None:
         SessionFieldValue.objects.bulk_create(
             [
