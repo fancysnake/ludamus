@@ -69,6 +69,7 @@ from ludamus.pacts import (
     LocationData,
     NotFoundError,
     ProposalCategoryDTO,
+    RedirectError,
     SessionDTO,
     SessionRepositoryProtocol,
     SessionStatus,
@@ -83,7 +84,6 @@ from ludamus.pacts import (
 from ludamus.pacts import SessionData as SessionCreateData
 
 from .design_fixtures import mock_event_info, mock_session_data, mock_session_data_ended
-from .exceptions import RedirectError
 from .forms import (
     ConnectedUserForm,
     UserForm,
