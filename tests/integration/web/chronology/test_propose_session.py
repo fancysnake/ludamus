@@ -1,6 +1,7 @@
 from datetime import timedelta
 from http import HTTPStatus
 
+import pytest
 from django.contrib import messages
 from django.urls import reverse
 
@@ -680,6 +681,18 @@ class TestProposeSessionPageView:
         assert len(review["personal_fields"]) == 1
         assert len(review["time_slots"]) == 1
 
+    def test_post_review_renders_review_step(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/review.html"
+        assert response.context["review"]["title"] == "Test Session"
+
     # -- Submit tests --
 
     def test_submit_creates_session_and_proposal(
@@ -906,6 +919,20 @@ class TestProposeSessionPageView:
         response = authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert response.status_code == HTTPStatus.FOUND
+
+    def test_submit_without_participants_limit_raises(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        session = authenticated_client.session
+        session[f"propose_{event.slug}"] = {
+            "category_id": proposal_category.pk,
+            "session_data": {"title": "Test", "description": "Desc"},
+        }
+        session.save()
+
+        with pytest.raises(ValueError, match="session_data must contain"):
+            authenticated_client.post(self._get_submit_url(event.slug), {})
 
     def test_submit_with_slug_collision(
         self,
