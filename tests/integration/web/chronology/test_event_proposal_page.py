@@ -41,6 +41,35 @@ class TestEventProposalPageView:
             template_name="chronology/propose_session.html",
         )
 
+    def test_get_ok_no_min_participants_limit(
+        self, authenticated_client, event, faker, proposal_category, time_zone
+    ):
+        proposal_category.min_participants_limit = 0
+        proposal_category.save()
+        event.proposal_start_time = faker.date_time_between(
+            "-10d", "-1d", tzinfo=time_zone
+        )
+        event.proposal_end_time = faker.date_time_between(
+            "+1d", "+10d", tzinfo=time_zone
+        )
+        event.save()
+        response = authenticated_client.get(self._get_url(event.slug))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "confirmed_tags": {},
+                "event": event,
+                "form": ANY,
+                "max_participants_limit": 20,
+                "min_participants_limit": 0,
+                "tag_categories": [],
+                "time_slot": None,
+            },
+            template_name="chronology/propose_session.html",
+        )
+
     @pytest.mark.usefixtures("proposal_category")
     def test_post_form_invalid(self, authenticated_client, event, faker, time_zone):
         event.proposal_start_time = faker.date_time_between(

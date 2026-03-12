@@ -71,6 +71,7 @@ def _create_event(
     publication_offset: timedelta,
     enrollment_banner: str | None = None,
     allow_anonymous: bool = False,
+    proposals_open: bool = False,
 ) -> Event:
     now = timezone.now()
     start = now + start_offset
@@ -83,6 +84,14 @@ def _create_event(
         start_time=start,
         end_time=end,
         publication_time=now - publication_offset,
+        **(
+            {
+                "proposal_start_time": now - timedelta(days=1),
+                "proposal_end_time": now + timedelta(days=7),
+            }
+            if proposals_open
+            else {}
+        ),
     )
 
     if enrollment_banner:
@@ -136,7 +145,7 @@ def _create_session(
 ) -> Session:
     session = Session.objects.create(
         sphere=sphere,
-        presenter_name=presenter,
+        display_name=presenter,
         title=title,
         slug=slug,
         description=description,
@@ -219,6 +228,53 @@ def main() -> None:
     # Test user for authenticated e2e tests
     _create_test_user()
 
+    # Staff manager user for panel e2e tests (logs in via /admin/)
+    manager = User.objects.create_user(
+        username="e2e-manager",
+        email="e2e-manager@test.local",
+        password="e2e-manager-123",
+        name="E2E Manager",
+        slug="e2e-manager",
+        is_staff=True,
+    )
+    sphere.managers.add(manager)
+
+    # Second sphere with NO events — used to test panel redirect
+    _, empty_sphere = _create_site("another.localhost:8000", name="Empty Sphere")
+    empty_manager = User.objects.create_user(
+        username="e2e-manager-empty",
+        email="e2e-manager-empty@test.local",
+        password="e2e-manager-empty-123",
+        name="E2E Manager Empty",
+        slug="e2e-manager-empty",
+        is_staff=True,
+    )
+    empty_sphere.managers.add(empty_manager)
+
+    # Persist a session for the empty-sphere manager (cookie-based login)
+    empty_session = SessionStore()
+    empty_session["_auth_user_id"] = str(empty_manager.pk)
+    empty_session["_auth_user_backend"] = "django.contrib.auth.backends.ModelBackend"
+    empty_session["_auth_user_hash"] = empty_manager.get_session_auth_hash()
+    empty_session.create()
+
+    empty_state = {
+        "cookies": [
+            {
+                "name": "sessionid",
+                "value": empty_session.session_key,
+                "domain": "another.localhost",
+                "path": "/",
+                "httpOnly": True,
+                "secure": False,
+                "sameSite": "Lax",
+            }
+        ],
+        "origins": [],
+    }
+    empty_state_path = REPO_ROOT / "tests" / "e2e" / ".auth-state-empty.json"
+    empty_state_path.write_text(json.dumps(empty_state, indent=2))
+
     # Flatpages
     _create_flatpage(
         site,
@@ -254,6 +310,7 @@ def main() -> None:
         publication_offset=timedelta(days=2),
         enrollment_banner="Enrollment is open—grab a slot before we fill up!",
         allow_anonymous=True,
+        proposals_open=True,
     )
 
     # Create venue hierarchy for the upcoming event

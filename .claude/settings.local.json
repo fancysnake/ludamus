@@ -1,21 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mise run check:*)",
-      "Bash(mise run djlint:*)",
-      "Bash(mise run mypy:*)",
-      "Bash(mise run ruff-fix:*)",
-      "Bash(mise run test:*)",
-      "Bash(mise run black:*)",
-      "Bash(mise run _pytest:*)",
-      "Bash(mise run dj migrate:*)",
-      "Bash(mise run dj compilemessages:*)",
-      "Bash(mise run ruff-check:*)",
-      "Bash(mise run:*)",
+      "Bash(ls *)",
+      "Bash(npx playwright *)",
+      "Bash(wc *)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_snapshot",
       "Skill(gloria)",
+      "Skill(hector)",
       "Skill(manuel)",
-      "Skill(tessa)",
-      "Bash(DJANGO_SETTINGS_MODULE=ludamus.edges.settings PYTHONPATH=src .venv/bin/python:*)"
+      "Skill(tessa)"
     ],
     "deny": [
       "Edit(./tests/integration/utils.py)"

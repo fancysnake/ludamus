@@ -1,7 +1,28 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from django.core.exceptions import ValidationError
 
 from ludamus.adapters.db.django.models import TimeSlot
+from tests.integration.conftest import EventFactory
+
+
+class TestEventIsPublished:
+    def test_published_when_publication_time_in_past(self, sphere):
+        event = EventFactory(
+            sphere=sphere, publication_time=datetime.now(UTC) - timedelta(days=1)
+        )
+        assert event.is_published is True
+
+    def test_not_published_when_publication_time_in_future(self, sphere):
+        event = EventFactory(
+            sphere=sphere, publication_time=datetime.now(UTC) + timedelta(days=1)
+        )
+        assert event.is_published is False
+
+    def test_not_published_when_publication_time_is_none(self, sphere):
+        event = EventFactory(sphere=sphere, publication_time=None)
+        assert event.is_published is False
 
 
 class TestTimeSlot:

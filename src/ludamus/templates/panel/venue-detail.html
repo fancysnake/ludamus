@@ -1,9 +1,9 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
 {% load tessera %}
-{% block title %}
-    {{ venue.name }} - {% translate "Venues" %} - Ludamus Backoffice
-{% endblock title %}
+{% block title_prefix %}
+    {{ venue.name }} - {% translate "Venues" %} -
+{% endblock title_prefix %}
 {% block page_title %}
     {{ venue.name }}
 {% endblock page_title %}

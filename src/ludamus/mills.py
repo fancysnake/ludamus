@@ -282,19 +282,22 @@ class ProposeSessionService:
     ) -> list[TimeSlotRequirementDTO]:
         return self._uow.proposal_categories.list_time_slot_requirements(category_id)
 
-    def get_saved_personal_data(self, event_id: int) -> dict[str, str]:
+    def get_saved_personal_data(
+        self, event_id: int
+    ) -> dict[str, str | list[str] | bool]:
         return self._uow.host_personal_data.read_for_user_event(
             self._context.current_user_id, event_id
         )
 
     def submit(self, event: EventDTO, wizard_data: WizardData) -> ProposeSessionResult:
         session_data = wizard_data.get("session_data", {})
-        if "title" not in session_data or "participants_limit" not in session_data:
-            msg = "session_data must contain 'title' and 'participants_limit'"
+        if "title" not in session_data:
+            msg = "session_data must contain 'title'"
             raise ValueError(msg)
         title = str(session_data["title"])
         description = str(session_data.get("description", ""))
-        participants_limit = int(session_data["participants_limit"])  # type: ignore[call-overload]
+        raw_limit = session_data.get("participants_limit") or 0
+        participants_limit = int(str(raw_limit))
         category_id = wizard_data["category_id"]
         time_slot_ids = wizard_data.get("time_slot_ids", [])
 
@@ -305,7 +308,7 @@ class ProposeSessionService:
         create_data = SessionData(
             sphere_id=event.sphere_id,
             presenter_id=current_user.pk,
-            presenter_name=current_user.name,
+            display_name=str(session_data.get("display_name", current_user.name)),
             category_id=category_id,
             title=title,
             slug=slug,
@@ -314,6 +317,7 @@ class ProposeSessionService:
             needs="",
             participants_limit=participants_limit,
             min_age=0,
+            contact_email=wizard_data.get("contact_email", ""),
             status=SessionStatus.PENDING,
         )
 
@@ -350,7 +354,7 @@ class ProposeSessionService:
                 continue
             values.append(
                 SessionFieldValueData(
-                    session_id=session_id, field_id=field_dto.pk, value=str(value)
+                    session_id=session_id, field_id=field_dto.pk, value=value
                 )
             )
         if values:
@@ -432,7 +436,7 @@ class AcceptProposalService:
                 session.pk,
                 SessionUpdateData(
                     status=SessionStatus.ACCEPTED,
-                    presenter_name=presenter.name,
+                    display_name=presenter.name,
                     slug=slugifier(session.title),
                 ),
             )

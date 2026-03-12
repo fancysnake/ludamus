@@ -14,6 +14,7 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
+    EventProposalSettings,
     HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -65,6 +66,7 @@ from ludamus.pacts import (
     ProposalCategoryDTO,
     ProposalCategoryRepositoryProtocol,
     ProposalDTO,
+    ProposalListItemDTO,
     ProposalRepositoryProtocol,
     SessionData,
     SessionDTO,
@@ -73,6 +75,7 @@ from ludamus.pacts import (
     SessionFieldRepositoryProtocol,
     SessionFieldRequirementDTO,
     SessionFieldValueData,
+    SessionFieldValueDTO,
     SessionRepositoryProtocol,
     SessionStatus,
     SessionUpdateData,
@@ -201,11 +204,13 @@ class ProposalRepository(ProposalRepositoryProtocol):
     @staticmethod
     def read_event(proposal_id: int) -> EventDTO:
         try:
-            event = Event.objects.get(proposal_categories__proposals__id=proposal_id)
+            event = Event.objects.select_related("proposal_settings").get(
+                proposal_categories__proposals__id=proposal_id
+            )
         except Event.DoesNotExist as exception:
             raise NotFoundError from exception
 
-        return EventDTO.model_validate(event)
+        return _event_dto(event)
 
     @staticmethod
     def read_spaces(proposal_id: int) -> list[SpaceDTO]:
@@ -267,6 +272,47 @@ class ProposalRepository(ProposalRepositoryProtocol):
             session_id=session_id,
         )
 
+    @staticmethod
+    def list_proposals_by_event(
+        event_id: int,
+        *,
+        host_name: str | None = None,
+        field_filters: dict[int, str] | None = None,
+        search: str | None = None,
+    ) -> list[ProposalListItemDTO]:
+        qs = Proposal.objects.filter(category__event_id=event_id).select_related(
+            "host", "category", "session"
+        )
+
+        if host_name:
+            qs = qs.filter(host__name__icontains=host_name)
+
+        if field_filters:
+            for field_id, value in field_filters.items():
+                qs = qs.filter(
+                    session__field_values__field_id=field_id,
+                    session__field_values__value__icontains=value,
+                )
+
+        if search:
+            qs = qs.filter(session__field_values__value__icontains=search).distinct()
+
+        return [
+            ProposalListItemDTO(
+                pk=p.pk,
+                title=p.title,
+                host_name=p.host.name,
+                category_name=p.category.name,
+                session_status=(
+                    SessionStatus(p.session.status)
+                    if p.session
+                    else SessionStatus.PENDING
+                ),
+                creation_time=p.creation_time,
+            )
+            for p in qs.order_by("-creation_time")
+        ]
+
 
 class SessionRepository(SessionRepositoryProtocol):
     @staticmethod
@@ -296,10 +342,12 @@ class SessionRepository(SessionRepositoryProtocol):
     @staticmethod
     def read_event(session_id: int) -> EventDTO:
         try:
-            event = Event.objects.get(proposal_categories__sessions__id=session_id)
+            event = Event.objects.select_related("proposal_settings").get(
+                proposal_categories__sessions__id=session_id
+            )
         except Event.DoesNotExist as exception:
             raise NotFoundError from exception
-        return EventDTO.model_validate(event)
+        return _event_dto(event)
 
     @staticmethod
     def read_presenter(session_id: int) -> UserDTO:
@@ -374,12 +422,13 @@ class SessionRepository(SessionRepositoryProtocol):
         )
         return [
             PendingSessionDTO(
+                contact_email=s.contact_email,
                 creation_time=s.creation_time,
                 description=s.description,
                 needs=s.needs,
                 participants_limit=s.participants_limit,
                 pk=s.pk,
-                presenter_name=s.presenter_name,
+                display_name=s.display_name,
                 requirements=s.requirements,
                 tags=[PendingSessionTagDTO.model_validate(t) for t in s.tags.all()],
                 time_slots=[
@@ -406,12 +455,13 @@ class SessionRepository(SessionRepositoryProtocol):
         )
         return [
             PendingSessionDTO(
+                contact_email=s.contact_email,
                 creation_time=s.creation_time,
                 description=s.description,
                 needs=s.needs,
                 participants_limit=s.participants_limit,
                 pk=s.pk,
-                presenter_name=s.presenter_name,
+                display_name=s.display_name,
                 requirements=s.requirements,
                 tags=[PendingSessionTagDTO.model_validate(t) for t in s.tags.all()],
                 time_slots=[
@@ -443,6 +493,20 @@ class SessionRepository(SessionRepositoryProtocol):
                 for v in values
             ]
         )
+
+    @staticmethod
+    def read_field_values(session_id: int) -> list[SessionFieldValueDTO]:
+        values = (
+            SessionFieldValue.objects.filter(session_id=session_id)
+            .select_related("field")
+            .order_by("field__order", "field__name")
+        )
+        return [
+            SessionFieldValueDTO(
+                field_name=v.field.name, field_question=v.field.question, value=v.value
+            )
+            for v in values
+        ]
 
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):
@@ -494,6 +558,13 @@ class ConnectedUserRepository(ConnectedUserRepositoryProtocol):
         user.delete()
 
 
+def _event_dto(event: Event) -> EventDTO:
+    settings = getattr(event, "proposal_settings", None)
+    description = settings.description if settings is not None else ""
+    dto = EventDTO.model_validate(event)
+    return dto.model_copy(update={"proposal_description": description})
+
+
 class EventRepository(EventRepositoryProtocol):
     @staticmethod
     def list_by_sphere(sphere_id: int) -> list[EventDTO]:
@@ -502,8 +573,12 @@ class EventRepository(EventRepositoryProtocol):
         Returns:
             List of EventDTO objects for the sphere.
         """
-        events = Event.objects.filter(sphere_id=sphere_id).order_by("-start_time")
-        return [EventDTO.model_validate(event) for event in events]
+        events = (
+            Event.objects.filter(sphere_id=sphere_id)
+            .select_related("proposal_settings")
+            .order_by("-start_time")
+        )
+        return [_event_dto(event) for event in events]
 
     @staticmethod
     def read(pk: int) -> EventDTO:
@@ -516,10 +591,10 @@ class EventRepository(EventRepositoryProtocol):
             NotFoundError: If the event does not exist.
         """
         try:
-            event = Event.objects.get(id=pk)
+            event = Event.objects.select_related("proposal_settings").get(id=pk)
         except Event.DoesNotExist as exception:
             raise NotFoundError from exception
-        return EventDTO.model_validate(event)
+        return _event_dto(event)
 
     @staticmethod
     def read_by_slug(slug: str, sphere_id: int) -> EventDTO:
@@ -532,10 +607,12 @@ class EventRepository(EventRepositoryProtocol):
             NotFoundError: If the event does not exist.
         """
         try:
-            event = Event.objects.get(slug=slug, sphere_id=sphere_id)
+            event = Event.objects.select_related("proposal_settings").get(
+                slug=slug, sphere_id=sphere_id
+            )
         except Event.DoesNotExist as exception:
             raise NotFoundError from exception
-        return EventDTO.model_validate(event)
+        return _event_dto(event)
 
     @staticmethod
     def get_stats_data(event_id: int) -> EventStatsData:
@@ -572,6 +649,12 @@ class EventRepository(EventRepositoryProtocol):
 
         event.name = name
         event.save()
+
+    @staticmethod
+    def update_proposal_description(event_id: int, description: str) -> None:
+        EventProposalSettings.objects.update_or_create(
+            event_id=event_id, defaults={"description": description}
+        )
 
 
 class VenueRepository(VenueRepositoryProtocol):
@@ -1305,6 +1388,20 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
             category.durations = data["durations"]
             needs_save = True
 
+        if (
+            "min_participants_limit" in data
+            and category.min_participants_limit != data["min_participants_limit"]
+        ):
+            category.min_participants_limit = data["min_participants_limit"]
+            needs_save = True
+
+        if (
+            "max_participants_limit" in data
+            and category.max_participants_limit != data["max_participants_limit"]
+        ):
+            category.max_participants_limit = data["max_participants_limit"]
+            needs_save = True
+
         if needs_save:
             category.save()
 
@@ -1454,6 +1551,52 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
             )
 
     @staticmethod
+    def add_field_to_categories(field_id: int, categories: dict[int, bool]) -> None:
+        """Add a personal data field to multiple categories.
+
+        Args:
+            field_id: The field to add.
+            categories: Dict mapping category_id to is_required boolean.
+        """
+        for category_id, is_required in categories.items():
+            max_order = (
+                PersonalDataFieldRequirement.objects.filter(
+                    category_id=category_id
+                ).aggregate(Max("order"))["order__max"]
+                or 0
+            )
+            PersonalDataFieldRequirement.objects.create(
+                category_id=category_id,
+                field_id=field_id,
+                is_required=is_required,
+                order=max_order + 1,
+            )
+
+    @staticmethod
+    def add_session_field_to_categories(
+        field_id: int, categories: dict[int, bool]
+    ) -> None:
+        """Add a session field to multiple categories.
+
+        Args:
+            field_id: The field to add.
+            categories: Dict mapping category_id to is_required boolean.
+        """
+        for category_id, is_required in categories.items():
+            max_order = (
+                SessionFieldRequirement.objects.filter(
+                    category_id=category_id
+                ).aggregate(Max("order"))["order__max"]
+                or 0
+            )
+            SessionFieldRequirement.objects.create(
+                category_id=category_id,
+                field_id=field_id,
+                is_required=is_required,
+                order=max_order + 1,
+            )
+
+    @staticmethod
     def get_time_slot_requirements(category_id: int) -> dict[int, bool]:
         """Get time slot requirements for a category.
 
@@ -1527,12 +1670,16 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
             ]
             field_dto = PersonalDataFieldDTO(
                 allow_custom=field.allow_custom,
-                field_type=cast("Literal['text', 'select']", field.field_type),
+                field_type=cast(
+                    "Literal['text', 'select', 'checkbox']", field.field_type
+                ),
+                help_text=field.help_text,
                 is_multiple=field.is_multiple,
                 name=field.name,
                 options=options,
                 order=field.order,
                 pk=field.pk,
+                question=field.question,
                 slug=field.slug,
             )
             result.append(
@@ -1561,12 +1708,16 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
             ]
             field_dto = SessionFieldDTO(
                 allow_custom=field.allow_custom,
-                field_type=cast("Literal['text', 'select']", field.field_type),
+                field_type=cast(
+                    "Literal['text', 'select', 'checkbox']", field.field_type
+                ),
+                help_text=field.help_text,
                 is_multiple=field.is_multiple,
                 name=field.name,
                 options=options,
                 order=field.order,
                 pk=field.pk,
+                question=field.question,
                 slug=field.slug,
             )
             result.append(
@@ -1612,11 +1763,13 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         self,
         event_id: int,
         name: str,
+        question: str,
         field_type: str = "text",
         options: list[str] | None = None,
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        help_text: str = "",
     ) -> PersonalDataFieldDTO:
         base_slug = slugify(name)
         slug = self.generate_unique_slug(event_id, base_slug)
@@ -1628,10 +1781,12 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         field = PersonalDataField.objects.create(
             event_id=event_id,
             name=name,
+            question=question,
             slug=slug,
             field_type=field_type,
             is_multiple=actual_is_multiple,
             allow_custom=actual_allow_custom,
+            help_text=help_text,
         )
 
         if field_type == "select" and options:
@@ -1672,7 +1827,9 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def update(self, pk: int, name: str) -> PersonalDataFieldDTO:
+    def update(
+        self, pk: int, name: str, question: str, *, help_text: str = ""
+    ) -> PersonalDataFieldDTO:
         try:
             field = PersonalDataField.objects.get(pk=pk)
         except PersonalDataField.DoesNotExist as exc:
@@ -1682,7 +1839,9 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         slug = self.generate_unique_slug(field.event_id, base_slug, exclude_pk=pk)
 
         field.name = name
+        field.question = question
         field.slug = slug
+        field.help_text = help_text
         field.save()
 
         return self._to_dto(field)
@@ -1710,12 +1869,14 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         ]
         return PersonalDataFieldDTO(
             allow_custom=field.allow_custom,
-            field_type=cast("Literal['text', 'select']", field.field_type),
+            field_type=cast("Literal['text', 'select', 'checkbox']", field.field_type),
+            help_text=field.help_text,
             is_multiple=field.is_multiple,
             name=field.name,
             options=options,
             order=field.order,
             pk=field.pk,
+            question=field.question,
             slug=field.slug,
         )
 
@@ -1725,11 +1886,13 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         self,
         event_id: int,
         name: str,
+        question: str,
         field_type: str = "text",
         options: list[str] | None = None,
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        help_text: str = "",
     ) -> SessionFieldDTO:
         base_slug = slugify(name)
         slug = self.generate_unique_slug(event_id, base_slug)
@@ -1741,10 +1904,12 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         field = SessionField.objects.create(
             event_id=event_id,
             name=name,
+            question=question,
             slug=slug,
             field_type=field_type,
             is_multiple=actual_is_multiple,
             allow_custom=actual_allow_custom,
+            help_text=help_text,
         )
 
         if field_type == "select" and options:
@@ -1785,7 +1950,9 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def update(self, pk: int, name: str) -> SessionFieldDTO:
+    def update(
+        self, pk: int, name: str, question: str, *, help_text: str = ""
+    ) -> SessionFieldDTO:
         try:
             field = SessionField.objects.get(pk=pk)
         except SessionField.DoesNotExist as exc:
@@ -1795,7 +1962,9 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         slug = self.generate_unique_slug(field.event_id, base_slug, exclude_pk=pk)
 
         field.name = name
+        field.question = question
         field.slug = slug
+        field.help_text = help_text
         field.save()
 
         return self._to_dto(field)
@@ -1821,12 +1990,14 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         options = [SessionFieldOptionDTO.model_validate(o) for o in field.options.all()]
         return SessionFieldDTO(
             allow_custom=field.allow_custom,
-            field_type=cast("Literal['text', 'select']", field.field_type),
+            field_type=cast("Literal['text', 'select', 'checkbox']", field.field_type),
+            help_text=field.help_text,
             is_multiple=field.is_multiple,
             name=field.name,
             options=options,
             order=field.order,
             pk=field.pk,
+            question=field.question,
             slug=field.slug,
         )
 
@@ -1843,7 +2014,9 @@ class HostPersonalDataRepository(HostPersonalDataRepositoryProtocol):
             )
 
     @staticmethod
-    def read_for_user_event(user_id: int, event_id: int) -> dict[str, str]:
+    def read_for_user_event(
+        user_id: int, event_id: int
+    ) -> dict[str, str | list[str] | bool]:
         records = HostPersonalData.objects.filter(
             user_id=user_id, event_id=event_id
         ).select_related("field")

@@ -168,3 +168,56 @@ class TestEventsPageView:
         assert response.status_code == HTTPStatus.OK
         assert response.context["is_sphere_manager"] is False
         assert b'href="/panel/"' not in response.content
+
+    def test_unpublished_event_hidden_for_anonymous(self, client, sphere):
+        EventFactory(sphere=sphere, publication_time=None)
+
+        response = client.get(self.URL)
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={"past_events": [], "upcoming_events": [], "view": ANY},
+            template_name=["index.html"],
+        )
+
+    def test_unpublished_event_hidden_for_regular_user(
+        self, authenticated_client, sphere
+    ):
+        EventFactory(sphere=sphere, publication_time=None)
+
+        response = authenticated_client.get(self.URL)
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={"past_events": [], "upcoming_events": [], "view": ANY},
+            template_name=["index.html"],
+        )
+
+    def test_unpublished_event_visible_for_manager(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        event = EventFactory(sphere=sphere, publication_time=None)
+
+        response = authenticated_client.get(self.URL)
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "past_events": [],
+                "upcoming_events": [
+                    EventInfo.from_event(
+                        event=event,
+                        session_count=0,
+                        cover_image_url=staticfiles_storage.url(
+                            EVENT_PLACEHOLDER_IMAGES[0]
+                        ),
+                    )
+                ],
+                "view": ANY,
+            },
+            template_name=["index.html"],
+        )

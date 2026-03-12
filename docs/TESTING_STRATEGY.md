@@ -33,6 +33,9 @@ Rules:
 
 ### Integration tests
 
+Purpose: verify the view→template **context contract** — that views produce the
+correct data for every branch of logic.
+
 Yes: views, commands
 
 No: classes, functions
@@ -56,9 +59,31 @@ Asserts:
   of different keys)
 - redirect location
 
+Scope: cover **every variation** of context data — empty vs populated lists,
+different user roles, permission checks, edge cases. One test per meaningful
+context branch.
+
+Do NOT test: whether the rendered page actually works for the user (that is
+the job of e2e tests).
+
 ## End-to-End tests
 
-Yes: Full features, complete flows
+Purpose: verify that **features work** from the user's perspective in a real
+browser.
+
+Yes: full features, complete user operations, multi-step workflows
+
+Technology: Playwright (TypeScript)
+
+Scope: cover **operations and workflows** — creating, editing, deleting,
+filtering, navigating. Tests can and should combine multiple related actions
+in a single test (e.g. apply several filters at once, create then edit an
+entity).
+
+Do NOT test: every branch of context data — that is the job of integration
+tests. For example, if a filter works (correct context data) is verified by
+integration tests; e2e tests verify that using multiple filters together
+produces the expected page behavior.
 
 ## TDD Workflow
 

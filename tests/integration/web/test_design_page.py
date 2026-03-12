@@ -34,6 +34,7 @@ def _expected_event_info() -> EventInfo:
         is_ended=False,
         is_live=False,
         is_proposal_active=True,
+        is_published=True,
         name="Design Preview Event",
         session_count=12,
         start_time=start,
@@ -146,6 +147,7 @@ def _expected_session_data() -> SessionData:
         is_enrollment_available=True,
         presenter=presenter,
         session=SessionDTO(
+            contact_email="alex@example.com",
             creation_time=creation,
             description=(
                 "A sample session for the design page. Host and tags are mock data."
@@ -154,7 +156,7 @@ def _expected_session_data() -> SessionData:
             modification_time=creation,
             participants_limit=6,
             pk=1,
-            presenter_name="Alex Designer",
+            display_name="Alex Designer",
             requirements="",
             slug="design-session",
             title="Design System Session Card",
@@ -220,13 +222,14 @@ def _expected_session_data_ended() -> SessionData:
         is_enrollment_available=False,
         presenter=presenter,
         session=SessionDTO(
+            contact_email="alex@example.com",
             creation_time=creation,
             description="Ended session for design preview.",
             min_age=0,
             modification_time=creation,
             participants_limit=6,
             pk=2,
-            presenter_name="Alex Designer",
+            display_name="Alex Designer",
             requirements="",
             slug="design-session-ended",
             title="Ended Session (Design Preview)",

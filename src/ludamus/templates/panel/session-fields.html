@@ -1,9 +1,9 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
 {% load tessera %}
-{% block title %}
-    {% translate "Session Fields" %} - Ludamus Backoffice
-{% endblock title %}
+{% block title_prefix %}
+    {% translate "Session Fields" %} -
+{% endblock title_prefix %}
 {% block page_title %}
     {% translate "Session Fields" %}
 {% endblock page_title %}
@@ -28,57 +28,59 @@
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <div class="alert alert-info mb-6">
             <div class="flex items-start gap-3">
-                <span class="text-blue-600 flex-shrink-0 mt-0.5">{% icon "information-circle" class="w-5 h-5" %}</span>
+                <span class="flex-shrink-0 mt-0.5">{% icon "information-circle" class="w-5 h-5" %}</span>
                 <div>
-                    <p class="text-sm font-medium text-blue-800">{% translate "What are Session Fields?" %}</p>
-                    <p class="text-sm text-blue-700 mt-1">
+                    <p class="text-sm font-medium">{% translate "What are Session Fields?" %}</p>
+                    <p class="text-sm mt-1">
                         {% translate "Session fields collect information about each session proposal. Examples: game system, genre, difficulty level, language. Unlike host data, session fields are filled separately for each proposal." %}
                     </p>
-                    <p class="text-sm text-blue-700 mt-2">
+                    <p class="text-sm mt-2">
                         {% translate "After creating fields here, configure which ones are required or optional in each session type's settings." %}
                     </p>
                 </div>
             </div>
         </div>
         {% if fields %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
-                <table class="min-w-full divide-y divide-neutral-200">
-                    <thead class="bg-neutral-50">
+            <div class="bg-bg-secondary rounded-xl shadow-sm border border-border overflow-x-auto">
+                <table class="min-w-full divide-y divide-border">
+                    <thead class="bg-bg-tertiary">
                         <tr>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
                                 {% translate "Name" context "place" %}
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
                                 {% translate "Type" %}
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-right text-xs font-medium text-foreground-muted uppercase tracking-wider">
                                 {% translate "Actions" %}
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-neutral-200">
+                    <tbody class="bg-bg-secondary divide-y divide-border">
                         {% for field in fields %}
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ field.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                                <td class="px-6 py-4 text-sm font-medium text-foreground max-w-xs truncate">{{ field.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">
                                     {% if field.field_type == "select" %}
                                         {% translate "Select" %}
                                         <span class="text-neutral-400">({{ field.options|length }})</span>
                                         {% if field.is_multiple %}
-                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--theme-info-bg)] text-[var(--theme-info-text)]">
                                                 {% translate "Multiple" %}
                                             </span>
                                         {% endif %}
                                         {% if field.allow_custom %}
-                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--theme-success-bg)] text-[var(--theme-success-text)]">
                                                 {% translate "Custom" %}
                                             </span>
                                         {% endif %}
+                                    {% elif field.field_type == "checkbox" %}
+                                        {% translate "Checkbox" %}
                                     {% else %}
                                         {% translate "Text" %}
                                     {% endif %}
@@ -91,7 +93,7 @@
                                           class="inline"
                                           onsubmit="return confirm('{% translate "Are you sure you want to delete this field?" %}');">
                                         {% csrf_token %}
-                                        <button type="submit" class="text-red-600 hover:text-red-800">{% translate "Delete" %}</button>
+                                        <button type="submit" class="text-danger hover:text-danger/80">{% translate "Delete" %}</button>
                                     </form>
                                 </td>
                             </tr>
@@ -100,13 +102,13 @@
                 </table>
             </div>
         {% else %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
-                <p class="text-neutral-500">{% translate "No session fields defined. Add fields to classify sessions." %}</p>
+            <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-8 text-center">
+                <p class="text-foreground-muted">{% translate "No session fields defined. Add fields to classify sessions." %}</p>
             </div>
         {% endif %}
     {% else %}
-        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
-            <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
+        <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-8 text-center">
+            <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}
 {% endblock content %}

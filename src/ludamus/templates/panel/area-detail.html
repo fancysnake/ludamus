@@ -1,9 +1,9 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
 {% load tessera %}
-{% block title %}
-    {{ area.name }} - {% translate "Areas" %} - Ludamus Backoffice
-{% endblock title %}
+{% block title_prefix %}
+    {{ area.name }} - {% translate "Areas" %} -
+{% endblock title_prefix %}
 {% block page_title %}
     {{ area.name }}
 {% endblock page_title %}

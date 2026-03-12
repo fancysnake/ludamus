@@ -571,7 +571,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex items-center gap-2">
                                         <span style="color: var(--color-foreground-muted)">{% icon "user-circle" class="w-4 h-4" variant="mini" %}</span>
-                                        <span>{{ pending.presenter_name }}</span>
+                                        <span>{{ pending.display_name }}</span>
                                     </div>
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
@@ -639,7 +639,7 @@
                             <div>
                                 <h4 class="text-sm font-semibold mb-1"
                                     style="color: var(--color-foreground-secondary)">{% translate "Host" %}</h4>
-                                <p>{{ pending.presenter_name }}</p>
+                                <p>{{ pending.display_name }}</p>
                             </div>
                             <div>
                                 <h4 class="text-sm font-semibold mb-1"

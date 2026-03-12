@@ -193,7 +193,7 @@ class TestSpaceDeleteActionView:
             title="Test Session",
             slug="test-session",
             sphere=sphere,
-            presenter_name="Test Host",
+            display_name="Test Host",
             participants_limit=10,
         )
         AgendaItem.objects.create(
