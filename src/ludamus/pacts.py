@@ -14,6 +14,15 @@ class NotFoundError(Exception):
     pass
 
 
+class RedirectError(Exception):
+    def __init__(
+        self, url: str, *, error: str | None = None, warning: str | None = None
+    ) -> None:
+        self.url = url
+        self.error = error
+        self.warning = warning
+
+
 class DateTimeRangeProtocol(Protocol):
     """Protocol for objects with start_time and end_time datetime fields."""
 
@@ -24,6 +33,7 @@ class DateTimeRangeProtocol(Protocol):
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    description: str
     durations: list[str]
     end_time: datetime | None
     max_participants_limit: int
@@ -409,6 +419,7 @@ class UserData(TypedDict, total=False):
 
 
 class ProposalCategoryData(TypedDict, total=False):
+    description: str
     durations: list[str]
     end_time: datetime | None
     name: str
@@ -472,6 +483,51 @@ class SessionFieldDTO(BaseModel):
     order: int
     pk: int
     slug: str
+
+
+class PersonalFieldRequirementDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    field: PersonalDataFieldDTO
+    is_required: bool
+
+
+class SessionFieldRequirementDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    field: SessionFieldDTO
+    is_required: bool
+
+
+class TimeSlotRequirementDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    time_slot: TimeSlotDTO
+    time_slot_id: int
+    is_required: bool
+
+
+class SessionFieldValueData(TypedDict):
+    session_id: int
+    field_id: int
+    value: str
+
+
+class HostPersonalDataEntry(TypedDict):
+    user_id: int
+    event_id: int
+    field_id: int
+    value: str
+
+
+class WizardData(TypedDict, total=False):
+    category_id: int
+    personal_data: dict[str, str]
+    session_data: dict[str, object]
+    time_slot_ids: list[int]
+
+
+@dataclass
+class ProposeSessionResult:
+    session_id: int
+    title: str
 
 
 @dataclass
@@ -579,6 +635,10 @@ class ProposalRepositoryProtocol(Protocol):
     def read_tags(proposal_id: int) -> list[TagDTO]: ...
     @staticmethod
     def read_tag_categories(proposal_id: int) -> list[TagCategoryDTO]: ...
+    @staticmethod
+    def create_from_session(
+        category_id: int, host_id: int, session_id: int, session_data: SessionData
+    ) -> None: ...
 
 
 class SessionRepositoryProtocol(Protocol):
@@ -618,6 +678,12 @@ class SessionRepositoryProtocol(Protocol):
     ) -> list[PendingSessionDTO]: ...
     @staticmethod
     def read_preferred_time_slot_ids(session_id: int) -> list[int]: ...
+    @staticmethod
+    def slug_exists(sphere_id: int, slug: str) -> bool: ...
+    @staticmethod
+    def save_field_values(
+        session_id: int, values: list[SessionFieldValueData]
+    ) -> None: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):
@@ -719,7 +785,21 @@ class ProposalCategoryRepositoryProtocol(Protocol):
     @staticmethod
     def list_by_event(event_id: int) -> list[ProposalCategoryDTO]: ...
     @staticmethod
+    def read(pk: int, event_id: int) -> ProposalCategoryDTO: ...
+    @staticmethod
     def read_by_slug(event_id: int, slug: str) -> ProposalCategoryDTO: ...
+    @staticmethod
+    def list_personal_field_requirements(
+        category_id: int,
+    ) -> list[PersonalFieldRequirementDTO]: ...
+    @staticmethod
+    def list_session_field_requirements(
+        category_id: int,
+    ) -> list[SessionFieldRequirementDTO]: ...
+    @staticmethod
+    def list_time_slot_requirements(
+        category_id: int,
+    ) -> list[TimeSlotRequirementDTO]: ...
     @staticmethod
     def set_field_requirements(
         category_id: int, requirements: dict[int, bool], order: list[int] | None = None
@@ -859,7 +939,14 @@ class EncounterRSVPRepositoryProtocol(Protocol):
     def delete_by_user(encounter_id: int, user_id: int) -> None: ...
 
 
-class UnitOfWorkProtocol(Protocol):
+class HostPersonalDataRepositoryProtocol(Protocol):
+    @staticmethod
+    def save(entries: list[HostPersonalDataEntry]) -> None: ...
+    @staticmethod
+    def read_for_user_event(user_id: int, event_id: int) -> dict[str, str]: ...
+
+
+class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
     @staticmethod
@@ -900,6 +987,8 @@ class UnitOfWorkProtocol(Protocol):
     def encounter_rsvps(self) -> EncounterRSVPRepositoryProtocol: ...
     @property
     def enrollment_configs(self) -> EnrollmentConfigRepositoryProtocol: ...
+    @property
+    def host_personal_data(self) -> HostPersonalDataRepositoryProtocol: ...
 
 
 class TicketAPIProtocol(Protocol):

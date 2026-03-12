@@ -14,6 +14,7 @@ from ludamus.adapters.db.django.models import (
     Proposal,
     ProposalCategory,
     Session,
+    SessionFieldValue,
     Space,
     Sphere,
     Tag,
@@ -63,12 +64,19 @@ class SpaceAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 
+class SessionFieldValueInline(admin.TabularInline):  # type: ignore [type-arg]
+    model = SessionFieldValue
+    extra = 0
+    fields = ("field", "value")
+
+
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     list_display = ("title", "status", "presenter_name", "category", "sphere")
     list_filter = ("status", "sphere")
     search_fields = ("title", "presenter_name")
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("title",)}
+    inlines = (SessionFieldValueInline,)
 
 
 class SphereAdminForm(forms.ModelForm):  # type: ignore [type-arg]
