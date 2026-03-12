@@ -36,6 +36,7 @@
              hx-target="#wizard-content"
              hx-swap="outerHTML"
              hx-trigger="load"
+             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
              hx-vals='{"category_id": "{{ category.pk }}"}'></div>
     {% endif %}
 </div>

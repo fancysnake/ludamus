@@ -40,5 +40,11 @@
         <p class="text-sm text-foreground-muted">{% translate "Time slots saved. Next step coming soon." %}</p>
     {% else %}
         <p class="text-sm text-foreground-muted">{% translate "No time slot selection needed. Proceeding to next step." %}</p>
+        <div hx-post="{% url 'web:chronology:session-propose-timeslots' event_slug=event.slug %}"
+             hx-target="#wizard-content"
+             hx-swap="outerHTML"
+             hx-trigger="load"
+             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+             hx-vals='{"skip": "1"}'></div>
     {% endif %}
 </div>

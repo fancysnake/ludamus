@@ -83,5 +83,11 @@
         <p class="text-sm text-foreground-muted">
             {% translate "No additional information needed. Proceeding to next step." %}
         </p>
+        <div hx-post="{% url 'web:chronology:session-propose-personal' event_slug=event.slug %}"
+             hx-target="#wizard-content"
+             hx-swap="outerHTML"
+             hx-trigger="load"
+             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+             hx-vals='{"skip": "1"}'></div>
     {% endif %}
 </div>
