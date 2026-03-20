@@ -52,7 +52,7 @@ kanban
     [CODEOWNERS file]@{ assigned: 'agent-readiness' }
     [Structured logging]@{ assigned: 'agent-readiness' }
     [Support Markdown in Session.description]@{
-      assigned: 'sessions',
+      assigned: 'sessions'
       ticket: 9
     }
     [Sphere creation command]@{ assigned: 'management', ticket: 14 }
