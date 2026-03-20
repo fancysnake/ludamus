@@ -16,7 +16,7 @@
         <p class="mt-4 text-lg text-foreground-muted max-w-md">
             {% translate "No more 'hey, when are we playing?' in the group chat." %}
         </p>
-        <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <div class="mt-6 flex flex-wrap justify-center gap-3">
             <a href="{% url 'web:crowd:auth0:login' %}?screen_hint=signup&next={% url 'web:notice-board:index' %}"
                class="btn btn-primary text-base px-6 py-2.5">{% translate "Sign up" %}</a>
             <a href="{% url 'web:crowd:auth0:login' %}?next={% url 'web:notice-board:index' %}"
@@ -27,29 +27,38 @@
         <h2 class="text-xl font-bold text-teal-600 dark:text-teal-400 text-center mb-6">
             {% translate "Example encounters" %}
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+        <div class="session-grid grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
             {% for encounter in sample_encounters %}
-                <div class="card flex flex-col">
-                    <div class="block p-4 flex-1 rounded-2xl">
-                        <h3 class="font-semibold text-foreground mb-1">{{ encounter.title }}</h3>
-                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
-                            {% icon "puzzle-piece" class="h-4 w-4 flex-shrink-0" %}
-                            <span>{{ encounter.game }}</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
-                            {% icon "calendar" class="h-4 w-4 flex-shrink-0" %}
-                            <span>{{ encounter.date }}</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
-                            {% icon "map-pin" class="h-4 w-4 flex-shrink-0" %}
-                            <span>{{ encounter.place }}</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted">
-                            {% icon "users" class="h-4 w-4 flex-shrink-0" %}
-                            <span>{{ encounter.rsvp_count }} / {{ encounter.max_participants }}</span>
+                <article class="session-card-wrapper">
+                    <div class="session-card relative block w-full h-full rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 duration-100 ring-offset-background">
+                        <div class="relative z-10 flex h-full flex-col px-5 pb-5">
+                            <header class="-mx-5 bg-transparent px-5 pt-5">
+                                <h3 class="text-3xl font-bold leading-tight tracking-tight text-foreground-primary">{{ encounter.title }}</h3>
+                            </header>
+                            <div class="flex-1"></div>
+                            <div class="mt-auto pt-4 flex flex-col gap-1.5">
+                                <div class="flex items-center gap-1.5 text-sm text-foreground-secondary">
+                                    {% icon "puzzle-piece" class="size-4 shrink-0 text-foreground-muted/80" variant="mini" %}
+                                    <span>{{ encounter.game }}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-sm text-foreground-secondary">
+                                    {% icon "calendar" class="size-4 shrink-0 text-foreground-muted/80" variant="mini" %}
+                                    <span>{{ encounter.date }}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-1.5 text-sm text-foreground-secondary min-w-0 overflow-hidden">
+                                        {% icon "map-pin" class="size-4 shrink-0 text-foreground-muted/80" variant="mini" %}
+                                        <span class="truncate">{{ encounter.place }}</span>
+                                    </div>
+                                    <div class="shrink-0 flex items-center gap-1.5 text-sm font-semibold text-teal-700 dark:text-teal-400">
+                                        {% icon "users" class="size-4 shrink-0" variant="mini" %}
+                                        <span>{{ encounter.rsvp_count }}/{{ encounter.max_participants }}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </article>
             {% endfor %}
         </div>
     </div>
