@@ -10,10 +10,6 @@ from django.utils.safestring import mark_safe
 if TYPE_CHECKING:
     from django.forms import BaseForm, BoundField
 
-HELP_TEXT_CLASS = "text-xs mt-1 text-foreground-muted"
-
-ERROR_CLASS = "text-xs mt-1 text-danger"
-
 
 def render_form_errors(form: BaseForm) -> str:
     """Render form-level (non-field) errors.
@@ -40,7 +36,9 @@ def render_help_text(field: BoundField) -> str:
     if not field.help_text:
         return ""
 
-    return format_html('<p class="{}">{}</p>', HELP_TEXT_CLASS, field.help_text)
+    return format_html(
+        '<p class="text-xs mt-1 text-foreground-muted">{}</p>', field.help_text
+    )
 
 
 def render_errors(field: BoundField) -> str:
@@ -53,7 +51,7 @@ def render_errors(field: BoundField) -> str:
         return ""
 
     errors_html = [
-        format_html('<p class="{}">{}</p>', ERROR_CLASS, error)
+        format_html('<p class="text-xs mt-1 text-danger">{}</p>', error)
         for error in field.errors
     ]
 
