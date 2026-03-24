@@ -1,10 +1,10 @@
-"""Checkbox and multi-choice renderers."""
+"""Checkbox and multi-choice renderers — delegate to component templates."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.utils.html import format_html
+from django.template.loader import render_to_string
 
 from .errors import render_errors, render_help_text
 from .label import render_label
@@ -12,43 +12,33 @@ from .label import render_label
 if TYPE_CHECKING:
     from django.forms import BoundField
 
-CHECKBOX_CLASS = (
-    "w-4 h-4 rounded border border-border accent-primary "
-    "focus:ring-1 focus:ring-offset-0"
-)
-
 
 def render_checkbox_field(field: BoundField) -> str:
-    """Render a single checkbox with inline label.
+    """Render a single checkbox using the shared component template.
 
     Returns:
         HTML string of the checkbox field.
     """
-    existing_class = field.field.widget.attrs.get("class", "")
-    if CHECKBOX_CLASS not in existing_class:
-        field.field.widget.attrs["class"] = CHECKBOX_CLASS
-
-    label_html = format_html(
-        '<label class="inline-flex items-center cursor-pointer">'
-        "{}"
-        '<span class="ml-2 text-sm text-foreground">{}</span>'
-        "</label>",
-        field,
-        field.label,
+    html = render_to_string(
+        "components/checkbox-field.html",
+        {
+            "name": field.html_name,
+            "id": field.id_for_label,
+            "label": field.label,
+            "checked": bool(field.value()),
+        },
     )
-    return f"{label_html}{render_help_text(field)}{render_errors(field)}"
+    return f"{html}{render_help_text(field)}{render_errors(field)}"
 
 
 def render_multi_choice_field(field: BoundField, *, is_radio: bool = False) -> str:
-    """Render a group of radio buttons or checkboxes.
+    """Render a group of radio buttons or checkboxes using the component template.
 
     Returns:
         HTML string of the multi-choice field.
     """
-    parts = [render_label(field), '<div class="mt-2 space-y-2">']
-
-    for i, (value, label) in enumerate(field.field.choices):  # type: ignore[attr-defined]
-        input_type = "radio" if is_radio else "checkbox"
+    options = []
+    for i, (value, choice_label) in enumerate(field.field.choices):  # type: ignore[attr-defined]
         input_id = f"{field.id_for_label}_{i}"
         is_checked = False
 
@@ -63,23 +53,22 @@ def render_multi_choice_field(field: BoundField, *, is_radio: bool = False) -> s
                 )
                 is_checked = str(value) in [str(v) for v in values]
 
-        checked_attr = "checked" if is_checked else ""
-        parts.append(
-            format_html(
-                '<label class="flex items-center cursor-pointer">'
-                '<input type="{}" id="{}" name="{}" value="{}" class="{}" {}>'
-                '<span class="ml-2 text-sm text-foreground">{}</span>'
-                "</label>",
-                input_type,
-                input_id,
-                field.html_name,
-                value,
-                CHECKBOX_CLASS,
-                checked_attr,
-                label,
-            )
-        )
+        options.append((value, choice_label, is_checked, input_id))
 
-    parts.extend(("</div>", render_help_text(field), render_errors(field)))
+    group_html = render_to_string(
+        "components/choice-group.html",
+        {
+            "input_type": "radio" if is_radio else "checkbox",
+            "name": field.html_name,
+            "id_prefix": field.id_for_label,
+            "options": options,
+        },
+    )
 
+    parts = [
+        render_label(field),
+        group_html,
+        render_help_text(field),
+        render_errors(field),
+    ]
     return "\n".join(parts)

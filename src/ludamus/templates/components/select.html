@@ -1,0 +1,5 @@
+{# Select wrapper. Used by {% select %} tag. #}
+{# Variables: attrs (safe string of HTML attributes), slot (safe string of inner content) #}
+<select class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground disabled:opacity-50 disabled:cursor-not-allowed{% if extra_class|default:"" %} {{ extra_class }}{% endif %}"
+        {{ attrs }}>{{ slot }}
+</select>

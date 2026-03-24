@@ -1,30 +1,29 @@
-"""Select renderer."""
+"""Select renderer — delegates to components/select-field.html."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.template.loader import render_to_string
+
 if TYPE_CHECKING:
     from django.forms import BoundField
 
-SELECT_CLASS = (
-    "w-full px-3 py-2 text-sm rounded-lg border "
-    "border-border bg-bg-secondary text-foreground "
-    "disabled:opacity-50 disabled:cursor-not-allowed"
-)
-
 
 def render_select(field: BoundField) -> str:
-    """Render a styled ``<select>``.
+    """Render a styled ``<select>`` using the shared component template.
 
     Returns:
         HTML string of the select element.
     """
-    existing_class = field.field.widget.attrs.get("class", "")
-
-    if SELECT_CLASS not in existing_class:
-        field.field.widget.attrs["class"] = f"{SELECT_CLASS} {existing_class}".strip()
-    if field.errors:
-        field.field.widget.attrs["style"] = "border-color: var(--theme-danger);"
-
-    return str(field)
+    return render_to_string(
+        "components/select-field.html",
+        {
+            "name": field.html_name,
+            "id": field.id_for_label,
+            "choices": field.field.choices,  # type: ignore[attr-defined]
+            "selected": field.value(),
+            "required": field.field.required,
+            "has_errors": bool(field.errors),
+        },
+    )

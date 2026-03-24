@@ -10,7 +10,6 @@ from ludamus.adapters.web.django.templatetags.tailwind_forms import (
     tw_form,
 )
 from ludamus.adapters.web.django.templatetags.tailwind_forms.checkbox import (
-    CHECKBOX_CLASS,
     render_checkbox_field,
     render_multi_choice_field,
 )
@@ -20,10 +19,7 @@ from ludamus.adapters.web.django.templatetags.tailwind_forms.errors import (
 )
 from ludamus.adapters.web.django.templatetags.tailwind_forms.input import render_input
 from ludamus.adapters.web.django.templatetags.tailwind_forms.label import render_label
-from ludamus.adapters.web.django.templatetags.tailwind_forms.select import (
-    SELECT_CLASS,
-    render_select,
-)
+from ludamus.adapters.web.django.templatetags.tailwind_forms.select import render_select
 from ludamus.adapters.web.django.templatetags.tailwind_forms.textarea import (
     render_textarea,
 )
@@ -257,31 +253,24 @@ class TestRenderMultiChoiceField:
 
 
 class TestRenderSelect:
-    def test_applies_select_class(self) -> None:
+    def test_renders_with_classes(self) -> None:
         form = SimpleForm()
         html = render_select(form["color"])
-        assert SELECT_CLASS in form["color"].field.widget.attrs["class"]
         assert "<select" in html
+        assert "border-border" in html
+        assert "bg-bg-secondary" in html
 
-    def test_preserves_existing_class(self) -> None:
+    def test_renders_choices(self) -> None:
         form = SimpleForm()
-        form.fields["color"].widget.attrs["class"] = "my-custom"
         html = render_select(form["color"])
-        assert "my-custom" in html
-        assert SELECT_CLASS in form["color"].field.widget.attrs["class"]
-
-    def test_skips_class_when_already_present(self) -> None:
-        form = SimpleForm()
-        form.fields["color"].widget.attrs["class"] = SELECT_CLASS
-        render_select(form["color"])
-        # Should not duplicate
-        assert form["color"].field.widget.attrs["class"] == SELECT_CLASS
+        assert "Red" in html
+        assert "Blue" in html
 
     def test_error_styling(self) -> None:
         form = SimpleForm(data={"color": ""})
         form.is_valid()
-        render_select(form["color"])
-        assert "border-color" in form.fields["color"].widget.attrs.get("style", "")
+        html = render_select(form["color"])
+        assert "border-color" in html
 
 
 # ---------------------------------------------------------------------------
@@ -343,17 +332,19 @@ class TestRenderInput:
 
 
 class TestRenderCheckboxField:
-    def test_applies_checkbox_class(self) -> None:
+    def test_renders_with_classes(self) -> None:
         form = SimpleForm()
         html = render_checkbox_field(form["agree"])
-        assert CHECKBOX_CLASS in form["agree"].field.widget.attrs["class"]
         assert 'type="checkbox"' in html
+        assert "accent-primary" in html
+        assert "I agree" in html
 
-    def test_skips_class_when_already_present(self) -> None:
-        form = SimpleForm()
-        form.fields["agree"].widget.attrs["class"] = CHECKBOX_CLASS
-        render_checkbox_field(form["agree"])
-        assert form["agree"].field.widget.attrs["class"] == CHECKBOX_CLASS
+    def test_renders_checked_state(self) -> None:
+        form = SimpleForm(
+            data={"agree": True, "name": "x", "email": "x@x.com", "color": "red"}
+        )
+        html = render_checkbox_field(form["agree"])
+        assert "checked" in html
 
 
 # ---------------------------------------------------------------------------
