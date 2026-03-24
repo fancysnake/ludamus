@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Area, Space, Venue
-from ludamus.pacts import VenueDTO
+from ludamus.pacts import EventDTO, VenueDTO
 from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
 
@@ -51,20 +51,34 @@ class TestVenueCopyPageView:
         sphere.managers.add(active_user)
         venue = Venue.objects.create(event=event, name="Main Hall", slug="main-hall")
         # Create another event for copy target
-        EventFactory(name="Second Event", slug="second-event", sphere=sphere)
+        second_event = EventFactory(
+            name="Second Event", slug="second-event", sphere=sphere
+        )
 
         response = authenticated_client.get(self.get_url(event, venue))
 
+        event_dto = EventDTO.model_validate(event)
+        second_event_dto = EventDTO.model_validate(second_event)
+        events = sorted(
+            [event_dto, second_event_dto], key=lambda e: e.start_time, reverse=True
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
                 "active_nav": "venues",
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": event_dto,
+                "events": events,
                 "form": ANY,
-                "is_proposal_active": ANY,
-                "stats": ANY,
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "venue": VenueDTO.model_validate(venue),
             },
             template_name="panel/venue-copy.html",
@@ -173,22 +187,36 @@ class TestVenueCopyPageView:
         sphere.managers.add(active_user)
         venue = Venue.objects.create(event=event, name="Main Hall", slug="main-hall")
         # Create another event for copy target
-        EventFactory(name="Second Event", slug="second-event", sphere=sphere)
+        second_event = EventFactory(
+            name="Second Event", slug="second-event", sphere=sphere
+        )
 
         response = authenticated_client.post(
             self.get_url(event, venue), {"target_event": ""}
         )
 
+        event_dto = EventDTO.model_validate(event)
+        second_event_dto = EventDTO.model_validate(second_event)
+        events = sorted(
+            [event_dto, second_event_dto], key=lambda e: e.start_time, reverse=True
+        )
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
                 "active_nav": "venues",
-                "current_event": ANY,
-                "events": ANY,
+                "current_event": event_dto,
+                "events": events,
                 "form": ANY,
-                "is_proposal_active": ANY,
-                "stats": ANY,
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
                 "venue": VenueDTO.model_validate(venue),
             },
             template_name="panel/venue-copy.html",

@@ -1,6 +1,14 @@
 from django.urls import URLPattern, URLResolver, include, path
 from django.views.generic.base import TemplateView
 
+from ludamus.gates.web.django.chronology.urls import urlpatterns as chronology_gate_urls
+from ludamus.gates.web.django.notice_board.urls import (
+    authenticated_urlpatterns as encounter_authenticated,
+)
+from ludamus.gates.web.django.notice_board.urls import (
+    public_urlpatterns as encounter_public,
+)
+
 from . import views
 
 app_name = "web"  # pylint: disable=invalid-name
@@ -53,6 +61,7 @@ crowd_urls: list[URLPattern | URLResolver] = [
 ]
 
 chronology_urls = [
+    *chronology_gate_urls,
     path("event/<str:slug>/", views.EventPageView.as_view(), name="event"),
     path(
         "session/<int:session_id>/enrollment/",
@@ -92,7 +101,8 @@ chronology_urls = [
 ]
 
 urlpatterns = [
-    path("", views.IndexPageView.as_view(), name="index"),
+    path("", views.IndexRedirectView.as_view(), name="index"),
+    path("events/", views.EventsPageView.as_view(), name="events"),
     path("design/", views.DesignPageView.as_view(), name="design"),
     path(
         "design/tailwind/",
@@ -103,4 +113,17 @@ urlpatterns = [
         "chronology/", include((chronology_urls, "chronology"), namespace="chronology")
     ),
     path("crowd/", include((crowd_urls, "crowd"), namespace="crowd")),
+    path(
+        "",
+        include(
+            (
+                [
+                    path("e/", include(encounter_public)),
+                    path("encounters/", include(encounter_authenticated)),
+                ],
+                "notice-board",
+            ),
+            namespace="notice-board",
+        ),
+    ),
 ]

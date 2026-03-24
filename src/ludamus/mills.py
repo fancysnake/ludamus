@@ -1,21 +1,41 @@
+import re
+import string
+import unicodedata
 from datetime import UTC, datetime, timedelta
+from secrets import choice as _secret_choice
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING
+from urllib.parse import urlencode
+
+import markdown as _md
 
 from ludamus.pacts import (
     AgendaItemData,
     AuthenticatedRequestContext,
     DateTimeRangeProtocol,
+    EncounterDetailResult,
+    EncounterDTO,
+    EncounterIndexItem,
+    EncounterIndexResult,
     EnrollmentConfigDTO,
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventStatsData,
+    HostPersonalDataEntry,
     MembershipAPIError,
+    NotFoundError,
     PanelStatsDTO,
+    PersonalFieldRequirementDTO,
+    ProposalCategoryDTO,
+    ProposeSessionResult,
+    SessionData,
     SessionDTO,
+    SessionFieldRequirementDTO,
+    SessionFieldValueData,
     SessionStatus,
     SessionUpdateData,
     TicketAPIProtocol,
+    TimeSlotRequirementDTO,
     UnitOfWorkProtocol,
     UserData,
     UserDTO,
@@ -24,7 +44,169 @@ from ludamus.pacts import (
     UserRepositoryProtocol,
     UserType,
     VirtualEnrollmentConfig,
+    WizardData,
 )
+
+_BASE62_CHARS = string.ascii_letters + string.digits
+
+
+def generate_share_code(length: int = 6) -> str:
+    return "".join(_secret_choice(_BASE62_CHARS) for _ in range(length))
+
+
+def render_markdown(text: str) -> str:
+    result: str = _md.markdown(text, extensions=["nl2br", "fenced_code"])
+    return result
+
+
+def generate_ics_content(encounter: EncounterDTO, url: str) -> str:
+    def _ics_dt(dt: datetime) -> str:
+        utc = dt.astimezone(UTC)
+        return utc.strftime("%Y%m%dT%H%M%SZ")
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Ludamus//Encounters//EN",
+        "BEGIN:VEVENT",
+        f"DTSTART:{_ics_dt(encounter.start_time)}",
+    ]
+    if encounter.end_time:
+        lines.append(f"DTEND:{_ics_dt(encounter.end_time)}")
+    lines.append(f"SUMMARY:{encounter.title}")
+    if encounter.place:
+        lines.append(f"LOCATION:{encounter.place}")
+    if encounter.description:
+        escaped = encounter.description.replace("\\", "\\\\").replace("\n", "\\n")
+        lines.append(f"DESCRIPTION:{escaped}")
+    lines.extend(
+        [
+            f"URL:{url}",
+            f"UID:{encounter.share_code}@ludamus",
+            "END:VEVENT",
+            "END:VCALENDAR",
+        ]
+    )
+    return "\r\n".join(lines)
+
+
+def _gcal_dt(dt: datetime) -> str:
+    return dt.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+
+
+def google_calendar_url(encounter: EncounterDTO, url: str) -> str:
+    end = encounter.end_time or (encounter.start_time + timedelta(hours=2))
+    params = {
+        "action": "TEMPLATE",
+        "text": encounter.title,
+        "dates": f"{_gcal_dt(encounter.start_time)}/{_gcal_dt(end)}",
+        "details": (
+            f"{encounter.description}\n\n{url}" if encounter.description else url
+        ),
+    }
+    if encounter.place:
+        params["location"] = encounter.place
+    return f"https://calendar.google.com/calendar/render?{urlencode(params)}"
+
+
+def outlook_calendar_url(encounter: EncounterDTO, url: str) -> str:
+    end = encounter.end_time or (encounter.start_time + timedelta(hours=2))
+    params = {
+        "rru": "addevent",
+        "subject": encounter.title,
+        "startdt": encounter.start_time.astimezone(UTC).isoformat(),
+        "enddt": end.astimezone(UTC).isoformat(),
+        "body": f"{encounter.description}\n\n{url}" if encounter.description else url,
+    }
+    if encounter.place:
+        params["location"] = encounter.place
+    return f"https://outlook.live.com/calendar/0/action/compose?{urlencode(params)}"
+
+
+class EncounterService:
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+
+    def build_detail(
+        self, share_code: str, current_user_id: int | None
+    ) -> EncounterDetailResult:
+        encounter = self._uow.encounters.read_by_share_code(share_code)
+        creator = self._uow.active_users.read_by_id(encounter.creator_id)
+        rsvps = self._uow.encounter_rsvps.list_by_encounter(encounter.pk)
+        rsvp_count = len(rsvps)
+        is_full = (
+            encounter.max_participants > 0 and rsvp_count >= encounter.max_participants
+        )
+        spots_remaining = (
+            max(0, encounter.max_participants - rsvp_count)
+            if encounter.max_participants > 0
+            else None
+        )
+        user_has_rsvpd = (
+            current_user_id is not None
+            and self._uow.encounter_rsvps.user_has_rsvpd(encounter.pk, current_user_id)
+        )
+        return EncounterDetailResult(
+            encounter=encounter,
+            creator=creator,
+            rsvps=rsvps,
+            rsvp_count=rsvp_count,
+            is_full=is_full,
+            spots_remaining=spots_remaining,
+            is_creator=current_user_id == encounter.creator_id,
+            user_has_rsvpd=user_has_rsvpd,
+        )
+
+    def _resolve_creator_name(self, creator_id: int) -> str:
+        try:
+            user = self._uow.active_users.read_by_id(creator_id)
+        except NotFoundError:
+            return ""
+        return user.full_name or user.name or user.username
+
+    def build_index(self, sphere_id: int, user_id: int) -> EncounterIndexResult:
+        my_upcoming = self._uow.encounters.list_upcoming_by_creator(sphere_id, user_id)
+        rsvpd = self._uow.encounters.list_upcoming_rsvpd(sphere_id, user_id)
+        my_ids = {e.pk for e in my_upcoming}
+
+        upcoming = [
+            EncounterIndexItem(
+                encounter=e,
+                rsvp_count=self._uow.encounter_rsvps.count_by_encounter(e.pk),
+                is_mine=True,
+                organizer_name="",
+            )
+            for e in my_upcoming
+        ]
+        upcoming.extend(
+            EncounterIndexItem(
+                encounter=e,
+                rsvp_count=self._uow.encounter_rsvps.count_by_encounter(e.pk),
+                is_mine=False,
+                organizer_name=self._resolve_creator_name(e.creator_id),
+            )
+            for e in rsvpd
+            if e.pk not in my_ids
+        )
+        upcoming.sort(key=lambda x: x.encounter.start_time)
+
+        past_dtos = self._uow.encounters.list_past(sphere_id)
+        past = [
+            EncounterIndexItem(
+                encounter=e,
+                rsvp_count=self._uow.encounter_rsvps.count_by_encounter(e.pk),
+                is_mine=e.creator_id == user_id,
+                organizer_name=(
+                    ""
+                    if e.creator_id == user_id
+                    else self._resolve_creator_name(e.creator_id)
+                ),
+            )
+            for e in past_dtos
+        ]
+
+        return EncounterIndexResult(upcoming=upcoming, past=past)
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -52,6 +234,150 @@ def get_days_to_event(event: EventDTO) -> int:
     now = datetime.now(tz=UTC)
     delta = event.start_time - now
     return max(0, delta.days)
+
+
+class ProposeSessionService:
+    def __init__(
+        self, uow: UnitOfWorkProtocol, context: AuthenticatedRequestContext
+    ) -> None:
+        self._uow = uow
+        self._context = context
+
+    def _generate_unique_slug(self, sphere_id: int, title: str) -> str:
+        value = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
+        base_slug = re.sub(r"[^\w\s-]", "", value.lower())
+        base_slug = re.sub(r"[-\s]+", "-", base_slug).strip("-")
+        slug = base_slug
+        for _ in range(4):
+            if not self._uow.sessions.slug_exists(sphere_id, slug):
+                break
+            slug = f"{base_slug}-{token_urlsafe(3)}"
+        return slug
+
+    def get_event(self, slug: str) -> EventDTO:
+        return self._uow.events.read_by_slug(slug, self._context.current_sphere_id)
+
+    def get_categories(self, event_id: int) -> list[ProposalCategoryDTO]:
+        return self._uow.proposal_categories.list_by_event(event_id)
+
+    def get_category(self, pk: int, event_id: int) -> ProposalCategoryDTO:
+        return self._uow.proposal_categories.read(pk, event_id)
+
+    def get_personal_requirements(
+        self, category_id: int
+    ) -> list[PersonalFieldRequirementDTO]:
+        return self._uow.proposal_categories.list_personal_field_requirements(
+            category_id
+        )
+
+    def get_session_requirements(
+        self, category_id: int
+    ) -> list[SessionFieldRequirementDTO]:
+        return self._uow.proposal_categories.list_session_field_requirements(
+            category_id
+        )
+
+    def get_timeslot_requirements(
+        self, category_id: int
+    ) -> list[TimeSlotRequirementDTO]:
+        return self._uow.proposal_categories.list_time_slot_requirements(category_id)
+
+    def get_saved_personal_data(self, event_id: int) -> dict[str, str]:
+        return self._uow.host_personal_data.read_for_user_event(
+            self._context.current_user_id, event_id
+        )
+
+    def submit(self, event: EventDTO, wizard_data: WizardData) -> ProposeSessionResult:
+        session_data = wizard_data.get("session_data", {})
+        if "title" not in session_data or "participants_limit" not in session_data:
+            msg = "session_data must contain 'title' and 'participants_limit'"
+            raise ValueError(msg)
+        title = str(session_data["title"])
+        description = str(session_data.get("description", ""))
+        participants_limit = int(session_data["participants_limit"])  # type: ignore[call-overload]
+        category_id = wizard_data["category_id"]
+        time_slot_ids = wizard_data.get("time_slot_ids", [])
+
+        current_user = self._uow.active_users.read(self._context.current_user_slug)
+
+        slug = self._generate_unique_slug(event.sphere_id, title)
+
+        create_data = SessionData(
+            sphere_id=event.sphere_id,
+            presenter_id=current_user.pk,
+            presenter_name=current_user.name,
+            category_id=category_id,
+            title=title,
+            slug=slug,
+            description=description,
+            requirements="",
+            needs="",
+            participants_limit=participants_limit,
+            min_age=0,
+            status=SessionStatus.PENDING,
+        )
+
+        with self._uow.atomic():
+            session_id = self._uow.sessions.create(
+                create_data, tag_ids=[], time_slot_ids=time_slot_ids
+            )
+
+            self._uow.proposals.create_from_session(
+                category_id, self._context.current_user_id, session_id, create_data
+            )
+
+            self._save_session_field_values(session_id, event.pk, session_data)
+
+            if personal_data := wizard_data.get("personal_data", {}):
+                self._save_personal_data(event.pk, personal_data)
+
+        return ProposeSessionResult(session_id=session_id, title=title)
+
+    def _save_session_field_values(
+        self, session_id: int, event_id: int, session_data: object
+    ) -> None:
+        data = session_data if isinstance(session_data, dict) else {}
+        values: list[SessionFieldValueData] = []
+        for key, value in data.items():
+            if not isinstance(key, str) or not key.startswith("session_"):
+                continue
+            slug = key.removeprefix("session_")
+            if slug.endswith("_custom"):
+                continue
+            try:
+                field_dto = self._uow.session_fields.read_by_slug(event_id, slug)
+            except NotFoundError:
+                continue
+            values.append(
+                SessionFieldValueData(
+                    session_id=session_id, field_id=field_dto.pk, value=str(value)
+                )
+            )
+        if values:
+            self._uow.sessions.save_field_values(session_id, values)
+
+    def _save_personal_data(self, event_id: int, personal_data: dict[str, str]) -> None:
+        entries: list[HostPersonalDataEntry] = []
+        for key, value in personal_data.items():
+            if not key.startswith("personal_"):
+                continue
+            slug = key.removeprefix("personal_")
+            if slug.endswith("_custom"):
+                continue
+            try:
+                field_dto = self._uow.personal_data_fields.read_by_slug(event_id, slug)
+            except NotFoundError:
+                continue
+            entries.append(
+                HostPersonalDataEntry(
+                    user_id=self._context.current_user_id,
+                    event_id=event_id,
+                    field_id=field_dto.pk,
+                    value=value,
+                )
+            )
+        if entries:
+            self._uow.host_personal_data.save(entries)
 
 
 class AnonymousEnrollmentService:

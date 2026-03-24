@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+{% load i18n tessera date_tags %}
+{% block title %}
+    {{ encounter.title }}
+{% endblock title %}
+{% block og_title %}
+    {{ encounter.title }}
+{% endblock og_title %}
+{% block og_description %}
+    {{ encounter.start_time|date:"DATE_FORMAT" }}, {{ encounter.start_time|time:"TIME_FORMAT" }}
+    {% if encounter.place %}— {{ encounter.place }}{% endif %}
+    {% if encounter.description %}| {{ encounter.description|truncatewords:25 }}{% endif %}
+{% endblock og_description %}
+{% block og_image %}
+    {% if encounter.header_image %}
+        {{ request.scheme }}://{{ request.get_host }}{{ MEDIA_URL }}{{ encounter.header_image }}
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock og_image %}
+{% block twitter_title %}
+    {{ encounter.title }}
+{% endblock twitter_title %}
+{% block twitter_description %}
+    {{ encounter.start_time|date:"DATE_FORMAT" }}, {{ encounter.start_time|time:"TIME_FORMAT" }}
+    {% if encounter.place %}— {{ encounter.place }}{% endif %}
+    {% if encounter.description %}| {{ encounter.description|truncatewords:25 }}{% endif %}
+{% endblock twitter_description %}
+{% block twitter_image %}
+    {% if encounter.header_image %}
+        {{ request.scheme }}://{{ request.get_host }}{{ MEDIA_URL }}{{ encounter.header_image }}
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock twitter_image %}
+{% block header %}
+{% endblock header %}
+{% block body %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {# ── LEFT COLUMN: "what is this" ── #}
+        <div class="lg:col-span-2 space-y-6">
+            {# Hero image + title #}
+            {% if encounter.header_image %}
+                <div class="relative aspect-[2/1] overflow-hidden rounded-t-2xl -mb-6">
+                    <img src="{{ MEDIA_URL }}{{ encounter.header_image }}"
+                         alt="{{ encounter.title }}"
+                         width="800"
+                         height="400"
+                         class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 px-6 pb-6">
+                        <p class="text-sm italic text-white/90 drop-shadow-lg">
+                            {% if is_creator %}
+                                {% translate "Your encounter" %}
+                            {% elif user_has_rsvpd %}
+                                {% translate "You're attending this encounter" %}
+                            {% else %}
+                                {{ creator.full_name|default:creator.name }} {% translate "invites you to an encounter" %}
+                            {% endif %}
+                        </p>
+                        <h1 class="text-2xl font-bold text-white drop-shadow-lg mt-1">{{ encounter.title }}</h1>
+                    </div>
+                </div>
+            {% else %}
+                <div>
+                    <p class="text-sm italic text-foreground-secondary">
+                        {% if is_creator %}
+                            {% translate "Your encounter" %}
+                        {% elif user_has_rsvpd %}
+                            {% translate "You're attending this encounter" %}
+                        {% else %}
+                            {{ creator.full_name|default:creator.name }} {% translate "invites you to an encounter" %}
+                        {% endif %}
+                    </p>
+                    <h1 class="text-2xl font-bold text-foreground mt-1">{{ encounter.title }}</h1>
+                </div>
+            {% endif %}
+            {# Quick facts + description card #}
+            <div class="card {% if encounter.header_image %}rounded-t-none{% endif %}">
+                <div class="card-body space-y-4">
+                    {# Quick facts grid #}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% if encounter.game %}
+                            <div class="flex items-center gap-2.5 p-3 rounded-lg bg-bg-tertiary">
+                                {% icon "puzzle-piece" class="h-5 w-5 text-primary" %}
+                                <div>
+                                    <div class="text-xs text-foreground-secondary uppercase tracking-wide">{% translate "Game" %}</div>
+                                    <div class="font-medium text-foreground">{{ encounter.game }}</div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="flex items-center gap-2.5 p-3 rounded-lg bg-bg-tertiary">
+                            {% icon "calendar" class="h-5 w-5 text-primary" %}
+                            <div>
+                                <div class="text-xs text-foreground-secondary uppercase tracking-wide">{% translate "When" %}</div>
+                                <div class="font-medium text-foreground">
+                                    {% if encounter.end_time %}
+                                        {{ encounter|format_datetime_range }}
+                                    {% else %}
+                                        {{ encounter.start_time|date:"DATE_FORMAT" }}, {{ encounter.start_time|time:"TIME_FORMAT" }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if encounter.place %}
+                            <div class="flex items-center gap-2.5 p-3 rounded-lg bg-bg-tertiary">
+                                {% icon "map-pin" class="h-5 w-5 text-primary" %}
+                                <div>
+                                    <div class="text-xs text-foreground-secondary uppercase tracking-wide">{% translate "Where" %}</div>
+                                    <div class="font-medium text-foreground">{{ encounter.place }}</div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {# Fix 4 — Spots with visual weight #}
+                        <div class="flex items-center gap-2.5 p-3 rounded-lg {% if is_full %}bg-[var(--theme-danger-bg)]{% elif spots_remaining == 1 %}bg-[var(--theme-warning-bg)]{% else %}bg-bg-tertiary{% endif %}">
+                            <span class="{% if is_full %}text-[var(--theme-danger-base)]{% elif spots_remaining == 1 %}text-[var(--theme-warning-text)]{% else %}text-primary{% endif %}">
+                                {% icon "users" class="h-5 w-5" %}
+                            </span>
+                            <div>
+                                <div class="text-xs text-foreground-secondary uppercase tracking-wide">{% translate "Spots" %}</div>
+                                <div class="font-semibold {% if is_full %}text-[var(--theme-danger-base)]{% elif spots_remaining == 1 %}text-[var(--theme-warning-text)]{% else %}text-foreground{% endif %}">
+                                    {% if encounter.max_participants > 0 %}
+                                        {% if is_full %}
+                                            {% translate "No spots left" %}
+                                        {% elif spots_remaining == 1 %}
+                                            {% translate "1 spot left" %}
+                                        {% else %}
+                                            {{ spots_remaining }} {% translate "spots left" %}
+                                        {% endif %}
+                                    {% else %}
+                                        {{ rsvp_count }} {% translate "attending" %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# RSVP form or organizer actions — mobile only #}
+                    <div class="lg:hidden">
+                        {% include "notice_board/_rsvp_inline.html" %}
+                        {% if is_creator %}
+                            {% include "notice_board/_organizer_actions.html" %}
+                        {% endif %}
+                    </div>
+                    {# Calendar button — mobile only, for authenticated non-attendees and creators #}
+                    {% if user.is_authenticated and not user_has_rsvpd or is_creator %}
+                        <div class="lg:hidden">{% include "notice_board/_calendar_inline.html" %}</div>
+                    {% endif %}
+                    {# Description #}
+                    {% if description_html %}
+                        <hr class="border-border">
+                        <div class="prose prose-sm dark:prose-invert max-w-none">{{ description_html|safe }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {# ── RIGHT COLUMN: "what do I do" ── #}
+        <div class="space-y-4">
+            {# RSVP form or organizer actions — desktop only, top of sidebar #}
+            <div class="hidden lg:block">
+                {% include "notice_board/_rsvp_inline.html" %}
+                {% if is_creator %}
+                    {% include "notice_board/_organizer_actions.html" %}
+                {% endif %}
+            </div>
+            {# Calendar button — desktop only, for authenticated non-attendees and creators #}
+            {% if user.is_authenticated and not user_has_rsvpd or is_creator %}
+                <div class="hidden lg:block">{% include "notice_board/_calendar_inline.html" %}</div>
+            {% endif %}
+            {# Participants list #}
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="text-xs text-foreground-secondary uppercase tracking-wide mb-3">
+                        {% translate "Attending" %} ({{ rsvp_count }})
+                    </h3>
+                    {% if attendees %}
+                        <ul class="space-y-2">
+                            {% for attendee in attendees %}
+                                <li class="flex items-center gap-2 text-sm">
+                                    {% include "components/avatar.html" with user=attendee size="size-6" %}
+                                    <span class="text-foreground">{{ attendee.full_name|default:attendee.name }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-sm text-foreground-secondary">
+                            {% if is_creator %}
+                                {% translate "No one has signed up yet. Share the encounter with friends!" %}
+                            {% else %}
+                                {% translate "No one has signed up yet. Be the first!" %}
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+            {# Organizer info #}
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="text-xs text-foreground-secondary uppercase tracking-wide mb-3">{% translate "Organized by" %}</h3>
+                    <div class="flex items-center gap-3">
+                        {% include "components/avatar.html" with user=creator size="size-10" %}
+                        <div>
+                            <div class="font-medium text-foreground">{{ creator.full_name|default:creator.name }}</div>
+                            {% if creator.discord_username %}
+                                <button class="btn btn-secondary text-xs py-0.5 px-2 mt-1"
+                                        hx-get="{% url 'web:crowd:user-discord-username' user_slug=creator.slug %}"
+                                        hx-swap="outerHTML"
+                                        hx-trigger="click once">
+                                    {% icon "chat-bubble-left-right" class="w-3.5 h-3.5" variant="mini" %}
+                                    {% translate "Show Discord" %}
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {# Countdown — bottom, quiet #}
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <div class="text-xs text-foreground-secondary uppercase tracking-wide mb-2">
+                        {% translate "Time until encounter" %}
+                    </div>
+                    <div id="encounter-countdown"
+                         class="grid grid-cols-4 gap-1"
+                         data-start-time="{{ encounter.start_time|date:'c' }}"
+                         data-started-text="{% translate "The encounter has started!" %}">
+                        <div class="flex flex-col items-center">
+                            <span id="cd-days" class="text-xl font-bold text-foreground tabular-nums">--</span>
+                            <span class="text-xs uppercase tracking-wider text-foreground-secondary">d</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span id="cd-hours" class="text-xl font-bold text-foreground tabular-nums">--</span>
+                            <span class="text-xs uppercase tracking-wider text-foreground-secondary">h</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span id="cd-minutes"
+                                  class="text-xl font-bold text-foreground tabular-nums">--</span>
+                            <span class="text-xs uppercase tracking-wider text-foreground-secondary">m</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span id="cd-seconds"
+                                  class="text-xl font-bold text-foreground tabular-nums">--</span>
+                            <span class="text-xs uppercase tracking-wider text-foreground-secondary">s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {# QR modal + share data (organizer only) #}
+            {% if is_creator %}
+                <dialog id="qr-modal" class="modal rounded-2xl p-6">
+                    <img src="{% url 'web:notice-board:encounter-qr' share_code=encounter.share_code %}"
+                         alt="QR Code"
+                         width="240"
+                         height="240"
+                         class="rounded-lg">
+                </dialog>
+                <input type="hidden" id="share-url" value="{{ share_url }}">
+                <div id="share-info-data"
+                     data-title="{{ encounter.title }}{% if encounter.game %} — {{ encounter.game }}{% endif %}"
+                     data-time="{{ encounter.start_time|date:'DATE_FORMAT' }}, {{ encounter.start_time|time:'TIME_FORMAT' }}"
+                     data-place="{{ encounter.place }}"
+                     data-url="{{ share_url }}"
+                     class="hidden"></div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        (function() {
+            var el = document.getElementById('encounter-countdown');
+            if (!el) return;
+            var startTime = new Date(el.dataset.startTime).getTime();
+            var startedText = el.dataset.startedText;
+            var daysEl = document.getElementById('cd-days');
+            var hoursEl = document.getElementById('cd-hours');
+            var minutesEl = document.getElementById('cd-minutes');
+            var secondsEl = document.getElementById('cd-seconds');
+
+            function pad(n) {
+                return n < 10 ? '0' + n : '' + n;
+            }
+
+            function update() {
+                var now = Date.now();
+                var diff = startTime - now;
+                if (diff <= 0) {
+                    el.className = 'text-center text-sm text-foreground-secondary';
+                    el.textContent = startedText;
+                    return;
+                }
+                daysEl.textContent = pad(Math.floor(diff / 86400000));
+                hoursEl.textContent = pad(Math.floor((diff % 86400000) / 3600000));
+                minutesEl.textContent = pad(Math.floor((diff % 3600000) / 60000));
+                secondsEl.textContent = pad(Math.floor((diff % 60000) / 1000));
+                requestAnimationFrame(update);
+            }
+            update();
+        })();
+
+        function closeAllMenus() {
+            document.querySelectorAll('.share-menu, .calendar-menu').forEach(function(m) {
+                m.classList.add('hidden');
+            });
+        }
+
+        document.querySelectorAll('.share-toggle-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var menu = btn.closest('.share-menu-wrapper').querySelector('.share-menu');
+                var isHidden = menu.classList.contains('hidden');
+                closeAllMenus();
+                if (isHidden) menu.classList.remove('hidden');
+            });
+        });
+        document.querySelectorAll('.calendar-toggle-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var menu = btn.closest('.calendar-menu-wrapper').querySelector('.calendar-menu');
+                var isHidden = menu.classList.contains('hidden');
+                closeAllMenus();
+                if (isHidden) menu.classList.remove('hidden');
+            });
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.share-menu-wrapper') && !e.target.closest('.calendar-menu-wrapper')) {
+                closeAllMenus();
+            }
+        });
+        (function() {
+            var shareUrl = document.getElementById('share-url');
+            var shareData = document.getElementById('share-info-data');
+
+            document.querySelectorAll('.copy-link-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    if (!shareUrl) return;
+                    navigator.clipboard.writeText(shareUrl.value).then(function() {
+                        var orig = btn.textContent;
+                        btn.textContent = btn.dataset.copiedText;
+                        setTimeout(function() {
+                            btn.textContent = orig;
+                        }, 2000);
+                    });
+                    closeAllMenus();
+                });
+            });
+            document.querySelectorAll('.copy-info-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    if (!shareData) return;
+                    var d = shareData.dataset;
+                    var lines = [d.title, d.time];
+                    if (d.place) lines.push(d.place);
+                    lines.push(d.url);
+                    navigator.clipboard.writeText(lines.join('\n'));
+                    closeAllMenus();
+                });
+            });
+            document.querySelectorAll('.show-qr-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    document.getElementById('qr-modal').showModal();
+                    closeAllMenus();
+                });
+            });
+            var qrModal = document.getElementById('qr-modal');
+            if (qrModal) {
+                qrModal.addEventListener('click', function(e) {
+                    if (e.target === qrModal) qrModal.close();
+                });
+            }
+        })();
+        (function() {
+            function collapseSavePrompt(card) {
+                var prompt = card.querySelector('.rsvp-save-prompt');
+                var done = card.querySelector('.rsvp-save-done');
+                if (prompt) prompt.classList.add('hidden');
+                if (done) done.classList.remove('hidden');
+            }
+            document.querySelectorAll('.rsvp-restore-prompt').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var card = btn.closest('.card');
+                    var prompt = card.querySelector('.rsvp-save-prompt');
+                    var done = card.querySelector('.rsvp-save-done');
+                    if (done) done.classList.add('hidden');
+                    if (prompt) prompt.classList.remove('hidden');
+                });
+            });
+            document.querySelectorAll('.rsvp-copy-details').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var d = btn.dataset;
+                    var lines = [d.title, d.time];
+                    if (d.place) lines.push(d.place);
+                    lines.push(d.url);
+                    navigator.clipboard.writeText(lines.join('\n'));
+                    collapseSavePrompt(btn.closest('.card'));
+                });
+            });
+            document.querySelectorAll('.calendar-menu a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    closeAllMenus();
+                    setTimeout(function() {
+                        collapseSavePrompt(link.closest('.card'));
+                    }, 300);
+                });
+            });
+        })();
+    </script>
+{% endblock body %}

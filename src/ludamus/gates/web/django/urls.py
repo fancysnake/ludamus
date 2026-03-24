@@ -4,6 +4,7 @@ import time
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.db import connection
 from django.http import JsonResponse
@@ -231,6 +232,7 @@ urlpatterns: list[URLResolver | URLPattern] = [
 
 
 if settings.DEBUG:  # pragma: no cover
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]
 
     # Debug URLs to test error pages

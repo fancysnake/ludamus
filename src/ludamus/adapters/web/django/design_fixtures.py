@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 
+from ludamus.gates.web.django.entities import UserInfo
 from ludamus.pacts import (
     AgendaItemDTO,
     LocationData,
@@ -19,7 +20,6 @@ from .entities import (
     SessionData,
     TagCategoryData,
     TagWithCategory,
-    UserInfo,
 )
 
 _DESIGN_PLACEHOLDER_IMAGE = "placeholder-images/01.jpg"

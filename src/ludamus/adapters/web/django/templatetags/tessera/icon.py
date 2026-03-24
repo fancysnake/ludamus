@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from heroicons import IconDoesNotExist
 from heroicons.templatetags.heroicons import (
@@ -52,5 +53,5 @@ def icon(name: str, *, variant: str = "outline", **kwargs: object) -> str:
         logger.warning("Icon %r (variant=%s) not found, rendering empty", name, variant)
         return ""
     if css_style:
-        result = result.replace("<svg ", f'<svg style="{css_style}" ', 1)
+        result = result.replace("<svg ", f'<svg style="{escape(css_style)}" ', 1)
     return mark_safe(result)  # noqa: S308

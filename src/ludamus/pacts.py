@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -12,6 +12,15 @@ if TYPE_CHECKING:
 
 class NotFoundError(Exception):
     pass
+
+
+class RedirectError(Exception):
+    def __init__(
+        self, url: str, *, error: str | None = None, warning: str | None = None
+    ) -> None:
+        self.url = url
+        self.error = error
+        self.warning = warning
 
 
 class DateTimeRangeProtocol(Protocol):
@@ -24,6 +33,7 @@ class DateTimeRangeProtocol(Protocol):
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    description: str
     durations: list[str]
     end_time: datetime | None
     max_participants_limit: int
@@ -123,6 +133,15 @@ class SessionStatus(StrEnum):
 class SessionParticipationStatus(StrEnum):
     CONFIRMED = auto()
     WAITING = auto()
+
+
+class SpherePage(StrEnum):
+    EVENTS = "events"
+    ENCOUNTERS = "encounters"
+
+    @classmethod
+    def all_values(cls) -> list[str]:
+        return [p.value for p in cls]
 
 
 class SessionParticipationDTO(BaseModel):
@@ -276,6 +295,8 @@ class SiteDTO(BaseModel):
 class SphereDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    default_page: SpherePage
+    enabled_pages: list[SpherePage]
     name: str
     pk: int
     site_id: int
@@ -294,6 +315,79 @@ class EventDTO(BaseModel):
     slug: str
     sphere_id: int
     start_time: datetime
+
+
+class EncounterDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    creator_id: int
+    description: str
+    end_time: datetime | None
+    game: str
+    header_image: str
+    max_participants: int
+    pk: int
+    place: str
+    share_code: str
+    sphere_id: int
+    start_time: datetime
+    title: str
+
+    @field_validator("header_image", mode="before")
+    @classmethod
+    def _coerce_header_image(cls, v: object) -> str:
+        return str(v) if v else ""
+
+
+class EncounterRSVPDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    encounter_id: int
+    ip_address: str
+    pk: int
+    user_id: int
+
+
+class EncounterData(TypedDict, total=False):
+    creator_id: int
+    description: str
+    end_time: datetime | None
+    game: str
+    header_image: str
+    max_participants: int
+    place: str
+    share_code: str
+    sphere_id: int
+    start_time: datetime
+    title: str
+
+
+@dataclass
+class EncounterDetailResult:  # pylint: disable=too-many-instance-attributes
+    encounter: EncounterDTO
+    creator: UserDTO
+    rsvps: list[EncounterRSVPDTO]
+    rsvp_count: int
+    is_full: bool
+    spots_remaining: int | None
+    is_creator: bool
+    user_has_rsvpd: bool
+
+
+@dataclass
+class EncounterIndexItem:
+    encounter: EncounterDTO
+    rsvp_count: int
+    is_mine: bool
+    organizer_name: str
+
+
+@dataclass
+class EncounterIndexResult:
+    upcoming: list[EncounterIndexItem]
+    past: list[EncounterIndexItem]
 
 
 class EnrollmentConfigDTO(BaseModel):
@@ -325,6 +419,7 @@ class UserData(TypedDict, total=False):
 
 
 class ProposalCategoryData(TypedDict, total=False):
+    description: str
     durations: list[str]
     end_time: datetime | None
     name: str
@@ -388,6 +483,51 @@ class SessionFieldDTO(BaseModel):
     order: int
     pk: int
     slug: str
+
+
+class PersonalFieldRequirementDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    field: PersonalDataFieldDTO
+    is_required: bool
+
+
+class SessionFieldRequirementDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    field: SessionFieldDTO
+    is_required: bool
+
+
+class TimeSlotRequirementDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    time_slot: TimeSlotDTO
+    time_slot_id: int
+    is_required: bool
+
+
+class SessionFieldValueData(TypedDict):
+    session_id: int
+    field_id: int
+    value: str
+
+
+class HostPersonalDataEntry(TypedDict):
+    user_id: int
+    event_id: int
+    field_id: int
+    value: str
+
+
+class WizardData(TypedDict, total=False):
+    category_id: int
+    personal_data: dict[str, str]
+    session_data: dict[str, object]
+    time_slot_ids: list[int]
+
+
+@dataclass
+class ProposeSessionResult:
+    session_id: int
+    title: str
 
 
 @dataclass
@@ -466,6 +606,7 @@ class UserRepositoryProtocol(Protocol):
     @staticmethod
     def create(user_data: UserData) -> None: ...
     def read(self, slug: str) -> UserDTO: ...
+    def read_by_id(self, pk: int) -> UserDTO: ...
     def read_by_username(self, username: str) -> UserDTO: ...
     @staticmethod
     def update(user_slug: str, user_data: UserData) -> None: ...
@@ -494,6 +635,10 @@ class ProposalRepositoryProtocol(Protocol):
     def read_tags(proposal_id: int) -> list[TagDTO]: ...
     @staticmethod
     def read_tag_categories(proposal_id: int) -> list[TagCategoryDTO]: ...
+    @staticmethod
+    def create_from_session(
+        category_id: int, host_id: int, session_id: int, session_data: SessionData
+    ) -> None: ...
 
 
 class SessionRepositoryProtocol(Protocol):
@@ -533,6 +678,12 @@ class SessionRepositoryProtocol(Protocol):
     ) -> list[PendingSessionDTO]: ...
     @staticmethod
     def read_preferred_time_slot_ids(session_id: int) -> list[int]: ...
+    @staticmethod
+    def slug_exists(sphere_id: int, slug: str) -> bool: ...
+    @staticmethod
+    def save_field_values(
+        session_id: int, values: list[SessionFieldValueData]
+    ) -> None: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):
@@ -634,7 +785,21 @@ class ProposalCategoryRepositoryProtocol(Protocol):
     @staticmethod
     def list_by_event(event_id: int) -> list[ProposalCategoryDTO]: ...
     @staticmethod
+    def read(pk: int, event_id: int) -> ProposalCategoryDTO: ...
+    @staticmethod
     def read_by_slug(event_id: int, slug: str) -> ProposalCategoryDTO: ...
+    @staticmethod
+    def list_personal_field_requirements(
+        category_id: int,
+    ) -> list[PersonalFieldRequirementDTO]: ...
+    @staticmethod
+    def list_session_field_requirements(
+        category_id: int,
+    ) -> list[SessionFieldRequirementDTO]: ...
+    @staticmethod
+    def list_time_slot_requirements(
+        category_id: int,
+    ) -> list[TimeSlotRequirementDTO]: ...
     @staticmethod
     def set_field_requirements(
         category_id: int, requirements: dict[int, bool], order: list[int] | None = None
@@ -734,7 +899,54 @@ class EnrollmentConfigRepositoryProtocol(Protocol):
     ) -> DomainEnrollmentConfigDTO | None: ...
 
 
-class UnitOfWorkProtocol(Protocol):
+class EncounterRepositoryProtocol(Protocol):
+    @staticmethod
+    def create(data: EncounterData) -> EncounterDTO: ...
+    @staticmethod
+    def read(pk: int) -> EncounterDTO: ...
+    @staticmethod
+    def read_by_share_code(share_code: str) -> EncounterDTO: ...
+    @staticmethod
+    def list_by_creator(sphere_id: int, creator_id: int) -> list[EncounterDTO]: ...
+    @staticmethod
+    def list_upcoming_by_creator(
+        sphere_id: int, creator_id: int
+    ) -> list[EncounterDTO]: ...
+    @staticmethod
+    def list_upcoming_rsvpd(sphere_id: int, user_id: int) -> list[EncounterDTO]: ...
+    @staticmethod
+    def list_past(sphere_id: int) -> list[EncounterDTO]: ...
+    @staticmethod
+    def update(pk: int, data: EncounterData) -> None: ...
+    @staticmethod
+    def delete(pk: int) -> None: ...
+
+
+class EncounterRSVPRepositoryProtocol(Protocol):
+    @staticmethod
+    def create(
+        encounter_id: int, ip_address: str, user_id: int
+    ) -> EncounterRSVPDTO: ...
+    @staticmethod
+    def list_by_encounter(encounter_id: int) -> list[EncounterRSVPDTO]: ...
+    @staticmethod
+    def count_by_encounter(encounter_id: int) -> int: ...
+    @staticmethod
+    def recent_rsvp_exists(ip_address: str, seconds: int = 60) -> bool: ...
+    @staticmethod
+    def user_has_rsvpd(encounter_id: int, user_id: int) -> bool: ...
+    @staticmethod
+    def delete_by_user(encounter_id: int, user_id: int) -> None: ...
+
+
+class HostPersonalDataRepositoryProtocol(Protocol):
+    @staticmethod
+    def save(entries: list[HostPersonalDataEntry]) -> None: ...
+    @staticmethod
+    def read_for_user_event(user_id: int, event_id: int) -> dict[str, str]: ...
+
+
+class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
     @staticmethod
@@ -770,7 +982,13 @@ class UnitOfWorkProtocol(Protocol):
     @property
     def time_slots(self) -> TimeSlotRepositoryProtocol: ...
     @property
+    def encounters(self) -> EncounterRepositoryProtocol: ...
+    @property
+    def encounter_rsvps(self) -> EncounterRSVPRepositoryProtocol: ...
+    @property
     def enrollment_configs(self) -> EnrollmentConfigRepositoryProtocol: ...
+    @property
+    def host_personal_data(self) -> HostPersonalDataRepositoryProtocol: ...
 
 
 class TicketAPIProtocol(Protocol):
@@ -782,6 +1000,8 @@ class DependencyInjectorProtocol(Protocol):
     def uow(self) -> UnitOfWorkProtocol: ...
     @property
     def ticket_api(self) -> TicketAPIProtocol: ...
+    @staticmethod
+    def gravatar_url(email: str) -> str | None: ...
 
 
 class RootRequestProtocol(Protocol):

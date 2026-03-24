@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 import pytest
-from django.template import Context, Template
+from django.template import Context, Template, TemplateSyntaxError
 from heroicons import IconDoesNotExist
 
 
@@ -32,6 +32,12 @@ class TestIcon:
         tpl = Template('{% load tessera %}{% icon "clock" style="color: var(--x)" %}')
         html = tpl.render(Context())
         assert "color: var(--x)" in html
+
+    def test_escapes_xss_in_style_kwarg(self) -> None:
+        tpl = Template('{% load tessera %}{% icon "clock" style=bad_style %}')
+        html = tpl.render(Context({"bad_style": '" onload="alert(1)'}))
+        assert 'onload="alert(1)"' not in html
+        assert "&quot;" in html
 
     @patch("ludamus.adapters.web.django.templatetags.tessera.icon.settings")
     def test_missing_icon_raises_in_debug(self, mock_settings: object) -> None:
@@ -202,3 +208,9 @@ class TestTabs:
         )
         html = tpl.render(Context({"bad_url": '"><script>alert(1)</script>'}))
         assert "<script>" not in html
+
+    def test_tab_missing_key_raises(self) -> None:
+        with pytest.raises(TemplateSyntaxError, match="requires at least a key"):
+            Template(
+                "{% load tessera %}{% tabs %}{% tab %}X{% end_tab %}{% end_tabs %}"
+            )

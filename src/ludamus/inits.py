@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, TypeVar
 from django.conf import settings
 
 from ludamus.links.db.django.uow import UnitOfWork
+from ludamus.links.gravatar import gravatar_url
 from ludamus.links.ticket_api import MembershipApiClient
 from ludamus.pacts import DependencyInjectorProtocol, TicketAPIProtocol
 
@@ -31,6 +32,10 @@ class DependencyInjector(DependencyInjectorProtocol):
     @cached_property
     def ticket_api(self) -> TicketAPIProtocol:
         return MembershipApiClient()
+
+    @staticmethod
+    def gravatar_url(email: str) -> str | None:
+        return gravatar_url(email)
 
 
 class RepositoryInjectionMiddleware[Response]:

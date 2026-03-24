@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% block title %}
+    {{ current_sphere.name }}
+{% endblock title %}
+{% block header_section %}
+{% endblock header_section %}
+{% block body %}
+    <div class="flex flex-col items-center justify-center pt-10 sm:pt-14 pb-4 text-center">
+        <h1 class="text-3xl sm:text-4xl font-bold text-foreground leading-tight">
+            {% translate "Organize game nights" %}
+            <br>
+            <span class="text-teal-600 dark:text-teal-400">{% translate "with friends" %}</span>
+        </h1>
+        <p class="mt-4 text-lg text-foreground-muted max-w-md">
+            {% translate "No more 'hey, when are we playing?' in the group chat." %}
+        </p>
+        <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <a href="{% url 'web:crowd:auth0:login' %}?screen_hint=signup&next={% url 'web:notice-board:index' %}"
+               class="btn btn-primary text-base px-6 py-2.5">{% translate "Sign up" %}</a>
+            <a href="{% url 'web:crowd:auth0:login' %}?next={% url 'web:notice-board:index' %}"
+               class="btn btn-secondary text-base px-6 py-2.5">{% translate "Log in" %}</a>
+        </div>
+    </div>
+    <div class="pt-2 pb-4">
+        <h2 class="text-xl font-bold text-teal-600 dark:text-teal-400 text-center mb-6">
+            {% translate "Example encounters" %}
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            {% for encounter in sample_encounters %}
+                <div class="card flex flex-col">
+                    <div class="block p-4 flex-1 rounded-2xl">
+                        <h3 class="font-semibold text-foreground mb-1">{{ encounter.title }}</h3>
+                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
+                            {% icon "puzzle-piece" class="h-4 w-4 flex-shrink-0" %}
+                            <span>{{ encounter.game }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
+                            {% icon "calendar" class="h-4 w-4 flex-shrink-0" %}
+                            <span>{{ encounter.date }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted mb-1">
+                            {% icon "map-pin" class="h-4 w-4 flex-shrink-0" %}
+                            <span>{{ encounter.place }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-sm text-foreground-muted">
+                            {% icon "users" class="h-4 w-4 flex-shrink-0" %}
+                            <span>{{ encounter.rsvp_count }} / {{ encounter.max_participants }}</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock body %}

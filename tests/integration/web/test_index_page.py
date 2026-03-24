@@ -10,8 +10,29 @@ from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
 
 
-class TestIndexPageView:
+class TestIndexRedirectView:
     URL = reverse("web:index")
+
+    def test_redirects_to_events_by_default(self, client):
+        response = client.get(self.URL)
+
+        assert_response(response, HTTPStatus.FOUND, url=reverse("web:events"))
+
+    def test_redirects_to_encounters_when_default_page_is_encounters(
+        self, client, sphere
+    ):
+        sphere.default_page = "encounters"
+        sphere.save()
+
+        response = client.get(self.URL)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=reverse("web:notice-board:index")
+        )
+
+
+class TestEventsPageView:
+    URL = reverse("web:events")
 
     def test_ok(self, client):
         response = client.get(self.URL)

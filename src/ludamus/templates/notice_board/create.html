@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n tailwind_forms %}
+{% block title %}
+    {% translate "Create Encounter" %}
+{% endblock title %}
+{% block header %}
+    {% translate "Create Encounter" %}
+{% endblock header %}
+{% block body %}
+    <div class="max-w-2xl mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% include "notice_board/_form.html" %}
+                    {% tw_button "Create Encounter" %}
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock body %}

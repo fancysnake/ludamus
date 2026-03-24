@@ -1,87 +1,86 @@
 # TODO
 
-- [ ] Add blurred image placeholders
-  (like [Plaiceholder](https://plaiceholder.co/)) to prevent blinking when
-  progressive blur images load
+```mermaid
+---
+config:
+  kanban:
+    ticketBaseUrl: 'https://github.com/fancysnake/ludamus/issues/#TICKET#'
+---
+kanban
+  Wishlist
+    [Reasonable Cyclomatic Complexity thresholds]@{
+      assigned: 'agent-readiness'
+    }
+    [Dead code detection tooling]@{ assigned: 'agent-readiness' }
+    [Duplicate code detection tooling]@{ assigned: 'agent-readiness' }
+    [Technical debt markers tracking]@{ assigned: 'agent-readiness' }
+    [Feature flag system]@{ assigned: 'agent-readiness' }
+    [Automated release notes]@{ assigned: 'agent-readiness' }
+    [Automated deployment pipelines]@{ assigned: 'agent-readiness' }
+    [Test suite duration monitoring]@{ assigned: 'agent-readiness' }
+    [Auto-generated technical docs]@{ assigned: 'agent-readiness' }
+    [Architecture diagrams]@{ assigned: 'agent-readiness' }
+    [Priority/type/area labels]@{ assigned: 'agent-readiness' }
+    [Request tracing]@{ assigned: 'agent-readiness' }
+    [Engineering telemetry]@{ assigned: 'agent-readiness' }
+    [Sentry with source maps]@{ assigned: 'agent-readiness' }
+    [PagerDuty/alert rules]@{ assigned: 'agent-readiness' }
+    [Incident response playbooks]@{ assigned: 'agent-readiness' }
+    [Real-time deploy impact]@{ assigned: 'agent-readiness' }
+    [Log sanitization/scrubbing]@{ assigned: 'agent-readiness' }
+    [Analytics instrumentation]@{ assigned: 'agent-readiness' }
+    [Errors to actionable issues]@{ assigned: 'agent-readiness' }
 
-## Panel
+  Epics
+    [Migrate to HTMX]@{ assigned: 'frontend', ticket: 10 }
 
-- [ ] Proposals management with filterable list and accept/reject workflow
-- [ ] Timetable builder with drag-and-drop scheduling and conflict detection
-- [ ] Session hosts list with discount tiers and confirmation workflow
-- [ ] Program categories with configurable submission forms
-- [ ] Change log for timetable history (marketing notifications)
-- [ ] Door cards for printable room schedules
-- [ ] Organizer permissions by program category
-- [ ] Event settings (discount tiers, submission periods)
-- [ ] Konwencik app sync
-- [ ] News/announcements for event page
+  Backlog
+    [Add blurred image placeholders - Plaiceholder-style progressive blur]@{
+      assigned: 'frontend'
+    }
+    [Door cards - printable room schedules]@{ assigned: 'panel' }
+    [Konwencik app sync]@{ assigned: 'panel' }
+    [Add gh cli]@{ assigned: 'agent-readiness' }
+    [TypeScript/mypy strict mode]@{ assigned: 'agent-readiness' }
+    [Test coverage thresholds]@{ assigned: 'agent-readiness' }
+    [Isolated/parallel test execution]@{ assigned: 'agent-readiness' }
+    [AGENTS.md file]@{ assigned: 'agent-readiness' }
+    [Claude skills definitions]@{ assigned: 'agent-readiness' }
+    [Structured issue templates]@{ assigned: 'agent-readiness' }
+    [Pull request templates]@{ assigned: 'agent-readiness' }
+    [Development container configuration]@{ assigned: 'agent-readiness' }
+    [CODEOWNERS file]@{ assigned: 'agent-readiness' }
+    [Structured logging]@{ assigned: 'agent-readiness' }
+    [Support Markdown in Session.description]@{
+      assigned: 'sessions'
+      ticket: 9
+    }
+    [Sphere creation command]@{ assigned: 'management', ticket: 14 }
+    [Add versioning and changelog]@{ assigned: 'documentation', ticket: 23 }
+    [Venues rework]@{ assigned: 'panel', ticket: 155 }
 
-## User's proposals view
+  Roadmap
+    [Session hosts list - discount tiers and confirmation workflow]@{
+      assigned: 'panel'
+    }
+    [Change log for timetable history - marketing notifications]@{
+      assigned: 'panel'
+    }
+    [Organizer permissions - by program category]@{ assigned: 'panel' }
+    [News/announcements - for event page]@{ assigned: 'panel' }
+    [View and edit proposals]@{ assigned: 'user-proposals' }
+    [Profile page - current and past proposals with statuses]@{
+      assigned: 'user-proposals'
+    }
+    [Resend old proposal]@{ assigned: 'user-proposals' }
 
-- [ ] Allow user to view and edit his not yet accepted proposals on the event page
-  while the proposal phase is active
-- [ ] Add a profile page to display user's current and past proposals to the events
-  in current sphere and their statuses
-- [ ] Add an option to "resend" old proposal to new event (duplicate the proposal
-  contents, ask to fill missing fields if any)
-
-## Agent readiness
-
-### Style & Validation
-
-- [ ] TypeScript strict mode or mypy strict mode is enabled
-- [ ] Code maintains reasonable complexity thresholds
-- [ ] Dead code detection tooling configured
-- [ ] Duplicate code (DRY) detection tooling configured
-- [ ] Tooling tracks technical debt markers
-
-### Build systems
-
-- [ ] Add gh cli
-- [ ] Feature flag system configured for safe rollouts
-- [ ] Automated release notes or changelog generation
-- [ ] Automated release/deployment pipelines configured
-
-### Testing
-
-- [ ] Test suite duration is measured and monitored
-- [ ] Test Coverage Thresholds
-- [ ] Tests are configured for isolated/parallel execution
-
-### Documentation
-
-- [ ] Repository has an AGENTS.md file with instructions for autonomous agents
-- [ ] System automatically generates or updates technical documentation
-- [ ] Repository has skills defined following the Claude skills standard
-- [ ] Architecture diagrams and service dependencies are documented
-
-### Development Environment
-
-- [ ] Project has a development container configuration
-
-### Debugging & Observability
-
-- [ ] Project uses structured logging for better observability
-- [ ] Application implements request tracing
-- [ ] Engineering telemetry for performance monitoring
-- [ ] Sentry/Bugsnag with source maps and breadcrumbs
-- [ ] PagerDuty/OpsGenie or alert rules defined
-- [ ] Incident response playbooks exist
-- [ ] Can see deploy impact in real-time
-
-### Security
-
-- [ ] Repository has a CODEOWNERS file to assign ownership
-- [ ] Log sanitization/scrubbing mechanisms configured
-
-### Task Discovery
-
-- [ ] Structured issue templates exist
-- [ ] Consistent priority/type/area labels
-- [ ] Pull request templates exist
-
-### Product & Experimentation
-
-- [ ] Mixpanel/Amplitude/PostHog instrumented
-- [ ] Errors flow from tracking to actionable issues
+  Sprint
+    [Proposals management - filterable list and accept/reject workflow]@{
+      assigned: 'panel'
+    }
+    [Timetable builder - drag-and-drop scheduling and conflict detection]@{
+      assigned: 'panel'
+    }
+    [Program categories - configurable submission forms]@{ assigned: 'panel' }
+    [Event settings - discount tiers, submission periods]@{ assigned: 'panel' }
+```

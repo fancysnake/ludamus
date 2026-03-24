@@ -22,7 +22,6 @@ package-mode = false
 [tool.poetry.dependencies]
 authlib = "~1.6.0"
 django = "~6.0.0"
-django-bootstrap5 = "~26.1.0"
 gunicorn = "^25.0.1"
 django-environ = "^0.13.0"
 psycopg = "^3.2.9"
@@ -31,6 +30,9 @@ django-extensions = "^4.1"
 requests = "^2.32.5"
 heroicons = { version = "^2.9", extras = ["django"] }
 django-tailwind = { version = "^4.0.0", extras = ["reload"] }
+segno = "^1.6.6"
+pillow = "^12.1.1"
+markdown = "^3.10.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.1.0"
@@ -101,7 +103,6 @@ known_first_party = ["ludamus"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = [
-    "django-bootstrap5",
     "django-extensions",
     "django-tailwind",
     "gunicorn",
@@ -145,6 +146,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["environ"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["markdown"]
 ignore_missing_imports = true
 
 # RUFF

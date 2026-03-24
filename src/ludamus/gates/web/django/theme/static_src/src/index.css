@@ -298,6 +298,12 @@ a, button {
   color: var(--theme-info-text);
 }
 
+.alert-default {
+  background-color: var(--theme-bg-tertiary);
+  border-color: var(--theme-border);
+  color: var(--color-foreground-secondary);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -385,7 +391,7 @@ select:focus-visible {
 }
 
 button:active {
-  @apply scale-97;  
+  @apply scale-97;
 }
 
 .session-tags-more:hover .session-tags-popover {

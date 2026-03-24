@@ -8,6 +8,8 @@ from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
     DomainEnrollmentConfig,
+    Encounter,
+    EncounterRSVP,
     EnrollmentConfig,
     Event,
     HostPersonalData,
@@ -20,6 +22,7 @@ from ludamus.adapters.db.django.models import (
     SessionField,
     SessionFieldOption,
     SessionFieldRequirement,
+    SessionFieldValue,
     SessionParticipation,
     SessionParticipationStatus,
     Space,
@@ -335,6 +338,16 @@ class TestSessionFieldOption:
         assert str(SessionFieldOption(label=label)) == label
 
 
+class TestSessionFieldValue:
+    def test_str(self, faker):
+        field_name = faker.word()
+        value = faker.sentence()
+
+        sfv = SessionFieldValue(field=SessionField(name=field_name), value=value)
+
+        assert str(sfv) == f"{field_name}: {value}"
+
+
 class TestTimeSlotRequirement:
     def test_str_required(self, faker):
         category_name = faker.word()
@@ -353,6 +366,20 @@ class TestTimeSlotRequirement:
         )
 
         assert str(requirement) == f"Time slot (optional) for {category_name}"
+
+
+class TestEncounter:
+    def test_str(self, faker):
+        title = faker.word()
+
+        assert str(Encounter(title=title)) == title
+
+
+class TestEncounterRSVP:
+    def test_str(self):
+        user = User(name="John Smith", email="john@example.com")
+
+        assert str(EncounterRSVP(user=user)) == str(user)
 
 
 class TestSessionFieldRequirement:

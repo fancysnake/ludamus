@@ -6,8 +6,12 @@ from django.http import HttpRequest, HttpResponseBase, HttpResponseRedirect
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from ludamus.adapters.web.django.exceptions import RedirectError
-from ludamus.pacts import AuthenticatedRequestContext, NotFoundError, RequestContext
+from ludamus.pacts import (
+    AuthenticatedRequestContext,
+    NotFoundError,
+    RedirectError,
+    RequestContext,
+)
 
 if TYPE_CHECKING:
     from ludamus.pacts import DependencyInjectorProtocol

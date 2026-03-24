@@ -51,9 +51,12 @@ from ludamus.adapters.web.django.entities import (
     SessionUserParticipationData,
     TagCategoryData,
     TagWithCategory,
+)
+from ludamus.gates.web.django.entities import (
+    AuthenticatedRootRequest,
+    RootRequest,
     UserInfo,
 )
-from ludamus.links.gravatar import gravatar_url
 from ludamus.mills import (
     AcceptProposalService,
     AnonymousEnrollmentService,
@@ -62,17 +65,16 @@ from ludamus.mills import (
 from ludamus.pacts import (
     AgendaItemDTO,
     AreaDTO,
-    AuthenticatedRequestContext,
-    DependencyInjectorProtocol,
     EventDTO,
     LocationData,
     NotFoundError,
     ProposalCategoryDTO,
-    RequestContext,
+    RedirectError,
     SessionDTO,
     SessionRepositoryProtocol,
     SessionStatus,
     SpaceDTO,
+    SpherePage,
     TagCategoryDTO,
     TagDTO,
     UserData,
@@ -82,7 +84,6 @@ from ludamus.pacts import (
 from ludamus.pacts import SessionData as SessionCreateData
 
 from .design_fixtures import mock_event_info, mock_session_data, mock_session_data_ended
-from .exceptions import RedirectError
 from .forms import (
     ConnectedUserForm,
     UserForm,
@@ -101,16 +102,6 @@ if TYPE_CHECKING:
 
 MINIMUM_ALLOWED_USER_AGE = 16
 CACHE_TIMEOUT = 600  # 10 minutes
-
-
-class AuthenticatedRootRequest(HttpRequest):
-    context: AuthenticatedRequestContext
-    di: DependencyInjectorProtocol
-
-
-class RootRequest(HttpRequest):
-    context: RequestContext
-    di: DependencyInjectorProtocol
 
 
 class LoginRequiredPageView(TemplateView):
@@ -443,7 +434,19 @@ class DesignPageView(TemplateView):
         return context
 
 
-class IndexPageView(TemplateView):
+class IndexRedirectView(View):
+    request: RootRequest
+
+    def get(self, _request: RootRequest) -> HttpResponse:
+        sphere = self.request.di.uow.spheres.read(
+            self.request.context.current_sphere_id
+        )
+        if sphere.default_page == SpherePage.ENCOUNTERS:
+            return redirect("web:notice-board:index")
+        return redirect("web:events")
+
+
+class EventsPageView(TemplateView):
     request: RootRequest
     template_name = "index.html"
 
@@ -677,7 +680,7 @@ class ProfileAvatarPageView(LoginRequiredMixin, View):
             "crowd/user/avatar.html",
             {
                 "user": user,
-                "gravatar_url": gravatar_url(user.email),
+                "gravatar_url": request.di.gravatar_url(user.email),
                 "has_auth0_avatar": bool(user.avatar_url),
             },
         )
@@ -1027,7 +1030,9 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             )  # TODO(fancysnake): Fix after merging venues
             if session.presenter_id:
                 presenter_dto = UserDTO.model_validate(session.presenter)
-                presenter = UserInfo.from_user_dto(presenter_dto)
+                presenter = UserInfo.from_user_dto(
+                    presenter_dto, gravatar_url=self.request.di.gravatar_url
+                )
             else:
                 presenter_name = session.presenter_name or ""
                 presenter = UserInfo(
@@ -1072,7 +1077,10 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 waiting_count=session.waiting_count,
                 session_participations=[
                     ParticipationInfo(
-                        user=UserInfo.from_user_dto(UserDTO.model_validate(sp.user)),
+                        user=UserInfo.from_user_dto(
+                            UserDTO.model_validate(sp.user),
+                            gravatar_url=self.request.di.gravatar_url,
+                        ),
                         status=sp.status,
                         creation_time=sp.creation_time,
                     )

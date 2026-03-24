@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% block title %}
+    {% translate "Encounters" %}
+{% endblock title %}
+{% block header %}
+    {% translate "Encounters" %}
+{% endblock header %}
+{% block body %}
+    <!-- Dismissible info banner -->
+    <div id="encounters-info-banner" class="alert alert-info mb-6">
+        <div class="flex items-start justify-between">
+            <div class="flex items-start gap-3">
+                {% icon "information-circle" class="w-5 h-5 mt-0.5 flex-shrink-0 text-[var(--theme-info-base)]" %}
+                <div class="text-sm">
+                    <p class="font-medium text-foreground">{% translate "What are encounters?" %}</p>
+                    <p class="mt-1">
+                        {% translate "Encounters are small private meetups you can organize and share via a short link. Create one, invite friends, and play!" %}
+                    </p>
+                </div>
+            </div>
+            <button onclick="dismissEncountersInfo()"
+                    class="ml-4 flex-shrink-0 text-foreground-muted opacity-50 hover:opacity-100">
+                {% icon "x-mark" class="w-5 h-5" %}
+            </button>
+        </div>
+    </div>
+    <!-- Upcoming -->
+    <section class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-foreground">{% translate "Upcoming" %}</h2>
+            <a href="{% url 'web:notice-board:create' %}" class="btn btn-primary">
+                {% icon "plus" class="w-5 h-5" %}
+                {% translate "Create Encounter" %}
+            </a>
+        </div>
+        {% if upcoming_encounters %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for item in upcoming_encounters %}
+                    {% include "components/encounter_card.html" with encounter=item.encounter rsvp_count=item.rsvp_count is_mine=item.is_mine organizer_name=item.organizer_name %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-sm text-foreground-muted py-4">{% translate "No upcoming encounters." %}</p>
+        {% endif %}
+    </section>
+    <!-- Past -->
+    <section>
+        <h2 class="text-xl font-bold mb-4 text-foreground">{% translate "Past" %}</h2>
+        {% if past_encounters %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for item in past_encounters %}
+                    {% include "components/encounter_card.html" with encounter=item.encounter rsvp_count=item.rsvp_count is_mine=item.is_mine organizer_name=item.organizer_name variant="past" %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-sm text-foreground-muted py-4">{% translate "No past encounters." %}</p>
+        {% endif %}
+    </section>
+{% endblock body %}
+{% block extra_scripts %}
+    <script>
+        (function() {
+            if (localStorage.getItem('encounters_info_dismissed')) {
+                var banner = document.getElementById('encounters-info-banner');
+                if (banner) banner.style.display = 'none';
+            }
+        })();
+
+        function dismissEncountersInfo() {
+            localStorage.setItem('encounters_info_dismissed', '1');
+            var banner = document.getElementById('encounters-info-banner');
+            if (banner) banner.style.display = 'none';
+        }
+
+        document.querySelectorAll('.encounter-copy-link').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var url = window.location.origin + btn.dataset.url;
+                var textEl = btn.querySelector('.encounter-copy-link-text');
+                navigator.clipboard.writeText(url).then(function() {
+                    var orig = textEl.textContent;
+                    textEl.textContent = btn.dataset.copiedText;
+                    setTimeout(function() {
+                        textEl.textContent = orig;
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+{% endblock extra_scripts %}

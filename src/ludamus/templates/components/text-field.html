@@ -3,13 +3,13 @@
 {% load tessera %}
 {% ds_classes "input" as cls %}
 <input type="text"
-       autocomplete="{{ autocomplete|default:'off' }}"
+       {% if autocomplete|default:"" %}autocomplete="{{ autocomplete }}"{% endif %}
        class="{{ cls }}"
        name="{{ name }}"
-       id="{{ id|default:'' }}"
-       placeholder="{{ placeholder|default:'' }}"
-       value="{{ value|default:'' }}"
-       maxlength="{{ maxlength|default:'' }}"
-       inputmode="{{ inputmode|default:'' }}"
-       pattern="{{ pattern|default:'' }}"
-       required="{{ required|default:False }}">
+       {% if id|default:"" %}id="{{ id }}"{% endif %}
+       {% if placeholder|default:"" %}placeholder="{{ placeholder }}"{% endif %}
+       {% if value|default:"" %}value="{{ value }}"{% endif %}
+       {% if maxlength|default:"" %}maxlength="{{ maxlength }}"{% endif %}
+       {% if inputmode|default:"" %}inputmode="{{ inputmode }}"{% endif %}
+       {% if pattern|default:"" %}pattern="{{ pattern }}"{% endif %}
+       {% if required|default:False %}required{% endif %}>

@@ -1,4 +1,4 @@
-{% extends "base_tailwind.html" %}
+{% extends "base.html" %}
 {% load i18n %}
 {% load tessera %}
 {% load static %}
@@ -1016,7 +1016,7 @@
     {% endfor %}
     <!-- Back to Events List -->
     <div class="mt-8">
-        <a href="{% url 'web:index' %}" class="btn btn-secondary">
+        <a href="{% url 'web:events' %}" class="btn btn-secondary">
             {% icon "arrow-left" class="w-4 h-4" variant="mini" %} {% translate "Back to Events" %}
         </a>
     </div>

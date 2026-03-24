@@ -1,16 +1,20 @@
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
+from django import forms
 from django.contrib import admin
 
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
     DomainEnrollmentConfig,
+    Encounter,
+    EncounterRSVP,
     EnrollmentConfig,
     Event,
     Proposal,
     ProposalCategory,
     Session,
+    SessionFieldValue,
     Space,
     Sphere,
     Tag,
@@ -20,6 +24,7 @@ from ludamus.adapters.db.django.models import (
     UserEnrollmentConfig,
     Venue,
 )
+from ludamus.pacts import SpherePage
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -59,17 +64,41 @@ class SpaceAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
 
 
+class SessionFieldValueInline(admin.TabularInline):  # type: ignore [type-arg]
+    model = SessionFieldValue
+    extra = 0
+    fields = ("field", "value")
+
+
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     list_display = ("title", "status", "presenter_name", "category", "sphere")
     list_filter = ("status", "sphere")
     search_fields = ("title", "presenter_name")
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("title",)}
+    inlines = (SessionFieldValueInline,)
+
+
+class SphereAdminForm(forms.ModelForm):  # type: ignore [type-arg]
+    enabled_pages = forms.MultipleChoiceField(
+        choices=[(p.value, p.value.title()) for p in SpherePage],
+        widget=forms.SelectMultiple,
+    )
+
+    def clean(self) -> dict[str, object]:
+        cleaned: dict[str, object] = super().clean() or {}
+        default_page = cleaned.get("default_page")
+        enabled_pages = cast("list[str]", cleaned.get("enabled_pages") or [])
+        if default_page and default_page not in enabled_pages:
+            self.add_error(
+                "default_page", "Default page must be one of the enabled pages."
+            )
+        return cleaned
 
 
 @admin.register(Sphere)
 class SphereAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    ...
+    form = SphereAdminForm
 
 
 @admin.register(Tag)
@@ -150,3 +179,16 @@ class DomainEnrollmentConfigAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     list_filter = ("enrollment_config__event",)
     search_fields = ("domain",)
     fields = ("enrollment_config", "domain", "allowed_slots_per_user")
+
+
+@admin.register(Encounter)
+class EncounterAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = ("title", "sphere", "creator", "start_time", "share_code")
+    list_filter = ("sphere",)
+    search_fields = ("title",)
+
+
+@admin.register(EncounterRSVP)
+class EncounterRSVPAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = ("encounter", "user", "ip_address", "creation_time")
+    list_filter = ("encounter",)
