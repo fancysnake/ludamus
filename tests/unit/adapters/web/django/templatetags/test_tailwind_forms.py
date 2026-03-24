@@ -3,12 +3,6 @@
 from django import forms
 from django.forms.widgets import CheckboxSelectMultiple, RadioSelect, Select
 
-from ludamus.adapters.web.django.form_styles import (
-    CHECKBOX_CLASS,
-    INPUT_CLASS,
-    SELECT_CLASS,
-    TEXTAREA_CLASS,
-)
 from ludamus.adapters.web.django.templatetags.tailwind_forms import (
     tw_button,
     tw_errors,
@@ -16,6 +10,7 @@ from ludamus.adapters.web.django.templatetags.tailwind_forms import (
     tw_form,
 )
 from ludamus.adapters.web.django.templatetags.tailwind_forms.checkbox import (
+    CHECKBOX_CLASS,
     render_checkbox_field,
     render_multi_choice_field,
 )
@@ -25,7 +20,10 @@ from ludamus.adapters.web.django.templatetags.tailwind_forms.errors import (
 )
 from ludamus.adapters.web.django.templatetags.tailwind_forms.input import render_input
 from ludamus.adapters.web.django.templatetags.tailwind_forms.label import render_label
-from ludamus.adapters.web.django.templatetags.tailwind_forms.select import render_select
+from ludamus.adapters.web.django.templatetags.tailwind_forms.select import (
+    SELECT_CLASS,
+    render_select,
+)
 from ludamus.adapters.web.django.templatetags.tailwind_forms.textarea import (
     render_textarea,
 )
@@ -169,6 +167,12 @@ class TestRenderLabel:
         field.label = ""
         assert not render_label(field)
 
+    def test_renders_label_with_classes(self) -> None:
+        form = SimpleForm()
+        html = render_label(form["name"])
+        assert "text-foreground-secondary" in html
+        assert "font-medium" in html
+
     def test_escapes_xss_in_label(self) -> None:
         form = XSSForm()
         html = render_label(form["malicious"])
@@ -286,46 +290,25 @@ class TestRenderSelect:
 
 
 class TestRenderTextarea:
-    def test_applies_textarea_class(self) -> None:
+    def test_renders_with_classes(self) -> None:
         form = SimpleForm()
         html = render_textarea(form["bio"])
-        assert TEXTAREA_CLASS in form["bio"].field.widget.attrs["class"]
         assert "<textarea" in html
+        assert "border-border" in html
+        assert "bg-bg-secondary" in html
 
-    def test_preserves_existing_class(self) -> None:
+    def test_default_rows(self) -> None:
         form = SimpleForm()
-        form.fields["bio"].widget.attrs["class"] = "custom-ta"
-        render_textarea(form["bio"])
-        assert "custom-ta" in form["bio"].field.widget.attrs["class"]
-        assert TEXTAREA_CLASS in form["bio"].field.widget.attrs["class"]
-
-    def test_skips_class_when_already_present(self) -> None:
-        form = SimpleForm()
-        form.fields["bio"].widget.attrs["class"] = TEXTAREA_CLASS
-        render_textarea(form["bio"])
-        assert form["bio"].field.widget.attrs["class"] == TEXTAREA_CLASS
-
-    def test_default_rows_when_unset(self) -> None:
-        form = SimpleForm()
-        del form.fields["bio"].widget.attrs["rows"]
-        render_textarea(form["bio"])
-        expected_rows = 4
-        assert form["bio"].field.widget.attrs["rows"] == expected_rows
-
-    def test_preserves_existing_rows(self) -> None:
-        form = SimpleForm()
-        # Django Textarea sets rows=10 by default
-        original = form.fields["bio"].widget.attrs["rows"]
-        render_textarea(form["bio"])
-        assert form["bio"].field.widget.attrs["rows"] == original
+        html = render_textarea(form["bio"])
+        assert 'rows="' in html
 
     def test_error_styling(self) -> None:
         form = SimpleForm(data={"bio": ""})
         form.is_valid()
         # bio is not required, so we need to inject an error
         form.errors["bio"] = ["Too short"]
-        render_textarea(form["bio"])
-        assert "border-color" in form.fields["bio"].widget.attrs.get("style", "")
+        html = render_textarea(form["bio"])
+        assert "border-color" in html
 
 
 # ---------------------------------------------------------------------------
@@ -334,29 +317,24 @@ class TestRenderTextarea:
 
 
 class TestRenderInput:
-    def test_applies_input_class(self) -> None:
+    def test_renders_with_classes(self) -> None:
         form = SimpleForm()
-        render_input(form["name"])
-        assert INPUT_CLASS in form["name"].field.widget.attrs["class"]
+        html = render_input(form["name"])
+        assert "<input" in html
+        assert "border-border" in html
+        assert "bg-bg-secondary" in html
 
-    def test_preserves_existing_class(self) -> None:
+    def test_passes_placeholder(self) -> None:
         form = SimpleForm()
-        form.fields["name"].widget.attrs["class"] = "extra"
-        render_input(form["name"])
-        assert "extra" in form["name"].field.widget.attrs["class"]
-        assert INPUT_CLASS in form["name"].field.widget.attrs["class"]
-
-    def test_skips_class_when_already_present(self) -> None:
-        form = SimpleForm()
-        form.fields["name"].widget.attrs["class"] = INPUT_CLASS
-        render_input(form["name"])
-        assert form["name"].field.widget.attrs["class"] == INPUT_CLASS
+        form.fields["name"].widget.attrs["placeholder"] = "Enter name"
+        html = render_input(form["name"])
+        assert 'placeholder="Enter name"' in html
 
     def test_error_styling(self) -> None:
         form = SimpleForm(data={"name": ""})
         form.is_valid()
-        render_input(form["name"])
-        assert "border-color" in form.fields["name"].widget.attrs.get("style", "")
+        html = render_input(form["name"])
+        assert "border-color" in html
 
 
 # ---------------------------------------------------------------------------

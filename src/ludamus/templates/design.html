@@ -88,64 +88,50 @@
             <p class="text-sm text-foreground-muted">
                 {% translate "Partials:" %} <code>components/</code> text-field, textarea, label, tag. Select: <code>{% templatetag openblock %} load tessera {% templatetag closeblock %}</code>.
             </p>
-            {% ds_classes "input" as input_cls %}
-            {% ds_classes "textarea" as textarea_cls %}
-            {% ds_classes "label" as label_cls %}
             <form class="flex flex-col gap-4 max-w-md" action="#" method="post">
                 <div class="flex flex-col gap-1">
-                    <label class="{{ label_cls }}"
-                           for="design-input-text">{% translate "Text field" %}</label>
-                    <input id="design-input-text"
-                           name="design-input-text"
-                           class="{{ input_cls }}"
-                           type="text"
-                           placeholder="{% translate "Placeholder" %}">
+                    {% include "components/label.html" with for_id="design-input-text" text=_("Text field") required=False only %}
+                    {% include "components/text-field.html" with id="design-input-text" name="design-input-text" placeholder=_("Placeholder") required=False value="" only %}
                 </div>
                 <div class="flex flex-col gap-1">
-                    <label class="{{ label_cls }}"
-                           for="design-textarea">{% translate "Textarea" %}</label>
-                    <textarea id="design-textarea"
-                              name="design-textarea"
-                              class="{{ textarea_cls }}"
-                              rows="3"
-                              placeholder="{% translate "Placeholder" %}"></textarea>
+                    {% include "components/label.html" with for_id="design-textarea" text=_("Textarea") required=False only %}
+                    {% include "components/textarea.html" with id="design-textarea" name="design-textarea" rows="3" placeholder=_("Placeholder") required=False value="" only %}
                 </div>
                 <div class="flex flex-col gap-1">
-                    <label class="{{ label_cls }}"
-                           for="design-select">{% translate "Select" %}</label>
+                    {% include "components/label.html" with for_id="design-select" text=_("Select") required=False only %}
                     {% select id="design-select" name="design-select" %}
-                        <option value="">{% translate "Choose an option..." %}</option>
-                        <option value="a">{% translate "Option A" %}</option>
-                        <option value="b">{% translate "Option B" %}</option>
-                    {% end_select %}
-                </div>
-                <div class="flex items-center gap-2">
-                    <input class="rounded border-[var(--theme-border)]"
-                           type="checkbox"
-                           id="design-checkbox"
-                           checked>
-                    <label class="text-sm" for="design-checkbox">{% translate "Checkbox" %}</label>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input class="border-[var(--theme-border)]"
-                           type="radio"
-                           name="design-radio"
-                           id="design-radio-a"
-                           checked>
-                    <label class="text-sm" for="design-radio-a">{% translate "Radio A" %}</label>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input class="border-[var(--theme-border)]"
-                           type="radio"
-                           name="design-radio"
-                           id="design-radio-b">
-                    <label class="text-sm" for="design-radio-b">{% translate "Radio B" %}</label>
-                </div>
-                <div class="flex gap-2">
-                    <button class="btn btn-primary" type="button">{% translate "Submit" %}</button>
-                    <button class="btn btn-outline-secondary" type="button">{% translate "Cancel" %}</button>
-                </div>
-            </form>
-        </section>
-    </div>
+                    <option value="">{% translate "Choose an option..." %}</option>
+                    <option value="a">{% translate "Option A" %}</option>
+                    <option value="b">{% translate "Option B" %}</option>
+                {% end_select %}
+            </div>
+            <div class="flex items-center gap-2">
+                <input class="rounded border-[var(--theme-border)]"
+                       type="checkbox"
+                       id="design-checkbox"
+                       checked>
+                <label class="text-sm" for="design-checkbox">{% translate "Checkbox" %}</label>
+            </div>
+            <div class="flex items-center gap-2">
+                <input class="border-[var(--theme-border)]"
+                       type="radio"
+                       name="design-radio"
+                       id="design-radio-a"
+                       checked>
+                <label class="text-sm" for="design-radio-a">{% translate "Radio A" %}</label>
+            </div>
+            <div class="flex items-center gap-2">
+                <input class="border-[var(--theme-border)]"
+                       type="radio"
+                       name="design-radio"
+                       id="design-radio-b">
+                <label class="text-sm" for="design-radio-b">{% translate "Radio B" %}</label>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-primary" type="button">{% translate "Submit" %}</button>
+                <button class="btn btn-outline-secondary" type="button">{% translate "Cancel" %}</button>
+            </div>
+        </form>
+    </section>
+</div>
 {% endblock body %}

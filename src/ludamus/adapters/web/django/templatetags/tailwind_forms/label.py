@@ -1,20 +1,17 @@
-"""Label renderer."""
+"""Label renderer — delegates to components/label.html."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
-
-from ludamus.adapters.web.django.form_styles import LABEL_CLASS
+from django.template.loader import render_to_string
 
 if TYPE_CHECKING:
     from django.forms import BoundField
 
 
 def render_label(field: BoundField) -> str:
-    """Render a styled ``<label>`` for a form field.
+    """Render a styled ``<label>`` using the shared component template.
 
     Returns:
         HTML string of the label element, or empty string if no label.
@@ -22,14 +19,11 @@ def render_label(field: BoundField) -> str:
     if not field.label:
         return ""
 
-    required_mark = (
-        mark_safe('<span class="text-danger">*</span>') if field.field.required else ""
-    )
-
-    return format_html(
-        '<label for="{}" class="{} mb-1">{}{}</label>',
-        field.id_for_label,
-        LABEL_CLASS,
-        field.label,
-        required_mark,
+    return render_to_string(
+        "components/label.html",
+        {
+            "for_id": field.id_for_label,
+            "text": field.label,
+            "required": field.field.required,
+        },
     )

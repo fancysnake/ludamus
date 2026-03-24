@@ -6,13 +6,16 @@ from typing import TYPE_CHECKING
 
 from django.utils.html import format_html
 
-from ludamus.adapters.web.django.form_styles import CHECKBOX_CLASS
-
 from .errors import render_errors, render_help_text
 from .label import render_label
 
 if TYPE_CHECKING:
     from django.forms import BoundField
+
+CHECKBOX_CLASS = (
+    "w-4 h-4 rounded border border-border accent-primary "
+    "focus:ring-1 focus:ring-offset-0"
+)
 
 
 def render_checkbox_field(field: BoundField) -> str:

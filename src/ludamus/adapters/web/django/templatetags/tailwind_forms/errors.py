@@ -7,10 +7,12 @@ from typing import TYPE_CHECKING
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from ludamus.adapters.web.django.form_styles import ERROR_CLASS, HELP_TEXT_CLASS
-
 if TYPE_CHECKING:
     from django.forms import BaseForm, BoundField
+
+HELP_TEXT_CLASS = "text-xs mt-1 text-foreground-muted"
+
+ERROR_CLASS = "text-xs mt-1 text-danger"
 
 
 def render_form_errors(form: BaseForm) -> str:

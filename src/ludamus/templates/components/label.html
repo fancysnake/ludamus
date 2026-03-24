@@ -1,11 +1,10 @@
-{% load i18n tessera %}
+{% load i18n %}
 {# Label for form fields. #}
 {# Variables: for_id, text, required (bool) #}
-{% ds_classes "label" as cls %}
 <label {% if for_id %}for="{{ for_id }}"{% endif %}
-       class="{{ cls }}">
+       class="block text-sm font-medium text-foreground-secondary">
     {{ text }}
-    {% if required %}
+    {% if required|default:False %}
         <span class="text-danger" aria-hidden="true">*</span><span class="sr-only">({% translate "required" %})</span>
     {% endif %}
 </label>

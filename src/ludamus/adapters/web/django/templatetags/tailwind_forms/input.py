@@ -1,26 +1,34 @@
-"""Text input renderer."""
+"""Text input renderer — delegates to components/text-field.html."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ludamus.adapters.web.django.form_styles import INPUT_CLASS
+from django.template.loader import render_to_string
 
 if TYPE_CHECKING:
     from django.forms import BoundField
 
 
 def render_input(field: BoundField) -> str:
-    """Render a styled ``<input>``.
+    """Render a styled ``<input>`` using the shared component template.
 
     Returns:
         HTML string of the input element.
     """
-    existing_class = field.field.widget.attrs.get("class", "")
-
-    if INPUT_CLASS not in existing_class:
-        field.field.widget.attrs["class"] = f"{INPUT_CLASS} {existing_class}".strip()
-    if field.errors:
-        field.field.widget.attrs["style"] = "border-color: var(--theme-danger);"
-
-    return str(field)
+    attrs = field.field.widget.attrs
+    return render_to_string(
+        "components/text-field.html",
+        {
+            "name": field.html_name,
+            "id": field.id_for_label,
+            "value": field.value() or "",
+            "required": field.field.required,
+            "placeholder": attrs.get("placeholder", ""),
+            "maxlength": attrs.get("maxlength", ""),
+            "inputmode": attrs.get("inputmode", ""),
+            "pattern": attrs.get("pattern", ""),
+            "autocomplete": attrs.get("autocomplete", ""),
+            "has_errors": bool(field.errors),
+        },
+    )

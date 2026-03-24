@@ -8,9 +8,13 @@ from django import template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
-from ludamus.adapters.web.django.form_styles import SELECT_CLASS
-
 from ._registry import register
+
+SELECT_CLASS = (
+    "w-full px-3 py-2 text-sm rounded-lg border "
+    "border-border bg-bg-secondary text-foreground "
+    "disabled:opacity-50 disabled:cursor-not-allowed"
+)
 
 if TYPE_CHECKING:
     from django.template.base import FilterExpression, Parser, Token

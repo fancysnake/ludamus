@@ -1,10 +1,8 @@
 {# Text input field. Always pass `name`. Other vars are optional — use `only` in includes. #}
-{# Optional: id, placeholder, value, required, maxlength, inputmode, pattern, autocomplete #}
-{% load tessera %}
-{% ds_classes "input" as cls %}
+{# Optional: id, placeholder, value, required, maxlength, inputmode, pattern, autocomplete, has_errors #}
 <input type="text"
        {% if autocomplete|default:"" %}autocomplete="{{ autocomplete }}"{% endif %}
-       class="{{ cls }}"
+       class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted disabled:opacity-50 disabled:cursor-not-allowed"
        name="{{ name }}"
        {% if id|default:"" %}id="{{ id }}"{% endif %}
        {% if placeholder|default:"" %}placeholder="{{ placeholder }}"{% endif %}
@@ -12,4 +10,5 @@
        {% if maxlength|default:"" %}maxlength="{{ maxlength }}"{% endif %}
        {% if inputmode|default:"" %}inputmode="{{ inputmode }}"{% endif %}
        {% if pattern|default:"" %}pattern="{{ pattern }}"{% endif %}
-       {% if required|default:False %}required{% endif %}>
+       {% if required|default:False %}required{% endif %}
+       {% if has_errors|default:False %}style="border-color: var(--theme-danger);"{% endif %}>
