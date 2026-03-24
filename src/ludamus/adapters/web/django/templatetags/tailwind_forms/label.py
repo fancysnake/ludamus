@@ -1,4 +1,4 @@
-"""Label renderer — delegates to components/label.html."""
+"""Label renderer."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def render_label(field: BoundField) -> str:
-    """Render a styled ``<label>`` using the shared component template.
+    """Render a styled ``<label>``.
 
     Returns:
         HTML string of the label element, or empty string if no label.

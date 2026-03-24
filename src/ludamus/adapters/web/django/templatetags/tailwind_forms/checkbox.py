@@ -1,4 +1,4 @@
-"""Checkbox and multi-choice renderers — delegate to component templates."""
+"""Checkbox and multi-choice renderers."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def render_checkbox_field(field: BoundField) -> str:
-    """Render a single checkbox using the shared component template.
+    """Render a single checkbox with inline label.
 
     Returns:
         HTML string of the checkbox field.
@@ -32,7 +32,7 @@ def render_checkbox_field(field: BoundField) -> str:
 
 
 def render_multi_choice_field(field: BoundField, *, is_radio: bool = False) -> str:
-    """Render a group of radio buttons or checkboxes using the component template.
+    """Render a group of radio buttons or checkboxes.
 
     Returns:
         HTML string of the multi-choice field.

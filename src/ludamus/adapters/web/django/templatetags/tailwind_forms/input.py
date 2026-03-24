@@ -1,4 +1,4 @@
-"""Text input renderer — delegates to components/text-field.html."""
+"""Text input renderer."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def render_input(field: BoundField) -> str:
-    """Render a styled ``<input>`` using the shared component template.
+    """Render a styled ``<input>``.
 
     Returns:
         HTML string of the input element.

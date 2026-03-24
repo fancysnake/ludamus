@@ -1,4 +1,4 @@
-"""Textarea renderer — delegates to components/textarea.html."""
+"""Textarea renderer."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def render_textarea(field: BoundField) -> str:
-    """Render a styled ``<textarea>`` using the shared component template.
+    """Render a styled ``<textarea>``.
 
     Returns:
         HTML string of the textarea element.

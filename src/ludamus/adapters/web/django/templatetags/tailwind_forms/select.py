@@ -1,4 +1,4 @@
-"""Select renderer — delegates to components/select-field.html."""
+"""Select renderer."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def render_select(field: BoundField) -> str:
-    """Render a styled ``<select>`` using the shared component template.
+    """Render a styled ``<select>``.
 
     Returns:
         HTML string of the select element.
