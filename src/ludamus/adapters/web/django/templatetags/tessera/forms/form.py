@@ -1,10 +1,9 @@
-"""Form and field orchestration — tw_form, tw_field, tw_errors, tw_button."""
+"""Form and field orchestration."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django import template
 from django.forms.widgets import (
     CheckboxInput,
     CheckboxSelectMultiple,
@@ -14,6 +13,8 @@ from django.forms.widgets import (
     Textarea,
 )
 from django.utils.safestring import mark_safe
+
+from ludamus.adapters.web.django.templatetags.tessera._registry import register
 
 from .button import render_button
 from .checkbox import render_checkbox_field, render_multi_choice_field
@@ -26,34 +27,32 @@ from .textarea import render_textarea
 if TYPE_CHECKING:
     from django.forms import BaseForm, BoundField
 
-register = template.Library()
-
 
 @register.simple_tag
-def tw_form(form: BaseForm, *, layout: str = "vertical") -> str:
-    """Render an entire form with Tailwind styling.
+def tessera_form(form: BaseForm, *, layout: str = "vertical") -> str:
+    """Render an entire form.
 
     Returns:
         HTML string of the rendered form fields.
 
     Usage:
-        {% tw_form form %}
-        {% tw_form form layout="horizontal" %}
+        {% tessera_form form %}
+        {% tessera_form form layout="horizontal" %}
     """
-    output = [tw_field(field, layout=layout) for field in form]
+    output = [tessera_field(field, layout=layout) for field in form]
     return mark_safe("\n".join(output))  # noqa: S308
 
 
 @register.simple_tag
-def tw_field(field: BoundField, *, layout: str = "vertical") -> str:
-    """Render a single form field with Tailwind styling.
+def tessera_field(field: BoundField, *, layout: str = "vertical") -> str:
+    """Render a single form field.
 
     Returns:
         HTML string of the rendered field.
 
     Usage:
-        {% tw_field form.email %}
-        {% tw_field form.name layout="horizontal" %}
+        {% tessera_field form.email %}
+        {% tessera_field form.name layout="horizontal" %}
     """
     widget = field.field.widget
     is_checkbox = isinstance(widget, CheckboxInput)
@@ -96,20 +95,20 @@ def tw_field(field: BoundField, *, layout: str = "vertical") -> str:
 
 
 @register.simple_tag
-def tw_errors(form: BaseForm) -> str:
+def tessera_errors(form: BaseForm) -> str:
     """Render form-level (non-field) errors.
 
     Returns:
         HTML string of non-field errors, or empty string if none.
 
     Usage:
-        {% tw_errors form %}
+        {% tessera_errors form %}
     """
     return render_form_errors(form)
 
 
 @register.simple_tag
-def tw_button(  # noqa: PLR0913
+def tessera_button(  # noqa: PLR0913
     text: str,
     *,
     button_type: str = "submit",
@@ -124,8 +123,8 @@ def tw_button(  # noqa: PLR0913
         HTML string of the rendered button.
 
     Usage:
-        {% tw_button "Submit" %}
-        {% tw_button "Cancel" button_type="button" variant="secondary" %}
+        {% tessera_button "Submit" %}
+        {% tessera_button "Cancel" button_type="button" variant="secondary" %}
     """
     return render_button(
         text,

@@ -1,26 +1,26 @@
-"""Tests for Tailwind form templatetags, focusing on XSS prevention."""
+"""Tests for tessera form templatetags, focusing on XSS prevention."""
 
 from django import forms
 from django.forms.widgets import CheckboxSelectMultiple, RadioSelect, Select
 
-from ludamus.adapters.web.django.templatetags.tailwind_forms import (
-    tw_button,
-    tw_errors,
-    tw_field,
-    tw_form,
+from ludamus.adapters.web.django.templatetags.tessera.forms import (
+    tessera_button,
+    tessera_errors,
+    tessera_field,
+    tessera_form,
 )
-from ludamus.adapters.web.django.templatetags.tailwind_forms.checkbox import (
+from ludamus.adapters.web.django.templatetags.tessera.forms.checkbox import (
     render_checkbox_field,
     render_multi_choice_field,
 )
-from ludamus.adapters.web.django.templatetags.tailwind_forms.errors import (
+from ludamus.adapters.web.django.templatetags.tessera.forms.errors import (
     render_errors,
     render_help_text,
 )
-from ludamus.adapters.web.django.templatetags.tailwind_forms.input import render_input
-from ludamus.adapters.web.django.templatetags.tailwind_forms.label import render_label
-from ludamus.adapters.web.django.templatetags.tailwind_forms.select import render_select
-from ludamus.adapters.web.django.templatetags.tailwind_forms.textarea import (
+from ludamus.adapters.web.django.templatetags.tessera.forms.input import render_input
+from ludamus.adapters.web.django.templatetags.tessera.forms.label import render_label
+from ludamus.adapters.web.django.templatetags.tessera.forms.select import render_select
+from ludamus.adapters.web.django.templatetags.tessera.forms.textarea import (
     render_textarea,
 )
 
@@ -73,59 +73,59 @@ class XSSChoiceForm(forms.Form):
     )
 
 
-class TestTwForm:
+class TestTesseraForm:
     def test_renders_all_fields(self) -> None:
         form = SimpleForm()
-        html = tw_form(form)
+        html = tessera_form(form)
         assert "Name" in html
         assert "Email" in html
         assert "I agree" in html
 
     def test_escapes_xss_in_labels_and_help_text(self) -> None:
         form = XSSForm()
-        html = tw_form(form)
+        html = tessera_form(form)
         assert "<script>" not in html
         assert "&lt;script&gt;" in html or "&#x27;" in html or "&quot;" in html
 
 
-class TestTwField:
+class TestTesseraField:
     def test_renders_text_input(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["name"])
+        html = tessera_field(form["name"])
         assert "<input" in html
         assert 'type="text"' in html
 
     def test_renders_textarea(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["bio"])
+        html = tessera_field(form["bio"])
         assert "<textarea" in html
 
     def test_renders_checkbox(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["agree"])
+        html = tessera_field(form["agree"])
         assert 'type="checkbox"' in html
 
     def test_renders_required_asterisk(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["name"])
+        html = tessera_field(form["name"])
         assert "*" in html  # Required field marker
 
     def test_renders_help_text(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["email"])
+        html = tessera_field(form["email"])
         assert "We won&#x27;t share this" in html or "We won't share this" in html
 
 
-class TestTwErrors:
+class TestTesseraErrors:
     def test_empty_when_no_errors(self) -> None:
         form = SimpleForm()
-        assert not tw_errors(form)
+        assert not tessera_errors(form)
 
     def test_renders_non_field_errors(self) -> None:
         form = SimpleForm(data={})
         form.is_valid()  # Initialize errors
         form._errors["__all__"] = form.error_class(["Form-level error"])  # noqa: SLF001
-        html = tw_errors(form)
+        html = tessera_errors(form)
         assert "Form-level error" in html
 
     def test_escapes_xss_in_error_messages(self) -> None:
@@ -134,24 +134,24 @@ class TestTwErrors:
         form._errors["__all__"] = form.error_class(  # noqa: SLF001
             ['<script>alert("xss")</script>']
         )
-        html = tw_errors(form)
+        html = tessera_errors(form)
         assert "<script>" not in html
         assert "&lt;script&gt;" in html
 
 
-class TestTwButton:
+class TestTesseraButton:
     def test_renders_submit_button(self) -> None:
-        html = tw_button("Submit")
+        html = tessera_button("Submit")
         assert "<button" in html
         assert 'type="submit"' in html
         assert "Submit" in html
 
     def test_renders_disabled_button(self) -> None:
-        html = tw_button("Disabled", disabled=True)
+        html = tessera_button("Disabled", disabled=True)
         assert "disabled" in html
 
     def test_escapes_xss_in_button_text(self) -> None:
-        html = tw_button('<script>alert("xss")</script>')
+        html = tessera_button('<script>alert("xss")</script>')
         assert "<script>" not in html
         assert "&lt;script&gt;" in html
 
@@ -348,85 +348,85 @@ class TestRenderCheckboxField:
 
 
 # ---------------------------------------------------------------------------
-# tw_field — layout and widget branches
+# tessera_field — layout and widget branches
 # ---------------------------------------------------------------------------
 
 
-class TestTwFieldBranches:
+class TestTesseraFieldBranches:
     def test_horizontal_layout_text_input(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["name"], layout="horizontal")
+        html = tessera_field(form["name"], layout="horizontal")
         assert "sm:flex" in html
         assert "sm:w-1/3" in html
         assert "sm:w-2/3" in html
 
     def test_renders_select_field(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["color"])
+        html = tessera_field(form["color"])
         assert "<select" in html
 
     def test_horizontal_layout_select(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["color"], layout="horizontal")
+        html = tessera_field(form["color"], layout="horizontal")
         assert "sm:flex" in html
         assert "<select" in html
 
     def test_renders_radio_field(self) -> None:
         form = ChoiceForm()
-        html = tw_field(form["color"])
+        html = tessera_field(form["color"])
         assert 'type="radio"' in html
 
     def test_renders_multi_checkbox_field(self) -> None:
         form = ChoiceForm()
-        html = tw_field(form["toppings"])
+        html = tessera_field(form["toppings"])
         assert "Cheese" in html
         assert "Pepperoni" in html
 
     def test_horizontal_textarea(self) -> None:
         form = SimpleForm()
-        html = tw_field(form["bio"], layout="horizontal")
+        html = tessera_field(form["bio"], layout="horizontal")
         assert "<textarea" in html
         assert "sm:w-2/3" in html
 
 
 # ---------------------------------------------------------------------------
-# tw_form — layout passthrough
+# tessera_form — layout passthrough
 # ---------------------------------------------------------------------------
 
 
-class TestTwFormLayout:
+class TestTesseraFormLayout:
     def test_horizontal_layout(self) -> None:
         form = SimpleForm()
-        html = tw_form(form, layout="horizontal")
+        html = tessera_form(form, layout="horizontal")
         assert "sm:flex" in html
 
 
 # ---------------------------------------------------------------------------
-# tw_button — variant, size, full_width branches
+# tessera_button — variant, size, full_width branches
 # ---------------------------------------------------------------------------
 
 
-class TestTwButtonBranches:
+class TestTesseraButtonBranches:
     def test_full_width(self) -> None:
-        html = tw_button("Go", full_width=True)
+        html = tessera_button("Go", full_width=True)
         assert "w-full" in html
 
     def test_secondary_variant(self) -> None:
-        html = tw_button("Cancel", variant="secondary")
+        html = tessera_button("Cancel", variant="secondary")
         assert "btn-secondary" in html
 
     def test_unknown_variant_falls_back_to_primary(self) -> None:
-        html = tw_button("Go", variant="unknown")
+        html = tessera_button("Go", variant="unknown")
         assert "btn-primary" in html
 
     def test_lg_size(self) -> None:
-        html = tw_button("Big", size="lg")
+        html = tessera_button("Big", size="lg")
         assert "py-3" in html
 
     def test_sm_size(self) -> None:
-        html = tw_button("Small", size="sm")
+        html = tessera_button("Small", size="sm")
         assert "py-1.5" in html
 
     def test_unknown_size_falls_back_to_md(self) -> None:
-        html = tw_button("Go", size="unknown")
+        html = tessera_button("Go", size="unknown")
         assert "py-2" in html
