@@ -22,7 +22,7 @@ def render_textarea(field: BoundField) -> str:
         {
             "name": field.html_name,
             "id": field.id_for_label,
-            "value": field.value() or "",
+            "value": field.value() if field.value() is not None else "",
             "required": field.field.required,
             "rows": attrs.get("rows", 4),
             "placeholder": attrs.get("placeholder", ""),

@@ -60,7 +60,6 @@ def render_multi_choice_field(field: BoundField, *, is_radio: bool = False) -> s
         {
             "input_type": "radio" if is_radio else "checkbox",
             "name": field.html_name,
-            "id_prefix": field.id_for_label,
             "options": options,
         },
     )

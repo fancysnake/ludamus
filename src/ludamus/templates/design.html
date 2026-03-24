@@ -100,38 +100,22 @@
                 <div class="flex flex-col gap-1">
                     {% include "components/label.html" with for_id="design-select" text=_("Select") required=False only %}
                     {% select id="design-select" name="design-select" %}
-                    <option value="">{% translate "Choose an option..." %}</option>
-                    <option value="a">{% translate "Option A" %}</option>
-                    <option value="b">{% translate "Option B" %}</option>
-                {% end_select %}
-            </div>
-            <div class="flex items-center gap-2">
-                <input class="rounded border-[var(--theme-border)]"
-                       type="checkbox"
-                       id="design-checkbox"
-                       checked>
-                <label class="text-sm" for="design-checkbox">{% translate "Checkbox" %}</label>
-            </div>
-            <div class="flex items-center gap-2">
-                <input class="border-[var(--theme-border)]"
-                       type="radio"
-                       name="design-radio"
-                       id="design-radio-a"
-                       checked>
-                <label class="text-sm" for="design-radio-a">{% translate "Radio A" %}</label>
-            </div>
-            <div class="flex items-center gap-2">
-                <input class="border-[var(--theme-border)]"
-                       type="radio"
-                       name="design-radio"
-                       id="design-radio-b">
-                <label class="text-sm" for="design-radio-b">{% translate "Radio B" %}</label>
-            </div>
-            <div class="flex gap-2">
-                <button class="btn btn-primary" type="button">{% translate "Submit" %}</button>
-                <button class="btn btn-outline-secondary" type="button">{% translate "Cancel" %}</button>
-            </div>
-        </form>
-    </section>
-</div>
+                        <option value="">{% translate "Choose an option..." %}</option>
+                        <option value="a">{% translate "Option A" %}</option>
+                        <option value="b">{% translate "Option B" %}</option>
+                    {% end_select %}
+                </div>
+                <div>
+                    {% include "components/checkbox-field.html" with id="design-checkbox" name="design-checkbox" label=_("Checkbox") checked=True only %}
+                </div>
+                <div>
+                    {% include "components/choice-group.html" with input_type="radio" name="design-radio" options=design_radio_options only %}
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-primary" type="button">{% translate "Submit" %}</button>
+                    <button class="btn btn-outline-secondary" type="button">{% translate "Cancel" %}</button>
+                </div>
+            </form>
+        </section>
+    </div>
 {% endblock body %}

@@ -16,14 +16,19 @@ def render_input(field: BoundField) -> str:
     Returns:
         HTML string of the input element.
     """
-    attrs = field.field.widget.attrs
+    widget = field.field.widget
+    attrs = widget.attrs
+    value = field.value()
     return render_to_string(
         "components/text-field.html",
         {
             "name": field.html_name,
             "id": field.id_for_label,
-            "value": field.value() or "",
+            "input_type": getattr(widget, "input_type", "text"),
+            "value": value if value is not None else "",
             "required": field.field.required,
+            "disabled": attrs.get("disabled", False),
+            "readonly": attrs.get("readonly", False),
             "placeholder": attrs.get("placeholder", ""),
             "maxlength": attrs.get("maxlength", ""),
             "inputmode": attrs.get("inputmode", ""),

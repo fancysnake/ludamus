@@ -260,6 +260,10 @@ class TestDesignPageView:
                 "design_event": _expected_event_info(),
                 "design_session_data": _expected_session_data(),
                 "design_session_data_ended": _expected_session_data_ended(),
+                "design_radio_options": [
+                    ("a", "Radio A", True, "design-radio-a"),
+                    ("b", "Radio B", False, "design-radio-b"),
+                ],
             },
             template_name=["design.html"],
         )

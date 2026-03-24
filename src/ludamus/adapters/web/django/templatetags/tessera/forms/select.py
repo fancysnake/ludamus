@@ -17,7 +17,7 @@ def render_select(field: BoundField) -> str:
         HTML string of the select element.
     """
     return render_to_string(
-        "components/select-field.html",
+        "components/select.html",
         {
             "name": field.html_name,
             "id": field.id_for_label,
