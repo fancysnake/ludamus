@@ -3,26 +3,24 @@
 from django import forms
 from django.forms.widgets import CheckboxSelectMultiple, RadioSelect, Select
 
-from ludamus.adapters.web.django.templatetags.tessera.forms import (
+from ludamus.adapters.web.django.templatetags.tessera.checkbox import (
+    render_checkbox_field,
+    render_multi_choice_field,
+)
+from ludamus.adapters.web.django.templatetags.tessera.errors import (
+    render_errors,
+    render_help_text,
+)
+from ludamus.adapters.web.django.templatetags.tessera.form import (
     tessera_button,
     tessera_errors,
     tessera_field,
     tessera_form,
 )
-from ludamus.adapters.web.django.templatetags.tessera.forms.checkbox import (
-    render_checkbox_field,
-    render_multi_choice_field,
-)
-from ludamus.adapters.web.django.templatetags.tessera.forms.errors import (
-    render_errors,
-    render_help_text,
-)
-from ludamus.adapters.web.django.templatetags.tessera.forms.input import render_input
-from ludamus.adapters.web.django.templatetags.tessera.forms.label import render_label
-from ludamus.adapters.web.django.templatetags.tessera.forms.select import render_select
-from ludamus.adapters.web.django.templatetags.tessera.forms.textarea import (
-    render_textarea,
-)
+from ludamus.adapters.web.django.templatetags.tessera.form_select import render_select
+from ludamus.adapters.web.django.templatetags.tessera.input import render_input
+from ludamus.adapters.web.django.templatetags.tessera.label import render_label
+from ludamus.adapters.web.django.templatetags.tessera.textarea import render_textarea
 
 
 class SimpleForm(forms.Form):

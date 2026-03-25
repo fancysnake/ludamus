@@ -14,14 +14,13 @@ from django.forms.widgets import (
 )
 from django.utils.safestring import mark_safe
 
-from ludamus.adapters.web.django.templatetags.tessera._registry import register
-
+from ._registry import register
 from .button import render_button
 from .checkbox import render_checkbox_field, render_multi_choice_field
 from .errors import render_errors, render_form_errors, render_help_text
+from .form_select import render_select
 from .input import render_input
 from .label import render_label
-from .select import render_select
 from .textarea import render_textarea
 
 if TYPE_CHECKING:

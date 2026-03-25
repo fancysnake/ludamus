@@ -21,7 +21,7 @@ Usage:
 """
 
 from ._registry import register
-from .forms import tessera_button, tessera_errors, tessera_field, tessera_form
+from .form import tessera_button, tessera_errors, tessera_field, tessera_form
 from .icon import icon
 from .select import SelectNode, do_select
 from .tabs import (
