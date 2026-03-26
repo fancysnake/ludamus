@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n tessera tailwind_forms %}
+{% load i18n tessera %}
 {% block title %}
     {% translate "Edit profile" %}
 {% endblock title %}
@@ -29,8 +29,8 @@
             {% endif %}
             <form action="{% url 'web:crowd:profile' %}" method="post">
                 {% csrf_token %}
-                {% tw_form form %}
-                {% tw_button "OK" %}
+                {% tessera_form form %}
+                {% tessera_button "OK" %}
             </form>
         </div>
     </div>

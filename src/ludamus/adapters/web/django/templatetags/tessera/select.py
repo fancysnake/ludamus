@@ -5,10 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django import template
+from django.template.loader import render_to_string
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
-
-from ludamus.adapters.web.django.form_styles import SELECT_CLASS
 
 from ._registry import register
 
@@ -26,7 +25,7 @@ class SelectNode(template.Node):
         self.attrs = attrs
 
     def render(self, context: template.Context) -> str:
-        """Render the select element.
+        """Render the select element via components/select.html.
 
         Returns:
             HTML string of the themed ``<select>`` element.
@@ -35,26 +34,26 @@ class SelectNode(template.Node):
             k: v.resolve(context) for k, v in self.attrs.items()
         }
 
-        extra_class = resolved.pop("class", "")
-        classes = (
-            f"{SELECT_CLASS} {extra_class}".strip() if extra_class else SELECT_CLASS
-        )
+        extra_class = str(resolved.pop("class", ""))
 
-        parts = [f'<select class="{classes}"']
-        parts.extend(
-            f' {a}="{escape(str(v))}"'
+        attr_parts = [
+            f'{a}="{escape(str(v))}"'
             for a in ("id", "name", "size")
             if (v := resolved.get(a))
-        )
-
+        ]
         if resolved.get("multiple"):
-            parts.append(" multiple")
+            attr_parts.append("multiple")
         if resolved.get("required"):
-            parts.append(" required")
+            attr_parts.append("required")
 
-        parts.extend((">", self.nodelist.render(context), "</select>"))
-
-        return mark_safe("".join(parts))  # noqa: S308
+        return render_to_string(
+            "components/select.html",
+            {
+                "attrs": mark_safe(" ".join(attr_parts)),  # noqa: S308
+                "extra_class": extra_class,
+                "slot": mark_safe(self.nodelist.render(context)),  # noqa: S308
+            },
+        )
 
 
 @register.tag("select")

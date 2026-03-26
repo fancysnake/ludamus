@@ -90,55 +90,26 @@
             </p>
             <form class="flex flex-col gap-4 max-w-md" action="#" method="post">
                 <div class="flex flex-col gap-1">
-                    <label class="block text-sm font-medium text-foreground-secondary"
-                           for="design-input-text">{% translate "Text field" %}</label>
-                    <input id="design-input-text"
-                           name="design-input-text"
-                           class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted"
-                           type="text"
-                           placeholder="{% translate "Placeholder" %}">
+                    {% include "components/label.html" with for_id="design-input-text" text=_("Text field") required=False only %}
+                    {% include "components/text-field.html" with id="design-input-text" name="design-input-text" placeholder=_("Placeholder") required=False value="" only %}
                 </div>
                 <div class="flex flex-col gap-1">
-                    <label class="block text-sm font-medium text-foreground-secondary"
-                           for="design-textarea">{% translate "Textarea" %}</label>
-                    <textarea id="design-textarea"
-                              name="design-textarea"
-                              class="w-full px-3 py-2 text-sm leading-relaxed rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted"
-                              rows="3"
-                              placeholder="{% translate "Placeholder" %}"></textarea>
+                    {% include "components/label.html" with for_id="design-textarea" text=_("Textarea") required=False only %}
+                    {% include "components/textarea.html" with id="design-textarea" name="design-textarea" rows="3" placeholder=_("Placeholder") required=False value="" only %}
                 </div>
                 <div class="flex flex-col gap-1">
-                    <label class="block text-sm font-medium text-foreground-secondary"
-                           for="design-select">{% translate "Select" %}</label>
-                    <select id="design-select"
-                            name="design-select"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground">
+                    {% include "components/label.html" with for_id="design-select" text=_("Select") required=False only %}
+                    {% select id="design-select" name="design-select" %}
                         <option value="">{% translate "Choose an option..." %}</option>
                         <option value="a">{% translate "Option A" %}</option>
                         <option value="b">{% translate "Option B" %}</option>
-                    </select>
+                    {% end_select %}
                 </div>
-                <div class="flex items-center gap-2">
-                    <input class="rounded border-[var(--theme-border)]"
-                           type="checkbox"
-                           id="design-checkbox"
-                           checked>
-                    <label class="text-sm" for="design-checkbox">{% translate "Checkbox" %}</label>
+                <div>
+                    {% include "components/checkbox-field.html" with id="design-checkbox" name="design-checkbox" label=_("Checkbox") checked=True only %}
                 </div>
-                <div class="flex items-center gap-2">
-                    <input class="border-[var(--theme-border)]"
-                           type="radio"
-                           name="design-radio"
-                           id="design-radio-a"
-                           checked>
-                    <label class="text-sm" for="design-radio-a">{% translate "Radio A" %}</label>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input class="border-[var(--theme-border)]"
-                           type="radio"
-                           name="design-radio"
-                           id="design-radio-b">
-                    <label class="text-sm" for="design-radio-b">{% translate "Radio B" %}</label>
+                <div>
+                    {% include "components/choice-group.html" with input_type="radio" name="design-radio" options=design_radio_options only %}
                 </div>
                 <div class="flex gap-2">
                     <button class="btn btn-primary" type="button">{% translate "Submit" %}</button>

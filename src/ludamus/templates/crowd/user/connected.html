@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n tessera tailwind_forms %}
+{% load i18n tessera %}
 {% block title %}
     {% translate "Connected users" %}
 {% endblock title %}
@@ -31,7 +31,7 @@
                     </h6>
                     <form action="{% url 'web:crowd:profile-connected-users' %}" method="post">
                         {% csrf_token %}
-                        {% tw_form form %}
+                        {% tessera_form form %}
                         <button type="submit" class="btn btn-primary">OK</button>
                     </form>
                 </div>

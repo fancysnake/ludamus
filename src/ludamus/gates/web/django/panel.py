@@ -2202,7 +2202,8 @@ class TimeSlotsPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         all_days = self._event_days(
-            current_event.start_time.date(), current_event.end_time.date()
+            localtime(current_event.start_time).date(),
+            localtime(current_event.end_time).date(),
         )
         page = int(self.request.GET.get("page", 0))
         total_pages = max(
@@ -2215,8 +2216,8 @@ class TimeSlotsPageView(PanelAccessMixin, EventContextMixin, View):
 
         time_slots = self.request.di.uow.time_slots.list_by_event(current_event.pk)
 
-        event_start = current_event.start_time.date()
-        event_end = current_event.end_time.date()
+        event_start = localtime(current_event.start_time).date()
+        event_end = localtime(current_event.end_time).date()
         visible_set = set(visible_days)
         days: dict[str, list[TimeSlotDTO]] = {d.isoformat(): [] for d in visible_days}
         orphaned_slots: list[TimeSlotDTO] = []

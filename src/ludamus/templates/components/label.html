@@ -1,11 +1,10 @@
 {% load i18n %}
 {# Label for form fields. #}
 {# Variables: for_id, text, required (bool) #}
-{# Classes kept in sync with form_styles.LABEL_CLASS #}
 <label {% if for_id %}for="{{ for_id }}"{% endif %}
        class="block text-sm font-medium text-foreground-secondary">
     {{ text }}
-    {% if required %}
+    {% if required|default:False %}
         <span class="text-danger" aria-hidden="true">*</span><span class="sr-only">({% translate "required" %})</span>
     {% endif %}
 </label>

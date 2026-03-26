@@ -3,6 +3,33 @@ import path from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
+/** Build an HH:MM string by adding minutes to a base hour:minute. */
+function timeHHMM(
+  hour: number,
+  minute: number,
+  addMinutes: number = 0,
+): string {
+  const d = new Date(2000, 0, 1, hour, minute + addMinutes);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/**
+ * Compute both YYYY-MM-DD and HH:MM after adding minutes to a base datetime.
+ * Handles midnight rollover by advancing the date.
+ */
+function dateTimeAfter(
+  baseDateStr: string,
+  hour: number,
+  minute: number,
+  addMinutes: number = 0,
+): { date: string; time: string } {
+  const [y, m, day] = baseDateStr.split('-').map(Number);
+  const d = new Date(y, m - 1, day, hour, minute + addMinutes);
+  const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const ts = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return { date: ds, time: ts };
+}
+
 test('panel redirects to home with message when sphere has no events', async ({
   browser,
 }) => {
@@ -136,7 +163,7 @@ test.describe('Backoffice Panel', () => {
     await expect(
       page.getByText('Venue created successfully.'),
     ).toBeVisible();
-    await expect(page.getByText('Community Library')).toBeVisible();
+    await expect(page.getByText('Community Library').first()).toBeVisible();
   });
 
   test('views venue detail with areas', async ({ page }) => {
@@ -731,11 +758,13 @@ test.describe('Backoffice Panel', () => {
       '/panel/event/autumn-open/cfp/time-slots/',
     );
 
-    // Extract date from the per-day "Add" link's ?date= param
-    const addLink = page.getByRole('link', {
-      name: 'Add',
-      exact: true,
-    });
+    // Extract date from the first per-day "Add" link's ?date= param
+    const addLink = page
+      .getByRole('link', {
+        name: 'Add',
+        exact: true,
+      })
+      .first();
     const addHref = await addLink.getAttribute('href');
     const dateMatch = addHref?.match(
       /date=(\d{4}-\d{2}-\d{2})/,
@@ -753,8 +782,6 @@ test.describe('Backoffice Panel', () => {
     const rawMin = parseInt(hourMatch?.[2] ?? '0', 10);
     // Add 1 minute to avoid seconds-precision issue
     const safeMin = rawMin + 1;
-    const pad = (n: number) =>
-      String(n).padStart(2, '0');
 
     // Click the per-day "Add" link (pre-fills the date)
     await addLink.click();
@@ -762,10 +789,10 @@ test.describe('Backoffice Panel', () => {
     // Fill times 1h–2h into the event
     await page
       .locator('#id_start_time')
-      .fill(`${pad(baseHour + 1)}:${pad(safeMin)}`);
+      .fill(timeHHMM(baseHour, safeMin, 60));
     await page
       .locator('#id_end_time')
-      .fill(`${pad(baseHour + 2)}:${pad(safeMin)}`);
+      .fill(timeHHMM(baseHour, safeMin, 120));
     await page.getByRole('button', { name: 'Create' }).click();
 
     await expect(
@@ -778,13 +805,10 @@ test.describe('Backoffice Panel', () => {
       .first()
       .click();
 
-    // Extend by 30 min (handle minute overflow)
-    const extMin = safeMin + 30;
-    const extHour =
-      baseHour + 2 + Math.floor(extMin / 60);
+    // Extend by 30 min
     await page
       .locator('#id_end_time')
-      .fill(`${pad(extHour)}:${pad(extMin % 60)}`);
+      .fill(timeHHMM(baseHour, safeMin, 150));
     await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(
@@ -865,10 +889,12 @@ test.describe('Backoffice Panel', () => {
         await page.goto(
           '/panel/event/autumn-open/cfp/time-slots/',
         );
-        const addLink = page.getByRole('link', {
-          name: 'Add',
-          exact: true,
-        });
+        const addLink = page
+          .getByRole('link', {
+            name: 'Add',
+            exact: true,
+          })
+          .first();
         const addHref = await addLink.getAttribute('href');
         // Extract date from ?date= param
         const dateMatch = addHref?.match(/date=(\d{4}-\d{2}-\d{2})/);
@@ -886,22 +912,22 @@ test.describe('Backoffice Panel', () => {
         // (event start has seconds, form only takes HH:MM)
         const rawMin = parseInt(hourMatch?.[2] ?? '0', 10);
         const safeMin = rawMin + 1;
-        const pad = (n: number) =>
-          String(n).padStart(2, '0');
 
-        // Create 3 time slots
+        // Create 3 time slots (1h each)
         for (let i = 0; i < 3; i++) {
+          const start = dateTimeAfter(dateStr, baseHour, safeMin, i * 60);
+          const end = dateTimeAfter(dateStr, baseHour, safeMin, (i + 1) * 60);
           await page.goto(
             '/panel/event/autumn-open/cfp/time-slots/create/',
           );
-          await page.locator('#id_date').fill(dateStr);
-          await page.locator('#id_end_date').fill(dateStr);
+          await page.locator('#id_date').fill(start.date);
+          await page.locator('#id_end_date').fill(end.date);
           await page
             .locator('#id_start_time')
-            .fill(`${pad(baseHour + i)}:${pad(safeMin)}`);
+            .fill(start.time);
           await page
             .locator('#id_end_time')
-            .fill(`${pad(baseHour + i + 1)}:${pad(safeMin)}`);
+            .fill(end.time);
           await page
             .getByRole('button', { name: 'Create' })
             .click();
@@ -1758,11 +1784,13 @@ test.describe('Backoffice Panel', () => {
       '/panel/event/autumn-open/cfp/time-slots/',
     );
 
-    // Extract event date from the "Add" link
-    const addLink = page.getByRole('link', {
-      name: 'Add',
-      exact: true,
-    });
+    // Extract event date from the first "Add" link
+    const addLink = page
+      .getByRole('link', {
+        name: 'Add',
+        exact: true,
+      })
+      .first();
     const addHref = await addLink.getAttribute('href');
     const dateMatch = addHref?.match(
       /date=(\d{4}-\d{2}-\d{2})/,
@@ -1779,31 +1807,25 @@ test.describe('Backoffice Panel', () => {
     const baseHour = parseInt(hourMatch?.[1] ?? '9', 10);
     const rawMin = parseInt(hourMatch?.[2] ?? '0', 10);
     const safeMin = rawMin + 1;
-    const pad = (n: number) =>
-      String(n).padStart(2, '0');
 
-    // Event lasts 4h from baseHour. Use baseHour+3 to stay within bounds
-    // and avoid collisions with serial flow slots (baseHour+0..+2).
-    const slotStart = baseHour + 3;
-
-    // Create first time slot: slotStart:safeMin to slotStart+0:safeMin+30
-    // (30 min slot to stay within the 4h event window)
-    const slotEndMin = safeMin + 30;
-    const slotEndH =
-      slotEndMin >= 60 ? slotStart + 1 : slotStart;
-    const slotEndM = slotEndMin % 60;
+    // Use baseHour+3h offset to avoid collisions with serial flow slots.
+    // 30-min slot, then overlap test with 15-min offset.
+    // Use dateTimeAfter to handle midnight rollover correctly.
+    const offsetMin = 3 * 60;
+    const slotStart = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin);
+    const slotEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 30);
 
     await page.goto(
       '/panel/event/autumn-open/cfp/time-slots/create/',
     );
-    await page.locator('#id_date').fill(dateStr);
-    await page.locator('#id_end_date').fill(dateStr);
+    await page.locator('#id_date').fill(slotStart.date);
+    await page.locator('#id_end_date').fill(slotEnd.date);
     await page
       .locator('#id_start_time')
-      .fill(`${pad(slotStart)}:${pad(safeMin)}`);
+      .fill(slotStart.time);
     await page
       .locator('#id_end_time')
-      .fill(`${pad(slotEndH)}:${pad(slotEndM)}`);
+      .fill(slotEnd.time);
     await page
       .getByRole('button', { name: 'Create' })
       .click();
@@ -1811,29 +1833,21 @@ test.describe('Backoffice Panel', () => {
       page.getByText('Time slot created successfully.'),
     ).toBeVisible();
 
-    // Try creating overlapping slot: slotStart:safeMin+15 to slotStart:safeMin+45
+    // Try creating overlapping slot: offset+15 to offset+45
     // This overlaps with the first slot
-    const overlapStartMin = safeMin + 15;
-    const overlapStartH =
-      overlapStartMin >= 60 ? slotStart + 1 : slotStart;
-    const overlapStartM = overlapStartMin % 60;
-    const overlapEndMin = safeMin + 45;
-    const overlapEndH =
-      overlapEndMin >= 60 ? slotStart + 1 : slotStart;
-    const overlapEndM = overlapEndMin % 60;
+    const overlapStart = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 15);
+    const overlapEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 45);
     await page.goto(
       '/panel/event/autumn-open/cfp/time-slots/create/',
     );
-    await page.locator('#id_date').fill(dateStr);
-    await page.locator('#id_end_date').fill(dateStr);
+    await page.locator('#id_date').fill(overlapStart.date);
+    await page.locator('#id_end_date').fill(overlapEnd.date);
     await page
       .locator('#id_start_time')
-      .fill(
-        `${pad(overlapStartH)}:${pad(overlapStartM)}`,
-      );
+      .fill(overlapStart.time);
     await page
       .locator('#id_end_time')
-      .fill(`${pad(overlapEndH)}:${pad(overlapEndM)}`);
+      .fill(overlapEnd.time);
     await page
       .getByRole('button', { name: 'Create' })
       .click();

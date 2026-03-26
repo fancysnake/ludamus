@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from ludamus.adapters.web.django.form_styles import ERROR_CLASS, HELP_TEXT_CLASS
-
 if TYPE_CHECKING:
     from django.forms import BaseForm, BoundField
 
@@ -38,7 +36,9 @@ def render_help_text(field: BoundField) -> str:
     if not field.help_text:
         return ""
 
-    return format_html('<p class="{}">{}</p>', HELP_TEXT_CLASS, field.help_text)
+    return format_html(
+        '<p class="text-xs mt-1 text-foreground-muted">{}</p>', field.help_text
+    )
 
 
 def render_errors(field: BoundField) -> str:
@@ -51,7 +51,7 @@ def render_errors(field: BoundField) -> str:
         return ""
 
     errors_html = [
-        format_html('<p class="{}">{}</p>', ERROR_CLASS, error)
+        format_html('<p class="text-xs mt-1 text-danger">{}</p>', error)
         for error in field.errors
     ]
 

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n tailwind_forms %}
+{% load i18n tessera %}
 {% block title %}
     {% translate "Create Encounter" %}
 {% endblock title %}
@@ -13,7 +13,7 @@
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     {% include "notice_board/_form.html" %}
-                    {% tw_button "Create Encounter" %}
+                    {% tessera_button "Create Encounter" %}
                 </form>
             </div>
         </div>

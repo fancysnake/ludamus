@@ -431,6 +431,10 @@ class DesignPageView(TemplateView):
         context["design_event"] = mock_event_info()
         context["design_session_data"] = mock_session_data()
         context["design_session_data_ended"] = mock_session_data_ended()
+        context["design_radio_options"] = [
+            ("a", "Radio A", True, "design-radio-a"),
+            ("b", "Radio B", False, "design-radio-b"),
+        ]
         return context
 
 

@@ -96,6 +96,7 @@ precision = 2
 
 [tool.djlint]
 ignore = "H021,H031,H037,D018"
+custom_blocks = "select"
 
 # DEPTRY
 

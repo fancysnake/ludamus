@@ -42,9 +42,17 @@ class TestTimeSlotsPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
+        # Pin event to a single local day so day count is predictable.
+        local_start = localtime(event.start_time).replace(
+            hour=10, minute=0, second=0, microsecond=0
+        )
+        event.start_time = local_start
+        event.end_time = local_start.replace(hour=18)
+        event.save()
 
         response = authenticated_client.get(self.get_url(event))
 
+        day = local_start.date()
         assert_response(
             response,
             HTTPStatus.OK,
@@ -63,10 +71,10 @@ class TestTimeSlotsPageView:
                 },
                 "active_nav": "cfp",
                 "time_slots": [],
-                "days": {event.start_time.date().isoformat(): []},
+                "days": {day.isoformat(): []},
                 "orphaned_slots": [],
                 "continuation_slots": set(),
-                "event_days": [event.start_time.date()],
+                "event_days": [day],
                 "page": 0,
                 "has_prev": False,
                 "has_next": False,
@@ -87,7 +95,9 @@ class TestTimeSlotsPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        day1 = event.start_time.replace(hour=10, minute=0, second=0, microsecond=0)
+        day1 = localtime(event.start_time).replace(
+            hour=10, minute=0, second=0, microsecond=0
+        )
         TimeSlot.objects.create(
             event=event, start_time=day1, end_time=day1 + timedelta(hours=2)
         )
@@ -110,7 +120,9 @@ class TestTimeSlotsPageView:
         sphere.managers.add(active_user)
         event.end_time = event.start_time + timedelta(days=2)
         event.save()
-        day1 = event.start_time.replace(hour=10, minute=0, second=0, microsecond=0)
+        day1 = localtime(event.start_time).replace(
+            hour=10, minute=0, second=0, microsecond=0
+        )
         day2 = day1 + timedelta(days=1)
         TimeSlot.objects.create(
             event=event, start_time=day1, end_time=day1 + timedelta(hours=2)
@@ -150,10 +162,11 @@ class TestTimeSlotsPageView:
         response = authenticated_client.get(self.get_url(event))
 
         event_days = response.context["event_days"]
+        local_start = localtime(event.start_time).date()
         assert len(event_days) == 1 + 2
-        assert event_days[0] == event.start_time.date()
-        assert event_days[1] == event.start_time.date() + timedelta(days=1)
-        assert event_days[2] == event.start_time.date() + timedelta(days=2)
+        assert event_days[0] == local_start
+        assert event_days[1] == local_start + timedelta(days=1)
+        assert event_days[2] == local_start + timedelta(days=2)
 
     def test_get_paginates_when_more_than_3_days(
         self, authenticated_client, active_user, sphere, event
@@ -164,7 +177,7 @@ class TestTimeSlotsPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        start = event.start_time.date()
+        start = localtime(event.start_time).date()
         assert_response(
             response,
             HTTPStatus.OK,
@@ -203,7 +216,7 @@ class TestTimeSlotsPageView:
 
         response = authenticated_client.get(self.get_url(event) + "?page=1")
 
-        start = event.start_time.date()
+        start = localtime(event.start_time).date()
         assert_response(
             response,
             HTTPStatus.OK,
@@ -251,18 +264,25 @@ class TestTimeSlotsPageView:
         orphaned = response.context["orphaned_slots"]
         assert len(orphaned) == 1
         assert orphaned[0] == TimeSlotDTO.model_validate(slot)
-        day_key = event.start_time.date().isoformat()
+        day_key = localtime(event.start_time).date().isoformat()
         assert all(s.pk != slot.pk for s in response.context["days"][day_key])
 
     def test_get_shows_orphaned_slots_after_event_end(
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        after_event = event.end_time + timedelta(days=1)
+        # Pin event to a single local day so "after event" is unambiguous.
+        local_start = localtime(event.start_time).replace(
+            hour=10, minute=0, second=0, microsecond=0
+        )
+        event.start_time = local_start
+        event.end_time = local_start.replace(hour=18)
+        event.save()
+        after_local = local_start + timedelta(days=2)
         slot = TimeSlot.objects.create(
             event=event,
-            start_time=after_event.replace(hour=10, minute=0, second=0, microsecond=0),
-            end_time=after_event.replace(hour=12, minute=0, second=0, microsecond=0),
+            start_time=after_local.replace(hour=10),
+            end_time=after_local.replace(hour=12),
         )
 
         response = authenticated_client.get(self.get_url(event))
@@ -277,19 +297,21 @@ class TestTimeSlotsPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        event.end_time = event.start_time + timedelta(days=1)
+        event.end_time = event.start_time + timedelta(days=2)
         event.save()
-        day1 = event.start_time.replace(hour=18, minute=0, second=0, microsecond=0)
-        day2_end = (event.start_time + timedelta(days=1)).replace(
-            hour=6, minute=0, second=0, microsecond=0
+        # Build times that span midnight in local time (Europe/Warsaw).
+        local_start = localtime(event.start_time)
+        day1_start = local_start.replace(hour=22, minute=0, second=0, microsecond=0)
+        day2_end = (day1_start + timedelta(days=1)).replace(hour=2, minute=0)
+        slot = TimeSlot.objects.create(
+            event=event, start_time=day1_start, end_time=day2_end
         )
-        slot = TimeSlot.objects.create(event=event, start_time=day1, end_time=day2_end)
 
         response = authenticated_client.get(self.get_url(event))
 
         days = response.context["days"]
-        day1_key = localtime(day1).date().isoformat()
-        day2_key = localtime(day2_end).date().isoformat()
+        day1_key = day1_start.date().isoformat()
+        day2_key = day2_end.date().isoformat()
         slot_dto = TimeSlotDTO.model_validate(slot)
         assert slot_dto in days[day1_key]
         assert slot_dto in days[day2_key]

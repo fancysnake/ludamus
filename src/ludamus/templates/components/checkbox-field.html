@@ -1,0 +1,10 @@
+{# Single checkbox with inline label. #}
+{# Variables: name, id, label, checked, has_errors #}
+<label class="inline-flex items-center cursor-pointer">
+    <input type="checkbox"
+           class="w-4 h-4 rounded border border-border accent-primary focus:ring-1 focus:ring-offset-0"
+           {% if id|default:"" %}id="{{ id }}"{% endif %}
+           name="{{ name }}"
+           {% if checked|default:False %}checked{% endif %}>
+    <span class="ml-2 text-sm text-foreground">{{ label }}</span>
+</label>
