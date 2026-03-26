@@ -118,7 +118,7 @@ test.describe('Backoffice Panel', () => {
     await page.goto('/panel/event/autumn-open/venues/');
 
     await expect(
-      page.getByRole('cell', { name: 'Convention Center' }),
+      page.getByRole('cell', { name: 'Convention Center', exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'New Venue' }),
@@ -726,33 +726,46 @@ test.describe('Backoffice Panel', () => {
   test('creates, edits, and deletes a time slot', async ({
     page,
   }) => {
-    // Navigate to time slots page and use the per-day "Add"
-    // link which pre-fills the date via ?date= param.
+    // Navigate to time slots page and extract event start info
     await page.goto(
       '/panel/event/autumn-open/cfp/time-slots/',
     );
 
-    // Click the per-day "Add" link (not the top-level button)
-    // This pre-fills the date field with the event day.
+    // Extract date from the per-day "Add" link's ?date= param
+    const addLink = page.getByRole('link', {
+      name: 'Add',
+      exact: true,
+    });
+    const addHref = await addLink.getAttribute('href');
+    const dateMatch = addHref?.match(
+      /date=(\d{4}-\d{2}-\d{2})/,
+    );
+    const dateStr = dateMatch?.[1] ?? '';
+
+    // Extract event start hour from "Event starts at HH:MM" text
+    const startsText = await page
+      .getByText(/Event starts at/)
+      .textContent();
+    const hourMatch = startsText?.match(
+      /starts at (\d{2}):(\d{2})/,
+    );
+    const baseHour = parseInt(hourMatch?.[1] ?? '9', 10);
+    const rawMin = parseInt(hourMatch?.[2] ?? '0', 10);
+    // Add 1 minute to avoid seconds-precision issue
+    const safeMin = rawMin + 1;
+    const pad = (n: number) =>
+      String(n).padStart(2, '0');
+
+    // Click the per-day "Add" link (pre-fills the date)
+    await addLink.click();
+
+    // Fill times 1h–2h into the event
     await page
-      .getByRole('link', { name: 'Add', exact: true })
-      .click();
-
-    // The event starts at bootstrap's now + 1 day and lasts 4h.
-    // Compute times 1h and 2h into the event using Date objects
-    // so hours wrap correctly across midnight.
-    const now = new Date();
-    const slotStart = new Date(
-      now.getTime() + 25 * 60 * 60 * 1000,
-    );
-    const slotEnd = new Date(
-      now.getTime() + 26 * 60 * 60 * 1000,
-    );
-    const fmt = (d: Date) =>
-      `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-
-    await page.locator('#id_start_time').fill(fmt(slotStart));
-    await page.locator('#id_end_time').fill(fmt(slotEnd));
+      .locator('#id_start_time')
+      .fill(`${pad(baseHour + 1)}:${pad(safeMin)}`);
+    await page
+      .locator('#id_end_time')
+      .fill(`${pad(baseHour + 2)}:${pad(safeMin)}`);
     await page.getByRole('button', { name: 'Create' }).click();
 
     await expect(
@@ -765,13 +778,13 @@ test.describe('Backoffice Panel', () => {
       .first()
       .click();
 
-    // Extend by 30 min
-    const slotEndExtended = new Date(
-      slotEnd.getTime() + 30 * 60 * 1000,
-    );
+    // Extend by 30 min (handle minute overflow)
+    const extMin = safeMin + 30;
+    const extHour =
+      baseHour + 2 + Math.floor(extMin / 60);
     await page
       .locator('#id_end_time')
-      .fill(fmt(slotEndExtended));
+      .fill(`${pad(extHour)}:${pad(extMin % 60)}`);
     await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(
