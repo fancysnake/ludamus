@@ -20,7 +20,14 @@ kanban
     [Test suite duration monitoring]@{ assigned: 'agent-readiness' }
     [Auto-generated technical docs]@{ assigned: 'agent-readiness' }
     [Architecture diagrams]@{ assigned: 'agent-readiness' }
-    [Priority/type/area labels]@{ assigned: 'agent-readiness' }
+    [Add screenshots/demo to README]@{ assigned: 'pre-launch' }
+    [Public docs/ARCHITECTURE.md - human-oriented version]@{
+      assigned: 'pre-launch'
+    }
+    [Review and clean up docs/ directory]@{ assigned: 'pre-launch' }
+    [Seed data management command - factory_boy + Faker]@{
+      assigned: 'pre-launch'
+    }
     [Request tracing]@{ assigned: 'agent-readiness' }
     [Engineering telemetry]@{ assigned: 'agent-readiness' }
     [Sentry with source maps]@{ assigned: 'agent-readiness' }
@@ -46,20 +53,49 @@ kanban
     [Isolated/parallel test execution]@{ assigned: 'agent-readiness' }
     [AGENTS.md file]@{ assigned: 'agent-readiness' }
     [Claude skills definitions]@{ assigned: 'agent-readiness' }
-    [Structured issue templates]@{ assigned: 'agent-readiness' }
-    [Pull request templates]@{ assigned: 'agent-readiness' }
+    [Issue templates - YAML forms, config.yml, disable blank issues]@{
+      assigned: 'pre-launch'
+    }
+    [PR template - checklist, under 40 lines]@{ assigned: 'pre-launch' }
     [Development container configuration]@{ assigned: 'agent-readiness' }
-    [CODEOWNERS file]@{ assigned: 'agent-readiness' }
+    [CODEOWNERS file]@{ assigned: 'pre-launch' }
     [Structured logging]@{ assigned: 'agent-readiness' }
     [Support Markdown in Session.description]@{
       assigned: 'sessions'
       ticket: 9
     }
     [Sphere creation command]@{ assigned: 'management', ticket: 14 }
-    [Add versioning and changelog]@{ assigned: 'documentation', ticket: 23 }
+    [Changelog - Keep a Changelog format, consider CalVer]@{
+      assigned: 'pre-launch', ticket: 23
+    }
+    [Resolve TODO comments - convert to GitHub issues]@{
+      assigned: 'pre-launch'
+    }
+    [Enable GitHub Discussions - Announcements, Ideas, Q&A, General, Show & Tell]@{
+      assigned: 'pre-launch'
+    }
+    [Label taxonomy + 3-5 good-first-issue starter issues]@{
+      assigned: 'pre-launch'
+    }
     [Venues rework]@{ assigned: 'panel', ticket: 155 }
 
   Roadmap
+    [Expand README.md - description, features, architecture, quick start]@{
+      assigned: 'pre-launch'
+    }
+    [Create CONTRIBUTING.md - dev setup, tests, code style, PR process]@{
+      assigned: 'pre-launch'
+    }
+    [Create CODE_OF_CONDUCT.md - Contributor Covenant v2.1]@{
+      assigned: 'pre-launch'
+    }
+    [Create SECURITY.md - vulnerability reporting, responsible disclosure]@{
+      assigned: 'pre-launch'
+    }
+    [Clean up internal files - gitignore or remove task/plan files, mockups]@{
+      assigned: 'pre-launch'
+    }
+    [Add project URLs to pyproject.toml]@{ assigned: 'pre-launch' }
     [Session hosts list - discount tiers and confirmation workflow]@{
       assigned: 'panel'
     }
