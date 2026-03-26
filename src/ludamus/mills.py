@@ -55,7 +55,9 @@ def generate_share_code(length: int = 6) -> str:
 
 
 def render_markdown(text: str) -> str:
-    result: str = _md.markdown(text, extensions=["nl2br", "fenced_code"])
+    result: str = _md.markdown(  # type: ignore [misc]
+        text, extensions=["nl2br", "fenced_code"]
+    )
     return result
 
 
@@ -340,7 +342,7 @@ class ProposeSessionService:
     def _save_session_field_values(
         self, session_id: int, event_id: int, session_data: object
     ) -> None:
-        data = session_data if isinstance(session_data, dict) else {}
+        data = session_data if isinstance(session_data, dict) else {}  # type: ignore [misc]
         values: list[SessionFieldValueData] = []
         for key, value in data.items():
             if not isinstance(key, str) or not key.startswith("session_"):

@@ -48,7 +48,6 @@ kanban
     [Door cards - printable room schedules]@{ assigned: 'panel' }
     [Konwencik app sync]@{ assigned: 'panel' }
     [Add gh cli]@{ assigned: 'agent-readiness' }
-    [TypeScript/mypy strict mode]@{ assigned: 'agent-readiness' }
     [Test coverage thresholds]@{ assigned: 'agent-readiness' }
     [Isolated/parallel test execution]@{ assigned: 'agent-readiness' }
     [AGENTS.md file]@{ assigned: 'agent-readiness' }
@@ -119,4 +118,7 @@ kanban
     }
     [Program categories - configurable submission forms]@{ assigned: 'panel' }
     [Event settings - discount tiers, submission periods]@{ assigned: 'panel' }
+
+  Done
+    [TypeScript/mypy strict mode]@{ assigned: 'agent-readiness' }
 ```

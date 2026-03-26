@@ -1008,7 +1008,9 @@ class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
     @staticmethod
-    def login_user(request: Any, user_slug: str) -> None: ...  # noqa: ANN401
+    def login_user(  # type: ignore [explicit-any]
+        request: Any, user_slug: str  # noqa: ANN401
+    ) -> None: ...
     @property
     def active_users(self) -> UserRepositoryProtocol: ...
     @property

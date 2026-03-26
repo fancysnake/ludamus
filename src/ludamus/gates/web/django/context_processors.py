@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 from django.conf import settings
 
@@ -10,19 +10,27 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
     from ludamus.adapters.web.django.middlewares import RootRepositoryRequest
+    from ludamus.pacts import SiteDTO, SphereDTO, UserDTO
 
 
-def sites(request: RootRepositoryRequest) -> dict[str, Any]:
+class SitesContextData(TypedDict):
+    root_site: SiteDTO | None
+    current_site: SiteDTO | None
+    current_sphere: SphereDTO | None
+    is_sphere_manager: bool
+
+
+def sites(request: RootRepositoryRequest) -> SitesContextData:
     # Context processor may run during error handling before middleware completes
     if not hasattr(request, "context") or not hasattr(
         request, "di"
     ):  # pragma: no cover
-        return {
-            "root_site": None,
-            "current_site": None,
-            "current_sphere": None,
-            "is_sphere_manager": False,
-        }
+        return SitesContextData(
+            root_site=None,
+            current_site=None,
+            current_sphere=None,
+            is_sphere_manager=False,
+        )
 
     sphere_repository = request.di.uow.spheres
     root_sphere = sphere_repository.read(request.context.root_sphere_id)
@@ -34,12 +42,12 @@ def sites(request: RootRepositoryRequest) -> dict[str, Any]:
             current_sphere.pk, request.context.current_user_slug
         )
 
-    return {
-        "root_site": sphere_repository.read_site(root_sphere.pk),
-        "current_site": sphere_repository.read_site(current_sphere.pk),
-        "current_sphere": current_sphere,
-        "is_sphere_manager": is_sphere_manager,
-    }
+    return SitesContextData(
+        root_site=sphere_repository.read_site(root_sphere.pk),
+        current_site=sphere_repository.read_site(current_sphere.pk),
+        current_sphere=current_sphere,
+        is_sphere_manager=is_sphere_manager,
+    )
 
 
 def support(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
@@ -50,25 +58,31 @@ def static_version(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
     return {"STATIC_VERSION": settings.STATIC_VERSION}
 
 
-def current_user(request: RootRepositoryRequest) -> dict[str, Any]:
+class CurrentUserContextData(TypedDict):
+    current_user_info: NotRequired[UserInfo]
+    current_connected_users: list[UserInfo]
+    current_user: UserDTO | None
+
+
+def current_user(request: RootRepositoryRequest) -> CurrentUserContextData:
     # Context processor may run during error handling before middleware completes
     if (
         not hasattr(request, "context")
         or not hasattr(request, "di")
         or not request.context.current_user_slug
     ):
-        return {"current_user": None, "current_connected_users": []}
+        return CurrentUserContextData(current_user=None, current_connected_users=[])
 
     user_dto = request.di.uow.active_users.read(request.context.current_user_slug)
-    return {
-        "current_user": user_dto,
-        "current_user_info": UserInfo.from_user_dto(
+    return CurrentUserContextData(
+        current_user=user_dto,
+        current_user_info=UserInfo.from_user_dto(
             user_dto, gravatar_url=request.di.gravatar_url
         ),
-        "current_connected_users": [
+        current_connected_users=[
             UserInfo.from_user_dto(u, gravatar_url=request.di.gravatar_url)
             for u in request.di.uow.connected_users.read_all(
                 request.context.current_user_slug
             )
         ],
-    }
+    )
