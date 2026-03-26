@@ -3,6 +3,7 @@ from http import HTTPStatus
 
 from django.contrib import messages
 from django.urls import reverse
+from django.utils.timezone import localtime
 
 from ludamus.adapters.db.django.models import TimeSlot
 from ludamus.pacts import EventDTO, TimeSlotDTO
@@ -278,17 +279,17 @@ class TestTimeSlotsPageView:
         sphere.managers.add(active_user)
         event.end_time = event.start_time + timedelta(days=1)
         event.save()
-        day1 = event.start_time.replace(hour=22, minute=0, second=0, microsecond=0)
+        day1 = event.start_time.replace(hour=18, minute=0, second=0, microsecond=0)
         day2_end = (event.start_time + timedelta(days=1)).replace(
-            hour=2, minute=0, second=0, microsecond=0
+            hour=6, minute=0, second=0, microsecond=0
         )
         slot = TimeSlot.objects.create(event=event, start_time=day1, end_time=day2_end)
 
         response = authenticated_client.get(self.get_url(event))
 
         days = response.context["days"]
-        day1_key = day1.date().isoformat()
-        day2_key = day2_end.date().isoformat()
+        day1_key = localtime(day1).date().isoformat()
+        day2_key = localtime(day2_end).date().isoformat()
         slot_dto = TimeSlotDTO.model_validate(slot)
         assert slot_dto in days[day1_key]
         assert slot_dto in days[day2_key]

@@ -428,10 +428,10 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         phone_field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
 
         response = authenticated_client.get(self.get_url(event, category))
@@ -459,6 +459,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=email_field.pk,
                         name="Email",
+                        question="What is your email?",
                         slug="email",
                         field_type="text",
                         order=0,
@@ -467,6 +468,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=phone_field.pk,
                         name="Phone",
+                        question="What is your phone?",
                         slug="phone",
                         field_type="text",
                         order=0,
@@ -494,10 +496,10 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         phone_field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=category, field=email_field, is_required=True
@@ -531,6 +533,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=email_field.pk,
                         name="Email",
+                        question="What is your email?",
                         slug="email",
                         field_type="text",
                         order=0,
@@ -539,6 +542,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=phone_field.pk,
                         name="Phone",
+                        question="What is your phone?",
                         slug="phone",
                         field_type="text",
                         order=0,
@@ -566,7 +570,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.get(self.get_url(event, category))
@@ -594,6 +598,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=email_field.pk,
                         name="Email",
+                        question="What is your email?",
                         slug="email",
                         field_type="text",
                         order=0,
@@ -621,7 +626,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.post(
@@ -648,7 +653,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         phone_field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
 
         response = authenticated_client.post(
@@ -675,7 +680,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         PersonalDataFieldRequirement.objects.create(
             category=category, field=email_field, is_required=True
@@ -704,7 +709,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         PersonalDataFieldRequirement.objects.create(
             category=category, field=email_field, is_required=True
@@ -734,13 +739,13 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         phone_field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         bio_field = PersonalDataField.objects.create(
-            event=event, name="Bio", slug="bio"
+            event=event, name="Bio", question="Tell us about yourself", slug="bio"
         )
 
         response = authenticated_client.post(
@@ -972,10 +977,13 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
         difficulty_field = SessionField.objects.create(
-            event=event, name="Difficulty", slug="difficulty"
+            event=event,
+            name="Difficulty",
+            question="What difficulty level?",
+            slug="difficulty",
         )
 
         response = authenticated_client.get(self.get_url(event, category))
@@ -1006,6 +1014,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=difficulty_field.pk,
                         name="Difficulty",
+                        question="What difficulty level?",
                         slug="difficulty",
                         field_type="text",
                         order=0,
@@ -1014,6 +1023,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=genre_field.pk,
                         name="Genre",
+                        question="What genre?",
                         slug="genre",
                         field_type="text",
                         order=0,
@@ -1038,10 +1048,13 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
         difficulty_field = SessionField.objects.create(
-            event=event, name="Difficulty", slug="difficulty"
+            event=event,
+            name="Difficulty",
+            question="What difficulty level?",
+            slug="difficulty",
         )
         SessionFieldRequirement.objects.create(
             category=category, field=genre_field, is_required=True
@@ -1078,6 +1091,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=genre_field.pk,
                         name="Genre",
+                        question="What genre?",
                         slug="genre",
                         field_type="text",
                         order=0,
@@ -1086,6 +1100,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=difficulty_field.pk,
                         name="Difficulty",
+                        question="What difficulty level?",
                         slug="difficulty",
                         field_type="text",
                         order=0,
@@ -1113,7 +1128,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
 
         response = authenticated_client.get(self.get_url(event, category))
@@ -1144,6 +1159,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=genre_field.pk,
                         name="Genre",
+                        question="What genre?",
                         slug="genre",
                         field_type="text",
                         order=0,
@@ -1168,7 +1184,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
 
         response = authenticated_client.post(
@@ -1198,7 +1214,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
 
         response = authenticated_client.post(
@@ -1228,7 +1244,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
         SessionFieldRequirement.objects.create(
             category=category, field=genre_field, is_required=True
@@ -1257,13 +1273,19 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
         difficulty_field = SessionField.objects.create(
-            event=event, name="Difficulty", slug="difficulty"
+            event=event,
+            name="Difficulty",
+            question="What difficulty level?",
+            slug="difficulty",
         )
         system_field = SessionField.objects.create(
-            event=event, name="System", slug="system"
+            event=event,
+            name="System",
+            question="What RPG system will you use?",
+            slug="system",
         )
 
         response = authenticated_client.post(
@@ -1308,10 +1330,10 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         phone_field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=category, field=email_field, is_required=True, order=1
@@ -1347,6 +1369,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=phone_field.pk,
                         name="Phone",
+                        question="What is your phone?",
                         slug="phone",
                         field_type="text",
                         order=0,
@@ -1355,6 +1378,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=email_field.pk,
                         name="Email",
+                        question="What is your email?",
                         slug="email",
                         field_type="text",
                         order=0,
@@ -1383,10 +1407,10 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         phone_field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         # Only email has a saved order requirement
         PersonalDataFieldRequirement.objects.create(
@@ -1421,6 +1445,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=email_field.pk,
                         name="Email",
+                        question="What is your email?",
                         slug="email",
                         field_type="text",
                         order=0,
@@ -1429,6 +1454,7 @@ class TestCFPEditPageView:
                     PersonalDataFieldDTO(
                         pk=phone_field.pk,
                         name="Phone",
+                        question="What is your phone?",
                         slug="phone",
                         field_type="text",
                         order=0,
@@ -1499,10 +1525,10 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         phone_field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
 
         response = authenticated_client.post(
@@ -1538,10 +1564,13 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
         difficulty_field = SessionField.objects.create(
-            event=event, name="Difficulty", slug="difficulty"
+            event=event,
+            name="Difficulty",
+            question="What difficulty level?",
+            slug="difficulty",
         )
         SessionFieldRequirement.objects.create(
             category=category, field=genre_field, is_required=True, order=1
@@ -1579,6 +1608,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=difficulty_field.pk,
                         name="Difficulty",
+                        question="What difficulty level?",
                         slug="difficulty",
                         field_type="text",
                         order=0,
@@ -1587,6 +1617,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=genre_field.pk,
                         name="Genre",
+                        question="What genre?",
                         slug="genre",
                         field_type="text",
                         order=0,
@@ -1615,10 +1646,13 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
         difficulty_field = SessionField.objects.create(
-            event=event, name="Difficulty", slug="difficulty"
+            event=event,
+            name="Difficulty",
+            question="What difficulty level?",
+            slug="difficulty",
         )
         # Only genre has a saved order requirement
         SessionFieldRequirement.objects.create(
@@ -1655,6 +1689,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=genre_field.pk,
                         name="Genre",
+                        question="What genre?",
                         slug="genre",
                         field_type="text",
                         order=0,
@@ -1663,6 +1698,7 @@ class TestCFPEditPageView:
                     SessionFieldDTO(
                         pk=difficulty_field.pk,
                         name="Difficulty",
+                        question="What difficulty level?",
                         slug="difficulty",
                         field_type="text",
                         order=0,
@@ -1730,10 +1766,13 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         genre_field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre"
+            event=event, name="Genre", question="What genre?", slug="genre"
         )
         difficulty_field = SessionField.objects.create(
-            event=event, name="Difficulty", slug="difficulty"
+            event=event,
+            name="Difficulty",
+            question="What difficulty level?",
+            slug="difficulty",
         )
 
         response = authenticated_client.post(
@@ -1912,7 +1951,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", field_type="text"
+            event=event, name="Email", question="What is your email?", field_type="text"
         )
         # Setup: field is required and a host has filled in data
         PersonalDataFieldRequirement.objects.create(
@@ -1947,7 +1986,7 @@ class TestCFPEditPageView:
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
         email_field = PersonalDataField.objects.create(
-            event=event, name="Email", field_type="text"
+            event=event, name="Email", question="What is your email?", field_type="text"
         )
         # Setup: existing proposal without the field requirement
         host = UserFactory.create()
@@ -2345,3 +2384,85 @@ class TestCFPEditPageView:
                 "proposal_count": 0,
             },
         )
+
+    # Participant limits tests
+
+    def test_post_saves_participant_limits(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                "min_participants_limit": "3",
+                "max_participants_limit": "10",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.min_participants_limit == int("3")
+        assert category.max_participants_limit == int("10")
+
+    def test_post_saves_zero_limits(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event,
+            name="RPG Sessions",
+            slug="rpg-sessions",
+            min_participants_limit=5,
+            max_participants_limit=20,
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category),
+            data={
+                "name": "RPG Sessions",
+                "min_participants_limit": "0",
+                "max_participants_limit": "0",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.min_participants_limit == 0
+        assert category.max_participants_limit == 0
+
+    def test_post_empty_limits_default_to_zero(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(
+            event=event, name="RPG Sessions", slug="rpg-sessions"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, category), data={"name": "RPG Sessions"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session type updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/",
+        )
+        category.refresh_from_db()
+        assert category.min_participants_limit == 0
+        assert category.max_participants_limit == 0

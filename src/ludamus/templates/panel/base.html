@@ -8,12 +8,11 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>
-            {% block title %}
-                Ludamus Backoffice
-            {% endblock title %}
-        </title>
+            {% block title_prefix %}
+            {% endblock title_prefix %}
+        {{ current_sphere.name }}</title>
         <meta name="description"
-              content="Ludamus backoffice panel for event management">
+              content="{{ current_sphere.name }} backoffice panel for event management">
         <meta name="keywords" content="ludamus, backoffice, events, management">
         <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
         <link rel="stylesheet"
@@ -27,11 +26,19 @@
             .sidebar-panel {
                 transition: transform 0.3s ease-in-out;
             }
+
+            .sidebar-scroll {
+                scrollbar-width: none;
+            }
+
+            .sidebar-scroll::-webkit-scrollbar {
+                display: none;
+            }
         </style>
         {% block extra_head %}
         {% endblock extra_head %}
     </head>
-    <body class="bg-neutral-50 min-h-screen">
+    <body class="bg-background min-h-screen">
         <div class="flex min-h-screen">
             <!-- Mobile Sidebar Overlay -->
             <div id="sidebarOverlay"
@@ -40,62 +47,69 @@
             </div>
             <!-- Sidebar -->
             <aside id="sidebar"
-                   class="sidebar-panel w-64 bg-neutral-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0 overflow-y-auto">
-                <div class="p-6">
-                    <h1 class="text-2xl font-bold text-primary">Ludamus</h1>
-                    <p class="text-neutral-400 text-sm">{% translate "Backoffice" %}</p>
-                </div>
-                <!-- Event Selector -->
-                {% if events %}
-                    <div class="px-4 mb-6">
-                        <label class="text-xs text-neutral-500 uppercase tracking-wider">{% translate "Event" %}</label>
-                        <div class="relative mt-1">
-                            <select id="eventSelector"
-                                    class="w-full appearance-none bg-neutral-800 border border-neutral-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                    hx-on:change="window.location.href = '/panel/event/' + this.value + '/'">
-                                {% for event in events %}
-                                    <option value="{{ event.slug }}"
-                                            {% if current_event and current_event.slug == event.slug %}selected{% endif %}>
-                                        {{ event.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <svg class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400"
-                                 viewBox="0 0 20 20"
-                                 fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
+                   class="sidebar-panel w-64 bg-neutral-900 text-white flex-shrink-0 fixed h-full z-50 -translate-x-full lg:translate-x-0 flex flex-col">
+                <div class="sidebar-scroll flex-1 overflow-y-auto min-h-0">
+                    <div class="p-6">
+                        <h1 class="text-2xl font-bold text-primary">{{ current_sphere.name }}</h1>
+                        <p class="text-neutral-400 text-sm">{% translate "Backoffice" %}</p>
                     </div>
-                {% endif %}
-                <nav class="px-4 space-y-1">
-                    {% block sidebar_nav %}
-                        <a href="{% url 'panel:event-index' slug=current_event.slug %}"
-                           class="flex items-center px-4 py-3 {% if active_nav == 'index' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
-                            {% icon "home" class="w-5 h-5 mr-3" %}
-                            {% translate "Dashboard" %}
-                        </a>
-                        <a href="{% url 'panel:cfp' slug=current_event.slug %}"
-                           class="flex items-center px-4 py-3 {% if active_nav == 'cfp' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
-                            {% icon "rectangle-stack" class="w-5 h-5 mr-3" %}
-                            {% translate "Call for Proposals" %}
-                        </a>
-                        <a href="{% url 'panel:venues' slug=current_event.slug %}"
-                           class="flex items-center px-4 py-3 {% if active_nav == 'venues' %}text-white bg-gray-800{% else %}text-gray-300 hover:bg-gray-800{% endif %} rounded-lg transition">
-                            {% icon "building-office-2" class="w-5 h-5 mr-3" %}
-                            {% translate "Venues" %}
-                        </a>
-                        <div class="pt-4 mt-4 border-t border-neutral-800">
-                            <p class="px-4 text-xs text-neutral-500 uppercase tracking-wider mb-2">{% translate "Settings" %}</p>
-                            <a href="{% url 'panel:event-settings' slug=current_event.slug %}"
-                               class="flex items-center px-4 py-3 {% if active_nav == 'settings' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
-                                {% icon "cog-6-tooth" class="w-5 h-5 mr-3" %}
-                                {% translate "Event Settings" %}
-                            </a>
+                    <!-- Event Selector -->
+                    {% if events %}
+                        <div class="px-4 mb-6">
+                            <label class="text-xs text-neutral-500 uppercase tracking-wider">{% translate "Event" %}</label>
+                            <div class="relative mt-1">
+                                <select id="eventSelector"
+                                        class="w-full appearance-none bg-neutral-800 border border-neutral-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                        hx-on:change="window.location.href = '/panel/event/' + this.value + '/'">
+                                    {% for event in events %}
+                                        <option value="{{ event.slug }}"
+                                                {% if current_event and current_event.slug == event.slug %}selected{% endif %}>
+                                            {{ event.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <svg class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
                         </div>
-                    {% endblock sidebar_nav %}
-                </nav>
-                <div class="absolute bottom-0 w-64 p-4 border-t border-neutral-800 bg-neutral-900">
+                    {% endif %}
+                    <nav class="px-4 space-y-1">
+                        {% block sidebar_nav %}
+                            <a href="{% url 'panel:event-index' slug=current_event.slug %}"
+                               class="flex items-center px-4 py-3 {% if active_nav == 'index' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
+                                {% icon "home" class="w-5 h-5 mr-3" %}
+                                {% translate "Dashboard" %}
+                            </a>
+                            <a href="{% url 'panel:cfp' slug=current_event.slug %}"
+                               class="flex items-center px-4 py-3 {% if active_nav == 'cfp' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
+                                {% icon "rectangle-stack" class="w-5 h-5 mr-3" %}
+                                {% translate "Call for Proposals" %}
+                            </a>
+                            <a href="{% url 'panel:proposals' slug=current_event.slug %}"
+                               class="flex items-center px-4 py-3 {% if active_nav == 'proposals' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
+                                {% icon "document-text" class="w-5 h-5 mr-3" %}
+                                {% translate "Proposals" %}
+                            </a>
+                            <a href="{% url 'panel:venues' slug=current_event.slug %}"
+                               class="flex items-center px-4 py-3 {% if active_nav == 'venues' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
+                                {% icon "building-office-2" class="w-5 h-5 mr-3" %}
+                                {% translate "Venues" %}
+                            </a>
+                            <div class="pt-4 mt-4 border-t border-neutral-800">
+                                <p class="px-4 text-xs text-neutral-500 uppercase tracking-wider mb-2">{% translate "Settings" %}</p>
+                                <a href="{% url 'panel:event-settings' slug=current_event.slug %}"
+                                   class="flex items-center px-4 py-3 {% if active_nav == 'settings' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
+                                    {% icon "cog-6-tooth" class="w-5 h-5 mr-3" %}
+                                    {% translate "Event Settings" %}
+                                </a>
+                            </div>
+                        {% endblock sidebar_nav %}
+                    </nav>
+                </div>
+                <div class="flex-shrink-0 p-4 border-t border-neutral-800 bg-neutral-900">
                     <a href="{% url 'web:index' %}"
                        class="flex items-center px-4 py-2 mb-4 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg transition">
                         {% icon "arrow-left" class="w-5 h-5 mr-3" %}
@@ -116,7 +130,7 @@
             <main class="flex-1 lg:ml-64">
                 <!-- Top Bar -->
                 <header class="bg-white border-b border-neutral-200 px-3 sm:px-4 lg:px-8 py-3 sm:py-4 sticky top-0 z-10">
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                         <!-- Mobile menu button -->
                         <button hx-on:click="document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden')"
                                 class="lg:hidden p-2 -ml-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg flex-shrink-0">
@@ -141,7 +155,7 @@
                                         {% translate "Event:" %} <strong>{{ current_event.start_time|date:"d M" }} - {{ current_event.end_time|date:"d M Y" }}</strong>
                                     </span>
                                     {% if is_proposal_active %}
-                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full whitespace-nowrap">{% translate "Proposals Open" %}</span>
+                                        <span class="px-3 py-1 bg-[var(--theme-success-bg)] text-[var(--theme-success-text)] text-sm rounded-full whitespace-nowrap">{% translate "Proposals Open" %}</span>
                                     {% else %}
                                         <span class="px-3 py-1 bg-neutral-100 text-neutral-700 text-sm rounded-full whitespace-nowrap">{% translate "Proposals Closed" %}</span>
                                     {% endif %}
@@ -154,7 +168,7 @@
                 {% if messages %}
                     <div class="p-3 sm:p-4 lg:px-8 lg:pt-4 lg:pb-0 space-y-2">
                         {% for message in messages %}
-                            <div class="{% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-800{% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %} border rounded-lg p-4 flex items-start">
+                            <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} flex items-start">
                                 {% if message.tags == 'error' %}
                                     {% icon "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
                                 {% elif message.tags == 'warning' %}

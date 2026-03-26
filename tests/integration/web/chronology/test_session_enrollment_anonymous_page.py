@@ -325,8 +325,14 @@ class TestSessionEnrollmentAnonymousPageView:
     ):
         session = agenda_item.session
         session.min_age = 12
-        session.participants_limit = 0
+        session.participants_limit = 1
         session.save()
+        filler_user = anonymous_user_factory()
+        SessionParticipation.objects.create(
+            session=session,
+            user=filler_user,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
         user = anonymous_user_factory()
         session = client.session
         session["anonymous_enrollment_active"] = True

@@ -59,6 +59,25 @@ class ProposalDTO(BaseModel):
     title: str
 
 
+class ProposalListItemDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    category_name: str
+    creation_time: datetime
+    host_name: str
+    pk: int
+    session_status: "SessionStatus"
+    title: str
+
+
+class SessionFieldValueDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    field_name: str
+    field_question: str
+    value: str | list[str] | bool
+
+
 class AgendaItemDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -72,6 +91,7 @@ class SessionDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     category_id: int | None
+    contact_email: str
     creation_time: datetime
     description: str
     min_age: int
@@ -80,7 +100,7 @@ class SessionDTO(BaseModel):
     participants_limit: int
     pk: int
     presenter_id: int | None
-    presenter_name: str
+    display_name: str
     requirements: str
     slug: str
     status: SessionStatus
@@ -105,12 +125,13 @@ class PendingSessionTimeSlotDTO(BaseModel):
 class PendingSessionDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    contact_email: str
     creation_time: datetime
     description: str
     needs: str
     participants_limit: int
     pk: int
-    presenter_name: str
+    display_name: str
     requirements: str
     tags: list[PendingSessionTagDTO]
     time_slots: list[PendingSessionTimeSlotDTO]
@@ -230,12 +251,13 @@ class TagDTO(BaseModel):
 
 class SessionData(TypedDict, total=False):
     category_id: int | None
+    contact_email: str
     description: str
     min_age: int
     needs: str
     participants_limit: int
     presenter_id: int | None
-    presenter_name: str
+    display_name: str
     requirements: str
     slug: str
     sphere_id: int
@@ -244,7 +266,7 @@ class SessionData(TypedDict, total=False):
 
 
 class SessionUpdateData(TypedDict, total=False):
-    presenter_name: str
+    display_name: str
     slug: str
     status: SessionStatus
 
@@ -309,6 +331,7 @@ class EventDTO(BaseModel):
     end_time: datetime
     name: str
     pk: int
+    proposal_description: str = ""
     proposal_end_time: datetime | None
     proposal_start_time: datetime | None
     publication_time: datetime | None
@@ -422,6 +445,8 @@ class ProposalCategoryData(TypedDict, total=False):
     description: str
     durations: list[str]
     end_time: datetime | None
+    max_participants_limit: int
+    min_participants_limit: int
     name: str
     start_time: datetime | None
 
@@ -450,12 +475,14 @@ class PersonalDataFieldDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     allow_custom: bool = False
-    field_type: Literal["text", "select"]
+    field_type: Literal["text", "select", "checkbox"]
+    help_text: str = ""
     is_multiple: bool = False
     name: str
     options: list[PersonalDataFieldOptionDTO] = []
     order: int
     pk: int
+    question: str
     slug: str
 
 
@@ -476,12 +503,14 @@ class SessionFieldDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     allow_custom: bool = False
-    field_type: Literal["text", "select"]
+    field_type: Literal["text", "select", "checkbox"]
+    help_text: str = ""
     is_multiple: bool = False
     name: str
     options: list[SessionFieldOptionDTO] = []
     order: int
     pk: int
+    question: str
     slug: str
 
 
@@ -507,18 +536,19 @@ class TimeSlotRequirementDTO(BaseModel):
 class SessionFieldValueData(TypedDict):
     session_id: int
     field_id: int
-    value: str
+    value: str | list[str] | bool
 
 
 class HostPersonalDataEntry(TypedDict):
     user_id: int
     event_id: int
     field_id: int
-    value: str
+    value: str | list[str] | bool
 
 
 class WizardData(TypedDict, total=False):
     category_id: int
+    contact_email: str
     personal_data: dict[str, str]
     session_data: dict[str, object]
     time_slot_ids: list[int]
@@ -639,6 +669,14 @@ class ProposalRepositoryProtocol(Protocol):
     def create_from_session(
         category_id: int, host_id: int, session_id: int, session_data: SessionData
     ) -> None: ...
+    @staticmethod
+    def list_proposals_by_event(
+        event_id: int,
+        *,
+        host_name: str | None = None,
+        field_filters: dict[int, str] | None = None,
+        search: str | None = None,
+    ) -> list[ProposalListItemDTO]: ...
 
 
 class SessionRepositoryProtocol(Protocol):
@@ -684,6 +722,8 @@ class SessionRepositoryProtocol(Protocol):
     def save_field_values(
         session_id: int, values: list[SessionFieldValueData]
     ) -> None: ...
+    @staticmethod
+    def read_field_values(session_id: int) -> list[SessionFieldValueDTO]: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):
@@ -715,6 +755,8 @@ class EventRepositoryProtocol(Protocol):
     def get_stats_data(event_id: int) -> EventStatsData: ...
     @staticmethod
     def update_name(event_id: int, name: str) -> None: ...
+    @staticmethod
+    def update_proposal_description(event_id: int, description: str) -> None: ...
 
 
 class VenueRepositoryProtocol(Protocol):
@@ -766,7 +808,7 @@ class SpaceRepositoryProtocol(Protocol):
     def has_sessions(pk: int) -> bool: ...
 
 
-class ProposalCategoryRepositoryProtocol(Protocol):
+class ProposalCategoryRepositoryProtocol(Protocol):  # noqa: PLR0904 — split planned
     def create(self, event_id: int, name: str) -> ProposalCategoryDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -816,6 +858,12 @@ class ProposalCategoryRepositoryProtocol(Protocol):
     def set_time_slot_requirements(
         category_id: int, requirements: dict[int, bool], order: list[int] | None = None
     ) -> None: ...
+    @staticmethod
+    def add_field_to_categories(field_id: int, categories: dict[int, bool]) -> None: ...
+    @staticmethod
+    def add_session_field_to_categories(
+        field_id: int, categories: dict[int, bool]
+    ) -> None: ...
     def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO: ...
 
 
@@ -824,11 +872,13 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
         self,
         event_id: int,
         name: str,
-        field_type: Literal["text", "select"] = "text",
+        question: str,
+        field_type: Literal["text", "select", "checkbox"] = "text",
         options: list[str] | None = None,
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        help_text: str = "",
     ) -> PersonalDataFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -836,7 +886,9 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
     def has_requirements(pk: int) -> bool: ...
     def list_by_event(self, event_id: int) -> list[PersonalDataFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> PersonalDataFieldDTO: ...
-    def update(self, pk: int, name: str) -> PersonalDataFieldDTO: ...
+    def update(
+        self, pk: int, name: str, question: str, *, help_text: str = ""
+    ) -> PersonalDataFieldDTO: ...
 
 
 class SessionFieldRepositoryProtocol(Protocol):
@@ -844,11 +896,13 @@ class SessionFieldRepositoryProtocol(Protocol):
         self,
         event_id: int,
         name: str,
-        field_type: Literal["text", "select"] = "text",
+        question: str,
+        field_type: Literal["text", "select", "checkbox"] = "text",
         options: list[str] | None = None,
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        help_text: str = "",
     ) -> SessionFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -856,7 +910,9 @@ class SessionFieldRepositoryProtocol(Protocol):
     def has_requirements(pk: int) -> bool: ...
     def list_by_event(self, event_id: int) -> list[SessionFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO: ...
-    def update(self, pk: int, name: str) -> SessionFieldDTO: ...
+    def update(
+        self, pk: int, name: str, question: str, *, help_text: str = ""
+    ) -> SessionFieldDTO: ...
 
 
 class TimeSlotRepositoryProtocol(Protocol):
@@ -943,7 +999,9 @@ class HostPersonalDataRepositoryProtocol(Protocol):
     @staticmethod
     def save(entries: list[HostPersonalDataEntry]) -> None: ...
     @staticmethod
-    def read_for_user_event(user_id: int, event_id: int) -> dict[str, str]: ...
+    def read_for_user_event(
+        user_id: int, event_id: int
+    ) -> dict[str, str | list[str] | bool]: ...
 
 
 class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904

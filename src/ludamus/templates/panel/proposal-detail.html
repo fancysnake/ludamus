@@ -1,0 +1,110 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% load cfp_tags %}
+{% block title_prefix %}
+    {{ proposal.title }} - {% translate "Proposals" %} -
+{% endblock title_prefix %}
+{% block page_title %}
+    {{ proposal.title }}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Proposal Details" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block content %}
+    {% if current_event %}
+        <nav class="mb-4 text-sm">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a href="{% url 'panel:proposals' slug=current_event.slug %}"
+                       class="text-foreground-muted hover:text-primary">{% translate "Proposals" %}</a>
+                </li>
+                <li class="text-foreground-muted/50">/</li>
+                <li class="text-foreground font-medium">{{ proposal.title }}</li>
+            </ol>
+        </nav>
+        <div class="card mb-6">
+            <div class="card-body">
+                <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Host" %}</h3>
+                <p class="text-foreground">{{ host.name }}</p>
+                {% if host.email %}<p class="text-sm text-foreground-muted">{{ host.email }}</p>{% endif %}
+            </div>
+        </div>
+        {% if proposal.description %}
+            <div class="card mb-6">
+                <div class="card-body">
+                    <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Description" %}</h3>
+                    <p class="text-foreground whitespace-pre-wrap">{{ proposal.description }}</p>
+                </div>
+            </div>
+        {% endif %}
+        {% if proposal.requirements %}
+            <div class="card mb-6">
+                <div class="card-body">
+                    <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Requirements" %}</h3>
+                    <p class="text-foreground whitespace-pre-wrap">{{ proposal.requirements }}</p>
+                </div>
+            </div>
+        {% endif %}
+        {% if proposal.needs %}
+            <div class="card mb-6">
+                <div class="card-body">
+                    <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Needs" %}</h3>
+                    <p class="text-foreground whitespace-pre-wrap">{{ proposal.needs }}</p>
+                </div>
+            </div>
+        {% endif %}
+        <div class="card mb-6">
+            <div class="card-body">
+                <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Details" %}</h3>
+                <dl class="grid grid-cols-2 gap-4">
+                    <div>
+                        <dt class="text-xs text-foreground-muted">{% translate "Participants Limit" %}</dt>
+                        <dd class="text-foreground">
+                            {{ proposal.participants_limit|default_if_none:"—" }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-foreground-muted">{% translate "Minimum Age" %}</dt>
+                        <dd class="text-foreground">
+                            {{ proposal.min_age }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+        {% if tags %}
+            <div class="card mb-6">
+                <div class="card-body">
+                    <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Tags" %}</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for tag in tags %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700">
+                                {{ tag.name }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if field_values %}
+            <div class="card mb-6">
+                <div class="card-body">
+                    <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Session Fields" %}</h3>
+                    <dl class="space-y-3">
+                        {% for fv in field_values %}
+                            <div>
+                                <dt class="text-xs text-foreground-muted">{{ fv.field_name }}</dt>
+                                <dd class="text-foreground">
+                                    {{ fv.value|format_field_value }}
+                                </dd>
+                            </div>
+                        {% endfor %}
+                    </dl>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock content %}
