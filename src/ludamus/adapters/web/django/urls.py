@@ -1,6 +1,7 @@
 from django.urls import URLPattern, URLResolver, include, path
 from django.views.generic.base import TemplateView
 
+from ludamus.gates.web.django.chronology.urls import urlpatterns as chronology_gate_urls
 from ludamus.gates.web.django.notice_board.urls import (
     authenticated_urlpatterns as encounter_authenticated,
 )
@@ -60,6 +61,7 @@ crowd_urls: list[URLPattern | URLResolver] = [
 ]
 
 chronology_urls = [
+    *chronology_gate_urls,
     path("event/<str:slug>/", views.EventPageView.as_view(), name="event"),
     path(
         "session/<int:session_id>/enrollment/",

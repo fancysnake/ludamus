@@ -756,6 +756,7 @@ class ProposalCategory(models.Model):
     # ID
     name = models.CharField(max_length=255)
     slug = models.SlugField()
+    description = models.TextField(blank=True, default="")
     # Time
     start_time = models.DateTimeField(blank=True, null=True)
     end_time = models.DateTimeField(blank=True, null=True)
@@ -1030,6 +1031,33 @@ class SessionFieldRequirement(models.Model):
     def __str__(self) -> str:
         req = "required" if self.is_required else "optional"
         return f"{self.field.name} ({req}) for {self.category.name}"
+
+
+class SessionFieldValue(models.Model):
+    """Stores a session field value for a specific session."""
+
+    session = models.ForeignKey(
+        Session, on_delete=models.CASCADE, related_name="field_values"
+    )
+    field = models.ForeignKey(
+        SessionField, on_delete=models.CASCADE, related_name="values"
+    )
+    value = models.TextField(blank=True, default="")
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "session_field_value"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("session", "field"),
+                name="unique_session_field_value_per_session",
+            ),
+        )
+
+    def __str__(self) -> str:
+        value_preview = str(self.value)[:50]
+        return f"{self.field.name}: {value_preview}"
 
 
 class TimeSlotRequirement(models.Model):

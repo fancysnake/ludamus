@@ -14,6 +14,7 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
+    HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
     PersonalDataFieldRequirement,
@@ -23,6 +24,7 @@ from ludamus.adapters.db.django.models import (
     SessionField,
     SessionFieldOption,
     SessionFieldRequirement,
+    SessionFieldValue,
     Space,
     Sphere,
     Tag,
@@ -49,6 +51,8 @@ from ludamus.pacts import (
     EventDTO,
     EventRepositoryProtocol,
     EventStatsData,
+    HostPersonalDataEntry,
+    HostPersonalDataRepositoryProtocol,
     NotFoundError,
     PendingSessionDTO,
     PendingSessionTagDTO,
@@ -56,6 +60,7 @@ from ludamus.pacts import (
     PersonalDataFieldDTO,
     PersonalDataFieldOptionDTO,
     PersonalDataFieldRepositoryProtocol,
+    PersonalFieldRequirementDTO,
     ProposalCategoryData,
     ProposalCategoryDTO,
     ProposalCategoryRepositoryProtocol,
@@ -66,6 +71,8 @@ from ludamus.pacts import (
     SessionFieldDTO,
     SessionFieldOptionDTO,
     SessionFieldRepositoryProtocol,
+    SessionFieldRequirementDTO,
+    SessionFieldValueData,
     SessionRepositoryProtocol,
     SessionStatus,
     SessionUpdateData,
@@ -78,6 +85,7 @@ from ludamus.pacts import (
     TagDTO,
     TimeSlotDTO,
     TimeSlotRepositoryProtocol,
+    TimeSlotRequirementDTO,
     UserData,
     UserDTO,
     UserEnrollmentConfigData,
@@ -242,6 +250,23 @@ class ProposalRepository(ProposalRepositoryProtocol):
             for tag in proposal.category.tag_categories.all()
         ]
 
+    @staticmethod
+    def create_from_session(
+        category_id: int, host_id: int, session_id: int, session_data: SessionData
+    ) -> None:
+        # TODO(deploy-3): Remove Proposal dual-write after migration completes.
+        Proposal.objects.create(
+            category_id=category_id,
+            host_id=host_id,
+            title=session_data["title"],
+            description=session_data.get("description", ""),
+            requirements="",
+            needs="",
+            participants_limit=session_data.get("participants_limit", 0),
+            min_age=0,
+            session_id=session_id,
+        )
+
 
 class SessionRepository(SessionRepositoryProtocol):
     @staticmethod
@@ -402,6 +427,21 @@ class SessionRepository(SessionRepositoryProtocol):
     def read_preferred_time_slot_ids(session_id: int) -> list[int]:
         return list(
             TimeSlot.objects.filter(session__id=session_id).values_list("id", flat=True)
+        )
+
+    @staticmethod
+    def slug_exists(sphere_id: int, slug: str) -> bool:
+        return Session.objects.filter(sphere_id=sphere_id, slug=slug).exists()
+
+    @staticmethod
+    def save_field_values(session_id: int, values: list[SessionFieldValueData]) -> None:
+        SessionFieldValue.objects.bulk_create(
+            [
+                SessionFieldValue(
+                    session_id=session_id, field_id=v["field_id"], value=v["value"]
+                )
+                for v in values
+            ]
         )
 
 
@@ -1211,7 +1251,7 @@ class SpaceRepository(SpaceRepositoryProtocol):
         return slug
 
 
-class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
+class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: PLR0904
     def create(self, event_id: int, name: str) -> ProposalCategoryDTO:
         base_slug = slugify(name)
         slug = self.generate_unique_slug(event_id, base_slug)
@@ -1247,6 +1287,10 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
             )
             category.name = name
             category.slug = slug
+            needs_save = True
+
+        if "description" in data and category.description != data["description"]:
+            category.description = data["description"]
             needs_save = True
 
         if "start_time" in data and category.start_time != data["start_time"]:
@@ -1455,6 +1499,96 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):
                 is_required=is_required,
                 order=order_map.get(time_slot_id, 0),
             )
+
+    @staticmethod
+    def read(pk: int, event_id: int) -> ProposalCategoryDTO:
+        try:
+            category = ProposalCategory.objects.get(pk=pk, event_id=event_id)
+        except ProposalCategory.DoesNotExist as exception:
+            raise NotFoundError from exception
+        return ProposalCategoryDTO.model_validate(category)
+
+    @staticmethod
+    def list_personal_field_requirements(
+        category_id: int,
+    ) -> list[PersonalFieldRequirementDTO]:
+        requirements = (
+            PersonalDataFieldRequirement.objects.filter(category_id=category_id)
+            .select_related("field")
+            .prefetch_related("field__options")
+            .order_by("order", "field__name")
+        )
+        result = []
+        for req in requirements:
+            field = req.field
+            options = [
+                PersonalDataFieldOptionDTO.model_validate(o)
+                for o in field.options.all().order_by("order", "label")
+            ]
+            field_dto = PersonalDataFieldDTO(
+                allow_custom=field.allow_custom,
+                field_type=cast("Literal['text', 'select']", field.field_type),
+                is_multiple=field.is_multiple,
+                name=field.name,
+                options=options,
+                order=field.order,
+                pk=field.pk,
+                slug=field.slug,
+            )
+            result.append(
+                PersonalFieldRequirementDTO(
+                    field=field_dto, is_required=req.is_required
+                )
+            )
+        return result
+
+    @staticmethod
+    def list_session_field_requirements(
+        category_id: int,
+    ) -> list[SessionFieldRequirementDTO]:
+        requirements = (
+            SessionFieldRequirement.objects.filter(category_id=category_id)
+            .select_related("field")
+            .prefetch_related("field__options")
+            .order_by("order", "field__name")
+        )
+        result = []
+        for req in requirements:
+            field = req.field
+            options = [
+                SessionFieldOptionDTO.model_validate(o)
+                for o in field.options.all().order_by("order", "label")
+            ]
+            field_dto = SessionFieldDTO(
+                allow_custom=field.allow_custom,
+                field_type=cast("Literal['text', 'select']", field.field_type),
+                is_multiple=field.is_multiple,
+                name=field.name,
+                options=options,
+                order=field.order,
+                pk=field.pk,
+                slug=field.slug,
+            )
+            result.append(
+                SessionFieldRequirementDTO(field=field_dto, is_required=req.is_required)
+            )
+        return result
+
+    @staticmethod
+    def list_time_slot_requirements(category_id: int) -> list[TimeSlotRequirementDTO]:
+        requirements = (
+            TimeSlotRequirement.objects.filter(category_id=category_id)
+            .select_related("time_slot")
+            .order_by("order", "time_slot__start_time")
+        )
+        return [
+            TimeSlotRequirementDTO(
+                time_slot=TimeSlotDTO.model_validate(req.time_slot),
+                time_slot_id=req.time_slot_id,
+                is_required=req.is_required,
+            )
+            for req in requirements
+        ]
 
     @staticmethod
     def generate_unique_slug(
@@ -1695,6 +1829,25 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             pk=field.pk,
             slug=field.slug,
         )
+
+
+class HostPersonalDataRepository(HostPersonalDataRepositoryProtocol):
+    @staticmethod
+    def save(entries: list[HostPersonalDataEntry]) -> None:
+        for entry in entries:
+            HostPersonalData.objects.update_or_create(
+                user_id=entry["user_id"],
+                event_id=entry["event_id"],
+                field_id=entry["field_id"],
+                defaults={"value": entry["value"]},
+            )
+
+    @staticmethod
+    def read_for_user_event(user_id: int, event_id: int) -> dict[str, str]:
+        records = HostPersonalData.objects.filter(
+            user_id=user_id, event_id=event_id
+        ).select_related("field")
+        return {hpd.field.slug: hpd.value for hpd in records}
 
 
 class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):

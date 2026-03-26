@@ -1,4 +1,6 @@
+import re
 import string
+import unicodedata
 from datetime import UTC, datetime, timedelta
 from secrets import choice as _secret_choice
 from secrets import token_urlsafe
@@ -19,13 +21,21 @@ from ludamus.pacts import (
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventStatsData,
+    HostPersonalDataEntry,
     MembershipAPIError,
     NotFoundError,
     PanelStatsDTO,
+    PersonalFieldRequirementDTO,
+    ProposalCategoryDTO,
+    ProposeSessionResult,
+    SessionData,
     SessionDTO,
+    SessionFieldRequirementDTO,
+    SessionFieldValueData,
     SessionStatus,
     SessionUpdateData,
     TicketAPIProtocol,
+    TimeSlotRequirementDTO,
     UnitOfWorkProtocol,
     UserData,
     UserDTO,
@@ -34,6 +44,7 @@ from ludamus.pacts import (
     UserRepositoryProtocol,
     UserType,
     VirtualEnrollmentConfig,
+    WizardData,
 )
 
 _BASE62_CHARS = string.ascii_letters + string.digits
@@ -223,6 +234,150 @@ def get_days_to_event(event: EventDTO) -> int:
     now = datetime.now(tz=UTC)
     delta = event.start_time - now
     return max(0, delta.days)
+
+
+class ProposeSessionService:
+    def __init__(
+        self, uow: UnitOfWorkProtocol, context: AuthenticatedRequestContext
+    ) -> None:
+        self._uow = uow
+        self._context = context
+
+    def _generate_unique_slug(self, sphere_id: int, title: str) -> str:
+        value = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
+        base_slug = re.sub(r"[^\w\s-]", "", value.lower())
+        base_slug = re.sub(r"[-\s]+", "-", base_slug).strip("-")
+        slug = base_slug
+        for _ in range(4):
+            if not self._uow.sessions.slug_exists(sphere_id, slug):
+                break
+            slug = f"{base_slug}-{token_urlsafe(3)}"
+        return slug
+
+    def get_event(self, slug: str) -> EventDTO:
+        return self._uow.events.read_by_slug(slug, self._context.current_sphere_id)
+
+    def get_categories(self, event_id: int) -> list[ProposalCategoryDTO]:
+        return self._uow.proposal_categories.list_by_event(event_id)
+
+    def get_category(self, pk: int, event_id: int) -> ProposalCategoryDTO:
+        return self._uow.proposal_categories.read(pk, event_id)
+
+    def get_personal_requirements(
+        self, category_id: int
+    ) -> list[PersonalFieldRequirementDTO]:
+        return self._uow.proposal_categories.list_personal_field_requirements(
+            category_id
+        )
+
+    def get_session_requirements(
+        self, category_id: int
+    ) -> list[SessionFieldRequirementDTO]:
+        return self._uow.proposal_categories.list_session_field_requirements(
+            category_id
+        )
+
+    def get_timeslot_requirements(
+        self, category_id: int
+    ) -> list[TimeSlotRequirementDTO]:
+        return self._uow.proposal_categories.list_time_slot_requirements(category_id)
+
+    def get_saved_personal_data(self, event_id: int) -> dict[str, str]:
+        return self._uow.host_personal_data.read_for_user_event(
+            self._context.current_user_id, event_id
+        )
+
+    def submit(self, event: EventDTO, wizard_data: WizardData) -> ProposeSessionResult:
+        session_data = wizard_data.get("session_data", {})
+        if "title" not in session_data or "participants_limit" not in session_data:
+            msg = "session_data must contain 'title' and 'participants_limit'"
+            raise ValueError(msg)
+        title = str(session_data["title"])
+        description = str(session_data.get("description", ""))
+        participants_limit = int(session_data["participants_limit"])  # type: ignore[call-overload]
+        category_id = wizard_data["category_id"]
+        time_slot_ids = wizard_data.get("time_slot_ids", [])
+
+        current_user = self._uow.active_users.read(self._context.current_user_slug)
+
+        slug = self._generate_unique_slug(event.sphere_id, title)
+
+        create_data = SessionData(
+            sphere_id=event.sphere_id,
+            presenter_id=current_user.pk,
+            presenter_name=current_user.name,
+            category_id=category_id,
+            title=title,
+            slug=slug,
+            description=description,
+            requirements="",
+            needs="",
+            participants_limit=participants_limit,
+            min_age=0,
+            status=SessionStatus.PENDING,
+        )
+
+        with self._uow.atomic():
+            session_id = self._uow.sessions.create(
+                create_data, tag_ids=[], time_slot_ids=time_slot_ids
+            )
+
+            self._uow.proposals.create_from_session(
+                category_id, self._context.current_user_id, session_id, create_data
+            )
+
+            self._save_session_field_values(session_id, event.pk, session_data)
+
+            if personal_data := wizard_data.get("personal_data", {}):
+                self._save_personal_data(event.pk, personal_data)
+
+        return ProposeSessionResult(session_id=session_id, title=title)
+
+    def _save_session_field_values(
+        self, session_id: int, event_id: int, session_data: object
+    ) -> None:
+        data = session_data if isinstance(session_data, dict) else {}
+        values: list[SessionFieldValueData] = []
+        for key, value in data.items():
+            if not isinstance(key, str) or not key.startswith("session_"):
+                continue
+            slug = key.removeprefix("session_")
+            if slug.endswith("_custom"):
+                continue
+            try:
+                field_dto = self._uow.session_fields.read_by_slug(event_id, slug)
+            except NotFoundError:
+                continue
+            values.append(
+                SessionFieldValueData(
+                    session_id=session_id, field_id=field_dto.pk, value=str(value)
+                )
+            )
+        if values:
+            self._uow.sessions.save_field_values(session_id, values)
+
+    def _save_personal_data(self, event_id: int, personal_data: dict[str, str]) -> None:
+        entries: list[HostPersonalDataEntry] = []
+        for key, value in personal_data.items():
+            if not key.startswith("personal_"):
+                continue
+            slug = key.removeprefix("personal_")
+            if slug.endswith("_custom"):
+                continue
+            try:
+                field_dto = self._uow.personal_data_fields.read_by_slug(event_id, slug)
+            except NotFoundError:
+                continue
+            entries.append(
+                HostPersonalDataEntry(
+                    user_id=self._context.current_user_id,
+                    event_id=event_id,
+                    field_id=field_dto.pk,
+                    value=value,
+                )
+            )
+        if entries:
+            self._uow.host_personal_data.save(entries)
 
 
 class AnonymousEnrollmentService:
