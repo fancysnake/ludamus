@@ -79,7 +79,7 @@ class Command(BaseCommand):
                     dep, filepath, prefix, force=force, dry_run=dry_run
                 )
                 stats[result] += 1
-            except CommandError:
+            except CommandError:  # type: ignore [misc]
                 stats["failed"] += 1
 
         self._print_summary(stats, dry_run=dry_run)

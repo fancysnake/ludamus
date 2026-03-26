@@ -120,8 +120,8 @@ DEP004 = ["debug_toolbar"]
 check_untyped_defs = true
 color_output = true
 disallow_any_decorated = true
-disallow_any_explicit = false                 # TODO: REMOVE
-disallow_any_expr = false
+disallow_any_explicit = true
+disallow_any_expr = true
 disallow_any_generics = true
 disallow_any_unimported = true
 disallow_incomplete_defs = true
@@ -130,8 +130,14 @@ disallow_untyped_calls = true
 disallow_untyped_decorators = true
 disallow_untyped_defs = true
 exclude = ["migrations/.*.py", "tests/.*.py"]
+extra_checks = true
+implicit_reexport = true
+plugins = ["mypy_django_plugin.main", "pydantic.mypy"]
+pretty = true
 python_version = "3.14"
-plugins = ["mypy_django_plugin.main"]
+strict = true
+strict_equality = true
+strict_equality_for_none = true
 warn_incomplete_stub = true
 warn_no_return = true
 warn_redundant_casts = true
@@ -154,6 +160,25 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["markdown"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "ludamus.adapters.db.django.*",
+    "ludamus.adapters.web.django.*",
+    "ludamus.edges.settings",
+    "ludamus.gates.web.django.*",
+    "ludamus.links.db.django.*",
+    "ludamus.links.ticket_api",
+]
+disallow_any_expr = false
+
+[[tool.mypy.overrides]]
+module = ["ludamus.adapters.web.django.*", "ludamus.gates.web.django.*"]
+disallow_any_explicit = false
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
 
 # RUFF
 
