@@ -24,7 +24,9 @@ class TestSessionFieldEditPageView:
     # GET tests
 
     def test_get_redirects_anonymous_user_to_login(self, client, event):
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
         url = self.get_url(event, field)
 
         response = client.get(url)
@@ -34,7 +36,9 @@ class TestSessionFieldEditPageView:
         )
 
     def test_get_redirects_non_manager_user(self, authenticated_client, event):
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         response = authenticated_client.get(self.get_url(event, field))
 
@@ -49,7 +53,9 @@ class TestSessionFieldEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         response = authenticated_client.get(self.get_url(event, field))
 
@@ -83,7 +89,9 @@ class TestSessionFieldEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
         url = reverse(
             "panel:session-field-edit",
             kwargs={"slug": "nonexistent", "field_slug": field.slug},
@@ -119,20 +127,27 @@ class TestSessionFieldEditPageView:
     # POST tests
 
     def test_post_redirects_anonymous_user_to_login(self, client, event):
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
         url = self.get_url(event, field)
 
-        response = client.post(url, data={"name": "Difficulty"})
+        response = client.post(
+            url, data={"name": "Difficulty", "question": "What difficulty level?"}
+        )
 
         assert_response(
             response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
         )
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         response = authenticated_client.post(
-            self.get_url(event, field), data={"name": "Difficulty"}
+            self.get_url(event, field),
+            data={"name": "Difficulty", "question": "What difficulty level?"},
         )
 
         assert_response(
@@ -146,10 +161,13 @@ class TestSessionFieldEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         response = authenticated_client.post(
-            self.get_url(event, field), data={"name": "RPG System"}
+            self.get_url(event, field),
+            data={"name": "RPG System", "question": "What RPG system will you use?"},
         )
 
         assert_response(
@@ -165,10 +183,13 @@ class TestSessionFieldEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         authenticated_client.post(
-            self.get_url(event, field), data={"name": "RPG System"}
+            self.get_url(event, field),
+            data={"name": "RPG System", "question": "What RPG system will you use?"},
         )
 
         field.refresh_from_db()
@@ -178,11 +199,19 @@ class TestSessionFieldEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        SessionField.objects.create(event=event, name="Difficulty", slug="difficulty")
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        SessionField.objects.create(
+            event=event,
+            name="Difficulty",
+            question="What difficulty level?",
+            slug="difficulty",
+        )
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         authenticated_client.post(
-            self.get_url(event, field), data={"name": "Difficulty"}
+            self.get_url(event, field),
+            data={"name": "Difficulty", "question": "What difficulty level?"},
         )
 
         field.refresh_from_db()
@@ -192,7 +221,9 @@ class TestSessionFieldEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         response = authenticated_client.post(self.get_url(event, field), data={})
 
@@ -226,13 +257,17 @@ class TestSessionFieldEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
         url = reverse(
             "panel:session-field-edit",
             kwargs={"slug": "nonexistent", "field_slug": field.slug},
         )
 
-        response = authenticated_client.post(url, data={"name": "Difficulty"})
+        response = authenticated_client.post(
+            url, data={"name": "Difficulty", "question": "What difficulty level?"}
+        )
 
         assert_response(
             response,
@@ -250,7 +285,9 @@ class TestSessionFieldEditPageView:
             kwargs={"slug": event.slug, "field_slug": "nonexistent"},
         )
 
-        response = authenticated_client.post(url, data={"name": "Difficulty"})
+        response = authenticated_client.post(
+            url, data={"name": "Difficulty", "question": "What difficulty level?"}
+        )
 
         assert_response(
             response,
@@ -264,7 +301,12 @@ class TestSessionFieldEditPageView:
     ):
         sphere.managers.add(active_user)
         field = SessionField.objects.create(
-            event=event, name="Tags", slug="tags", field_type="select", is_multiple=True
+            event=event,
+            name="Tags",
+            question="What tags apply?",
+            slug="tags",
+            field_type="select",
+            is_multiple=True,
         )
 
         response = authenticated_client.get(self.get_url(event, field))
@@ -279,6 +321,7 @@ class TestSessionFieldEditPageView:
         field = SessionField.objects.create(
             event=event,
             name="Genre",
+            question="What genre?",
             slug="genre",
             field_type="select",
             allow_custom=True,

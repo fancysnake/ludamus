@@ -25,7 +25,7 @@ class TestPersonalDataFieldEditPageView:
 
     def test_get_redirects_anonymous_user_to_login(self, client, event):
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         url = self.get_url(event, field)
 
@@ -37,7 +37,7 @@ class TestPersonalDataFieldEditPageView:
 
     def test_get_redirects_non_manager_user(self, authenticated_client, event):
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.get(self.get_url(event, field))
@@ -54,7 +54,7 @@ class TestPersonalDataFieldEditPageView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.get(self.get_url(event, field))
@@ -90,7 +90,7 @@ class TestPersonalDataFieldEditPageView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         url = reverse(
             "panel:personal-data-field-edit",
@@ -128,11 +128,13 @@ class TestPersonalDataFieldEditPageView:
 
     def test_post_redirects_anonymous_user_to_login(self, client, event):
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         url = self.get_url(event, field)
 
-        response = client.post(url, data={"name": "Phone"})
+        response = client.post(
+            url, data={"name": "Phone", "question": "What is your phone?"}
+        )
 
         assert_response(
             response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
@@ -140,11 +142,12 @@ class TestPersonalDataFieldEditPageView:
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.post(
-            self.get_url(event, field), data={"name": "Phone"}
+            self.get_url(event, field),
+            data={"name": "Phone", "question": "What is your phone?"},
         )
 
         assert_response(
@@ -159,11 +162,12 @@ class TestPersonalDataFieldEditPageView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.post(
-            self.get_url(event, field), data={"name": "Phone Number"}
+            self.get_url(event, field),
+            data={"name": "Phone Number", "question": "What is your phone number?"},
         )
 
         assert_response(
@@ -180,11 +184,12 @@ class TestPersonalDataFieldEditPageView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         authenticated_client.post(
-            self.get_url(event, field), data={"name": "Phone Number"}
+            self.get_url(event, field),
+            data={"name": "Phone Number", "question": "What is your phone number?"},
         )
 
         field.refresh_from_db()
@@ -194,12 +199,17 @@ class TestPersonalDataFieldEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        PersonalDataField.objects.create(event=event, name="Phone", slug="phone")
+        PersonalDataField.objects.create(
+            event=event, name="Phone", question="What is your phone?", slug="phone"
+        )
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
-        authenticated_client.post(self.get_url(event, field), data={"name": "Phone"})
+        authenticated_client.post(
+            self.get_url(event, field),
+            data={"name": "Phone", "question": "What is your phone?"},
+        )
 
         field.refresh_from_db()
         assert field.slug.startswith("phone-")
@@ -209,7 +219,7 @@ class TestPersonalDataFieldEditPageView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.post(self.get_url(event, field), data={})
@@ -245,14 +255,16 @@ class TestPersonalDataFieldEditPageView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         url = reverse(
             "panel:personal-data-field-edit",
             kwargs={"slug": "nonexistent", "field_slug": field.slug},
         )
 
-        response = authenticated_client.post(url, data={"name": "Phone"})
+        response = authenticated_client.post(
+            url, data={"name": "Phone", "question": "What is your phone?"}
+        )
 
         assert_response(
             response,
@@ -270,7 +282,9 @@ class TestPersonalDataFieldEditPageView:
             kwargs={"slug": event.slug, "field_slug": "nonexistent"},
         )
 
-        response = authenticated_client.post(url, data={"name": "Phone"})
+        response = authenticated_client.post(
+            url, data={"name": "Phone", "question": "What is your phone?"}
+        )
 
         assert_response(
             response,
@@ -286,6 +300,7 @@ class TestPersonalDataFieldEditPageView:
         field = PersonalDataField.objects.create(
             event=event,
             name="Languages",
+            question="What languages do you speak?",
             slug="languages",
             field_type="select",
             is_multiple=True,
@@ -303,6 +318,7 @@ class TestPersonalDataFieldEditPageView:
         field = PersonalDataField.objects.create(
             event=event,
             name="Country",
+            question="What country are you from?",
             slug="country",
             field_type="select",
             allow_custom=True,

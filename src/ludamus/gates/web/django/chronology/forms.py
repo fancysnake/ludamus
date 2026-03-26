@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import operator
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
@@ -40,6 +40,10 @@ def _build_field_from_requirement(
             fields[f"{field_key}_custom"] = forms.CharField(
                 label=f"{field_def.name} (custom)", required=False
             )
+    elif field_def.field_type == "checkbox":
+        fields[field_key] = forms.BooleanField(
+            label=field_def.name, required=req.is_required
+        )
     else:
         fields[field_key] = forms.CharField(
             label=field_def.name, required=req.is_required
@@ -54,12 +58,32 @@ def build_personal_data_form(
     for req in requirements:
         _build_field_from_requirement(fields, f"personal_{req.field.slug}", req)
 
+    fields["contact_email"] = forms.EmailField(label=_("Contact email"), required=True)
+
     return type("PersonalDataForm", (forms.Form,), fields)
 
 
 def build_session_details_form(
     requirements: Sequence[SessionFieldRequirementDTO],
+    *,
+    min_limit: int = 0,
+    max_limit: int = 0,
 ) -> type[forms.Form]:
+    participants_kwargs: dict[str, Any] = {"label": _("Max participants")}
+    if min_limit == 0 and max_limit == 0:
+        participants_kwargs["required"] = False
+        participants_kwargs["min_value"] = 0
+        participants_kwargs["initial"] = 0
+        participants_kwargs["help_text"] = _("0 = no limit")
+    elif max_limit == 0:
+        participants_kwargs["min_value"] = min_limit
+    elif min_limit == 0:
+        participants_kwargs["min_value"] = 0
+        participants_kwargs["max_value"] = max_limit
+    else:
+        participants_kwargs["min_value"] = min_limit
+        participants_kwargs["max_value"] = max_limit
+
     fields: dict[str, forms.Field] = {
         "title": forms.CharField(label=_("Title"), max_length=255),
         "description": forms.CharField(
@@ -67,9 +91,8 @@ def build_session_details_form(
             required=False,
             widget=forms.Textarea(attrs={"rows": 4}),
         ),
-        "participants_limit": forms.IntegerField(
-            label=_("Max participants"), min_value=1
-        ),
+        "participants_limit": forms.IntegerField(**participants_kwargs),
+        "display_name": forms.CharField(label=_("Presenter name"), max_length=255),
     }
 
     for req in requirements:

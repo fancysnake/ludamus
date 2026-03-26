@@ -68,8 +68,12 @@ class TestPersonalDataFieldsPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        PersonalDataField.objects.create(event=event, name="Email", slug="email")
-        PersonalDataField.objects.create(event=event, name="Phone", slug="phone")
+        PersonalDataField.objects.create(
+            event=event, name="Email", question="What is your email?", slug="email"
+        )
+        PersonalDataField.objects.create(
+            event=event, name="Phone", question="What is your phone?", slug="phone"
+        )
 
         response = authenticated_client.get(self.get_url(event))
 
@@ -147,12 +151,26 @@ class TestPersonalDataFieldsPageView:
     ):
         sphere.managers.add(active_user)
         PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone", order=2
+            event=event,
+            name="Phone",
+            question="What is your phone?",
+            slug="phone",
+            order=2,
         )
         PersonalDataField.objects.create(
-            event=event, name="Email", slug="email", order=1
+            event=event,
+            name="Email",
+            question="What is your email?",
+            slug="email",
+            order=1,
         )
-        PersonalDataField.objects.create(event=event, name="City", slug="city", order=1)
+        PersonalDataField.objects.create(
+            event=event,
+            name="City",
+            question="What city are you in?",
+            slug="city",
+            order=1,
+        )
 
         response = authenticated_client.get(self.get_url(event))
 
@@ -190,6 +208,7 @@ class TestPersonalDataFieldsPageView:
         PersonalDataField.objects.create(
             event=event,
             name="Languages",
+            question="What languages do you speak?",
             slug="languages",
             field_type="select",
             is_multiple=True,
@@ -197,6 +216,7 @@ class TestPersonalDataFieldsPageView:
         PersonalDataField.objects.create(
             event=event,
             name="Country",
+            question="What country are you from?",
             slug="country",
             field_type="select",
             is_multiple=False,
@@ -219,6 +239,7 @@ class TestPersonalDataFieldsPageView:
         PersonalDataField.objects.create(
             event=event,
             name="Country",
+            question="What country are you from?",
             slug="country",
             field_type="select",
             allow_custom=True,
@@ -226,6 +247,7 @@ class TestPersonalDataFieldsPageView:
         PersonalDataField.objects.create(
             event=event,
             name="City",
+            question="What city are you in?",
             slug="city",
             field_type="select",
             allow_custom=False,

@@ -125,13 +125,23 @@ run = "mise run _pytest -- tests/unit --cov=tests.unit --cov=ludamus"
 [tasks.test]
 description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit"
+env.COVERAGE_FILE = "{{ config_root }}/.coverage.unit"
 
 [tasks.diff-cover]
 run = """
 mise run test --cov
-coverage xml
+coverage xml --data-file=.coverage.unit
 diff-cover coverage.xml --compare-branch=main
 """
+
+[tasks."coverage:combine"]
+description = "Combine integration + e2e coverage and export XML"
+run = """
+coverage combine .coverage.unit .coverage.e2e
+coverage xml -o coverage.xml
+coverage report
+"""
+env.PYTHONPATH = "src"
 
 # E2E
 
@@ -141,6 +151,7 @@ env.ALLOWED_HOSTS = ".localhost"
 env.AUTH0_CLIENT_ID = "test-auth0-client-id"
 env.AUTH0_CLIENT_SECRET = "test-auth0-client-secret"
 env.AUTH0_DOMAIN = "auth0.example.com"
+env.COVERAGE_FILE = "{{ config_root }}/.coverage.e2e"
 env.DB_NAME = "dev.e2e.sqlite3"
 env.DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
 env.ENV = "local"
@@ -161,7 +172,10 @@ dir = "tests/e2e"
 
 [tasks.e2e]
 description = "Run end-to-end Playwright tests (chromium)"
-run = "npx playwright test --project=chromium"
+run = """
+npx playwright test --project=chromium --project=chromium-auth
+mise run _e2e -- coverage report
+"""
 dir = "tests/e2e"
 
 [tasks."boot-e2e"]
@@ -173,7 +187,7 @@ mise run _e2e -- django-admin downloadvendor
 mise run _e2e -- python tests/e2e/scripts/bootstrap_data.py
 mise run _e2e -- django-admin tailwind install
 mise run _e2e -- django-admin tailwind build
-mise run _e2e -- django-admin runserver --insecure
+exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload
 """
 
 # DEPLOYMENT

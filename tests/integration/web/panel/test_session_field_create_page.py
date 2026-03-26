@@ -4,8 +4,9 @@ from unittest.mock import ANY
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import SessionField
+from ludamus.adapters.db.django.models import SessionField, SessionFieldRequirement
 from ludamus.pacts import EventDTO
+from tests.integration.conftest import ProposalCategoryFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -63,6 +64,7 @@ class TestSessionFieldCreatePageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "categories": [],
                 "form": ANY,
             },
         )
@@ -88,7 +90,10 @@ class TestSessionFieldCreatePageView:
     def test_post_redirects_anonymous_user_to_login(self, client, event):
         url = self.get_url(event)
 
-        response = client.post(url, data={"name": "RPG System"})
+        response = client.post(
+            url,
+            data={"name": "RPG System", "question": "What RPG system will you use?"},
+        )
 
         assert_response(
             response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
@@ -96,7 +101,8 @@ class TestSessionFieldCreatePageView:
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.post(
-            self.get_url(event), data={"name": "RPG System"}
+            self.get_url(event),
+            data={"name": "RPG System", "question": "What RPG system will you use?"},
         )
 
         assert_response(
@@ -112,7 +118,8 @@ class TestSessionFieldCreatePageView:
         sphere.managers.add(active_user)
 
         response = authenticated_client.post(
-            self.get_url(event), data={"name": "RPG System"}
+            self.get_url(event),
+            data={"name": "RPG System", "question": "What RPG system will you use?"},
         )
 
         assert_response(
@@ -128,7 +135,10 @@ class TestSessionFieldCreatePageView:
     ):
         sphere.managers.add(active_user)
 
-        authenticated_client.post(self.get_url(event), data={"name": "RPG System"})
+        authenticated_client.post(
+            self.get_url(event),
+            data={"name": "RPG System", "question": "What RPG system will you use?"},
+        )
 
         field = SessionField.objects.get(event=event)
         assert field.slug == "rpg-system"
@@ -137,9 +147,13 @@ class TestSessionFieldCreatePageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        SessionField.objects.create(event=event, name="Genre", slug="genre")
+        SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
-        authenticated_client.post(self.get_url(event), data={"name": "Genre"})
+        authenticated_client.post(
+            self.get_url(event), data={"name": "Genre", "question": "What genre?"}
+        )
 
         fields = SessionField.objects.filter(event=event)
         assert fields.count() == 1 + 1  # existing + new
@@ -171,6 +185,7 @@ class TestSessionFieldCreatePageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "categories": [],
                 "form": ANY,
             },
         )
@@ -182,7 +197,10 @@ class TestSessionFieldCreatePageView:
         sphere.managers.add(active_user)
         url = reverse("panel:session-field-create", kwargs={"slug": "nonexistent"})
 
-        response = authenticated_client.post(url, data={"name": "RPG System"})
+        response = authenticated_client.post(
+            url,
+            data={"name": "RPG System", "question": "What RPG system will you use?"},
+        )
 
         assert_response(
             response,
@@ -196,7 +214,9 @@ class TestSessionFieldCreatePageView:
     ):
         sphere.managers.add(active_user)
 
-        authenticated_client.post(self.get_url(event), data={"name": "Notes"})
+        authenticated_client.post(
+            self.get_url(event), data={"name": "Notes", "question": "Any notes?"}
+        )
 
         field = SessionField.objects.get(event=event)
         assert field.field_type == "text"
@@ -210,6 +230,7 @@ class TestSessionFieldCreatePageView:
             self.get_url(event),
             data={
                 "name": "Difficulty",
+                "question": "What difficulty level?",
                 "field_type": "select",
                 "options": "Beginner\nIntermediate\nAdvanced",
             },
@@ -231,7 +252,12 @@ class TestSessionFieldCreatePageView:
 
         authenticated_client.post(
             self.get_url(event),
-            data={"name": "Notes", "field_type": "text", "options": "Option1\nOption2"},
+            data={
+                "name": "Notes",
+                "question": "Any notes?",
+                "field_type": "text",
+                "options": "Option1\nOption2",
+            },
         )
 
         field = SessionField.objects.get(event=event)
@@ -247,6 +273,7 @@ class TestSessionFieldCreatePageView:
             self.get_url(event),
             data={
                 "name": "Difficulty",
+                "question": "What difficulty level?",
                 "field_type": "select",
                 "options": "Easy\nHard",
             },
@@ -264,6 +291,7 @@ class TestSessionFieldCreatePageView:
             self.get_url(event),
             data={
                 "name": "Tags",
+                "question": "What tags apply?",
                 "field_type": "select",
                 "options": "Action\nAdventure\nHorror",
                 "is_multiple": True,
@@ -281,7 +309,12 @@ class TestSessionFieldCreatePageView:
 
         authenticated_client.post(
             self.get_url(event),
-            data={"name": "Notes", "field_type": "text", "is_multiple": True},
+            data={
+                "name": "Notes",
+                "question": "Any notes?",
+                "field_type": "text",
+                "is_multiple": True,
+            },
         )
 
         field = SessionField.objects.get(event=event)
@@ -297,6 +330,7 @@ class TestSessionFieldCreatePageView:
             self.get_url(event),
             data={
                 "name": "Difficulty",
+                "question": "What difficulty level?",
                 "field_type": "select",
                 "options": "Easy\nHard",
             },
@@ -314,6 +348,7 @@ class TestSessionFieldCreatePageView:
             self.get_url(event),
             data={
                 "name": "Genre",
+                "question": "What genre?",
                 "field_type": "select",
                 "options": "Action\nAdventure",
                 "allow_custom": True,
@@ -331,9 +366,65 @@ class TestSessionFieldCreatePageView:
 
         authenticated_client.post(
             self.get_url(event),
-            data={"name": "Notes", "field_type": "text", "allow_custom": True},
+            data={
+                "name": "Notes",
+                "question": "Any notes?",
+                "field_type": "text",
+                "allow_custom": True,
+            },
         )
 
         field = SessionField.objects.get(event=event)
         assert field.field_type == "text"
         assert field.allow_custom is False
+
+    # Category assignment tests
+
+    def test_get_includes_categories_in_context(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        ProposalCategoryFactory(event=event, name="Workshop")
+        ProposalCategoryFactory(event=event, name="Talk")
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert len(response.context["categories"]) == 1 + 1  # Workshop + Talk
+
+    def test_post_with_category_assignments_creates_requirements(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        cat1 = ProposalCategoryFactory(event=event, name="Workshop")
+        cat2 = ProposalCategoryFactory(event=event, name="Talk")
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={
+                "name": "RPG System",
+                "question": "What RPG system will you use?",
+                f"category_{cat1.pk}": "required",
+                f"category_{cat2.pk}": "optional",
+            },
+        )
+
+        field = SessionField.objects.get(event=event)
+        reqs = {
+            r.category_id: r.is_required
+            for r in SessionFieldRequirement.objects.filter(field=field)
+        }
+        assert reqs == {cat1.pk: True, cat2.pk: False}
+
+    def test_post_without_category_assignments_creates_no_requirements(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        ProposalCategoryFactory(event=event, name="Workshop")
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={"name": "RPG System", "question": "What RPG system will you use?"},
+        )
+
+        field = SessionField.objects.get(event=event)
+        assert not SessionFieldRequirement.objects.filter(field=field).exists()

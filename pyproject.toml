@@ -78,12 +78,13 @@ skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor,src/ludamus/
 
 [tool.coverage.run]
 branch = true
-source = ["src", "tests"]
+source = ["src"]
 omit = [
     "src/ludamus/edges/*",
     "src/ludamus/adapters/db/django/migrations/*",
     "tests/template_checks.py",
 ]
+sigterm = true
 
 [tool.coverage.report]
 show_missing = true

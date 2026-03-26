@@ -86,6 +86,7 @@ class EventFactory(DjangoModelFactory):
     sphere = SubFactory(SphereFactory)
     start_time = LazyAttribute(lambda __: datetime.now(UTC) + timedelta(days=7))
     end_time = LazyAttribute(lambda o: o.start_time + timedelta(hours=8))
+    publication_time = LazyAttribute(lambda __: datetime.now(UTC) - timedelta(days=14))
     proposal_start_time = LazyAttribute(lambda o: o.start_time - timedelta(days=10))
     proposal_end_time = LazyAttribute(lambda o: o.start_time - timedelta(days=6))
 
@@ -166,7 +167,8 @@ class SessionFactory(DjangoModelFactory):
     slug = Faker("slug")
     description = Faker("text")
     presenter = SubFactory(UserFactory)
-    presenter_name = Faker("name")
+    display_name = Faker("name")
+    contact_email = Faker("email")
     category = SubFactory("tests.integration.conftest.ProposalCategoryFactory")
     participants_limit = Faker("random_int", min=2, max=20)
     sphere = SubFactory(SphereFactory)
@@ -341,7 +343,7 @@ def time_slot(event):
 def session_fixture(active_user, sphere):
     return SessionFactory(
         presenter=active_user,
-        presenter_name=active_user.full_name,
+        display_name=active_user.full_name,
         sphere=sphere,
         participants_limit=10,
         min_age=0,
@@ -363,7 +365,7 @@ def pending_session_fixture(proposal_category, active_user, sphere):
     return SessionFactory(
         category=proposal_category,
         presenter=active_user,
-        presenter_name=active_user.name,
+        display_name=active_user.name,
         sphere=sphere,
         participants_limit=10,
         min_age=0,

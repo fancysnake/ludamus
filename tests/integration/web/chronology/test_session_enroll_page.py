@@ -149,6 +149,30 @@ class TestSessionEnrollPageView:
         )
 
     @pytest.mark.usefixtures("enrollment_config")
+    def test_post_ok_unlimited_session(
+        self, staff_user, agenda_item, staff_client, session, event
+    ):
+        session.participants_limit = 0
+        session.save()
+
+        response = staff_client.post(
+            self._get_url(agenda_item.session.pk),
+            data={f"user_{staff_user.id}": "enroll"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, f"Enrolled: {staff_user.name}")],
+            url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
+        )
+        SessionParticipation.objects.get(
+            user=staff_user,
+            session=agenda_item.session,
+            status=SessionParticipationStatus.CONFIRMED,
+        )
+
+    @pytest.mark.usefixtures("enrollment_config")
     def test_post_cancel(self, active_user, agenda_item, authenticated_client, event):
         SessionParticipation.objects.create(
             user=active_user,
@@ -242,7 +266,7 @@ class TestSessionEnrollPageView:
         self, active_user, agenda_item, authenticated_client, event
     ):
         other_session = SessionFactory(
-            presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
+            display_name=active_user.name, sphere=event.sphere, participants_limit=10
         )
         AgendaItem.objects.create(
             session=other_session,
@@ -1254,7 +1278,7 @@ class TestSessionEnrollPageView:
         enrollment_config.max_waitlist_sessions = 0
         enrollment_config.save()
         other_session = SessionFactory(
-            presenter_name=active_user.name, sphere=event.sphere, participants_limit=10
+            display_name=active_user.name, sphere=event.sphere, participants_limit=10
         )
         AgendaItem.objects.create(
             session=other_session,

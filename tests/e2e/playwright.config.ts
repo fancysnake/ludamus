@@ -24,6 +24,8 @@ const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:8000`;
 
 const WEB_COMMAND = 'mise run boot-e2e';
 
+const isCI = !!process.env.CI;
+
 export default defineConfig({
   testDir: './tests',
   outputDir: 'test-results',
@@ -35,13 +37,13 @@ export default defineConfig({
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
+  forbidOnly: isCI,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  retries: isCI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 2 : undefined,
+  workers: isCI ? 2 : undefined,
   /* Reporter to use */
-  reporter: process.env.CI
+  reporter: isCI
     ? [['github'], ['html', { open: 'never' }]]
     : [['line'], ['html', { open: 'never' }]],
   /* Shared settings for all the projects below. */
@@ -49,7 +51,7 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
+    video: isCI ? 'retain-on-failure' : 'on-first-retry',
   },
   /* Configure projects for major browsers */
   projects: [
@@ -63,11 +65,16 @@ export default defineConfig({
       testIgnore: /.*\.auth\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
-    {
-      name: 'webkit',
-      testIgnore: /.*\.auth\.spec\.ts/,
-      use: { ...devices['iPhone 14 Pro'] },
-    },
+    /* Webkit requires OS-specific binaries; only run on CI */
+    ...(isCI
+      ? [
+          {
+            name: 'webkit',
+            testIgnore: /.*\.auth\.spec\.ts/,
+            use: { ...devices['iPhone 14 Pro'] },
+          },
+        ]
+      : []),
     /* Authenticated browser for profile/user tests */
     {
       name: 'chromium-auth',
@@ -84,10 +91,11 @@ export default defineConfig({
     env: {
       ...process.env
     },
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !isCI,
     timeout: 180 * 1000,
     stdout: 'pipe',
     stderr: 'pipe',
     cwd: repoRoot,
+    gracefulShutdown: { signal: 'SIGINT', timeout: 5000 },
   },
 });

@@ -34,8 +34,8 @@ from ludamus.pacts import (
     VenueDTO,
     VirtualEnrollmentConfig,
 )
-from tests.integration.conftest import AgendaItemFactory, SessionFactory
-from tests.integration.utils import assert_response
+from tests.integration.conftest import AgendaItemFactory, EventFactory, SessionFactory
+from tests.integration.utils import assert_response, assert_response_404
 
 
 class TestEventPageView:
@@ -77,12 +77,13 @@ class TestEventPageView:
         response = authenticated_client.get(self._get_url(event.slug))
 
         expected_pending = PendingSessionDTO(
+            contact_email=pending_session.contact_email,
             creation_time=pending_session.creation_time,
             description=pending_session.description,
             needs=pending_session.needs,
             participants_limit=pending_session.participants_limit,
             pk=pending_session.pk,
-            presenter_name=pending_session.presenter_name,
+            display_name=pending_session.display_name,
             requirements=pending_session.requirements,
             tags=[],
             time_slots=[],
@@ -253,11 +254,68 @@ class TestEventPageView:
             template_name=["chronology/event.html"],
         )
 
+    def test_ok_unlimited_session(
+        self, active_user, agenda_item, client, event, session
+    ):
+        session.participants_limit = 0
+        session.save()
+
+        host = UserInfo.from_user_dto(
+            UserDTO.model_validate(active_user), gravatar_url=gravatar_url
+        )
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=0,
+            enrolled_count=0,
+            filterable_tags=[],
+            full_participant_info="0",
+            has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            presenter=host,
+            session_participations=[],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            tags=[],
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        response = client.get(self._get_url(event.slug))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": False,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {
+                    agenda_item.start_time: [session_data]
+                },
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "sessions": [session_data],
+                "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
     def test_ok_session_without_presenter_user(self, client, event, space, sphere):
-        presenter_name = "External Presenter"
+        display_name = "External Presenter"
         session = SessionFactory(
             presenter=None,
-            presenter_name=presenter_name,
+            display_name=display_name,
             sphere=sphere,
             participants_limit=10,
             min_age=0,
@@ -279,11 +337,11 @@ class TestEventPageView:
             presenter=UserInfo(
                 avatar_url=None,
                 discord_username="",
-                full_name=presenter_name,
-                name=presenter_name,
+                full_name=display_name,
+                name=display_name,
                 pk=0,
                 slug="",
-                username=presenter_name,
+                username=display_name,
             ),
             session_participations=[],
             session=SessionDTO.model_validate(session),
@@ -1662,3 +1720,29 @@ class TestEventPageView:
             },
             template_name=["chronology/event.html"],
         )
+
+    def test_unpublished_event_returns_404_for_anonymous(self, client, sphere):
+        event = EventFactory(sphere=sphere, publication_time=None)
+
+        response = client.get(self._get_url(event.slug))
+
+        assert_response_404(response)
+
+    def test_unpublished_event_returns_404_for_regular_user(
+        self, authenticated_client, sphere
+    ):
+        event = EventFactory(sphere=sphere, publication_time=None)
+
+        response = authenticated_client.get(self._get_url(event.slug))
+
+        assert_response_404(response)
+
+    def test_unpublished_event_visible_for_manager(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        event = EventFactory(sphere=sphere, publication_time=None)
+
+        response = authenticated_client.get(self._get_url(event.slug))
+
+        assert response.status_code == HTTPStatus.OK

@@ -401,21 +401,20 @@ def create_session_proposal_form(
     tag_fields = _get_tags_fields(tag_categories, tags)
 
     # Update participants_limit field with category bounds
+    min_limit = proposal_category.min_participants_limit if proposal_category else 0
+    max_limit = proposal_category.max_participants_limit if proposal_category else 0
+    widget_attrs: dict[str, object] = {"class": "form-control"}
+    if min_limit:
+        widget_attrs["min"] = min_limit
+    else:
+        widget_attrs["min"] = 0
+    if max_limit:
+        widget_attrs["max"] = max_limit
+
     participants_limit_field = forms.IntegerField(
-        widget=forms.NumberInput(
-            attrs={
-                "class": "form-control",
-                "min": (
-                    proposal_category.min_participants_limit if proposal_category else 1
-                ),
-                "max": (
-                    proposal_category.max_participants_limit
-                    if proposal_category
-                    else 100
-                ),
-            }
-        ),
-        initial=proposal_category.min_participants_limit if proposal_category else None,
+        widget=forms.NumberInput(attrs=widget_attrs),
+        required=min_limit != 0 or max_limit != 0,
+        initial=min_limit or 0,
     )
 
     # PEGI rating field with custom choices

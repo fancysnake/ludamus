@@ -64,6 +64,28 @@ def is_continuation(continuation_set: set[tuple[int, str]], slot_and_date: str) 
     return (int(slot_pk), date_iso) in continuation_set
 
 
+def has_field_value(value: object) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return True
+    return bool(value)
+
+
+@register.filter
+def format_field_value(value: Any) -> str:  # type: ignore[misc] # noqa: ANN401
+    """Format a session field value for display.
+
+    Returns:
+        Formatted string: lists joined with ", ", bools as Yes/No, else str().
+    """
+    if isinstance(value, list):
+        return ", ".join(str(v) for v in value)
+    if isinstance(value, bool):
+        return _("Yes") if value else _("No")
+    return str(value)
+
+
 @register.filter
 def format_duration(iso_duration: str) -> str:
     """Format ISO 8601 duration string to human-readable format.

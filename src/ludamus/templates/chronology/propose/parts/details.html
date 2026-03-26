@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load markdown_tags %}
 <div id="wizard-content">
     {% if form|default:"" %}
         <h2 class="text-lg font-semibold mb-1">{% translate "Session Details" %}</h2>
@@ -39,29 +40,50 @@
                     <label for="id_participants_limit"
                            class="block text-sm font-medium text-foreground-secondary mb-2">
                         {% translate "Max participants" %}
-                        <span class="text-danger" aria-hidden="true">*</span>
+                        {% if form.participants_limit.field.required %}<span class="text-danger" aria-hidden="true">*</span>{% endif %}
                     </label>
                     <input type="number"
                            name="participants_limit"
                            id="id_participants_limit"
                            value="{{ form.participants_limit.value|default_if_none:'' }}"
                            class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                           required
-                           min="1">
+                           {% if form.participants_limit.field.required %}required{% endif %}
+                           {% if form.participants_limit.field.min_value != None %}min="{{ form.participants_limit.field.min_value }}"{% endif %}
+                           {% if form.participants_limit.field.max_value != None %}max="{{ form.participants_limit.field.max_value }}"{% endif %}>
+                    {% if form.participants_limit.field.help_text %}
+                        <p class="text-sm text-foreground-muted mt-1">{{ form.participants_limit.field.help_text }}</p>
+                    {% endif %}
                     {% if form.participants_limit.errors %}
                         <p class="text-sm text-danger mt-1">{{ form.participants_limit.errors.0 }}</p>
                     {% endif %}
                 </div>
+                <div>
+                    <label for="id_display_name"
+                           class="block text-sm font-medium text-foreground-secondary mb-2">
+                        {% translate "Presenter name" %}
+                        <span class="text-danger" aria-hidden="true">*</span>
+                    </label>
+                    <input type="text"
+                           name="display_name"
+                           id="id_display_name"
+                           value="{{ form.display_name.value|default_if_none:'' }}"
+                           class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                           required
+                           maxlength="255">
+                    {% if form.display_name.errors %}<p class="text-sm text-danger mt-1">{{ form.display_name.errors.0 }}</p>{% endif %}
+                </div>
                 {% for desc in field_descriptors|default:"" %}
                     <div>
-                        <label for="id_{{ desc.key }}"
-                               class="block text-sm font-medium text-foreground-secondary mb-2">
-                            {{ desc.name }}
-                            {% if desc.is_required %}
-                                <span class="text-danger" aria-hidden="true">*</span>
-                                <span class="sr-only">{% translate "(required)" %}</span>
-                            {% endif %}
-                        </label>
+                        {% if desc.field_type != "checkbox" %}
+                            <label for="id_{{ desc.key }}"
+                                   class="block text-sm font-medium text-foreground-secondary mb-2">
+                                {{ desc.name }}
+                                {% if desc.is_required %}
+                                    <span class="text-danger" aria-hidden="true">*</span>
+                                    <span class="sr-only">{% translate "(required)" %}</span>
+                                {% endif %}
+                            </label>
+                        {% endif %}
                         {% if desc.field_type == "select" and desc.is_multiple %}
                             <div class="space-y-1">
                                 {% for choice in desc.bound_field.field.choices %}
@@ -87,6 +109,15 @@
                                     </option>
                                 {% endfor %}
                             </select>
+                        {% elif desc.field_type == "checkbox" %}
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="checkbox"
+                                       name="{{ desc.key }}"
+                                       value="true"
+                                       {% if desc.bound_field.value %}checked{% endif %}
+                                       class="rounded border-border">
+                                {{ desc.name }}
+                            </label>
                         {% else %}
                             <input type="text"
                                    name="{{ desc.key }}"
@@ -96,6 +127,9 @@
                                    {% if desc.is_required %}required{% endif %}>
                         {% endif %}
                         {% if desc.bound_field.errors %}<p class="text-sm text-danger mt-1">{{ desc.bound_field.errors.0 }}</p>{% endif %}
+                        {% if desc.help_text %}
+                            <div class="text-xs text-foreground-muted mt-1">{{ desc.help_text|render_markdown }}</div>
+                        {% endif %}
                         {% if desc.allow_custom %}
                             <div class="mt-2">
                                 <input type="text"
