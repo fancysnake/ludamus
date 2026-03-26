@@ -69,8 +69,15 @@ class TestSessionFieldsPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        SessionField.objects.create(event=event, name="RPG System", slug="rpg-system")
-        SessionField.objects.create(event=event, name="Genre", slug="genre")
+        SessionField.objects.create(
+            event=event,
+            name="RPG System",
+            question="What RPG system will you use?",
+            slug="rpg-system",
+        )
+        SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         response = authenticated_client.get(self.get_url(event))
 
@@ -147,12 +154,22 @@ class TestSessionFieldsPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        SessionField.objects.create(event=event, name="Genre", slug="genre", order=2)
         SessionField.objects.create(
-            event=event, name="RPG System", slug="rpg-system", order=1
+            event=event, name="Genre", question="What genre?", slug="genre", order=2
         )
         SessionField.objects.create(
-            event=event, name="Difficulty", slug="difficulty", order=1
+            event=event,
+            name="RPG System",
+            question="What RPG system will you use?",
+            slug="rpg-system",
+            order=1,
+        )
+        SessionField.objects.create(
+            event=event,
+            name="Difficulty",
+            question="What difficulty level?",
+            slug="difficulty",
+            order=1,
         )
 
         response = authenticated_client.get(self.get_url(event))
@@ -189,11 +206,17 @@ class TestSessionFieldsPageView:
     ):
         sphere.managers.add(active_user)
         SessionField.objects.create(
-            event=event, name="Tags", slug="tags", field_type="select", is_multiple=True
+            event=event,
+            name="Tags",
+            question="What tags apply?",
+            slug="tags",
+            field_type="select",
+            is_multiple=True,
         )
         SessionField.objects.create(
             event=event,
             name="Difficulty",
+            question="What difficulty level?",
             slug="difficulty",
             field_type="select",
             is_multiple=False,
@@ -216,6 +239,7 @@ class TestSessionFieldsPageView:
         SessionField.objects.create(
             event=event,
             name="Genre",
+            question="What genre?",
             slug="genre",
             field_type="select",
             allow_custom=True,
@@ -223,6 +247,7 @@ class TestSessionFieldsPageView:
         SessionField.objects.create(
             event=event,
             name="Difficulty",
+            question="What difficulty level?",
             slug="difficulty",
             field_type="select",
             allow_custom=False,

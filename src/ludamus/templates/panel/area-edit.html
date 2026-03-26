@@ -1,9 +1,9 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
 {% load tessera %}
-{% block title %}
-    {% translate "Edit Area" %} - Ludamus Backoffice
-{% endblock title %}
+{% block title_prefix %}
+    {% translate "Edit Area" %} -
+{% endblock title_prefix %}
 {% block page_title %}
     {{ area.name }}
 {% endblock page_title %}

@@ -11,6 +11,7 @@ from typing import (
     Any,
     Literal,
     Protocol,
+    TypedDict,
     cast,
 )  # pylint: disable=unused-import
 
@@ -54,8 +55,10 @@ if TYPE_CHECKING:
 class _FieldDTO(Protocol):
     """Protocol for field DTOs with common attributes."""
 
+    help_text: str
     pk: int
     name: str
+    question: str
 
 
 class _FieldRepositoryProtocol(Protocol):
@@ -64,26 +67,32 @@ class _FieldRepositoryProtocol(Protocol):
     def read_by_slug(self, event_pk: int, slug: str) -> _FieldDTO: ...
 
 
-def _parse_field_form_data(
-    form: forms.Form,
-) -> tuple[str, Literal["text", "select"], list[str] | None, bool, bool]:
-    """Parse common field form data for personal data and session fields.
+class FieldFormData(TypedDict):
+    name: str
+    question: str
+    field_type: Literal["text", "select", "checkbox"]
+    options: list[str] | None
+    is_multiple: bool
+    allow_custom: bool
+    help_text: str
 
-    Args:
-        form: Validated form with name, field_type, options, is_multiple, allow_custom.
 
-    Returns:
-        Tuple of (name, field_type, options, is_multiple, allow_custom).
-    """
-    name = form.cleaned_data["name"]
+def _parse_field_form_data(form: forms.Form) -> FieldFormData:
     field_type = cast(
-        "Literal['text', 'select']", form.cleaned_data.get("field_type") or "text"
+        "Literal['text', 'select', 'checkbox']",
+        form.cleaned_data.get("field_type") or "text",
     )
     options_text = form.cleaned_data.get("options") or ""
     options = [o.strip() for o in options_text.split("\n") if o.strip()] or None
-    is_multiple = form.cleaned_data.get("is_multiple") or False
-    allow_custom = form.cleaned_data.get("allow_custom") or False
-    return name, field_type, options, is_multiple, allow_custom
+    return FieldFormData(
+        name=form.cleaned_data["name"],
+        question=form.cleaned_data["question"],
+        field_type=field_type,
+        options=options,
+        is_multiple=form.cleaned_data.get("is_multiple") or False,
+        allow_custom=form.cleaned_data.get("allow_custom") or False,
+        help_text=form.cleaned_data.get("help_text") or "",
+    )
 
 
 def _sort_fields_by_order[T: _FieldDTO](fields: list[T], order: list[int]) -> list[T]:
@@ -323,8 +332,89 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Event not found."))
             return redirect("panel:event-settings", slug=slug)
 
+        self.request.di.uow.events.update_proposal_description(
+            current_event.pk, form.cleaned_data["proposal_description"] or ""
+        )
+
         messages.success(self.request, _("Event settings saved successfully."))
         return redirect("panel:event-settings", slug=slug)
+
+
+class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
+    """List submitted proposals for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "proposals"
+
+        host_name = self.request.GET.get("host", "").strip() or None
+        search = self.request.GET.get("search", "").strip() or None
+        session_fields = self.request.di.uow.session_fields.list_by_event(
+            current_event.pk
+        )
+        filterable_fields = [f for f in session_fields if f.field_type == "select"]
+        field_filters: dict[int, str] = {}
+        for field in filterable_fields:
+            if value := self.request.GET.get(f"field_{field.pk}", "").strip():
+                field_filters[field.pk] = value
+
+        context["proposals"] = self.request.di.uow.proposals.list_proposals_by_event(
+            current_event.pk,
+            host_name=host_name,
+            field_filters=field_filters or None,
+            search=search,
+        )
+        context["session_fields"] = filterable_fields
+        context["filter_host"] = host_name or ""
+        context["filter_search"] = search or ""
+        context["filter_fields"] = {
+            field.pk: self.request.GET.get(f"field_{field.pk}", "")
+            for field in filterable_fields
+        }
+        return TemplateResponse(self.request, "panel/proposals.html", context)
+
+
+class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
+    """View proposal details."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            proposal = self.request.di.uow.proposals.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        proposal_event = self.request.di.uow.proposals.read_event(proposal_id)
+        if proposal_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        host = self.request.di.uow.proposals.read_host(proposal_id)
+        tags = self.request.di.uow.proposals.read_tags(proposal_id)
+
+        field_values = []
+        if proposal.session_id:
+            field_values = self.request.di.uow.sessions.read_field_values(
+                proposal.session_id
+            )
+
+        context["active_nav"] = "proposals"
+        context["proposal"] = proposal
+        context["host"] = host
+        context["tags"] = tags
+        context["field_values"] = field_values
+        return TemplateResponse(self.request, "panel/proposal-detail.html", context)
 
 
 class CFPPageView(PanelAccessMixin, EventContextMixin, View):
@@ -434,6 +524,8 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "description": category.description,
                 "start_time": category.start_time,
                 "end_time": category.end_time,
+                "min_participants_limit": category.min_participants_limit,
+                "max_participants_limit": category.max_participants_limit,
             }
         )
 
@@ -591,6 +683,12 @@ class CFPEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "start_time": form.cleaned_data["start_time"],
                 "end_time": form.cleaned_data["end_time"],
                 "durations": durations,
+                "min_participants_limit": (
+                    form.cleaned_data["min_participants_limit"] or 0
+                ),
+                "max_participants_limit": (
+                    form.cleaned_data["max_participants_limit"] or 0
+                ),
             },
         )
 
@@ -700,6 +798,9 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
 
         context["active_nav"] = "cfp"
         context["form"] = PersonalDataFieldForm()
+        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
         return TemplateResponse(
             self.request, "panel/personal-data-field-create.html", context
         )
@@ -718,22 +819,33 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
         if not form.is_valid():
             context["active_nav"] = "cfp"
             context["form"] = form
+            context["categories"] = (
+                self.request.di.uow.proposal_categories.list_by_event(current_event.pk)
+            )
             return TemplateResponse(
                 self.request, "panel/personal-data-field-create.html", context
             )
 
-        name, field_type, options, is_multiple, allow_custom = _parse_field_form_data(
-            form
+        parsed = _parse_field_form_data(form)
+
+        field = self.request.di.uow.personal_data_fields.create(
+            current_event.pk,
+            parsed["name"],
+            parsed["question"],
+            parsed["field_type"],
+            parsed["options"],
+            is_multiple=parsed["is_multiple"],
+            allow_custom=parsed["allow_custom"],
+            help_text=parsed["help_text"],
         )
 
-        self.request.di.uow.personal_data_fields.create(
-            current_event.pk,
-            name,
-            field_type,
-            options,
-            is_multiple=is_multiple,
-            allow_custom=allow_custom,
+        category_requirements, _order = _parse_field_requirements(
+            self.request.POST, "category_", "category_order"
         )
+        if category_requirements:
+            self.request.di.uow.proposal_categories.add_field_to_categories(
+                field.pk, category_requirements
+            )
 
         messages.success(self.request, _("Personal data field created successfully."))
         return redirect("panel:personal-data-fields", slug=slug)
@@ -766,7 +878,13 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["field"] = field
-        context["form"] = PersonalDataFieldForm(initial={"name": field.name})
+        context["form"] = PersonalDataFieldForm(
+            initial={
+                "name": field.name,
+                "question": field.question,
+                "help_text": field.help_text,
+            }
+        )
         return TemplateResponse(
             self.request, "panel/personal-data-field-edit.html", context
         )
@@ -801,7 +919,11 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             )
 
         name = form.cleaned_data["name"]
-        self.request.di.uow.personal_data_fields.update(field.pk, name)
+        question = form.cleaned_data["question"]
+        help_text = form.cleaned_data.get("help_text") or ""
+        self.request.di.uow.personal_data_fields.update(
+            field.pk, name, question, help_text=help_text
+        )
 
         messages.success(self.request, _("Personal data field updated successfully."))
         return redirect("panel:personal-data-fields", slug=slug)
@@ -883,6 +1005,9 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["form"] = SessionFieldForm()
+        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
         return TemplateResponse(
             self.request, "panel/session-field-create.html", context
         )
@@ -901,22 +1026,33 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
         if not form.is_valid():
             context["active_nav"] = "cfp"
             context["form"] = form
+            context["categories"] = (
+                self.request.di.uow.proposal_categories.list_by_event(current_event.pk)
+            )
             return TemplateResponse(
                 self.request, "panel/session-field-create.html", context
             )
 
-        name, field_type, options, is_multiple, allow_custom = _parse_field_form_data(
-            form
+        parsed = _parse_field_form_data(form)
+
+        field = self.request.di.uow.session_fields.create(
+            current_event.pk,
+            parsed["name"],
+            parsed["question"],
+            parsed["field_type"],
+            parsed["options"],
+            is_multiple=parsed["is_multiple"],
+            allow_custom=parsed["allow_custom"],
+            help_text=parsed["help_text"],
         )
 
-        self.request.di.uow.session_fields.create(
-            current_event.pk,
-            name,
-            field_type,
-            options,
-            is_multiple=is_multiple,
-            allow_custom=allow_custom,
+        category_requirements, _order = _parse_field_requirements(
+            self.request.POST, "category_", "category_order"
         )
+        if category_requirements:
+            self.request.di.uow.proposal_categories.add_session_field_to_categories(
+                field.pk, category_requirements
+            )
 
         messages.success(self.request, _("Session field created successfully."))
         return redirect("panel:session-fields", slug=slug)
@@ -949,7 +1085,13 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["field"] = field
-        context["form"] = SessionFieldForm(initial={"name": field.name})
+        context["form"] = SessionFieldForm(
+            initial={
+                "name": field.name,
+                "question": field.question,
+                "help_text": field.help_text,
+            }
+        )
         return TemplateResponse(self.request, "panel/session-field-edit.html", context)
 
     def post(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
@@ -982,7 +1124,11 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             )
 
         name = form.cleaned_data["name"]
-        self.request.di.uow.session_fields.update(field.pk, name)
+        question = form.cleaned_data["question"]
+        help_text = form.cleaned_data.get("help_text") or ""
+        self.request.di.uow.session_fields.update(
+            field.pk, name, question, help_text=help_text
+        )
 
         messages.success(self.request, _("Session field updated successfully."))
         return redirect("panel:session-fields", slug=slug)

@@ -19,7 +19,7 @@ from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, reverse_lazy
@@ -446,6 +446,16 @@ class IndexRedirectView(View):
         return redirect("web:events")
 
 
+def _is_manager(request: RootRequest) -> bool:
+    return (
+        request.user.is_authenticated
+        and request.context.current_user_slug is not None
+        and request.di.uow.spheres.is_manager(
+            request.context.current_sphere_id, request.context.current_user_slug
+        )
+    )
+
+
 class EventsPageView(TemplateView):
     request: RootRequest
     template_name = "index.html"
@@ -458,6 +468,8 @@ class EventsPageView(TemplateView):
             .order_by("start_time")
             .all()
         )
+        if not _is_manager(self.request):
+            all_events = [e for e in all_events if e.is_published]
         event_datas: list[EventInfo] = []
         # Assign placeholder images based on index
         for i, event in enumerate(all_events):
@@ -736,6 +748,9 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+
+        if not self.object.is_published and not _is_manager(self.request):
+            raise Http404
 
         # Get all sessions for this event that are published
         event_sessions = (
@@ -1034,7 +1049,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                     presenter_dto, gravatar_url=self.request.di.gravatar_url
                 )
             else:
-                presenter_name = session.presenter_name or ""
+                presenter_name = session.display_name or ""
                 presenter = UserInfo(
                     avatar_url=None,
                     discord_username="",
@@ -1691,7 +1706,7 @@ class EventProposalPageView(LoginRequiredMixin, View):
             SessionCreateData(
                 sphere_id=event.sphere_id,
                 presenter_id=current_user.pk,
-                presenter_name=current_user.name,
+                display_name=current_user.name,
                 category_id=proposal_category.pk,
                 title=form.cleaned_data["title"],
                 slug=slugify(form.cleaned_data["title"]),

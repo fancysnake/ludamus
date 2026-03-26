@@ -1,5 +1,8 @@
-{% load i18n %}
+{% load i18n markdown_tags %}
 <div id="wizard-content">
+    {% if event.proposal_description %}
+        <div class="prose prose-sm mb-6">{{ event.proposal_description|render_markdown }}</div>
+    {% endif %}
     <h2 class="text-lg font-semibold mb-1">{% translate "What would you like to propose?" %}</h2>
     <p class="text-sm text-foreground-muted mb-5">{% translate "Choose the type of session you want to run." %}</p>
     {% if error|default:"" %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}
@@ -28,15 +31,5 @@
                 <button type="submit" class="btn btn-primary py-3 px-6">{% translate "Continue" %} →</button>
             </div>
         </form>
-    {% elif auto_advance|default:False %}
-        <p class="text-sm text-foreground-muted mb-4">
-            {% translate "Category:" %} <strong>{{ category.name }}</strong>
-        </p>
-        <div hx-post="{% url 'web:chronology:session-propose-category' event_slug=event.slug %}"
-             hx-target="#wizard-content"
-             hx-swap="outerHTML"
-             hx-trigger="load"
-             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-             hx-vals='{"category_id": "{{ category.pk }}"}'></div>
     {% endif %}
 </div>

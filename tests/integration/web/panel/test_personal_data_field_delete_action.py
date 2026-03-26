@@ -25,7 +25,7 @@ class TestPersonalDataFieldDeleteActionView:
 
     def test_post_redirects_anonymous_user_to_login(self, client, event):
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         url = self.get_url(event, field)
 
@@ -37,7 +37,7 @@ class TestPersonalDataFieldDeleteActionView:
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.post(self.get_url(event, field))
@@ -54,7 +54,7 @@ class TestPersonalDataFieldDeleteActionView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
 
         response = authenticated_client.post(self.get_url(event, field))
@@ -72,7 +72,7 @@ class TestPersonalDataFieldDeleteActionView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         url = reverse(
             "panel:personal-data-field-delete",
@@ -111,7 +111,7 @@ class TestPersonalDataFieldDeleteActionView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         category = ProposalCategory.objects.create(
             event=event, name="Session", slug="session"
@@ -137,7 +137,7 @@ class TestPersonalDataFieldDeleteActionView:
     ):
         sphere.managers.add(active_user)
         field = PersonalDataField.objects.create(
-            event=event, name="Email", slug="email"
+            event=event, name="Email", question="What is your email?", slug="email"
         )
         category1 = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
         category2 = ProposalCategory.objects.create(

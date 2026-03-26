@@ -1,9 +1,9 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
 {% load tessera %}
-{% block title %}
-    {% translate "Edit Personal Data Field" %} - Ludamus Backoffice
-{% endblock title %}
+{% block title_prefix %}
+    {% translate "Edit Personal Data Field" %} -
+{% endblock title_prefix %}
 {% block page_title %}
     {% translate "Edit Personal Data Field" %}
 {% endblock page_title %}
@@ -15,56 +15,81 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
-           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
-            {% translate "Cancel" %}
-        </a>
+           class="btn btn-secondary">{% translate "Cancel" %}</a>
     {% endif %}
 {% endblock header_actions %}
 {% block content %}
     {% if current_event and field %}
         <form method="post" class="max-w-2xl">
             {% csrf_token %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
-                <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Field Details" %}</h3>
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-700 mb-2" for="id_name">
-                            {% translate "Name" context "place" %}
-                        </label>
-                        <input type="text"
-                               name="name"
-                               id="id_name"
-                               value="{{ form.name.value|default:'' }}"
-                               class="w-full border {% if form.name.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-                               placeholder="{% translate "e.g., Email, Phone, Bio" %}">
-                        {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-700 mb-2">{% translate "Field Type" %}</label>
-                        <div class="w-full bg-neutral-100 border border-neutral-300 rounded-lg px-4 py-2 text-neutral-600">
-                            {% if field.field_type == "select" %}
-                                {% translate "Select" %}
-                            {% else %}
-                                {% translate "Text" %}
-                            {% endif %}
-                        </div>
-                        <p class="mt-1 text-sm text-neutral-500">{% translate "Field type cannot be changed after creation." %}</p>
-                    </div>
-                    {% if field.field_type == "select" and field.options %}
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="text-lg font-semibold text-foreground mb-6">{% translate "Field Details" %}</h3>
+                    <div class="space-y-6">
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-2">{% translate "Options" %}</label>
-                            <ul class="bg-neutral-50 border border-neutral-300 rounded-lg p-3 text-neutral-700 space-y-1">
-                                {% for option in field.options %}<li class="text-sm">{{ option.label }}</li>{% endfor %}
-                            </ul>
+                            <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                   for="id_name">{% translate "Name" context "place" %}</label>
+                            <input type="text"
+                                   name="name"
+                                   id="id_name"
+                                   value="{{ form.name.value|default:'' }}"
+                                   class="w-full border {% if form.name.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                                   placeholder="{% translate "e.g., Email, Phone, Bio" %}">
+                            {% if form.name.errors %}<p class="mt-1 text-sm text-danger">{{ form.name.errors.0 }}</p>{% endif %}
                         </div>
-                    {% endif %}
-                </div>
-                <div class="mt-6 flex justify-end">
-                    <button type="submit"
-                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-                        {% icon "check" class="w-4 h-4 mr-2" %}
-                        {% translate "Save" %}
-                    </button>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                   for="id_question">{% translate "Question" %}</label>
+                            <textarea name="question"
+                                      id="id_question"
+                                      rows="2"
+                                      class="w-full border {% if form.question.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                                      placeholder="{% translate "e.g., What is your email address?" %}">{{ form.question.value|default:'' }}</textarea>
+                            <p class="mt-1 text-sm text-foreground-muted">
+                                {% translate "Full question text shown as the form label in the proposal wizard." %}
+                            </p>
+                            {% if form.question.errors %}<p class="mt-1 text-sm text-danger">{{ form.question.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground-secondary mb-2">{% translate "Field Type" %}</label>
+                            <div class="w-full bg-bg-tertiary border border-border rounded-lg px-4 py-2 text-foreground-secondary">
+                                {% if field.field_type == "select" %}
+                                    {% translate "Select" %}
+                                {% elif field.field_type == "checkbox" %}
+                                    {% translate "Checkbox" %}
+                                {% else %}
+                                    {% translate "Text" %}
+                                {% endif %}
+                            </div>
+                            <p class="mt-1 text-sm text-foreground-muted">{% translate "Field type cannot be changed after creation." %}</p>
+                        </div>
+                        {% if field.field_type == "select" and field.options %}
+                            <div>
+                                <label class="block text-sm font-medium text-foreground-secondary mb-2">{% translate "Options" %}</label>
+                                <ul class="bg-bg-tertiary border border-border rounded-lg p-3 text-foreground-secondary space-y-1">
+                                    {% for option in field.options %}<li class="text-sm">{{ option.label }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                   for="id_help_text">{% translate "Help Text" %}</label>
+                            <textarea name="help_text"
+                                      id="id_help_text"
+                                      rows="2"
+                                      class="w-full border border-border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                                      placeholder="{% translate "Optional guidance for proposal submitters" %}">{{ form.help_text.value|default:'' }}</textarea>
+                            <p class="mt-1 text-sm text-foreground-muted">
+                                {% translate "Supports markdown (links, bold). Shown below the field in the proposal form." %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <button type="submit" class="btn btn-primary flex items-center">
+                            {% icon "check" class="w-4 h-4 mr-2" %}
+                            {% translate "Save" %}
+                        </button>
+                    </div>
                 </div>
             </div>
         </form>

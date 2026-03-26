@@ -25,6 +25,10 @@
                         <p class="mb-3">{{ presenter.name }}</p>
                         <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Participants Limit" %}</h6>
                         <p class="mb-3">{{ session.participants_limit }}</p>
+                        {% if session.contact_email %}
+                            <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Contact Email" %}</h6>
+                            <p class="mb-3">{{ session.contact_email }}</p>
+                        {% endif %}
                     </div>
                     <div>
                         <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Submitted" %}</h6>

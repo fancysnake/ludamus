@@ -1,11 +1,11 @@
 from datetime import timedelta
 from http import HTTPStatus
 
-import pytest
 from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
+    EventProposalSettings,
     HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -78,7 +78,12 @@ class TestProposeSessionPageView:
         session = client.session
         wizard = {
             "category_id": category.pk,
-            "session_data": {"title": "Test Session", "participants_limit": 6},
+            "contact_email": "proposer@example.com",
+            "session_data": {
+                "display_name": "Test User",
+                "title": "Test Session",
+                "participants_limit": 6,
+            },
             **extra,
         }
         session[f"propose_{event.slug}"] = wizard
@@ -120,7 +125,7 @@ class TestProposeSessionPageView:
             template_name="chronology/propose/base.html",
         )
 
-    def test_get_auto_advances_with_single_category(
+    def test_get_preselects_single_category(
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
@@ -132,9 +137,9 @@ class TestProposeSessionPageView:
             HTTPStatus.OK,
             context_data={
                 "event": EventDTO.model_validate(event),
-                "category": ProposalCategoryDTO.model_validate(proposal_category),
+                "categories": [ProposalCategoryDTO.model_validate(proposal_category)],
+                "selected_category_id": str(proposal_category.pk),
                 "step": "category",
-                "auto_advance": True,
             },
             template_name="chronology/propose/base.html",
         )
@@ -166,6 +171,39 @@ class TestProposeSessionPageView:
         wizard = authenticated_client.session[f"propose_{event.slug}"]
         assert wizard["category_id"] == cat.pk
 
+    def test_post_different_category_clears_wizard_data(
+        self, authenticated_client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        cat_a = ProposalCategoryFactory(event=event, name="RPG")
+        cat_b = ProposalCategoryFactory(event=event, name="Workshop")
+        self._set_wizard_full(authenticated_client, event, cat_a)
+
+        authenticated_client.post(
+            self._get_category_url(event.slug), {"category_id": cat_b.pk}
+        )
+
+        wizard = authenticated_client.session[f"propose_{event.slug}"]
+        assert wizard["category_id"] == cat_b.pk
+        assert "session_data" not in wizard
+        assert "contact_email" not in wizard
+
+    def test_post_same_category_preserves_wizard_data(
+        self, authenticated_client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        cat = ProposalCategoryFactory(event=event, name="RPG")
+        ProposalCategoryFactory(event=event, name="Workshop")
+        self._set_wizard_full(authenticated_client, event, cat)
+
+        authenticated_client.post(
+            self._get_category_url(event.slug), {"category_id": cat.pk}
+        )
+
+        wizard = authenticated_client.session[f"propose_{event.slug}"]
+        assert wizard["category_id"] == cat.pk
+        assert wizard["session_data"]["title"] == "Test Session"
+
     def test_post_category_without_choice_shows_error(
         self, authenticated_client, event, faker, time_zone
     ):
@@ -184,7 +222,7 @@ class TestProposeSessionPageView:
         cat = ProposalCategoryFactory(event=event, name="RPG")
         ProposalCategoryFactory(event=event, name="Workshop")
         field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=cat, field=field, is_required=True
@@ -197,9 +235,9 @@ class TestProposeSessionPageView:
         assert response.status_code == HTTPStatus.OK
         assert response.context["form"] is not None
         assert len(response.context["field_descriptors"]) == 1
-        assert response.context["field_descriptors"][0]["name"] == "Phone"
+        assert response.context["field_descriptors"][0]["name"] == "What is your phone?"
 
-    def test_post_category_skips_personal_when_no_fields(
+    def test_post_category_shows_personal_step_even_without_fields(
         self, authenticated_client, event, faker, time_zone
     ):
         self._activate_proposals(event, faker, time_zone)
@@ -210,11 +248,10 @@ class TestProposeSessionPageView:
             self._get_category_url(event.slug), {"category_id": cat.pk}
         )
 
-        # Skips personal step (no fields), skips timeslots (no requirements),
-        # renders session details form
+        # Always shows personal step for contact email, even without extra fields
         assert response.status_code == HTTPStatus.OK
-        assert response.context["form"] is not None
-        assert response.template_name == "chronology/propose/parts/details.html"
+        assert response.template_name == "chronology/propose/parts/personal.html"
+        assert response.context["form"]["contact_email"] is not None
 
     # -- Personal data POST tests --
 
@@ -223,7 +260,7 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -231,19 +268,21 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_personal_url(event.slug), {"personal_phone": "+48 123"}
+            self._get_personal_url(event.slug),
+            {"personal_phone": "+48 123", "contact_email": "test@example.com"},
         )
 
         assert response.status_code == HTTPStatus.OK
         wizard = authenticated_client.session[f"propose_{event.slug}"]
         assert wizard["personal_data"]["personal_phone"] == "+48 123"
+        assert wizard["contact_email"] == "test@example.com"
 
     def test_post_personal_data_invalid_shows_errors(
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
         field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -262,7 +301,11 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = PersonalDataField.objects.create(
-            event=event, name="T-Shirt", slug="tshirt", field_type="select"
+            event=event,
+            name="T-Shirt",
+            question="What is your T-Shirt size?",
+            slug="tshirt",
+            field_type="select",
         )
         PersonalDataFieldOption.objects.create(
             field=field, label="Small", value="S", order=0
@@ -276,12 +319,14 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_personal_url(event.slug), {"personal_tshirt": "M"}
+            self._get_personal_url(event.slug),
+            {"personal_tshirt": "M", "contact_email": "test@example.com"},
         )
 
         assert response.status_code == HTTPStatus.OK
         wizard = authenticated_client.session[f"propose_{event.slug}"]
         assert wizard["personal_data"]["personal_tshirt"] == "M"
+        assert wizard["contact_email"] == "test@example.com"
 
     # -- Time slot POST tests --
 
@@ -296,7 +341,7 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -320,7 +365,7 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -330,7 +375,8 @@ class TestProposeSessionPageView:
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
-            self._get_personal_url(event.slug), {"personal_phone": "+48 123"}
+            self._get_personal_url(event.slug),
+            {"personal_phone": "+48 123", "contact_email": "test@example.com"},
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -443,6 +489,7 @@ class TestProposeSessionPageView:
         response = authenticated_client.post(
             self._get_details_url(event.slug),
             {
+                "display_name": "Presenter",
                 "title": "My RPG Session",
                 "description": "A great adventure",
                 "participants_limit": "6",
@@ -474,7 +521,10 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = SessionField.objects.create(
-            event=event, name="RPG System", slug="rpg_system"
+            event=event,
+            name="RPG System",
+            question="What RPG system will you use?",
+            slug="rpg_system",
         )
         SessionFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -484,6 +534,7 @@ class TestProposeSessionPageView:
         response = authenticated_client.post(
             self._get_details_url(event.slug),
             {
+                "display_name": "Presenter",
                 "title": "My Session",
                 "participants_limit": "4",
                 "session_rpg_system": "D&D 5e",
@@ -499,7 +550,11 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = SessionField.objects.create(
-            event=event, name="Genre", slug="genre", field_type="select"
+            event=event,
+            name="Genre",
+            question="What genre?",
+            slug="genre",
+            field_type="select",
         )
         SessionFieldOption.objects.create(
             field=field, label="Fantasy", value="fantasy", order=0
@@ -515,6 +570,7 @@ class TestProposeSessionPageView:
         response = authenticated_client.post(
             self._get_details_url(event.slug),
             {
+                "display_name": "Presenter",
                 "title": "Space Opera",
                 "participants_limit": "5",
                 "session_genre": "scifi",
@@ -530,7 +586,10 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = SessionField.objects.create(
-            event=event, name="RPG System", slug="rpg_system"
+            event=event,
+            name="RPG System",
+            question="What RPG system will you use?",
+            slug="rpg_system",
         )
         SessionFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -544,7 +603,10 @@ class TestProposeSessionPageView:
 
         assert response.status_code == HTTPStatus.OK
         assert len(response.context["field_descriptors"]) == 1
-        assert response.context["field_descriptors"][0]["name"] == "RPG System"
+        assert (
+            response.context["field_descriptors"][0]["name"]
+            == "What RPG system will you use?"
+        )
 
     def test_render_session_step_prefills_from_wizard(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -553,7 +615,11 @@ class TestProposeSessionPageView:
         session = authenticated_client.session
         session[f"propose_{event.slug}"] = {
             "category_id": proposal_category.pk,
-            "session_data": {"title": "Prefilled Title", "participants_limit": 8},
+            "session_data": {
+                "display_name": "Prefilled Name",
+                "title": "Prefilled Title",
+                "participants_limit": 8,
+            },
         }
         session.save()
 
@@ -586,7 +652,7 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -615,6 +681,26 @@ class TestProposeSessionPageView:
         assert response.status_code == HTTPStatus.OK
         assert response.context["slot_descriptors"]
 
+    def test_post_back_from_details_skips_timeslots_when_none_required(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = PersonalDataField.objects.create(
+            event=event, name="Phone", question="What is your phone?", slug="phone"
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=True
+        )
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_timeslots_url(event.slug), {"back": "1"}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/personal.html"
+        assert response.context["field_descriptors"]
+
     def test_post_back_to_session(
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
@@ -638,7 +724,11 @@ class TestProposeSessionPageView:
 
         response = authenticated_client.post(
             self._get_details_url(event.slug),
-            {"title": "My Session", "participants_limit": "4"},
+            {
+                "display_name": "Presenter",
+                "title": "My Session",
+                "participants_limit": "4",
+            },
         )
 
         assert response.status_code == HTTPStatus.OK
@@ -650,7 +740,7 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -669,6 +759,7 @@ class TestProposeSessionPageView:
         response = authenticated_client.post(
             self._get_details_url(event.slug),
             {
+                "display_name": "Presenter",
                 "title": "Full Session",
                 "participants_limit": "5",
                 "description": "Full description",
@@ -693,6 +784,47 @@ class TestProposeSessionPageView:
         assert response.template_name == "chronology/propose/parts/review.html"
         assert response.context["review"]["title"] == "Test Session"
 
+    # -- display_name tests --
+
+    def test_details_prefills_display_name(
+        self,
+        authenticated_client,
+        event,
+        faker,
+        time_zone,
+        proposal_category,
+        active_user,
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_details_url(event.slug), {"back": "1"}
+        )
+
+        form = response.context["form"]
+        assert form.initial["display_name"] == active_user.name
+
+    def test_submit_uses_display_name_from_wizard(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "display_name": "My Custom Name",
+                "title": "Test Session",
+                "participants_limit": 6,
+            },
+        )
+
+        authenticated_client.post(self._get_submit_url(event.slug), {})
+
+        session = Session.objects.get(title="Test Session")
+        assert session.display_name == "My Custom Name"
+
     # -- Submit tests --
 
     def test_submit_creates_session_and_proposal(
@@ -715,7 +847,7 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = PersonalDataField.objects.create(
-            event=event, name="Phone", slug="phone"
+            event=event, name="Phone", question="What is your phone?", slug="phone"
         )
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -752,7 +884,10 @@ class TestProposeSessionPageView:
     ):
         self._activate_proposals(event, faker, time_zone)
         field = SessionField.objects.create(
-            event=event, name="RPG System", slug="rpg_system"
+            event=event,
+            name="RPG System",
+            question="What RPG system will you use?",
+            slug="rpg_system",
         )
         SessionFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
@@ -773,6 +908,71 @@ class TestProposeSessionPageView:
         session = Session.objects.get(title="Test Session")
         sfv = SessionFieldValue.objects.get(session=session, field=field)
         assert sfv.value == "D&D 5e"
+
+    def test_submit_saves_multiselect_field_as_list(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="Genres",
+            question="What genres?",
+            slug="genres",
+            field_type="select",
+            is_multiple=True,
+        )
+        SessionFieldOption.objects.create(field=field, value="fantasy", label="Fantasy")
+        SessionFieldOption.objects.create(field=field, value="sci-fi", label="Sci-Fi")
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=True
+        )
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_genres": ["fantasy", "sci-fi"],
+            },
+        )
+
+        authenticated_client.post(self._get_submit_url(event.slug), {})
+
+        session = Session.objects.get(title="Test Session")
+        sfv = SessionFieldValue.objects.get(session=session, field=field)
+        assert sfv.value == ["fantasy", "sci-fi"]
+
+    def test_submit_saves_checkbox_field_as_boolean(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="Needs projector",
+            question="Do you need a projector?",
+            slug="needs_projector",
+            field_type="checkbox",
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_needs_projector": True,
+            },
+        )
+
+        authenticated_client.post(self._get_submit_url(event.slug), {})
+
+        session = Session.objects.get(title="Test Session")
+        sfv = SessionFieldValue.objects.get(session=session, field=field)
+        assert sfv.value is True
 
     def test_submit_clears_wizard_session(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -818,7 +1018,7 @@ class TestProposeSessionPageView:
 
         assert response.status_code == HTTPStatus.FOUND
 
-    def test_post_personal_skips_when_no_requirements(
+    def test_post_personal_without_email_shows_error(
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
@@ -826,7 +1026,22 @@ class TestProposeSessionPageView:
 
         response = authenticated_client.post(self._get_personal_url(event.slug), {})
 
-        # No personal requirements — skips to session step (no timeslots either)
+        # Contact email is required — stays on personal step
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/personal.html"
+        assert response.context["form"].errors["contact_email"]
+
+    def test_post_personal_advances_when_no_extra_requirements(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_personal_url(event.slug), {"contact_email": "test@example.com"}
+        )
+
+        # No personal requirements, but contact email provided — advances
         assert response.status_code == HTTPStatus.OK
         assert response.template_name == "chronology/propose/parts/details.html"
 
@@ -857,6 +1072,7 @@ class TestProposeSessionPageView:
         field = PersonalDataField.objects.create(
             event=event,
             name="Diet",
+            question="What is your diet?",
             slug="diet",
             field_type="select",
             allow_custom=True,
@@ -885,6 +1101,7 @@ class TestProposeSessionPageView:
         field = SessionField.objects.create(
             event=event,
             name="System",
+            question="What system will you use?",
             slug="system",
             field_type="select",
             allow_custom=True,
@@ -920,19 +1137,25 @@ class TestProposeSessionPageView:
 
         assert response.status_code == HTTPStatus.FOUND
 
-    def test_submit_without_participants_limit_raises(
+    def test_submit_without_participants_limit_defaults_to_zero(
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
         session = authenticated_client.session
         session[f"propose_{event.slug}"] = {
             "category_id": proposal_category.pk,
-            "session_data": {"title": "Test", "description": "Desc"},
+            "session_data": {
+                "title": "Test",
+                "description": "Desc",
+                "display_name": "Presenter",
+                "contact_email": "test@example.com",
+            },
         }
         session.save()
 
-        with pytest.raises(ValueError, match="session_data must contain"):
-            authenticated_client.post(self._get_submit_url(event.slug), {})
+        response = authenticated_client.post(self._get_submit_url(event.slug), {})
+
+        assert response.status_code == HTTPStatus.FOUND
 
     def test_submit_with_slug_collision(
         self,
@@ -948,7 +1171,7 @@ class TestProposeSessionPageView:
         Session.objects.create(
             sphere=event.sphere,
             presenter=active_user,
-            presenter_name="Other",
+            display_name="Other",
             category=proposal_category,
             title="Test Session",
             slug="test-session",
@@ -1055,6 +1278,7 @@ class TestProposeSessionPageView:
         field = PersonalDataField.objects.create(
             event=event,
             name="Allergies",
+            question="What are your allergies?",
             slug="allergies",
             field_type="select",
             is_multiple=True,
@@ -1086,6 +1310,7 @@ class TestProposeSessionPageView:
         field = SessionField.objects.create(
             event=event,
             name="Themes",
+            question="What themes?",
             slug="themes",
             field_type="select",
             is_multiple=True,
@@ -1123,3 +1348,218 @@ class TestProposeSessionPageView:
         authenticated_client.post(self._get_submit_url(event.slug), {})
 
         assert HostPersonalData.objects.count() == 0
+
+    # -- Coverage: checkbox field type (forms.py:44) --
+
+    def test_post_personal_data_checkbox_field(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Agreement",
+            question="Do you agree?",
+            slug="agreement",
+            field_type="checkbox",
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_personal_url(event.slug),
+            {"personal_agreement": "on", "contact_email": "test@example.com"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        wizard = authenticated_client.session[f"propose_{event.slug}"]
+        assert wizard["personal_data"]["personal_agreement"] is True
+
+    # -- Coverage: proposal_description in GET (views.py) --
+
+    def test_get_shows_proposal_description(
+        self, authenticated_client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        EventProposalSettings.objects.create(event=event, description="## Welcome")
+        ProposalCategoryFactory(event=event, name="RPG")
+
+        response = authenticated_client.get(self._get_url(event.slug))
+
+        assert response.status_code == HTTPStatus.OK
+        assert "<h2>Welcome</h2>" in response.content.decode()
+
+    # -- Coverage: proposal_description in category back (views.py) --
+
+    def test_post_back_to_category_shows_proposal_description(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        EventProposalSettings.objects.create(event=event, description="## Rules")
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_category_url(event.slug), {"back": "1"}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert "<h2>Rules</h2>" in response.content.decode()
+
+    # -- Coverage: personal data prefill from wizard session (views.py:119) --
+
+    def test_personal_step_prefills_from_wizard_session(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = PersonalDataField.objects.create(
+            event=event, name="Phone", question="What is your phone?", slug="phone"
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=True
+        )
+        session = authenticated_client.session
+        session[f"propose_{event.slug}"] = {
+            "category_id": proposal_category.pk,
+            "personal_data": {"personal_phone": "+48 777"},
+            "contact_email": "wizard@example.com",
+        }
+        session.save()
+
+        response = authenticated_client.post(
+            self._get_personal_url(event.slug), {"back": "1"}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        form = response.context["form"]
+        assert form.initial["personal_phone"] == "+48 777"
+
+    # -- Coverage: review formats boolean values (views.py:195-197, 203-205) --
+
+    def test_review_formats_boolean_field_values(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="Needs projector",
+            question="Do you need a projector?",
+            slug="needs_projector",
+            field_type="checkbox",
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_needs_projector": True,
+            },
+        )
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        review = response.context["review"]
+        projector_field = next(
+            f
+            for f in review["session_fields"]
+            if f["name"] == "Do you need a projector?"
+        )
+        assert projector_field["value"] is True
+
+    # -- Coverage: review formats list values (views.py:201-202) --
+
+    def test_review_formats_multiselect_field_values(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="Genres",
+            question="What genres?",
+            slug="genres",
+            field_type="select",
+            is_multiple=True,
+        )
+        SessionFieldOption.objects.create(field=field, value="fantasy", label="Fantasy")
+        SessionFieldOption.objects.create(field=field, value="scifi", label="Sci-Fi")
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_genres": ["fantasy", "scifi"],
+            },
+        )
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        review = response.context["review"]
+        genre_field = next(
+            f for f in review["session_fields"] if f["name"] == "What genres?"
+        )
+        assert genre_field["value"] == ["fantasy", "scifi"]
+
+    # -- Coverage: review passes raw string values through (views.py) --
+
+    def test_review_passes_raw_string_values(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event, name="Note", question="Any notes?", slug="note"
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_note": "Some note",
+            },
+        )
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        review = response.context["review"]
+        note_field = next(
+            f for f in review["session_fields"] if f["name"] == "Any notes?"
+        )
+        assert note_field["value"] == "Some note"
+
+    # -- Coverage: review skips None values (views.py:193-194) --
+
+    def test_review_skips_none_field_values(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="Optional",
+            question="What is your optional info?",
+            slug="optional",
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        # Don't include session_optional in wizard data — get() returns None
+        self._set_wizard_full(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        review = response.context["review"]
+        field_names = [f["name"] for f in review["session_fields"]]
+        assert "What is your optional info?" not in field_names

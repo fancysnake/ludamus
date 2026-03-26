@@ -24,7 +24,9 @@ class TestSessionFieldDeleteActionView:
         )
 
     def test_post_redirects_anonymous_user_to_login(self, client, event):
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
         url = self.get_url(event, field)
 
         response = client.post(url)
@@ -34,7 +36,9 @@ class TestSessionFieldDeleteActionView:
         )
 
     def test_post_redirects_non_manager_user(self, authenticated_client, event):
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         response = authenticated_client.post(self.get_url(event, field))
 
@@ -49,7 +53,9 @@ class TestSessionFieldDeleteActionView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
 
         response = authenticated_client.post(self.get_url(event, field))
 
@@ -65,7 +71,9 @@ class TestSessionFieldDeleteActionView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
         url = reverse(
             "panel:session-field-delete",
             kwargs={"slug": "nonexistent", "field_slug": field.slug},
@@ -102,7 +110,9 @@ class TestSessionFieldDeleteActionView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
         category = ProposalCategory.objects.create(
             event=event, name="Session", slug="session"
         )
@@ -126,7 +136,9 @@ class TestSessionFieldDeleteActionView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        field = SessionField.objects.create(event=event, name="Genre", slug="genre")
+        field = SessionField.objects.create(
+            event=event, name="Genre", question="What genre?", slug="genre"
+        )
         category1 = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
         category2 = ProposalCategory.objects.create(
             event=event, name="Workshop", slug="workshop"

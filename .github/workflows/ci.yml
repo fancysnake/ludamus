@@ -22,29 +22,34 @@ jobs:
       - run: mise install
       - run: mise run p install
       - run: mise run prcheck
-      - run: mise run test -- --cov --cov-report=xml
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
 
-  playwright:
+  test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
       - run: mise install
       - run: mise run p install
 
-        # per the docs: "caching browser binaries is not recommended,
-        # since the amount of time it takes to restore the cache is
-        # comparable to the time it takes to download the binaries"
+      # Integration/unit tests → .coverage.unit
+      - run: mise run test -- --cov
+
+      # E2E tests → .coverage.e2e
       - name: Install Playwright Browsers
         run: mise run install:playwright
-
       - name: Run end-to-end tests
         run: mise run e2e
+
+      # Combine and upload
+      - name: Combine coverage reports
+        run: mise run coverage:combine
+        if: ${{ !cancelled() }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}

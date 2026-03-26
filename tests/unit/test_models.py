@@ -12,6 +12,7 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
+    EventProposalSettings,
     HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -51,6 +52,16 @@ class TestEnrollmentConfig:
         assert (
             str(EnrollmentConfig(event=Event(name=name)))
             == f"Enrollment config for {name}"
+        )
+
+
+class TestEventProposalSettings:
+    def test_str(self, faker):
+        name = faker.word()
+
+        assert (
+            str(EventProposalSettings(event=Event(name=name)))
+            == f"Proposal settings for {name}"
         )
 
 
@@ -185,7 +196,7 @@ class TestAgendaItem:
             str(
                 AgendaItem(
                     session_confirmed=True,
-                    session=Session(title=title, presenter_name=name),
+                    session=Session(title=title, display_name=name),
                 )
             )
             == f"{title} by {name} (True)"

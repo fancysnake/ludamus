@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load cfp_tags %}
 <div id="wizard-content">
     {% if review|default:"" %}
         <h2 class="text-lg font-semibold mb-1">{% translate "Review & Submit" %}</h2>
@@ -9,8 +10,16 @@
                 <p class="text-foreground">{{ review.category_name }}</p>
             </div>
             <div class="border border-border rounded-2xl p-5">
-                <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Session" %}</h3>
+                <h3 class="text-sm font-medium text-foreground-muted mb-2">
+                    {% translate "Session" context "proposal review heading" %}
+                </h3>
                 <dl class="space-y-2">
+                    <div>
+                        <dt class="text-xs text-foreground-muted">{% translate "Presenter name" %}</dt>
+                        <dd class="text-foreground">
+                            {{ review.display_name }}
+                        </dd>
+                    </div>
                     <div>
                         <dt class="text-xs text-foreground-muted">{% translate "Title" %}</dt>
                         <dd class="text-foreground">
@@ -28,34 +37,44 @@
                     <div>
                         <dt class="text-xs text-foreground-muted">{% translate "Max participants" %}</dt>
                         <dd class="text-foreground">
-                            {{ review.participants_limit }}
+                            {% if review.participants_limit %}
+                                {{ review.participants_limit }}
+                            {% else %}
+                                {% translate "No limit" %}
+                            {% endif %}
                         </dd>
                     </div>
                     {% for field in review.session_fields %}
                         <div>
                             <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
                             <dd class="text-foreground">
-                                {{ field.value }}
+                                {{ field.value|format_field_value }}
                             </dd>
                         </div>
                     {% endfor %}
                 </dl>
             </div>
-            {% if review.personal_fields %}
-                <div class="border border-border rounded-2xl p-5">
-                    <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Your Information" %}</h3>
-                    <dl class="space-y-2">
-                        {% for field in review.personal_fields %}
-                            <div>
-                                <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
-                                <dd class="text-foreground">
-                                    {{ field.value }}
-                                </dd>
-                            </div>
-                        {% endfor %}
-                    </dl>
-                </div>
-            {% endif %}
+            <div class="border border-border rounded-2xl p-5">
+                <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Your Information" %}</h3>
+                <dl class="space-y-2">
+                    {% if review.contact_email %}
+                        <div>
+                            <dt class="text-xs text-foreground-muted">{% translate "Contact Email" %}</dt>
+                            <dd class="text-foreground">
+                                {{ review.contact_email }}
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% for field in review.personal_fields %}
+                        <div>
+                            <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
+                            <dd class="text-foreground">
+                                {{ field.value|format_field_value }}
+                            </dd>
+                        </div>
+                    {% endfor %}
+                </dl>
+            </div>
             {% if review.time_slots %}
                 <div class="border border-border rounded-2xl p-5">
                     <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Preferred Time Slots" %}</h3>

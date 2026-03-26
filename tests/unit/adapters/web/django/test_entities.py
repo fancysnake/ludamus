@@ -1,3 +1,4 @@
+import sys
 from unittest.mock import MagicMock
 
 import pytest
@@ -46,6 +47,11 @@ class TestSessionDataSpotsLeft:
         data = _make_session_data(effective_participants_limit=5, enrolled_count=7)
 
         assert data.spots_left == 0
+
+    def test_unlimited_returns_maxsize(self):
+        data = _make_session_data(effective_participants_limit=0, enrolled_count=5)
+
+        assert data.spots_left == sys.maxsize
 
 
 class TestSessionDataSpotsScarce:

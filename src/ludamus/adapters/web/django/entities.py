@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Self
 
@@ -62,7 +63,13 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     )
 
     @property
+    def is_unlimited(self) -> bool:
+        return self.effective_participants_limit == 0
+
+    @property
     def spots_left(self) -> int:
+        if self.effective_participants_limit == 0:
+            return sys.maxsize
         return max(0, self.effective_participants_limit - self.enrolled_count)
 
     _SCARCE_THRESHOLD = 0.2
@@ -103,6 +110,7 @@ class EventInfo:  # pylint: disable=too-many-instance-attributes
     is_ended: bool
     is_live: bool
     is_proposal_active: bool
+    is_published: bool
     name: str
     session_count: int
     start_time: datetime
@@ -119,6 +127,7 @@ class EventInfo:  # pylint: disable=too-many-instance-attributes
             is_ended=event.is_ended,
             is_live=event.is_live,
             is_proposal_active=event.is_proposal_active,
+            is_published=event.is_published,
             name=event.name,
             session_count=session_count,
             slug=event.slug,

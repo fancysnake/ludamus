@@ -17,6 +17,9 @@ class EventSettingsForm(forms.Form):
             "required": _("Event name is required."),
         },
     )
+    proposal_description = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 4})
+    )
 
 
 class ProposalCategoryForm(forms.Form):
@@ -35,12 +38,28 @@ class ProposalCategoryForm(forms.Form):
     )
     start_time = forms.DateTimeField(required=False)
     end_time = forms.DateTimeField(required=False)
+    min_participants_limit = forms.IntegerField(required=False, min_value=0, initial=0)
+    max_participants_limit = forms.IntegerField(required=False, min_value=0, initial=0)
+
+    def clean(self) -> dict[str, object]:
+        cleaned = super().clean() or {}
+        min_limit = cleaned.get("min_participants_limit") or 0
+        max_limit = cleaned.get("max_participants_limit") or 0
+        if min_limit and max_limit and min_limit > max_limit:
+            raise forms.ValidationError(
+                _("Minimum participants limit cannot exceed maximum.")
+            )
+        return cleaned
 
 
 class PersonalDataFieldForm(forms.Form):
     """Form for creating/editing personal data fields."""
 
-    FIELD_TYPE_CHOICES: ClassVar = [("text", _("Text")), ("select", _("Select"))]
+    FIELD_TYPE_CHOICES: ClassVar = [
+        ("text", _("Text")),
+        ("select", _("Select")),
+        ("checkbox", _("Checkbox")),
+    ]
 
     name = forms.CharField(
         max_length=255,
@@ -48,6 +67,14 @@ class PersonalDataFieldForm(forms.Form):
         error_messages={
             "max_length": _("Field name is too long (max 255 characters)."),
             "required": _("Field name is required."),
+        },
+    )
+    question = forms.CharField(
+        max_length=500,
+        strip=True,
+        error_messages={
+            "max_length": _("Question text is too long (max 500 characters)."),
+            "required": _("Question text is required."),
         },
     )
     field_type = forms.ChoiceField(
@@ -67,13 +94,25 @@ class PersonalDataFieldForm(forms.Form):
         required=False,
         initial=False,
         help_text=_("Allow entering custom values (for Select fields only)."),
+    )
+    help_text = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+        help_text=_(
+            "Supports markdown (links, bold)."
+            " Shown below the field in the proposal form."
+        ),
     )
 
 
 class SessionFieldForm(forms.Form):
     """Form for creating/editing session fields."""
 
-    FIELD_TYPE_CHOICES: ClassVar = [("text", _("Text")), ("select", _("Select"))]
+    FIELD_TYPE_CHOICES: ClassVar = [
+        ("text", _("Text")),
+        ("select", _("Select")),
+        ("checkbox", _("Checkbox")),
+    ]
 
     name = forms.CharField(
         max_length=255,
@@ -81,6 +120,14 @@ class SessionFieldForm(forms.Form):
         error_messages={
             "max_length": _("Field name is too long (max 255 characters)."),
             "required": _("Field name is required."),
+        },
+    )
+    question = forms.CharField(
+        max_length=500,
+        strip=True,
+        error_messages={
+            "max_length": _("Question text is too long (max 500 characters)."),
+            "required": _("Question text is required."),
         },
     )
     field_type = forms.ChoiceField(
@@ -100,6 +147,14 @@ class SessionFieldForm(forms.Form):
         required=False,
         initial=False,
         help_text=_("Allow entering custom values (for Select fields only)."),
+    )
+    help_text = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+        help_text=_(
+            "Supports markdown (links, bold)."
+            " Shown below the field in the proposal form."
+        ),
     )
 
 

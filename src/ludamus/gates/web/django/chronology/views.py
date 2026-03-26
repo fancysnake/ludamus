@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
 
+from ludamus.gates.web.django.templatetags.cfp_tags import has_field_value
 from ludamus.mills import ProposeSessionService, is_proposal_active
 from ludamus.pacts import NotFoundError, RedirectError
 
@@ -50,9 +51,10 @@ def _field_descriptors(
         desc = {
             "key": field_key,
             "bound_field": bound_field,
-            "name": req.field.name,
+            "name": req.field.question,
             "slug": req.field.slug,
             "field_type": req.field.field_type,
+            "help_text": req.field.help_text,
             "is_required": req.is_required,
             "is_multiple": req.field.is_multiple,
             "allow_custom": req.field.allow_custom,
@@ -91,11 +93,13 @@ def _render_category(
     wizard = request.session.get(_session_key(event_slug), {})
     selected_id = wizard.get("category_id")
 
-    return TemplateResponse(
-        request,
-        "chronology/propose/parts/category.html",
-        {"event": event, "categories": categories, "selected_category_id": selected_id},
-    )
+    context: dict[str, object] = {
+        "event": event,
+        "categories": categories,
+        "selected_category_id": selected_id,
+    }
+
+    return TemplateResponse(request, "chronology/propose/parts/category.html", context)
 
 
 def _render_personal(
@@ -104,13 +108,19 @@ def _render_personal(
     event: EventDTO,
     category: ProposalCategoryDTO,
 ) -> HttpResponse:
-    if not (requirements := service.get_personal_requirements(category.pk)):
-        return _render_timeslots(request, service, event, category)
+    requirements = service.get_personal_requirements(category.pk)
 
     wizard = request.session.get(_session_key(event.slug), {})
-    if not (initial := wizard.get("personal_data")):
+    initial: dict[str, str | list[str] | bool] = {}
+    if saved_personal := wizard.get("personal_data"):
+        initial = saved_personal
+    else:
         saved = service.get_saved_personal_data(event.pk)
         initial = {f"personal_{slug}": value for slug, value in saved.items()}
+
+    initial["contact_email"] = wizard.get(
+        "contact_email", getattr(request.user, "email", "")
+    )
 
     form = build_personal_data_form(requirements)(initial=initial)
 
@@ -159,8 +169,14 @@ def _render_details(
 
     wizard = request.session.get(_session_key(event.slug), {})
     initial = wizard.get("session_data", {})
+    if "display_name" not in initial:
+        initial["display_name"] = getattr(request.user, "name", "")
 
-    form = build_session_details_form(requirements)(initial=initial)
+    form = build_session_details_form(
+        requirements,
+        min_limit=category.min_participants_limit,
+        max_limit=category.max_participants_limit,
+    )(initial=initial)
 
     return TemplateResponse(
         request,
@@ -189,14 +205,16 @@ def _render_review(
     session_fields = []
     for req in service.get_session_requirements(category.pk):
         key = f"session_{req.field.slug}"
-        if value := session_data.get(key):
-            session_fields.append({"name": req.field.name, "value": value})
+        value = session_data.get(key)
+        if has_field_value(value):
+            session_fields.append({"name": req.field.question, "value": value})
 
     personal_fields = []
     for p_req in service.get_personal_requirements(category.pk):
         key = f"personal_{p_req.field.slug}"
-        if value := personal_data.get(key):
-            personal_fields.append({"name": p_req.field.name, "value": value})
+        value = personal_data.get(key)
+        if has_field_value(value):
+            personal_fields.append({"name": p_req.field.question, "value": value})
 
     time_slots = []
     if time_slot_ids:
@@ -210,9 +228,11 @@ def _render_review(
 
     review: dict[str, object] = {
         "category_name": category.name,
+        "display_name": session_data.get("display_name", ""),
         "title": session_data.get("title", ""),
         "description": session_data.get("description", ""),
         "participants_limit": session_data.get("participants_limit", ""),
+        "contact_email": wizard.get("contact_email", ""),
         "session_fields": session_fields,
         "personal_fields": personal_fields,
         "time_slots": time_slots,
@@ -287,26 +307,19 @@ class ProposeSessionPageView(ProposeWizardMixin, View):
 
         request.session.pop(_session_key(event_slug), None)
 
+        context: dict[str, object] = {
+            "event": event,
+            "categories": categories,
+            "step": "category",
+        }
+
         if len(categories) == 1:
             request.session[_session_key(event_slug)] = {
                 "category_id": categories[0].pk
             }
-            return TemplateResponse(
-                request,
-                "chronology/propose/base.html",
-                {
-                    "event": event,
-                    "category": categories[0],
-                    "step": "category",
-                    "auto_advance": True,
-                },
-            )
+            context["selected_category_id"] = str(categories[0].pk)
 
-        return TemplateResponse(
-            request,
-            "chronology/propose/base.html",
-            {"event": event, "categories": categories, "step": "category"},
-        )
+        return TemplateResponse(request, "chronology/propose/base.html", context)
 
 
 class ProposeSessionCategoryComponentView(ProposeWizardMixin, View):
@@ -319,14 +332,13 @@ class ProposeSessionCategoryComponentView(ProposeWizardMixin, View):
 
         if not (category_id := request.POST.get("category_id")):
             categories = service.get_categories(event.pk)
+            ctx: dict[str, object] = {
+                "event": event,
+                "categories": categories,
+                "error": _("Please select a category."),
+            }
             return TemplateResponse(
-                request,
-                "chronology/propose/parts/category.html",
-                {
-                    "event": event,
-                    "categories": categories,
-                    "error": _("Please select a category."),
-                },
+                request, "chronology/propose/parts/category.html", ctx
             )
 
         try:
@@ -340,7 +352,8 @@ class ProposeSessionCategoryComponentView(ProposeWizardMixin, View):
             ) from None
 
         wizard = request.session.get(_session_key(event_slug), {})
-        wizard["category_id"] = category.pk
+        if wizard.get("category_id") != category.pk:
+            wizard = {"category_id": category.pk}
         request.session[_session_key(event_slug)] = wizard
 
         return _render_personal(request, service, event, category)
@@ -355,8 +368,7 @@ class ProposeSessionPersonalComponentView(ProposeWizardMixin, View):
         if request.POST.get("back"):
             return _render_personal(request, service, event, category)
 
-        if not (requirements := service.get_personal_requirements(category.pk)):
-            return _render_timeslots(request, service, event, category)
+        requirements = service.get_personal_requirements(category.pk)
 
         form_class = build_personal_data_form(requirements)
         form = form_class(data=request.POST)
@@ -377,8 +389,12 @@ class ProposeSessionPersonalComponentView(ProposeWizardMixin, View):
 
         wizard = request.session.get(_session_key(event_slug), {})
         wizard["personal_data"] = {
-            key: value for key, value in form.cleaned_data.items() if value
+            key: value
+            for key, value in form.cleaned_data.items()
+            if key != "contact_email" and value
         }
+
+        wizard["contact_email"] = form.cleaned_data["contact_email"]
         request.session[_session_key(event_slug)] = wizard
 
         return _render_timeslots(request, service, event, category)
@@ -391,6 +407,8 @@ class ProposeSessionTimeslotsComponentView(ProposeWizardMixin, View):
         category = self._get_wizard_category(request, service, event, event_slug)
 
         if request.POST.get("back"):
+            if not service.get_timeslot_requirements(category.pk):
+                return _render_personal(request, service, event, category)
             return _render_timeslots(request, service, event, category)
 
         if not (requirements := service.get_timeslot_requirements(category.pk)):
@@ -430,7 +448,11 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
             return _render_details(request, service, event, category)
 
         requirements = service.get_session_requirements(category.pk)
-        form_class = build_session_details_form(requirements)
+        form_class = build_session_details_form(
+            requirements,
+            min_limit=category.min_participants_limit,
+            max_limit=category.max_participants_limit,
+        )
         form = form_class(data=request.POST)
 
         if not form.is_valid():

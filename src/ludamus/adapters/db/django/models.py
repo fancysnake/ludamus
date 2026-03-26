@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import sys
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, ClassVar, Never, cast
 
@@ -214,6 +215,13 @@ class Event(models.Model):
     def is_ended(self) -> bool:
         return self.end_time < datetime.now(tz=UTC)
 
+    @property
+    def is_published(self) -> bool:
+        return (
+            self.publication_time is not None
+            and self.publication_time <= datetime.now(tz=UTC)
+        )
+
     def get_active_enrollment_configs(self) -> list[EnrollmentConfig]:
         return [config for config in self.enrollment_configs.all() if config.is_active]
 
@@ -228,6 +236,19 @@ class Event(models.Model):
             return None
 
         return max(eligible_configs, key=lambda c: c.percentage_slots)
+
+
+class EventProposalSettings(models.Model):
+    event = models.OneToOneField(
+        Event, on_delete=models.CASCADE, related_name="proposal_settings"
+    )
+    description = models.TextField(default="", blank=True)
+
+    class Meta:
+        db_table = "event_proposal_settings"
+
+    def __str__(self) -> str:
+        return f"Proposal settings for {self.event}"
 
 
 class EnrollmentConfig(models.Model):
@@ -293,6 +314,8 @@ class EnrollmentConfig(models.Model):
         Returns:
             Number of available slots for enrollment.
         """
+        if session.participants_limit == 0:
+            return sys.maxsize
         effective_limit = math.ceil(
             session.participants_limit * self.percentage_slots / 100
         )
@@ -594,7 +617,8 @@ class Session(models.Model):
         blank=True,
         related_name="presented_sessions",
     )
-    presenter_name = models.CharField(max_length=255)
+    display_name = models.CharField(max_length=255)
+    contact_email = models.EmailField(default="", blank=True)
     category = models.ForeignKey(
         "ProposalCategory",
         on_delete=models.CASCADE,
@@ -667,6 +691,8 @@ class Session(models.Model):
     @property
     def effective_participants_limit(self) -> int:
         """Get effective participants limit considering enrollment config percentage."""
+        if self.participants_limit == 0:
+            return 0
         event = self.agenda_item.space.area.venue.event
         if enrollment_config := event.get_most_liberal_config(self):
             return math.ceil(
@@ -677,6 +703,8 @@ class Session(models.Model):
     @property
     def is_full(self) -> bool:
         """Check if session is at capacity for enrollment."""
+        if self.participants_limit == 0:
+            return False
         return self.enrolled_count >= self.effective_participants_limit
 
     @property
@@ -692,11 +720,14 @@ class Session(models.Model):
         """Get complete participant information display."""
         # TODO(@fancysnake): This is used in templates. Rewrite to pass static values
         # ZAG-16
-        base_info = f"{self.enrolled_count}/{self.effective_participants_limit}"
+        if self.effective_participants_limit == 0:
+            base_info = str(self.enrolled_count)
+        else:
+            base_info = f"{self.enrolled_count}/{self.effective_participants_limit}"
 
-        # Add session limit if different from effective limit
-        if self.effective_participants_limit != self.participants_limit:
-            base_info += f" (session limit: {self.participants_limit})"
+            # Add session limit if different from effective limit
+            if self.effective_participants_limit != self.participants_limit:
+                base_info += f" (session limit: {self.participants_limit})"
 
         # Add waiting list info
         if self.waiting_count > 0:
@@ -731,7 +762,7 @@ class AgendaItem(models.Model):
 
     def __str__(self) -> str:
         return (
-            f"{self.session.title} by {self.session.presenter_name} "
+            f"{self.session.title} by {self.session.display_name} "
             f"({self.session_confirmed})"
         )
 
@@ -762,8 +793,8 @@ class ProposalCategory(models.Model):
     end_time = models.DateTimeField(blank=True, null=True)
     # Settings
     tag_categories = models.ManyToManyField(TagCategory)
-    max_participants_limit = models.PositiveIntegerField(default=100)
-    min_participants_limit = models.PositiveIntegerField(default=1)
+    max_participants_limit = models.PositiveIntegerField(default=0)
+    min_participants_limit = models.PositiveIntegerField(default=0)
     durations = models.JSONField(
         default=list
     )  # ISO 8601 durations, e.g. ["PT30M", "PT1H"]
@@ -845,6 +876,7 @@ class SessionParticipation(models.Model):
 class PersonalDataFieldType(models.TextChoices):
     TEXT = "text", "Text"
     SELECT = "select", "Select"
+    CHECKBOX = "checkbox", "Checkbox"
 
 
 class PersonalDataField(models.Model):
@@ -854,6 +886,7 @@ class PersonalDataField(models.Model):
         Event, on_delete=models.CASCADE, related_name="personal_data_fields"
     )
     name = models.CharField(max_length=255)
+    question = models.CharField(max_length=500)
     slug = models.SlugField()
     field_type = models.CharField(
         max_length=20,
@@ -863,6 +896,7 @@ class PersonalDataField(models.Model):
     is_multiple = models.BooleanField(default=False)
     allow_custom = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+    help_text = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "personal_data_field"
@@ -937,7 +971,7 @@ class HostPersonalData(models.Model):
     field = models.ForeignKey(
         PersonalDataField, on_delete=models.CASCADE, related_name="values"
     )
-    value = models.TextField(blank=True, default="")
+    value = models.JSONField(default="")
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
 
@@ -958,6 +992,7 @@ class HostPersonalData(models.Model):
 class SessionFieldType(models.TextChoices):
     TEXT = "text", "Text"
     SELECT = "select", "Select"
+    CHECKBOX = "checkbox", "Checkbox"
 
 
 class SessionField(models.Model):
@@ -967,6 +1002,7 @@ class SessionField(models.Model):
         Event, on_delete=models.CASCADE, related_name="session_fields"
     )
     name = models.CharField(max_length=255)
+    question = models.CharField(max_length=500)
     slug = models.SlugField()
     field_type = models.CharField(
         max_length=20, choices=SessionFieldType.choices, default=SessionFieldType.TEXT
@@ -974,6 +1010,7 @@ class SessionField(models.Model):
     is_multiple = models.BooleanField(default=False)
     allow_custom = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+    help_text = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "session_field"
@@ -1042,7 +1079,7 @@ class SessionFieldValue(models.Model):
     field = models.ForeignKey(
         SessionField, on_delete=models.CASCADE, related_name="values"
     )
-    value = models.TextField(blank=True, default="")
+    value = models.JSONField(default="")
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
 

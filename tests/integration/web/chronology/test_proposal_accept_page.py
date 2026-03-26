@@ -209,7 +209,7 @@ class TestProposalAcceptPageView:
         )
         session = Session.objects.get(pk=pending_session.pk)
         assert session.status == "accepted"
-        assert session.presenter_name == active_user.name
+        assert session.display_name == active_user.name
         assert session.agenda_item.space == space
         assert session.agenda_item.session == session
         assert session.agenda_item.session_confirmed
@@ -243,7 +243,7 @@ class TestProposalAcceptPageView:
             title="Other Session",
             sphere=event.sphere,
             slug="other-session",
-            presenter_name=staff_user.name,
+            display_name=staff_user.name,
             participants_limit=10,
         )
         AgendaItem.objects.create(

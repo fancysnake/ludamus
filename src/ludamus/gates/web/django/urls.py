@@ -163,6 +163,16 @@ panel_urlpatterns = [
         panel.TimeSlotDeleteActionView.as_view(),
         name="time-slot-delete",
     ),
+    path(
+        "event/<slug:slug>/proposals/",
+        panel.ProposalsPageView.as_view(),
+        name="proposals",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/",
+        panel.ProposalDetailPageView.as_view(),
+        name="proposal-detail",
+    ),
     path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
     path(
         "event/<slug:slug>/cfp/create/",
