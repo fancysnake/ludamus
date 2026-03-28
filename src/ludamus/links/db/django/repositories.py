@@ -1597,6 +1597,54 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
             )
 
     @staticmethod
+    def get_personal_field_categories(field_id: int) -> dict[int, bool]:
+        reqs = PersonalDataFieldRequirement.objects.filter(field_id=field_id)
+        return {req.category_id: req.is_required for req in reqs}
+
+    @staticmethod
+    def set_personal_field_categories(
+        field_id: int, categories: dict[int, bool]
+    ) -> None:
+        PersonalDataFieldRequirement.objects.filter(field_id=field_id).delete()
+        for category_id, is_required in categories.items():
+            max_order = (
+                PersonalDataFieldRequirement.objects.filter(
+                    category_id=category_id
+                ).aggregate(Max("order"))["order__max"]
+                or 0
+            )
+            PersonalDataFieldRequirement.objects.create(
+                category_id=category_id,
+                field_id=field_id,
+                is_required=is_required,
+                order=max_order + 1,
+            )
+
+    @staticmethod
+    def get_session_field_categories(field_id: int) -> dict[int, bool]:
+        reqs = SessionFieldRequirement.objects.filter(field_id=field_id)
+        return {req.category_id: req.is_required for req in reqs}
+
+    @staticmethod
+    def set_session_field_categories(
+        field_id: int, categories: dict[int, bool]
+    ) -> None:
+        SessionFieldRequirement.objects.filter(field_id=field_id).delete()
+        for category_id, is_required in categories.items():
+            max_order = (
+                SessionFieldRequirement.objects.filter(
+                    category_id=category_id
+                ).aggregate(Max("order"))["order__max"]
+                or 0
+            )
+            SessionFieldRequirement.objects.create(
+                category_id=category_id,
+                field_id=field_id,
+                is_required=is_required,
+                order=max_order + 1,
+            )
+
+    @staticmethod
     def get_time_slot_requirements(category_id: int) -> dict[int, bool]:
         """Get time slot requirements for a category.
 
@@ -1769,6 +1817,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        max_length: int = 50,
         help_text: str = "",
     ) -> PersonalDataFieldDTO:
         base_slug = slugify(name)
@@ -1786,6 +1835,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
             field_type=field_type,
             is_multiple=actual_is_multiple,
             allow_custom=actual_allow_custom,
+            max_length=max_length,
             help_text=help_text,
         )
 
@@ -1811,6 +1861,21 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         """
         return PersonalDataFieldRequirement.objects.filter(field_id=pk).exists()
 
+    @staticmethod
+    def get_usage_counts(event_id: int) -> dict[int, dict[str, int]]:
+        rows = (
+            PersonalDataFieldRequirement.objects.filter(field__event_id=event_id)
+            .values("field_id")
+            .annotate(
+                required=Count("pk", filter=Q(is_required=True)),
+                optional=Count("pk", filter=Q(is_required=False)),
+            )
+        )
+        return {
+            row["field_id"]: {"required": row["required"], "optional": row["optional"]}
+            for row in rows
+        }
+
     def list_by_event(self, event_id: int) -> list[PersonalDataFieldDTO]:
         fields = PersonalDataField.objects.filter(event_id=event_id).prefetch_related(
             "options"
@@ -1828,7 +1893,13 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         return self._to_dto(field)
 
     def update(
-        self, pk: int, name: str, question: str, *, help_text: str = ""
+        self,
+        pk: int,
+        name: str,
+        question: str,
+        *,
+        max_length: int = 50,
+        help_text: str = "",
     ) -> PersonalDataFieldDTO:
         try:
             field = PersonalDataField.objects.get(pk=pk)
@@ -1841,6 +1912,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         field.name = name
         field.question = question
         field.slug = slug
+        field.max_length = max_length
         field.help_text = help_text
         field.save()
 
@@ -1872,6 +1944,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
             field_type=cast("Literal['text', 'select', 'checkbox']", field.field_type),
             help_text=field.help_text,
             is_multiple=field.is_multiple,
+            max_length=field.max_length,
             name=field.name,
             options=options,
             order=field.order,
@@ -1892,6 +1965,7 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        max_length: int = 50,
         help_text: str = "",
     ) -> SessionFieldDTO:
         base_slug = slugify(name)
@@ -1909,6 +1983,7 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             field_type=field_type,
             is_multiple=actual_is_multiple,
             allow_custom=actual_allow_custom,
+            max_length=max_length,
             help_text=help_text,
         )
 
@@ -1934,6 +2009,21 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         """
         return SessionFieldRequirement.objects.filter(field_id=pk).exists()
 
+    @staticmethod
+    def get_usage_counts(event_id: int) -> dict[int, dict[str, int]]:
+        rows = (
+            SessionFieldRequirement.objects.filter(field__event_id=event_id)
+            .values("field_id")
+            .annotate(
+                required=Count("pk", filter=Q(is_required=True)),
+                optional=Count("pk", filter=Q(is_required=False)),
+            )
+        )
+        return {
+            row["field_id"]: {"required": row["required"], "optional": row["optional"]}
+            for row in rows
+        }
+
     def list_by_event(self, event_id: int) -> list[SessionFieldDTO]:
         fields = SessionField.objects.filter(event_id=event_id).prefetch_related(
             "options"
@@ -1951,7 +2041,13 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         return self._to_dto(field)
 
     def update(
-        self, pk: int, name: str, question: str, *, help_text: str = ""
+        self,
+        pk: int,
+        name: str,
+        question: str,
+        *,
+        max_length: int = 50,
+        help_text: str = "",
     ) -> SessionFieldDTO:
         try:
             field = SessionField.objects.get(pk=pk)
@@ -1964,6 +2060,7 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         field.name = name
         field.question = question
         field.slug = slug
+        field.max_length = max_length
         field.help_text = help_text
         field.save()
 
@@ -1993,6 +2090,7 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             field_type=cast("Literal['text', 'select', 'checkbox']", field.field_type),
             help_text=field.help_text,
             is_multiple=field.is_multiple,
+            max_length=field.max_length,
             name=field.name,
             options=options,
             order=field.order,

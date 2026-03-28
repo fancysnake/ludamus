@@ -478,6 +478,7 @@ class PersonalDataFieldDTO(BaseModel):
     field_type: Literal["text", "select", "checkbox"]
     help_text: str = ""
     is_multiple: bool = False
+    max_length: int = 50
     name: str
     options: list[PersonalDataFieldOptionDTO] = []
     order: int
@@ -506,12 +507,22 @@ class SessionFieldDTO(BaseModel):
     field_type: Literal["text", "select", "checkbox"]
     help_text: str = ""
     is_multiple: bool = False
+    max_length: int = 50
     name: str
     options: list[SessionFieldOptionDTO] = []
     order: int
     pk: int
     question: str
     slug: str
+
+
+@dataclass
+class FieldUsageSummary:
+    """A field DTO bundled with its usage counts across categories."""
+
+    field: PersonalDataFieldDTO | SessionFieldDTO
+    required_count: int
+    optional_count: int
 
 
 class PersonalFieldRequirementDTO(BaseModel):
@@ -864,6 +875,18 @@ class ProposalCategoryRepositoryProtocol(Protocol):  # noqa: PLR0904 — split p
     def add_session_field_to_categories(
         field_id: int, categories: dict[int, bool]
     ) -> None: ...
+    @staticmethod
+    def get_personal_field_categories(field_id: int) -> dict[int, bool]: ...
+    @staticmethod
+    def set_personal_field_categories(
+        field_id: int, categories: dict[int, bool]
+    ) -> None: ...
+    @staticmethod
+    def get_session_field_categories(field_id: int) -> dict[int, bool]: ...
+    @staticmethod
+    def set_session_field_categories(
+        field_id: int, categories: dict[int, bool]
+    ) -> None: ...
     def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO: ...
 
 
@@ -878,16 +901,25 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        max_length: int = 50,
         help_text: str = "",
     ) -> PersonalDataFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
     @staticmethod
     def has_requirements(pk: int) -> bool: ...
+    @staticmethod
+    def get_usage_counts(event_id: int) -> dict[int, dict[str, int]]: ...
     def list_by_event(self, event_id: int) -> list[PersonalDataFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> PersonalDataFieldDTO: ...
     def update(
-        self, pk: int, name: str, question: str, *, help_text: str = ""
+        self,
+        pk: int,
+        name: str,
+        question: str,
+        *,
+        max_length: int = 50,
+        help_text: str = "",
     ) -> PersonalDataFieldDTO: ...
 
 
@@ -902,16 +934,25 @@ class SessionFieldRepositoryProtocol(Protocol):
         *,
         is_multiple: bool = False,
         allow_custom: bool = False,
+        max_length: int = 50,
         help_text: str = "",
     ) -> SessionFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
     @staticmethod
     def has_requirements(pk: int) -> bool: ...
+    @staticmethod
+    def get_usage_counts(event_id: int) -> dict[int, dict[str, int]]: ...
     def list_by_event(self, event_id: int) -> list[SessionFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO: ...
     def update(
-        self, pk: int, name: str, question: str, *, help_text: str = ""
+        self,
+        pk: int,
+        name: str,
+        question: str,
+        *,
+        max_length: int = 50,
+        help_text: str = "",
     ) -> SessionFieldDTO: ...
 
 
@@ -1055,7 +1096,18 @@ class TicketAPIProtocol(Protocol):
     def fetch_membership_count(self, user_email: str) -> int: ...
 
 
+class PanelConfigProtocol(Protocol):
+    field_max_length: int
+
+
+class ConfigProtocol(Protocol):
+    @property
+    def panel(self) -> PanelConfigProtocol: ...
+
+
 class DependencyInjectorProtocol(Protocol):
+    @property
+    def config(self) -> ConfigProtocol: ...
     @property
     def uow(self) -> UnitOfWorkProtocol: ...
     @property

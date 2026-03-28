@@ -26,6 +26,7 @@ from django.http import (
 )
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.utils.timezone import get_current_timezone, localtime
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
@@ -43,7 +44,7 @@ from ludamus.gates.web.django.forms import (
     create_venue_copy_form,
 )
 from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
-from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
+from ludamus.pacts import DependencyInjectorProtocol, FieldUsageSummary, NotFoundError
 
 if TYPE_CHECKING:
 
@@ -56,6 +57,7 @@ class _FieldDTO(Protocol):
     """Protocol for field DTOs with common attributes."""
 
     help_text: str
+    max_length: int
     pk: int
     name: str
     question: str
@@ -74,6 +76,7 @@ class FieldFormData(TypedDict):
     options: list[str] | None
     is_multiple: bool
     allow_custom: bool
+    max_length: int
     help_text: str
 
 
@@ -91,6 +94,7 @@ def _parse_field_form_data(form: forms.Form) -> FieldFormData:
         options=options,
         is_multiple=form.cleaned_data.get("is_multiple") or False,
         allow_custom=form.cleaned_data.get("allow_custom") or False,
+        max_length=form.cleaned_data.get("max_length") or 0,
         help_text=form.cleaned_data.get("help_text") or "",
     )
 
@@ -433,6 +437,13 @@ class CFPPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         context["active_nav"] = "cfp"
+        context["active_tab"] = "types"
+        context["tab_urls"] = {
+            "types": reverse("panel:cfp", kwargs={"slug": slug}),
+            "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
+            "session": reverse("panel:session-fields", kwargs={"slug": slug}),
+            "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
+        }
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
         )
@@ -773,9 +784,27 @@ class PersonalDataFieldsPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         context["active_nav"] = "cfp"
-        context["fields"] = self.request.di.uow.personal_data_fields.list_by_event(
+        context["active_tab"] = "host"
+        context["tab_urls"] = {
+            "types": reverse("panel:cfp", kwargs={"slug": slug}),
+            "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
+            "session": reverse("panel:session-fields", kwargs={"slug": slug}),
+            "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
+        }
+        fields = self.request.di.uow.personal_data_fields.list_by_event(
             current_event.pk
         )
+        usage_counts = self.request.di.uow.personal_data_fields.get_usage_counts(
+            current_event.pk
+        )
+        context["fields"] = [
+            FieldUsageSummary(
+                field=f,
+                required_count=usage_counts.get(f.pk, {}).get("required", 0),
+                optional_count=usage_counts.get(f.pk, {}).get("optional", 0),
+            )
+            for f in fields
+        ]
         return TemplateResponse(
             self.request, "panel/personal-data-fields.html", context
         )
@@ -797,10 +826,14 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
             return redirect("panel:index")
 
         context["active_nav"] = "cfp"
-        context["form"] = PersonalDataFieldForm()
+        context["form"] = PersonalDataFieldForm(
+            initial={"max_length": self.request.di.config.panel.field_max_length}
+        )
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
         )
+        context["required_category_pks"] = set()
+        context["optional_category_pks"] = set()
         return TemplateResponse(
             self.request, "panel/personal-data-field-create.html", context
         )
@@ -822,6 +855,15 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
             context["categories"] = (
                 self.request.di.uow.proposal_categories.list_by_event(current_event.pk)
             )
+            cat_reqs, _order = _parse_field_requirements(
+                self.request.POST, "category_", "category_order"
+            )
+            context["required_category_pks"] = {
+                pk for pk, is_req in cat_reqs.items() if is_req
+            }
+            context["optional_category_pks"] = {
+                pk for pk, is_req in cat_reqs.items() if not is_req
+            }
             return TemplateResponse(
                 self.request, "panel/personal-data-field-create.html", context
             )
@@ -836,6 +878,7 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
             parsed["options"],
             is_multiple=parsed["is_multiple"],
             allow_custom=parsed["allow_custom"],
+            max_length=parsed["max_length"],
             help_text=parsed["help_text"],
         )
 
@@ -882,9 +925,24 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             initial={
                 "name": field.name,
                 "question": field.question,
+                "max_length": field.max_length,
                 "help_text": field.help_text,
             }
         )
+        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
+        field_cats = (
+            self.request.di.uow.proposal_categories.get_personal_field_categories(
+                field.pk
+            )
+        )
+        context["required_category_pks"] = {
+            pk for pk, is_req in field_cats.items() if is_req
+        }
+        context["optional_category_pks"] = {
+            pk for pk, is_req in field_cats.items() if not is_req
+        }
         return TemplateResponse(
             self.request, "panel/personal-data-field-edit.html", context
         )
@@ -914,16 +972,36 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             context["active_nav"] = "cfp"
             context["field"] = field
             context["form"] = form
+            context["categories"] = (
+                self.request.di.uow.proposal_categories.list_by_event(current_event.pk)
+            )
+            cat_reqs, _order = _parse_field_requirements(
+                self.request.POST, "category_", "category_order"
+            )
+            context["required_category_pks"] = {
+                pk for pk, is_req in cat_reqs.items() if is_req
+            }
+            context["optional_category_pks"] = {
+                pk for pk, is_req in cat_reqs.items() if not is_req
+            }
             return TemplateResponse(
                 self.request, "panel/personal-data-field-edit.html", context
             )
 
         name = form.cleaned_data["name"]
         question = form.cleaned_data["question"]
+        max_length = form.cleaned_data.get("max_length") or 0
         help_text = form.cleaned_data.get("help_text") or ""
-        self.request.di.uow.personal_data_fields.update(
-            field.pk, name, question, help_text=help_text
+        cat_reqs, _order = _parse_field_requirements(
+            self.request.POST, "category_", "category_order"
         )
+        with self.request.di.uow.atomic():
+            self.request.di.uow.personal_data_fields.update(
+                field.pk, name, question, max_length=max_length, help_text=help_text
+            )
+            self.request.di.uow.proposal_categories.set_personal_field_categories(
+                field.pk, cat_reqs
+            )
 
         messages.success(self.request, _("Personal data field updated successfully."))
         return redirect("panel:personal-data-fields", slug=slug)
@@ -982,9 +1060,25 @@ class SessionFieldsPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         context["active_nav"] = "cfp"
-        context["fields"] = self.request.di.uow.session_fields.list_by_event(
+        context["active_tab"] = "session"
+        context["tab_urls"] = {
+            "types": reverse("panel:cfp", kwargs={"slug": slug}),
+            "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
+            "session": reverse("panel:session-fields", kwargs={"slug": slug}),
+            "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
+        }
+        fields = self.request.di.uow.session_fields.list_by_event(current_event.pk)
+        usage_counts = self.request.di.uow.session_fields.get_usage_counts(
             current_event.pk
         )
+        context["fields"] = [
+            FieldUsageSummary(
+                field=f,
+                required_count=usage_counts.get(f.pk, {}).get("required", 0),
+                optional_count=usage_counts.get(f.pk, {}).get("optional", 0),
+            )
+            for f in fields
+        ]
         return TemplateResponse(self.request, "panel/session-fields.html", context)
 
 
@@ -1004,10 +1098,14 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         context["active_nav"] = "cfp"
-        context["form"] = SessionFieldForm()
+        context["form"] = SessionFieldForm(
+            initial={"max_length": self.request.di.config.panel.field_max_length}
+        )
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
         )
+        context["required_category_pks"] = set()
+        context["optional_category_pks"] = set()
         return TemplateResponse(
             self.request, "panel/session-field-create.html", context
         )
@@ -1029,6 +1127,15 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
             context["categories"] = (
                 self.request.di.uow.proposal_categories.list_by_event(current_event.pk)
             )
+            cat_reqs, _order = _parse_field_requirements(
+                self.request.POST, "category_", "category_order"
+            )
+            context["required_category_pks"] = {
+                pk for pk, is_req in cat_reqs.items() if is_req
+            }
+            context["optional_category_pks"] = {
+                pk for pk, is_req in cat_reqs.items() if not is_req
+            }
             return TemplateResponse(
                 self.request, "panel/session-field-create.html", context
             )
@@ -1043,6 +1150,7 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
             parsed["options"],
             is_multiple=parsed["is_multiple"],
             allow_custom=parsed["allow_custom"],
+            max_length=parsed["max_length"],
             help_text=parsed["help_text"],
         )
 
@@ -1089,9 +1197,24 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             initial={
                 "name": field.name,
                 "question": field.question,
+                "max_length": field.max_length,
                 "help_text": field.help_text,
             }
         )
+        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
+        field_cats = (
+            self.request.di.uow.proposal_categories.get_session_field_categories(
+                field.pk
+            )
+        )
+        context["required_category_pks"] = {
+            pk for pk, is_req in field_cats.items() if is_req
+        }
+        context["optional_category_pks"] = {
+            pk for pk, is_req in field_cats.items() if not is_req
+        }
         return TemplateResponse(self.request, "panel/session-field-edit.html", context)
 
     def post(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
@@ -1119,16 +1242,36 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
             context["active_nav"] = "cfp"
             context["field"] = field
             context["form"] = form
+            context["categories"] = (
+                self.request.di.uow.proposal_categories.list_by_event(current_event.pk)
+            )
+            cat_reqs, _order = _parse_field_requirements(
+                self.request.POST, "category_", "category_order"
+            )
+            context["required_category_pks"] = {
+                pk for pk, is_req in cat_reqs.items() if is_req
+            }
+            context["optional_category_pks"] = {
+                pk for pk, is_req in cat_reqs.items() if not is_req
+            }
             return TemplateResponse(
                 self.request, "panel/session-field-edit.html", context
             )
 
         name = form.cleaned_data["name"]
         question = form.cleaned_data["question"]
+        max_length = form.cleaned_data.get("max_length") or 0
         help_text = form.cleaned_data.get("help_text") or ""
-        self.request.di.uow.session_fields.update(
-            field.pk, name, question, help_text=help_text
+        cat_reqs, _order = _parse_field_requirements(
+            self.request.POST, "category_", "category_order"
         )
+        with self.request.di.uow.atomic():
+            self.request.di.uow.session_fields.update(
+                field.pk, name, question, max_length=max_length, help_text=help_text
+            )
+            self.request.di.uow.proposal_categories.set_session_field_categories(
+                field.pk, cat_reqs
+            )
 
         messages.success(self.request, _("Session field updated successfully."))
         return redirect("panel:session-fields", slug=slug)
@@ -2234,6 +2377,13 @@ class TimeSlotsPageView(PanelAccessMixin, EventContextMixin, View):
                 continuation_slots.add((ts.pk, end_date.isoformat()))
 
         context["active_nav"] = "cfp"
+        context["active_tab"] = "time_slots"
+        context["tab_urls"] = {
+            "types": reverse("panel:cfp", kwargs={"slug": slug}),
+            "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
+            "session": reverse("panel:session-fields", kwargs={"slug": slug}),
+            "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
+        }
         context["time_slots"] = time_slots
         context["days"] = days
         context["orphaned_slots"] = orphaned_slots

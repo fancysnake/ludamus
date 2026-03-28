@@ -9,11 +9,13 @@
             {% url 'web:crowd:profile' as profile_url %}
             {% url 'web:crowd:profile-connected-users' as connected_url %}
             {% url 'web:crowd:profile-avatar' as avatar_url %}
-            {% tabs class="px-6 pt-4" %}
-            {% tab "profile" icon="user" href=profile_url %}{% translate "Personal Information" %}{% end_tab %}
-            {% tab "connected" icon="users" href=connected_url active=True %}{% translate "Connected users" %}{% end_tab %}
-            {% tab "avatar" icon="photo" href=avatar_url %}{% translate "Avatar" %}{% end_tab %}
-        {% end_tabs %}
+            <div class="bg-warm-200 rounded-t-2xl px-6 pt-4 border-b border-warm-300">
+                {% tabs %}
+                {% tab "profile" icon="user" href=profile_url %}{% translate "Personal Information" %}{% end_tab %}
+                {% tab "connected" icon="users" href=connected_url active=True %}{% translate "Connected users" %}{% end_tab %}
+                {% tab "avatar" icon="photo" href=avatar_url %}{% translate "Avatar" %}{% end_tab %}
+            {% end_tabs %}
+        </div>
         <div class="card-body">
             {# Info banner #}
             <div class="alert alert-info flex items-start gap-3 mb-4">

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import operator
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
@@ -58,6 +59,7 @@ def _field_descriptors(
             "is_required": req.is_required,
             "is_multiple": req.field.is_multiple,
             "allow_custom": req.field.allow_custom,
+            "max_length": req.field.max_length,
         }
         if req.field.allow_custom:
             desc["custom_bound_field"] = form[f"{field_key}_custom"]  # type: ignore[index]
@@ -68,16 +70,19 @@ def _field_descriptors(
 def _timeslot_descriptors(
     requirements: Sequence[TimeSlotRequirementDTO], selected_ids: list[int]
 ) -> list[dict[str, object]]:
-    return [
-        {
-            "id": req.time_slot_id,
-            "start_time": req.time_slot.start_time,
-            "end_time": req.time_slot.end_time,
-            "is_required": req.is_required,
-            "is_selected": req.time_slot_id in selected_ids,
-        }
-        for req in requirements
-    ]
+    return sorted(
+        (
+            {
+                "id": req.time_slot_id,
+                "start_time": req.time_slot.start_time,
+                "end_time": req.time_slot.end_time,
+                "is_required": req.is_required,
+                "is_selected": req.time_slot_id in selected_ids,
+            }
+            for req in requirements
+        ),
+        key=operator.itemgetter("start_time"),
+    )
 
 
 # -- Module-level render functions --

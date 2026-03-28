@@ -81,6 +81,9 @@ class TestPersonalDataFieldEditPageView:
                 "active_nav": "cfp",
                 "field": context_field,
                 "form": ANY,
+                "categories": [],
+                "required_category_pks": set(),
+                "optional_category_pks": set(),
             },
         )
         assert response.context["current_event"].pk == event.pk
@@ -245,6 +248,9 @@ class TestPersonalDataFieldEditPageView:
                 "active_nav": "cfp",
                 "field": context_field,
                 "form": ANY,
+                "categories": [],
+                "required_category_pks": set(),
+                "optional_category_pks": set(),
             },
         )
         field.refresh_from_db()

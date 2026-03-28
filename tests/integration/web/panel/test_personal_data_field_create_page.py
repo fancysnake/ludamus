@@ -69,6 +69,8 @@ class TestPersonalDataFieldCreatePageView:
                 "active_nav": "cfp",
                 "categories": [],
                 "form": ANY,
+                "required_category_pks": set(),
+                "optional_category_pks": set(),
             },
         )
         assert response.context["current_event"].pk == event.pk
@@ -192,6 +194,8 @@ class TestPersonalDataFieldCreatePageView:
                 "active_nav": "cfp",
                 "categories": [],
                 "form": ANY,
+                "required_category_pks": set(),
+                "optional_category_pks": set(),
             },
         )
         assert not PersonalDataField.objects.filter(event=event).exists()

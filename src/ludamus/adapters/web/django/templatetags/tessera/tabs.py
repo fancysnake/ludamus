@@ -14,16 +14,17 @@ from .icon import icon
 if TYPE_CHECKING:
     from django.template.base import FilterExpression, Parser, Token
 
-TAB_NAV_CLASS = "flex border-b border-[var(--theme-border)]"
+TAB_NAV_CLASS = "inline-flex gap-1 items-end"
 _TAB_BASE = (
-    "inline-flex items-center gap-1.5 px-1 pb-2 text-sm font-medium border-b-2 -mb-px"
+    "inline-flex items-center gap-1.5 px-4 text-sm font-medium"
+    " rounded-t-lg transition-colors"
 )
 TAB_ACTIVE_CLASS = (
-    f"{_TAB_BASE} border-[var(--theme-primary)] text-[var(--theme-primary)]"
+    f"{_TAB_BASE} py-2.5 bg-bg-secondary text-[var(--theme-primary)]"
+    " -mb-px relative z-10 shadow-[0_-1px_3px_0_rgba(0,0,0,0.06)]"
 )
 TAB_INACTIVE_CLASS = (
-    f"{_TAB_BASE} border-transparent text-foreground-muted"
-    " hover:text-foreground hover:border-[var(--theme-border)]"
+    f"{_TAB_BASE} py-2 text-foreground-muted hover:text-foreground hover:bg-warm-100"
 )
 
 

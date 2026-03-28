@@ -60,6 +60,19 @@ class TestSessionFieldsPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "session",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "fields": [],
             },
         )
@@ -81,11 +94,11 @@ class TestSessionFieldsPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        # Verify fields are DTOs, not Django models
+        # Verify fields are FieldUsageSummary instances
         fields = response.context["fields"]
         assert len(fields) == 1 + 1  # RPG System + Genre
-        assert fields[0].name == "Genre"  # Alphabetically first
-        assert fields[1].name == "RPG System"
+        assert fields[0].field.name == "Genre"  # Alphabetically first
+        assert fields[1].field.name == "RPG System"
         assert_response(
             response,
             HTTPStatus.OK,
@@ -103,6 +116,19 @@ class TestSessionFieldsPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "session",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "fields": fields,
             },
         )
@@ -131,6 +157,19 @@ class TestSessionFieldsPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "session",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "fields": [],
             },
         )
@@ -177,9 +216,9 @@ class TestSessionFieldsPageView:
         fields = response.context["fields"]
         assert len(fields) == 1 + 1 + 1  # Genre + RPG System + Difficulty
         # Order 1 first (Difficulty, RPG System alphabetically), then order 2 (Genre)
-        assert fields[0].name == "Difficulty"
-        assert fields[1].name == "RPG System"
-        assert fields[2].name == "Genre"
+        assert fields[0].field.name == "Difficulty"
+        assert fields[1].field.name == "RPG System"
+        assert fields[2].field.name == "Genre"
         assert_response(
             response,
             HTTPStatus.OK,
@@ -197,6 +236,19 @@ class TestSessionFieldsPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "session",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "fields": fields,
             },
         )
@@ -227,8 +279,8 @@ class TestSessionFieldsPageView:
         fields = response.context["fields"]
         assert len(fields) == 1 + 1  # Tags + Difficulty
         # Fields should have is_multiple attribute in DTO
-        difficulty_field = next(f for f in fields if f.name == "Difficulty")
-        tags_field = next(f for f in fields if f.name == "Tags")
+        difficulty_field = next(f.field for f in fields if f.field.name == "Difficulty")
+        tags_field = next(f.field for f in fields if f.field.name == "Tags")
         assert difficulty_field.is_multiple is False
         assert tags_field.is_multiple is True
 
@@ -257,7 +309,7 @@ class TestSessionFieldsPageView:
 
         fields = response.context["fields"]
         assert len(fields) == 1 + 1  # Genre + Difficulty
-        genre_field = next(f for f in fields if f.name == "Genre")
-        difficulty_field = next(f for f in fields if f.name == "Difficulty")
+        genre_field = next(f.field for f in fields if f.field.name == "Genre")
+        difficulty_field = next(f.field for f in fields if f.field.name == "Difficulty")
         assert genre_field.allow_custom is True
         assert difficulty_field.allow_custom is False

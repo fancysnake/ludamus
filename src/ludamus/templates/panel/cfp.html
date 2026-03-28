@@ -15,32 +15,6 @@
 {% endblock page_subtitle %}
 {% block header_actions %}
     {% if current_event %}
-        <div class="relative inline-block">
-            <button type="button"
-                    class="action-dropdown-toggle px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition inline-flex items-center mr-2"
-                    aria-haspopup="true">
-                {% icon "cog-6-tooth" class="w-4 h-4 mr-2" %}
-                {% translate "Settings" %}
-                {% icon "chevron-down" class="w-3 h-3 ml-1" %}
-            </button>
-            <div class="action-dropdown-menu hidden absolute right-0 mt-2 w-56 bg-bg-secondary rounded-lg shadow-lg border border-border z-10">
-                <a href="{% url 'panel:personal-data-fields' slug=current_event.slug %}"
-                   class="flex items-center px-4 py-2.5 text-sm text-foreground-secondary hover:bg-bg-tertiary rounded-t-lg">
-                    {% icon "identification" class="w-4 h-4 mr-2" %}
-                    {% translate "Host Data Fields" %}
-                </a>
-                <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
-                   class="flex items-center px-4 py-2.5 text-sm text-foreground-secondary hover:bg-bg-tertiary">
-                    {% icon "tag" class="w-4 h-4 mr-2" %}
-                    {% translate "Session Fields" %}
-                </a>
-                <a href="{% url 'panel:time-slots' slug=current_event.slug %}"
-                   class="flex items-center px-4 py-2.5 text-sm text-foreground-secondary hover:bg-bg-tertiary rounded-b-lg">
-                    {% icon "clock" class="w-4 h-4 mr-2" %}
-                    {% translate "Time Slots" %}
-                </a>
-            </div>
-        </div>
         <a href="{% url 'panel:cfp-create' slug=current_event.slug %}"
            class="btn btn-primary flex items-center">
             {% icon "plus" class="w-4 h-4 mr-2" %}
@@ -50,6 +24,15 @@
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
+        <div class="-mt-3 sm:-mt-4 lg:-mt-8 -mx-3 sm:-mx-4 lg:-mx-8 px-3 sm:px-4 lg:px-8 pt-3 bg-warm-200 border-b border-warm-300">
+            {% tabs %}
+            {% tab "types" active=True href=tab_urls.types %}{% translate "Session Types" %}{% end_tab %}
+            {% tab "host" href=tab_urls.host %}{% translate "Host Data Fields" %}{% end_tab %}
+            {% tab "session" href=tab_urls.session %}{% translate "Session Fields" %}{% end_tab %}
+            {% tab "time_slots" href=tab_urls.time_slots %}{% translate "Time Slots" %}{% end_tab %}
+        {% end_tabs %}
+    </div>
+    <div class="-mx-3 sm:-mx-4 lg:-mx-8 -mb-3 sm:-mb-4 lg:-mb-8 px-3 sm:px-4 lg:px-8 py-6 bg-bg-secondary">
         {% if categories %}
             <div class="bg-bg-secondary rounded-xl shadow-sm border border-border overflow-x-auto">
                 <table class="min-w-full divide-y divide-border">
@@ -121,25 +104,10 @@
                 </p>
             </div>
         {% endif %}
-    {% else %}
-        <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-8 text-center">
-            <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
-        </div>
-    {% endif %}
+    </div>
+{% else %}
+    <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-8 text-center">
+        <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
+    </div>
+{% endif %}
 {% endblock content %}
-{% block extra_scripts %}
-    <script>
-        document.querySelectorAll('.action-dropdown-toggle').forEach(button => {
-            button.addEventListener('click', e => {
-                e.stopPropagation();
-                const menu = button.nextElementSibling;
-                const isOpen = !menu.classList.contains('hidden');
-                document.querySelectorAll('.action-dropdown-menu').forEach(m => m.classList.add('hidden'));
-                if (!isOpen) menu.classList.remove('hidden');
-            });
-        });
-        document.addEventListener('click', () => {
-            document.querySelectorAll('.action-dropdown-menu').forEach(m => m.classList.add('hidden'));
-        });
-    </script>
-{% endblock extra_scripts %}

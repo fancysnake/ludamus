@@ -258,7 +258,7 @@
                 </span>
             </div>
             {% if event.is_proposal_active %}
-                <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
+                <a href="{% url 'web:chronology:session-propose' event_slug=event.slug %}"
                    class="btn btn-primary text-sm">
                     {% icon "plus" class="w-4 h-4" variant="mini" %} {% translate "Propose Session" %}
                 </a>
@@ -421,7 +421,7 @@
                         {% endif %}
                         <span class="text-xs" style="color: var(--color-foreground-muted)">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
                         {% if event.is_proposal_active %}
-                            <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
+                            <a href="{% url 'web:chronology:session-propose' event_slug=event.slug %}"
                                class="btn btn-teal text-xs py-1.5 px-3 shrink-0">
                                 {% icon "plus" class="w-4 h-4" variant="mini" %} {% translate "Propose" %}
                             </a>
@@ -439,7 +439,7 @@
                             <p class="text-sm" style="color: var(--color-foreground-muted)">
                                 {% translate "No sessions scheduled for this time slot" %}
                                 {% if event.is_proposal_active %}
-                                    – <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
+                                    – <a href="{% url 'web:chronology:session-propose' event_slug=event.slug %}"
     style="color: var(--theme-primary)">{% translate "be the first to propose!" %}</a>
                                 {% endif %}
                             </p>
@@ -504,7 +504,7 @@
                 <p class="mb-4 max-w-md" style="color: var(--color-foreground-muted)">
                     {% translate "Got a game you're dying to play? Propose your own session and find players!" %}
                 </p>
-                <a href="{% url 'web:chronology:event-proposal' event_slug=event.slug %}"
+                <a href="{% url 'web:chronology:session-propose' event_slug=event.slug %}"
                    class="btn btn-primary text-base px-6 py-3 shadow-lg shadow-coral-500/25">
                     {% translate "Propose a session" %}
                 </a>

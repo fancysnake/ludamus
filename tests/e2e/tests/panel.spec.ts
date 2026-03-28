@@ -633,7 +633,7 @@ test.describe('Backoffice Panel', () => {
 
     await expect(
       page.getByRole('heading', {
-        name: 'Personal Data Fields',
+        name: 'CFP Fields',
       }),
     ).toBeVisible();
 
@@ -692,12 +692,12 @@ test.describe('Backoffice Panel', () => {
     );
 
     await expect(
-      page.getByRole('heading', { name: 'Session Fields' }),
+      page.getByRole('heading', { name: 'CFP Fields' }),
     ).toBeVisible();
 
     // Create
     await page
-      .getByRole('link', { name: 'New Session Field' })
+      .getByRole('link', { name: 'New Field' })
       .click();
     await page.locator('#id_name').fill('Game System');
     await page

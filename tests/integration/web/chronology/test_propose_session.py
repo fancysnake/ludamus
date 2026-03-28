@@ -536,6 +536,7 @@ class TestProposeSessionPageView:
             {
                 "display_name": "Presenter",
                 "title": "My Session",
+                "description": "A test session",
                 "participants_limit": "4",
                 "session_rpg_system": "D&D 5e",
             },
@@ -572,6 +573,7 @@ class TestProposeSessionPageView:
             {
                 "display_name": "Presenter",
                 "title": "Space Opera",
+                "description": "A test session",
                 "participants_limit": "5",
                 "session_genre": "scifi",
             },
@@ -727,6 +729,7 @@ class TestProposeSessionPageView:
             {
                 "display_name": "Presenter",
                 "title": "My Session",
+                "description": "A test session",
                 "participants_limit": "4",
             },
         )

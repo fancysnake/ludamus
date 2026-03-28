@@ -37,16 +37,18 @@ def _build_field_from_requirement(
             )
 
         if field_def.allow_custom:
+            max_len = field_def.max_length if field_def.max_length > 0 else None
             fields[f"{field_key}_custom"] = forms.CharField(
-                label=f"{field_def.name} (custom)", required=False
+                label=f"{field_def.name} (custom)", required=False, max_length=max_len
             )
     elif field_def.field_type == "checkbox":
         fields[field_key] = forms.BooleanField(
             label=field_def.name, required=req.is_required
         )
     else:
+        max_len = field_def.max_length if field_def.max_length > 0 else None
         fields[field_key] = forms.CharField(
-            label=field_def.name, required=req.is_required
+            label=field_def.name, required=req.is_required, max_length=max_len
         )
 
 
@@ -87,9 +89,7 @@ def build_session_details_form(
     fields: dict[str, forms.Field] = {
         "title": forms.CharField(label=_("Title"), max_length=255),
         "description": forms.CharField(
-            label=_("Description"),
-            required=False,
-            widget=forms.Textarea(attrs={"rows": 4}),
+            label=_("Description"), widget=forms.Textarea(attrs={"rows": 4})
         ),
         "participants_limit": forms.IntegerField(**participants_kwargs),
         "display_name": forms.CharField(label=_("Presenter name"), max_length=255),
