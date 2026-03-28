@@ -106,12 +106,66 @@ class TestEncountersIndexPageView:
             template_name=["notice_board/index.html"],
         )
 
-    def test_past_encounter_by_other_user_shows_organizer_name(
+    def test_past_encounter_by_other_user_not_joined_is_hidden(
         self, authenticated_client, sphere
+    ):
+        other_user = UserFactory(username="past_organizer", name="Past Organizer")
+        EncounterFactory(
+            creator=other_user,
+            sphere=sphere,
+            start_time=datetime.now(UTC) - timedelta(days=3),
+        )
+
+        response = authenticated_client.get(self.URL)
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "upcoming_encounters": [],
+                "past_encounters": [],
+                "view": ANY,
+            },
+            template_name=["notice_board/index.html"],
+        )
+
+    def test_past_encounter_rsvpd_shows_organizer_name(
+        self, authenticated_client, active_user, sphere
     ):
         other_user = UserFactory(username="past_organizer", name="Past Organizer")
         encounter = EncounterFactory(
             creator=other_user,
+            sphere=sphere,
+            start_time=datetime.now(UTC) - timedelta(days=3),
+        )
+        EncounterRSVPFactory(encounter=encounter, user=active_user)
+
+        response = authenticated_client.get(self.URL)
+
+        encounter.refresh_from_db()
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "upcoming_encounters": [],
+                "past_encounters": [
+                    EncounterIndexItem(
+                        encounter=EncounterDTO.model_validate(encounter),
+                        rsvp_count=1,
+                        is_mine=False,
+                        organizer_name="Past Organizer",
+                    )
+                ],
+                "view": ANY,
+            },
+            template_name=["notice_board/index.html"],
+        )
+
+    def test_past_encounter_created_by_user_is_shown(
+        self, authenticated_client, active_user, sphere
+    ):
+        encounter = EncounterFactory(
+            creator=active_user,
             sphere=sphere,
             start_time=datetime.now(UTC) - timedelta(days=3),
         )
@@ -128,8 +182,8 @@ class TestEncountersIndexPageView:
                     EncounterIndexItem(
                         encounter=EncounterDTO.model_validate(encounter),
                         rsvp_count=0,
-                        is_mine=False,
-                        organizer_name="Past Organizer",
+                        is_mine=True,
+                        organizer_name="",
                     )
                 ],
                 "view": ANY,
