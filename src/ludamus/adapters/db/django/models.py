@@ -895,6 +895,7 @@ class PersonalDataField(models.Model):
     )
     is_multiple = models.BooleanField(default=False)
     allow_custom = models.BooleanField(default=False)
+    max_length = models.PositiveIntegerField(default=50)
     order = models.PositiveIntegerField(default=0)
     help_text = models.TextField(blank=True, default="")
 
@@ -1009,6 +1010,7 @@ class SessionField(models.Model):
     )
     is_multiple = models.BooleanField(default=False)
     allow_custom = models.BooleanField(default=False)
+    max_length = models.PositiveIntegerField(default=50)
     order = models.PositiveIntegerField(default=0)
     help_text = models.TextField(blank=True, default="")
 

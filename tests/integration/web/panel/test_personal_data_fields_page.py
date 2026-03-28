@@ -60,6 +60,19 @@ class TestPersonalDataFieldsPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "host",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "fields": [],
             },
         )
@@ -77,11 +90,11 @@ class TestPersonalDataFieldsPageView:
 
         response = authenticated_client.get(self.get_url(event))
 
-        # Verify fields are DTOs, not Django models
+        # Verify fields are FieldUsageSummary instances
         fields = response.context["fields"]
         assert len(fields) == 1 + 1  # Email + Phone
-        assert fields[0].name == "Email"
-        assert fields[1].name == "Phone"
+        assert fields[0].field.name == "Email"
+        assert fields[1].field.name == "Phone"
         assert_response(
             response,
             HTTPStatus.OK,
@@ -99,6 +112,19 @@ class TestPersonalDataFieldsPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "host",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "fields": fields,
             },
         )
@@ -127,6 +153,19 @@ class TestPersonalDataFieldsPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "host",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "fields": [],
             },
         )
@@ -177,9 +216,9 @@ class TestPersonalDataFieldsPageView:
         fields = response.context["fields"]
         assert len(fields) == 1 + 1 + 1  # Phone + Email + City
         # Order 1 fields first (alphabetically: City, Email), then order 2 (Phone)
-        assert fields[0].name == "City"
-        assert fields[1].name == "Email"
-        assert fields[2].name == "Phone"
+        assert fields[0].field.name == "City"
+        assert fields[1].field.name == "Email"
+        assert fields[2].field.name == "Phone"
         assert_response(
             response,
             HTTPStatus.OK,
@@ -197,6 +236,19 @@ class TestPersonalDataFieldsPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "host",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "fields": fields,
             },
         )
@@ -227,8 +279,8 @@ class TestPersonalDataFieldsPageView:
         fields = response.context["fields"]
         assert len(fields) == 1 + 1  # Languages + Country
         # Fields should have is_multiple attribute in DTO
-        country_field = next(f for f in fields if f.name == "Country")
-        languages_field = next(f for f in fields if f.name == "Languages")
+        country_field = next(f.field for f in fields if f.field.name == "Country")
+        languages_field = next(f.field for f in fields if f.field.name == "Languages")
         assert country_field.is_multiple is False
         assert languages_field.is_multiple is True
 
@@ -257,7 +309,7 @@ class TestPersonalDataFieldsPageView:
 
         fields = response.context["fields"]
         assert len(fields) == 1 + 1  # Country + City
-        country_field = next(f for f in fields if f.name == "Country")
-        city_field = next(f for f in fields if f.name == "City")
+        country_field = next(f.field for f in fields if f.field.name == "Country")
+        city_field = next(f.field for f in fields if f.field.name == "City")
         assert country_field.allow_custom is True
         assert city_field.allow_custom is False

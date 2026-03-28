@@ -96,7 +96,7 @@
                         class="btn btn-secondary py-3"
                         hx-post="{% url 'web:chronology:session-propose-details' event_slug=event.slug %}"
                         hx-target="#wizard-content"
-                        hx-swap="outerHTML"
+                        hx-swap="outerHTML scroll:#wizard-content:top"
                         hx-vals='{"back": "1"}'>← {% translate "Back" %}</button>
                 <button type="submit" class="btn btn-primary py-3">{% translate "Submit Proposal" %}</button>
             </div>

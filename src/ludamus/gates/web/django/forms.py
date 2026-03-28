@@ -95,6 +95,14 @@ class PersonalDataFieldForm(forms.Form):
         initial=False,
         help_text=_("Allow entering custom values (for Select fields only)."),
     )
+    max_length = forms.IntegerField(
+        required=False,
+        min_value=0,
+        help_text=_(
+            "Maximum number of characters allowed (0 = no limit)."
+            " Applies to text fields and custom value inputs."
+        ),
+    )
     help_text = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={"rows": 2}),
@@ -147,6 +155,14 @@ class SessionFieldForm(forms.Form):
         required=False,
         initial=False,
         help_text=_("Allow entering custom values (for Select fields only)."),
+    )
+    max_length = forms.IntegerField(
+        required=False,
+        min_value=0,
+        help_text=_(
+            "Maximum number of characters allowed (0 = no limit)."
+            " Applies to text fields and custom value inputs."
+        ),
     )
     help_text = forms.CharField(
         required=False,

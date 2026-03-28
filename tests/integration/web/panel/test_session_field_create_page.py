@@ -66,6 +66,8 @@ class TestSessionFieldCreatePageView:
                 "active_nav": "cfp",
                 "categories": [],
                 "form": ANY,
+                "required_category_pks": set(),
+                "optional_category_pks": set(),
             },
         )
         assert response.context["current_event"].pk == event.pk
@@ -187,6 +189,8 @@ class TestSessionFieldCreatePageView:
                 "active_nav": "cfp",
                 "categories": [],
                 "form": ANY,
+                "required_category_pks": set(),
+                "optional_category_pks": set(),
             },
         )
         assert not SessionField.objects.filter(event=event).exists()

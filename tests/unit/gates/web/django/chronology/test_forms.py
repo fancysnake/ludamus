@@ -16,7 +16,12 @@ class TestBuildSessionDetailsFormParticipantLimits:
     def test_both_limits_zero_accepts_zero(self):
         form_class = build_session_details_form([], min_limit=0, max_limit=0)
         form = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": "0"}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "0",
+            }
         )
 
         assert form.is_valid()
@@ -25,7 +30,12 @@ class TestBuildSessionDetailsFormParticipantLimits:
     def test_both_limits_zero_accepts_empty(self):
         form_class = build_session_details_form([], min_limit=0, max_limit=0)
         form = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": ""}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "",
+            }
         )
 
         assert form.is_valid()
@@ -34,7 +44,12 @@ class TestBuildSessionDetailsFormParticipantLimits:
     def test_only_min_set_enforces_min(self):
         form_class = build_session_details_form([], min_limit=5, max_limit=0)
         form = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": "3"}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "3",
+            }
         )
 
         assert not form.is_valid()
@@ -43,7 +58,12 @@ class TestBuildSessionDetailsFormParticipantLimits:
     def test_only_min_set_accepts_valid(self):
         form_class = build_session_details_form([], min_limit=5, max_limit=0)
         form = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": "10"}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "10",
+            }
         )
 
         assert form.is_valid()
@@ -51,7 +71,12 @@ class TestBuildSessionDetailsFormParticipantLimits:
     def test_only_max_set_enforces_max(self):
         form_class = build_session_details_form([], min_limit=0, max_limit=10)
         form = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": "15"}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "15",
+            }
         )
 
         assert not form.is_valid()
@@ -60,7 +85,12 @@ class TestBuildSessionDetailsFormParticipantLimits:
     def test_only_max_set_accepts_zero(self):
         form_class = build_session_details_form([], min_limit=0, max_limit=10)
         form = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": "0"}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "0",
+            }
         )
 
         assert form.is_valid()
@@ -69,17 +99,32 @@ class TestBuildSessionDetailsFormParticipantLimits:
         form_class = build_session_details_form([], min_limit=3, max_limit=10)
 
         too_low = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": "2"}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "2",
+            }
         )
         assert not too_low.is_valid()
 
         too_high = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": "11"}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "11",
+            }
         )
         assert not too_high.is_valid()
 
         just_right = form_class(
-            {"title": "Test", "display_name": "Presenter", "participants_limit": "5"}
+            {
+                "title": "Test",
+                "description": "A test session",
+                "display_name": "Presenter",
+                "participants_limit": "5",
+            }
         )
         assert just_right.is_valid()
 

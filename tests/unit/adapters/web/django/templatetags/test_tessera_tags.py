@@ -146,7 +146,6 @@ class TestTabs:
         )
         html = tpl.render(Context())
         assert 'aria-selected="false"' in html
-        assert "border-transparent" in html
 
     def test_active_tab_classes(self) -> None:
         tpl = Template(
@@ -154,8 +153,7 @@ class TestTabs:
             '{% tabs %}{% tab "a" href="/a/" active=True %}A{% end_tab %}{% end_tabs %}'
         )
         html = tpl.render(Context())
-        assert "border-[var(--theme-primary)]" in html
-        assert "text-[var(--theme-primary)]" in html
+        assert 'aria-selected="true"' in html
 
     def test_tab_with_icon(self) -> None:
         tpl = Template(

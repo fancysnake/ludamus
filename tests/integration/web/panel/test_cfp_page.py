@@ -62,6 +62,19 @@ class TestCFPPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "types",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "categories": [],
                 "category_stats": {},
             },
@@ -112,6 +125,19 @@ class TestCFPPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "types",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "categories": [
                     ProposalCategoryDTO(
                         pk=cat1.pk,
@@ -167,6 +193,19 @@ class TestCFPPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "types",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "categories": [],
                 "category_stats": {},
             },
@@ -294,6 +333,19 @@ class TestCFPPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "cfp",
+                "active_tab": "types",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "categories": [
                     ProposalCategoryDTO(
                         pk=category.pk,
@@ -367,6 +419,19 @@ class TestCFPPageView:
                     "total_sessions": 1 + 1,  # pending + scheduled
                 },
                 "active_nav": "cfp",
+                "active_tab": "types",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "categories": [
                     ProposalCategoryDTO(
                         pk=category.pk,
@@ -446,6 +511,19 @@ class TestCFPPageView:
                     "total_sessions": 1 + 1,  # pending + scheduled
                 },
                 "active_nav": "cfp",
+                "active_tab": "types",
+                "tab_urls": {
+                    "types": reverse("panel:cfp", kwargs={"slug": event.slug}),
+                    "host": reverse(
+                        "panel:personal-data-fields", kwargs={"slug": event.slug}
+                    ),
+                    "session": reverse(
+                        "panel:session-fields", kwargs={"slug": event.slug}
+                    ),
+                    "time_slots": reverse(
+                        "panel:time-slots", kwargs={"slug": event.slug}
+                    ),
+                },
                 "categories": [
                     ProposalCategoryDTO(
                         pk=category1.pk,
