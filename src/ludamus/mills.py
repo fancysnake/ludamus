@@ -192,7 +192,7 @@ class EncounterService:
         )
         upcoming.sort(key=lambda x: x.encounter.start_time)
 
-        past_dtos = self._uow.encounters.list_past(sphere_id)
+        past_dtos = self._uow.encounters.list_past(sphere_id, user_id)
         past = [
             EncounterIndexItem(
                 encounter=e,
