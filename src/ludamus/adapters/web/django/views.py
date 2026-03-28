@@ -133,7 +133,16 @@ class Auth0LoginActionView(View):
         ).domain
         next_path = request.GET.get("next")
         if request.get_host() != root_domain:
-            url = f'{request.scheme}://{root_domain}{reverse("web:crowd:auth0:login")}?next={next_path}'
+            if next_path:
+                next_path = request.build_absolute_uri(next_path)
+            login_url = (
+                f'{request.scheme}://{root_domain}{reverse("web:crowd:auth0:login")}'
+            )
+            url = (
+                f"{login_url}?{urlencode({'next': next_path})}"
+                if next_path
+                else login_url
+            )
             raise RedirectError(url)
 
         # Generate a secure state token
