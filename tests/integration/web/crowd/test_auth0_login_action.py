@@ -36,7 +36,22 @@ class TestAuth0LoginActionView:
         response = client.get(self.URL, HTTP_HOST=non_root_sphere.site.domain)
 
         assert_response(
+            response, HTTPStatus.FOUND, url="http://testserver/crowd/auth0/do/login"
+        )
+
+    def test_error_non_root_domain_preserves_absolute_next(
+        self, client, non_root_sphere
+    ):
+        domain = non_root_sphere.site.domain
+        response = client.get(
+            f"{self.URL}?next=/event/my-event/session/propose/", HTTP_HOST=domain
+        )
+
+        assert_response(
             response,
             HTTPStatus.FOUND,
-            url="http://testserver/crowd/auth0/do/login?next=None",
+            url=(
+                "http://testserver/crowd/auth0/do/login"
+                f"?next=http%3A%2F%2F{domain}%2Fevent%2Fmy-event%2Fsession%2Fpropose%2F"
+            ),
         )
