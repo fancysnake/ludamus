@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
 from ludamus.adapters.db.django.models import (
+    EnrollmentConfig,
     Session,
     SessionParticipation,
     SessionParticipationStatus,
@@ -31,10 +32,11 @@ from ludamus.pacts import (
     UserData,
     UserDTO,
     UserType,
+    VirtualEnrollmentConfig,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
 
 TODAY = datetime.now(tz=UTC).date()
@@ -72,6 +74,219 @@ class ConnectedUserForm(BaseUserForm):
     )
 
 
+def _can_join_waitlist(
+    *,
+    user: UserDTO,
+    session: Session,
+    enrollment_config: EnrollmentConfig | None,
+    current_user_enrollment_config: VirtualEnrollmentConfig | None,
+) -> bool:
+    if not enrollment_config:
+        return False
+    if enrollment_config.max_waitlist_sessions == 0:
+        return False
+    if (
+        enrollment_config.restrict_to_configured_users
+        and not current_user_enrollment_config
+    ):
+        return False
+
+    current_waitlist_count = SessionParticipation.objects.filter(
+        user_id=user.pk,
+        status=SessionParticipationStatus.WAITING,
+        session__agenda_item__space__area__venue__event=session.agenda_item.space.area.venue.event,
+    ).count()
+    return current_waitlist_count < enrollment_config.max_waitlist_sessions
+
+
+def _build_user_choices(
+    *,
+    current_participation: SessionParticipation | None,
+    has_conflict: bool,
+    user_can_enroll: bool,
+    can_join_wl: bool,
+) -> tuple[list[tuple[str, str]], str]:
+    choices: list[tuple[str, str]] = [("", _("No change"))]
+    help_text = ""
+
+    match current_participation and current_participation.status:
+        case SessionParticipationStatus.CONFIRMED:
+            choices.append(("cancel", _("Cancel enrollment")))
+            if can_join_wl:
+                choices.append(("waitlist", _("Move to waiting list")))
+        case SessionParticipationStatus.WAITING:
+            choices.append(("cancel", _("Cancel enrollment")))
+            if user_can_enroll:
+                choices.append(("enroll", _("Enroll (if spots available)")))
+        case _:
+            choices, help_text = _build_default_choices(
+                user_can_enroll=user_can_enroll,
+                can_join_wl=can_join_wl,
+                has_conflict=has_conflict,
+            )
+
+    return choices, help_text
+
+
+def _build_default_choices(
+    *, user_can_enroll: bool, can_join_wl: bool, has_conflict: bool
+) -> tuple[list[tuple[str, str]], str]:
+    if has_conflict:
+        choices: list[tuple[str, str]] = [("", _("No change (time conflict)"))]
+        if can_join_wl:
+            choices.append(("waitlist", _("Join waiting list")))
+        return choices, _("Time conflict detected")
+
+    choices = [("", _("No change"))]
+    if user_can_enroll:
+        choices.append(("enroll", _("Enroll")))
+    if can_join_wl:
+        choices.append(("waitlist", _("Join waiting list")))
+    return choices, ""
+
+
+def _has_no_actionable_choices(choices: list[tuple[str, str]]) -> bool:
+    return len(choices) == 0 or (len(choices) == 1 and not choices[0][0])
+
+
+def _build_fallback_choices(
+    *,
+    enrollment_config: EnrollmentConfig | None,
+    current_user_enrollment_config: VirtualEnrollmentConfig | None,
+    user: UserDTO,
+) -> tuple[list[tuple[str, str]], str]:
+    if enrollment_config and enrollment_config.restrict_to_configured_users:
+        if not user.email:
+            return (
+                [("", _("No enrollment options (email required)"))],
+                _("Email address required for enrollment"),
+            )
+        if not current_user_enrollment_config:
+            return (
+                [("", _("No enrollment options (access required)"))],
+                _("Enrollment access permission required"),
+            )
+    return [("", _("No change"))], _("No enrollment options available")
+
+
+class _UserEnrollmentChoiceField(forms.ChoiceField):
+    def __init__(
+        self,
+        *,
+        user_obj: UserDTO,
+        enrollment_config: EnrollmentConfig | None,
+        current_user_enrollment_config: VirtualEnrollmentConfig | None,
+        user_can_enroll: bool,
+        current_user: UserDTO,
+        **kwargs: Any,
+    ) -> None:
+        self.user_obj = user_obj
+        self._enrollment_config = enrollment_config
+        self._current_user_enrollment_config = current_user_enrollment_config
+        self._user_can_enroll = user_can_enroll
+        self._current_user = current_user
+        super().__init__(**kwargs)
+
+    def validate(self, value: str) -> None:
+        if value and value not in [choice[0] for choice in self.choices]:  # type: ignore [index, union-attr]
+            user_name = self.user_obj.name or _("User")
+            self._validate_rejected_value(value, user_name)
+        super().validate(value)
+
+    def _validate_rejected_value(self, value: str, user_name: str) -> None:
+        if value == "enroll":
+            self._raise_enroll_error(user_name)
+        elif value != "waitlist":
+            raise ValidationError(
+                _("Invalid choice for %(user)s: %(value)s")
+                % {"user": user_name, "value": value}
+            )
+
+    def _raise_enroll_error(self, user_name: str) -> None:
+        ec = self._enrollment_config
+        if ec and ec.restrict_to_configured_users:
+            if not self._current_user.email:
+                raise ValidationError(
+                    _("%(user)s cannot enroll: email address required")
+                    % {"user": user_name}
+                )
+            if not self._current_user_enrollment_config:
+                raise ValidationError(
+                    _("%(user)s cannot enroll: enrollment access permission required")
+                    % {"user": user_name}
+                )
+        elif not self._user_can_enroll:
+            raise ValidationError(
+                _("%(user)s cannot enroll: enrollment not available")
+                % {"user": user_name}
+            )
+
+
+def _make_enrollment_clean(
+    *,
+    current_user: UserDTO,
+    connected_users: Iterable[UserDTO],
+    enrollment_config: EnrollmentConfig | None,
+    current_user_enrollment_config: VirtualEnrollmentConfig | None,
+    field_to_user_name: dict[str, str],
+) -> Callable[..., dict[str, Any] | None]:
+    all_users = [current_user, *connected_users]
+
+    def clean(self: forms.Form) -> dict[str, Any] | None:
+        if not (cleaned_data := forms.Form.clean(self)):
+            return cleaned_data
+
+        enroll_requests = [
+            user
+            for field_name, value in cleaned_data.items()
+            if field_name.startswith("user_") and value == "enroll"
+            for user in all_users
+            if user.pk == int(field_name.split("_")[1])
+        ]
+
+        if (
+            enroll_requests
+            and enrollment_config
+            and enrollment_config.restrict_to_configured_users
+            and current_user_enrollment_config
+            and not can_enroll_users(
+                users=all_users,
+                event=EventDTO.model_validate(enrollment_config.event),
+                virtual_config=current_user_enrollment_config,
+                users_to_enroll=enroll_requests,
+            )
+        ):
+            event = EventDTO.model_validate(enrollment_config.event)
+            used_slots = get_used_slots(users=all_users, event=event)
+            available_slots = get_vc_available_slots(
+                users=all_users,
+                event=event,
+                virtual_config=current_user_enrollment_config,
+            )
+            user_field = next(
+                field_name
+                for field_name, value in cleaned_data.items()
+                if field_name.startswith("user_") and value == "enroll"
+            )
+            user_name = field_to_user_name.get(user_field, "User")
+            self.add_error(
+                user_field,
+                (
+                    f"{user_name}: Cannot enroll more users. You have "
+                    f"already enrolled {used_slots} out of "
+                    f"{current_user_enrollment_config.allowed_slots} "
+                    "unique people "
+                    "(each person can enroll in multiple sessions). "
+                    f"Only {available_slots} slots remaining for "
+                    "new people."
+                ),
+            )
+
+        return cleaned_data
+
+    return clean
+
+
 def create_enrollment_form(
     *,
     session: Session,
@@ -80,13 +295,6 @@ def create_enrollment_form(
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
     ticket_api: TicketAPIProtocol,
 ) -> type[forms.Form]:
-    # Create form class dynamically with pre-generated fields
-    form_fields = {}
-
-    # Create mapping from field names to user names for error display
-    field_to_user_name = {}
-
-    # Get enrollment config to check waitlist settings
     enrollment_config = (
         session.agenda_item.space.area.venue.event.get_most_liberal_config(session)
     )
@@ -108,143 +316,42 @@ def create_enrollment_form(
         )
     )
 
-    def can_join_waitlist(user: UserDTO) -> bool:
-        # No enrollment config = no enrollment functionality at all
-        if not enrollment_config:
-            return False
-
-        if enrollment_config.max_waitlist_sessions == 0:
-            return False
-
-        # If restricted to configured users only, check if user has UserEnrollmentConfig
-        if (
-            enrollment_config.restrict_to_configured_users
-            and not current_user_enrollment_config
-        ):
-            return False
-
-        # Count current waitlist participations for this user
-        current_waitlist_count = SessionParticipation.objects.filter(
-            user_id=user.pk,
-            status=SessionParticipationStatus.WAITING,
-            session__agenda_item__space__area__venue__event=session.agenda_item.space.area.venue.event,
-        ).count()
-
-        return current_waitlist_count < enrollment_config.max_waitlist_sessions
+    form_fields: dict[str, _UserEnrollmentChoiceField] = {}
+    field_to_user_name: dict[str, str] = {}
 
     for user in (current_user, *connected_users):
         current_participation = SessionParticipation.objects.filter(
             session=session, user_id=user.pk
         ).first()
         has_conflict = Session.objects.has_conflicts(session, user)
+        can_join_wl = _can_join_waitlist(
+            user=user,
+            session=session,
+            enrollment_config=enrollment_config,
+            current_user_enrollment_config=current_user_enrollment_config,
+        )
+
+        choices, help_text = _build_user_choices(
+            current_participation=current_participation,
+            has_conflict=has_conflict,
+            user_can_enroll=user_can_enroll,
+            can_join_wl=can_join_wl,
+        )
+        if _has_no_actionable_choices(choices) and not has_conflict:
+            choices, help_text = _build_fallback_choices(
+                enrollment_config=enrollment_config,
+                current_user_enrollment_config=current_user_enrollment_config,
+                user=user,
+            )
+
         field_name = f"user_{user.pk}"
-        choices = [("", _("No change"))]
-        help_text = ""
-
-        # Determine available choices based on current status first
-        match current_participation and current_participation.status:
-            case SessionParticipationStatus.CONFIRMED:
-                base_choices = [("cancel", _("Cancel enrollment"))]
-                if can_join_waitlist(user):
-                    base_choices.append(("waitlist", _("Move to waiting list")))
-                choices.extend(base_choices)
-            case SessionParticipationStatus.WAITING:
-                # On waiting list - can always cancel, but enrollment depends on age
-                base_waiting_choices = [("cancel", _("Cancel enrollment"))]
-                if user_can_enroll:
-                    base_waiting_choices.append(
-                        ("enroll", _("Enroll (if spots available)"))
-                    )
-                choices.extend(base_waiting_choices)
-                # Set help text if age restriction applies
-            case _:
-                # Unknown status - treat as if no participation exists
-                # Add default enrollment options only if age requirement is met
-                if user_can_enroll and not has_conflict:
-                    choices.append(("enroll", _("Enroll")))
-                if can_join_waitlist(user):
-                    choices.append(("waitlist", _("Join waiting list")))
-
-                if has_conflict:
-                    # Add note about time conflict
-                    base_conflict_choices = [("", _("No change (time conflict)"))]
-                    if can_join_waitlist(user):
-                        base_conflict_choices.append(
-                            ("waitlist", _("Join waiting list"))
-                        )
-                    choices = base_conflict_choices
-                    help_text = _("Time conflict detected")
-
-        # If no choices available, provide helpful explanation
-        # But preserve age restriction and time conflict choices
-        if (
-            len(choices) == 0 or (len(choices) == 1 and not choices[0][0])
-        ) and not has_conflict:
-            if enrollment_config and enrollment_config.restrict_to_configured_users:
-                if not user.email:
-                    help_text = _("Email address required for enrollment")
-                    choices = [("", _("No enrollment options (email required)"))]
-                # Check if user has their own config or manager's config
-                elif not current_user_enrollment_config:
-                    help_text = _("Enrollment access permission required")
-                    choices = [("", _("No enrollment options (access required)"))]
-                else:
-                    help_text = _("No enrollment options available")
-                    choices = [("", _("No change"))]
-            else:
-                help_text = _("No enrollment options available")
-                choices = [("", _("No change"))]
-
-        # Add to field name mapping
         field_to_user_name[field_name] = user.full_name
-
-        # Create a custom choice field with better error messages
-        class UserEnrollmentChoiceField(forms.ChoiceField):
-            def __init__(self, user_obj: UserDTO, *args: Any, **kwargs: Any) -> None:
-                self.user_obj = user_obj
-                super().__init__(*args, **kwargs)
-
-            def validate(self, value: str) -> None:
-                if value and value not in [choice[0] for choice in self.choices]:  # type: ignore [index, union-attr]
-                    user_name = self.user_obj.name or _("User")
-                    if value == "enroll":
-                        # Check age requirement first
-                        if (
-                            enrollment_config
-                            and enrollment_config.restrict_to_configured_users
-                        ):
-                            # Check if this is a connected user
-                            if not current_user.email:
-                                raise ValidationError(
-                                    _(
-                                        "%(user)s cannot enroll: email address "
-                                        "required"
-                                    )
-                                    % {"user": user_name}
-                                )
-
-                            if not current_user_enrollment_config:
-                                raise ValidationError(
-                                    _(
-                                        "%(user)s cannot enroll: enrollment access "
-                                        "permission required"
-                                    )
-                                    % {"user": user_name}
-                                )
-                        elif not user_can_enroll:
-                            raise ValidationError(
-                                _("%(user)s cannot enroll: enrollment not available")
-                                % {"user": user_name}
-                            )
-                    elif value != "waitlist":
-                        raise ValidationError(
-                            _("Invalid choice for %(user)s: %(value)s")
-                            % {"user": user_name, "value": value}
-                        )
-                super().validate(value)
-
-        form_fields[field_name] = UserEnrollmentChoiceField(
+        form_fields[field_name] = _UserEnrollmentChoiceField(
             user_obj=user,
+            enrollment_config=enrollment_config,
+            current_user_enrollment_config=current_user_enrollment_config,
+            user_can_enroll=user_can_enroll,
+            current_user=current_user,
             choices=choices,
             required=False,
             label=user.full_name,
@@ -258,74 +365,14 @@ def create_enrollment_form(
             ),
         )
 
-    def clean(self: forms.Form) -> dict[str, Any] | None:
-        if cleaned_data := forms.Form.clean(self):
-            # Count enrollment requests to check user slot limits
-            enroll_requests = []
-            for field_name, value in cleaned_data.items():
-                if (
-                    field_name.startswith("user_")
-                    and value == "enroll"
-                    and (
-                        user := next(
-                            (
-                                u
-                                for u in (current_user, *connected_users)
-                                if u.pk == int(field_name.split("_")[1])
-                            ),
-                            None,
-                        )
-                    )
-                ):
-                    # Find the user from users list
-                    enroll_requests.append(user)
+    clean = _make_enrollment_clean(
+        current_user=current_user,
+        connected_users=connected_users,
+        enrollment_config=enrollment_config,
+        current_user_enrollment_config=current_user_enrollment_config,
+        field_to_user_name=field_to_user_name,
+    )
 
-            # Check if manager has enough user slots for all users being enrolled
-            if (
-                enroll_requests
-                and enrollment_config
-                and enrollment_config.restrict_to_configured_users
-                and current_user_enrollment_config
-                and not can_enroll_users(
-                    users=[current_user, *connected_users],
-                    event=EventDTO.model_validate(enrollment_config.event),
-                    virtual_config=current_user_enrollment_config,
-                    users_to_enroll=enroll_requests,
-                )
-            ):
-                used_slots = get_used_slots(
-                    users=[current_user, *connected_users],
-                    event=EventDTO.model_validate(enrollment_config.event),
-                )
-                available_slots = get_vc_available_slots(
-                    users=[current_user, *connected_users],
-                    event=EventDTO.model_validate(enrollment_config.event),
-                    virtual_config=current_user_enrollment_config,
-                )
-                # Add error to first enrollment field using user's name
-                user_field = next(
-                    field_name
-                    for field_name, value in cleaned_data.items()
-                    if field_name.startswith("user_") and value == "enroll"
-                )
-                user_name = field_to_user_name.get(user_field, "User")
-                self.add_error(
-                    user_field,
-                    (
-                        f"{user_name}: Cannot enroll more users. You have "
-                        f"already enrolled {used_slots} out of "
-                        f"{current_user_enrollment_config.allowed_slots} "
-                        "unique people "
-                        "(each person can enroll in multiple sessions). "
-                        f"Only {available_slots} slots remaining for "
-                        "new people."
-                    ),
-                )
-                return cleaned_data
-
-        return cleaned_data
-
-    # Create form class with custom clean method
     form = type("EnrollmentForm", (forms.Form,), form_fields)
     form.clean = clean  # type: ignore [attr-defined]
     return form

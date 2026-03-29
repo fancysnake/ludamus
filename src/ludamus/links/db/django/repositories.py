@@ -1354,6 +1354,15 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
 
         return ProposalCategoryDTO.model_validate(category)
 
+    _SIMPLE_UPDATE_FIELDS = (
+        "description",
+        "start_time",
+        "end_time",
+        "durations",
+        "min_participants_limit",
+        "max_participants_limit",
+    )
+
     def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO:
         try:
             category = ProposalCategory.objects.get(id=pk)
@@ -1364,43 +1373,17 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
 
         if "name" in data and category.name != data["name"]:
             name = data["name"]
-            base_slug = slugify(name)
-            slug = self.generate_unique_slug(
-                category.event_id, base_slug, exclude_pk=pk
-            )
             category.name = name
-            category.slug = slug
+            category.slug = self.generate_unique_slug(
+                category.event_id, slugify(name), exclude_pk=pk
+            )
             needs_save = True
 
-        if "description" in data and category.description != data["description"]:
-            category.description = data["description"]
-            needs_save = True
-
-        if "start_time" in data and category.start_time != data["start_time"]:
-            category.start_time = data["start_time"]
-            needs_save = True
-
-        if "end_time" in data and category.end_time != data["end_time"]:
-            category.end_time = data["end_time"]
-            needs_save = True
-
-        if "durations" in data and category.durations != data["durations"]:
-            category.durations = data["durations"]
-            needs_save = True
-
-        if (
-            "min_participants_limit" in data
-            and category.min_participants_limit != data["min_participants_limit"]
-        ):
-            category.min_participants_limit = data["min_participants_limit"]
-            needs_save = True
-
-        if (
-            "max_participants_limit" in data
-            and category.max_participants_limit != data["max_participants_limit"]
-        ):
-            category.max_participants_limit = data["max_participants_limit"]
-            needs_save = True
+        data_dict = cast("dict[str, object]", data)
+        for field in self._SIMPLE_UPDATE_FIELDS:
+            if field in data_dict and getattr(category, field) != data_dict[field]:
+                setattr(category, field, data_dict[field])
+                needs_save = True
 
         if needs_save:
             category.save()

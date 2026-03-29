@@ -210,64 +210,18 @@ class Auth0LoginCallbackActionView(RedirectView):
     request: RootRequest
 
     def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
-        redirect_to = super().get_redirect_url(*args, **kwargs)
+        default_redirect = super().get_redirect_url(*args, **kwargs)
+        index_url = self.request.build_absolute_uri(reverse("web:index"))
 
-        # Validate state parameter
-        if not (state_token := self.request.GET.get("state")):
-            messages.error(
-                self.request,
-                _("Invalid authentication request: missing state parameter"),
-            )
-            return self.request.build_absolute_uri(reverse("web:index"))
-
-        # Retrieve and validate state data
-        cache_key = f"oauth_state:{state_token}"
-
-        if not (state_data_json := cache.get(cache_key)):
-            messages.error(
-                self.request, _("Authentication session expired. Please try again.")
-            )
-            return self.request.build_absolute_uri(reverse("web:index"))
-
-        # Delete state from cache immediately to prevent replay attacks
-        cache.delete(cache_key)
-
-        try:
-            state_data = json.loads(state_data_json)
-            redirect_to = state_data.get("redirect_to") or redirect_to or ""
-
-            # Validate state timestamp
-            created_at = datetime.fromisoformat(state_data["created_at"])
-            if datetime.now(UTC) - created_at > timedelta(minutes=10):
-                messages.error(
-                    self.request, _("Authentication session expired. Please try again.")
-                )
-                return self.request.build_absolute_uri(reverse("web:index"))
-
-        except KeyError, ValueError:
-            messages.error(self.request, _("Invalid authentication state"))
-            return self.request.build_absolute_uri(reverse("web:index"))
+        if (redirect_to := self._resolve_oauth_state(default_redirect)) is None:
+            return index_url
 
         if self.request.context.current_user_slug:
-            return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
+            return redirect_to or index_url
 
         userinfo = self._get_userinfo()
+        user = self._get_or_create_user(userinfo)
 
-        # Handle login/signup
-        try:
-            user = self.request.di.uow.active_users.read_by_username(userinfo.username)
-        except NotFoundError:
-            create_data = userinfo.to_create_data(
-                slug=slugify(userinfo.username), password=make_password(None)
-            )
-            if self.request.di.uow.active_users.email_exists(
-                create_data.get("email", "")
-            ):
-                create_data["email"] = ""
-            self.request.di.uow.active_users.create(create_data)
-            user = self.request.di.uow.active_users.read_by_username(userinfo.username)
-
-        # Log the user in
         self.request.di.uow.login_user(self.request, user.slug)
         if self.request.session.get("anonymous_enrollment_active"):
             self.request.session.pop("anonymous_user_code", None)
@@ -275,19 +229,7 @@ class Auth0LoginCallbackActionView(RedirectView):
             self.request.session.pop("anonymous_event_id", None)
         messages.success(self.request, _("Welcome!"))
 
-        if update_data := userinfo.to_update_data(user):
-            if (
-                "email" in update_data
-                and self.request.di.uow.active_users.email_exists(
-                    update_data["email"], exclude_slug=user.slug
-                )
-            ):
-                del update_data["email"]
-            if update_data:
-                self.request.di.uow.active_users.update(user.slug, update_data)
-
-            if "name" in update_data:
-                user = self.request.di.uow.active_users.read(user.slug)
+        user = self._apply_user_updates(userinfo, user)
 
         if not (user.name or "").strip():
             messages.success(self.request, _("Please complete your profile."))
@@ -298,7 +240,70 @@ class Auth0LoginCallbackActionView(RedirectView):
                 )
             return self.request.build_absolute_uri(reverse("web:crowd:profile"))
 
-        return redirect_to or self.request.build_absolute_uri(reverse("web:index"))
+        return redirect_to or index_url
+
+    def _resolve_oauth_state(self, default_redirect: str | None) -> str | None:
+        if not (state_token := self.request.GET.get("state")):
+            messages.error(
+                self.request,
+                _("Invalid authentication request: missing state parameter"),
+            )
+            return None
+
+        cache_key = f"oauth_state:{state_token}"
+        if not (state_data_json := cache.get(cache_key)):
+            messages.error(
+                self.request, _("Authentication session expired. Please try again.")
+            )
+            return None
+
+        cache.delete(cache_key)
+
+        try:
+            state_data = json.loads(state_data_json)
+            redirect_to = state_data.get("redirect_to") or default_redirect or ""
+
+            created_at = datetime.fromisoformat(state_data["created_at"])
+            if datetime.now(UTC) - created_at > timedelta(minutes=10):
+                messages.error(
+                    self.request, _("Authentication session expired. Please try again.")
+                )
+                return None
+
+        except KeyError, ValueError:
+            messages.error(self.request, _("Invalid authentication state"))
+            return None
+
+        return redirect_to
+
+    def _get_or_create_user(self, userinfo: Auth0UserInfo) -> UserDTO:
+        try:
+            return self.request.di.uow.active_users.read_by_username(userinfo.username)
+        except NotFoundError:
+            create_data = userinfo.to_create_data(
+                slug=slugify(userinfo.username), password=make_password(None)
+            )
+            if self.request.di.uow.active_users.email_exists(
+                create_data.get("email", "")
+            ):
+                create_data["email"] = ""
+            self.request.di.uow.active_users.create(create_data)
+            return self.request.di.uow.active_users.read_by_username(userinfo.username)
+
+    def _apply_user_updates(self, userinfo: Auth0UserInfo, user: UserDTO) -> UserDTO:
+        if update_data := userinfo.to_update_data(user):
+            if (
+                "email" in update_data
+                and self.request.di.uow.active_users.email_exists(
+                    update_data["email"], exclude_slug=user.slug
+                )
+            ):
+                del update_data["email"]
+            if update_data:
+                self.request.di.uow.active_users.update(user.slug, update_data)
+            if "name" in update_data:
+                user = self.request.di.uow.active_users.read(user.slug)
+        return user
 
     def _get_userinfo(self) -> Auth0UserInfo:
         token = oauth.auth0.authorize_access_token(self.request)
@@ -849,92 +854,94 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             config.restrict_to_configured_users for config in active_configs
         )
         context["enrollment_requires_slots"] = requires_slots
+        context.update(self._get_anonymous_context())
+
+        filterable_categories = self.object.filterable_tag_categories.all()
+        context["filterable_tag_categories"] = list(filterable_categories)
+        context.update(self._get_pending_sessions_context())
+
+        return context
+
+    def _get_anonymous_context(self) -> dict[str, Any]:
+        ctx: dict[str, Any] = {}
         anonymous_service = AnonymousEnrollmentService(
             self.request.di.uow.anonymous_users
         )
 
-        # Handle anonymous mode
-        # Clear anonymous session flags if user is authenticated
         if self.request.context.current_user_id and self.request.session.get(
             "anonymous_enrollment_active"
         ):
-            self.request.session.pop("anonymous_user_code", None)
-            self.request.session.pop("anonymous_enrollment_active", None)
-            self.request.session.pop("anonymous_event_id", None)
-            self.request.session.pop("anonymous_site_id", None)
-        elif (
-            self.request.session.get("anonymous_enrollment_active")
-            and not self.request.context.current_user_id
-        ):
-            # Load anonymous user data if in anonymous mode - validate site
-            anonymous_user_code = self.request.session.get("anonymous_user_code")
-            current_site_id = self.request.context.current_site_id
-            session_site_id = self.request.session.get("anonymous_site_id")
-            if anonymous_user_code and session_site_id == current_site_id:
-                anonymous_user = None
-                with suppress(NotFoundError):
-                    anonymous_user = anonymous_service.get_user_by_code(
-                        code=anonymous_user_code
-                    )
+            self._clear_anonymous_session()
+            return ctx
 
-                if anonymous_user:
-                    context["anonymous_code"] = anonymous_user.slug.removeprefix(
-                        "code_"
-                    )
-
-                    # Get anonymous user's enrollments for this event
-                    anonymous_enrollments = SessionParticipation.objects.filter(
-                        user_id=anonymous_user.pk,
-                        session__agenda_item__space__area__venue__event=self.object,
-                    ).select_related("session")
-
-                    context["anonymous_user_enrollments"] = list(anonymous_enrollments)
-                else:
-                    # Clear anonymous session if site doesn't match
-                    self.request.session.pop("anonymous_user_code", None)
-                    self.request.session.pop("anonymous_enrollment_active", None)
-                    self.request.session.pop("anonymous_event_id", None)
-                    self.request.session.pop("anonymous_site_id", None)
-            else:
-                # Clear anonymous session if site doesn't match
-                self.request.session.pop("anonymous_user_code", None)
-                self.request.session.pop("anonymous_enrollment_active", None)
-                self.request.session.pop("anonymous_event_id", None)
-                self.request.session.pop("anonymous_site_id", None)
-
-        # Add filterable tag categories for this event
-        filterable_categories = self.object.filterable_tag_categories.all()
-        context["filterable_tag_categories"] = list(filterable_categories)
-
-        # Add proposals for superusers, sphere managers, and proposal authors
         if (
-            self.request.context.current_user_slug
-            and self.request.context.current_user_id is not None
+            not self.request.session.get("anonymous_enrollment_active")
+            or self.request.context.current_user_id
         ):
-            # Check if user is a sphere manager for this event's sphere
-            is_sphere_manager = self.object.sphere.managers.filter(
-                id=self.request.context.current_user_id
-            ).exists()
+            return ctx
 
-            if (
-                self.request.di.uow.active_users.read(
-                    self.request.context.current_user_slug
-                ).is_superuser
-                or is_sphere_manager
-            ):
-                # Show all pending sessions for superusers and sphere managers
-                context["pending_sessions"] = (
-                    self.request.di.uow.sessions.read_pending_by_event(self.object.pk)
-                )
-            else:
-                # Show only the user's own pending sessions
-                context["pending_sessions"] = (
-                    self.request.di.uow.sessions.read_pending_by_event_for_user(
-                        self.object.pk, self.request.context.current_user_id
-                    )
-                )
+        anonymous_user_code = self.request.session.get("anonymous_user_code")
+        current_site_id = self.request.context.current_site_id
+        session_site_id = self.request.session.get("anonymous_site_id")
 
-        return context
+        if not (anonymous_user_code and session_site_id == current_site_id):
+            self._clear_anonymous_session()
+            return ctx
+
+        anonymous_user = None
+        with suppress(NotFoundError):
+            anonymous_user = anonymous_service.get_user_by_code(
+                code=anonymous_user_code
+            )
+
+        if not anonymous_user:
+            self._clear_anonymous_session()
+            return ctx
+
+        ctx["anonymous_code"] = anonymous_user.slug.removeprefix("code_")
+        anonymous_enrollments = SessionParticipation.objects.filter(
+            user_id=anonymous_user.pk,
+            session__agenda_item__space__area__venue__event=self.object,
+        ).select_related("session")
+        ctx["anonymous_user_enrollments"] = list(anonymous_enrollments)
+        return ctx
+
+    def _clear_anonymous_session(self) -> None:
+        self.request.session.pop("anonymous_user_code", None)
+        self.request.session.pop("anonymous_enrollment_active", None)
+        self.request.session.pop("anonymous_event_id", None)
+        self.request.session.pop("anonymous_site_id", None)
+
+    def _get_pending_sessions_context(self) -> dict[str, Any]:
+        if (
+            not self.request.context.current_user_slug
+            or self.request.context.current_user_id is None
+        ):
+            return {}
+
+        is_sphere_manager = self.object.sphere.managers.filter(
+            id=self.request.context.current_user_id
+        ).exists()
+
+        if (
+            self.request.di.uow.active_users.read(
+                self.request.context.current_user_slug
+            ).is_superuser
+            or is_sphere_manager
+        ):
+            return {
+                "pending_sessions": self.request.di.uow.sessions.read_pending_by_event(
+                    self.object.pk
+                )
+            }
+
+        return {
+            "pending_sessions": (
+                self.request.di.uow.sessions.read_pending_by_event_for_user(
+                    self.object.pk, self.request.context.current_user_id
+                )
+            )
+        }
 
     def _set_user_participations(
         self, sessions: dict[int, SessionData], event_sessions: QuerySet[Session]
@@ -1983,6 +1990,107 @@ class EventAnonymousActivateActionView(View):
         return redirect("web:chronology:event", slug=event.slug)
 
 
+def _validate_anonymous_enrollment_request(
+    request: RootRequest, session_id: int
+) -> tuple[Session, UserDTO] | HttpResponse:
+    if not request.session.get("anonymous_enrollment_active"):
+        messages.error(request, _("Anonymous enrollment is not active."))
+        return redirect("web:index")
+
+    if request.session.get("anonymous_site_id") != request.context.current_site_id:
+        messages.error(
+            request, _("Anonymous enrollment session is not valid for this site.")
+        )
+        return redirect("web:index")
+
+    try:
+        session = Session.objects.get(
+            id=session_id, sphere__site_id=request.context.current_site_id
+        )
+    except Session.DoesNotExist:
+        messages.error(request, _("Session not found."))
+        return redirect("web:index")
+
+    if not (anonymous_user_code := request.session.get("anonymous_user_code")):
+        messages.error(request, _("Anonymous session expired."))
+        return redirect("web:index")
+
+    service = AnonymousEnrollmentService(user_repository=request.di.uow.anonymous_users)
+    try:
+        anonymous_user = service.get_user_by_code(code=anonymous_user_code)
+    except NotFoundError:
+        messages.error(request, _("Anonymous user not found."))
+        return redirect("web:index")
+
+    return session, anonymous_user
+
+
+def _cancel_anonymous_enrollment(
+    request: RootRequest, session: Session, anonymous_user: UserDTO
+) -> None:
+    try:
+        enrollment = SessionParticipation.objects.get(
+            session=session, user_id=anonymous_user.pk
+        )
+        enrollment.delete()
+        messages.success(
+            request,
+            _("Successfully cancelled enrollment in session: %(title)s")
+            % {"title": session.title},
+        )
+    except SessionParticipation.DoesNotExist:
+        messages.warning(request, _("No enrollment found to cancel."))
+
+
+def _enroll_anonymous_user(
+    request: RootRequest, session: Session, anonymous_user: UserDTO, session_id: int
+) -> HttpResponse | None:
+    if Session.objects.has_conflicts(session, anonymous_user):
+        messages.error(
+            request,
+            _(
+                "Cannot enroll: You are already enrolled in another session "
+                "that conflicts with this time slot."
+            ),
+        )
+        return redirect(
+            "web:chronology:session-enrollment-anonymous", session_id=session_id
+        )
+
+    if session.is_full:
+        SessionParticipation.objects.get_or_create(
+            session=session,
+            user_id=anonymous_user.pk,
+            defaults={"status": SessionParticipationStatus.WAITING.value},
+        )
+        messages.success(
+            request,
+            _(
+                "Session is full. You have been added to the waiting list "
+                "for: %(title)s"
+            )
+            % {"title": session.title},
+        )
+    else:
+        enrollment, created = SessionParticipation.objects.get_or_create(
+            session=session,
+            user_id=anonymous_user.pk,
+            defaults={"status": SessionParticipationStatus.CONFIRMED.value},
+        )
+        if (
+            not created
+            and enrollment.status != SessionParticipationStatus.CONFIRMED.value
+        ):
+            enrollment.status = SessionParticipationStatus.CONFIRMED.value
+            enrollment.save()
+        messages.success(
+            request,
+            _("Successfully enrolled in session: %(title)s") % {"title": session.title},
+        )
+
+    return None
+
+
 class SessionEnrollmentAnonymousPageView(View):
     @staticmethod
     def get(request: RootRequest, session_id: int) -> HttpResponse:
@@ -2046,126 +2154,31 @@ class SessionEnrollmentAnonymousPageView(View):
 
     @staticmethod
     def post(request: RootRequest, session_id: int) -> HttpResponse:
-        # Redirect to regular enrollment if user is authenticated
         if request.context.current_user_slug:
             return redirect("web:chronology:session-enrollment", session_id=session_id)
 
-        # Check if anonymous mode is active
-        if not request.session.get("anonymous_enrollment_active"):
-            messages.error(request, _("Anonymous enrollment is not active."))
-            return redirect("web:index")
+        result = _validate_anonymous_enrollment_request(request, session_id)
+        if isinstance(result, HttpResponse):
+            return result
+        session, anonymous_user = result
 
-        # Check if anonymous user is for the current site
-        current_site_id = request.context.current_site_id
-        session_site_id = request.session.get("anonymous_site_id")
-        if session_site_id != current_site_id:
-            messages.error(
-                request, _("Anonymous enrollment session is not valid for this site.")
-            )
-            return redirect("web:index")
-
-        # Get session
-        try:
-            session = Session.objects.get(
-                id=session_id, sphere__site_id=request.context.current_site_id
-            )
-        except Session.DoesNotExist:
-            messages.error(request, _("Session not found."))
-            return redirect("web:index")
-
-        # Get anonymous user
-        if not (anonymous_user_code := request.session.get("anonymous_user_code")):
-            messages.error(request, _("Anonymous session expired."))
-            return redirect("web:index")
-
-        user_repository = request.di.uow.anonymous_users
-        service = AnonymousEnrollmentService(user_repository=user_repository)
-        # Look up user by code
-        try:
-            anonymous_user = service.get_user_by_code(code=anonymous_user_code)
-        except NotFoundError:
-            messages.error(request, _("Anonymous user not found."))
-            return redirect("web:index")
-
-        # Update user data if provided
         if name := request.POST.get("name", "").strip():
             anonymous_user.name = name
 
-        # Validate required fields
         if not anonymous_user.name:
             messages.error(request, _("Name is required."))
             return redirect(
                 "web:chronology:session-enrollment-anonymous", session_id=session_id
             )
 
-        user_repository.update(anonymous_user.slug, UserData(name=name))
+        request.di.uow.anonymous_users.update(anonymous_user.slug, UserData(name=name))
 
-        # Check for cancellation request
         if request.POST.get("action", "enroll") == "cancel":
-            # Cancel enrollment
-            try:
-                enrollment = SessionParticipation.objects.get(
-                    session=session, user_id=anonymous_user.pk
-                )
-                enrollment.delete()
-                messages.success(
-                    request,
-                    _("Successfully cancelled enrollment in session: %(title)s")
-                    % {"title": session.title},
-                )
-            except SessionParticipation.DoesNotExist:
-                messages.warning(request, _("No enrollment found to cancel."))
-        else:
-            # Check for time conflicts before enrolling
-            if Session.objects.has_conflicts(session, anonymous_user):
-                messages.error(
-                    request,
-                    _(
-                        "Cannot enroll: You are already enrolled in another session "
-                        "that conflicts with this time slot."
-                    ),
-                )
-                return redirect(
-                    "web:chronology:session-enrollment-anonymous", session_id=session_id
-                )
-
-            # Check if session is full and determine enrollment status
-            if session.is_full:
-                # Add to waitlist
-                enrollment, created = SessionParticipation.objects.get_or_create(
-                    session=session,
-                    user_id=anonymous_user.pk,
-                    defaults={"status": SessionParticipationStatus.WAITING.value},
-                )
-
-                messages.success(
-                    request,
-                    _(
-                        "Session is full. You have been added to the waiting list "
-                        "for: %(title)s"
-                    )
-                    % {"title": session.title},
-                )
-            else:
-                # Enroll normally
-                enrollment, created = SessionParticipation.objects.get_or_create(
-                    session=session,
-                    user_id=anonymous_user.pk,
-                    defaults={"status": SessionParticipationStatus.CONFIRMED.value},
-                )
-
-                if (
-                    not created
-                    and enrollment.status != SessionParticipationStatus.CONFIRMED.value
-                ):
-                    enrollment.status = SessionParticipationStatus.CONFIRMED.value
-                    enrollment.save()
-
-                messages.success(
-                    request,
-                    _("Successfully enrolled in session: %(title)s")
-                    % {"title": session.title},
-                )
+            _cancel_anonymous_enrollment(request, session, anonymous_user)
+        elif early_redirect := _enroll_anonymous_user(
+            request, session, anonymous_user, session_id
+        ):
+            return early_redirect
 
         return redirect(
             "web:chronology:event", slug=session.agenda_item.space.area.venue.event.slug
