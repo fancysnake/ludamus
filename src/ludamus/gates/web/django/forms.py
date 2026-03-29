@@ -5,6 +5,21 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+_DATETIME_LOCAL_FORMATS = ["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"]
+
+
+def _datetime_local_widget() -> forms.DateTimeInput:
+    return forms.DateTimeInput(
+        attrs={
+            "type": "datetime-local",
+            "class": (
+                "w-full border border-border rounded-lg px-4 py-2"
+                " focus:outline-none focus:ring-2 focus:ring-primary"
+            ),
+        },
+        format="%Y-%m-%dT%H:%M",
+    )
+
 
 class EventSettingsForm(forms.Form):
     """Form for event settings."""
@@ -17,8 +32,36 @@ class EventSettingsForm(forms.Form):
             "required": _("Event name is required."),
         },
     )
-    proposal_description = forms.CharField(
-        required=False, widget=forms.Textarea(attrs={"rows": 4})
+    slug = forms.SlugField(
+        max_length=50, error_messages={"required": _("Event slug is required.")}
+    )
+    description = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 3})
+    )
+    start_time = forms.DateTimeField(
+        widget=_datetime_local_widget(),
+        input_formats=_DATETIME_LOCAL_FORMATS,
+        error_messages={"required": _("Start time is required.")},
+    )
+    end_time = forms.DateTimeField(
+        widget=_datetime_local_widget(),
+        input_formats=_DATETIME_LOCAL_FORMATS,
+        error_messages={"required": _("End time is required.")},
+    )
+    publication_time = forms.DateTimeField(
+        required=False,
+        widget=_datetime_local_widget(),
+        input_formats=_DATETIME_LOCAL_FORMATS,
+    )
+    proposal_start_time = forms.DateTimeField(
+        required=False,
+        widget=_datetime_local_widget(),
+        input_formats=_DATETIME_LOCAL_FORMATS,
+    )
+    proposal_end_time = forms.DateTimeField(
+        required=False,
+        widget=_datetime_local_widget(),
+        input_formats=_DATETIME_LOCAL_FORMATS,
     )
 
 
@@ -111,6 +154,7 @@ class PersonalDataFieldForm(forms.Form):
             " Shown below the field in the proposal form."
         ),
     )
+    is_public = forms.BooleanField(required=False, initial=False)
 
 
 class SessionFieldForm(forms.Form):
@@ -172,6 +216,8 @@ class SessionFieldForm(forms.Form):
             " Shown below the field in the proposal form."
         ),
     )
+    icon = forms.CharField(max_length=50, required=False)
+    is_public = forms.BooleanField(required=False, initial=False)
 
 
 class VenueForm(forms.Form):

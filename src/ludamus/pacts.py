@@ -478,6 +478,7 @@ class PersonalDataFieldDTO(BaseModel):
     field_type: Literal["text", "select", "checkbox"]
     help_text: str = ""
     is_multiple: bool = False
+    is_public: bool = False
     max_length: int = 50
     name: str
     options: list[PersonalDataFieldOptionDTO] = []
@@ -506,7 +507,9 @@ class SessionFieldDTO(BaseModel):
     allow_custom: bool = False
     field_type: Literal["text", "select", "checkbox"]
     help_text: str = ""
+    icon: str = ""
     is_multiple: bool = False
+    is_public: bool = False
     max_length: int = 50
     name: str
     options: list[SessionFieldOptionDTO] = []
@@ -514,6 +517,28 @@ class SessionFieldDTO(BaseModel):
     pk: int
     question: str
     slug: str
+
+
+class EventSettingsDTO(BaseModel):
+    """Display settings for an event."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    filterable_session_field_ids: list[int] = []
+    pk: int
+
+
+class EventUpdateData(TypedDict, total=False):
+    """Write shape for updating event fields."""
+
+    name: str
+    slug: str
+    description: str
+    start_time: datetime
+    end_time: datetime
+    publication_time: datetime | None
+    proposal_start_time: datetime | None
+    proposal_end_time: datetime | None
 
 
 @dataclass
@@ -765,7 +790,7 @@ class EventRepositoryProtocol(Protocol):
     @staticmethod
     def get_stats_data(event_id: int) -> EventStatsData: ...
     @staticmethod
-    def update_name(event_id: int, name: str) -> None: ...
+    def update(event_id: int, data: EventUpdateData) -> None: ...
     @staticmethod
     def update_proposal_description(event_id: int, description: str) -> None: ...
 
@@ -903,6 +928,7 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
         allow_custom: bool = False,
         max_length: int = 50,
         help_text: str = "",
+        is_public: bool = False,
     ) -> PersonalDataFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -912,7 +938,7 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
     def get_usage_counts(event_id: int) -> dict[int, dict[str, int]]: ...
     def list_by_event(self, event_id: int) -> list[PersonalDataFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> PersonalDataFieldDTO: ...
-    def update(
+    def update(  # noqa: PLR0913
         self,
         pk: int,
         name: str,
@@ -920,6 +946,7 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
         *,
         max_length: int = 50,
         help_text: str = "",
+        is_public: bool = False,
     ) -> PersonalDataFieldDTO: ...
 
 
@@ -936,6 +963,8 @@ class SessionFieldRepositoryProtocol(Protocol):
         allow_custom: bool = False,
         max_length: int = 50,
         help_text: str = "",
+        icon: str = "",
+        is_public: bool = False,
     ) -> SessionFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -945,7 +974,7 @@ class SessionFieldRepositoryProtocol(Protocol):
     def get_usage_counts(event_id: int) -> dict[int, dict[str, int]]: ...
     def list_by_event(self, event_id: int) -> list[SessionFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO: ...
-    def update(
+    def update(  # noqa: PLR0913
         self,
         pk: int,
         name: str,
@@ -953,6 +982,8 @@ class SessionFieldRepositoryProtocol(Protocol):
         *,
         max_length: int = 50,
         help_text: str = "",
+        icon: str = "",
+        is_public: bool = False,
     ) -> SessionFieldDTO: ...
 
 
@@ -973,6 +1004,13 @@ class TimeSlotRepositoryProtocol(Protocol):
     def read_by_event(event_id: int, pk: int) -> TimeSlotDTO: ...
     @staticmethod
     def update(pk: int, start_time: datetime, end_time: datetime) -> TimeSlotDTO: ...
+
+
+class EventSettingsRepositoryProtocol(Protocol):
+    @staticmethod
+    def read_or_create(event_id: int) -> EventSettingsDTO: ...
+    @staticmethod
+    def update_filterable_fields(event_id: int, field_ids: list[int]) -> None: ...
 
 
 class EnrollmentConfigRepositoryProtocol(Protocol):
@@ -1062,6 +1100,8 @@ class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     def connected_users(self) -> ConnectedUserRepositoryProtocol: ...
     @property
     def events(self) -> EventRepositoryProtocol: ...
+    @property
+    def event_settings(self) -> EventSettingsRepositoryProtocol: ...
     @property
     def personal_data_fields(self) -> PersonalDataFieldRepositoryProtocol: ...
     @property

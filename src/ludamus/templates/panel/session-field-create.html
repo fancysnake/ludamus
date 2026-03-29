@@ -123,6 +123,33 @@
                                 {% translate "Supports markdown (links, bold). Shown below the field in the proposal form." %}
                             </p>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                   for="id_icon">{% translate "Icon" %}</label>
+                            <div class="flex items-center gap-3">
+                                <input type="text"
+                                       name="icon"
+                                       id="id_icon"
+                                       value="{{ form.icon.value|default:'' }}"
+                                       class="w-full border border-border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                                       placeholder="{% translate "e.g., puzzle-piece, star" %}"
+                                       hx-get="{% url 'panel:icon-preview' %}"
+                                       hx-trigger="input changed delay:300ms, load"
+                                       hx-target="#icon-preview"
+                                       hx-swap="innerHTML"
+                                       hx-include="#id_icon">
+                                <span id="icon-preview" class="flex-shrink-0 text-foreground-secondary"></span>
+                            </div>
+                            <p class="mt-1 text-sm text-foreground-muted">{% translate "Heroicon name to display next to the field." %}</p>
+                        </div>
+                        <label class="flex items-center">
+                            <input type="checkbox"
+                                   name="is_public"
+                                   id="id_is_public"
+                                   {% if form.is_public.value %}checked{% endif %}
+                                   class="rounded border-border text-primary focus:ring-primary">
+                            <span class="ml-2 text-sm text-foreground-secondary">{% translate "Show on public session card" %}</span>
+                        </label>
                     </div>
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {

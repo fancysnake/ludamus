@@ -128,9 +128,9 @@ run = "mise run _pytest -- tests tests/integration tests/unit"
 env.COVERAGE_FILE = "{{ config_root }}/.coverage.unit"
 
 [tasks.diff-cover]
+depends = ["coverage"]
 run = """
-mise run test --cov
-coverage xml --data-file=.coverage.unit
+coverage xml --data-file=.coverage
 diff-cover coverage.xml --compare-branch=main
 """
 
@@ -222,3 +222,10 @@ dir = "src/ludamus/gates/web/django/theme/static_src"
 
 [tasks.shitcheck]
 run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint)'"
+
+[tasks.coverage]
+depends = [
+  "test --cov",
+  "e2e",
+  "coverage:combine"
+]

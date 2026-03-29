@@ -55,6 +55,11 @@ panel_urlpatterns = [
         panel.EventSettingsPageView.as_view(),
         name="event-settings",
     ),
+    path(
+        "event/<slug:slug>/settings/display/",
+        panel.EventDisplaySettingsPageView.as_view(),
+        name="event-display-settings",
+    ),
     path("event/<slug:slug>/venues/", panel.VenuesPageView.as_view(), name="venues"),
     path(
         "event/<slug:slug>/venues/structure/",
@@ -228,6 +233,9 @@ panel_urlpatterns = [
         "event/<slug:event_slug>/cfp/<str:category_slug>/do/delete",
         panel.CFPDeleteActionView.as_view(),
         name="cfp-delete",
+    ),
+    path(
+        "parts/icon-preview/", panel.IconPreviewPartView.as_view(), name="icon-preview"
     ),
 ]
 

@@ -15,6 +15,7 @@ from ludamus.adapters.db.django.models import (
     EnrollmentConfig,
     Event,
     EventProposalSettings,
+    EventSettings,
     HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -51,7 +52,10 @@ from ludamus.pacts import (
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventRepositoryProtocol,
+    EventSettingsDTO,
+    EventSettingsRepositoryProtocol,
     EventStatsData,
+    EventUpdateData,
     HostPersonalDataEntry,
     HostPersonalDataRepositoryProtocol,
     NotFoundError,
@@ -641,20 +645,38 @@ class EventRepository(EventRepositoryProtocol):
         )
 
     @staticmethod
-    def update_name(event_id: int, name: str) -> None:
+    def update(event_id: int, data: EventUpdateData) -> None:
         try:
             event = Event.objects.get(id=event_id)
         except Event.DoesNotExist as exception:
             raise NotFoundError from exception
 
-        event.name = name
-        event.save()
+        for key, value in data.items():
+            setattr(event, key, value)
+        event.save(update_fields=list(data.keys()))
 
     @staticmethod
     def update_proposal_description(event_id: int, description: str) -> None:
         EventProposalSettings.objects.update_or_create(
             event_id=event_id, defaults={"description": description}
         )
+
+
+class EventSettingsRepository(EventSettingsRepositoryProtocol):
+    @staticmethod
+    def read_or_create(event_id: int) -> EventSettingsDTO:
+        settings, _ = EventSettings.objects.get_or_create(event_id=event_id)
+        return EventSettingsDTO(
+            pk=settings.pk,
+            filterable_session_field_ids=list(
+                settings.filterable_session_fields.values_list("pk", flat=True)
+            ),
+        )
+
+    @staticmethod
+    def update_filterable_fields(event_id: int, field_ids: list[int]) -> None:
+        settings, _ = EventSettings.objects.get_or_create(event_id=event_id)
+        settings.filterable_session_fields.set(field_ids)
 
 
 class VenueRepository(VenueRepositoryProtocol):
@@ -1802,6 +1824,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         allow_custom: bool = False,
         max_length: int = 50,
         help_text: str = "",
+        is_public: bool = False,
     ) -> PersonalDataFieldDTO:
         base_slug = slugify(name)
         slug = self.generate_unique_slug(event_id, base_slug)
@@ -1820,6 +1843,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
             allow_custom=actual_allow_custom,
             max_length=max_length,
             help_text=help_text,
+            is_public=is_public,
         )
 
         if field_type == "select" and options:
@@ -1875,7 +1899,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def update(
+    def update(  # noqa: PLR0913
         self,
         pk: int,
         name: str,
@@ -1883,6 +1907,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         *,
         max_length: int = 50,
         help_text: str = "",
+        is_public: bool = False,
     ) -> PersonalDataFieldDTO:
         try:
             field = PersonalDataField.objects.get(pk=pk)
@@ -1897,6 +1922,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         field.slug = slug
         field.max_length = max_length
         field.help_text = help_text
+        field.is_public = is_public
         field.save()
 
         return self._to_dto(field)
@@ -1950,6 +1976,8 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         allow_custom: bool = False,
         max_length: int = 50,
         help_text: str = "",
+        icon: str = "",
+        is_public: bool = False,
     ) -> SessionFieldDTO:
         base_slug = slugify(name)
         slug = self.generate_unique_slug(event_id, base_slug)
@@ -1968,6 +1996,8 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             allow_custom=actual_allow_custom,
             max_length=max_length,
             help_text=help_text,
+            icon=icon,
+            is_public=is_public,
         )
 
         if field_type == "select" and options:
@@ -2023,7 +2053,7 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def update(
+    def update(  # noqa: PLR0913
         self,
         pk: int,
         name: str,
@@ -2031,6 +2061,8 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         *,
         max_length: int = 50,
         help_text: str = "",
+        icon: str = "",
+        is_public: bool = False,
     ) -> SessionFieldDTO:
         try:
             field = SessionField.objects.get(pk=pk)
@@ -2045,6 +2077,8 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         field.slug = slug
         field.max_length = max_length
         field.help_text = help_text
+        field.icon = icon
+        field.is_public = is_public
         field.save()
 
         return self._to_dto(field)
