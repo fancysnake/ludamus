@@ -123,6 +123,14 @@
                                 {% translate "Supports markdown (links, bold). Shown below the field in the proposal form." %}
                             </p>
                         </div>
+                        <label class="flex items-center">
+                            <input type="checkbox"
+                                   name="is_public"
+                                   id="id_is_public"
+                                   {% if form.is_public.value %}checked{% endif %}
+                                   class="rounded border-border text-primary focus:ring-primary">
+                            <span class="ml-2 text-sm text-foreground-secondary">{% translate "Show on public session card" %}</span>
+                        </label>
                     </div>
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {

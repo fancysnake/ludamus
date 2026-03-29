@@ -13,6 +13,7 @@ from ludamus.adapters.db.django.models import (
     EnrollmentConfig,
     Event,
     EventProposalSettings,
+    EventSettings,
     HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -53,6 +54,13 @@ class TestEnrollmentConfig:
             str(EnrollmentConfig(event=Event(name=name)))
             == f"Enrollment config for {name}"
         )
+
+
+class TestEventSettings:
+    def test_str(self, faker):
+        name = faker.word()
+
+        assert str(EventSettings(event=Event(name=name))) == f"Settings for {name}"
 
 
 class TestEventProposalSettings:

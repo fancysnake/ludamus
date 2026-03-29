@@ -898,6 +898,7 @@ class PersonalDataField(models.Model):
     max_length = models.PositiveIntegerField(default=50)
     order = models.PositiveIntegerField(default=0)
     help_text = models.TextField(blank=True, default="")
+    is_public = models.BooleanField(default=False)
 
     class Meta:
         db_table = "personal_data_field"
@@ -1013,6 +1014,8 @@ class SessionField(models.Model):
     max_length = models.PositiveIntegerField(default=50)
     order = models.PositiveIntegerField(default=0)
     help_text = models.TextField(blank=True, default="")
+    icon = models.CharField(max_length=50, blank=True)
+    is_public = models.BooleanField(default=False)
 
     class Meta:
         db_table = "session_field"
@@ -1177,6 +1180,19 @@ class EncounterRSVP(models.Model):
 
     def __str__(self) -> str:
         return str(self.user)
+
+
+class EventSettings(models.Model):
+    event = models.OneToOneField(
+        Event, on_delete=models.CASCADE, related_name="settings"
+    )
+    filterable_session_fields = models.ManyToManyField(SessionField, blank=True)
+
+    class Meta:
+        db_table = "event_settings"
+
+    def __str__(self) -> str:
+        return f"Settings for {self.event}"
 
 
 def can_enroll_users(

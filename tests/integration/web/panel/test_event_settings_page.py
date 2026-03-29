@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 from django.contrib import messages
@@ -43,8 +43,6 @@ class TestEventSettingsPageViewGet:
 
         response = authenticated_client.get(self.get_url(event))
 
-        is_proposal_active = response.context["is_proposal_active"]
-        days_to_event = response.context["days_to_event"]
         assert_response(
             response,
             HTTPStatus.OK,
@@ -52,8 +50,7 @@ class TestEventSettingsPageViewGet:
             context_data={
                 "current_event": EventDTO.model_validate(event),
                 "events": [EventDTO.model_validate(event)],
-                "is_proposal_active": is_proposal_active,
-                "current_event_is_ended": False,
+                "is_proposal_active": response.context["is_proposal_active"],
                 "stats": {
                     "hosts_count": 0,
                     "pending_proposals": 0,
@@ -63,7 +60,9 @@ class TestEventSettingsPageViewGet:
                     "total_sessions": 0,
                 },
                 "active_nav": "settings",
-                "days_to_event": days_to_event,
+                "active_tab": "general",
+                "tab_urls": response.context["tab_urls"],
+                "form": ANY,
             },
         )
 
@@ -91,17 +90,14 @@ class TestEventSettingsPageViewGet:
 
         response = authenticated_client.get(self.get_url(event2))
 
-        is_proposal_active = response.context["is_proposal_active"]
-        days_to_event = response.context["days_to_event"]
-        events = response.context["events"]
         assert_response(
             response,
             HTTPStatus.OK,
             template_name="panel/settings.html",
             context_data={
                 "current_event": EventDTO.model_validate(event2),
-                "events": events,
-                "is_proposal_active": is_proposal_active,
+                "events": response.context["events"],
+                "is_proposal_active": response.context["is_proposal_active"],
                 "stats": {
                     "hosts_count": 0,
                     "pending_proposals": 0,
@@ -111,8 +107,9 @@ class TestEventSettingsPageViewGet:
                     "total_sessions": 0,
                 },
                 "active_nav": "settings",
-                "days_to_event": days_to_event,
-                "current_event_is_ended": False,
+                "active_tab": "general",
+                "tab_urls": response.context["tab_urls"],
+                "form": ANY,
             },
         )
 
@@ -122,10 +119,21 @@ class TestEventSettingsPageViewPost:
     def get_url(event):
         return reverse("panel:event-settings", kwargs={"slug": event.slug})
 
+    @staticmethod
+    def _post_data(event, **overrides):
+        data = {
+            "name": event.name,
+            "slug": event.slug,
+            "start_time": event.start_time.strftime("%Y-%m-%dT%H:%M"),
+            "end_time": event.end_time.strftime("%Y-%m-%dT%H:%M"),
+        }
+        data.update(overrides)
+        return data
+
     def test_redirects_anonymous_user(self, client, event):
         url = self.get_url(event)
 
-        response = client.post(url, data={"name": "New Name"})
+        response = client.post(url, data=self._post_data(event, name="New Name"))
 
         assert_response(
             response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
@@ -133,7 +141,7 @@ class TestEventSettingsPageViewPost:
 
     def test_redirects_non_manager_user(self, authenticated_client, event):
         response = authenticated_client.post(
-            self.get_url(event), data={"name": "New Name"}
+            self.get_url(event), data=self._post_data(event, name="New Name")
         )
 
         assert_response(
@@ -165,7 +173,7 @@ class TestEventSettingsPageViewPost:
         new_name = faker.sentence(nb_words=3)
 
         response = authenticated_client.post(
-            self.get_url(event), data={"name": new_name}
+            self.get_url(event), data=self._post_data(event, name=new_name)
         )
 
         assert_response(
@@ -177,7 +185,7 @@ class TestEventSettingsPageViewPost:
         event.refresh_from_db()
         assert event.name == new_name
 
-    def test_error_on_empty_name(
+    def test_error_on_empty_form(
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
@@ -188,7 +196,12 @@ class TestEventSettingsPageViewPost:
         assert_response(
             response,
             HTTPStatus.FOUND,
-            messages=[(messages.ERROR, "Event name is required.")],
+            messages=[
+                (messages.ERROR, "Event name is required."),
+                (messages.ERROR, "Event slug is required."),
+                (messages.ERROR, "Start time is required."),
+                (messages.ERROR, "End time is required."),
+            ],
             url=f"/panel/event/{event.slug}/settings/",
         )
         event.refresh_from_db()
@@ -202,7 +215,7 @@ class TestEventSettingsPageViewPost:
         long_name = "x" * 256
 
         response = authenticated_client.post(
-            self.get_url(event), data={"name": long_name}
+            self.get_url(event), data=self._post_data(event, name=long_name)
         )
 
         assert_response(
@@ -218,13 +231,12 @@ class TestEventSettingsPageViewPost:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        # Mock update_name to raise NotFoundError (simulates race condition)
         with patch(
-            "ludamus.links.db.django.repositories.EventRepository.update_name",
+            "ludamus.links.db.django.repositories.EventRepository.update",
             side_effect=NotFoundError,
         ):
             response = authenticated_client.post(
-                self.get_url(event), data={"name": "New Name"}
+                self.get_url(event), data=self._post_data(event, name="New Name")
             )
 
         assert_response(
@@ -233,3 +245,42 @@ class TestEventSettingsPageViewPost:
             messages=[(messages.ERROR, "Event not found.")],
             url=f"/panel/event/{event.slug}/settings/",
         )
+
+    def test_error_on_duplicate_slug(
+        self, authenticated_client, active_user, sphere, event, faker
+    ):
+        sphere.managers.add(active_user)
+        other_event = EventFactory(sphere=sphere, slug=faker.slug())
+        original_slug = event.slug
+
+        response = authenticated_client.post(
+            self.get_url(event), data=self._post_data(event, slug=other_event.slug)
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "An event with this slug already exists.")],
+            url=f"/panel/event/{original_slug}/settings/",
+        )
+        event.refresh_from_db()
+        assert event.slug == original_slug
+
+    def test_updates_event_slug(
+        self, authenticated_client, active_user, sphere, event, faker
+    ):
+        sphere.managers.add(active_user)
+        new_slug = faker.slug()
+
+        response = authenticated_client.post(
+            self.get_url(event), data=self._post_data(event, slug=new_slug)
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Event settings saved successfully.")],
+            url=f"/panel/event/{new_slug}/settings/",
+        )
+        event.refresh_from_db()
+        assert event.slug == new_slug

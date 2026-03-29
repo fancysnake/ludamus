@@ -70,7 +70,15 @@
                     <tbody class="bg-bg-secondary divide-y divide-border">
                         {% for entry in fields %}
                             <tr>
-                                <td class="px-6 py-4 text-sm font-medium text-foreground max-w-xs truncate">{{ entry.field.name }}</td>
+                                <td class="px-6 py-4 text-sm font-medium text-foreground max-w-xs truncate">
+                                    {% if entry.field.icon %}
+                                        {% icon entry.field.icon class="w-4 h-4 inline mr-1 text-neutral-400" %}
+                                    {% endif %}
+                                    {{ entry.field.name }}
+                                    {% if entry.field.is_public %}
+                                        <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--theme-success-bg)] text-[var(--theme-success-text)]">{% translate "Public" %}</span>
+                                    {% endif %}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">
                                     {% if entry.field.field_type == "select" %}
                                         {% translate "Select" %}

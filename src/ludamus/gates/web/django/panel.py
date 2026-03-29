@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -25,11 +25,13 @@ from django.http import (
     QueryDict,
 )
 from django.shortcuts import redirect
+from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.timezone import get_current_timezone, localtime
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
+from heroicons import IconDoesNotExist
 
 from ludamus.gates.web.django.forms import (
     AreaForm,
@@ -43,8 +45,13 @@ from ludamus.gates.web.django.forms import (
     VenueForm,
     create_venue_copy_form,
 )
-from ludamus.mills import PanelService, get_days_to_event, is_proposal_active
-from ludamus.pacts import DependencyInjectorProtocol, FieldUsageSummary, NotFoundError
+from ludamus.mills import PanelService, is_proposal_active
+from ludamus.pacts import (
+    DependencyInjectorProtocol,
+    EventUpdateData,
+    FieldUsageSummary,
+    NotFoundError,
+)
 
 if TYPE_CHECKING:
 
@@ -57,6 +64,7 @@ class _FieldDTO(Protocol):
     """Protocol for field DTOs with common attributes."""
 
     help_text: str
+    is_public: bool
     max_length: int
     pk: int
     name: str
@@ -291,28 +299,43 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
     request: PanelRequest
 
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display event settings form.
-
-        Returns:
-            TemplateResponse with the settings form.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
 
         context["active_nav"] = "settings"
-        context["days_to_event"] = get_days_to_event(current_event)
-        context["current_event_is_ended"] = current_event.end_time < datetime.now(
-            tz=UTC
+        context["active_tab"] = "general"
+        context["tab_urls"] = {
+            "general": reverse("panel:event-settings", kwargs={"slug": slug}),
+            "display": reverse("panel:event-display-settings", kwargs={"slug": slug}),
+        }
+        context["form"] = EventSettingsForm(
+            initial={
+                "name": current_event.name,
+                "slug": current_event.slug,
+                "description": current_event.description,
+                "start_time": localtime(current_event.start_time),
+                "end_time": localtime(current_event.end_time),
+                "publication_time": (
+                    localtime(current_event.publication_time)
+                    if current_event.publication_time
+                    else None
+                ),
+                "proposal_start_time": (
+                    localtime(current_event.proposal_start_time)
+                    if current_event.proposal_start_time
+                    else None
+                ),
+                "proposal_end_time": (
+                    localtime(current_event.proposal_end_time)
+                    if current_event.proposal_end_time
+                    else None
+                ),
+            }
         )
         return TemplateResponse(self.request, "panel/settings.html", context)
 
     def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Handle event settings form submission.
-
-        Returns:
-            Redirect response to panel:event-settings.
-        """
         sphere_id = self.request.context.current_sphere_id
 
         try:
@@ -321,27 +344,97 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Event not found."))
             return redirect("panel:index")
 
-        # Validate form
         form = EventSettingsForm(self.request.POST)
         if not form.is_valid():
             for field_errors in form.errors.values():
                 messages.error(self.request, str(field_errors[0]))
             return redirect("panel:event-settings", slug=slug)
 
-        # Update event via repository
-        new_name = form.cleaned_data["name"]
+        cd = form.cleaned_data
+
+        # Check slug uniqueness if changed
+        if (new_slug := cd["slug"]) != current_event.slug:
+            try:
+                self.request.di.uow.events.read_by_slug(new_slug, sphere_id)
+                messages.error(
+                    self.request, _("An event with this slug already exists.")
+                )
+                return redirect("panel:event-settings", slug=slug)
+            except NotFoundError:
+                pass  # Slug is available
+
+        data: EventUpdateData = {
+            "name": cd["name"],
+            "slug": new_slug,
+            "description": cd.get("description") or "",
+            "start_time": cd["start_time"],
+            "end_time": cd["end_time"],
+            "publication_time": cd.get("publication_time"),
+            "proposal_start_time": cd.get("proposal_start_time"),
+            "proposal_end_time": cd.get("proposal_end_time"),
+        }
+
         try:
-            self.request.di.uow.events.update_name(current_event.pk, new_name)
+            self.request.di.uow.events.update(current_event.pk, data)
         except NotFoundError:
             messages.error(self.request, _("Event not found."))
             return redirect("panel:event-settings", slug=slug)
 
-        self.request.di.uow.events.update_proposal_description(
-            current_event.pk, form.cleaned_data["proposal_description"] or ""
+        messages.success(self.request, _("Event settings saved successfully."))
+        return redirect("panel:event-settings", slug=new_slug)
+
+
+class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
+    """Display settings page — filterable session fields."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "settings"
+        context["active_tab"] = "display"
+        context["tab_urls"] = {
+            "general": reverse("panel:event-settings", kwargs={"slug": slug}),
+            "display": reverse("panel:event-display-settings", kwargs={"slug": slug}),
+        }
+
+        fields = self.request.di.uow.session_fields.list_by_event(current_event.pk)
+        settings_dto = self.request.di.uow.event_settings.read_or_create(
+            current_event.pk
+        )
+        context["fields"] = fields
+        context["filterable_field_ids"] = settings_dto.filterable_session_field_ids
+
+        return TemplateResponse(self.request, "panel/display-settings.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        sphere_id = self.request.context.current_sphere_id
+
+        try:
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
+        except NotFoundError:
+            messages.error(self.request, _("Event not found."))
+            return redirect("panel:index")
+
+        selected_ids = [
+            int(pk) for pk in self.request.POST.getlist("filterable_session_fields")
+        ]
+        # Validate against actual session field PKs
+        valid_pks = {
+            f.pk
+            for f in self.request.di.uow.session_fields.list_by_event(current_event.pk)
+        }
+        filtered_ids = [pk for pk in selected_ids if pk in valid_pks]
+
+        self.request.di.uow.event_settings.update_filterable_fields(
+            current_event.pk, filtered_ids
         )
 
-        messages.success(self.request, _("Event settings saved successfully."))
-        return redirect("panel:event-settings", slug=slug)
+        messages.success(self.request, _("Display settings saved successfully."))
+        return redirect("panel:event-display-settings", slug=slug)
 
 
 class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
@@ -880,6 +973,7 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
             allow_custom=parsed["allow_custom"],
             max_length=parsed["max_length"],
             help_text=parsed["help_text"],
+            is_public=form.cleaned_data.get("is_public", False),
         )
 
         category_requirements, _order = _parse_field_requirements(
@@ -927,6 +1021,7 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "question": field.question,
                 "max_length": field.max_length,
                 "help_text": field.help_text,
+                "is_public": field.is_public,
             }
         )
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
@@ -997,7 +1092,12 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         with self.request.di.uow.atomic():
             self.request.di.uow.personal_data_fields.update(
-                field.pk, name, question, max_length=max_length, help_text=help_text
+                field.pk,
+                name,
+                question,
+                max_length=max_length,
+                help_text=help_text,
+                is_public=form.cleaned_data.get("is_public", False),
             )
             self.request.di.uow.proposal_categories.set_personal_field_categories(
                 field.pk, cat_reqs
@@ -1152,6 +1252,8 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
             allow_custom=parsed["allow_custom"],
             max_length=parsed["max_length"],
             help_text=parsed["help_text"],
+            icon=form.cleaned_data.get("icon") or "",
+            is_public=form.cleaned_data.get("is_public", False),
         )
 
         category_requirements, _order = _parse_field_requirements(
@@ -1199,6 +1301,8 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "question": field.question,
                 "max_length": field.max_length,
                 "help_text": field.help_text,
+                "icon": getattr(field, "icon", ""),
+                "is_public": field.is_public,
             }
         )
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
@@ -1267,7 +1371,13 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         with self.request.di.uow.atomic():
             self.request.di.uow.session_fields.update(
-                field.pk, name, question, max_length=max_length, help_text=help_text
+                field.pk,
+                name,
+                question,
+                max_length=max_length,
+                help_text=help_text,
+                icon=form.cleaned_data.get("icon") or "",
+                is_public=form.cleaned_data.get("is_public", False),
             )
             self.request.di.uow.proposal_categories.set_session_field_categories(
                 field.pk, cat_reqs
@@ -2558,3 +2668,20 @@ class TimeSlotDeleteActionView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Time slot deleted successfully."))
         return redirect("panel:time-slots", slug=slug)
+
+
+class IconPreviewPartView(LoginRequiredMixin, View):
+    """HTMX partial: renders an icon preview or empty response."""
+
+    def get(self, _request: HttpRequest) -> HttpResponse:
+        if not (icon_name := self.request.GET.get("icon", "").strip()):
+            return HttpResponse("")
+        try:
+            html = render_to_string(
+                "panel/parts/icon_preview.html",
+                {"icon_name": icon_name},
+                request=self.request,
+            )
+        except IconDoesNotExist:
+            return HttpResponse("")
+        return HttpResponse(html)

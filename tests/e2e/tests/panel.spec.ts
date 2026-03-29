@@ -108,7 +108,7 @@ test.describe('Backoffice Panel', () => {
     ).toBeVisible();
 
     // Name input pre-filled
-    await expect(page.locator('#name')).toHaveValue('Autumn Open Playtest');
+    await expect(page.locator('#id_name')).toHaveValue('Autumn Open Playtest');
 
     // Save button visible
     await expect(
@@ -119,7 +119,7 @@ test.describe('Backoffice Panel', () => {
   test('updates event name via settings form', async ({ page }) => {
     await page.goto('/panel/event/autumn-open/settings/');
 
-    const nameInput = page.locator('#name');
+    const nameInput = page.locator('#id_name');
     await nameInput.fill('Autumn Open Playtest Renamed');
     await page.getByRole('button', { name: 'Save Settings' }).click();
 
