@@ -56,6 +56,11 @@ panel_urlpatterns = [
         name="event-settings",
     ),
     path(
+        "event/<slug:slug>/settings/proposals/",
+        panel.EventProposalSettingsPageView.as_view(),
+        name="event-proposal-settings",
+    ),
+    path(
         "event/<slug:slug>/settings/display/",
         panel.EventDisplaySettingsPageView.as_view(),
         name="event-display-settings",

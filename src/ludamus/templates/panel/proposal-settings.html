@@ -1,0 +1,90 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% block title_prefix %}
+    {% translate "Proposal Settings" %} -
+{% endblock title_prefix %}
+{% block page_title %}
+    {% translate "Event Settings" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}{{ current_event.name }}{% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <div class="flex items-center space-x-3">
+            <button type="button"
+                    onclick="document.getElementById('proposal-settings-form').reset()"
+                    class="btn btn-secondary">{% translate "Cancel Changes" %}</button>
+            <button type="submit"
+                    form="proposal-settings-form"
+                    class="btn btn-primary flex items-center">
+                {% icon "check" class="w-4 h-4 mr-2" %}
+                {% translate "Save Settings" %}
+            </button>
+        </div>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        <div class="-mt-3 sm:-mt-4 lg:-mt-8 -mx-3 sm:-mx-4 lg:-mx-8 px-3 sm:px-4 lg:px-8 pt-3 bg-warm-200 border-b border-warm-300">
+            {% tabs %}
+            {% tab "general" href=tab_urls.general %}{% translate "General" %}{% end_tab %}
+            {% tab "proposals" active=True href=tab_urls.proposals %}{% translate "Proposals" %}{% end_tab %}
+            {% tab "display" href=tab_urls.display %}{% translate "Display" %}{% end_tab %}
+        {% end_tabs %}
+    </div>
+    <div class="-mx-3 sm:-mx-4 lg:-mx-8 -mb-3 sm:-mb-4 lg:-mb-8 px-3 sm:px-4 lg:px-8 py-6 bg-bg-secondary">
+        <form id="proposal-settings-form"
+              method="post"
+              action="{% url 'panel:event-proposal-settings' slug=current_event.slug %}"
+              class="max-w-2xl">
+            {% csrf_token %}
+            <div class="space-y-6">
+                <!-- Proposal Description -->
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="text-lg font-semibold text-foreground mb-2">{% translate "Proposal Description" %}</h3>
+                        <p class="text-sm text-foreground-muted mb-6">{% translate "Displayed on the first page of the proposal form." %}</p>
+                        <textarea name="proposal_description"
+                                  id="id_proposal_description"
+                                  rows="4"
+                                  class="w-full border border-border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">{{ form.proposal_description.value|default:'' }}</textarea>
+                    </div>
+                </div>
+                <!-- Proposal Dates -->
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="text-lg font-semibold text-foreground mb-6">{% translate "Proposal Period" %}</h3>
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                           for="id_proposal_start_time">{% translate "Proposals Open" %}</label>
+                                    {{ form.proposal_start_time }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                           for="id_proposal_end_time">{% translate "Proposals Close" %}</label>
+                                    {{ form.proposal_end_time }}
+                                </div>
+                            </div>
+                            <p class="text-sm text-foreground-muted">{% translate "Leave both empty to disable proposals." %}</p>
+                            <label class="flex items-center">
+                                <input type="checkbox"
+                                       name="apply_dates_to_categories"
+                                       class="rounded border-border text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm text-foreground-secondary">{% translate "Apply these dates to all proposal categories" %}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% else %}
+    <div class="card p-8 text-center">
+        <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
+    </div>
+{% endif %}
+{% endblock content %}

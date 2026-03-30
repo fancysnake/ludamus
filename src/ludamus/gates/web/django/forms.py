@@ -53,6 +53,14 @@ class EventSettingsForm(forms.Form):
         widget=_datetime_local_widget(),
         input_formats=_DATETIME_LOCAL_FORMATS,
     )
+
+
+class ProposalSettingsForm(forms.Form):
+    """Form for proposal settings (description, dates, apply-to-categories)."""
+
+    proposal_description = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 4})
+    )
     proposal_start_time = forms.DateTimeField(
         required=False,
         widget=_datetime_local_widget(),
@@ -63,6 +71,7 @@ class EventSettingsForm(forms.Form):
         widget=_datetime_local_widget(),
         input_formats=_DATETIME_LOCAL_FORMATS,
     )
+    apply_dates_to_categories = forms.BooleanField(required=False, initial=False)
 
 
 class ProposalCategoryForm(forms.Form):
