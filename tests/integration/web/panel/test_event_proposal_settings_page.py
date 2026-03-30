@@ -124,6 +124,22 @@ class TestEventProposalSettingsPageViewPost:
             url="/panel/",
         )
 
+    def test_error_on_invalid_datetime(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(
+            self.get_url(event), data={"proposal_start_time": "not-a-date"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Enter a valid date/time.")],
+            url=f"/panel/event/{event.slug}/settings/proposals/",
+        )
+
     def test_saves_proposal_description(
         self, authenticated_client, active_user, sphere, event
     ):
