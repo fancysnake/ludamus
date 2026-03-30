@@ -38,6 +38,7 @@ from ludamus.gates.web.django.forms import (
     EventSettingsForm,
     PersonalDataFieldForm,
     ProposalCategoryForm,
+    ProposalSettingsForm,
     SessionFieldForm,
     SpaceForm,
     TimeSlotForm,
@@ -293,6 +294,14 @@ class EventIndexPageView(PanelAccessMixin, EventContextMixin, View):
         return TemplateResponse(self.request, "panel/index.html", context)
 
 
+def _settings_tab_urls(slug: str) -> dict[str, str]:
+    return {
+        "general": reverse("panel:event-settings", kwargs={"slug": slug}),
+        "proposals": reverse("panel:event-proposal-settings", kwargs={"slug": slug}),
+        "display": reverse("panel:event-display-settings", kwargs={"slug": slug}),
+    }
+
+
 class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
     """Event settings page view."""
 
@@ -305,10 +314,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "settings"
         context["active_tab"] = "general"
-        context["tab_urls"] = {
-            "general": reverse("panel:event-settings", kwargs={"slug": slug}),
-            "display": reverse("panel:event-display-settings", kwargs={"slug": slug}),
-        }
+        context["tab_urls"] = _settings_tab_urls(slug)
         context["form"] = EventSettingsForm(
             initial={
                 "name": current_event.name,
@@ -319,16 +325,6 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
                 "publication_time": (
                     localtime(current_event.publication_time)
                     if current_event.publication_time
-                    else None
-                ),
-                "proposal_start_time": (
-                    localtime(current_event.proposal_start_time)
-                    if current_event.proposal_start_time
-                    else None
-                ),
-                "proposal_end_time": (
-                    localtime(current_event.proposal_end_time)
-                    if current_event.proposal_end_time
                     else None
                 ),
             }
@@ -370,8 +366,6 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
             "start_time": cd["start_time"],
             "end_time": cd["end_time"],
             "publication_time": cd.get("publication_time"),
-            "proposal_start_time": cd.get("proposal_start_time"),
-            "proposal_end_time": cd.get("proposal_end_time"),
         }
 
         try:
@@ -396,10 +390,7 @@ class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "settings"
         context["active_tab"] = "display"
-        context["tab_urls"] = {
-            "general": reverse("panel:event-settings", kwargs={"slug": slug}),
-            "display": reverse("panel:event-display-settings", kwargs={"slug": slug}),
-        }
+        context["tab_urls"] = _settings_tab_urls(slug)
 
         fields = self.request.di.uow.session_fields.list_by_event(current_event.pk)
         settings_dto = self.request.di.uow.event_settings.read_or_create(
@@ -435,6 +426,83 @@ class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Display settings saved successfully."))
         return redirect("panel:event-display-settings", slug=slug)
+
+
+class EventProposalSettingsPageView(PanelAccessMixin, EventContextMixin, View):
+    """Proposal settings page — description, dates, apply-to-categories."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "settings"
+        context["active_tab"] = "proposals"
+        context["tab_urls"] = _settings_tab_urls(slug)
+        context["form"] = ProposalSettingsForm(
+            initial={
+                "proposal_description": current_event.proposal_description,
+                "proposal_start_time": (
+                    localtime(current_event.proposal_start_time)
+                    if current_event.proposal_start_time
+                    else None
+                ),
+                "proposal_end_time": (
+                    localtime(current_event.proposal_end_time)
+                    if current_event.proposal_end_time
+                    else None
+                ),
+            }
+        )
+        return TemplateResponse(self.request, "panel/proposal-settings.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        sphere_id = self.request.context.current_sphere_id
+
+        try:
+            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
+        except NotFoundError:
+            messages.error(self.request, _("Event not found."))
+            return redirect("panel:index")
+
+        form = ProposalSettingsForm(self.request.POST)
+        if not form.is_valid():
+            for field_errors in form.errors.values():
+                messages.error(self.request, str(field_errors[0]))
+            return redirect("panel:event-proposal-settings", slug=slug)
+
+        cd = form.cleaned_data
+
+        # Save proposal description
+        self.request.di.uow.events.update_proposal_description(
+            current_event.pk, cd.get("proposal_description") or ""
+        )
+
+        # Save proposal dates
+        data: EventUpdateData = {
+            "proposal_start_time": cd.get("proposal_start_time"),
+            "proposal_end_time": cd.get("proposal_end_time"),
+        }
+        self.request.di.uow.events.update(current_event.pk, data)
+
+        # Optionally apply dates to all categories
+        if cd.get("apply_dates_to_categories"):
+            categories = self.request.di.uow.proposal_categories.list_by_event(
+                current_event.pk
+            )
+            for category in categories:
+                self.request.di.uow.proposal_categories.update(
+                    category.pk,
+                    {
+                        "start_time": cd.get("proposal_start_time"),
+                        "end_time": cd.get("proposal_end_time"),
+                    },
+                )
+
+        messages.success(self.request, _("Proposal settings saved successfully."))
+        return redirect("panel:event-proposal-settings", slug=slug)
 
 
 class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
