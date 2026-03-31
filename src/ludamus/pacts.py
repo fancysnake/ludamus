@@ -915,20 +915,51 @@ class ProposalCategoryRepositoryProtocol(Protocol):  # noqa: PLR0904 — split p
     def update(self, pk: int, data: ProposalCategoryData) -> ProposalCategoryDTO: ...
 
 
+class PersonalDataFieldCreateData(TypedDict):
+    name: str
+    question: str
+    field_type: Literal["text", "select", "checkbox"]
+    options: list[str] | None
+    is_multiple: bool
+    allow_custom: bool
+    max_length: int
+    help_text: str
+    is_public: bool
+
+
+class PersonalDataFieldUpdateData(TypedDict):
+    name: str
+    question: str
+    max_length: int
+    help_text: str
+    is_public: bool
+
+
+class SessionFieldCreateData(TypedDict):
+    name: str
+    question: str
+    field_type: Literal["text", "select", "checkbox"]
+    options: list[str] | None
+    is_multiple: bool
+    allow_custom: bool
+    max_length: int
+    help_text: str
+    icon: str
+    is_public: bool
+
+
+class SessionFieldUpdateData(TypedDict):
+    name: str
+    question: str
+    max_length: int
+    help_text: str
+    icon: str
+    is_public: bool
+
+
 class PersonalDataFieldRepositoryProtocol(Protocol):
-    def create(  # noqa: PLR0913
-        self,
-        event_id: int,
-        name: str,
-        question: str,
-        field_type: Literal["text", "select", "checkbox"] = "text",
-        options: list[str] | None = None,
-        *,
-        is_multiple: bool = False,
-        allow_custom: bool = False,
-        max_length: int = 50,
-        help_text: str = "",
-        is_public: bool = False,
+    def create(
+        self, event_id: int, data: PersonalDataFieldCreateData
     ) -> PersonalDataFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -938,33 +969,14 @@ class PersonalDataFieldRepositoryProtocol(Protocol):
     def get_usage_counts(event_id: int) -> dict[int, dict[str, int]]: ...
     def list_by_event(self, event_id: int) -> list[PersonalDataFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> PersonalDataFieldDTO: ...
-    def update(  # noqa: PLR0913
-        self,
-        pk: int,
-        name: str,
-        question: str,
-        *,
-        max_length: int = 50,
-        help_text: str = "",
-        is_public: bool = False,
+    def update(
+        self, pk: int, data: PersonalDataFieldUpdateData
     ) -> PersonalDataFieldDTO: ...
 
 
 class SessionFieldRepositoryProtocol(Protocol):
-    def create(  # noqa: PLR0913
-        self,
-        event_id: int,
-        name: str,
-        question: str,
-        field_type: Literal["text", "select", "checkbox"] = "text",
-        options: list[str] | None = None,
-        *,
-        is_multiple: bool = False,
-        allow_custom: bool = False,
-        max_length: int = 50,
-        help_text: str = "",
-        icon: str = "",
-        is_public: bool = False,
+    def create(
+        self, event_id: int, data: SessionFieldCreateData
     ) -> SessionFieldDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -974,17 +986,7 @@ class SessionFieldRepositoryProtocol(Protocol):
     def get_usage_counts(event_id: int) -> dict[int, dict[str, int]]: ...
     def list_by_event(self, event_id: int) -> list[SessionFieldDTO]: ...
     def read_by_slug(self, event_id: int, slug: str) -> SessionFieldDTO: ...
-    def update(  # noqa: PLR0913
-        self,
-        pk: int,
-        name: str,
-        question: str,
-        *,
-        max_length: int = 50,
-        help_text: str = "",
-        icon: str = "",
-        is_public: bool = False,
-    ) -> SessionFieldDTO: ...
+    def update(self, pk: int, data: SessionFieldUpdateData) -> SessionFieldDTO: ...
 
 
 class TimeSlotRepositoryProtocol(Protocol):

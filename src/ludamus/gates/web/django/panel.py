@@ -1033,15 +1033,17 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
 
         field = self.request.di.uow.personal_data_fields.create(
             current_event.pk,
-            parsed["name"],
-            parsed["question"],
-            parsed["field_type"],
-            parsed["options"],
-            is_multiple=parsed["is_multiple"],
-            allow_custom=parsed["allow_custom"],
-            max_length=parsed["max_length"],
-            help_text=parsed["help_text"],
-            is_public=form.cleaned_data.get("is_public", False),
+            {
+                "name": parsed["name"],
+                "question": parsed["question"],
+                "field_type": parsed["field_type"],
+                "options": parsed["options"],
+                "is_multiple": parsed["is_multiple"],
+                "allow_custom": parsed["allow_custom"],
+                "max_length": parsed["max_length"],
+                "help_text": parsed["help_text"],
+                "is_public": form.cleaned_data.get("is_public", False),
+            },
         )
 
         category_requirements, _order = _parse_field_requirements(
@@ -1161,11 +1163,13 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         with self.request.di.uow.atomic():
             self.request.di.uow.personal_data_fields.update(
                 field.pk,
-                name,
-                question,
-                max_length=max_length,
-                help_text=help_text,
-                is_public=form.cleaned_data.get("is_public", False),
+                {
+                    "name": name,
+                    "question": question,
+                    "max_length": max_length,
+                    "help_text": help_text,
+                    "is_public": form.cleaned_data.get("is_public", False),
+                },
             )
             self.request.di.uow.proposal_categories.set_personal_field_categories(
                 field.pk, cat_reqs
@@ -1312,16 +1316,18 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
 
         field = self.request.di.uow.session_fields.create(
             current_event.pk,
-            parsed["name"],
-            parsed["question"],
-            parsed["field_type"],
-            parsed["options"],
-            is_multiple=parsed["is_multiple"],
-            allow_custom=parsed["allow_custom"],
-            max_length=parsed["max_length"],
-            help_text=parsed["help_text"],
-            icon=form.cleaned_data.get("icon") or "",
-            is_public=form.cleaned_data.get("is_public", False),
+            {
+                "name": parsed["name"],
+                "question": parsed["question"],
+                "field_type": parsed["field_type"],
+                "options": parsed["options"],
+                "is_multiple": parsed["is_multiple"],
+                "allow_custom": parsed["allow_custom"],
+                "max_length": parsed["max_length"],
+                "help_text": parsed["help_text"],
+                "icon": form.cleaned_data.get("icon") or "",
+                "is_public": form.cleaned_data.get("is_public", False),
+            },
         )
 
         category_requirements, _order = _parse_field_requirements(
@@ -1440,12 +1446,14 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         with self.request.di.uow.atomic():
             self.request.di.uow.session_fields.update(
                 field.pk,
-                name,
-                question,
-                max_length=max_length,
-                help_text=help_text,
-                icon=form.cleaned_data.get("icon") or "",
-                is_public=form.cleaned_data.get("is_public", False),
+                {
+                    "name": name,
+                    "question": question,
+                    "max_length": max_length,
+                    "help_text": help_text,
+                    "icon": form.cleaned_data.get("icon") or "",
+                    "is_public": form.cleaned_data.get("is_public", False),
+                },
             )
             self.request.di.uow.proposal_categories.set_session_field_categories(
                 field.pk, cat_reqs

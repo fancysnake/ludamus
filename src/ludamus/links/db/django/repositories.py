@@ -62,9 +62,11 @@ from ludamus.pacts import (
     PendingSessionDTO,
     PendingSessionTagDTO,
     PendingSessionTimeSlotDTO,
+    PersonalDataFieldCreateData,
     PersonalDataFieldDTO,
     PersonalDataFieldOptionDTO,
     PersonalDataFieldRepositoryProtocol,
+    PersonalDataFieldUpdateData,
     PersonalFieldRequirementDTO,
     ProposalCategoryData,
     ProposalCategoryDTO,
@@ -74,10 +76,12 @@ from ludamus.pacts import (
     ProposalRepositoryProtocol,
     SessionData,
     SessionDTO,
+    SessionFieldCreateData,
     SessionFieldDTO,
     SessionFieldOptionDTO,
     SessionFieldRepositoryProtocol,
     SessionFieldRequirementDTO,
+    SessionFieldUpdateData,
     SessionFieldValueData,
     SessionFieldValueDTO,
     SessionRepositoryProtocol,
@@ -1812,38 +1816,29 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
 
 
 class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
-    def create(  # noqa: PLR0913
-        self,
-        event_id: int,
-        name: str,
-        question: str,
-        field_type: str = "text",
-        options: list[str] | None = None,
-        *,
-        is_multiple: bool = False,
-        allow_custom: bool = False,
-        max_length: int = 50,
-        help_text: str = "",
-        is_public: bool = False,
+    def create(
+        self, event_id: int, data: PersonalDataFieldCreateData
     ) -> PersonalDataFieldDTO:
-        base_slug = slugify(name)
+        field_type = data["field_type"]
+        options = data["options"]
+        base_slug = slugify(data["name"])
         slug = self.generate_unique_slug(event_id, base_slug)
 
         # is_multiple and allow_custom only apply to select fields
-        actual_is_multiple = is_multiple if field_type == "select" else False
-        actual_allow_custom = allow_custom if field_type == "select" else False
+        actual_is_multiple = data["is_multiple"] if field_type == "select" else False
+        actual_allow_custom = data["allow_custom"] if field_type == "select" else False
 
         field = PersonalDataField.objects.create(
             event_id=event_id,
-            name=name,
-            question=question,
+            name=data["name"],
+            question=data["question"],
             slug=slug,
             field_type=field_type,
             is_multiple=actual_is_multiple,
             allow_custom=actual_allow_custom,
-            max_length=max_length,
-            help_text=help_text,
-            is_public=is_public,
+            max_length=data["max_length"],
+            help_text=data["help_text"],
+            is_public=data["is_public"],
         )
 
         if field_type == "select" and options:
@@ -1899,30 +1894,23 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def update(  # noqa: PLR0913
-        self,
-        pk: int,
-        name: str,
-        question: str,
-        *,
-        max_length: int = 50,
-        help_text: str = "",
-        is_public: bool = False,
+    def update(
+        self, pk: int, data: PersonalDataFieldUpdateData
     ) -> PersonalDataFieldDTO:
         try:
             field = PersonalDataField.objects.get(pk=pk)
         except PersonalDataField.DoesNotExist as exc:
             raise NotFoundError from exc
 
-        base_slug = slugify(name)
+        base_slug = slugify(data["name"])
         slug = self.generate_unique_slug(field.event_id, base_slug, exclude_pk=pk)
 
-        field.name = name
-        field.question = question
+        field.name = data["name"]
+        field.question = data["question"]
         field.slug = slug
-        field.max_length = max_length
-        field.help_text = help_text
-        field.is_public = is_public
+        field.max_length = data["max_length"]
+        field.help_text = data["help_text"]
+        field.is_public = data["is_public"]
         field.save()
 
         return self._to_dto(field)
@@ -1964,40 +1952,28 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
 
 
 class SessionFieldRepository(SessionFieldRepositoryProtocol):
-    def create(  # noqa: PLR0913
-        self,
-        event_id: int,
-        name: str,
-        question: str,
-        field_type: str = "text",
-        options: list[str] | None = None,
-        *,
-        is_multiple: bool = False,
-        allow_custom: bool = False,
-        max_length: int = 50,
-        help_text: str = "",
-        icon: str = "",
-        is_public: bool = False,
-    ) -> SessionFieldDTO:
-        base_slug = slugify(name)
+    def create(self, event_id: int, data: SessionFieldCreateData) -> SessionFieldDTO:
+        field_type = data["field_type"]
+        options = data["options"]
+        base_slug = slugify(data["name"])
         slug = self.generate_unique_slug(event_id, base_slug)
 
         # is_multiple and allow_custom only apply to select fields
-        actual_is_multiple = is_multiple if field_type == "select" else False
-        actual_allow_custom = allow_custom if field_type == "select" else False
+        actual_is_multiple = data["is_multiple"] if field_type == "select" else False
+        actual_allow_custom = data["allow_custom"] if field_type == "select" else False
 
         field = SessionField.objects.create(
             event_id=event_id,
-            name=name,
-            question=question,
+            name=data["name"],
+            question=data["question"],
             slug=slug,
             field_type=field_type,
             is_multiple=actual_is_multiple,
             allow_custom=actual_allow_custom,
-            max_length=max_length,
-            help_text=help_text,
-            icon=icon,
-            is_public=is_public,
+            max_length=data["max_length"],
+            help_text=data["help_text"],
+            icon=data["icon"],
+            is_public=data["is_public"],
         )
 
         if field_type == "select" and options:
@@ -2053,32 +2029,22 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
 
         return self._to_dto(field)
 
-    def update(  # noqa: PLR0913
-        self,
-        pk: int,
-        name: str,
-        question: str,
-        *,
-        max_length: int = 50,
-        help_text: str = "",
-        icon: str = "",
-        is_public: bool = False,
-    ) -> SessionFieldDTO:
+    def update(self, pk: int, data: SessionFieldUpdateData) -> SessionFieldDTO:
         try:
             field = SessionField.objects.get(pk=pk)
         except SessionField.DoesNotExist as exc:
             raise NotFoundError from exc
 
-        base_slug = slugify(name)
+        base_slug = slugify(data["name"])
         slug = self.generate_unique_slug(field.event_id, base_slug, exclude_pk=pk)
 
-        field.name = name
-        field.question = question
+        field.name = data["name"]
+        field.question = data["question"]
         field.slug = slug
-        field.max_length = max_length
-        field.help_text = help_text
-        field.icon = icon
-        field.is_public = is_public
+        field.max_length = data["max_length"]
+        field.help_text = data["help_text"]
+        field.icon = data["icon"]
+        field.is_public = data["is_public"]
         field.save()
 
         return self._to_dto(field)
