@@ -14,13 +14,21 @@
 {% endblock page_subtitle %}
 {% block header_actions %}
     {% if current_event %}
-        <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
-           class="btn btn-secondary">{% translate "Cancel" %}</a>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'panel:session-fields' slug=current_event.slug %}"
+               class="btn btn-secondary">{% translate "Cancel" %}</a>
+            <button type="submit"
+                    form="session-field-form"
+                    class="btn btn-primary flex items-center">
+                {% icon "check" class="w-4 h-4 mr-2" %}
+                {% translate "Save" %}
+            </button>
+        </div>
     {% endif %}
 {% endblock header_actions %}
 {% block content %}
     {% if current_event and field %}
-        <form method="post" class="max-w-2xl">
+        <form id="session-field-form" method="post" class="max-w-2xl">
             {% csrf_token %}
             <div class="card">
                 <div class="card-body">
@@ -159,12 +167,6 @@
                 {% else %}
                     <p class="text-sm text-foreground-muted italic">{% translate "No session types have been created yet." %}</p>
                 {% endif %}
-            </div>
-            <div class="mt-6 flex justify-end">
-                <button type="submit" class="btn btn-primary flex items-center">
-                    {% icon "check" class="w-4 h-4 mr-2" %}
-                    {% translate "Save" %}
-                </button>
             </div>
         </form>
     {% endif %}

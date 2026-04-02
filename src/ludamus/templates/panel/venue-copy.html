@@ -12,49 +12,50 @@
 {% endblock page_subtitle %}
 {% block header_actions %}
     {% if current_event %}
-        <a href="{% url 'panel:venue-detail' slug=current_event.slug venue_slug=venue.slug %}"
-           class="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition">
-            {% translate "Cancel" %}
-        </a>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'panel:venue-detail' slug=current_event.slug venue_slug=venue.slug %}"
+               class="btn btn-secondary">{% translate "Cancel" %}</a>
+            <button type="submit"
+                    form="venue-copy-form"
+                    class="btn btn-primary flex items-center">
+                {% icon "arrow-right-circle" class="w-4 h-4 mr-2" %}
+                {% translate "Copy to Event" %}
+            </button>
+        </div>
     {% endif %}
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
-        <form method="post" class="max-w-2xl">
+        <form id="venue-copy-form" method="post" class="max-w-2xl">
             {% csrf_token %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
-                <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-                    <p class="text-sm text-blue-800">
-                        {% blocktranslate with venue_name=venue.name %}
-                            This will copy "{{ venue_name }}" including all areas and spaces to another event.
-                        {% endblocktranslate %}
-                    </p>
-                </div>
-                <h3 class="text-lg font-semibold text-neutral-900 mb-6">{% translate "Select Target Event" %}</h3>
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium text-neutral-700 mb-2"
-                               for="id_target_event">{% translate "Event" %}</label>
-                        <select name="target_event"
-                                id="id_target_event"
-                                class="w-full border {% if form.target_event.errors %}border-red-500{% else %}border-neutral-300{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
-                            <option value="">{% translate "Select an event..." %}</option>
-                            {% for value, label in form.target_event.field.choices %}
-                                <option value="{{ value }}"
-                                        {% if form.target_event.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        {% if form.target_event.errors %}<p class="mt-1 text-sm text-red-600">{{ form.target_event.errors.0 }}</p>{% endif %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="alert alert-info mb-6">
+                        <p class="text-sm">
+                            {% blocktranslate with venue_name=venue.name %}
+                                This will copy "{{ venue_name }}" including all areas and spaces to another event.
+                            {% endblocktranslate %}
+                        </p>
                     </div>
-                </div>
-                <div class="mt-6 flex justify-end">
-                    <button type="submit"
-                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-                        {% icon "arrow-right-circle" class="w-4 h-4 mr-2" %}
-                        {% translate "Copy to Event" %}
-                    </button>
+                    <h3 class="text-lg font-semibold text-foreground mb-6">{% translate "Select Target Event" %}</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                   for="id_target_event">{% translate "Event" %}</label>
+                            <select name="target_event"
+                                    id="id_target_event"
+                                    class="w-full border {% if form.target_event.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="">{% translate "Select an event..." %}</option>
+                                {% for value, label in form.target_event.field.choices %}
+                                    <option value="{{ value }}"
+                                            {% if form.target_event.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.target_event.errors %}<p class="mt-1 text-sm text-danger">{{ form.target_event.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
