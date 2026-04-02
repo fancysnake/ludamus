@@ -191,7 +191,7 @@ test.describe('Backoffice Panel', () => {
 
     const addressInput = page.locator('#id_address');
     await addressInput.fill('999 Updated Avenue');
-    await page.getByRole('button', { name: 'Save Changes' }).click();
+    await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(
       page.getByText('Venue updated successfully.'),
@@ -203,7 +203,7 @@ test.describe('Backoffice Panel', () => {
       .getByRole('link', { name: 'Edit' })
       .click();
     await addressInput.fill('123 Gaming Street, Tabletop City');
-    await page.getByRole('button', { name: 'Save Changes' }).click();
+    await page.getByRole('button', { name: 'Save' }).click();
     await expect(
       page.getByText('Venue updated successfully.'),
     ).toBeVisible();
@@ -369,7 +369,7 @@ test.describe('Backoffice Panel', () => {
     const descInput = page.locator('#id_description');
     await descInput.fill('Updated description for main hall');
     await page
-      .getByRole('button', { name: 'Save Changes' })
+      .getByRole('button', { name: 'Save' })
       .click();
 
     await expect(
@@ -385,7 +385,7 @@ test.describe('Backoffice Panel', () => {
       'The central gaming area with multiple tables.',
     );
     await page
-      .getByRole('button', { name: 'Save Changes' })
+      .getByRole('button', { name: 'Save' })
       .click();
     await expect(
       page.getByText('Area updated successfully.'),
@@ -457,7 +457,7 @@ test.describe('Backoffice Panel', () => {
     const capacityInput = page.locator('#id_capacity');
     await capacityInput.fill('40');
     await page
-      .getByRole('button', { name: 'Save Changes' })
+      .getByRole('button', { name: 'Save' })
       .click();
 
     await expect(
@@ -471,7 +471,7 @@ test.describe('Backoffice Panel', () => {
       .click();
     await capacityInput.fill('30');
     await page
-      .getByRole('button', { name: 'Save Changes' })
+      .getByRole('button', { name: 'Save' })
       .click();
     await expect(
       page.getByText('Space updated successfully.'),
