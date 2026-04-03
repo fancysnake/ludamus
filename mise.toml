@@ -69,6 +69,9 @@ run = "mise run _lint -- ruff check src tests"
 [tasks.ruff-fix]
 run = "mise run _lint -- ruff check --fix src tests"
 
+[tasks.vulture]
+run = "vulture --config=pyproject.toml src"
+
 [tasks.check]
 depends = [
   "black",
@@ -79,6 +82,7 @@ depends = [
   "djlint",
   "djlint-format",
   "pylint",
+  "vulture"
 ]
 
 [tasks.prcheck]

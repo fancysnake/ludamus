@@ -8,7 +8,6 @@ config:
 ---
 kanban
   Wishlist
-    [Dead code detection tooling]@{ assigned: 'agent-readiness' }
     [Duplicate code detection tooling]@{ assigned: 'agent-readiness' }
     [Technical debt markers tracking]@{ assigned: 'agent-readiness' }
     [Feature flag system]@{ assigned: 'agent-readiness' }
@@ -121,4 +120,5 @@ kanban
     [Reasonable Cyclomatic Complexity thresholds]@{
       assigned: 'agent-readiness'
     }
+    [Dead code detection tooling]@{ assigned: 'agent-readiness' }
 ```

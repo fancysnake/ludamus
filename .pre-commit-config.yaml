@@ -33,11 +33,11 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.11
+    rev: v1.7.12
     hooks:
       - id: actionlint
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.8
+    rev: v0.15.9
     hooks:
       - id: ruff-check
   - repo: https://github.com/asottile/pyupgrade
@@ -62,3 +62,8 @@ repos:
       - id: dclint
         files: ^docker/compose/.*\.ya?ml$
         args: [--fix]
+  - repo: https://github.com/jendrikseipp/vulture
+    rev: 'v2.16'
+    hooks:
+      - id: vulture
+        args: [--config=pyproject.toml]
