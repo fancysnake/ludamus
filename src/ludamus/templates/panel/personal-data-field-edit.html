@@ -71,12 +71,16 @@
                             </div>
                             <p class="mt-1 text-sm text-foreground-muted">{% translate "Field type cannot be changed after creation." %}</p>
                         </div>
-                        {% if field.field_type == "select" and field.options %}
+                        {% if field.field_type == "select" %}
                             <div>
-                                <label class="block text-sm font-medium text-foreground-secondary mb-2">{% translate "Options" %}</label>
-                                <ul class="bg-bg-tertiary border border-border rounded-lg p-3 text-foreground-secondary space-y-1">
-                                    {% for option in field.options %}<li class="text-sm">{{ option.label }}</li>{% endfor %}
-                                </ul>
+                                <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                       for="id_options">{% translate "Options" %}</label>
+                                <textarea name="options"
+                                          id="id_options"
+                                          rows="5"
+                                          class="w-full border border-border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                                          placeholder="{% translate "One option per line" %}">{{ form.options.value|default:'' }}</textarea>
+                                <p class="mt-1 text-sm text-foreground-muted">{% translate "Enter one option per line." %}</p>
                             </div>
                         {% endif %}
                         {% if field.field_type != "checkbox" %}
@@ -117,7 +121,7 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-6 mt-6">
+            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-6 mt-6">
                 <h3 class="text-lg font-semibold text-foreground mb-1">{% translate "Session Types" %}</h3>
                 <p class="text-sm text-foreground-muted mb-6">
                     {% translate "Select which session types should include this field." %}

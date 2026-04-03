@@ -55,7 +55,6 @@ from ludamus.pacts import (
 )
 
 if TYPE_CHECKING:
-
     from django import forms
 
     from ludamus.pacts import AuthenticatedRequestContext, EventDTO, TimeSlotDTO
@@ -72,10 +71,10 @@ class _FieldDTO(Protocol):
     question: str
 
 
-class _FieldRepositoryProtocol(Protocol):
+class _FieldRepositoryProtocol[T: _FieldDTO](Protocol):
     """Protocol for field repositories used by helper functions."""
 
-    def read_by_slug(self, event_pk: int, slug: str) -> _FieldDTO: ...
+    def read_by_slug(self, event_pk: int, slug: str) -> T: ...
 
 
 class FieldFormData(TypedDict):
@@ -239,13 +238,13 @@ class EventContextMixin:
 
         return context, current_event
 
-    def _read_field_or_redirect(
+    def _read_field_or_redirect[T: _FieldDTO](
         self,
-        repository: _FieldRepositoryProtocol,
+        repository: _FieldRepositoryProtocol[T],
         event_pk: int,
         field_slug: str,
         error_message: str,
-    ) -> _FieldDTO:
+    ) -> T:
         try:
             field = repository.read_by_slug(event_pk, field_slug)
         except NotFoundError:
@@ -299,6 +298,15 @@ def _settings_tab_urls(slug: str) -> dict[str, str]:
         "general": reverse("panel:event-settings", kwargs={"slug": slug}),
         "proposals": reverse("panel:event-proposal-settings", kwargs={"slug": slug}),
         "display": reverse("panel:event-display-settings", kwargs={"slug": slug}),
+    }
+
+
+def _cfp_tab_urls(slug: str) -> dict[str, str]:
+    return {
+        "types": reverse("panel:cfp", kwargs={"slug": slug}),
+        "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
+        "session": reverse("panel:session-fields", kwargs={"slug": slug}),
+        "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
     }
 
 
@@ -475,31 +483,32 @@ class EventProposalSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         cd = form.cleaned_data
 
-        # Save proposal description
-        self.request.di.uow.events.update_proposal_description(
-            current_event.pk, cd.get("proposal_description") or ""
-        )
-
-        # Save proposal dates
-        data: EventUpdateData = {
-            "proposal_start_time": cd.get("proposal_start_time"),
-            "proposal_end_time": cd.get("proposal_end_time"),
-        }
-        self.request.di.uow.events.update(current_event.pk, data)
-
-        # Optionally apply dates to all categories
-        if cd.get("apply_dates_to_categories"):
-            categories = self.request.di.uow.proposal_categories.list_by_event(
-                current_event.pk
+        with self.request.di.uow.atomic():
+            # Save proposal description
+            self.request.di.uow.events.update_proposal_description(
+                current_event.pk, cd.get("proposal_description") or ""
             )
-            for category in categories:
-                self.request.di.uow.proposal_categories.update(
-                    category.pk,
-                    {
-                        "start_time": cd.get("proposal_start_time"),
-                        "end_time": cd.get("proposal_end_time"),
-                    },
+
+            # Save proposal dates
+            data: EventUpdateData = {
+                "proposal_start_time": cd.get("proposal_start_time"),
+                "proposal_end_time": cd.get("proposal_end_time"),
+            }
+            self.request.di.uow.events.update(current_event.pk, data)
+
+            # Optionally apply dates to all categories
+            if cd.get("apply_dates_to_categories"):
+                categories = self.request.di.uow.proposal_categories.list_by_event(
+                    current_event.pk
                 )
+                for category in categories:
+                    self.request.di.uow.proposal_categories.update(
+                        category.pk,
+                        {
+                            "start_time": cd.get("proposal_start_time"),
+                            "end_time": cd.get("proposal_end_time"),
+                        },
+                    )
 
         messages.success(self.request, _("Proposal settings saved successfully."))
         return redirect("panel:event-proposal-settings", slug=slug)
@@ -599,12 +608,7 @@ class CFPPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["active_tab"] = "types"
-        context["tab_urls"] = {
-            "types": reverse("panel:cfp", kwargs={"slug": slug}),
-            "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
-            "session": reverse("panel:session-fields", kwargs={"slug": slug}),
-            "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
-        }
+        context["tab_urls"] = _cfp_tab_urls(slug)
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
         )
@@ -946,12 +950,7 @@ class PersonalDataFieldsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["active_tab"] = "host"
-        context["tab_urls"] = {
-            "types": reverse("panel:cfp", kwargs={"slug": slug}),
-            "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
-            "session": reverse("panel:session-fields", kwargs={"slug": slug}),
-            "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
-        }
+        context["tab_urls"] = _cfp_tab_urls(slug)
         fields = self.request.di.uow.personal_data_fields.list_by_event(
             current_event.pk
         )
@@ -1085,15 +1084,16 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["field"] = field
-        context["form"] = PersonalDataFieldForm(
-            initial={
-                "name": field.name,
-                "question": field.question,
-                "max_length": field.max_length,
-                "help_text": field.help_text,
-                "is_public": field.is_public,
-            }
-        )
+        initial = {
+            "name": field.name,
+            "question": field.question,
+            "max_length": field.max_length,
+            "help_text": field.help_text,
+            "is_public": field.is_public,
+        }
+        if field.field_type == "select":
+            initial["options"] = "\n".join(o.label for o in field.options)
+        context["form"] = PersonalDataFieldForm(initial=initial)
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
         )
@@ -1157,6 +1157,10 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         question = form.cleaned_data["question"]
         max_length = form.cleaned_data.get("max_length") or 0
         help_text = form.cleaned_data.get("help_text") or ""
+        options_text = form.cleaned_data.get("options") or ""
+        options: list[str] | None = None
+        if field.field_type == "select":
+            options = [o.strip() for o in options_text.split("\n") if o.strip()] or []
         cat_reqs, _order = _parse_field_requirements(
             self.request.POST, "category_", "category_order"
         )
@@ -1169,6 +1173,7 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
                     "max_length": max_length,
                     "help_text": help_text,
                     "is_public": form.cleaned_data.get("is_public", False),
+                    "options": options,
                 },
             )
             self.request.di.uow.proposal_categories.set_personal_field_categories(
@@ -1233,12 +1238,7 @@ class SessionFieldsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["active_tab"] = "session"
-        context["tab_urls"] = {
-            "types": reverse("panel:cfp", kwargs={"slug": slug}),
-            "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
-            "session": reverse("panel:session-fields", kwargs={"slug": slug}),
-            "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
-        }
+        context["tab_urls"] = _cfp_tab_urls(slug)
         fields = self.request.di.uow.session_fields.list_by_event(current_event.pk)
         usage_counts = self.request.di.uow.session_fields.get_usage_counts(
             current_event.pk
@@ -1369,16 +1369,17 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["field"] = field
-        context["form"] = SessionFieldForm(
-            initial={
-                "name": field.name,
-                "question": field.question,
-                "max_length": field.max_length,
-                "help_text": field.help_text,
-                "icon": getattr(field, "icon", ""),
-                "is_public": field.is_public,
-            }
-        )
+        initial = {
+            "name": field.name,
+            "question": field.question,
+            "max_length": field.max_length,
+            "help_text": field.help_text,
+            "icon": field.icon,
+            "is_public": field.is_public,
+        }
+        if field.field_type == "select":
+            initial["options"] = "\n".join(o.label for o in field.options)
+        context["form"] = SessionFieldForm(initial=initial)
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
         )
@@ -1440,6 +1441,10 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         question = form.cleaned_data["question"]
         max_length = form.cleaned_data.get("max_length") or 0
         help_text = form.cleaned_data.get("help_text") or ""
+        options_text = form.cleaned_data.get("options") or ""
+        options: list[str] | None = None
+        if field.field_type == "select":
+            options = [o.strip() for o in options_text.split("\n") if o.strip()] or []
         cat_reqs, _order = _parse_field_requirements(
             self.request.POST, "category_", "category_order"
         )
@@ -1453,6 +1458,7 @@ class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
                     "help_text": help_text,
                     "icon": form.cleaned_data.get("icon") or "",
                     "is_public": form.cleaned_data.get("is_public", False),
+                    "options": options,
                 },
             )
             self.request.di.uow.proposal_categories.set_session_field_categories(
@@ -2564,12 +2570,7 @@ class TimeSlotsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["active_tab"] = "time_slots"
-        context["tab_urls"] = {
-            "types": reverse("panel:cfp", kwargs={"slug": slug}),
-            "host": reverse("panel:personal-data-fields", kwargs={"slug": slug}),
-            "session": reverse("panel:session-fields", kwargs={"slug": slug}),
-            "time_slots": reverse("panel:time-slots", kwargs={"slug": slug}),
-        }
+        context["tab_urls"] = _cfp_tab_urls(slug)
         context["time_slots"] = time_slots
         context["days"] = days
         context["orphaned_slots"] = orphaned_slots
@@ -2746,10 +2747,12 @@ class TimeSlotDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         return redirect("panel:time-slots", slug=slug)
 
 
-class IconPreviewPartView(LoginRequiredMixin, View):
+class IconPreviewPartView(PanelAccessMixin, View):
     """HTMX partial: renders an icon preview or empty response."""
 
-    def get(self, _request: HttpRequest) -> HttpResponse:
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest) -> HttpResponse:
         if not (icon_name := self.request.GET.get("icon", "").strip()):
             return HttpResponse("")
         try:

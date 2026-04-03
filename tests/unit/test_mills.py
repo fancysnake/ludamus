@@ -182,3 +182,16 @@ class TestIsProposalActive:
         event = EventDTO(**base_event_data)
 
         assert is_proposal_active(event) is False
+
+    def test_returns_false_when_publication_time_is_none(self, base_event_data):
+        base_event_data["publication_time"] = None
+        event = EventDTO(**base_event_data)
+
+        assert is_proposal_active(event) is False
+
+    def test_returns_false_when_event_not_yet_published(self, base_event_data):
+        now = datetime.now(tz=UTC)
+        base_event_data["publication_time"] = now + timedelta(days=1)
+        event = EventDTO(**base_event_data)
+
+        assert is_proposal_active(event) is False

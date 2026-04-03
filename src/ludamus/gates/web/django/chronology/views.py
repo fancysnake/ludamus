@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import operator
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
@@ -60,6 +61,8 @@ def _field_descriptors(
             "is_multiple": req.field.is_multiple,
             "allow_custom": req.field.allow_custom,
             "max_length": req.field.max_length,
+            "is_public": req.field.is_public,
+            "icon": getattr(req.field, "icon", ""),
         }
         if req.field.allow_custom:
             desc["custom_bound_field"] = form[f"{field_key}_custom"]  # type: ignore[index]
@@ -212,14 +215,27 @@ def _render_review(
         key = f"session_{req.field.slug}"
         value = session_data.get(key)
         if has_field_value(value):
-            session_fields.append({"name": req.field.question, "value": value})
+            session_fields.append(
+                {
+                    "name": req.field.question,
+                    "value": value,
+                    "is_public": req.field.is_public,
+                    "icon": req.field.icon,
+                }
+            )
 
     personal_fields = []
     for p_req in service.get_personal_requirements(category.pk):
         key = f"personal_{p_req.field.slug}"
         value = personal_data.get(key)
         if has_field_value(value):
-            personal_fields.append({"name": p_req.field.question, "value": value})
+            personal_fields.append(
+                {
+                    "name": p_req.field.question,
+                    "value": value,
+                    "is_public": p_req.field.is_public,
+                }
+            )
 
     time_slots = []
     if time_slot_ids:
@@ -239,7 +255,10 @@ def _render_review(
         "participants_limit": session_data.get("participants_limit", ""),
         "contact_email": wizard.get("contact_email", ""),
         "session_fields": session_fields,
+        "private_session_fields": [f for f in session_fields if not f["is_public"]],
         "personal_fields": personal_fields,
+        "public_personal_fields": [f for f in personal_fields if f["is_public"]],
+        "private_personal_fields": [f for f in personal_fields if not f["is_public"]],
         "time_slots": time_slots,
     }
 
@@ -268,8 +287,14 @@ class ProposeWizardMixin(LoginRequiredMixin):
             ) from None
 
         if not is_proposal_active(event):
+            redirect_url = (
+                reverse("web:chronology:event", kwargs={"slug": event_slug})
+                if event.publication_time is not None
+                and event.publication_time <= datetime.now(tz=UTC)
+                else reverse("web:index")
+            )
             raise RedirectError(
-                reverse("web:chronology:event", kwargs={"slug": event_slug}),
+                redirect_url,
                 error=_("Proposal submission is not currently active for this event."),
             )
 

@@ -34,7 +34,7 @@
     </div>
     <div class="-mx-3 sm:-mx-4 lg:-mx-8 -mb-3 sm:-mb-4 lg:-mb-8 px-3 sm:px-4 lg:px-8 py-6 bg-bg-secondary">
         {% if categories %}
-            <div class="bg-bg-secondary rounded-xl shadow-sm border border-border overflow-x-auto">
+            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border overflow-x-auto">
                 <table class="min-w-full divide-y divide-border">
                     <thead class="bg-bg-tertiary">
                         <tr>
@@ -98,7 +98,7 @@
                 </table>
             </div>
         {% else %}
-            <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-8 text-center">
+            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
                 <p class="text-foreground-muted">
                     {% translate "No session types yet. Add a session type to allow hosts to submit proposals." %}
                 </p>
@@ -106,7 +106,7 @@
         {% endif %}
     </div>
 {% else %}
-    <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-8 text-center">
+    <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
         <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
     </div>
 {% endif %}

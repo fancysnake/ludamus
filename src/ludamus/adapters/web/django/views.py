@@ -1792,9 +1792,14 @@ class EventProposalPageView(LoginRequiredMixin, View):
                 reverse("web:index"), error=_("Event not found.")
             ) from None
 
-        if not event.is_proposal_active:
+        if not event.is_published or not event.is_proposal_active:
+            redirect_url = (
+                reverse("web:chronology:event", kwargs={"slug": event_slug})
+                if event.is_published
+                else reverse("web:index")
+            )
             raise RedirectError(
-                reverse("web:chronology:event", kwargs={"slug": event_slug}),
+                redirect_url,
                 error=_("Proposal submission is not currently active for this event."),
             )
 

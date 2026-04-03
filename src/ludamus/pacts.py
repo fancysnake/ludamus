@@ -933,6 +933,7 @@ class PersonalDataFieldUpdateData(TypedDict):
     max_length: int
     help_text: str
     is_public: bool
+    options: list[str] | None
 
 
 class SessionFieldCreateData(TypedDict):
@@ -955,6 +956,7 @@ class SessionFieldUpdateData(TypedDict):
     help_text: str
     icon: str
     is_public: bool
+    options: list[str] | None
 
 
 class PersonalDataFieldRepositoryProtocol(Protocol):

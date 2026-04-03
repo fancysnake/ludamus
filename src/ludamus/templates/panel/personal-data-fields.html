@@ -45,7 +45,7 @@
             </div>
         </div>
         {% if fields %}
-            <div class="bg-bg-secondary rounded-xl shadow-sm border border-border overflow-x-auto">
+            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border overflow-x-auto">
                 <table class="min-w-full divide-y divide-border">
                     <thead class="bg-bg-tertiary">
                         <tr>
@@ -72,14 +72,12 @@
                             <tr>
                                 <td class="px-6 py-4 text-sm font-medium text-foreground max-w-xs truncate">
                                     {{ entry.field.name }}
-                                    {% if entry.field.is_public %}
-                                        <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--theme-success-bg)] text-[var(--theme-success-text)]">{% translate "Public" %}</span>
-                                    {% endif %}
+                                    {% include "components/visibility-badge.html" with is_public=entry.field.is_public %}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">
                                     {% if entry.field.field_type == "select" %}
                                         {% translate "Select" %}
-                                        <span class="text-neutral-400">({{ entry.field.options|length }})</span>
+                                        <span class="text-foreground-muted">({{ entry.field.options|length }})</span>
                                         {% if entry.field.is_multiple %}
                                             <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--theme-info-bg)] text-[var(--theme-info-text)]">
                                                 {% translate "Multiple" %}
@@ -126,7 +124,7 @@
                 </table>
             </div>
         {% else %}
-            <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-8 text-center">
+            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
                 <p class="text-foreground-muted">
                     {% translate "No personal data fields defined. Add fields to collect host information." %}
                 </p>
@@ -134,7 +132,7 @@
         {% endif %}
     </div>
 {% else %}
-    <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-8 text-center">
+    <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
         <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
     </div>
 {% endif %}
