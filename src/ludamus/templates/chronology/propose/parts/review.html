@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load cfp_tags %}
+{% load tessera %}
 <div id="wizard-content">
     {% if review|default:"" %}
         <h2 class="text-lg font-semibold mb-1">{% translate "Review & Submit" %}</h2>
@@ -13,6 +14,7 @@
                 <h3 class="text-sm font-medium text-foreground-muted mb-2">
                     {% translate "Session" context "proposal review heading" %}
                 </h3>
+                {% include "components/visibility-header.html" with is_public=True is_first=True %}
                 <dl class="space-y-2">
                     <div>
                         <dt class="text-xs text-foreground-muted">{% translate "Presenter name" %}</dt>
@@ -45,17 +47,60 @@
                         </dd>
                     </div>
                     {% for field in review.session_fields %}
-                        <div>
-                            <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
-                            <dd class="text-foreground">
-                                {{ field.value|format_field_value }}
-                            </dd>
-                        </div>
+                        {% if field.is_public %}
+                            <div>
+                                <dt class="text-xs text-foreground-muted">
+                                    {% if field.icon %}
+                                        {% icon field.icon class="w-3.5 h-3.5 inline mr-0.5 text-foreground-muted" %}
+                                    {% endif %}
+                                    {{ field.name }}
+                                </dt>
+                                <dd class="text-foreground">
+                                    {{ field.value|format_field_value }}
+                                </dd>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </dl>
+                {% if review.private_session_fields %}
+                    {% include "components/visibility-header.html" with is_public=False %}
+                    <dl class="space-y-2">
+                        {% for field in review.private_session_fields %}
+                            <div>
+                                <dt class="text-xs text-foreground-muted">
+                                    {% if field.icon %}
+                                        {% icon field.icon class="w-3.5 h-3.5 inline mr-0.5 text-foreground-muted" %}
+                                    {% endif %}
+                                    {{ field.name }}
+                                </dt>
+                                <dd class="text-foreground">
+                                    {{ field.value|format_field_value }}
+                                </dd>
+                            </div>
+                        {% endfor %}
+                    </dl>
+                {% endif %}
             </div>
             <div class="border border-border rounded-2xl p-5">
                 <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Your Information" %}</h3>
+                {% if review.public_personal_fields %}
+                    {% include "components/visibility-header.html" with is_public=True is_first=True %}
+                    <dl class="space-y-2">
+                        {% for field in review.public_personal_fields %}
+                            <div>
+                                <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
+                                <dd class="text-foreground">
+                                    {{ field.value|format_field_value }}
+                                </dd>
+                            </div>
+                        {% endfor %}
+                    </dl>
+                {% endif %}
+                {% if review.public_personal_fields %}
+                    {% include "components/visibility-header.html" with is_public=False %}
+                {% else %}
+                    {% include "components/visibility-header.html" with is_public=False is_first=True %}
+                {% endif %}
                 <dl class="space-y-2">
                     {% if review.contact_email %}
                         <div>
@@ -65,7 +110,7 @@
                             </dd>
                         </div>
                     {% endif %}
-                    {% for field in review.personal_fields %}
+                    {% for field in review.private_personal_fields %}
                         <div>
                             <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
                             <dd class="text-foreground">

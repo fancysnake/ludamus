@@ -1,0 +1,14 @@
+{% load i18n %}
+{% if is_public %}
+    <span class="ml-1 inline-flex text-[var(--theme-success)]"
+          title="{% translate "Shown on public session card" %}">
+        {% include "components/icon-eye.html" %}
+        <span class="sr-only">{% translate "public" %}</span>
+    </span>
+{% else %}
+    <span class="ml-1 inline-flex text-foreground-muted"
+          title="{% translate "Visible to organizers only" %}">
+        {% include "components/icon-eye-off.html" %}
+        <span class="sr-only">{% translate "organizers only" %}</span>
+    </span>
+{% endif %}

@@ -86,7 +86,7 @@ depends = [
 ]
 
 [tasks.prcheck]
-depends = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint"]
+depends = ["black-check", "ruff", "codespell", "mypy", "djlint", "pylint", "vulture"]
 
 # DJANGO
 
@@ -225,7 +225,7 @@ dir = "src/ludamus/gates/web/django/theme/static_src"
 # OTHER
 
 [tasks.shitcheck]
-run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint)'"
+run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|cast\\()'"
 
 [tasks.coverage]
 depends = [

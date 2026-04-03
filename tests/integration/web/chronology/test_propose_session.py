@@ -1566,3 +1566,74 @@ class TestProposeSessionPageView:
         review = response.context["review"]
         field_names = [f["name"] for f in review["session_fields"]]
         assert "What is your optional info?" not in field_names
+
+    # -- Coverage: review splits fields by public/private visibility --
+
+    def test_review_separates_fields_by_visibility(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        public_sf = SessionField.objects.create(
+            event=event,
+            name="Genre",
+            question="What genre?",
+            slug="genre",
+            is_public=True,
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=public_sf, is_required=False
+        )
+        private_sf = SessionField.objects.create(
+            event=event,
+            name="Notes",
+            question="Internal notes?",
+            slug="notes",
+            is_public=False,
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=private_sf, is_required=False
+        )
+        public_pf = PersonalDataField.objects.create(
+            event=event,
+            name="Nickname",
+            question="Your nickname?",
+            slug="nickname",
+            is_public=True,
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=public_pf, is_required=False
+        )
+        private_pf = PersonalDataField.objects.create(
+            event=event,
+            name="Phone",
+            question="Your phone?",
+            slug="phone",
+            is_public=False,
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=private_pf, is_required=False
+        )
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_genre": "RPG",
+                "session_notes": "For organizers only",
+            },
+            personal_data={"personal_nickname": "Hero", "personal_phone": "+48 555"},
+        )
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        review = response.context["review"]
+        all_sf_names = [f["name"] for f in review["session_fields"]]
+        assert all_sf_names == ["What genre?", "Internal notes?"]
+        private_sf_names = [f["name"] for f in review["private_session_fields"]]
+        assert private_sf_names == ["Internal notes?"]
+        public_pf_names = [f["name"] for f in review["public_personal_fields"]]
+        assert public_pf_names == ["Your nickname?"]
+        private_pf_names = [f["name"] for f in review["private_personal_fields"]]
+        assert private_pf_names == ["Your phone?"]

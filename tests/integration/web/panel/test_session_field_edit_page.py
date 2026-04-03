@@ -4,7 +4,7 @@ from unittest.mock import ANY
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import SessionField
+from ludamus.adapters.db.django.models import SessionField, SessionFieldOption
 from ludamus.pacts import EventDTO
 from tests.integration.utils import assert_response
 
@@ -301,6 +301,86 @@ class TestSessionFieldEditPageView:
             messages=[(messages.ERROR, "Session field not found.")],
             url=f"/panel/event/{event.slug}/cfp/session-fields/",
         )
+
+    def test_post_updates_options_on_select_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(
+            event=event,
+            name="Genre",
+            question="What genre?",
+            slug="genre",
+            field_type="select",
+        )
+        SessionFieldOption.objects.create(
+            field=field, label="Fantasy", value="Fantasy", order=0
+        )
+        SessionFieldOption.objects.create(
+            field=field, label="Sci-Fi", value="Sci-Fi", order=1
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, field),
+            data={
+                "name": "Genre",
+                "question": "What genre?",
+                "options": "Horror\nMystery\nComedy",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Session field updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/session-fields/",
+        )
+        labels = list(
+            SessionFieldOption.objects.filter(field=field)
+            .order_by("order")
+            .values_list("label", flat=True)
+        )
+        assert labels == ["Horror", "Mystery", "Comedy"]
+
+    def test_post_does_not_touch_options_on_text_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(
+            event=event, name="Notes", question="Any notes?", slug="notes"
+        )
+
+        authenticated_client.post(
+            self.get_url(event, field),
+            data={"name": "Notes", "question": "Any notes?", "options": "ignored"},
+        )
+
+        field.refresh_from_db()
+        assert field.name == "Notes"
+        assert not SessionFieldOption.objects.filter(field=field).exists()
+
+    def test_get_prepopulates_options_for_select_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = SessionField.objects.create(
+            event=event,
+            name="Genre",
+            question="What genre?",
+            slug="genre",
+            field_type="select",
+        )
+        SessionFieldOption.objects.create(
+            field=field, label="Fantasy", value="Fantasy", order=0
+        )
+        SessionFieldOption.objects.create(
+            field=field, label="Sci-Fi", value="Sci-Fi", order=1
+        )
+
+        response = authenticated_client.get(self.get_url(event, field))
+
+        form = response.context["form"]
+        assert form.initial["options"] == "Fantasy\nSci-Fi"
 
     def test_get_returns_field_with_is_multiple_attribute(
         self, authenticated_client, active_user, sphere, event

@@ -1732,6 +1732,7 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
                 ),
                 help_text=field.help_text,
                 is_multiple=field.is_multiple,
+                is_public=field.is_public,
                 name=field.name,
                 options=options,
                 order=field.order,
@@ -1769,7 +1770,9 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
                     "Literal['text', 'select', 'checkbox']", field.field_type
                 ),
                 help_text=field.help_text,
+                icon=field.icon,
                 is_multiple=field.is_multiple,
+                is_public=field.is_public,
                 name=field.name,
                 options=options,
                 order=field.order,
@@ -1898,7 +1901,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         self, pk: int, data: PersonalDataFieldUpdateData
     ) -> PersonalDataFieldDTO:
         try:
-            field = PersonalDataField.objects.get(pk=pk)
+            field = PersonalDataField.objects.prefetch_related("options").get(pk=pk)
         except PersonalDataField.DoesNotExist as exc:
             raise NotFoundError from exc
 
@@ -1912,6 +1915,15 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
         field.help_text = data["help_text"]
         field.is_public = data["is_public"]
         field.save()
+
+        options = data["options"]
+        if options is not None and field.field_type == "select":
+            field.options.all().delete()
+            for order, raw_option in enumerate(options):
+                if option_label := raw_option.strip():
+                    PersonalDataFieldOption.objects.create(
+                        field=field, label=option_label, value=option_label, order=order
+                    )
 
         return self._to_dto(field)
 
@@ -1941,6 +1953,7 @@ class PersonalDataFieldRepository(PersonalDataFieldRepositoryProtocol):
             field_type=cast("Literal['text', 'select', 'checkbox']", field.field_type),
             help_text=field.help_text,
             is_multiple=field.is_multiple,
+            is_public=field.is_public,
             max_length=field.max_length,
             name=field.name,
             options=options,
@@ -2031,7 +2044,7 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
 
     def update(self, pk: int, data: SessionFieldUpdateData) -> SessionFieldDTO:
         try:
-            field = SessionField.objects.get(pk=pk)
+            field = SessionField.objects.prefetch_related("options").get(pk=pk)
         except SessionField.DoesNotExist as exc:
             raise NotFoundError from exc
 
@@ -2046,6 +2059,15 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         field.icon = data["icon"]
         field.is_public = data["is_public"]
         field.save()
+
+        options = data["options"]
+        if options is not None and field.field_type == "select":
+            field.options.all().delete()
+            for order, raw_option in enumerate(options):
+                if option_label := raw_option.strip():
+                    SessionFieldOption.objects.create(
+                        field=field, label=option_label, value=option_label, order=order
+                    )
 
         return self._to_dto(field)
 
@@ -2072,7 +2094,9 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
             allow_custom=field.allow_custom,
             field_type=cast("Literal['text', 'select', 'checkbox']", field.field_type),
             help_text=field.help_text,
+            icon=field.icon,
             is_multiple=field.is_multiple,
+            is_public=field.is_public,
             max_length=field.max_length,
             name=field.name,
             options=options,

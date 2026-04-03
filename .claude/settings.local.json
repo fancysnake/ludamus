@@ -12,7 +12,11 @@
       "Skill(gloria)",
       "Skill(hector)",
       "Skill(manuel)",
-      "Skill(tessa)"
+      "Skill(tessa)",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_wait_for"
     ],
     "deny": [
       "Edit(./tests/integration/utils.py)"

@@ -5,6 +5,7 @@
     <p class="text-sm text-foreground-muted mb-5">
         {% translate "We need some information from you as the session host." %}
     </p>
+    {% include "components/visibility-legend.html" %}
     <form method="post"
           hx-post="{% url 'web:chronology:session-propose-personal' event_slug=event.slug %}"
           hx-target="#wizard-content"
@@ -17,6 +18,7 @@
                     {% translate "Contact Email" %}
                     <span class="text-danger" aria-hidden="true">*</span>
                     <span class="sr-only">{% translate "(required)" %}</span>
+                    {% include "components/visibility-icon.html" with is_public=False %}
                 </label>
                 <input type="email"
                        name="contact_email"
@@ -40,6 +42,7 @@
                                 <span class="text-danger" aria-hidden="true">*</span>
                                 <span class="sr-only">{% translate "(required)" %}</span>
                             {% endif %}
+                            {% include "components/visibility-icon.html" with is_public=desc.is_public %}
                         </label>
                     {% endif %}
                     {% if desc.field_type == "select" and desc.is_multiple %}
@@ -75,6 +78,7 @@
                                    {% if desc.bound_field.value %}checked{% endif %}
                                    class="rounded border-border">
                             {{ desc.name }}
+                            {% include "components/visibility-icon.html" with is_public=desc.is_public %}
                         </label>
                     {% else %}
                         <input type="text"

@@ -144,8 +144,7 @@
                                        hx-get="{% url 'panel:icon-preview' %}"
                                        hx-trigger="input changed delay:300ms, load"
                                        hx-target="#icon-preview"
-                                       hx-swap="innerHTML"
-                                       hx-include="#id_icon">
+                                       hx-swap="innerHTML">
                                 <span id="icon-preview" class="flex-shrink-0 text-foreground-secondary"></span>
                             </div>
                             <p class="mt-1 text-sm text-foreground-muted">{% translate "Heroicon name to display next to the field." %}</p>
@@ -175,7 +174,7 @@
                     </script>
                 </div>
             </div>
-            <div class="bg-bg-secondary rounded-xl shadow-sm border border-border p-6 mt-6">
+            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-6 mt-6">
                 <h3 class="text-lg font-semibold text-foreground mb-1">{% translate "Session Types" %}</h3>
                 <p class="text-sm text-foreground-muted mb-6">
                     {% translate "Select which session types should include this field." %}

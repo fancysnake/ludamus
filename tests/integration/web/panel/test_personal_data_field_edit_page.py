@@ -4,7 +4,7 @@ from unittest.mock import ANY
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import PersonalDataField
+from ludamus.adapters.db.django.models import PersonalDataField, PersonalDataFieldOption
 from ludamus.pacts import EventDTO
 from tests.integration.utils import assert_response
 
@@ -298,6 +298,90 @@ class TestPersonalDataFieldEditPageView:
             messages=[(messages.ERROR, "Personal data field not found.")],
             url=f"/panel/event/{event.slug}/cfp/personal-data/",
         )
+
+    def test_post_updates_options_on_select_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Country",
+            question="What country?",
+            slug="country",
+            field_type="select",
+        )
+        PersonalDataFieldOption.objects.create(
+            field=field, label="Poland", value="Poland", order=0
+        )
+        PersonalDataFieldOption.objects.create(
+            field=field, label="Germany", value="Germany", order=1
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event, field),
+            data={
+                "name": "Country",
+                "question": "What country?",
+                "options": "France\nSpain\nItaly",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Personal data field updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/personal-data/",
+        )
+        labels = list(
+            PersonalDataFieldOption.objects.filter(field=field)
+            .order_by("order")
+            .values_list("label", flat=True)
+        )
+        assert labels == ["France", "Spain", "Italy"]
+
+    def test_post_does_not_touch_options_on_text_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = PersonalDataField.objects.create(
+            event=event, name="Email", question="What is your email?", slug="email"
+        )
+
+        authenticated_client.post(
+            self.get_url(event, field),
+            data={
+                "name": "Email",
+                "question": "What is your email?",
+                "options": "ignored",
+            },
+        )
+
+        field.refresh_from_db()
+        assert field.name == "Email"
+        assert not PersonalDataFieldOption.objects.filter(field=field).exists()
+
+    def test_get_prepopulates_options_for_select_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Country",
+            question="What country?",
+            slug="country",
+            field_type="select",
+        )
+        PersonalDataFieldOption.objects.create(
+            field=field, label="Poland", value="Poland", order=0
+        )
+        PersonalDataFieldOption.objects.create(
+            field=field, label="Germany", value="Germany", order=1
+        )
+
+        response = authenticated_client.get(self.get_url(event, field))
+
+        form = response.context["form"]
+        assert form.initial["options"] == "Poland\nGermany"
 
     def test_get_returns_field_with_is_multiple_attribute(
         self, authenticated_client, active_user, sphere, event
