@@ -1,17 +1,16 @@
 {% load i18n %}
 {% load tessera %}
-<div class="flex flex-wrap gap-2 mt-2 session-tags-row">
+<div class="flex flex-wrap gap-1.5 mt-2 session-tags-row">
     {% for fv in data.displayed_field_values %}
-        <div class="inline-flex items-center gap-1 rounded-2xl font-medium px-2.5 py-1 text-sm max-w-[300px] bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
-             title="{{ fv.field_name }}">
-            {% if fv.field_icon %}
-                {% icon fv.field_icon class="size-4 shrink-0 opacity-80" variant="mini" %}
-            {% endif %}
-            {% for val in fv.value %}
+        {% for val in fv.value %}
+            <span class="inline-flex items-center gap-1 rounded-2xl font-medium px-2.5 py-1 text-sm max-w-[200px] bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
+                  title="{{ val }} ({{ fv.field_name }})">
+                {% if fv.field_icon and forloop.first %}
+                    {% icon fv.field_icon class="size-4 shrink-0 opacity-80" variant="mini" %}
+                {% endif %}
                 <span class="truncate">{{ val }}</span>
-                {% if not forloop.last %}<span class="text-warm-400 dark:text-neutral-500">·</span>{% endif %}
-            {% endfor %}
-        </div>
+            </span>
+        {% endfor %}
     {% endfor %}
     {% if data.session.min_age > 0 %}
         <span class="px-2.5 py-1 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-100 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
