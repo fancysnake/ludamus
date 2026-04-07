@@ -19,27 +19,6 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class TagCategoryData:
-    """Tag category data for template rendering."""
-
-    icon: str
-    name: str
-    pk: int
-    slug: str = ""
-
-
-@dataclass
-class TagWithCategory:
-    """Tag data with full category info for template rendering."""
-
-    category: TagCategoryData
-    category_id: int
-    confirmed: bool
-    name: str
-    pk: int
-
-
-@dataclass
 class ParticipationInfo:
     user: UserInfo
     status: str
@@ -52,7 +31,6 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     is_enrollment_available: bool
     presenter: UserInfo
     session: SessionDTO
-    tags: list[TagWithCategory]
     is_full: bool
     full_participant_info: str
     effective_participants_limit: int
@@ -62,7 +40,7 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     has_any_enrollments: bool = False
     user_enrolled: bool = False
     user_waiting: bool = False
-    displayed_tags: list[TagWithCategory] = field(default_factory=list)
+    displayed_field_values: list[SessionFieldValueDTO] = field(default_factory=list)
     field_values: list[SessionFieldValueDTO] = field(default_factory=list)
     waiting_count: int = 0
     is_ongoing: bool = False  # True if session has already started

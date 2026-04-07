@@ -48,8 +48,6 @@ from ludamus.adapters.web.django.entities import (
     ParticipationInfo,
     SessionData,
     SessionUserParticipationData,
-    TagCategoryData,
-    TagWithCategory,
 )
 from ludamus.gates.web.django.entities import (
     AuthenticatedRootRequest,
@@ -741,50 +739,6 @@ class UserDiscordUsernameComponentView(View):
         return HttpResponse("")
 
 
-def _tags_from_field_values(
-    field_values: Iterable[SessionFieldValue],
-) -> list[TagWithCategory]:
-    tags: list[TagWithCategory] = []
-    for fv in field_values:
-        field = fv.field
-        if field.field_type != "select" or not field.is_public:
-            continue
-        category = TagCategoryData(
-            icon=field.icon, name=field.name, pk=field.pk, slug=field.slug
-        )
-        values = fv.value if isinstance(fv.value, list) else [fv.value]
-        tags.extend(
-            TagWithCategory(
-                category=category, category_id=field.pk, confirmed=True, name=v, pk=0
-            )
-            for v in values
-            if isinstance(v, str)
-        )
-    return tags
-
-
-def _tags_from_field_value_dtos(
-    field_values: list[SessionFieldValueDTO],
-) -> list[TagWithCategory]:
-    tags: list[TagWithCategory] = []
-    for fv in field_values:
-        if fv.field_type != "select" or not fv.is_public:
-            continue
-        if not isinstance(fv.value, (str, list)):
-            continue
-        category = TagCategoryData(
-            icon=fv.field_icon, name=fv.field_name, pk=0, slug=fv.field_slug
-        )
-        values = fv.value if isinstance(fv.value, list) else [fv.value]
-        tags.extend(
-            TagWithCategory(
-                category=category, category_id=0, confirmed=True, name=v, pk=0
-            )
-            for v in values
-        )
-    return tags
-
-
 def _get_displayed_field_ids(event: Event) -> set[int]:
     with suppress(EventSettings.DoesNotExist):
         return set(event.settings.displayed_session_fields.values_list("id", flat=True))
@@ -806,6 +760,7 @@ def _field_value_dtos_from_models(
         SessionFieldValueDTO(
             allow_custom=fv.field.allow_custom,
             field_icon=fv.field.icon,
+            field_id=fv.field_id,
             field_name=fv.field.name,
             field_question=fv.field.question,
             field_slug=fv.field.slug,
@@ -1155,7 +1110,6 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
                 session=SessionDTO.model_validate(session),
                 presenter=presenter,
-                tags=_tags_from_field_values(session.field_values.all()),
                 field_values=_field_value_dtos_from_models(session.field_values.all()),
                 is_enrollment_available=session.is_enrollment_available,
                 is_full=session.is_full,
@@ -1195,13 +1149,15 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         if limit_configs:
             earliest_limit_end_time = min(config.end_time for config in limit_configs)
 
-        # Set displayed tags and display status for each session
+        # Set displayed field values and display status for each session
         displayed_field_ids = _get_displayed_field_ids(self.object)
         for session_data in sessions_data.values():
-            session_data.displayed_tags = [
-                tag
-                for tag in session_data.tags
-                if tag.category_id in displayed_field_ids
+            session_data.displayed_field_values = [
+                fv
+                for fv in session_data.field_values
+                if fv.field_id in displayed_field_ids
+                and fv.field_type == "select"
+                and fv.is_public
             ]
 
             session_start = session_data.agenda_item.start_time
@@ -1724,7 +1680,6 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                 session.pk
             ),
             "form": form,
-            "tags": _tags_from_field_value_dtos(field_values),
             "field_values": field_values,
         }
 

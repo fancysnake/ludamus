@@ -1,8 +1,17 @@
 {% load i18n %}
 {% load tessera %}
 <div class="flex flex-wrap gap-2 mt-2 session-tags-row">
-    {% for tag in data.displayed_tags|slice:":5" %}
-        {% include "components/tag.html" with tag=tag %}
+    {% for fv in data.displayed_field_values %}
+        <div class="inline-flex items-center gap-1 rounded-2xl font-medium px-2.5 py-1 text-sm max-w-[300px] bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
+             title="{{ fv.field_name }}">
+            {% if fv.field_icon %}
+                {% icon fv.field_icon class="size-4 shrink-0 opacity-80" variant="mini" %}
+            {% endif %}
+            {% for val in fv.value %}
+                <span class="truncate">{{ val }}</span>
+                {% if not forloop.last %}<span class="text-warm-400 dark:text-neutral-500">·</span>{% endif %}
+            {% endfor %}
+        </div>
     {% endfor %}
     {% if data.session.min_age > 0 %}
         <span class="px-2.5 py-1 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-100 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
@@ -13,17 +22,4 @@
         <span class="px-2.5 py-1 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-200/80 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
               title="{% translate "All ages welcome" %}">{% translate "All ages" %}</span>
     {% endif %}
-    {% with overflow=data.displayed_tags|slice:"5:" %}
-        {% if overflow %}
-            <div class="session-tags-more relative inline-block">
-                <div class="session-tags-popover absolute z-30 min-w-[14rem] max-w-[20rem] rounded-xl border border-neutral-200/25 dark:border-neutral-600/25 bg-neutral-50 dark:bg-neutral-800 p-2 shadow-xl opacity-0 pointer-events-none transition-opacity duration-150 flex flex-wrap gap-2">
-                    {% for tag in overflow %}
-                        {% include "components/tag.html" with tag=tag %}
-                    {% endfor %}
-                </div>
-                <span class="session-tags-more-trigger text-sm font-medium text-foreground-muted hover:text-foreground-secondary cursor-help border-b border-dotted border-foreground-muted hover:border-foreground-secondary"
-                      title="{% blocktranslate count counter=overflow|length %}{{ counter }} more tag{% plural %}{{ counter }} more tags{% endblocktranslate %}">+{{ overflow|length }}</span>
-            </div>
-        {% endif %}
-    {% endwith %}
 </div>

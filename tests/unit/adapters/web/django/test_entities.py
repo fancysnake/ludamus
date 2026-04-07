@@ -14,7 +14,6 @@ def _make_session_data(
         "is_enrollment_available": True,
         "presenter": MagicMock(),
         "session": MagicMock(),
-        "tags": [],
         "is_full": enrolled_count >= effective_participants_limit,
         "full_participant_info": "",
         "effective_participants_limit": effective_participants_limit,

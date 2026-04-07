@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load cfp_tags %}
 {% load tessera %}
 {% block title %}
     {% translate "Accept Proposal" %} - {{ session.title }}
@@ -33,11 +34,17 @@
                     <div>
                         <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Submitted" %}</h6>
                         <p class="mb-3">{{ session.creation_time|date:"M j, Y G:i" }}</p>
-                        {% if tags %}
-                            <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Tags" %}</h6>
+                        {% if field_values %}
+                            <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Session fields" %}</h6>
                             <div class="flex flex-wrap gap-1 mb-3">
-                                {% for tag in tags %}
-                                    {% include "components/tag.html" with tag=tag size="sm" %}
+                                {% for fv in field_values %}
+                                    <span class="inline-flex items-center gap-1 rounded-2xl font-medium text-xs px-2 py-0.5 bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
+                                          title="{{ fv.field_name }}">
+                                        {% if fv.field_icon %}
+                                            {% icon fv.field_icon class="size-3.5 shrink-0 opacity-80" variant="mini" %}
+                                        {% endif %}
+                                        <span class="truncate">{{ fv.value|format_field_value }}</span>
+                                    </span>
                                 {% endfor %}
                             </div>
                         {% endif %}

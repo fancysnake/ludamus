@@ -9,18 +9,13 @@ from ludamus.pacts import (
     AgendaItemDTO,
     LocationData,
     SessionDTO,
+    SessionFieldValueDTO,
     SessionStatus,
     SpaceDTO,
     VenueDTO,
 )
 
-from .entities import (
-    EventInfo,
-    ParticipationInfo,
-    SessionData,
-    TagCategoryData,
-    TagWithCategory,
-)
+from .entities import EventInfo, ParticipationInfo, SessionData
 
 _DESIGN_PLACEHOLDER_IMAGE = "placeholder-images/01.jpg"
 
@@ -60,6 +55,31 @@ def _mock_venue_and_space(creation: datetime) -> LocationData:
     return {"venue": venue, "area": None, "space": space}
 
 
+def _mock_field_values() -> list[SessionFieldValueDTO]:
+    return [
+        SessionFieldValueDTO(
+            field_icon="book-open",
+            field_id=1,
+            field_name="System",
+            field_question="What RPG system?",
+            field_slug="system",
+            field_type="select",
+            is_public=True,
+            value=["D&D 5e", "Pathfinder", "Fate"],
+        ),
+        SessionFieldValueDTO(
+            field_icon="exclamation-triangle",
+            field_id=2,
+            field_name="Triggers",
+            field_question="Content warnings?",
+            field_slug="triggers",
+            field_type="select",
+            is_public=True,
+            value=["horror", "violence"],
+        ),
+    ]
+
+
 def mock_event_info() -> EventInfo:
     start = datetime.now(UTC) + timedelta(days=7)
     end = start + timedelta(hours=6)
@@ -86,35 +106,7 @@ def mock_session_data() -> SessionData:
     start = base_time.replace(hour=14, minute=0, second=0, microsecond=0)
     end = start + timedelta(hours=2)
     creation = datetime.now(UTC) - timedelta(days=30)
-    category_themes = TagCategoryData(icon="", name="Themes", pk=1, slug="themes")
-    tag_names = [
-        "horror",
-        "mystery",
-        "18+",
-        "one-shot",
-        "PbtA",
-        "cooperative",
-        "extra tag for popover",
-        "fantasy",
-        "sci-fi",
-        "comedy",
-        "drama",
-        "sandbox",
-        "narrative",
-        "GM-less",
-        "2-4h",
-        "beginner-friendly",
-        "mature themes",
-        "improvisation",
-        "pre-generated",
-        "homebrew",
-    ]
-    tags = [
-        TagWithCategory(
-            category=category_themes, category_id=1, confirmed=True, name=name, pk=i
-        )
-        for i, name in enumerate(tag_names, start=1)
-    ]
+    field_values = _mock_field_values()
     presenter = _mock_user("Alex Designer", pk=1, slug="alex-designer", username="alex")
     participants = [
         _mock_user("Sam Player", pk=10, slug="sam-player", username="sam"),
@@ -149,13 +141,14 @@ def mock_session_data() -> SessionData:
             presenter_id=18,
             status=SessionStatus.ACCEPTED,
         ),
-        tags=tags,
         is_full=False,
         full_participant_info="4/6",
         effective_participants_limit=6,
         enrolled_count=2,
         session_participations=session_participations,
         loc=_mock_venue_and_space(creation),
+        field_values=field_values,
+        displayed_field_values=field_values,
     )
 
 
@@ -197,11 +190,12 @@ def mock_session_data_ended() -> SessionData:
             presenter_id=18,
             status=SessionStatus.ACCEPTED,
         ),
-        tags=data.tags[:3],
         is_full=True,
         full_participant_info="6/6",
         effective_participants_limit=6,
         enrolled_count=6,
         session_participations=ended_participations,
         loc=_mock_venue_and_space(creation),
+        field_values=data.field_values[:1],
+        displayed_field_values=data.displayed_field_values[:1],
     )

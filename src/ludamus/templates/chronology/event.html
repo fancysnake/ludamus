@@ -552,10 +552,11 @@
                                             <br>
                                             <span class="text-xs" style="color: var(--color-foreground-muted)">{{ pending.description|truncatechars:100 }}</span>
                                         {% endif %}
+                                        {# TODO: Replace pending.tags (old Tag M2M) with session field values #}
                                         {% if pending.tags %}
                                             <div class="flex flex-wrap gap-1 mt-1">
                                                 {% for tag in pending.tags %}
-                                                    {% include "components/tag.html" with tag=tag size="sm" %}
+                                                    <span class="inline-flex items-center rounded-2xl font-medium text-xs px-2 py-0.5 bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300">{{ tag.name }}</span>
                                                 {% endfor %}
                                             </div>
                                         {% endif %}
@@ -647,13 +648,14 @@
                                 </h4>
                                 <p>{{ pending.participants_limit }}</p>
                             </div>
+                            {# TODO: Replace pending.tags (old Tag M2M) with session field values #}
                             {% if pending.tags %}
                                 <div>
                                     <h4 class="text-sm font-semibold mb-1"
                                         style="color: var(--color-foreground-secondary)">{% translate "Tags" %}</h4>
                                     <div class="flex flex-wrap gap-1.5">
                                         {% for tag in pending.tags %}
-                                            {% include "components/tag.html" with tag=tag size="sm" %}
+                                            <span class="inline-flex items-center rounded-2xl font-medium text-xs px-2 py-0.5 bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300">{{ tag.name }}</span>
                                         {% endfor %}
                                     </div>
                                 </div>

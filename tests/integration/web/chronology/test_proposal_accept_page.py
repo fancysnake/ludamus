@@ -12,7 +12,6 @@ from ludamus.adapters.db.django.models import (
     SessionFieldValue,
     Space,
 )
-from ludamus.adapters.web.django.entities import TagCategoryData, TagWithCategory
 from ludamus.pacts import (
     EventDTO,
     SessionDTO,
@@ -67,7 +66,6 @@ class TestProposalAcceptPageView:
                 "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
-                "tags": [],
                 "field_values": [],
                 "preferred_time_slot_ids": [],
             },
@@ -194,7 +192,6 @@ class TestProposalAcceptPageView:
                 "presenter": UserDTO.model_validate(active_user),
                 "spaces": [],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
-                "tags": [],
                 "field_values": [],
                 "preferred_time_slot_ids": [],
             },
@@ -270,7 +267,6 @@ class TestProposalAcceptPageView:
                 "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
-                "tags": [],
                 "field_values": [],
                 "preferred_time_slot_ids": [],
             },
@@ -309,17 +305,16 @@ class TestProposalAcceptPageView:
                 "presenter": UserDTO.model_validate(pending_session.presenter),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
-                "tags": [],
                 "field_values": [],
                 "preferred_time_slot_ids": [],
             },
             template_name="chronology/accept_proposal.html",
         )
 
-    def test_get_ok_with_select_field_tags(
+    def test_get_ok_with_select_field_values(
         self, active_user, event, pending_session, space, staff_client, time_slot
     ):
-        """Public select field values are converted to tags."""
+        """Public select field values are shown in context."""
         session_field = SessionField.objects.create(
             event=event,
             name="Game Type",
@@ -336,15 +331,6 @@ class TestProposalAcceptPageView:
 
         response = staff_client.get(self._get_url(pending_session.id))
 
-        expected_tag = TagWithCategory(
-            category=TagCategoryData(
-                icon="puzzle-piece", name="Game Type", pk=0, slug="game-type"
-            ),
-            category_id=0,
-            confirmed=True,
-            name="RPG",
-            pk=0,
-        )
         assert_response(
             response,
             HTTPStatus.OK,
@@ -355,11 +341,11 @@ class TestProposalAcceptPageView:
                 "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
-                "tags": [expected_tag],
                 "field_values": [
                     SessionFieldValueDTO(
                         allow_custom=False,
                         field_icon="puzzle-piece",
+                        field_id=session_field.pk,
                         field_name="Game Type",
                         field_question="Game Type",
                         field_slug="game-type",
@@ -373,10 +359,10 @@ class TestProposalAcceptPageView:
             template_name="chronology/accept_proposal.html",
         )
 
-    def test_get_ok_with_text_field_excluded_from_tags(
+    def test_get_ok_with_text_field_in_field_values(
         self, active_user, event, pending_session, space, staff_client, time_slot
     ):
-        """Text field values are not converted to tags."""
+        """Text field values appear in field_values context."""
         session_field = SessionField.objects.create(
             event=event,
             name="RPG System",
@@ -401,11 +387,11 @@ class TestProposalAcceptPageView:
                 "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
-                "tags": [],
                 "field_values": [
                     SessionFieldValueDTO(
                         allow_custom=False,
                         field_icon="",
+                        field_id=session_field.pk,
                         field_name="RPG System",
                         field_question="What RPG system?",
                         field_slug="rpg-system",
@@ -419,10 +405,10 @@ class TestProposalAcceptPageView:
             template_name="chronology/accept_proposal.html",
         )
 
-    def test_get_ok_with_boolean_select_field_excluded_from_tags(
+    def test_get_ok_with_boolean_select_field_in_field_values(
         self, active_user, event, pending_session, space, staff_client, time_slot
     ):
-        """Public select field with a boolean value is not converted to a tag."""
+        """Public select field with a boolean value appears in field_values."""
         session_field = SessionField.objects.create(
             event=event,
             name="Has Minis",
@@ -447,11 +433,11 @@ class TestProposalAcceptPageView:
                 "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
-                "tags": [],
                 "field_values": [
                     SessionFieldValueDTO(
                         allow_custom=False,
                         field_icon="",
+                        field_id=session_field.pk,
                         field_name="Has Minis",
                         field_question="Do you use miniatures?",
                         field_slug="has-minis",
