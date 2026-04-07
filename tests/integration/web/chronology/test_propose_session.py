@@ -492,6 +492,7 @@ class TestProposeSessionPageView:
                 "title": "My RPG Session",
                 "description": "A great adventure",
                 "participants_limit": "6",
+                "min_age": "12",
             },
         )
 
@@ -500,6 +501,7 @@ class TestProposeSessionPageView:
         assert wizard["session_data"]["title"] == "My RPG Session"
         assert wizard["session_data"]["description"] == "A great adventure"
         assert wizard["session_data"]["participants_limit"] == int("6")
+        assert wizard["session_data"]["min_age"] == int("12")
 
     def test_post_session_details_invalid_shows_errors(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -765,11 +767,13 @@ class TestProposeSessionPageView:
                 "title": "Full Session",
                 "participants_limit": "5",
                 "description": "Full description",
+                "min_age": "16",
             },
         )
 
         review = response.context["review"]
         assert review["title"] == "Full Session"
+        assert review["min_age"] == int("16")
         assert review["category_name"] == proposal_category.name
         assert len(review["personal_fields"]) == 1
         assert len(review["time_slots"]) == 1
@@ -841,6 +845,31 @@ class TestProposeSessionPageView:
         session = Session.objects.get(title="Test Session")
         assert session.participants_limit == int("6")
         assert session.category == proposal_category
+
+    def test_submit_stores_min_age(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(authenticated_client, event, proposal_category)
+        session = authenticated_client.session
+        session[f"propose_{event.slug}"]["session_data"]["min_age"] = 12
+        session.save()
+
+        authenticated_client.post(self._get_submit_url(event.slug), {})
+
+        session = Session.objects.get(title="Test Session")
+        assert session.min_age == int("12")
+
+    def test_submit_without_min_age_defaults_to_zero(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(authenticated_client, event, proposal_category)
+
+        authenticated_client.post(self._get_submit_url(event.slug), {})
+
+        session = Session.objects.get(title="Test Session")
+        assert session.min_age == 0
 
     def test_submit_saves_personal_data(
         self, authenticated_client, event, faker, time_zone, proposal_category

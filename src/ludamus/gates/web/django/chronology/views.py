@@ -253,6 +253,7 @@ def _render_review(
         "title": session_data.get("title", ""),
         "description": session_data.get("description", ""),
         "participants_limit": session_data.get("participants_limit", ""),
+        "min_age": session_data.get("min_age", 0),
         "contact_email": wizard.get("contact_email", ""),
         "session_fields": session_fields,
         "private_session_fields": [f for f in session_fields if not f["is_public"]],

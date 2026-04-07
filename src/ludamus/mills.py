@@ -321,7 +321,7 @@ class ProposeSessionService:
             requirements="",
             needs="",
             participants_limit=participants_limit,
-            min_age=0,
+            min_age=int(str(session_data.get("min_age") or 0)),
             contact_email=wizard_data.get("contact_email", ""),
             status=SessionStatus.PENDING,
         )
