@@ -1,6 +1,7 @@
 {% load i18n %}
 {% load tessera %}
-<div class="flex flex-wrap gap-1 mt-2 session-tags-row max-h-[4.25rem] overflow-hidden">
+{# Pill height: text-sm + py-0.5 ≈ 1.75rem; gap-1 = 0.25rem. Two rows = 3.75rem #}
+<div class="flex flex-wrap gap-1 mt-2 session-tags-row max-h-[3.75rem] overflow-hidden">
     {% for fv in data.displayed_field_values %}
         {% for val in fv.value %}
             <span class="inline-flex items-center gap-1 rounded-2xl font-medium px-2.5 py-0.5 text-sm max-w-[200px] bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
