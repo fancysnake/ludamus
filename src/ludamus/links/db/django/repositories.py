@@ -20,7 +20,6 @@ from ludamus.adapters.db.django.models import (
     PersonalDataField,
     PersonalDataFieldOption,
     PersonalDataFieldRequirement,
-    Proposal,
     ProposalCategory,
     Session,
     SessionField,
@@ -71,9 +70,6 @@ from ludamus.pacts import (
     ProposalCategoryData,
     ProposalCategoryDTO,
     ProposalCategoryRepositoryProtocol,
-    ProposalDTO,
-    ProposalListItemDTO,
-    ProposalRepositoryProtocol,
     SessionData,
     SessionDTO,
     SessionFieldCreateData,
@@ -84,6 +80,7 @@ from ludamus.pacts import (
     SessionFieldUpdateData,
     SessionFieldValueData,
     SessionFieldValueDTO,
+    SessionListItemDTO,
     SessionRepositoryProtocol,
     SessionStatus,
     SessionUpdateData,
@@ -190,136 +187,6 @@ class UserRepository(UserRepositoryProtocol):
             query = query.exclude(slug=exclude_slug)
 
         return query.exists()
-
-
-class ProposalRepository(ProposalRepositoryProtocol):
-    @staticmethod
-    def read(pk: int) -> ProposalDTO:
-        try:
-            proposal = Proposal.objects.select_related("category").get(id=pk)
-        except Proposal.DoesNotExist as exception:
-            raise NotFoundError from exception
-
-        return ProposalDTO.model_validate(proposal)
-
-    @staticmethod
-    def update(proposal_dto: ProposalDTO) -> None:
-        proposal = Proposal.objects.get(id=proposal_dto.pk)
-        for key, value in proposal_dto.model_dump().items():
-            setattr(proposal, key, value)
-        proposal.save()
-
-    @staticmethod
-    def read_event(proposal_id: int) -> EventDTO:
-        try:
-            event = Event.objects.select_related("proposal_settings").get(
-                proposal_categories__proposals__id=proposal_id
-            )
-        except Event.DoesNotExist as exception:
-            raise NotFoundError from exception
-
-        return _event_dto(event)
-
-    @staticmethod
-    def read_spaces(proposal_id: int) -> list[SpaceDTO]:
-        spaces = Space.objects.filter(
-            area__venue__event__proposal_categories__proposals__id=proposal_id
-        )
-        return [SpaceDTO.model_validate(space) for space in spaces]
-
-    @staticmethod
-    def read_tag_ids(proposal_id: int) -> list[int]:
-        return list(
-            Tag.objects.filter(proposal__id=proposal_id).values_list("id", flat=True)
-        )
-
-    @staticmethod
-    def read_host(proposal_id: int) -> UserDTO:
-        proposal = Proposal.objects.select_related("host").get(id=proposal_id)
-        return UserDTO.model_validate(proposal.host)
-
-    @staticmethod
-    def read_time_slot(proposal_id: int, time_slot_id: int) -> TimeSlotDTO:
-        time_slot = TimeSlot.objects.get(
-            id=time_slot_id, event__proposal_categories__proposals__id=proposal_id
-        )
-        return TimeSlotDTO.model_validate(time_slot)
-
-    @staticmethod
-    def count_by_category(category_id: int) -> int:
-        return Proposal.objects.filter(category_id=category_id).count()
-
-    @staticmethod
-    def read_tags(proposal_id: int) -> list[TagDTO]:
-        proposal = Proposal.objects.get(id=proposal_id)
-        return [TagDTO.model_validate(tag) for tag in proposal.tags.all()]
-
-    @staticmethod
-    def read_tag_categories(proposal_id: int) -> list[TagCategoryDTO]:
-        proposal = Proposal.objects.select_related("category").get(id=proposal_id)
-
-        return [
-            TagCategoryDTO.model_validate(tag)
-            for tag in proposal.category.tag_categories.all()
-        ]
-
-    @staticmethod
-    def create_from_session(
-        category_id: int, host_id: int, session_id: int, session_data: SessionData
-    ) -> None:
-        # TODO(deploy-3): Remove Proposal dual-write after migration completes.
-        Proposal.objects.create(
-            category_id=category_id,
-            host_id=host_id,
-            title=session_data["title"],
-            description=session_data.get("description", ""),
-            requirements="",
-            needs="",
-            participants_limit=session_data.get("participants_limit", 0),
-            min_age=0,
-            session_id=session_id,
-        )
-
-    @staticmethod
-    def list_proposals_by_event(
-        event_id: int,
-        *,
-        host_name: str | None = None,
-        field_filters: dict[int, str] | None = None,
-        search: str | None = None,
-    ) -> list[ProposalListItemDTO]:
-        qs = Proposal.objects.filter(category__event_id=event_id).select_related(
-            "host", "category", "session"
-        )
-
-        if host_name:
-            qs = qs.filter(host__name__icontains=host_name)
-
-        if field_filters:
-            for field_id, value in field_filters.items():
-                qs = qs.filter(
-                    session__field_values__field_id=field_id,
-                    session__field_values__value__icontains=value,
-                )
-
-        if search:
-            qs = qs.filter(session__field_values__value__icontains=search).distinct()
-
-        return [
-            ProposalListItemDTO(
-                pk=p.pk,
-                title=p.title,
-                host_name=p.host.name,
-                category_name=p.category.name,
-                session_status=(
-                    SessionStatus(p.session.status)
-                    if p.session
-                    else SessionStatus.PENDING
-                ),
-                creation_time=p.creation_time,
-            )
-            for p in qs.order_by("-creation_time")
-        ]
 
 
 class SessionRepository(SessionRepositoryProtocol):
@@ -514,6 +381,43 @@ class SessionRepository(SessionRepositoryProtocol):
                 field_name=v.field.name, field_question=v.field.question, value=v.value
             )
             for v in values
+        ]
+
+    @staticmethod
+    def list_sessions_by_event(
+        event_id: int,
+        *,
+        presenter_name: str | None = None,
+        field_filters: dict[int, str] | None = None,
+        search: str | None = None,
+    ) -> list[SessionListItemDTO]:
+        qs = Session.objects.filter(category__event_id=event_id).select_related(
+            "presenter", "category"
+        )
+
+        if presenter_name:
+            qs = qs.filter(presenter__name__icontains=presenter_name)
+
+        if field_filters:
+            for field_id, value in field_filters.items():
+                qs = qs.filter(
+                    field_values__field_id=field_id,
+                    field_values__value__icontains=value,
+                )
+
+        if search:
+            qs = qs.filter(field_values__value__icontains=search).distinct()
+
+        return [
+            SessionListItemDTO(
+                pk=s.pk,
+                title=s.title,
+                display_name=s.display_name,
+                category_name=s.category.name if s.category else "",
+                status=SessionStatus(s.status),
+                creation_time=s.creation_time,
+            )
+            for s in qs.order_by("-creation_time")
         ]
 
 
@@ -1450,7 +1354,7 @@ class ProposalCategoryRepository(ProposalCategoryRepositoryProtocol):  # noqa: P
 
     @staticmethod
     def has_proposals(pk: int) -> bool:
-        return Proposal.objects.filter(category_id=pk).exists()
+        return Session.objects.filter(category_id=pk).exists()
 
     @staticmethod
     def list_by_event(event_id: int) -> list[ProposalCategoryDTO]:
@@ -2198,7 +2102,7 @@ class TimeSlotRepository(TimeSlotRepositoryProtocol):
 
     @staticmethod
     def has_proposals(pk: int) -> bool:
-        return Proposal.objects.filter(time_slots=pk).exists()
+        return Session.objects.filter(time_slots=pk).exists()
 
     @staticmethod
     def list_by_event(event_id: int) -> list[TimeSlotDTO]:

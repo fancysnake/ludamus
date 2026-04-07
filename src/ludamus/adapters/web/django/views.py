@@ -35,12 +35,9 @@ from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
     EnrollmentConfig,
     Event,
-    Proposal,
-    ProposalCategory,
     Session,
     SessionParticipation,
     SessionParticipationStatus,
-    Tag,
     can_enroll_users,
 )
 from ludamus.adapters.oauth import oauth
@@ -68,20 +65,16 @@ from ludamus.pacts import (
     EventDTO,
     LocationData,
     NotFoundError,
-    ProposalCategoryDTO,
     RedirectError,
     SessionDTO,
     SessionRepositoryProtocol,
     SessionStatus,
     SpaceDTO,
     SpherePage,
-    TagCategoryDTO,
-    TagDTO,
     UserData,
     UserDTO,
     VenueDTO,
 )
-from ludamus.pacts import SessionData as SessionCreateData
 
 from .design_fixtures import mock_event_info, mock_session_data, mock_session_data_ended
 from .forms import (
@@ -89,14 +82,11 @@ from .forms import (
     UserForm,
     create_enrollment_form,
     create_proposal_acceptance_form,
-    create_session_proposal_form,
-    get_tag_data_from_form,
 )
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
 
     from django.db.models.query import QuerySet
 
@@ -758,7 +748,6 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             .prefetch_related(
                 "venues__areas__spaces__agenda_items__session__tags__category",
                 "venues__areas__spaces__agenda_items__session__session_participations__user",
-                "venues__areas__spaces__agenda_items__session__proposal",
                 "enrollment_configs",
                 "filterable_tag_categories",
             )
@@ -773,7 +762,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         # Get all sessions for this event that are published
         event_sessions = (
             Session.objects.filter(agenda_item__space__area__venue__event=self.object)
-            .select_related("proposal__host", "agenda_item__space", "sphere")
+            .select_related("presenter", "agenda_item__space", "sphere")
             .prefetch_related(
                 "tags__category",
                 "session_participations__user__manager",
@@ -1613,212 +1602,6 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 ),
                 warning=_("Please select at least one user to enroll."),
             )
-
-
-class EventProposalPageView(LoginRequiredMixin, View):
-    request: AuthenticatedRootRequest
-
-    def get(self, request: AuthenticatedRootRequest, event_slug: str) -> HttpResponse:
-        event = self._validate_event(event_slug)
-
-        proposal_category = self._get_proposal_category(event)
-        tag_categories = proposal_category.tag_categories.all()
-
-        return TemplateResponse(
-            request,
-            "chronology/propose_session.html",
-            {
-                "event": event,
-                "time_slot": None,
-                "tag_categories": list(tag_categories),
-                "confirmed_tags": {
-                    str(category.id): (
-                        category.tags.filter(confirmed=True).values("id", "name")
-                    )
-                    for category in tag_categories
-                    if category.input_type == category.InputType.SELECT
-                },
-                "min_participants_limit": proposal_category.min_participants_limit,
-                "max_participants_limit": proposal_category.max_participants_limit,
-                "form": create_session_proposal_form(
-                    proposal_category=ProposalCategoryDTO.model_validate(
-                        proposal_category
-                    ),
-                    tag_categories=[
-                        TagCategoryDTO.model_validate(tc)
-                        for tc in proposal_category.tag_categories.all()
-                    ],
-                    tags={
-                        tc.pk: [TagDTO.model_validate(t) for t in tc.tags.all()]
-                        for tc in proposal_category.tag_categories.all()
-                    },
-                )(
-                    initial={
-                        "participants_limit": proposal_category.min_participants_limit
-                    }
-                ),
-            },
-        )
-
-    def post(
-        self, request: AuthenticatedRootRequest, event_slug: str  # noqa: ARG002
-    ) -> HttpResponse:
-        event = self._validate_event(event_slug)
-        proposal_category = self._get_proposal_category(event)
-
-        return self._handle_form(proposal_category, event)
-
-    def _handle_form(
-        self, proposal_category: ProposalCategory, event: Event
-    ) -> HttpResponse:
-        # Initialize form with POST data
-        form_class = create_session_proposal_form(
-            proposal_category=ProposalCategoryDTO.model_validate(proposal_category),
-            tag_categories=[
-                TagCategoryDTO.model_validate(tc)
-                for tc in proposal_category.tag_categories.all()
-            ],
-            tags={
-                tc.pk: [TagDTO.model_validate(t) for t in tc.tags.all()]
-                for tc in proposal_category.tag_categories.all()
-            },
-        )
-        form = form_class(data=self.request.POST)
-
-        if not form.is_valid():
-            # Re-render with form errors
-            tag_categories = proposal_category.tag_categories.all()
-
-            return TemplateResponse(
-                self.request,
-                "chronology/propose_session.html",
-                {
-                    "event": event,
-                    "time_slot": None,
-                    "tag_categories": list(tag_categories),
-                    "confirmed_tags": {
-                        str(category.id): list(
-                            category.tags.filter(confirmed=True).values("id", "name")
-                        )
-                        for category in tag_categories
-                        if category.input_type == category.InputType.SELECT
-                    },
-                    "min_participants_limit": proposal_category.min_participants_limit,
-                    "max_participants_limit": proposal_category.max_participants_limit,
-                    "form": form,
-                },
-            )
-
-        # Collect tags
-        tags = list(
-            self._get_tags(get_tag_data_from_form(form.cleaned_data), proposal_category)
-        )
-        tag_ids = [t.pk for t in tags]
-
-        # Collect time_slot_ids from form if present
-        time_slot_ids: list[int] = []
-
-        # Create Session with status=PENDING via repository
-        current_user = self.request.di.uow.active_users.read(
-            self.request.context.current_user_slug
-        )
-        session_id = self.request.di.uow.sessions.create(
-            SessionCreateData(
-                sphere_id=event.sphere_id,
-                presenter_id=current_user.pk,
-                display_name=current_user.name,
-                category_id=proposal_category.pk,
-                title=form.cleaned_data["title"],
-                slug=slugify(form.cleaned_data["title"]),
-                description=form.cleaned_data["description"],
-                requirements=form.cleaned_data["requirements"],
-                needs=form.cleaned_data["needs"],
-                participants_limit=form.cleaned_data["participants_limit"],
-                min_age=form.cleaned_data["min_age"],
-                status=SessionStatus.PENDING,
-            ),
-            tag_ids=tag_ids,
-            time_slot_ids=time_slot_ids,
-        )
-
-        # TODO(deploy-3): Remove Proposal dual-write after migration completes.
-        proposal = Proposal.objects.create(
-            category=proposal_category,
-            host_id=self.request.context.current_user_id,
-            title=form.cleaned_data["title"],
-            description=form.cleaned_data["description"],
-            requirements=form.cleaned_data["requirements"],
-            needs=form.cleaned_data["needs"],
-            participants_limit=form.cleaned_data["participants_limit"],
-            min_age=form.cleaned_data["min_age"],
-            session_id=session_id,
-        )
-        for tag in tags:
-            proposal.tags.add(tag)
-
-        messages.success(
-            self.request,
-            _("Session proposal '{}' submitted successfully!").format(
-                form.cleaned_data["title"]
-            ),
-        )
-        return redirect("web:chronology:event", slug=event.slug)
-
-    @staticmethod
-    def _get_tags(
-        tag_data: dict[int, dict[str, list[str] | list[int]]],
-        proposal_category: ProposalCategory,
-    ) -> Generator[Tag]:
-        for category_id, tags_info in tag_data.items():
-            for tag_id in tags_info.get("selected_tags", []):
-                with suppress(Tag.DoesNotExist), suppress(Tag.DoesNotExist):
-                    tag = Tag.objects.get(id=tag_id)
-                    yield tag
-
-            for tag_name in tags_info.get("typed_tags", []):
-                category = proposal_category.tag_categories.get(id=category_id)
-                tag, _created = Tag.objects.get_or_create(
-                    name=tag_name, category=category, defaults={"confirmed": False}
-                )
-                yield tag
-
-    def _validate_event(self, event_slug: str) -> Event:
-        try:
-            event = Event.objects.get(
-                sphere_id=self.request.context.current_sphere_id, slug=event_slug
-            )
-        except Event.DoesNotExist:
-            raise RedirectError(
-                reverse("web:index"), error=_("Event not found.")
-            ) from None
-
-        if not event.is_published or not event.is_proposal_active:
-            redirect_url = (
-                reverse("web:chronology:event", kwargs={"slug": event_slug})
-                if event.is_published
-                else reverse("web:index")
-            )
-            raise RedirectError(
-                redirect_url,
-                error=_("Proposal submission is not currently active for this event."),
-            )
-
-        return event
-
-    @staticmethod
-    def _get_proposal_category(event: Event) -> ProposalCategory:
-        try:
-            return ProposalCategory.objects.prefetch_related(
-                "tag_categories__tags"
-            ).get(event=event)
-        except ProposalCategory.DoesNotExist:
-            raise RedirectError(
-                reverse("web:chronology:event", kwargs={"slug": event.slug}),
-                error=_(
-                    "No proposal category configured for this event. "
-                    "Please contact the organizers."
-                ),
-            ) from None
 
 
 class ProposalAcceptPageView(LoginRequiredMixin, View):

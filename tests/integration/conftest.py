@@ -16,7 +16,6 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
-    Proposal,
     ProposalCategory,
     Session,
     SessionParticipation,
@@ -196,17 +195,6 @@ class ProposalCategoryFactory(DjangoModelFactory):
     min_participants_limit = 2
 
 
-class ProposalFactory(DjangoModelFactory):
-    class Meta:
-        model = Proposal
-
-    title = Faker("sentence", nb_words=5)
-    description = Faker("text")
-    host = SubFactory(UserFactory)
-    participants_limit = Faker("random_int", min=2, max=20)
-    category = SubFactory(ProposalCategoryFactory)
-
-
 class EncounterFactory(DjangoModelFactory):
     class Meta:
         model = Encounter
@@ -353,11 +341,6 @@ def session_fixture(active_user, sphere):
 @pytest.fixture(name="proposal_category")
 def proposal_category_fixture(event):
     return ProposalCategoryFactory(event=event)
-
-
-@pytest.fixture
-def proposal(proposal_category, active_user):
-    return ProposalFactory(category=proposal_category, host=active_user)
 
 
 @pytest.fixture(name="pending_session")

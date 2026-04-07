@@ -3,7 +3,7 @@ from http import HTTPStatus
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import Proposal, ProposalCategory
+from ludamus.adapters.db.django.models import ProposalCategory, Session
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -71,10 +71,14 @@ class TestCFPDeleteActionView:
         category = ProposalCategory.objects.create(
             event=event, name="RPG Sessions", slug="rpg-sessions"
         )
-        Proposal.objects.create(
+        Session.objects.create(
             category=category,
-            host=active_user,
+            sphere=sphere,
+            presenter=active_user,
+            display_name=active_user.username,
             title="Test Proposal",
+            slug="test-proposal",
+            status="pending",
             participants_limit=6,
         )
 

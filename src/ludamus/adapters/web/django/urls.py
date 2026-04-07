@@ -69,11 +69,6 @@ chronology_urls = [
         name="session-enrollment",
     ),
     path(
-        "event/<str:event_slug>/proposal/",
-        views.EventProposalPageView.as_view(),
-        name="event-proposal",
-    ),
-    path(
         "session/<int:session_id>/accept/",
         views.ProposalAcceptPageView.as_view(),
         name="session-accept",

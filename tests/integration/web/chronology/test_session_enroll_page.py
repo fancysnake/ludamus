@@ -8,7 +8,6 @@ from django.urls import reverse
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     EnrollmentConfig,
-    Proposal,
     SessionParticipation,
     SessionParticipationStatus,
     UserEnrollmentConfig,
@@ -373,16 +372,9 @@ class TestSessionEnrollPageView:
         self, authenticated_client, agenda_item, proposal_category, active_user
     ):
 
-        proposal = Proposal.objects.create(
-            title="Test Session",
-            description="Test description",
-            category=proposal_category,
-            host=active_user,
-            participants_limit=10,
-        )
-
-        proposal.session = agenda_item.session
-        proposal.save()
+        session = agenda_item.session
+        session.presenter = active_user
+        session.save()
 
         response = authenticated_client.post(
             self._get_url(agenda_item.session.pk),

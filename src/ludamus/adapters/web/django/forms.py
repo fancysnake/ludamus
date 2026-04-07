@@ -15,7 +15,6 @@ from ludamus.adapters.db.django.models import (
     SessionParticipation,
     SessionParticipationStatus,
     Space,
-    TagCategory,
     TimeSlot,
     can_enroll_users,
     get_used_slots,
@@ -25,9 +24,6 @@ from ludamus.mills import get_user_enrollment_config
 from ludamus.pacts import (
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
-    ProposalCategoryDTO,
-    TagCategoryDTO,
-    TagDTO,
     TicketAPIProtocol,
     UserData,
     UserDTO,
@@ -378,182 +374,6 @@ def create_enrollment_form(
     return form
 
 
-def get_tag_data_from_form(
-    cleaned_data: dict[str, Any],
-) -> dict[int, dict[str, list[str] | list[int]]]:
-    tag_data: dict[int, dict[str, list[str] | list[int]]] = {}
-    for field_name, value in cleaned_data.items():
-        if field_name.startswith("tags_") and value:
-            category_id = int(field_name.split("_")[1])
-            category = TagCategory.objects.get(pk=category_id)
-            match category.input_type:
-                case TagCategory.InputType.SELECT:
-                    # value is a list of tag IDs
-                    tag_data[category_id] = {
-                        "selected_tags": [int(tag_id) for tag_id in value]
-                    }
-                # value is a comma-separated string
-                case TagCategory.InputType.TYPE:
-                    tag_names = [
-                        name.strip() for name in value.split(",") if name.strip()
-                    ]
-                    tag_data[category_id] = {"typed_tags": tag_names}
-                case _:  # pragma: no cover
-                    raise ValueError("Unknown input type")
-    return tag_data
-
-
-def _get_tags_fields(
-    tag_categories: list[TagCategoryDTO], tags: dict[int, list[TagDTO]]
-) -> dict[str, forms.CharField | forms.MultipleChoiceField]:
-    tag_fields: dict[str, forms.CharField | forms.MultipleChoiceField] = {}
-
-    for category in tag_categories:
-        match category.input_type:
-            case TagCategory.InputType.SELECT:
-                # Create multiple select field for confirmed tags
-                tag_fields[f"tags_{category.pk}"] = forms.MultipleChoiceField(
-                    choices=[
-                        (tag.pk, tag.name) for tag in tags[category.pk] if tag.confirmed
-                    ],
-                    required=False,
-                    label=category.name,
-                    widget=forms.CheckboxSelectMultiple(
-                        attrs={"class": "form-check-input"}
-                    ),
-                    help_text=_("Select all that apply"),
-                )
-            case TagCategory.InputType.TYPE:
-                # Create text input for comma-separated tags
-                tag_fields[f"tags_{category.pk}"] = forms.CharField(
-                    required=False,
-                    label=category.name,
-                    widget=forms.TextInput(
-                        attrs={
-                            "class": "form-control",
-                            "placeholder": _("Enter tags separated by commas"),
-                        }
-                    ),
-                    help_text=_("Enter multiple tags separated by commas"),
-                )
-
-    return tag_fields
-
-
-def create_session_proposal_form(
-    proposal_category: ProposalCategoryDTO,
-    tag_categories: list[TagCategoryDTO],
-    tags: dict[int, list[TagDTO]],
-) -> type[forms.ModelForm]:  # type: ignore [type-arg]
-    tag_fields = _get_tags_fields(tag_categories, tags)
-
-    # Update participants_limit field with category bounds
-    min_limit = proposal_category.min_participants_limit if proposal_category else 0
-    max_limit = proposal_category.max_participants_limit if proposal_category else 0
-    widget_attrs: dict[str, object] = {"class": "form-control"}
-    if min_limit:
-        widget_attrs["min"] = min_limit
-    else:
-        widget_attrs["min"] = 0
-    if max_limit:
-        widget_attrs["max"] = max_limit
-
-    participants_limit_field = forms.IntegerField(
-        widget=forms.NumberInput(attrs=widget_attrs),
-        required=min_limit != 0 or max_limit != 0,
-        initial=min_limit or 0,
-    )
-
-    # PEGI rating field with custom choices
-    pegi_rating_field = forms.ChoiceField(
-        choices=[
-            (3, _("PEGI 3")),
-            (7, _("PEGI 7")),
-            (12, _("PEGI 12")),
-            (16, _("PEGI 16")),
-            (18, _("PEGI 18")),
-        ],
-        initial=3,
-        widget=forms.Select(attrs={"class": "form-select"}),
-        help_text=_("Select the appropriate age rating for this session"),
-    )
-
-    def clean_title(self: forms.ModelForm[Session]) -> str:
-        title: str = self.cleaned_data["title"]
-        return title.strip()
-
-    # Create form attributes with base Meta class
-    form_attrs = {
-        "Meta": type(
-            "Meta",
-            (),
-            {
-                "model": Session,
-                "fields": (
-                    "title",
-                    "description",
-                    "requirements",
-                    "needs",
-                    "participants_limit",
-                    "min_age",
-                ),
-                "widgets": {
-                    "title": forms.TextInput(
-                        attrs={
-                            "class": "form-control",
-                            "placeholder": _("Enter session title"),
-                            "maxlength": 255,
-                            "required": True,
-                        }
-                    ),
-                    "description": forms.Textarea(
-                        attrs={
-                            "class": "form-control",
-                            "rows": 4,
-                            "placeholder": _("Describe your session"),
-                        }
-                    ),
-                    "requirements": forms.Textarea(
-                        attrs={
-                            "class": "form-control",
-                            "rows": 3,
-                            "placeholder": _("What should participants bring or know?"),
-                        }
-                    ),
-                    "needs": forms.Textarea(
-                        attrs={
-                            "class": "form-control",
-                            "rows": 3,
-                            "placeholder": _("What materials or space do you need?"),
-                        }
-                    ),
-                    "participants_limit": forms.NumberInput(
-                        attrs={
-                            "class": "form-control",
-                            "min": (
-                                proposal_category.min_participants_limit
-                                if proposal_category
-                                else 1
-                            ),
-                            "max": (
-                                proposal_category.max_participants_limit
-                                if proposal_category
-                                else 100
-                            ),
-                        }
-                    ),
-                },
-            },
-        ),
-        "clean_title": clean_title,
-        "participants_limit": participants_limit_field,
-        "min_age": pegi_rating_field,
-        **tag_fields,
-    }
-
-    return type("SessionProposalForm", (forms.ModelForm,), form_attrs)
-
-
 def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
     # Query spaces with related area and venue for proper grouping
     spaces = (
@@ -601,7 +421,7 @@ def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
     )
 
     def clean_space(self: forms.Form) -> Space:
-        if not (space_id := self.cleaned_data.get("space")):
+        if not (space_id := self.cleaned_data.get("space")):  # pragma: no cover
             raise ValidationError(_("This field is required."))
         try:
             return Space.objects.get(pk=int(space_id), area__venue__event_id=event.pk)

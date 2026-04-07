@@ -4,7 +4,6 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
-    Proposal,
     ProposalCategory,
     Session,
     SessionField,
@@ -12,10 +11,10 @@ from ludamus.adapters.db.django.models import (
 )
 from ludamus.pacts import (
     EventDTO,
-    ProposalDTO,
-    ProposalListItemDTO,
+    SessionDTO,
     SessionFieldDTO,
     SessionFieldValueDTO,
+    SessionListItemDTO,
     SessionStatus,
     UserDTO,
 )
@@ -113,18 +112,12 @@ class TestProposalsPageView:
         session = Session.objects.create(
             category=category,
             presenter=active_user,
+            display_name=active_user.name,
             title="My Session",
             slug="my-session",
             sphere=sphere,
             participants_limit=5,
             status="pending",
-        )
-        proposal = Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="My Proposal",
-            participants_limit=5,
-            session=session,
         )
 
         response = authenticated_client.get(self.get_url(event))
@@ -144,13 +137,13 @@ class TestProposalsPageView:
                     "total_sessions": 1,
                 },
                 "proposals": [
-                    ProposalListItemDTO(
-                        pk=proposal.pk,
-                        title="My Proposal",
-                        host_name=active_user.name,
+                    SessionListItemDTO(
+                        pk=session.pk,
+                        title="My Session",
+                        display_name=active_user.name,
                         category_name="RPG",
-                        session_status=SessionStatus.PENDING,
-                        creation_time=proposal.creation_time,
+                        status=SessionStatus.PENDING,
+                        creation_time=session.creation_time,
                     )
                 ],
                 "session_fields": [],
@@ -166,37 +159,25 @@ class TestProposalsPageView:
         sphere.managers.add(active_user)
         category = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
         other_user = UserFactory(username="other", name="Other Person")
-        session1 = Session.objects.create(
+        Session.objects.create(
             category=category,
             presenter=active_user,
-            title="Session 1",
-            slug="session-1",
+            display_name=active_user.name,
+            title="Session A",
+            slug="session-a",
             sphere=sphere,
             participants_limit=5,
             status="pending",
         )
-        Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="Proposal A",
-            participants_limit=5,
-            session=session1,
-        )
-        session2 = Session.objects.create(
+        session_b = Session.objects.create(
             category=category,
             presenter=other_user,
-            title="Session 2",
-            slug="session-2",
+            display_name="Other Person",
+            title="Session B",
+            slug="session-b",
             sphere=sphere,
             participants_limit=5,
             status="accepted",
-        )
-        proposal_b = Proposal.objects.create(
-            category=category,
-            host=other_user,
-            title="Proposal B",
-            participants_limit=5,
-            session=session2,
         )
 
         response = authenticated_client.get(self.get_url(event), {"host": "Other"})
@@ -216,13 +197,13 @@ class TestProposalsPageView:
                     "total_sessions": 1,
                 },
                 "proposals": [
-                    ProposalListItemDTO(
-                        pk=proposal_b.pk,
-                        title="Proposal B",
-                        host_name="Other Person",
+                    SessionListItemDTO(
+                        pk=session_b.pk,
+                        title="Session B",
+                        display_name="Other Person",
                         category_name="RPG",
-                        session_status=SessionStatus.ACCEPTED,
-                        creation_time=proposal_b.creation_time,
+                        status=SessionStatus.ACCEPTED,
+                        creation_time=session_b.creation_time,
                     )
                 ],
                 "session_fields": [],
@@ -247,35 +228,23 @@ class TestProposalsPageView:
         session1 = Session.objects.create(
             category=category,
             presenter=active_user,
-            title="Session 1",
-            slug="session-1",
+            display_name=active_user.name,
+            title="D&D Adventure",
+            slug="dnd-adventure",
             sphere=sphere,
             participants_limit=5,
             status="pending",
-        )
-        proposal1 = Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="D&D Adventure",
-            participants_limit=5,
-            session=session1,
         )
         SessionFieldValue.objects.create(session=session1, field=field, value="D&D 5e")
         session2 = Session.objects.create(
             category=category,
             presenter=active_user,
-            title="Session 2",
-            slug="session-2",
+            display_name=active_user.name,
+            title="Fate Adventure",
+            slug="fate-adventure",
             sphere=sphere,
             participants_limit=5,
             status="pending",
-        )
-        Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="Fate Adventure",
-            participants_limit=5,
-            session=session2,
         )
         SessionFieldValue.objects.create(
             session=session2, field=field, value="Fate Core"
@@ -300,13 +269,13 @@ class TestProposalsPageView:
                     "total_sessions": 2,
                 },
                 "proposals": [
-                    ProposalListItemDTO(
-                        pk=proposal1.pk,
+                    SessionListItemDTO(
+                        pk=session1.pk,
                         title="D&D Adventure",
-                        host_name=active_user.name,
+                        display_name=active_user.name,
                         category_name="RPG",
-                        session_status=SessionStatus.PENDING,
-                        creation_time=proposal1.creation_time,
+                        status=SessionStatus.PENDING,
+                        creation_time=session1.creation_time,
                     )
                 ],
                 "session_fields": [
@@ -340,35 +309,23 @@ class TestProposalsPageView:
         session1 = Session.objects.create(
             category=category,
             presenter=active_user,
-            title="Session 1",
-            slug="session-1",
+            display_name=active_user.name,
+            title="D&D Adventure",
+            slug="dnd-adventure",
             sphere=sphere,
             participants_limit=5,
             status="pending",
-        )
-        proposal1 = Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="D&D Adventure",
-            participants_limit=5,
-            session=session1,
         )
         SessionFieldValue.objects.create(session=session1, field=field, value="D&D 5e")
         session2 = Session.objects.create(
             category=category,
             presenter=active_user,
-            title="Session 2",
-            slug="session-2",
+            display_name=active_user.name,
+            title="Fate Adventure",
+            slug="fate-adventure",
             sphere=sphere,
             participants_limit=5,
             status="pending",
-        )
-        Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="Fate Adventure",
-            participants_limit=5,
-            session=session2,
         )
         SessionFieldValue.objects.create(
             session=session2, field=field, value="Fate Core"
@@ -391,13 +348,13 @@ class TestProposalsPageView:
                     "total_sessions": 2,
                 },
                 "proposals": [
-                    ProposalListItemDTO(
-                        pk=proposal1.pk,
+                    SessionListItemDTO(
+                        pk=session1.pk,
                         title="D&D Adventure",
-                        host_name=active_user.name,
+                        display_name=active_user.name,
                         category_name="RPG",
-                        session_status=SessionStatus.PENDING,
-                        creation_time=proposal1.creation_time,
+                        status=SessionStatus.PENDING,
+                        creation_time=session1.creation_time,
                     )
                 ],
                 "session_fields": [],
@@ -522,22 +479,16 @@ class TestProposalDetailPageView:
         session = Session.objects.create(
             category=category,
             presenter=active_user,
-            title="Session",
-            slug="session",
+            display_name=active_user.name,
+            title="My Great Session",
+            description="A wonderful adventure",
+            slug="my-great-session",
             sphere=sphere,
             participants_limit=5,
             status="pending",
         )
-        proposal = Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="My Great Proposal",
-            description="A wonderful adventure",
-            participants_limit=5,
-            session=session,
-        )
 
-        response = authenticated_client.get(self.get_url(event, proposal.pk))
+        response = authenticated_client.get(self.get_url(event, session.pk))
 
         assert_response(
             response,
@@ -554,7 +505,7 @@ class TestProposalDetailPageView:
                     "total_sessions": 1,
                 },
                 "active_nav": "proposals",
-                "proposal": ProposalDTO.model_validate(proposal),
+                "proposal": SessionDTO.model_validate(session),
                 "host": UserDTO.model_validate(active_user),
                 "tags": [],
                 "field_values": [],
@@ -570,22 +521,16 @@ class TestProposalDetailPageView:
         session = Session.objects.create(
             category=category,
             presenter=active_user,
-            title="Session",
-            slug="session",
+            display_name=active_user.name,
+            title="My Session",
+            slug="my-session",
             sphere=sphere,
             participants_limit=5,
             status="pending",
         )
-        proposal = Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="Proposal",
-            participants_limit=5,
-            session=session,
-        )
         SessionFieldValue.objects.create(session=session, field=field, value="D&D 5e")
 
-        response = authenticated_client.get(self.get_url(event, proposal.pk))
+        response = authenticated_client.get(self.get_url(event, session.pk))
 
         assert_response(
             response,
@@ -602,7 +547,7 @@ class TestProposalDetailPageView:
                     "total_sessions": 1,
                 },
                 "active_nav": "proposals",
-                "proposal": ProposalDTO.model_validate(proposal),
+                "proposal": SessionDTO.model_validate(session),
                 "host": UserDTO.model_validate(active_user),
                 "tags": [],
                 "field_values": [
@@ -630,24 +575,18 @@ class TestProposalDetailPageView:
         session = Session.objects.create(
             category=category,
             presenter=active_user,
-            title="Session",
-            slug="session",
+            display_name=active_user.name,
+            title="My Session",
+            slug="my-session",
             sphere=sphere,
             participants_limit=5,
             status="pending",
-        )
-        proposal = Proposal.objects.create(
-            category=category,
-            host=active_user,
-            title="Proposal",
-            participants_limit=5,
-            session=session,
         )
         SessionFieldValue.objects.create(
             session=session, field=field, value=["RPG", "Popculture"]
         )
 
-        response = authenticated_client.get(self.get_url(event, proposal.pk))
+        response = authenticated_client.get(self.get_url(event, session.pk))
 
         assert response.status_code == HTTPStatus.OK
         content = response.content.decode()

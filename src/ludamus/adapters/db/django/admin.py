@@ -11,7 +11,6 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
-    Proposal,
     ProposalCategory,
     Session,
     SessionFieldValue,
@@ -52,11 +51,6 @@ class AgendaItemAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
-
-
-@admin.register(Proposal)
-class ProposalAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
-    ...
 
 
 @admin.register(Space)

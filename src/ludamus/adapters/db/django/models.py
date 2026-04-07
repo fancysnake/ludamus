@@ -812,42 +812,6 @@ class ProposalCategory(models.Model):
         return f"{self.name} ({self.id})"
 
 
-class Proposal(models.Model):
-    # Owner
-    category = models.ForeignKey(
-        ProposalCategory, on_delete=models.CASCADE, related_name="proposals"
-    )
-    host = models.ForeignKey(User, on_delete=models.CASCADE, related_name="proposals")
-    # ID
-    title = models.CharField(max_length=255)
-    description = models.TextField(default="", blank=True)
-    requirements = models.TextField(blank=True)
-    needs = models.TextField(default="", blank=True)
-    tags = models.ManyToManyField(Tag, blank=True)
-    # Preferences
-    participants_limit = models.PositiveIntegerField()
-    min_age = models.PositiveIntegerField(
-        default=0, help_text="Minimum age requirement (0 = no restriction)"
-    )
-    time_slots = models.ManyToManyField(TimeSlot)
-    # Time
-    creation_time = models.DateTimeField(auto_now_add=True)
-    # Assignment
-    session = models.OneToOneField(
-        Session,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name="proposal",
-    )
-
-    class Meta:
-        db_table = "proposal"
-
-    def __str__(self) -> str:
-        return self.title
-
-
 class SessionParticipation(models.Model):
     # Owner
     session = models.ForeignKey(

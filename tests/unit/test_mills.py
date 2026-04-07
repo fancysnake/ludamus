@@ -3,8 +3,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from ludamus.mills import PanelService, is_proposal_active
-from ludamus.pacts import EventDTO, EventStatsData, PanelStatsDTO
+from ludamus.mills import (
+    PanelService,
+    ProposeSessionService,
+    generate_ics_content,
+    get_days_to_event,
+    google_calendar_url,
+    is_proposal_active,
+    outlook_calendar_url,
+)
+from ludamus.pacts import EncounterDTO, EventDTO, EventStatsData, PanelStatsDTO
 
 
 class TestPanelService:
@@ -195,3 +203,210 @@ class TestIsProposalActive:
         event = EventDTO(**base_event_data)
 
         assert is_proposal_active(event) is False
+
+
+class TestGenerateIcsContent:
+    @pytest.fixture
+    def base_encounter_data(self):
+        now = datetime.now(tz=UTC)
+        return {
+            "creation_time": now,
+            "creator_id": 1,
+            "description": "A great session",
+            "end_time": now + timedelta(hours=2),
+            "game": "D&D",
+            "header_image": "",
+            "max_participants": 6,
+            "pk": 1,
+            "place": "Room 42",
+            "share_code": "ABC123",
+            "sphere_id": 1,
+            "start_time": now,
+            "title": "My Encounter",
+        }
+
+    def test_includes_dtend_when_end_time_present(self, base_encounter_data):
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = generate_ics_content(encounter, "https://example.com")
+
+        assert "DTEND:" in result
+
+    def test_excludes_dtend_when_end_time_is_none(self, base_encounter_data):
+        base_encounter_data["end_time"] = None
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = generate_ics_content(encounter, "https://example.com")
+
+        assert "DTEND:" not in result
+
+    def test_includes_location_when_place_present(self, base_encounter_data):
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = generate_ics_content(encounter, "https://example.com")
+
+        assert "LOCATION:Room 42" in result
+
+    def test_excludes_location_when_place_empty(self, base_encounter_data):
+        base_encounter_data["place"] = ""
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = generate_ics_content(encounter, "https://example.com")
+
+        assert "LOCATION:" not in result
+
+    def test_includes_description_when_present(self, base_encounter_data):
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = generate_ics_content(encounter, "https://example.com")
+
+        assert "DESCRIPTION:A great session" in result
+
+    def test_excludes_description_when_empty(self, base_encounter_data):
+        base_encounter_data["description"] = ""
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = generate_ics_content(encounter, "https://example.com")
+
+        assert "DESCRIPTION:" not in result
+
+
+class TestGoogleCalendarUrl:
+    @pytest.fixture
+    def base_encounter_data(self):
+        now = datetime.now(tz=UTC)
+        return {
+            "creation_time": now,
+            "creator_id": 1,
+            "description": "A great session",
+            "end_time": now + timedelta(hours=2),
+            "game": "D&D",
+            "header_image": "",
+            "max_participants": 6,
+            "pk": 1,
+            "place": "Room 42",
+            "share_code": "ABC123",
+            "sphere_id": 1,
+            "start_time": now,
+            "title": "My Encounter",
+        }
+
+    def test_excludes_location_when_place_empty(self, base_encounter_data):
+        base_encounter_data["place"] = ""
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = google_calendar_url(encounter, "https://example.com")
+
+        assert "location=" not in result
+
+    def test_uses_url_only_when_description_empty(self, base_encounter_data):
+        base_encounter_data["description"] = ""
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = google_calendar_url(encounter, "https://example.com")
+
+        assert "example.com" in result
+        assert "A+great+session" not in result
+
+
+class TestOutlookCalendarUrl:
+    @pytest.fixture
+    def base_encounter_data(self):
+        now = datetime.now(tz=UTC)
+        return {
+            "creation_time": now,
+            "creator_id": 1,
+            "description": "A great session",
+            "end_time": now + timedelta(hours=2),
+            "game": "D&D",
+            "header_image": "",
+            "max_participants": 6,
+            "pk": 1,
+            "place": "Room 42",
+            "share_code": "ABC123",
+            "sphere_id": 1,
+            "start_time": now,
+            "title": "My Encounter",
+        }
+
+    def test_excludes_location_when_place_empty(self, base_encounter_data):
+        base_encounter_data["place"] = ""
+        encounter = EncounterDTO(**base_encounter_data)
+
+        result = outlook_calendar_url(encounter, "https://example.com")
+
+        assert "location=" not in result
+
+
+class TestGetDaysToEvent:
+    @pytest.fixture
+    def base_event_data(self):
+        now = datetime.now(tz=UTC)
+        return {
+            "description": "Test event",
+            "end_time": now + timedelta(days=7),
+            "name": "Test Event",
+            "pk": 1,
+            "proposal_end_time": now + timedelta(days=1),
+            "proposal_start_time": now - timedelta(days=1),
+            "publication_time": now - timedelta(days=2),
+            "slug": "test-event",
+            "sphere_id": 1,
+            "start_time": now + timedelta(days=5),
+        }
+
+    def test_returns_positive_days_for_future_event(self, base_event_data):
+        days_ahead = 5
+        base_event_data["start_time"] = datetime.now(tz=UTC) + timedelta(
+            days=days_ahead
+        )
+        event = EventDTO(**base_event_data)
+
+        result = get_days_to_event(event)
+
+        assert result == days_ahead - 1  # timedelta.days truncates partial day
+
+    def test_returns_zero_for_past_event(self, base_event_data):
+        base_event_data["start_time"] = datetime.now(tz=UTC) - timedelta(days=2)
+        event = EventDTO(**base_event_data)
+
+        result = get_days_to_event(event)
+
+        assert result == 0
+
+
+class TestProposeSessionService:
+    @pytest.fixture
+    def mock_uow(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def mock_context(self):
+        ctx = MagicMock()
+        ctx.current_sphere_id = 1
+        ctx.current_user_id = 1
+        ctx.current_user_slug = "test-user"
+        return ctx
+
+    @pytest.fixture
+    def service(self, mock_uow, mock_context):
+        return ProposeSessionService(mock_uow, mock_context)
+
+    def test_submit_raises_value_error_when_title_missing(self, service):
+        now = datetime.now(tz=UTC)
+        event = EventDTO(
+            description="Test",
+            end_time=now + timedelta(days=7),
+            name="Test Event",
+            pk=1,
+            proposal_end_time=now + timedelta(days=1),
+            proposal_start_time=now - timedelta(days=1),
+            publication_time=now - timedelta(days=2),
+            slug="test-event",
+            sphere_id=1,
+            start_time=now + timedelta(days=5),
+        )
+        wizard_data = {"category_id": 1, "session_data": {"description": "No title"}}
+
+        with pytest.raises(ValueError, match="session_data must contain 'title'"):
+            service.submit(event, wizard_data)

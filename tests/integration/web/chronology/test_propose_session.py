@@ -10,7 +10,6 @@ from ludamus.adapters.db.django.models import (
     PersonalDataField,
     PersonalDataFieldOption,
     PersonalDataFieldRequirement,
-    Proposal,
     Session,
     SessionField,
     SessionFieldOption,
@@ -842,8 +841,6 @@ class TestProposeSessionPageView:
         session = Session.objects.get(title="Test Session")
         assert session.participants_limit == int("6")
         assert session.category == proposal_category
-        proposal = Proposal.objects.get(session=session)
-        assert proposal.title == "Test Session"
 
     def test_submit_saves_personal_data(
         self, authenticated_client, event, faker, time_zone, proposal_category

@@ -3,7 +3,7 @@ from http import HTTPStatus
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import Proposal, ProposalCategory, TimeSlot
+from ludamus.adapters.db.django.models import ProposalCategory, Session, TimeSlot
 from tests.integration.conftest import EventFactory, TimeSlotFactory, UserFactory
 from tests.integration.utils import assert_response
 
@@ -63,10 +63,17 @@ class TestTimeSlotDeleteActionView:
             event=event, name="Session", slug="session"
         )
         host = UserFactory(username="host", user_type="active")
-        proposal = Proposal.objects.create(
-            title="Test", category=category, host=host, participants_limit=10
+        session = Session.objects.create(
+            title="Test",
+            slug="test",
+            category=category,
+            sphere=sphere,
+            presenter=host,
+            display_name=host.username,
+            status="pending",
+            participants_limit=10,
         )
-        proposal.time_slots.add(time_slot)
+        session.time_slots.add(time_slot)
 
         response = authenticated_client.post(self.get_url(event, time_slot))
 

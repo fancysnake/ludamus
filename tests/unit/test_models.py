@@ -18,7 +18,6 @@ from ludamus.adapters.db.django.models import (
     PersonalDataField,
     PersonalDataFieldOption,
     PersonalDataFieldRequirement,
-    Proposal,
     ProposalCategory,
     Session,
     SessionField,
@@ -217,13 +216,6 @@ class TestProposalCategory:
         pk = faker.random_int(min=1)
 
         assert str(ProposalCategory(name=name, id=pk)) == f"{name} ({pk})"
-
-
-class TestProposal:
-    def test_str(self, faker):
-        title = faker.word()
-
-        assert str(Proposal(title=title)) == title
 
 
 class TestSessionParticipation:
