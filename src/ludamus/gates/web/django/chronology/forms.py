@@ -92,6 +92,14 @@ def build_session_details_form(
             label=_("Description"), widget=forms.Textarea(attrs={"rows": 4})
         ),
         "participants_limit": forms.IntegerField(**participants_kwargs),
+        "min_age": forms.IntegerField(
+            label=_("Minimum age"),
+            required=False,
+            min_value=0,
+            max_value=18,
+            initial=0,
+            help_text=_("0 = no age restriction"),
+        ),
         "display_name": forms.CharField(label=_("Presenter name"), max_length=255),
     }
 

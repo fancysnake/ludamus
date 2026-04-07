@@ -46,6 +46,16 @@
                             {% endif %}
                         </dd>
                     </div>
+                    <div>
+                        <dt class="text-xs text-foreground-muted">{% translate "Minimum age" %}</dt>
+                        <dd class="text-foreground">
+                            {% if review.min_age %}
+                                {{ review.min_age }}+
+                            {% else %}
+                                {% translate "All ages" %}
+                            {% endif %}
+                        </dd>
+                    </div>
                     {% for field in review.session_fields %}
                         {% if field.is_public %}
                             <div>
