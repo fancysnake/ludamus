@@ -6,7 +6,7 @@
          data-session-id="{{ data.session.pk }}"
          data-host="{{ data.session.display_name }}"
          data-tags="{% for tag in data.tags %}{{ tag.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
-         data-tag-categories="{% for tag in data.tags %}{{ tag.category.name|slugify }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
+         data-tag-categories="{% for tag in data.tags %}{{ tag.category.slug }}:{{ tag.name }}{% if not forloop.last %};{% endif %}{% endfor %}"
          data-status="{% if ended %}ended{% elif data.is_ongoing %}in-progress{% elif not data.is_enrollment_available %}unavailable{% elif data.is_full %}full{% else %}available{% endif %}"
          data-debug-ended="{{ ended|yesno:'true,false' }}"
          data-debug-is-ongoing="{{ data.is_ongoing|yesno:'true,false' }}"

@@ -2,7 +2,7 @@
 
 For each event's tag categories, create equivalent SessionField (SELECT,
 is_multiple=True) with SessionFieldOptions, SessionFieldRequirements, and
-SessionFieldValues.  Also wire up EventSettings.filterable_session_fields.
+SessionFieldValues.  Also wire up EventSettings.displayed_session_fields.
 """
 
 from collections import defaultdict
@@ -84,7 +84,7 @@ def _create_requirements(apps, tc_to_sf):
 
 
 def _wire_filterable_fields(apps, tc_to_sf):
-    """Wire EventSettings.filterable_session_fields from Event.filterable_tag_categories."""
+    """Wire EventSettings.displayed_session_fields from Event.filterable_tag_categories."""
     Event = apps.get_model("db_main", "Event")
     EventSettings = apps.get_model("db_main", "EventSettings")
 
@@ -99,7 +99,7 @@ def _wire_filterable_fields(apps, tc_to_sf):
         for tc_id in ftc_ids:
             sf = tc_to_sf.get((event.id, tc_id))
             if sf:
-                settings.filterable_session_fields.add(sf)
+                settings.displayed_session_fields.add(sf)
 
 
 def _migrate_session_tags(apps, tc_to_sf):

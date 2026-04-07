@@ -387,7 +387,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
 
 class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
-    """Display settings page — filterable session fields."""
+    """Display settings page — displayed session fields on cards."""
 
     request: PanelRequest
 
@@ -405,7 +405,7 @@ class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
             current_event.pk
         )
         context["fields"] = fields
-        context["filterable_field_ids"] = settings_dto.filterable_session_field_ids
+        context["filterable_field_ids"] = settings_dto.displayed_session_field_ids
 
         return TemplateResponse(self.request, "panel/display-settings.html", context)
 
@@ -419,7 +419,7 @@ class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         selected_ids = [
-            int(pk) for pk in self.request.POST.getlist("filterable_session_fields")
+            int(pk) for pk in self.request.POST.getlist("displayed_session_fields")
         ]
         # Validate against actual session field PKs
         valid_pks = {
@@ -428,7 +428,7 @@ class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
         }
         filtered_ids = [pk for pk in selected_ids if pk in valid_pks]
 
-        self.request.di.uow.event_settings.update_filterable_fields(
+        self.request.di.uow.event_settings.update_displayed_fields(
             current_event.pk, filtered_ids
         )
 
@@ -578,13 +578,11 @@ class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
             presenter = self.request.di.uow.sessions.read_presenter(proposal_id)
         except NotFoundError:
             presenter = None
-        tags = self.request.di.uow.sessions.read_tags(proposal_id)
         field_values = self.request.di.uow.sessions.read_field_values(proposal_id)
 
         context["active_nav"] = "proposals"
         context["proposal"] = session
         context["host"] = presenter
-        context["tags"] = tags
         context["field_values"] = field_values
         return TemplateResponse(self.request, "panel/proposal-detail.html", context)
 

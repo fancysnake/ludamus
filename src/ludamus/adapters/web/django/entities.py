@@ -9,7 +9,13 @@ if TYPE_CHECKING:
 
     from ludamus.adapters.db.django.models import Event
     from ludamus.gates.web.django.entities import UserInfo
-    from ludamus.pacts import AgendaItemDTO, LocationData, SessionDTO, UserDTO
+    from ludamus.pacts import (
+        AgendaItemDTO,
+        LocationData,
+        SessionDTO,
+        SessionFieldValueDTO,
+        UserDTO,
+    )
 
 
 @dataclass
@@ -19,6 +25,7 @@ class TagCategoryData:
     icon: str
     name: str
     pk: int
+    slug: str = ""
 
 
 @dataclass
@@ -55,7 +62,8 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     has_any_enrollments: bool = False
     user_enrolled: bool = False
     user_waiting: bool = False
-    filterable_tags: list[TagWithCategory] = field(default_factory=list)
+    displayed_tags: list[TagWithCategory] = field(default_factory=list)
+    field_values: list[SessionFieldValueDTO] = field(default_factory=list)
     waiting_count: int = 0
     is_ongoing: bool = False  # True if session has already started
     should_show_as_inactive: bool = (

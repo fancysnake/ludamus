@@ -46,7 +46,7 @@
                             {% for field in fields %}
                                 <label class="flex items-center">
                                     <input type="checkbox"
-                                           name="filterable_session_fields"
+                                           name="displayed_session_fields"
                                            value="{{ field.pk }}"
                                            {% if field.pk in filterable_field_ids %}checked{% endif %}
                                            class="rounded border-border text-primary focus:ring-primary">

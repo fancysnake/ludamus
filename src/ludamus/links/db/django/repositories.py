@@ -378,7 +378,14 @@ class SessionRepository(SessionRepositoryProtocol):
         )
         return [
             SessionFieldValueDTO(
-                field_name=v.field.name, field_question=v.field.question, value=v.value
+                allow_custom=v.field.allow_custom,
+                field_icon=v.field.icon,
+                field_name=v.field.name,
+                field_question=v.field.question,
+                field_slug=v.field.slug,
+                field_type=v.field.field_type,
+                is_public=v.field.is_public,
+                value=v.value,
             )
             for v in values
         ]
@@ -576,15 +583,15 @@ class EventSettingsRepository(EventSettingsRepositoryProtocol):
         settings, _ = EventSettings.objects.get_or_create(event_id=event_id)
         return EventSettingsDTO(
             pk=settings.pk,
-            filterable_session_field_ids=list(
-                settings.filterable_session_fields.values_list("pk", flat=True)
+            displayed_session_field_ids=list(
+                settings.displayed_session_fields.values_list("pk", flat=True)
             ),
         )
 
     @staticmethod
-    def update_filterable_fields(event_id: int, field_ids: list[int]) -> None:
+    def update_displayed_fields(event_id: int, field_ids: list[int]) -> None:
         settings, _ = EventSettings.objects.get_or_create(event_id=event_id)
-        settings.filterable_session_fields.set(field_ids)
+        settings.displayed_session_fields.set(field_ids)
 
 
 class VenueRepository(VenueRepositoryProtocol):

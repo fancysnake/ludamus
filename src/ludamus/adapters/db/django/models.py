@@ -1150,7 +1150,7 @@ class EventSettings(models.Model):
     event = models.OneToOneField(
         Event, on_delete=models.CASCADE, related_name="settings"
     )
-    filterable_session_fields = models.ManyToManyField(SessionField, blank=True)
+    displayed_session_fields = models.ManyToManyField(SessionField, blank=True)
 
     class Meta:
         db_table = "event_settings"

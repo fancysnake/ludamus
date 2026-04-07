@@ -47,8 +47,13 @@ class ProposalCategoryDTO(BaseModel):
 class SessionFieldValueDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    allow_custom: bool = False
+    field_icon: str = ""
     field_name: str
     field_question: str
+    field_slug: str = ""
+    field_type: str = "text"
+    is_public: bool = False
     value: str | list[str] | bool
 
 
@@ -509,7 +514,7 @@ class EventSettingsDTO(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    filterable_session_field_ids: list[int] = []
+    displayed_session_field_ids: list[int] = []
     pk: int
 
 
@@ -972,7 +977,7 @@ class EventSettingsRepositoryProtocol(Protocol):
     @staticmethod
     def read_or_create(event_id: int) -> EventSettingsDTO: ...
     @staticmethod
-    def update_filterable_fields(event_id: int, field_ids: list[int]) -> None: ...
+    def update_displayed_fields(event_id: int, field_ids: list[int]) -> None: ...
 
 
 class EnrollmentConfigRepositoryProtocol(Protocol):

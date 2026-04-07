@@ -507,7 +507,6 @@ class TestProposalDetailPageView:
                 "active_nav": "proposals",
                 "proposal": SessionDTO.model_validate(session),
                 "host": UserDTO.model_validate(active_user),
-                "tags": [],
                 "field_values": [],
             },
         )
@@ -549,11 +548,11 @@ class TestProposalDetailPageView:
                 "active_nav": "proposals",
                 "proposal": SessionDTO.model_validate(session),
                 "host": UserDTO.model_validate(active_user),
-                "tags": [],
                 "field_values": [
                     SessionFieldValueDTO(
                         field_name="System",
                         field_question="What RPG system?",
+                        field_slug="system",
                         value="D&D 5e",
                     )
                 ],
