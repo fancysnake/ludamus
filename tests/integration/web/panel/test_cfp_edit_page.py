@@ -22,7 +22,7 @@ from ludamus.pacts import (
     SessionFieldDTO,
     TimeSlotDTO,
 )
-from tests.integration.conftest import ProposalFactory, SessionFactory, UserFactory
+from tests.integration.conftest import SessionFactory, UserFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -1961,7 +1961,7 @@ class TestCFPEditPageView:
         HostPersonalData.objects.create(
             user=host, event=event, field=email_field, value="host@example.com"
         )
-        ProposalFactory.create(category=category, host=host)
+        SessionFactory.create(category=category, presenter=host, sphere=event.sphere)
 
         # Action: remove the field requirement (don't include it in POST)
         authenticated_client.post(
@@ -1990,7 +1990,7 @@ class TestCFPEditPageView:
         )
         # Setup: existing proposal without the field requirement
         host = UserFactory.create()
-        ProposalFactory.create(category=category, host=host)
+        SessionFactory.create(category=category, presenter=host, sphere=event.sphere)
         assert not HostPersonalData.objects.filter(
             user=host, event=event, field=email_field
         ).exists()

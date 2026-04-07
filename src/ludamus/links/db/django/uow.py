@@ -61,10 +61,6 @@ class UnitOfWork(UnitOfWorkProtocol):  # noqa: PLR0904
         return repositories.ProposalCategoryRepository()
 
     @cached_property
-    def proposals(self) -> repositories.ProposalRepository:
-        return repositories.ProposalRepository()
-
-    @cached_property
     def session_fields(self) -> repositories.SessionFieldRepository:
         return repositories.SessionFieldRepository()
 

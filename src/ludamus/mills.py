@@ -331,10 +331,6 @@ class ProposeSessionService:
                 create_data, tag_ids=[], time_slot_ids=time_slot_ids
             )
 
-            self._uow.proposals.create_from_session(
-                category_id, self._context.current_user_id, session_id, create_data
-            )
-
             self._save_session_field_values(session_id, event.pk, session_data)
 
             if personal_data := wizard_data.get("personal_data", {}):

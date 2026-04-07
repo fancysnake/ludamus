@@ -44,38 +44,23 @@ class ProposalCategoryDTO(BaseModel):
     start_time: datetime | None
 
 
-class ProposalDTO(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    creation_time: datetime
-    description: str
-    host_id: int
-    min_age: int
-    needs: str
-    participants_limit: int
-    pk: int
-    requirements: str
-    session_id: int | None
-    title: str
-
-
-class ProposalListItemDTO(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    category_name: str
-    creation_time: datetime
-    host_name: str
-    pk: int
-    session_status: "SessionStatus"
-    title: str
-
-
 class SessionFieldValueDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     field_name: str
     field_question: str
     value: str | list[str] | bool
+
+
+class SessionListItemDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    category_name: str
+    creation_time: datetime
+    display_name: str
+    pk: int
+    status: "SessionStatus"
+    title: str
 
 
 class AgendaItemDTO(BaseModel):
@@ -680,41 +665,6 @@ class UserRepositoryProtocol(Protocol):
     def email_exists(email: str, exclude_slug: str | None = None) -> bool: ...
 
 
-class ProposalRepositoryProtocol(Protocol):
-    @staticmethod
-    def read_event(proposal_id: int) -> EventDTO: ...
-    @staticmethod
-    def read_host(proposal_id: int) -> UserDTO: ...
-    @staticmethod
-    def read_spaces(proposal_id: int) -> list[SpaceDTO]: ...
-    @staticmethod
-    def read_tag_ids(proposal_id: int) -> list[int]: ...
-    @staticmethod
-    def read_time_slot(proposal_id: int, time_slot_id: int) -> TimeSlotDTO: ...
-    @staticmethod
-    def read(pk: int) -> ProposalDTO: ...
-    @staticmethod
-    def update(proposal_dto: ProposalDTO) -> None: ...
-    @staticmethod
-    def count_by_category(category_id: int) -> int: ...
-    @staticmethod
-    def read_tags(proposal_id: int) -> list[TagDTO]: ...
-    @staticmethod
-    def read_tag_categories(proposal_id: int) -> list[TagCategoryDTO]: ...
-    @staticmethod
-    def create_from_session(
-        category_id: int, host_id: int, session_id: int, session_data: SessionData
-    ) -> None: ...
-    @staticmethod
-    def list_proposals_by_event(
-        event_id: int,
-        *,
-        host_name: str | None = None,
-        field_filters: dict[int, str] | None = None,
-        search: str | None = None,
-    ) -> list[ProposalListItemDTO]: ...
-
-
 class SessionRepositoryProtocol(Protocol):
     @staticmethod
     def create(
@@ -760,6 +710,14 @@ class SessionRepositoryProtocol(Protocol):
     ) -> None: ...
     @staticmethod
     def read_field_values(session_id: int) -> list[SessionFieldValueDTO]: ...
+    @staticmethod
+    def list_sessions_by_event(
+        event_id: int,
+        *,
+        presenter_name: str | None = None,
+        field_filters: dict[int, str] | None = None,
+        search: str | None = None,
+    ) -> list[SessionListItemDTO]: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):
@@ -1112,8 +1070,6 @@ class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     def proposal_categories(self) -> ProposalCategoryRepositoryProtocol: ...
     @property
     def session_fields(self) -> SessionFieldRepositoryProtocol: ...
-    @property
-    def proposals(self) -> ProposalRepositoryProtocol: ...
     @property
     def sessions(self) -> SessionRepositoryProtocol: ...
     @property

@@ -236,6 +236,30 @@ class TestProposalAcceptPageView:
             url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
         )
 
+    def test_post_invalid_space_id(
+        self, active_user, event, pending_session, space, staff_client, time_slot
+    ):
+        response = staff_client.post(
+            self._get_url(pending_session.id),
+            data={"space": 99999, "time_slot": time_slot.id},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "event": EventDTO.model_validate(event),
+                "form": ANY,
+                "session": SessionDTO.model_validate(pending_session),
+                "presenter": UserDTO.model_validate(active_user),
+                "spaces": [SpaceDTO.model_validate(space)],
+                "time_slots": [TimeSlotDTO.model_validate(time_slot)],
+                "tags": [],
+                "preferred_time_slot_ids": [],
+            },
+            template_name="chronology/accept_proposal.html",
+        )
+
     def test_post_ok_conflict(
         self, staff_user, event, pending_session, space, staff_client, time_slot
     ):

@@ -1421,7 +1421,7 @@ test.describe('Backoffice Panel', () => {
         });
         await expect(row).toBeVisible();
         await expect(
-          row.getByText('E2E Tester'),
+          row.getByText('Game Master Alex'),
         ).toBeVisible();
         await expect(
           row.getByText('Tabletop RPG'),

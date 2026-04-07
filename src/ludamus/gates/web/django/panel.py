@@ -537,9 +537,9 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
             if value := self.request.GET.get(f"field_{field.pk}", "").strip():
                 field_filters[field.pk] = value
 
-        context["proposals"] = self.request.di.uow.proposals.list_proposals_by_event(
+        context["proposals"] = self.request.di.uow.sessions.list_sessions_by_event(
             current_event.pk,
-            host_name=host_name,
+            presenter_name=host_name,
             field_filters=field_filters or None,
             search=search,
         )
@@ -564,28 +564,26 @@ class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         try:
-            proposal = self.request.di.uow.proposals.read(proposal_id)
+            session = self.request.di.uow.sessions.read(proposal_id)
         except NotFoundError:
             messages.error(self.request, _("Proposal not found."))
             return redirect("panel:proposals", slug=slug)
 
-        proposal_event = self.request.di.uow.proposals.read_event(proposal_id)
-        if proposal_event.pk != current_event.pk:
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
             messages.error(self.request, _("Proposal not found."))
             return redirect("panel:proposals", slug=slug)
 
-        host = self.request.di.uow.proposals.read_host(proposal_id)
-        tags = self.request.di.uow.proposals.read_tags(proposal_id)
-
-        field_values = []
-        if proposal.session_id:
-            field_values = self.request.di.uow.sessions.read_field_values(
-                proposal.session_id
-            )
+        try:
+            presenter = self.request.di.uow.sessions.read_presenter(proposal_id)
+        except NotFoundError:
+            presenter = None
+        tags = self.request.di.uow.sessions.read_tags(proposal_id)
+        field_values = self.request.di.uow.sessions.read_field_values(proposal_id)
 
         context["active_nav"] = "proposals"
-        context["proposal"] = proposal
-        context["host"] = host
+        context["proposal"] = session
+        context["host"] = presenter
         context["tags"] = tags
         context["field_values"] = field_values
         return TemplateResponse(self.request, "panel/proposal-detail.html", context)

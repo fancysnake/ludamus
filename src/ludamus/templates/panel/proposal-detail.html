@@ -28,8 +28,12 @@
         <div class="card mb-6">
             <div class="card-body">
                 <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Host" %}</h3>
-                <p class="text-foreground">{{ host.name }}</p>
-                {% if host.email %}<p class="text-sm text-foreground-muted">{{ host.email }}</p>{% endif %}
+                {% if host %}
+                    <p class="text-foreground">{{ host.name }}</p>
+                    {% if host.email %}<p class="text-sm text-foreground-muted">{{ host.email }}</p>{% endif %}
+                {% else %}
+                    <p class="text-foreground-muted">{{ proposal.display_name }}</p>
+                {% endif %}
             </div>
         </div>
         {% if proposal.description %}
