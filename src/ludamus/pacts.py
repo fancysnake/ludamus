@@ -53,6 +53,7 @@ class SessionFieldValueDTO(BaseModel):
     field_name: str
     field_question: str
     field_slug: str = ""
+    field_order: int = 0
     field_type: str = "text"
     is_public: bool = False
     value: str | list[str] | bool
