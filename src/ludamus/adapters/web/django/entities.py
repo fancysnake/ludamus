@@ -27,26 +27,27 @@ class DisplayFieldRow:
     visible_values: list[str]
     overflow_values: list[str]
 
-    _MAX_VISIBLE = 4
-
     @property
     def overflow_count(self) -> int:
         return len(self.overflow_values)
 
-    @classmethod
-    def from_field_value(cls, fv: SessionFieldValueDTO) -> Self:
-        if isinstance(fv.value, list):
-            str_values = [v for v in fv.value if isinstance(v, str)]
-        elif isinstance(fv.value, str):
-            str_values = [fv.value]
-        else:
-            str_values = []
-        return cls(
-            icon=fv.field_icon,
-            name=fv.field_name,
-            visible_values=str_values[: cls._MAX_VISIBLE],
-            overflow_values=str_values[cls._MAX_VISIBLE :],
-        )
+
+_MAX_VISIBLE_PILLS = 4
+
+
+def build_display_field_row(fv: SessionFieldValueDTO) -> DisplayFieldRow:
+    if isinstance(fv.value, list):
+        str_values = [v for v in fv.value if isinstance(v, str)]
+    elif isinstance(fv.value, str):
+        str_values = [fv.value]
+    else:
+        str_values = []
+    return DisplayFieldRow(
+        icon=fv.field_icon,
+        name=fv.field_name,
+        visible_values=str_values[:_MAX_VISIBLE_PILLS],
+        overflow_values=str_values[_MAX_VISIBLE_PILLS:],
+    )
 
 
 @dataclass

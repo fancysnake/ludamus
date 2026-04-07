@@ -15,7 +15,7 @@ from ludamus.pacts import (
     VenueDTO,
 )
 
-from .entities import DisplayFieldRow, EventInfo, ParticipationInfo, SessionData
+from .entities import EventInfo, ParticipationInfo, SessionData, build_display_field_row
 
 _DESIGN_PLACEHOLDER_IMAGE = "placeholder-images/01.jpg"
 
@@ -148,9 +148,7 @@ def mock_session_data() -> SessionData:
         session_participations=session_participations,
         loc=_mock_venue_and_space(creation),
         field_values=field_values,
-        displayed_field_rows=[
-            DisplayFieldRow.from_field_value(fv) for fv in field_values
-        ],
+        displayed_field_rows=[build_display_field_row(fv) for fv in field_values],
     )
 
 

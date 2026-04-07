@@ -7,10 +7,10 @@ from django.urls import reverse
 from freezegun import freeze_time
 
 from ludamus.adapters.web.django.entities import (
-    DisplayFieldRow,
     EventInfo,
     ParticipationInfo,
     SessionData,
+    build_display_field_row,
 )
 from ludamus.gates.web.django.entities import UserInfo
 from ludamus.pacts import (
@@ -171,9 +171,7 @@ def _expected_session_data() -> SessionData:
         session_participations=session_participations,
         loc=_make_loc(creation),
         field_values=field_values,
-        displayed_field_rows=[
-            DisplayFieldRow.from_field_value(fv) for fv in field_values
-        ],
+        displayed_field_rows=[build_display_field_row(fv) for fv in field_values],
     )
 
 
@@ -247,9 +245,7 @@ def _expected_session_data_ended() -> SessionData:
         session_participations=ended_participations,
         loc=_make_loc(creation),
         field_values=field_values,
-        displayed_field_rows=[
-            DisplayFieldRow.from_field_value(fv) for fv in field_values
-        ],
+        displayed_field_rows=[build_display_field_row(fv) for fv in field_values],
     )
 
 

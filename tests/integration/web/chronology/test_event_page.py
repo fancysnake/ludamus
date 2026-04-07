@@ -17,9 +17,9 @@ from ludamus.adapters.db.django.models import (
     UserEnrollmentConfig,
 )
 from ludamus.adapters.web.django.entities import (
-    DisplayFieldRow,
     ParticipationInfo,
     SessionData,
+    build_display_field_row,
 )
 from ludamus.gates.web.django.entities import UserInfo
 from ludamus.links.gravatar import gravatar_url
@@ -1647,7 +1647,7 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_field_rows=[DisplayFieldRow.from_field_value(field_value_dto)],
+            displayed_field_rows=[build_display_field_row(field_value_dto)],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=False,
@@ -1691,10 +1691,10 @@ class TestEventPageView:
             template_name=["chronology/event.html"],
         )
 
-    def test_ok_session_with_non_select_field_excluded_from_displayed(
+    def test_ok_session_with_non_displayed_field_excluded_from_rows(
         self, active_user, agenda_item, client, event
     ):
-        """Text field values are not shown on cards even when public."""
+        """Field values not in displayed_session_fields are excluded from rows."""
         session_field = SessionField.objects.create(
             event=event,
             name="RPG System",
@@ -1743,6 +1743,167 @@ class TestEventPageView:
                     value="D&D 5e",
                 )
             ],
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": False,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {
+                    agenda_item.start_time: [session_data]
+                },
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "sessions": [session_data],
+                "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
+    def test_ok_session_with_displayed_text_field(
+        self, active_user, agenda_item, client, event
+    ):
+        """Text field values appear on cards when field is displayed."""
+        session_field = SessionField.objects.create(
+            event=event,
+            name="RPG System",
+            question="What RPG system?",
+            slug="rpg-system",
+            field_type="text",
+            is_public=True,
+        )
+        session = agenda_item.session
+        SessionFieldValue.objects.create(
+            session=session, field=session_field, value="D&D 5e"
+        )
+        settings, _ = EventSettings.objects.get_or_create(event=event)
+        settings.displayed_session_fields.add(session_field)
+
+        response = client.get(self._get_url(event.slug))
+
+        field_value_dto = SessionFieldValueDTO(
+            allow_custom=False,
+            field_icon="",
+            field_id=session_field.pk,
+            field_name="RPG System",
+            field_question="What RPG system?",
+            field_slug="rpg-system",
+            field_type="text",
+            is_public=True,
+            value="D&D 5e",
+        )
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            displayed_field_rows=[build_display_field_row(field_value_dto)],
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            presenter=UserInfo.from_user_dto(
+                UserDTO.model_validate(active_user), gravatar_url=gravatar_url
+            ),
+            session_participations=[],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            field_values=[field_value_dto],
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": False,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {
+                    agenda_item.start_time: [session_data]
+                },
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "sessions": [session_data],
+                "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
+    def test_ok_session_with_displayed_checkbox_field(
+        self, active_user, agenda_item, client, event
+    ):
+        """Checkbox field values appear on cards when field is displayed."""
+        session_field = SessionField.objects.create(
+            event=event,
+            name="Beginner Friendly",
+            question="Is this beginner friendly?",
+            slug="beginner-friendly",
+            field_type="checkbox",
+            is_public=True,
+            icon="academic-cap",
+        )
+        session = agenda_item.session
+        SessionFieldValue.objects.create(
+            session=session, field=session_field, value=True
+        )
+        settings, _ = EventSettings.objects.get_or_create(event=event)
+        settings.displayed_session_fields.add(session_field)
+
+        response = client.get(self._get_url(event.slug))
+
+        field_value_dto = SessionFieldValueDTO(
+            allow_custom=False,
+            field_icon="academic-cap",
+            field_id=session_field.pk,
+            field_name="Beginner Friendly",
+            field_question="Is this beginner friendly?",
+            field_slug="beginner-friendly",
+            field_type="checkbox",
+            is_public=True,
+            value=True,
+        )
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            displayed_field_rows=[build_display_field_row(field_value_dto)],
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            presenter=UserInfo.from_user_dto(
+                UserDTO.model_validate(active_user), gravatar_url=gravatar_url
+            ),
+            session_participations=[],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            field_values=[field_value_dto],
             user_enrolled=False,
             user_waiting=False,
         )
