@@ -55,7 +55,7 @@ def _make_presenter() -> UserInfo:
 
 
 def _make_tags() -> list[TagWithCategory]:
-    category_themes = TagCategoryData(icon="", name="Themes", pk=1)
+    category_themes = TagCategoryData(icon="", name="Themes", pk=1, slug="themes")
     tag_names = [
         "horror",
         "mystery",

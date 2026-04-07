@@ -5,8 +5,22 @@ import pytest
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import AgendaItem, Session, Space
-from ludamus.pacts import EventDTO, SessionDTO, SpaceDTO, TimeSlotDTO, UserDTO
+from ludamus.adapters.db.django.models import (
+    AgendaItem,
+    Session,
+    SessionField,
+    SessionFieldValue,
+    Space,
+)
+from ludamus.adapters.web.django.entities import TagCategoryData, TagWithCategory
+from ludamus.pacts import (
+    EventDTO,
+    SessionDTO,
+    SessionFieldValueDTO,
+    SpaceDTO,
+    TimeSlotDTO,
+    UserDTO,
+)
 from tests.integration.utils import assert_response
 
 
@@ -297,6 +311,155 @@ class TestProposalAcceptPageView:
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "tags": [],
                 "field_values": [],
+                "preferred_time_slot_ids": [],
+            },
+            template_name="chronology/accept_proposal.html",
+        )
+
+    def test_get_ok_with_select_field_tags(
+        self, active_user, event, pending_session, space, staff_client, time_slot
+    ):
+        """Public select field values are converted to tags."""
+        session_field = SessionField.objects.create(
+            event=event,
+            name="Game Type",
+            question="Game Type",
+            slug="game-type",
+            field_type="select",
+            is_multiple=True,
+            is_public=True,
+            icon="puzzle-piece",
+        )
+        SessionFieldValue.objects.create(
+            session=pending_session, field=session_field, value=["RPG"]
+        )
+
+        response = staff_client.get(self._get_url(pending_session.id))
+
+        expected_tag = TagWithCategory(
+            category=TagCategoryData(
+                icon="puzzle-piece", name="Game Type", pk=0, slug="game-type"
+            ),
+            category_id=0,
+            confirmed=True,
+            name="RPG",
+            pk=0,
+        )
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "event": EventDTO.model_validate(event),
+                "form": ANY,
+                "session": SessionDTO.model_validate(pending_session),
+                "presenter": UserDTO.model_validate(active_user),
+                "spaces": [SpaceDTO.model_validate(space)],
+                "time_slots": [TimeSlotDTO.model_validate(time_slot)],
+                "tags": [expected_tag],
+                "field_values": [
+                    SessionFieldValueDTO(
+                        allow_custom=False,
+                        field_icon="puzzle-piece",
+                        field_name="Game Type",
+                        field_question="Game Type",
+                        field_slug="game-type",
+                        field_type="select",
+                        is_public=True,
+                        value=["RPG"],
+                    )
+                ],
+                "preferred_time_slot_ids": [],
+            },
+            template_name="chronology/accept_proposal.html",
+        )
+
+    def test_get_ok_with_text_field_excluded_from_tags(
+        self, active_user, event, pending_session, space, staff_client, time_slot
+    ):
+        """Text field values are not converted to tags."""
+        session_field = SessionField.objects.create(
+            event=event,
+            name="RPG System",
+            question="What RPG system?",
+            slug="rpg-system",
+            field_type="text",
+            is_public=True,
+        )
+        SessionFieldValue.objects.create(
+            session=pending_session, field=session_field, value="D&D 5e"
+        )
+
+        response = staff_client.get(self._get_url(pending_session.id))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "event": EventDTO.model_validate(event),
+                "form": ANY,
+                "session": SessionDTO.model_validate(pending_session),
+                "presenter": UserDTO.model_validate(active_user),
+                "spaces": [SpaceDTO.model_validate(space)],
+                "time_slots": [TimeSlotDTO.model_validate(time_slot)],
+                "tags": [],
+                "field_values": [
+                    SessionFieldValueDTO(
+                        allow_custom=False,
+                        field_icon="",
+                        field_name="RPG System",
+                        field_question="What RPG system?",
+                        field_slug="rpg-system",
+                        field_type="text",
+                        is_public=True,
+                        value="D&D 5e",
+                    )
+                ],
+                "preferred_time_slot_ids": [],
+            },
+            template_name="chronology/accept_proposal.html",
+        )
+
+    def test_get_ok_with_boolean_select_field_excluded_from_tags(
+        self, active_user, event, pending_session, space, staff_client, time_slot
+    ):
+        """Public select field with a boolean value is not converted to a tag."""
+        session_field = SessionField.objects.create(
+            event=event,
+            name="Has Minis",
+            question="Do you use miniatures?",
+            slug="has-minis",
+            field_type="select",
+            is_public=True,
+        )
+        SessionFieldValue.objects.create(
+            session=pending_session, field=session_field, value=True
+        )
+
+        response = staff_client.get(self._get_url(pending_session.id))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "event": EventDTO.model_validate(event),
+                "form": ANY,
+                "session": SessionDTO.model_validate(pending_session),
+                "presenter": UserDTO.model_validate(active_user),
+                "spaces": [SpaceDTO.model_validate(space)],
+                "time_slots": [TimeSlotDTO.model_validate(time_slot)],
+                "tags": [],
+                "field_values": [
+                    SessionFieldValueDTO(
+                        allow_custom=False,
+                        field_icon="",
+                        field_name="Has Minis",
+                        field_question="Do you use miniatures?",
+                        field_slug="has-minis",
+                        field_type="select",
+                        is_public=True,
+                        value=True,
+                    )
+                ],
                 "preferred_time_slot_ids": [],
             },
             template_name="chronology/accept_proposal.html",
