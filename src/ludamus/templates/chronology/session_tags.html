@@ -1,24 +1,28 @@
 {% load i18n %}
 {% load tessera %}
-<div class="flex flex-wrap gap-1.5 mt-2 session-tags-row">
+<div class="flex flex-col gap-1.5 mt-2 session-tags-row max-h-[9rem] overflow-hidden">
     {% for fv in data.displayed_field_values %}
-        {% for val in fv.value %}
-            <span class="inline-flex items-center gap-1 rounded-2xl font-medium px-2.5 py-1 text-sm max-w-[200px] bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
-                  title="{{ val }} ({{ fv.field_name }})">
-                {% if fv.field_icon and forloop.first %}
-                    {% icon fv.field_icon class="size-4 shrink-0 opacity-80" variant="mini" %}
-                {% endif %}
-                <span class="truncate">{{ val }}</span>
-            </span>
-        {% endfor %}
+        <div class="flex flex-wrap gap-1 items-center max-h-[3.5rem] overflow-hidden">
+            {% for val in fv.value %}
+                <span class="inline-flex items-center gap-1 rounded-2xl font-medium px-2.5 py-0.5 text-sm max-w-[200px] bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
+                      title="{{ val }} ({{ fv.field_name }})">
+                    {% if fv.field_icon and forloop.first %}
+                        {% icon fv.field_icon class="size-3.5 shrink-0 opacity-80" variant="mini" %}
+                    {% endif %}
+                    <span class="truncate">{{ val }}</span>
+                </span>
+            {% endfor %}
+        </div>
     {% endfor %}
-    {% if data.session.min_age > 0 %}
-        <span class="px-2.5 py-1 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-100 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
-              title="{% translate "Minimum age" %}: {{ data.session.min_age }} {% translate "years" %}">
-            {{ data.session.min_age }}+
-        </span>
-    {% else %}
-        <span class="px-2.5 py-1 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-200/80 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
-              title="{% translate "All ages welcome" %}">{% translate "All ages" %}</span>
-    {% endif %}
+    <div class="flex flex-wrap gap-1 items-center">
+        {% if data.session.min_age > 0 %}
+            <span class="px-2.5 py-0.5 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-100 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
+                  title="{% translate "Minimum age" %}: {{ data.session.min_age }} {% translate "years" %}">
+                {{ data.session.min_age }}+
+            </span>
+        {% else %}
+            <span class="px-2.5 py-0.5 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-200/80 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
+                  title="{% translate "All ages welcome" %}">{% translate "All ages" %}</span>
+        {% endif %}
+    </div>
 </div>
