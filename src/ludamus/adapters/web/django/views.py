@@ -44,6 +44,7 @@ from ludamus.adapters.db.django.models import (
 )
 from ludamus.adapters.oauth import oauth
 from ludamus.adapters.web.django.entities import (
+    DisplayFieldRow,
     EventInfo,
     ParticipationInfo,
     SessionData,
@@ -1152,8 +1153,8 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         # Set displayed field values and display status for each session
         displayed_field_ids = _get_displayed_field_ids(self.object)
         for session_data in sessions_data.values():
-            session_data.displayed_field_values = [
-                fv
+            session_data.displayed_field_rows = [
+                DisplayFieldRow.from_field_value(fv)
                 for fv in session_data.field_values
                 if fv.field_id in displayed_field_ids
                 and fv.field_type == "select"
