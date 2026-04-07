@@ -25,9 +25,13 @@ class DisplayFieldRow:
     icon: str
     name: str
     visible_values: list[str]
-    overflow_count: int
+    overflow_values: list[str]
 
-    _MAX_VISIBLE = 6
+    _MAX_VISIBLE = 4
+
+    @property
+    def overflow_count(self) -> int:
+        return len(self.overflow_values)
 
     @classmethod
     def from_field_value(cls, fv: SessionFieldValueDTO) -> Self:
@@ -41,7 +45,7 @@ class DisplayFieldRow:
             icon=fv.field_icon,
             name=fv.field_name,
             visible_values=str_values[: cls._MAX_VISIBLE],
-            overflow_count=max(0, len(str_values) - cls._MAX_VISIBLE),
+            overflow_values=str_values[cls._MAX_VISIBLE :],
         )
 
 
