@@ -19,6 +19,33 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class DisplayFieldRow:
+    """A field's values capped for card display."""
+
+    icon: str
+    name: str
+    visible_values: list[str]
+    overflow_count: int
+
+    _MAX_VISIBLE = 6
+
+    @classmethod
+    def from_field_value(cls, fv: SessionFieldValueDTO) -> Self:
+        if isinstance(fv.value, list):
+            str_values = [v for v in fv.value if isinstance(v, str)]
+        elif isinstance(fv.value, str):
+            str_values = [fv.value]
+        else:
+            str_values = []
+        return cls(
+            icon=fv.field_icon,
+            name=fv.field_name,
+            visible_values=str_values[: cls._MAX_VISIBLE],
+            overflow_count=max(0, len(str_values) - cls._MAX_VISIBLE),
+        )
+
+
+@dataclass
 class ParticipationInfo:
     user: UserInfo
     status: str
@@ -40,7 +67,7 @@ class SessionData:  # pylint: disable=too-many-instance-attributes
     has_any_enrollments: bool = False
     user_enrolled: bool = False
     user_waiting: bool = False
-    displayed_field_values: list[SessionFieldValueDTO] = field(default_factory=list)
+    displayed_field_rows: list[DisplayFieldRow] = field(default_factory=list)
     field_values: list[SessionFieldValueDTO] = field(default_factory=list)
     waiting_count: int = 0
     is_ongoing: bool = False  # True if session has already started

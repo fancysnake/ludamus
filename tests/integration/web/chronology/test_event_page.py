@@ -16,7 +16,11 @@ from ludamus.adapters.db.django.models import (
     SessionParticipationStatus,
     UserEnrollmentConfig,
 )
-from ludamus.adapters.web.django.entities import ParticipationInfo, SessionData
+from ludamus.adapters.web.django.entities import (
+    DisplayFieldRow,
+    ParticipationInfo,
+    SessionData,
+)
 from ludamus.gates.web.django.entities import UserInfo
 from ludamus.links.gravatar import gravatar_url
 from ludamus.pacts import (
@@ -1643,7 +1647,7 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_field_values=[field_value_dto],
+            displayed_field_rows=[DisplayFieldRow.from_field_value(field_value_dto)],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=False,
