@@ -556,7 +556,7 @@
                                         {% if pending.tags %}
                                             <div class="flex flex-wrap gap-1 mt-1">
                                                 {% for tag in pending.tags %}
-                                                    <span class="inline-flex items-center rounded-2xl font-medium text-xs px-2 py-0.5 bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300">{{ tag.name }}</span>
+                                                    {% include "components/_field_pill.html" with value=tag.name size="sm" %}
                                                 {% endfor %}
                                             </div>
                                         {% endif %}
@@ -655,7 +655,7 @@
                                         style="color: var(--color-foreground-secondary)">{% translate "Tags" %}</h4>
                                     <div class="flex flex-wrap gap-1.5">
                                         {% for tag in pending.tags %}
-                                            <span class="inline-flex items-center rounded-2xl font-medium text-xs px-2 py-0.5 bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300">{{ tag.name }}</span>
+                                            {% include "components/_field_pill.html" with value=tag.name size="sm" %}
                                         {% endfor %}
                                     </div>
                                 </div>

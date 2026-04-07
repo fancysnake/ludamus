@@ -38,13 +38,7 @@
                             <h6 class="font-semibold text-foreground-secondary text-sm">{% translate "Session fields" %}</h6>
                             <div class="flex flex-wrap gap-1 mb-3">
                                 {% for fv in field_values %}
-                                    <span class="inline-flex items-center gap-1 rounded-2xl font-medium text-xs px-2 py-0.5 bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300"
-                                          title="{{ fv.field_name }}">
-                                        {% if fv.field_icon %}
-                                            {% icon fv.field_icon class="size-3.5 shrink-0 opacity-80" variant="mini" %}
-                                        {% endif %}
-                                        <span class="truncate">{{ fv.value|format_field_value }}</span>
-                                    </span>
+                                    {% include "components/_field_pill.html" with value=fv.value|format_field_value icon=fv.field_icon title=fv.field_name size="sm" %}
                                 {% endfor %}
                             </div>
                         {% endif %}
