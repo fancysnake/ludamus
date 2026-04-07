@@ -10,9 +10,14 @@ from tests.integration.utils import assert_response
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
 
 
-def _create_session_field(event, name="Test Field", slug="test-field"):
+def _create_session_field(event, name="Test Field", slug="test-field", **kwargs):
+    defaults = {"is_public": True}
     return SessionField.objects.create(
-        event=event, name=name, slug=slug, question=f"What is {name}?"
+        event=event,
+        name=name,
+        slug=slug,
+        question=f"What is {name}?",
+        **(defaults | kwargs),
     )
 
 
@@ -81,6 +86,18 @@ class TestEventDisplaySettingsPageViewGet:
 
         assert len(response.context["fields"]) == 1
         assert response.context["fields"][0].pk == field.pk
+
+    def test_excludes_non_public_fields(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        _create_session_field(event, name="Public", slug="public", is_public=True)
+        _create_session_field(event, name="Private", slug="private", is_public=False)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        field_names = [f.name for f in response.context["fields"]]
+        assert field_names == ["Public"]
 
     def test_redirects_on_invalid_slug(self, authenticated_client, active_user, sphere):
         sphere.managers.add(active_user)

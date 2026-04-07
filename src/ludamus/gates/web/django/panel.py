@@ -400,11 +400,11 @@ class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
         context["active_tab"] = "display"
         context["tab_urls"] = _settings_tab_urls(slug)
 
-        fields = self.request.di.uow.session_fields.list_by_event(current_event.pk)
+        all_fields = self.request.di.uow.session_fields.list_by_event(current_event.pk)
         settings_dto = self.request.di.uow.event_settings.read_or_create(
             current_event.pk
         )
-        context["fields"] = fields
+        context["fields"] = [f for f in all_fields if f.is_public]
         context["filterable_field_ids"] = settings_dto.displayed_session_field_ids
 
         return TemplateResponse(self.request, "panel/display-settings.html", context)
@@ -421,10 +421,11 @@ class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):
         selected_ids = [
             int(pk) for pk in self.request.POST.getlist("displayed_session_fields")
         ]
-        # Validate against actual session field PKs
+        # Validate against public session field PKs only
         valid_pks = {
             f.pk
             for f in self.request.di.uow.session_fields.list_by_event(current_event.pk)
+            if f.is_public
         }
         filtered_ids = [pk for pk in selected_ids if pk in valid_pks]
 
