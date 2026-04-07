@@ -16,12 +16,7 @@ from ludamus.adapters.db.django.models import (
     SessionParticipationStatus,
     UserEnrollmentConfig,
 )
-from ludamus.adapters.web.django.entities import (
-    ParticipationInfo,
-    SessionData,
-    TagCategoryData,
-    TagWithCategory,
-)
+from ludamus.adapters.web.django.entities import ParticipationInfo, SessionData
 from ludamus.gates.web.django.entities import UserInfo
 from ludamus.links.gravatar import gravatar_url
 from ludamus.pacts import (
@@ -142,7 +137,6 @@ class TestEventPageView:
             effective_participants_limit=10,
             enrolled_count=1,
             waiting_count=1,
-            displayed_tags=[],
             full_participant_info="1/10, 1 waiting",
             has_any_enrollments=True,
             is_enrollment_available=False,
@@ -174,7 +168,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(session.agenda_item.space.area),
                 venue=VenueDTO.model_validate(session.agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=True,
             user_waiting=True,
         )
@@ -212,7 +205,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=False,
@@ -227,7 +219,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -269,7 +260,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=0,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0",
             has_any_enrollments=False,
             is_enrollment_available=False,
@@ -284,7 +274,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -330,7 +319,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=False,
@@ -353,7 +341,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -390,7 +377,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=False,
@@ -407,7 +393,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -442,7 +427,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=False,
@@ -459,7 +443,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -724,7 +707,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=1,
-            displayed_tags=[],
             full_participant_info="1/10",
             has_any_enrollments=True,
             is_enrollment_available=False,
@@ -750,7 +732,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=True,
             user_waiting=False,
         )
@@ -793,7 +774,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -810,7 +790,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -878,7 +857,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -895,7 +873,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -954,7 +931,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -971,7 +947,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1034,7 +1009,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -1051,7 +1025,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1111,7 +1084,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -1128,7 +1100,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1190,7 +1161,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -1207,7 +1177,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1265,7 +1234,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -1282,7 +1250,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1352,7 +1319,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -1369,7 +1335,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1431,7 +1396,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -1448,7 +1412,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1519,7 +1482,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -1536,7 +1498,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1601,7 +1562,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=True,
@@ -1618,7 +1578,6 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1646,10 +1605,10 @@ class TestEventPageView:
             template_name=["chronology/event.html"],
         )
 
-    def test_ok_session_with_displayed_tags(
+    def test_ok_session_with_displayed_field_values(
         self, active_user, agenda_item, client, event
     ):
-        """Session field values are shown as tags when the field is displayed."""
+        """Select field values are shown on cards when the field is displayed."""
         session_field = SessionField.objects.create(
             event=event,
             name="Game Type",
@@ -1669,23 +1628,22 @@ class TestEventPageView:
 
         response = client.get(self._get_url(event.slug))
 
-        tag_with_category = TagWithCategory(
-            category=TagCategoryData(
-                icon="puzzle-piece",
-                name="Game Type",
-                pk=session_field.pk,
-                slug="game-type",
-            ),
-            category_id=session_field.pk,
-            confirmed=True,
-            name="RPG",
-            pk=0,
+        field_value_dto = SessionFieldValueDTO(
+            allow_custom=False,
+            field_icon="puzzle-piece",
+            field_id=session_field.pk,
+            field_name="Game Type",
+            field_question="Game Type",
+            field_slug="game-type",
+            field_type="select",
+            is_public=True,
+            value=["RPG"],
         )
         session_data = SessionData(
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[tag_with_category],
+            displayed_field_values=[field_value_dto],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=False,
@@ -1702,19 +1660,7 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[tag_with_category],
-            field_values=[
-                SessionFieldValueDTO(
-                    allow_custom=False,
-                    field_icon="puzzle-piece",
-                    field_name="Game Type",
-                    field_question="Game Type",
-                    field_slug="game-type",
-                    field_type="select",
-                    is_public=True,
-                    value=["RPG"],
-                )
-            ],
+            field_values=[field_value_dto],
             user_enrolled=False,
             user_waiting=False,
         )
@@ -1741,10 +1687,10 @@ class TestEventPageView:
             template_name=["chronology/event.html"],
         )
 
-    def test_ok_session_with_non_select_field_excluded_from_tags(
+    def test_ok_session_with_non_select_field_excluded_from_displayed(
         self, active_user, agenda_item, client, event
     ):
-        """Text field values are not converted to tags even when public."""
+        """Text field values are not shown on cards even when public."""
         session_field = SessionField.objects.create(
             event=event,
             name="RPG System",
@@ -1764,7 +1710,6 @@ class TestEventPageView:
             agenda_item=AgendaItemDTO.model_validate(agenda_item),
             effective_participants_limit=10,
             enrolled_count=0,
-            displayed_tags=[],
             full_participant_info="0/10",
             has_any_enrollments=False,
             is_enrollment_available=False,
@@ -1781,11 +1726,11 @@ class TestEventPageView:
                 area=AreaDTO.model_validate(agenda_item.space.area),
                 venue=VenueDTO.model_validate(agenda_item.space.area.venue),
             ),
-            tags=[],
             field_values=[
                 SessionFieldValueDTO(
                     allow_custom=False,
                     field_icon="",
+                    field_id=session_field.pk,
                     field_name="RPG System",
                     field_question="What RPG system?",
                     field_slug="rpg-system",

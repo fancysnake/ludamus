@@ -10,11 +10,16 @@ from ludamus.adapters.web.django.entities import (
     EventInfo,
     ParticipationInfo,
     SessionData,
-    TagCategoryData,
-    TagWithCategory,
 )
 from ludamus.gates.web.django.entities import UserInfo
-from ludamus.pacts import AgendaItemDTO, SessionDTO, SessionStatus, SpaceDTO, VenueDTO
+from ludamus.pacts import (
+    AgendaItemDTO,
+    SessionDTO,
+    SessionFieldValueDTO,
+    SessionStatus,
+    SpaceDTO,
+    VenueDTO,
+)
 from tests.integration.utils import assert_response
 
 FROZEN_TIME = "2026-01-15 12:00:00"
@@ -54,35 +59,28 @@ def _make_presenter() -> UserInfo:
     )
 
 
-def _make_tags() -> list[TagWithCategory]:
-    category_themes = TagCategoryData(icon="", name="Themes", pk=1, slug="themes")
-    tag_names = [
-        "horror",
-        "mystery",
-        "18+",
-        "one-shot",
-        "PbtA",
-        "cooperative",
-        "extra tag for popover",
-        "fantasy",
-        "sci-fi",
-        "comedy",
-        "drama",
-        "sandbox",
-        "narrative",
-        "GM-less",
-        "2-4h",
-        "beginner-friendly",
-        "mature themes",
-        "improvisation",
-        "pre-generated",
-        "homebrew",
-    ]
+def _make_field_values() -> list[SessionFieldValueDTO]:
     return [
-        TagWithCategory(
-            category=category_themes, category_id=1, confirmed=True, name=name, pk=i
-        )
-        for i, name in enumerate(tag_names, start=1)
+        SessionFieldValueDTO(
+            field_icon="book-open",
+            field_id=1,
+            field_name="System",
+            field_question="What RPG system?",
+            field_slug="system",
+            field_type="select",
+            is_public=True,
+            value=["D&D 5e", "Pathfinder", "Fate"],
+        ),
+        SessionFieldValueDTO(
+            field_icon="exclamation-triangle",
+            field_id=2,
+            field_name="Triggers",
+            field_question="Content warnings?",
+            field_slug="triggers",
+            field_type="select",
+            is_public=True,
+            value=["horror", "violence"],
+        ),
     ]
 
 
@@ -115,7 +113,7 @@ def _expected_session_data() -> SessionData:
     end = start + timedelta(hours=2)
     creation = FROZEN_NOW - timedelta(days=30)
     presenter = _make_presenter()
-    tags = _make_tags()
+    field_values = _make_field_values()
     participant_users = [
         UserInfo(
             avatar_url=None,
@@ -165,13 +163,14 @@ def _expected_session_data() -> SessionData:
             presenter_id=18,
             status=SessionStatus.ACCEPTED,
         ),
-        tags=tags,
         is_full=False,
         full_participant_info="4/6",
         effective_participants_limit=6,
         enrolled_count=2,
         session_participations=session_participations,
         loc=_make_loc(creation),
+        field_values=field_values,
+        displayed_field_values=field_values,
     )
 
 
@@ -181,7 +180,7 @@ def _expected_session_data_ended() -> SessionData:
     end = start + timedelta(hours=2)
     creation = FROZEN_NOW - timedelta(days=30)
     presenter = _make_presenter()
-    tags = _make_tags()[:3]
+    field_values = _make_field_values()[:1]
     ended_participants = [
         UserInfo(
             avatar_url=None,
@@ -238,13 +237,14 @@ def _expected_session_data_ended() -> SessionData:
             presenter_id=18,
             status=SessionStatus.ACCEPTED,
         ),
-        tags=tags,
         is_full=True,
         full_participant_info="6/6",
         effective_participants_limit=6,
         enrolled_count=6,
         session_participations=ended_participations,
         loc=_make_loc(creation),
+        field_values=field_values,
+        displayed_field_values=field_values,
     )
 
 

@@ -49,6 +49,7 @@ class SessionFieldValueDTO(BaseModel):
 
     allow_custom: bool = False
     field_icon: str = ""
+    field_id: int = 0
     field_name: str
     field_question: str
     field_slug: str = ""

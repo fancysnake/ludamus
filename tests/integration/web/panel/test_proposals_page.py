@@ -550,6 +550,7 @@ class TestProposalDetailPageView:
                 "host": UserDTO.model_validate(active_user),
                 "field_values": [
                     SessionFieldValueDTO(
+                        field_id=field.pk,
                         field_name="System",
                         field_question="What RPG system?",
                         field_slug="system",

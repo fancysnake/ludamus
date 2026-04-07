@@ -380,6 +380,7 @@ class SessionRepository(SessionRepositoryProtocol):
             SessionFieldValueDTO(
                 allow_custom=v.field.allow_custom,
                 field_icon=v.field.icon,
+                field_id=v.field_id,
                 field_name=v.field.name,
                 field_question=v.field.question,
                 field_slug=v.field.slug,
