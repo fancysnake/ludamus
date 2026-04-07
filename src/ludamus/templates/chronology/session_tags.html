@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load tessera %}
 <div class="flex flex-wrap gap-2 mt-2 session-tags-row">
-    {% for tag in data.tags|slice:":5" %}
+    {% for tag in data.displayed_tags|slice:":5" %}
         {% include "components/tag.html" with tag=tag %}
     {% endfor %}
     {% if data.session.min_age > 0 %}
@@ -13,7 +13,7 @@
         <span class="px-2.5 py-1 rounded-2xl text-sm font-medium max-w-[200px] truncate bg-coral-200/80 dark:bg-coral-900/50 text-coral-700 h-fit dark:text-coral-300"
               title="{% translate "All ages welcome" %}">{% translate "All ages" %}</span>
     {% endif %}
-    {% with overflow=data.tags|slice:"5:" %}
+    {% with overflow=data.displayed_tags|slice:"5:" %}
         {% if overflow %}
             <div class="session-tags-more relative inline-block">
                 <div class="session-tags-popover absolute z-30 min-w-[14rem] max-w-[20rem] rounded-xl border border-neutral-200/25 dark:border-neutral-600/25 bg-neutral-50 dark:bg-neutral-800 p-2 shadow-xl opacity-0 pointer-events-none transition-opacity duration-150 flex flex-wrap gap-2">

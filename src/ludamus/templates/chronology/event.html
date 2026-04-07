@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load tessera %}
+{% load cfp_tags %}
 {% load static %}
 {% block title %}
     {{ event.name }}
@@ -342,17 +343,15 @@
                                         </div>
                                     </div>
                                     <div id="tag-filters" class="contents">
-                                        {% for category in filterable_tag_categories %}
+                                        {% for field in filterable_tag_categories %}
                                             <div class="flex flex-col gap-1.5 grow">
                                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest grow text-foreground-muted"
-                                                       for="tag-filter-{{ category.name|slugify }}">
-                                                    {{ category.name }}
-                                                </label>
+                                                       for="tag-filter-{{ field.slug }}">{{ field.name }}</label>
                                                 <select class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
                                                         style="border-color: var(--theme-border)"
-                                                        data-category="{{ category.name|slugify }}"
-                                                        id="tag-filter-{{ category.name|slugify }}">
-                                                    <option value="">{% translate "All" %} {{ category.name }}</option>
+                                                        data-category="{{ field.slug }}"
+                                                        id="tag-filter-{{ field.slug }}">
+                                                    <option value="">{% translate "All" %} {{ field.name }}</option>
                                                 </select>
                                             </div>
                                         {% endfor %}
@@ -795,11 +794,30 @@
                             </div>
                         </div>
                     {% endif %}
-                    {% if data.tags %}
-                        <!-- Tags -->
-                        <div class="flex flex-wrap gap-2 mb-6">
-                            {% for tag in data.tags %}
-                                {% include "components/tag.html" with tag=tag %}
+                    {% if data.field_values %}
+                        <!-- Session Fields -->
+                        <div class="space-y-4 mb-6">
+                            {% for fv in data.field_values %}
+                                <div>
+                                    <h4 class="text-sm font-semibold mb-1"
+                                        style="color: var(--color-foreground-secondary)">
+                                        {% if fv.field_icon %}
+                                            {% icon fv.field_icon class="w-4 h-4 inline mr-1" variant="mini" %}
+                                        {% endif %}
+                                        {{ fv.field_name }}
+                                    </h4>
+                                    {% if fv.field_type == "select" and not fv.allow_custom %}
+                                        <div class="flex flex-wrap gap-1.5">
+                                            {% for val in fv.value %}
+                                                <span class="inline-flex items-center gap-1 rounded-2xl font-medium px-2.5 py-1 text-sm bg-warm-200/80 dark:bg-neutral-700 text-warm-700 dark:text-neutral-300">{{ val }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="leading-relaxed" style="color: var(--color-foreground-muted)">
+                                            {{ fv.value|format_field_value|linebreaks }}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             {% endfor %}
                         </div>
                     {% endif %}
@@ -838,15 +856,6 @@
                             </div>
                         </div>
                     </div>
-                    {% if data.session.requirements %}
-                        <div class="mb-6">
-                            <h3 class="font-semibold mb-2"
-                                style="color: var(--color-foreground-secondary)">{% translate "Requirements" %}</h3>
-                            <div class="leading-relaxed" style="color: var(--color-foreground-muted)">
-                                {{ data.session.requirements|linebreaks }}
-                            </div>
-                        </div>
-                    {% endif %}
                     <!-- Enrollment Status for Authenticated Users -->
                     {% if current_user and data.user_enrolled %}
                         <div class="pt-4" style="border-top: 1px solid var(--theme-border)">

@@ -142,7 +142,7 @@ class TestEventDisplaySettingsPageViewPost:
 
         response = authenticated_client.post(
             self.get_url(event),
-            data={"filterable_session_fields": [str(field1.pk), str(field2.pk)]},
+            data={"displayed_session_fields": [str(field1.pk), str(field2.pk)]},
         )
 
         assert_response(
@@ -164,7 +164,7 @@ class TestEventDisplaySettingsPageViewPost:
 
         # First set a field
         settings, _ = EventSettings.objects.get_or_create(event=event)
-        settings.filterable_session_fields.set([field.pk])
+        settings.displayed_session_fields.set([field.pk])
 
         # Then clear via POST
         response = authenticated_client.post(self.get_url(event), data={})

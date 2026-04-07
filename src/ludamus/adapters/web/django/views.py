@@ -35,7 +35,9 @@ from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
     EnrollmentConfig,
     Event,
+    EventSettings,
     Session,
+    SessionFieldValue,
     SessionParticipation,
     SessionParticipationStatus,
     can_enroll_users,
@@ -67,6 +69,7 @@ from ludamus.pacts import (
     NotFoundError,
     RedirectError,
     SessionDTO,
+    SessionFieldValueDTO,
     SessionRepositoryProtocol,
     SessionStatus,
     SpaceDTO,
@@ -83,6 +86,9 @@ from .forms import (
     create_enrollment_form,
     create_proposal_acceptance_form,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -735,6 +741,83 @@ class UserDiscordUsernameComponentView(View):
         return HttpResponse("")
 
 
+def _tags_from_field_values(
+    field_values: Iterable[SessionFieldValue],
+) -> list[TagWithCategory]:
+    tags: list[TagWithCategory] = []
+    for fv in field_values:
+        field = fv.field
+        if field.field_type != "select" or not field.is_public:
+            continue
+        category = TagCategoryData(
+            icon=field.icon, name=field.name, pk=field.pk, slug=field.slug
+        )
+        values = fv.value if isinstance(fv.value, list) else [fv.value]
+        tags.extend(
+            TagWithCategory(
+                category=category, category_id=field.pk, confirmed=True, name=v, pk=0
+            )
+            for v in values
+            if isinstance(v, str)
+        )
+    return tags
+
+
+def _tags_from_field_value_dtos(
+    field_values: list[SessionFieldValueDTO],
+) -> list[TagWithCategory]:
+    tags: list[TagWithCategory] = []
+    for fv in field_values:
+        if fv.field_type != "select" or not fv.is_public:
+            continue
+        if not isinstance(fv.value, (str, list)):
+            continue
+        category = TagCategoryData(
+            icon=fv.field_icon, name=fv.field_name, pk=0, slug=fv.field_slug
+        )
+        values = fv.value if isinstance(fv.value, list) else [fv.value]
+        tags.extend(
+            TagWithCategory(
+                category=category, category_id=0, confirmed=True, name=v, pk=0
+            )
+            for v in values
+        )
+    return tags
+
+
+def _get_displayed_field_ids(event: Event) -> set[int]:
+    with suppress(EventSettings.DoesNotExist):
+        return set(event.settings.displayed_session_fields.values_list("id", flat=True))
+    return set()
+
+
+def _get_public_select_fields(event: Event) -> list[Any]:
+    return list(
+        event.session_fields.filter(field_type="select", is_public=True).order_by(
+            "order", "name"
+        )
+    )
+
+
+def _field_value_dtos_from_models(
+    field_values: Iterable[SessionFieldValue],
+) -> list[SessionFieldValueDTO]:
+    return [
+        SessionFieldValueDTO(
+            allow_custom=fv.field.allow_custom,
+            field_icon=fv.field.icon,
+            field_name=fv.field.name,
+            field_question=fv.field.question,
+            field_slug=fv.field.slug,
+            field_type=fv.field.field_type,
+            is_public=fv.field.is_public,
+            value=fv.value,
+        )
+        for fv in field_values
+        if fv.field.is_public
+    ]
+
+
 class EventPageView(DetailView):  # type: ignore [type-arg]
     template_name = "chronology/event.html"
     model = Event
@@ -746,10 +829,9 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
             Event.objects.filter(sphere_id=self.request.context.current_sphere_id)
             .select_related("sphere")
             .prefetch_related(
-                "venues__areas__spaces__agenda_items__session__tags__category",
+                "venues__areas__spaces__agenda_items__session__field_values__field",
                 "venues__areas__spaces__agenda_items__session__session_participations__user",
                 "enrollment_configs",
-                "filterable_tag_categories",
             )
         )
 
@@ -854,8 +936,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         context["enrollment_requires_slots"] = requires_slots
         context.update(self._get_anonymous_context())
 
-        filterable_categories = self.object.filterable_tag_categories.all()
-        context["filterable_tag_categories"] = list(filterable_categories)
+        context["filterable_tag_categories"] = _get_public_select_fields(self.object)
         context.update(self._get_pending_sessions_context())
 
         return context
@@ -1074,18 +1155,8 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 agenda_item=AgendaItemDTO.model_validate(session.agenda_item),
                 session=SessionDTO.model_validate(session),
                 presenter=presenter,
-                tags=[
-                    TagWithCategory(
-                        category=TagCategoryData(
-                            icon=t.category.icon, name=t.category.name, pk=t.category.pk
-                        ),
-                        category_id=t.category_id,
-                        confirmed=t.confirmed,
-                        name=t.name,
-                        pk=t.pk,
-                    )
-                    for t in session.tags.select_related("category").all()
-                ],
+                tags=_tags_from_field_values(session.field_values.all()),
+                field_values=_field_value_dtos_from_models(session.field_values.all()),
                 is_enrollment_available=session.is_enrollment_available,
                 is_full=session.is_full,
                 loc=LocationData(
@@ -1124,15 +1195,13 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
         if limit_configs:
             earliest_limit_end_time = min(config.end_time for config in limit_configs)
 
-        # Set filterable tags and display status for each session
-        filterable_categories = set(
-            self.object.filterable_tag_categories.all().values_list("id", flat=True)
-        )
+        # Set displayed tags and display status for each session
+        displayed_field_ids = _get_displayed_field_ids(self.object)
         for session_data in sessions_data.values():
-            session_data.filterable_tags = [
+            session_data.displayed_tags = [
                 tag
                 for tag in session_data.tags
-                if tag.category_id in filterable_categories
+                if tag.category_id in displayed_field_ids
             ]
 
             session_start = session_data.agenda_item.start_time
@@ -1644,11 +1713,7 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         form: forms.Form,
     ) -> dict[str, Any]:
         session_repository = request.di.uow.sessions
-        tags = session_repository.read_tags(session.pk)
-        tag_categories = {
-            tc.pk: TagCategoryData(icon=tc.icon, name=tc.name, pk=tc.pk)
-            for tc in session_repository.read_tag_categories(session.pk)
-        }
+        field_values = session_repository.read_field_values(session.pk)
         return {
             "session": session,
             "presenter": session_repository.read_presenter(session.pk),
@@ -1659,16 +1724,8 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
                 session.pk
             ),
             "form": form,
-            "tags": [
-                TagWithCategory(
-                    category=tag_categories[tag.category_id],
-                    category_id=tag.category_id,
-                    confirmed=tag.confirmed,
-                    name=tag.name,
-                    pk=tag.pk,
-                )
-                for tag in tags
-            ],
+            "tags": _tags_from_field_value_dtos(field_values),
+            "field_values": field_values,
         }
 
     def get(self, request: AuthenticatedRootRequest, session_id: int) -> HttpResponse:

@@ -102,7 +102,6 @@ class TestProposalDetailPageView:
                 },
                 "proposal": SessionDTO.model_validate(session),
                 "host": None,
-                "tags": [],
                 "field_values": [],
             },
         )

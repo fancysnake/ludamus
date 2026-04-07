@@ -86,7 +86,7 @@ def mock_session_data() -> SessionData:
     start = base_time.replace(hour=14, minute=0, second=0, microsecond=0)
     end = start + timedelta(hours=2)
     creation = datetime.now(UTC) - timedelta(days=30)
-    category_themes = TagCategoryData(icon="", name="Themes", pk=1)
+    category_themes = TagCategoryData(icon="", name="Themes", pk=1, slug="themes")
     tag_names = [
         "horror",
         "mystery",
