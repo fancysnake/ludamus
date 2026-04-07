@@ -382,6 +382,7 @@ class SessionRepository(SessionRepositoryProtocol):
                 field_icon=v.field.icon,
                 field_id=v.field_id,
                 field_name=v.field.name,
+                field_order=v.field.order,
                 field_question=v.field.question,
                 field_slug=v.field.slug,
                 field_type=v.field.field_type,
