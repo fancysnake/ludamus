@@ -1741,6 +1741,85 @@ class TestEventPageView:
             template_name=["chronology/event.html"],
         )
 
+    def test_ok_session_with_non_select_field_excluded_from_tags(
+        self, active_user, agenda_item, client, event
+    ):
+        """Text field values are not converted to tags even when public."""
+        session_field = SessionField.objects.create(
+            event=event,
+            name="RPG System",
+            question="What RPG system?",
+            slug="rpg-system",
+            field_type="text",
+            is_public=True,
+        )
+        session = agenda_item.session
+        SessionFieldValue.objects.create(
+            session=session, field=session_field, value="D&D 5e"
+        )
+
+        response = client.get(self._get_url(event.slug))
+
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            displayed_tags=[],
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=False,
+            is_full=False,
+            is_ongoing=False,
+            presenter=UserInfo.from_user_dto(
+                UserDTO.model_validate(active_user), gravatar_url=gravatar_url
+            ),
+            session_participations=[],
+            session=SessionDTO.model_validate(session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            tags=[],
+            field_values=[
+                SessionFieldValueDTO(
+                    allow_custom=False,
+                    field_icon="",
+                    field_name="RPG System",
+                    field_question="What RPG system?",
+                    field_slug="rpg-system",
+                    field_type="text",
+                    is_public=True,
+                    value="D&D 5e",
+                )
+            ],
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": False,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {
+                    agenda_item.start_time: [session_data]
+                },
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "sessions": [session_data],
+                "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
     def test_unpublished_event_returns_404_for_anonymous(self, client, sphere):
         event = EventFactory(sphere=sphere, publication_time=None)
 
