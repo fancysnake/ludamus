@@ -8,6 +8,14 @@ config:
 ---
 kanban
   Wishlist
+    [Component Views should be tested only in e2e tests]@{ assigned: 'tests' }
+    [Links should be passed only to mills]@{ assigned: 'GLIMPSE' }
+    [Split mills/pacts/inits into packages per GLIMPSE layer rules]@{
+      assigned: 'GLIMPSE'
+    }
+    [Split check_proposal_rate_limit into query + command]@{
+      assigned: 'GLIMPSE'
+    }
     [Duplicate code detection tooling]@{ assigned: 'agent-readiness' }
     [Technical debt markers tracking]@{ assigned: 'agent-readiness' }
     [Feature flag system]@{ assigned: 'agent-readiness' }
@@ -73,6 +81,9 @@ kanban
       assigned: 'pre-launch'
     }
     [Venues rework]@{ assigned: 'panel', ticket: 155 }
+    [Drop HostPersonalData.user FK after 0061 deploys, unify read path]@{
+      assigned: 'GLIMPSE'
+    }
 
   Roadmap
     [Expand README.md - description, features, architecture, quick start]@{
@@ -112,7 +123,6 @@ kanban
     [Timetable builder - drag-and-drop scheduling and conflict detection]@{
       assigned: 'panel'
     }
-    [Program categories - configurable submission forms]@{ assigned: 'panel' }
     [Event settings - discount tiers, submission periods]@{ assigned: 'panel' }
 
   Done
@@ -121,4 +131,5 @@ kanban
       assigned: 'agent-readiness'
     }
     [Dead code detection tooling]@{ assigned: 'agent-readiness' }
+    [Program categories - configurable submission forms]@{ assigned: 'panel' }
 ```

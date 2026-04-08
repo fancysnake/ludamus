@@ -243,6 +243,7 @@ class EventProposalSettings(models.Model):
         Event, on_delete=models.CASCADE, related_name="proposal_settings"
     )
     description = models.TextField(default="", blank=True)
+    allow_anonymous_proposals = models.BooleanField(default=False)
 
     class Meta:
         db_table = "event_proposal_settings"
@@ -579,6 +580,36 @@ class Tag(models.Model):
         return self.name
 
 
+class Facilitator(models.Model):
+    """Program creator / session facilitator, decoupled from User accounts."""
+
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="facilitators"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="facilitator_profiles",
+    )
+    display_name = models.CharField(max_length=255)
+    slug = models.SlugField()
+
+    class Meta:
+        db_table = "facilitator"
+        verbose_name = _("Twórca programu")
+        verbose_name_plural = _("Twórcy programu")
+        constraints = (
+            models.UniqueConstraint(
+                fields=("event", "slug"), name="facilitator_unique_slug_per_event"
+            ),
+        )
+
+    def __str__(self) -> str:
+        return self.display_name
+
+
 class SessionManager(models.Manager["Session"]):
     def has_conflicts(self, session: Session, user: UserDTO) -> bool:
         return (
@@ -616,6 +647,16 @@ class Session(models.Model):
         null=True,
         blank=True,
         related_name="presented_sessions",
+    )
+    proposed_by = models.ForeignKey(
+        Facilitator,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="proposed_sessions",
+    )
+    facilitators = models.ManyToManyField(
+        Facilitator, blank=True, related_name="sessions"
     )
     display_name = models.CharField(max_length=255)
     contact_email = models.EmailField(default="", blank=True)
@@ -929,7 +970,18 @@ class HostPersonalData(models.Model):
     """Stores personal data values for a host within an event."""
 
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="personal_data"
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="personal_data",
+    )
+    facilitator = models.ForeignKey(
+        Facilitator,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="personal_data",
     )
     event = models.ForeignKey(
         Event, on_delete=models.CASCADE, related_name="host_personal_data"
@@ -947,6 +999,12 @@ class HostPersonalData(models.Model):
             models.UniqueConstraint(
                 fields=("user", "event", "field"),
                 name="unique_personal_data_per_user_event_field",
+                condition=Q(user__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=("facilitator", "event", "field"),
+                name="unique_personal_data_per_facilitator_event_field",
+                condition=Q(facilitator__isnull=False),
             ),
         )
 

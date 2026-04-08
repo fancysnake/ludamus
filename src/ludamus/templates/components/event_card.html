@@ -4,7 +4,7 @@
 {# Event card component - expects 'event' in context #}
 {# Optional: 'variant' can be "past" for muted styling #}
 <a href="{% url 'web:chronology:event' slug=event.slug %}"
-   class="progressive-blur relative aspect-5/3 flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background"
+   class="progressive-blur relative min-h-56 flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 hover:[--pb-scale:1.01] duration-100 ring-offset-background"
    style="--pb-image: url('{{ event.cover_image_url }}'){% if variant == 'past' %};
           filter: saturate(0.7){% endif %}">
     {# Progressive blur layers #}
@@ -40,20 +40,17 @@
             {% endif %}
         </div>
     </div>
-    {# Tint overlay for readability - stronger gradient #}
-    <div class="absolute inset-x-0 bottom-0 pointer-events-none z-[7]"
-         style="height: 80%;
-                background: linear-gradient(to top, var(--theme-bg-secondary) 0%, var(--theme-bg-secondary) 20%, color-mix(in srgb, var(--theme-bg-secondary) 85%, transparent) 50%, transparent 100%)">
+    {# Tint overlay for readability — full height with bottom-anchored solid zone so #}
+    {# longer translations (e.g. Polish) never push the title off the cream backdrop. #}
+    {# Pure var() stops only; color-mix() inline breaks the whole gradient in Opera. #}
+    <div class="absolute inset-0 pointer-events-none z-[7]"
+         style="background: linear-gradient(to top, var(--theme-bg-secondary) 0%, var(--theme-bg-secondary) 55%, transparent 100%)">
     </div>
     {# Content area - sits on top #}
     <div class="relative px-5 pb-5 z-10">
-        <h3 class="mb-3 text-lg font-semibold leading-tight text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-            {{ event.name }}
-        </h3>
-        {% if event.description %}
-            <p class="mb-4 line-clamp-2 text-sm text-neutral-900 dark:text-neutral-100">{{ event.description }}</p>
-        {% endif %}
-        <div class="flex items-center justify-between border-t border-neutral-200/50 dark:border-neutral-700/50 pt-3 text-sm text-neutral-800 dark:text-neutral-200">
+        <h3 class="mb-3 text-lg font-semibold leading-tight text-foreground">{{ event.name }}</h3>
+        {% if event.description %}<p class="mb-4 line-clamp-2 text-sm text-foreground">{{ event.description }}</p>{% endif %}
+        <div class="flex items-center justify-between border-t border-neutral-200/50 dark:border-neutral-700/50 pt-3 text-sm text-foreground-secondary">
             <div class="flex items-center gap-1.5">
                 {% icon "calendar" class="h-4 w-4" %}
                 <span>{{ event|format_datetime_range }}</span>

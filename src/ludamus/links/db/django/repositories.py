@@ -16,6 +16,7 @@ from ludamus.adapters.db.django.models import (
     Event,
     EventProposalSettings,
     EventSettings,
+    Facilitator,
     HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -50,11 +51,16 @@ from ludamus.pacts import (
     EnrollmentConfigDTO,
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
+    EventProposalSettingsDTO,
+    EventProposalSettingsRepositoryProtocol,
     EventRepositoryProtocol,
     EventSettingsDTO,
     EventSettingsRepositoryProtocol,
     EventStatsData,
     EventUpdateData,
+    FacilitatorData,
+    FacilitatorDTO,
+    FacilitatorRepositoryProtocol,
     HostPersonalDataEntry,
     HostPersonalDataRepositoryProtocol,
     NotFoundError,
@@ -195,11 +201,14 @@ class SessionRepository(SessionRepositoryProtocol):
         session_data: SessionData,
         tag_ids: Iterable[int],
         time_slot_ids: Iterable[int] = (),
+        facilitator_ids: Iterable[int] = (),
     ) -> int:
         session = Session.objects.create(**session_data)
         session.tags.set(tag_ids)
         if time_slot_ids:
             session.time_slots.set(time_slot_ids)
+        if facilitator_ids:
+            session.facilitators.set(facilitator_ids)
         return session.pk
 
     @staticmethod
@@ -577,6 +586,13 @@ class EventRepository(EventRepositoryProtocol):
         EventProposalSettings.objects.update_or_create(
             event_id=event_id, defaults={"description": description}
         )
+
+
+class EventProposalSettingsRepository(EventProposalSettingsRepositoryProtocol):
+    @staticmethod
+    def read_or_create_by_event(event_id: int) -> EventProposalSettingsDTO:
+        settings, _ = EventProposalSettings.objects.get_or_create(event_id=event_id)
+        return EventProposalSettingsDTO.model_validate(settings)
 
 
 class EventSettingsRepository(EventSettingsRepositoryProtocol):
@@ -2020,23 +2036,42 @@ class SessionFieldRepository(SessionFieldRepositoryProtocol):
         )
 
 
+class FacilitatorRepository(FacilitatorRepositoryProtocol):
+    @staticmethod
+    def create(data: FacilitatorData) -> FacilitatorDTO:
+        facilitator = Facilitator.objects.create(**data)
+        return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
+    def read_by_user_and_event(user_id: int, event_id: int) -> FacilitatorDTO:
+        try:
+            facilitator = Facilitator.objects.get(user_id=user_id, event_id=event_id)
+        except Facilitator.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
+    def slug_exists(event_id: int, slug: str) -> bool:
+        return Facilitator.objects.filter(event_id=event_id, slug=slug).exists()
+
+
 class HostPersonalDataRepository(HostPersonalDataRepositoryProtocol):
     @staticmethod
     def save(entries: list[HostPersonalDataEntry]) -> None:
         for entry in entries:
             HostPersonalData.objects.update_or_create(
-                user_id=entry["user_id"],
+                facilitator_id=entry["facilitator_id"],
                 event_id=entry["event_id"],
                 field_id=entry["field_id"],
                 defaults={"value": entry["value"]},
             )
 
     @staticmethod
-    def read_for_user_event(
-        user_id: int, event_id: int
+    def read_for_facilitator_event(
+        facilitator_id: int, event_id: int
     ) -> dict[str, str | list[str] | bool]:
         records = HostPersonalData.objects.filter(
-            user_id=user_id, event_id=event_id
+            facilitator_id=facilitator_id, event_id=event_id
         ).select_related("field")
         return {hpd.field.slug: hpd.value for hpd in records}
 

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 import segno
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -15,6 +15,7 @@ from django.utils.translation import gettext_lazy
 from django.views.generic.base import TemplateView, View
 
 from ludamus.gates.web.django.entities import UserInfo
+from ludamus.gates.web.django.helpers import get_client_ip as _get_client_ip
 from ludamus.mills import (
     EncounterService,
     generate_ics_content,
@@ -330,12 +331,6 @@ class EncounterDetailPageView(View):
                 ),
             },
         )
-
-
-def _get_client_ip(request: HttpRequest) -> str:
-    if forwarded := request.META.get("HTTP_X_FORWARDED_FOR", ""):
-        return str(forwarded).split(",", maxsplit=1)[0].strip()
-    return str(request.META.get("REMOTE_ADDR", ""))
 
 
 class EncounterRSVPActionView(LoginRequiredMixin, View):

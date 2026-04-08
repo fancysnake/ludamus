@@ -11,6 +11,8 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
+    EventProposalSettings,
+    Facilitator,
     ProposalCategory,
     Session,
     SessionFieldValue,
@@ -51,6 +53,12 @@ class AgendaItemAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
+
+
+@admin.register(EventProposalSettings)
+class EventProposalSettingsAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = ("event", "allow_anonymous_proposals")
+    list_filter = ("allow_anonymous_proposals",)
 
 
 @admin.register(Space)
@@ -114,6 +122,15 @@ class TimeSlotAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
 class UserAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
     list_display = ("name", "user_type", "manager", "email", "discord_username")
     prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {"slug": ("name",)}
+
+
+@admin.register(Facilitator)
+class FacilitatorAdmin(admin.ModelAdmin):  # type: ignore [type-arg]
+    list_display = ("display_name", "event", "user")
+    list_filter = ("event",)
+    prepopulated_fields: ClassVar[dict[str, Sequence[str]]] = {
+        "slug": ("display_name",)
+    }
 
 
 @admin.register(ProposalCategory)
