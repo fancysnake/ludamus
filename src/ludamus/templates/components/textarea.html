@@ -1,9 +1,8 @@
 {# Textarea field. #}
 {# Variables: id, name, rows (default 4), placeholder, value, required (bool), has_errors #}
-<textarea class="w-full px-3 py-2 text-sm leading-relaxed rounded-lg border border-border bg-bg-secondary text-foreground placeholder:text-foreground-muted disabled:opacity-50 disabled:cursor-not-allowed"
+<textarea class="w-full px-3 py-2 text-sm leading-relaxed rounded-lg border {% if has_errors|default:False %}border-danger{% else %}border-border{% endif %} bg-bg-secondary text-foreground placeholder:text-foreground-muted disabled:opacity-50 disabled:cursor-not-allowed"
           {% if id %}id="{{ id }}"{% endif %}
           {% if name %}name="{{ name }}"{% endif %}
           rows="{{ rows|default:'4' }}"
           {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
-          {% if required %}required{% endif %}
-          {% if has_errors|default:False %}style="border-color: var(--theme-danger);"{% endif %}>{% if value %}{{ value }}{% endif %}</textarea>
+          {% if required %}required{% endif %}>{% if value %}{{ value }}{% endif %}</textarea>

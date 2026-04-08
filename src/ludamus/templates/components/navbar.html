@@ -1,8 +1,6 @@
 {% load i18n %}
 {% load tessera %}
-<nav class="sticky top-0 z-50 border-b"
-     style="background-color: var(--theme-bg-secondary);
-            border-color: var(--theme-border)">
+<nav class="sticky top-0 z-50 border-b bg-bg-secondary border-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-14">
             <div class="flex items-center gap-6">
@@ -52,16 +50,12 @@
                         </button>
                         <!-- Dropdown panel -->
                         <div class="absolute right-0 top-full pt-2 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 transition-all duration-150 ease-out z-50">
-                            <div class="w-48 rounded-lg shadow-lg border"
-                                 style="background-color: var(--theme-bg-secondary);
-                                        border-color: var(--theme-border);
-                                        box-shadow: var(--theme-shadow-lg)">
+                            <div class="w-48 rounded-lg shadow-lg border bg-bg-secondary border-border"
+                                 style="box-shadow: var(--theme-shadow-lg)">
                                 <!-- User info header -->
-                                <div class="px-3.5 py-2.5 border-b rounded-t-lg"
-                                     style="border-color: var(--theme-border)">
+                                <div class="px-3.5 py-2.5 border-b rounded-t-lg border-border">
                                     <p class="text-sm font-medium truncate text-foreground-primary">{{ request.user.full_name|default:"User" }}</p>
-                                    <p class="text-xs truncate mt-0.5"
-                                       style="color: var(--color-foreground-secondary)">{{ request.user.email }}</p>
+                                    <p class="text-xs truncate mt-0.5 text-foreground-secondary">{{ request.user.email }}</p>
                                 </div>
                                 {% if is_sphere_manager %}
                                     <a href="{% url 'panel:index' %}"
