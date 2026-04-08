@@ -11,7 +11,7 @@ test.describe('Event filter panel', () => {
 
     await page.goto('/chronology/event/autumn-open/');
     await page.locator('#filter-toggle').click();
-    await expect(page.locator('#filter-panel.is-open')).toBeAttached();
+    await expect(page.locator('#filter-panel.is-open')).toBeVisible();
 
     const box = await page.locator('#filter-panel').boundingBox();
     expect(box).not.toBeNull();
