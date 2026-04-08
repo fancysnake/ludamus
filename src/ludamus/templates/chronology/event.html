@@ -54,11 +54,9 @@
                             {% translate "Proposals Open" %}
                         </div>
                     {% endif %}
-                    <h1 class="text-3xl sm:text-4xl font-bold mb-3"
-                        style="color: var(--color-foreground)">{{ event.name }}</h1>
+                    <h1 class="text-3xl sm:text-4xl font-bold mb-3 text-foreground">{{ event.name }}</h1>
                     {% if event.description %}
-                        <p class="text-lg mb-6 max-w-2xl"
-                           style="color: var(--color-foreground-muted)">{{ event.description }}</p>
+                        <p class="text-lg mb-6 max-w-2xl text-foreground-muted">{{ event.description }}</p>
                     {% endif %}
                     <!-- Event meta -->
                     <div class="flex flex-wrap gap-4 text-sm">
@@ -67,8 +65,8 @@
                                 {% icon "calendar-days" class="w-4 h-4 text-coral-600" variant="mini" %}
                             </div>
                             <div>
-                                <div class="font-medium" style="color: var(--color-foreground)">{{ event.start_time|date:"l, F j" }}</div>
-                                <div style="color: var(--color-foreground-muted)">
+                                <div class="font-medium leading-none" style="color: var(--color-foreground)">{{ event.start_time|date:"l, F j" }}</div>
+                                <div class="text-foreground-muted leading-none mt-0.5">
                                     {{ event.start_time|time:"G:i" }} - {{ event.end_time|time:"G:i" }}
                                 </div>
                             </div>
