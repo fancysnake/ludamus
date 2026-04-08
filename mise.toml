@@ -6,6 +6,7 @@ jobs = 1
 python = "3.14"
 node = "v25.6.1"
 poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
+"ast-grep" = "0.42.1"
 
 [env]
 # Mise creates and activates this virtualenv automatically
@@ -69,6 +70,9 @@ run = "mise run _lint -- ruff check src tests"
 [tasks.ruff-fix]
 run = "mise run _lint -- ruff check --fix src tests"
 
+[tasks.ast-grep]
+run = "ast-grep scan --error src"
+
 [tasks.vulture]
 run = "vulture --config=pyproject.toml src"
 
@@ -83,6 +87,7 @@ depends = [
   "djlint-format",
   "pylint",
   "vulture",
+  "ast-grep",
 ]
 
 [tasks.prcheck]
@@ -94,6 +99,7 @@ depends = [
   "djlint",
   "pylint",
   "vulture",
+  "ast-grep",
 ]
 
 # DJANGO

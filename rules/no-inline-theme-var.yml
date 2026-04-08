@@ -1,0 +1,16 @@
+id: no-inline-theme-var
+language: html
+severity: warning
+rule:
+  kind: attribute
+  regex: 'style="[^"]*var\(--theme-'
+message: |
+  Use Tailwind class instead of inline --theme- CSS variable.
+  Vars that have --color- equivalents in @theme can use standard utilities:
+    border-color: var(--theme-border)        → border-border
+    background-color: var(--theme-bg-secondary) → bg-bg-secondary
+    color: var(--theme-primary)              → text-primary
+  Vars without @theme equivalents need arbitrary value syntax:
+    background-color: var(--theme-warning-bg) → bg-(--theme-warning-bg)
+    color: var(--theme-warning-text)          → text-(--theme-warning-text)
+  Complex styles (gradients, compound borders) may need manual conversion.

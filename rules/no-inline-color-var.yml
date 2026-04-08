@@ -1,0 +1,16 @@
+id: no-inline-color-var
+language: html
+severity: warning
+rule:
+  kind: attribute
+  regex: 'style="[^"]*var\(--color-'
+message: |
+  Use Tailwind class instead of inline --color- CSS variable.
+  These are defined in @theme so standard utilities work:
+    color: var(--color-foreground)       → text-foreground
+    color: var(--color-foreground-muted) → text-foreground-muted
+    background-color: var(--color-X)     → bg-X
+    border-color: var(--color-border)    → border-border
+note: |
+  If the style attribute has multiple properties, extract only the
+  --color- ones to Tailwind classes and keep the rest in style.
