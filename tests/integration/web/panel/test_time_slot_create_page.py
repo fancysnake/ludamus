@@ -8,6 +8,7 @@ from django.utils.timezone import get_current_timezone
 
 from ludamus.adapters.db.django.models import TimeSlot
 from ludamus.pacts import EventDTO
+from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -120,6 +121,45 @@ class TestTimeSlotCreatePageView:
             expected_date, time(10, 0), tzinfo=tz
         )
         assert slot.end_time == datetime.combine(expected_date, time(12, 0), tzinfo=tz)
+
+    def test_post_creates_midnight_crossing_slot(
+        self, authenticated_client, active_user, sphere
+    ):
+        """Slot 22:00-02:00 with same date auto-advances end to next day."""
+        sphere.managers.add(active_user)
+        tz = get_current_timezone()
+        start = datetime.combine(
+            (datetime.now(tz) + timedelta(days=7)).date(), time(20, 0), tzinfo=tz
+        )
+        event = EventFactory(
+            sphere=sphere, start_time=start, end_time=start + timedelta(hours=8)
+        )
+        date_str = event.start_time.date().isoformat()
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            {
+                "date": date_str,
+                "end_date": date_str,
+                "start_time": "22:00",
+                "end_time": "02:00",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Time slot created successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/time-slots/",
+        )
+        slot = TimeSlot.objects.get(event=event)
+        expected_date = event.start_time.date()
+        assert slot.start_time == datetime.combine(
+            expected_date, time(22, 0), tzinfo=tz
+        )
+        assert slot.end_time == datetime.combine(
+            expected_date + timedelta(days=1), time(2, 0), tzinfo=tz
+        )
 
     def test_post_invalid_form_returns_errors(
         self, authenticated_client, active_user, sphere, event

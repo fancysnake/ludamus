@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -27,6 +27,7 @@ from django.contrib.sessions.backends.db import SessionStore  # noqa: E402
 from django.contrib.sites.models import Site  # noqa: E402
 from django.core.management import call_command  # noqa: E402
 from django.utils import timezone  # noqa: E402
+from django.utils.timezone import get_current_timezone  # noqa: E402
 
 from ludamus.adapters.db.django.models import (  # noqa: E402
     AgendaItem,
@@ -74,7 +75,11 @@ def _create_event(
     proposals_open: bool = False,
 ) -> Event:
     now = timezone.now()
-    start = now + start_offset
+    # Pin start to 10:00 local time on the target day so tests don't
+    # break when CI runs in the evening and times wrap past midnight.
+    target_day = (now + start_offset).date()
+    local_tz = get_current_timezone()
+    start = datetime.combine(target_day, time(10, 0), tzinfo=local_tz)
     end = start + timedelta(hours=duration_hours)
     event = Event.objects.create(
         sphere=sphere,

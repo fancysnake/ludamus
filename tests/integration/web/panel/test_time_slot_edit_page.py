@@ -105,6 +105,50 @@ class TestTimeSlotEditPageView:
             expected_date, time(16, 0), tzinfo=tz
         )
 
+    def test_post_updates_midnight_crossing_slot(
+        self, authenticated_client, active_user, sphere
+    ):
+        """Edit a slot to cross midnight; end_date auto-advances."""
+        sphere.managers.add(active_user)
+        tz = get_current_timezone()
+        start = datetime.combine(
+            (datetime.now(tz) + timedelta(days=7)).date(), time(20, 0), tzinfo=tz
+        )
+        event = EventFactory(
+            sphere=sphere, start_time=start, end_time=start + timedelta(hours=8)
+        )
+        slot = TimeSlotFactory(
+            event=event,
+            start_time=start + timedelta(hours=1),
+            end_time=start + timedelta(hours=2),
+        )
+        date_str = event.start_time.date().isoformat()
+
+        response = authenticated_client.post(
+            self.get_url(event, slot),
+            {
+                "date": date_str,
+                "end_date": date_str,
+                "start_time": "22:00",
+                "end_time": "02:00",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Time slot updated successfully.")],
+            url=f"/panel/event/{event.slug}/cfp/time-slots/",
+        )
+        slot.refresh_from_db()
+        expected_date = event.start_time.date()
+        assert slot.start_time == datetime.combine(
+            expected_date, time(22, 0), tzinfo=tz
+        )
+        assert slot.end_time == datetime.combine(
+            expected_date + timedelta(days=1), time(2, 0), tzinfo=tz
+        )
+
     def test_post_invalid_form_returns_errors(
         self, authenticated_client, active_user, sphere, event, time_slot
     ):
