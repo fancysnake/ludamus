@@ -6,13 +6,21 @@ import pytest
 from ludamus.mills import (
     PanelService,
     ProposeSessionService,
+    check_proposal_rate_limit,
     generate_ics_content,
     get_days_to_event,
     google_calendar_url,
     is_proposal_active,
     outlook_calendar_url,
 )
-from ludamus.pacts import EncounterDTO, EventDTO, EventStatsData, PanelStatsDTO
+from ludamus.pacts import (
+    EncounterDTO,
+    EventDTO,
+    EventStatsData,
+    FacilitatorDTO,
+    PanelStatsDTO,
+    RequestContext,
+)
 
 
 class TestPanelService:
@@ -410,3 +418,110 @@ class TestProposeSessionService:
 
         with pytest.raises(ValueError, match="session_data must contain 'title'"):
             service.submit(event, wizard_data)
+
+    def test_submit_anonymous_creates_facilitator_without_user(self, mock_uow):
+        anon_context = RequestContext(
+            current_site_id=1, current_sphere_id=1, root_site_id=1, root_sphere_id=1
+        )
+        service = ProposeSessionService(mock_uow, anon_context)
+
+        now = datetime.now(tz=UTC)
+        event = EventDTO(
+            description="Test",
+            end_time=now + timedelta(days=7),
+            name="Test Event",
+            pk=1,
+            proposal_end_time=now + timedelta(days=1),
+            proposal_start_time=now - timedelta(days=1),
+            publication_time=now - timedelta(days=2),
+            slug="test-event",
+            sphere_id=1,
+            start_time=now + timedelta(days=5),
+        )
+        mock_uow.sessions.slug_exists.return_value = False
+        facilitator = FacilitatorDTO(
+            display_name="Anon Host", event_id=1, pk=10, slug="anon-host", user_id=None
+        )
+        mock_uow.facilitators.create.return_value = facilitator
+        expected_session_id = 99
+        mock_uow.sessions.create.return_value = expected_session_id
+
+        wizard_data = {
+            "category_id": 1,
+            "session_data": {"title": "Test Session", "display_name": "Anon Host"},
+        }
+
+        result = service.submit(event, wizard_data)
+
+        assert result.session_id == expected_session_id
+        assert result.title == "Test Session"
+        mock_uow.facilitators.create.assert_called_once()
+        create_call = mock_uow.facilitators.create.call_args[0][0]
+        assert create_call["user_id"] is None
+        assert create_call["display_name"] == "Anon Host"
+
+    def test_get_saved_personal_data_returns_empty_for_anonymous(self, mock_uow):
+        anon_context = RequestContext(
+            current_site_id=1, current_sphere_id=1, root_site_id=1, root_sphere_id=1
+        )
+        service = ProposeSessionService(mock_uow, anon_context)
+
+        result = service.get_saved_personal_data(event_id=1)
+
+        assert result == {}
+        mock_uow.host_personal_data.read_for_facilitator_event.assert_not_called()
+        mock_uow.facilitators.read_by_user_and_event.assert_not_called()
+
+
+class TestCheckProposalRateLimit:
+    def test_allows_first_submission(self):
+        cache: dict[str, object] = {}
+
+        class FakeCache:
+            @staticmethod
+            def get(key: str) -> object:
+                return cache.get(key)
+
+            @staticmethod
+            def set(key: str, value: object, timeout: int | None = None) -> None:
+                del timeout
+                cache[key] = value
+
+        result = check_proposal_rate_limit(FakeCache(), "1.2.3.4", event_id=1)
+
+        assert result is True
+        assert "proposal_rate:1:1.2.3.4" in cache
+
+    def test_blocks_second_submission(self):
+        cache: dict[str, object] = {"proposal_rate:1:1.2.3.4": 1}
+
+        class FakeCache:
+            @staticmethod
+            def get(key: str) -> object:
+                return cache.get(key)
+
+            @staticmethod
+            def set(key: str, value: object, timeout: int | None = None) -> None:
+                del timeout
+                cache[key] = value
+
+        result = check_proposal_rate_limit(FakeCache(), "1.2.3.4", event_id=1)
+
+        assert result is False
+
+    def test_allows_different_event(self):
+        cache: dict[str, object] = {"proposal_rate:1:1.2.3.4": 1}
+
+        class FakeCache:
+            @staticmethod
+            def get(key: str) -> object:
+                return cache.get(key)
+
+            @staticmethod
+            def set(key: str, value: object, timeout: int | None = None) -> None:
+                del timeout
+                cache[key] = value
+
+        result = check_proposal_rate_limit(FakeCache(), "1.2.3.4", event_id=2)
+
+        assert result is True

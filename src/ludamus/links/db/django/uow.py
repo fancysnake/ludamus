@@ -45,12 +45,20 @@ class UnitOfWork(UnitOfWorkProtocol):  # noqa: PLR0904
         return repositories.ConnectedUserRepository()
 
     @cached_property
+    def event_proposal_settings(self) -> repositories.EventProposalSettingsRepository:
+        return repositories.EventProposalSettingsRepository()
+
+    @cached_property
     def event_settings(self) -> repositories.EventSettingsRepository:
         return repositories.EventSettingsRepository()
 
     @cached_property
     def events(self) -> repositories.EventRepository:
         return repositories.EventRepository()
+
+    @cached_property
+    def facilitators(self) -> repositories.FacilitatorRepository:
+        return repositories.FacilitatorRepository()
 
     @cached_property
     def personal_data_fields(self) -> repositories.PersonalDataFieldRepository:

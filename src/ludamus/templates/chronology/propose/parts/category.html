@@ -1,5 +1,17 @@
-{% load i18n markdown_tags %}
+{% load i18n markdown_tags tessera %}
 <div id="wizard-content">
+    {% if show_login_nudge %}
+        <div class="alert alert-info flex items-start gap-3 mb-4">
+            {% icon "user" class="w-5 h-5 shrink-0 mt-0.5" %}
+            <div class="flex-1">
+                <h6 class="font-semibold mb-1">{% translate "Have an account?" %}</h6>
+                <p class="mb-2 text-sm">
+                    {% translate "Log in to save your details across submissions, track your proposals, and skip re-entering personal data next time." %}
+                </p>
+                <a href="{{ login_url }}" class="btn btn-primary">{% translate "Log in" %}</a>
+            </div>
+        </div>
+    {% endif %}
     {% if event.proposal_description %}
         <div class="prose prose-sm dark:prose-invert mb-6">{{ event.proposal_description|render_markdown }}</div>
     {% endif %}

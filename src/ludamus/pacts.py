@@ -30,6 +30,23 @@ class DateTimeRangeProtocol(Protocol):
     end_time: datetime
 
 
+class FacilitatorDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    display_name: str
+    event_id: int
+    pk: int
+    slug: str
+    user_id: int | None
+
+
+class FacilitatorData(TypedDict, total=False):
+    display_name: str
+    event_id: int
+    slug: str
+    user_id: int | None
+
+
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -92,6 +109,7 @@ class SessionDTO(BaseModel):
     participants_limit: int
     pk: int
     presenter_id: int | None
+    proposed_by_id: int | None = None
     display_name: str
     requirements: str
     slug: str
@@ -249,6 +267,7 @@ class SessionData(TypedDict, total=False):
     needs: str
     participants_limit: int
     presenter_id: int | None
+    proposed_by_id: int | None
     display_name: str
     requirements: str
     slug: str
@@ -511,6 +530,14 @@ class SessionFieldDTO(BaseModel):
     slug: str
 
 
+class EventProposalSettingsDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    allow_anonymous_proposals: bool
+    description: str
+    pk: int
+
+
 class EventSettingsDTO(BaseModel):
     """Display settings for an event."""
 
@@ -568,7 +595,7 @@ class SessionFieldValueData(TypedDict):
 
 
 class HostPersonalDataEntry(TypedDict):
-    user_id: int
+    facilitator_id: int
     event_id: int
     field_id: int
     value: str | list[str] | bool
@@ -678,6 +705,7 @@ class SessionRepositoryProtocol(Protocol):
         session_data: SessionData,
         tag_ids: Iterable[int],
         time_slot_ids: Iterable[int] = (),
+        facilitator_ids: Iterable[int] = (),
     ) -> int: ...
     @staticmethod
     def read(pk: int) -> SessionDTO: ...
@@ -975,6 +1003,11 @@ class TimeSlotRepositoryProtocol(Protocol):
     def update(pk: int, start_time: datetime, end_time: datetime) -> TimeSlotDTO: ...
 
 
+class EventProposalSettingsRepositoryProtocol(Protocol):
+    @staticmethod
+    def read_or_create_by_event(event_id: int) -> EventProposalSettingsDTO: ...
+
+
 class EventSettingsRepositoryProtocol(Protocol):
     @staticmethod
     def read_or_create(event_id: int) -> EventSettingsDTO: ...
@@ -1043,12 +1076,21 @@ class EncounterRSVPRepositoryProtocol(Protocol):
     def delete_by_user(encounter_id: int, user_id: int) -> None: ...
 
 
+class FacilitatorRepositoryProtocol(Protocol):
+    @staticmethod
+    def create(data: FacilitatorData) -> FacilitatorDTO: ...
+    @staticmethod
+    def read_by_user_and_event(user_id: int, event_id: int) -> FacilitatorDTO: ...
+    @staticmethod
+    def slug_exists(event_id: int, slug: str) -> bool: ...
+
+
 class HostPersonalDataRepositoryProtocol(Protocol):
     @staticmethod
     def save(entries: list[HostPersonalDataEntry]) -> None: ...
     @staticmethod
-    def read_for_user_event(
-        user_id: int, event_id: int
+    def read_for_facilitator_event(
+        facilitator_id: int, event_id: int
     ) -> dict[str, str | list[str] | bool]: ...
 
 
@@ -1068,9 +1110,13 @@ class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     @property
     def connected_users(self) -> ConnectedUserRepositoryProtocol: ...
     @property
+    def event_proposal_settings(self) -> EventProposalSettingsRepositoryProtocol: ...
+    @property
     def events(self) -> EventRepositoryProtocol: ...
     @property
     def event_settings(self) -> EventSettingsRepositoryProtocol: ...
+    @property
+    def facilitators(self) -> FacilitatorRepositoryProtocol: ...
     @property
     def personal_data_fields(self) -> PersonalDataFieldRepositoryProtocol: ...
     @property
@@ -1107,6 +1153,13 @@ class PanelConfigProtocol(Protocol):
     field_max_length: int
 
 
+class CacheProtocol(Protocol):
+    @staticmethod
+    def get(key: str) -> object: ...
+    @staticmethod
+    def set(key: str, value: object, timeout: int | None = None) -> None: ...
+
+
 class ConfigProtocol(Protocol):
     @property
     def panel(self) -> PanelConfigProtocol: ...
@@ -1119,6 +1172,8 @@ class DependencyInjectorProtocol(Protocol):
     def uow(self) -> UnitOfWorkProtocol: ...
     @property
     def ticket_api(self) -> TicketAPIProtocol: ...
+    @property
+    def cache(self) -> CacheProtocol: ...
     @staticmethod
     def gravatar_url(email: str) -> str | None: ...
 

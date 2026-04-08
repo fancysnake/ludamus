@@ -1,11 +1,13 @@
 from datetime import timedelta
 from http import HTTPStatus
+from unittest.mock import patch
 
 from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
     EventProposalSettings,
+    Facilitator,
     HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -120,6 +122,8 @@ class TestProposeSessionPageView:
                     ProposalCategoryDTO.model_validate(cat2),
                 ],
                 "step": "category",
+                "show_login_nudge": False,
+                "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
             },
             template_name="chronology/propose/base.html",
         )
@@ -139,6 +143,8 @@ class TestProposeSessionPageView:
                 "categories": [ProposalCategoryDTO.model_validate(proposal_category)],
                 "selected_category_id": str(proposal_category.pk),
                 "step": "category",
+                "show_login_nudge": False,
+                "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
             },
             template_name="chronology/propose/base.html",
         )
@@ -345,9 +351,12 @@ class TestProposeSessionPageView:
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
         )
-        # Simulate previously saved personal data
+        # Simulate previously saved personal data via an existing Facilitator
+        facilitator = Facilitator.objects.create(
+            event=event, user=active_user, display_name=active_user.name, slug="active"
+        )
         HostPersonalData.objects.create(
-            user=active_user, event=event, field=field, value="+48 999"
+            facilitator=facilitator, event=event, field=field, value="+48 999"
         )
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
@@ -845,6 +854,11 @@ class TestProposeSessionPageView:
         session = Session.objects.get(title="Test Session")
         assert session.participants_limit == int("6")
         assert session.category == proposal_category
+        assert session.proposed_by is not None
+        assert session.proposed_by.user_id == session.presenter_id
+        assert list(session.facilitators.values_list("pk", flat=True)) == [
+            session.proposed_by_id
+        ]
 
     def test_submit_stores_min_age(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -1663,3 +1677,190 @@ class TestProposeSessionPageView:
         assert public_pf_names == ["Your nickname?"]
         private_pf_names = [f["name"] for f in review["private_personal_fields"]]
         assert private_pf_names == ["Your phone?"]
+
+
+class TestAnonymousProposalSubmission:
+    """E2E tests for anonymous proposal submissions via Facilitator model."""
+
+    URL_NAME = "web:chronology:session-propose"
+
+    def _url(self, event_slug, step=""):
+        name = f"{self.URL_NAME}-{step}" if step else self.URL_NAME
+        return reverse(name, kwargs={"event_slug": event_slug})
+
+    def _activate_proposals(self, event, faker, time_zone):
+        event.proposal_start_time = faker.date_time_between(
+            "-10d", "-1d", tzinfo=time_zone
+        )
+        event.proposal_end_time = faker.date_time_between(
+            "+1d", "+10d", tzinfo=time_zone
+        )
+        event.save()
+
+    def _enable_anonymous(self, event):
+        EventProposalSettings.objects.update_or_create(
+            event=event, defaults={"allow_anonymous_proposals": True}
+        )
+
+    def _set_wizard_full(self, client, event, category, **extra):
+        session = client.session
+        wizard = {
+            "category_id": category.pk,
+            "contact_email": "anon@example.com",
+            "session_data": {
+                "display_name": "Anonymous GM",
+                "title": "Anon Session",
+                "participants_limit": 6,
+            },
+            **extra,
+        }
+        session[f"propose_{event.slug}"] = wizard
+        session.save()
+
+    def test_anonymous_redirected_to_login_when_not_allowed(
+        self, client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+
+        response = client.get(self._url(event.slug))
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert "login" in response.url
+
+    def test_anonymous_redirects_to_index_when_event_not_found(self, client):
+        response = client.get(self._url("does-not-exist"))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("web:index"),
+        )
+
+    def test_anonymous_redirects_to_event_when_proposals_inactive(self, client, event):
+        response = client.get(self._url(event.slug))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[
+                (
+                    messages.ERROR,
+                    "Proposal submission is not currently active for this event.",
+                )
+            ],
+            url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
+        )
+
+    def test_anonymous_full_wizard_flow(
+        self, client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._enable_anonymous(event)
+        phone_field = PersonalDataField.objects.create(
+            event=event, name="Phone", question="Your phone?", slug="phone"
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=phone_field, is_required=True
+        )
+
+        # Step 1: GET landing page — see categories
+        response = client.get(self._url(event.slug))
+        assert response.status_code == HTTPStatus.OK
+
+        # Step 2: POST category selection
+        response = client.post(
+            self._url(event.slug, "category"), {"category_id": proposal_category.pk}
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Step 3: POST personal data
+        response = client.post(
+            self._url(event.slug, "personal"),
+            {"contact_email": "anon@example.com", "personal_phone": "+48 555"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Step 4: POST session details (no timeslots configured, skips to details)
+        expected_limit = proposal_category.min_participants_limit
+        response = client.post(
+            self._url(event.slug, "details"),
+            {
+                "display_name": "Anonymous GM",
+                "title": "My Anonymous Game",
+                "description": "A fun game for everyone",
+                "participants_limit": expected_limit,
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Step 5: POST submit
+        response = client.post(self._url(event.slug, "submit"))
+        assert response.status_code == HTTPStatus.FOUND
+
+        # Verify: Session created with no presenter
+        session = Session.objects.get(title="My Anonymous Game")
+        assert session.display_name == "Anonymous GM"
+        assert session.presenter_id is None
+        assert session.status == "pending"
+        assert session.participants_limit == expected_limit
+
+        # Verify: Facilitator created without user link
+        facilitator = Facilitator.objects.get(event=event, display_name="Anonymous GM")
+        assert facilitator.user_id is None
+        assert facilitator.event_id == event.pk
+
+        # Verify: Session linked to the Facilitator via FK + M2M
+        assert session.proposed_by_id == facilitator.pk
+        assert list(session.facilitators.values_list("pk", flat=True)) == [
+            facilitator.pk
+        ]
+
+        # Verify: Personal data saved on facilitator, not on user
+        hpd = HostPersonalData.objects.get(
+            facilitator=facilitator, event=event, field=phone_field
+        )
+        assert hpd.value == "+48 555"
+        assert hpd.user_id is None
+
+    def test_anonymous_submit_blocked_by_rate_limit(
+        self, client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._enable_anonymous(event)
+        self._set_wizard_full(client, event, proposal_category)
+
+        with patch(
+            "ludamus.gates.web.django.chronology.views.check_proposal_rate_limit",
+            return_value=False,
+        ):
+            response = client.post(self._url(event.slug, "submit"))
+
+        assert response.status_code == HTTPStatus.FOUND
+        assert Session.objects.count() == 0
+
+    def test_two_anonymous_submissions_same_display_name_get_distinct_slugs(
+        self, client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._enable_anonymous(event)
+
+        with patch(
+            "ludamus.gates.web.django.chronology.views.check_proposal_rate_limit",
+            return_value=True,
+        ):
+            self._set_wizard_full(client, event, proposal_category)
+            first = client.post(self._url(event.slug, "submit"))
+            assert first.status_code == HTTPStatus.FOUND
+
+            self._set_wizard_full(client, event, proposal_category)
+            second = client.post(self._url(event.slug, "submit"))
+            assert second.status_code == HTTPStatus.FOUND
+
+        expected_facilitator_count = 2
+        facilitators = Facilitator.objects.filter(
+            event=event, display_name="Anonymous GM"
+        )
+        assert facilitators.count() == expected_facilitator_count
+        slugs = list(facilitators.values_list("slug", flat=True))
+        assert len(set(slugs)) == expected_facilitator_count

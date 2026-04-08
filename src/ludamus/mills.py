@@ -12,6 +12,7 @@ import markdown as _md
 from ludamus.pacts import (
     AgendaItemData,
     AuthenticatedRequestContext,
+    CacheProtocol,
     DateTimeRangeProtocol,
     EncounterDetailResult,
     EncounterDTO,
@@ -21,6 +22,8 @@ from ludamus.pacts import (
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
     EventStatsData,
+    FacilitatorData,
+    FacilitatorDTO,
     HostPersonalDataEntry,
     MembershipAPIError,
     NotFoundError,
@@ -28,6 +31,7 @@ from ludamus.pacts import (
     PersonalFieldRequirementDTO,
     ProposalCategoryDTO,
     ProposeSessionResult,
+    RequestContext,
     SessionData,
     SessionDTO,
     SessionFieldRequirementDTO,
@@ -242,19 +246,18 @@ def get_days_to_event(event: EventDTO) -> int:
 
 
 class ProposeSessionService:
-    def __init__(
-        self, uow: UnitOfWorkProtocol, context: AuthenticatedRequestContext
-    ) -> None:
+    def __init__(self, uow: UnitOfWorkProtocol, context: RequestContext) -> None:
         self._uow = uow
         self._context = context
 
-    def _generate_unique_slug(self, sphere_id: int, title: str) -> str:
+    @staticmethod
+    def _generate_unique_slug(title: str, exists: Callable[[str], bool]) -> str:
         value = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
         base_slug = re.sub(r"[^\w\s-]", "", value.lower())
         base_slug = re.sub(r"[-\s]+", "-", base_slug).strip("-")
         slug = base_slug
         for _ in range(4):
-            if not self._uow.sessions.slug_exists(sphere_id, slug):
+            if not exists(slug):
                 break
             slug = f"{base_slug}-{token_urlsafe(3)}"
         return slug
@@ -290,8 +293,35 @@ class ProposeSessionService:
     def get_saved_personal_data(
         self, event_id: int
     ) -> dict[str, str | list[str] | bool]:
-        return self._uow.host_personal_data.read_for_user_event(
-            self._context.current_user_id, event_id
+        if (user_id := self._context.current_user_id) is None:
+            return {}
+        try:
+            facilitator = self._uow.facilitators.read_by_user_and_event(
+                user_id, event_id
+            )
+        except NotFoundError:
+            return {}
+        return self._uow.host_personal_data.read_for_facilitator_event(
+            facilitator.pk, event_id
+        )
+
+    def _find_or_create_facilitator(
+        self, event: EventDTO, display_name: str
+    ) -> FacilitatorDTO:
+        if (user_id := self._context.current_user_id) is not None:
+            try:
+                return self._uow.facilitators.read_by_user_and_event(user_id, event.pk)
+            except NotFoundError:
+                pass
+        # Anonymous submissions are never merged: each submit creates a fresh
+        # Facilitator row. Organizers reconcile later if needed.
+        slug = self._generate_unique_slug(
+            display_name, lambda s: self._uow.facilitators.slug_exists(event.pk, s)
+        )
+        return self._uow.facilitators.create(
+            FacilitatorData(
+                event_id=event.pk, user_id=user_id, display_name=display_name, slug=slug
+            )
         )
 
     def submit(self, event: EventDTO, wizard_data: WizardData) -> ProposeSessionResult:
@@ -306,35 +336,52 @@ class ProposeSessionService:
         category_id = wizard_data["category_id"]
         time_slot_ids = wizard_data.get("time_slot_ids", [])
 
-        current_user = self._uow.active_users.read(self._context.current_user_slug)
+        if (
+            self._context.current_user_id is not None
+            and self._context.current_user_slug is not None
+        ):
+            current_user = self._uow.active_users.read(self._context.current_user_slug)
+            default_display_name = current_user.name
+            presenter_id = current_user.pk
+        else:
+            default_display_name = ""
+            presenter_id = None
 
-        slug = self._generate_unique_slug(event.sphere_id, title)
-
-        create_data = SessionData(
-            sphere_id=event.sphere_id,
-            presenter_id=current_user.pk,
-            display_name=str(session_data.get("display_name", current_user.name)),
-            category_id=category_id,
-            title=title,
-            slug=slug,
-            description=description,
-            requirements="",
-            needs="",
-            participants_limit=participants_limit,
-            min_age=int(str(session_data.get("min_age") or 0)),
-            contact_email=wizard_data.get("contact_email", ""),
-            status=SessionStatus.PENDING,
+        display_name = str(session_data.get("display_name", default_display_name))
+        slug = self._generate_unique_slug(
+            title, lambda s: self._uow.sessions.slug_exists(event.sphere_id, s)
         )
 
         with self._uow.atomic():
+            facilitator = self._find_or_create_facilitator(event, display_name)
+
+            create_data = SessionData(
+                sphere_id=event.sphere_id,
+                presenter_id=presenter_id,
+                display_name=display_name,
+                category_id=category_id,
+                title=title,
+                slug=slug,
+                description=description,
+                requirements="",
+                needs="",
+                participants_limit=participants_limit,
+                min_age=int(str(session_data.get("min_age") or 0)),
+                contact_email=wizard_data.get("contact_email", ""),
+                status=SessionStatus.PENDING,
+            )
+
             session_id = self._uow.sessions.create(
-                create_data, tag_ids=[], time_slot_ids=time_slot_ids
+                create_data,
+                tag_ids=[],
+                time_slot_ids=time_slot_ids,
+                facilitator_ids=[facilitator.pk],
             )
 
             self._save_session_field_values(session_id, event.pk, session_data)
 
             if personal_data := wizard_data.get("personal_data", {}):
-                self._save_personal_data(event.pk, personal_data)
+                self._save_personal_data(event.pk, personal_data, facilitator)
 
         return ProposeSessionResult(session_id=session_id, title=title)
 
@@ -361,7 +408,9 @@ class ProposeSessionService:
         if values:
             self._uow.sessions.save_field_values(session_id, values)
 
-    def _save_personal_data(self, event_id: int, personal_data: dict[str, str]) -> None:
+    def _save_personal_data(
+        self, event_id: int, personal_data: dict[str, str], facilitator: FacilitatorDTO
+    ) -> None:
         entries: list[HostPersonalDataEntry] = []
         for key, value in personal_data.items():
             if not key.startswith("personal_"):
@@ -375,7 +424,7 @@ class ProposeSessionService:
                 continue
             entries.append(
                 HostPersonalDataEntry(
-                    user_id=self._context.current_user_id,
+                    facilitator_id=facilitator.pk,
                     event_id=event_id,
                     field_id=field_dto.pk,
                     value=value,
@@ -383,6 +432,22 @@ class ProposeSessionService:
             )
         if entries:
             self._uow.host_personal_data.save(entries)
+
+
+PROPOSAL_RATE_LIMIT_SECONDS = 300
+
+
+def check_proposal_rate_limit(cache: CacheProtocol, ip: str, event_id: int) -> bool:
+    """Check if an IP is rate-limited for proposal submission on an event.
+
+    Returns:
+        True if the submission is allowed, False if rate-limited.
+    """
+    key = f"proposal_rate:{event_id}:{ip}"
+    if cache.get(key) is not None:
+        return False
+    cache.set(key, 1, timeout=PROPOSAL_RATE_LIMIT_SECONDS)
+    return True
 
 
 class AnonymousEnrollmentService:

@@ -14,6 +14,7 @@ from ludamus.adapters.db.django.models import (
     Event,
     EventProposalSettings,
     EventSettings,
+    Facilitator,
     HostPersonalData,
     PersonalDataField,
     PersonalDataFieldOption,
@@ -111,6 +112,13 @@ class TestDomainEnrollmentConfig:
                 domain="examplecom",
                 allowed_slots_per_user=1,
             ).clean()
+
+
+class TestFacilitator:
+    def test_str(self, faker):
+        display_name = faker.name()
+
+        assert str(Facilitator(display_name=display_name)) == display_name
 
 
 class TestVenue:

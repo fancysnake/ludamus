@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING, TypeVar
 
 from django.conf import settings
 
+from ludamus.links.cache import DjangoCache
 from ludamus.links.db.django.uow import UnitOfWork
 from ludamus.links.gravatar import gravatar_url
 from ludamus.links.ticket_api import MembershipApiClient
-from ludamus.pacts import DependencyInjectorProtocol, TicketAPIProtocol
+from ludamus.pacts import CacheProtocol, DependencyInjectorProtocol, TicketAPIProtocol
 from ludamus.specs import DEFAULT_FIELD_MAX_LENGTH
 
 if TYPE_CHECKING:
@@ -51,6 +52,10 @@ class DependencyInjector(DependencyInjectorProtocol):
     @cached_property
     def ticket_api(self) -> TicketAPIProtocol:
         return MembershipApiClient()
+
+    @cached_property
+    def cache(self) -> CacheProtocol:
+        return DjangoCache()
 
     @staticmethod
     def gravatar_url(email: str) -> str | None:
