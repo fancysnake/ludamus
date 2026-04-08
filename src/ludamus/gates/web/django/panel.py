@@ -2624,6 +2624,8 @@ class TimeSlotCreatePageView(PanelAccessMixin, EventContextMixin, View):
             start_date, form.cleaned_data["start_time"], tzinfo=tz
         )
         end_time = datetime.combine(end_date, form.cleaned_data["end_time"], tzinfo=tz)
+        if end_time < start_time and end_date == start_date:
+            end_time += timedelta(days=1)
 
         existing = self.request.di.uow.time_slots.list_by_event(current_event.pk)
         if not _validate_time_slot(form, start_time, end_time, current_event, existing):
@@ -2698,6 +2700,8 @@ class TimeSlotEditPageView(PanelAccessMixin, EventContextMixin, View):
             start_date, form.cleaned_data["start_time"], tzinfo=tz
         )
         end_time = datetime.combine(end_date, form.cleaned_data["end_time"], tzinfo=tz)
+        if end_time < start_time and end_date == start_date:
+            end_time += timedelta(days=1)
 
         existing = [
             ts
