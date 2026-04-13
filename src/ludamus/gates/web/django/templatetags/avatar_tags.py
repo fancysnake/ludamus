@@ -15,4 +15,4 @@ def avatar_bg_class(name_value: str) -> str:
         return "bg-teal-400"
     if name_len % 2 == 0:
         return "bg-teal-500"
-    return "bg-warm-400"
+    return "bg-warm-400 dark:bg-warm-800"
