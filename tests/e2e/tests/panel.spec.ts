@@ -198,10 +198,9 @@ test.describe('Backoffice Panel', () => {
     ).toBeVisible();
 
     // Restore original address
-    await page
-      .locator('tr', { hasText: 'Convention Center' })
-      .getByRole('link', { name: 'Edit' })
-      .click();
+    await page.goto(
+      '/panel/event/autumn-open/venues/convention-center/edit/',
+    );
     await addressInput.fill('123 Gaming Street, Tabletop City');
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(
