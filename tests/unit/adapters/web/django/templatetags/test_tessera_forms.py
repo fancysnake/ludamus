@@ -268,7 +268,7 @@ class TestRenderSelect:
         form = SimpleForm(data={"color": ""})
         form.is_valid()
         html = render_select(form["color"])
-        assert "border-(--theme-danger)" in html
+        assert "border-danger" in html
 
 
 # ---------------------------------------------------------------------------
@@ -295,7 +295,7 @@ class TestRenderTextarea:
         # bio is not required, so we need to inject an error
         form.errors["bio"] = ["Too short"]
         html = render_textarea(form["bio"])
-        assert "border-(--theme-danger)" in html
+        assert "border-danger" in html
 
 
 # ---------------------------------------------------------------------------
@@ -321,7 +321,7 @@ class TestRenderInput:
         form = SimpleForm(data={"name": ""})
         form.is_valid()
         html = render_input(form["name"])
-        assert "border-(--theme-danger)" in html
+        assert "border-danger" in html
 
 
 # ---------------------------------------------------------------------------
