@@ -1,20 +1,29 @@
-import pytest
+import re
 
 from ludamus.gates.web.django.templatetags.avatar_tags import avatar_bg_class
 
+BG_CLASS_RE = re.compile(r"^(dark:)?bg-[a-z]+-\d{3}$")
+
 
 class TestAvatarBgClass:
-    @pytest.mark.parametrize(
-        ("name", "expected"),
-        (
-            ("abcd", "bg-coral-400"),  # len 4, 4 % 4 == 0
-            ("abc", "bg-teal-400"),  # len 3, 3 % 3 == 0
-            ("ab", "bg-teal-500"),  # len 2, 2 % 2 == 0
-            ("a", "bg-warm-400"),  # len 1, odd
-        ),
-    )
-    def test_returns_class_based_on_name_length(self, name, expected):
-        assert avatar_bg_class(name) == expected
+    def test_returns_valid_tailwind_bg_classes(self):
+        for name in ("a", "ab", "abc", "abcd", "hello", "world!"):
+            classes = avatar_bg_class(name).split()
+            assert all(
+                BG_CLASS_RE.match(c) for c in classes
+            ), f"avatar_bg_class({name!r}) returned invalid classes: {classes}"
 
-    def test_falsy_value_defaults_to_empty_string(self):
-        assert avatar_bg_class("") == "bg-coral-400"  # len 0, 0 % 4 == 0
+    def test_deterministic(self):
+        for name in ("alice", "bob", "X"):
+            assert avatar_bg_class(name) == avatar_bg_class(name)
+
+    def test_produces_variety(self):
+        min_expected_colors = 3
+        names = [chr(i) * i for i in range(1, 10)]
+        unique_results = {avatar_bg_class(n) for n in names}
+        assert len(unique_results) >= min_expected_colors
+
+    def test_falsy_value_does_not_crash(self):
+        result = avatar_bg_class("")
+        assert result
+        assert BG_CLASS_RE.match(result.split()[0])

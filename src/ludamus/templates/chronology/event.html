@@ -64,8 +64,10 @@
                                 {% icon "calendar-days" class="w-4 h-4 text-coral-600" variant="mini" %}
                             </div>
                             <div>
-                                <div class="font-medium text-foreground">{{ event.start_time|date:"l, F j" }}</div>
-                                <div class="text-foreground-muted">{{ event.start_time|time:"G:i" }} - {{ event.end_time|time:"G:i" }}</div>
+                                <div class="font-medium leading-none text-foreground">{{ event.start_time|date:"l, F j" }}</div>
+                                <div class="text-foreground-muted leading-none mt-0.5">
+                                    {{ event.start_time|time:"G:i" }} - {{ event.end_time|time:"G:i" }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1384,6 +1386,7 @@
             top: anchor(bottom);
             right: anchor(right);
             width: 28rem;
+            max-width: calc(100vw - 2rem);
             margin-top: 4px;
             display: block;
             min-width: 0;
@@ -1411,6 +1414,7 @@
                 right: 0;
                 left: auto;
                 width: 28rem;
+                max-width: calc(100vw - 2rem);
                 position-anchor: unset;
             }
         }
