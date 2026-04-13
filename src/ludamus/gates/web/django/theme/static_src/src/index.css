@@ -188,8 +188,11 @@ a, button {
     --theme-border: #404040;
     --color-border: #404040;
     --theme-border-focus: #f85a3c;
+    --color-border-focus: #f85a3c;
     --theme-primary: #f85a3c;
+    --color-primary: #f85a3c;
     --theme-primary-hover: #e53e20;
+    --color-primary-hover: #e53e20;
     --theme-primary-light: #292524;
     --color-primary-light: #292524;
     --theme-secondary: #2dd4b3;
@@ -248,8 +251,11 @@ a, button {
   --theme-border: #404040;
   --color-border: #404040;
   --theme-border-focus: #f85a3c;
+  --color-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
+  --color-primary: #f85a3c;
   --theme-primary-hover: #e53e20;
+  --color-primary-hover: #e53e20;
   --theme-primary-light: #292524;
   --color-primary-light: #292524;
   --theme-secondary: #2dd4b3;
