@@ -1,5 +1,6 @@
 {% load i18n markdown_tags tessera %}
 <div id="wizard-content">
+    {% include "chronology/propose/parts/_stepper.html" %}
     {% if show_login_nudge %}
         <div class="alert alert-info flex items-start gap-3 mb-4">
             {% icon "user" class="w-5 h-5 shrink-0 mt-0.5" %}

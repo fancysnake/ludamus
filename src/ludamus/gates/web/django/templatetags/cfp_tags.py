@@ -64,6 +64,32 @@ def is_continuation(continuation_set: set[tuple[int, str]], slot_and_date: str) 
     return (int(slot_pk), date_iso) in continuation_set
 
 
+_WIZARD_ORDER = ("category", "personal", "timeslots", "details", "review")
+
+
+@register.filter
+def is_done(step_key: str, current_step: str) -> bool:
+    """Check if a wizard step is already completed relative to current.
+
+    Returns:
+        True if step_key precedes current_step in wizard order.
+    """
+    try:
+        return _WIZARD_ORDER.index(step_key) < _WIZARD_ORDER.index(current_step)
+    except ValueError:
+        return False
+
+
+@register.filter
+def is_current(step_key: str, current_step: str) -> bool:
+    """Check if a wizard step is the currently active one.
+
+    Returns:
+        True if step_key equals current_step.
+    """
+    return step_key == current_step
+
+
 def has_field_value(value: object) -> bool:
     if value is None:
         return False
