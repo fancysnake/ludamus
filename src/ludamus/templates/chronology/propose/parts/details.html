@@ -4,8 +4,9 @@
 <div id="wizard-content">
     {% if form|default:"" %}
         <h2 class="text-lg font-semibold mb-1">{% translate "Session Details" %}</h2>
-        <p class="text-sm text-foreground-muted mb-5">{% translate "Tell us about the session you'd like to run." %}</p>
-        {% include "components/visibility-legend.html" %}
+        <p class="text-sm text-foreground-muted mb-5">
+            {% blocktranslate %}Session info — public by default. A 🔒 marks what only organizers see.{% endblocktranslate %}
+        </p>
         <form method="post"
               hx-post="{% url 'web:chronology:session-propose-details' event_slug=event.slug %}"
               hx-target="#wizard-content"
@@ -17,7 +18,6 @@
                            class="block text-sm font-medium text-foreground-secondary mb-2">
                         {% translate "Title" %}
                         <span class="text-danger" aria-hidden="true">*</span>
-                        {% include "components/visibility-icon.html" with is_public=True %}
                     </label>
                     <input type="text"
                            name="title"
@@ -33,7 +33,6 @@
                            class="block text-sm font-medium text-foreground-secondary mb-2">
                         {% translate "Description" %}
                         <span class="text-danger" aria-hidden="true">*</span>
-                        {% include "components/visibility-icon.html" with is_public=True %}
                     </label>
                     <textarea name="description"
                               id="id_description"
@@ -47,7 +46,6 @@
                            class="block text-sm font-medium text-foreground-secondary mb-2">
                         {% translate "Max participants" %}
                         {% if form.participants_limit.field.required %}<span class="text-danger" aria-hidden="true">*</span>{% endif %}
-                        {% include "components/visibility-icon.html" with is_public=True %}
                     </label>
                     <input type="number"
                            name="participants_limit"
@@ -68,7 +66,6 @@
                     <label for="id_min_age"
                            class="block text-sm font-medium text-foreground-secondary mb-2">
                         {% translate "Minimum age" %}
-                        {% include "components/visibility-icon.html" with is_public=True %}
                     </label>
                     <input type="number"
                            name="min_age"
@@ -85,7 +82,6 @@
                            class="block text-sm font-medium text-foreground-secondary mb-2">
                         {% translate "Presenter name" %}
                         <span class="text-danger" aria-hidden="true">*</span>
-                        {% include "components/visibility-icon.html" with is_public=True %}
                     </label>
                     <input type="text"
                            name="display_name"
@@ -109,7 +105,9 @@
                                     <span class="text-danger" aria-hidden="true">*</span>
                                     <span class="sr-only">{% translate "(required)" %}</span>
                                 {% endif %}
-                                {% include "components/visibility-icon.html" with is_public=desc.is_public %}
+                                {% if not desc.is_public %}
+                                    {% include "components/visibility-icon.html" with is_public=False %}
+                                {% endif %}
                             </label>
                         {% endif %}
                         {% if desc.field_type == "select" and desc.is_multiple %}
@@ -148,7 +146,9 @@
                                     {% icon desc.icon class="w-4 h-4 inline mr-1 text-foreground-muted" %}
                                 {% endif %}
                                 {{ desc.name }}
-                                {% include "components/visibility-icon.html" with is_public=desc.is_public %}
+                                {% if not desc.is_public %}
+                                    {% include "components/visibility-icon.html" with is_public=False %}
+                                {% endif %}
                             </label>
                         {% else %}
                             <input type="text"
