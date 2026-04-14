@@ -111,6 +111,30 @@ def _display_value(
     return raw
 
 
+_ALL_WIZARD_STEPS: tuple[tuple[str, str], ...] = (
+    ("category", _("Category")),
+    ("personal", _("Your info")),
+    ("timeslots", _("Time slots")),
+    ("details", _("Session")),
+    ("review", _("Review")),
+)
+
+
+def _wizard_steps(
+    service: ProposeSessionService, category: ProposalCategoryDTO | None
+) -> list[dict[str, str]]:
+    has_timeslots = (
+        True
+        if category is None
+        else bool(service.get_timeslot_requirements(category.pk))
+    )
+    return [
+        {"key": key, "label": str(label)}
+        for key, label in _ALL_WIZARD_STEPS
+        if key != "timeslots" or has_timeslots
+    ]
+
+
 # -- Module-level render functions --
 
 
@@ -137,6 +161,8 @@ def _render_category(
         "event": event,
         "categories": categories,
         "selected_category_id": selected_id,
+        "current_step": "category",
+        "wizard_steps": _wizard_steps(service, None),
         **_login_nudge_context(request),
     }
 
@@ -173,6 +199,8 @@ def _render_personal(
             "category": category,
             "form": form,
             "field_descriptors": _field_descriptors("personal", requirements, form),
+            "current_step": "personal",
+            "wizard_steps": _wizard_steps(service, category),
         },
     )
 
@@ -196,6 +224,8 @@ def _render_timeslots(
             "event": event,
             "category": category,
             "slot_descriptors": _timeslot_descriptors(requirements, selected_ids),
+            "current_step": "timeslots",
+            "wizard_steps": _wizard_steps(service, category),
         },
     )
 
@@ -227,6 +257,8 @@ def _render_details(
             "category": category,
             "form": form,
             "field_descriptors": _field_descriptors("session", requirements, form),
+            "current_step": "details",
+            "wizard_steps": _wizard_steps(service, category),
         },
     )
 
@@ -298,7 +330,13 @@ def _render_review(
     return TemplateResponse(
         request,
         "chronology/propose/parts/review.html",
-        {"event": event, "category": category, "review": review},
+        {
+            "event": event,
+            "category": category,
+            "review": review,
+            "current_step": "review",
+            "wizard_steps": _wizard_steps(service, category),
+        },
     )
 
 
@@ -398,6 +436,8 @@ class ProposeSessionPageView(ProposeWizardMixin, View):
             "event": event,
             "categories": categories,
             "step": "category",
+            "current_step": "category",
+            "wizard_steps": _wizard_steps(service, None),
             **_login_nudge_context(request),
         }
 
@@ -424,6 +464,8 @@ class ProposeSessionCategoryComponentView(ProposeWizardMixin, View):
                 "event": event,
                 "categories": categories,
                 "error": _("Please select a category."),
+                "current_step": "category",
+                "wizard_steps": _wizard_steps(service, None),
                 **_login_nudge_context(request),
             }
             return TemplateResponse(
@@ -473,6 +515,8 @@ class ProposeSessionPersonalComponentView(ProposeWizardMixin, View):
                     "field_descriptors": _field_descriptors(
                         "personal", requirements, form
                     ),
+                    "current_step": "personal",
+                    "wizard_steps": _wizard_steps(service, category),
                 },
             )
 
@@ -515,6 +559,8 @@ class ProposeSessionTimeslotsComponentView(ProposeWizardMixin, View):
                     "category": category,
                     "slot_descriptors": _timeslot_descriptors(requirements, []),
                     "error": _("Please select at least one time slot."),
+                    "current_step": "timeslots",
+                    "wizard_steps": _wizard_steps(service, category),
                 },
             )
 
@@ -555,6 +601,8 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
                     "field_descriptors": _field_descriptors(
                         "session", requirements, form
                     ),
+                    "current_step": "details",
+                    "wizard_steps": _wizard_steps(service, category),
                 },
             )
 

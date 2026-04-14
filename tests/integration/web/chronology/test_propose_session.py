@@ -1,6 +1,6 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 from django.contrib import messages
 from django.urls import reverse
@@ -122,6 +122,8 @@ class TestProposeSessionPageView:
                     ProposalCategoryDTO.model_validate(cat2),
                 ],
                 "step": "category",
+                "current_step": "category",
+                "wizard_steps": ANY,
                 "show_login_nudge": False,
                 "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
             },
@@ -143,6 +145,8 @@ class TestProposeSessionPageView:
                 "categories": [ProposalCategoryDTO.model_validate(proposal_category)],
                 "selected_category_id": str(proposal_category.pk),
                 "step": "category",
+                "current_step": "category",
+                "wizard_steps": ANY,
                 "show_login_nudge": False,
                 "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
             },
@@ -1476,6 +1480,99 @@ class TestProposeSessionPageView:
         assert response.status_code == HTTPStatus.OK
         form = response.context["form"]
         assert form.initial["personal_phone"] == "+48 777"
+
+    # -- Coverage: wizard stepper context (Fix D) --
+
+    def test_category_step_exposes_stepper_context(
+        self, authenticated_client, event, faker, time_zone
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        ProposalCategoryFactory(event=event)
+        ProposalCategoryFactory(event=event)
+
+        response = authenticated_client.post(self._get_category_url(event.slug), {})
+
+        assert response.context["current_step"] == "category"
+        assert [s["key"] for s in response.context["wizard_steps"]] == [
+            "category",
+            "personal",
+            "timeslots",
+            "details",
+            "review",
+        ]
+
+    def test_personal_step_stepper_omits_timeslots_when_none_required(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_category_url(event.slug), {"category_id": proposal_category.pk}
+        )
+
+        assert response.context["current_step"] == "personal"
+        assert [s["key"] for s in response.context["wizard_steps"]] == [
+            "category",
+            "personal",
+            "details",
+            "review",
+        ]
+
+    def test_timeslots_step_stepper_includes_timeslots(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        slot = TimeSlotFactory(event=event)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_timeslots_url(event.slug), {"back": "1"}
+        )
+
+        assert response.context["current_step"] == "timeslots"
+        assert [s["key"] for s in response.context["wizard_steps"]] == [
+            "category",
+            "personal",
+            "timeslots",
+            "details",
+            "review",
+        ]
+
+    def test_details_step_stepper_context(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_details_url(event.slug), {"back": "1"}
+        )
+
+        assert response.context["current_step"] == "details"
+        assert [s["key"] for s in response.context["wizard_steps"]] == [
+            "category",
+            "personal",
+            "details",
+            "review",
+        ]
+
+    def test_review_step_stepper_context(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        assert response.context["current_step"] == "review"
+        assert [s["key"] for s in response.context["wizard_steps"]] == [
+            "category",
+            "personal",
+            "details",
+            "review",
+        ]
 
     # -- Coverage: review formats boolean values (views.py:195-197, 203-205) --
 

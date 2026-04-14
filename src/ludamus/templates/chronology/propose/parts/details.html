@@ -2,6 +2,7 @@
 {% load markdown_tags %}
 {% load tessera %}
 <div id="wizard-content">
+    {% include "chronology/propose/parts/_stepper.html" %}
     {% if form|default:"" %}
         <h2 class="text-lg font-semibold mb-1">{% translate "Session Details" %}</h2>
         <p class="text-sm text-foreground-muted mb-5">
