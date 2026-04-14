@@ -30,8 +30,10 @@ if TYPE_CHECKING:
     from ludamus.gates.web.django.entities import RootRequest
     from ludamus.pacts import (
         EventDTO,
+        PersonalDataFieldDTO,
         PersonalFieldRequirementDTO,
         ProposalCategoryDTO,
+        SessionFieldDTO,
         SessionFieldRequirementDTO,
         TimeSlotRequirementDTO,
     )
@@ -95,6 +97,19 @@ def _timeslot_descriptors(
         ),
         key=operator.itemgetter("start_time"),
     )
+
+
+def _display_value(
+    field: SessionFieldDTO | PersonalDataFieldDTO, raw: object
+) -> object:
+    if raw in {None, ""}:
+        return raw
+    option_map = {opt.value: opt.label for opt in field.options}
+    if isinstance(raw, list):
+        return [option_map.get(v, v) for v in raw]
+    if isinstance(raw, bool):
+        return raw
+    return option_map.get(raw, raw) if isinstance(raw, str) else raw
 
 
 # -- Module-level render functions --
@@ -237,7 +252,7 @@ def _render_review(
             session_fields.append(
                 {
                     "name": req.field.question,
-                    "value": value,
+                    "value": _display_value(req.field, value),
                     "is_public": req.field.is_public,
                     "icon": req.field.icon,
                 }
@@ -251,7 +266,7 @@ def _render_review(
             personal_fields.append(
                 {
                     "name": p_req.field.question,
-                    "value": value,
+                    "value": _display_value(p_req.field, value),
                     "is_public": p_req.field.is_public,
                 }
             )

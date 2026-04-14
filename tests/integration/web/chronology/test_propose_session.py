@@ -1550,7 +1550,82 @@ class TestProposeSessionPageView:
         genre_field = next(
             f for f in review["session_fields"] if f["name"] == "What genres?"
         )
-        assert genre_field["value"] == ["fantasy", "scifi"]
+        assert genre_field["value"] == ["Fantasy", "Sci-Fi"]
+
+    # -- Coverage: review resolves select slugs to human labels (Fix A) --
+
+    def test_review_resolves_select_field_labels(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="System",
+            question="Which system?",
+            slug="system",
+            field_type="select",
+        )
+        SessionFieldOption.objects.create(
+            field=field, value="dnd5e", label="Dungeons & Dragons 5e"
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_system": "dnd5e",
+            },
+        )
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        review = response.context["review"]
+        system_field = next(
+            f for f in review["session_fields"] if f["name"] == "Which system?"
+        )
+        assert system_field["value"] == "Dungeons & Dragons 5e"
+
+    # -- Coverage: custom-value fallthrough preserves typed text (Fix A) --
+
+    def test_review_preserves_custom_typed_value(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="System",
+            question="Which system?",
+            slug="system",
+            field_type="select",
+            allow_custom=True,
+        )
+        SessionFieldOption.objects.create(field=field, value="dnd5e", label="D&D 5e")
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_system": "My Homebrew Game",
+            },
+        )
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        review = response.context["review"]
+        system_field = next(
+            f for f in review["session_fields"] if f["name"] == "Which system?"
+        )
+        assert system_field["value"] == "My Homebrew Game"
 
     # -- Coverage: review passes raw string values through (views.py) --
 
