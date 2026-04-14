@@ -132,12 +132,21 @@
             </div>
             {% if review.time_slots %}
                 <div class="border border-border rounded-2xl p-5">
-                    <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Preferred Time Slots" %}</h3>
-                    <ul class="space-y-1 text-sm text-foreground">
-                        {% for slot in review.time_slots %}
-                            <li>{{ slot.start_time|date:"D, d M" }} {{ slot.start_time|date:"H:i" }} – {{ slot.end_time|date:"H:i" }}</li>
+                    <h3 class="text-sm font-medium text-foreground-muted mb-3">{% translate "Preferred Time Slots" %}</h3>
+                    <div class="space-y-4">
+                        {% for group in review.time_slots %}
+                            <div>
+                                <h4 class="text-xs font-medium text-foreground mb-2">{{ group.day|date:"l, d M" }}</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    {% for slot in group.slots %}
+                                        <span class="inline-block border-2 border-primary bg-primary/5 rounded-full px-4 py-2 text-sm text-foreground min-w-[44px] text-center">
+                                            {{ slot.start_time|date:"H:i" }}–{{ slot.end_time|date:"H:i" }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 </div>
             {% endif %}
         </div>
