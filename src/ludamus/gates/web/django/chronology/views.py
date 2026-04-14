@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import operator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 
 from django.conf import settings as django_settings
@@ -84,32 +83,32 @@ def _field_descriptors(
 def _timeslot_descriptors(
     requirements: Sequence[TimeSlotRequirementDTO], selected_ids: list[int]
 ) -> list[dict[str, object]]:
-    return sorted(
-        (
-            {
-                "id": req.time_slot_id,
-                "start_time": req.time_slot.start_time,
-                "end_time": req.time_slot.end_time,
-                "is_required": req.is_required,
-                "is_selected": req.time_slot_id in selected_ids,
-            }
-            for req in requirements
-        ),
-        key=operator.itemgetter("start_time"),
-    )
+    flat = sorted(requirements, key=lambda req: req.time_slot.start_time)
+    selected = set(selected_ids)
+    groups: dict[date, list[dict[str, object]]] = {}
+    for req in flat:
+        slot: dict[str, object] = {
+            "id": req.time_slot_id,
+            "start_time": req.time_slot.start_time,
+            "end_time": req.time_slot.end_time,
+            "is_required": req.is_required,
+            "is_selected": req.time_slot_id in selected,
+        }
+        groups.setdefault(req.time_slot.start_time.date(), []).append(slot)
+    return [{"day": day, "slots": slots} for day, slots in sorted(groups.items())]
 
 
 def _display_value(
     field: SessionFieldDTO | PersonalDataFieldDTO, raw: object
 ) -> object:
-    if raw in {None, ""}:
+    if isinstance(raw, bool):
         return raw
     option_map = {opt.value: opt.label for opt in field.options}
     if isinstance(raw, list):
         return [option_map.get(v, v) for v in raw]
-    if isinstance(raw, bool):
-        return raw
-    return option_map.get(raw, raw) if isinstance(raw, str) else raw
+    if isinstance(raw, str):
+        return option_map.get(raw, raw)
+    return raw
 
 
 # -- Module-level render functions --
@@ -271,15 +270,14 @@ def _render_review(
                 }
             )
 
-    time_slots = []
+    time_slots: list[dict[str, object]] = []
     if time_slot_ids:
         ts_reqs = service.get_timeslot_requirements(category.pk)
         time_slot_id_set = set(time_slot_ids)
-        time_slots = [
-            {"start_time": req.time_slot.start_time, "end_time": req.time_slot.end_time}
-            for req in ts_reqs
-            if req.time_slot_id in time_slot_id_set
-        ]
+        time_slots = _timeslot_descriptors(
+            [req for req in ts_reqs if req.time_slot_id in time_slot_id_set],
+            time_slot_ids,
+        )
 
     review: dict[str, object] = {
         "category_name": category.name,
