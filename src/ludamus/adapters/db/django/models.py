@@ -1006,6 +1006,10 @@ class HostPersonalData(models.Model):
                 name="unique_personal_data_per_facilitator_event_field",
                 condition=Q(facilitator__isnull=False),
             ),
+            models.CheckConstraint(
+                condition=Q(user__isnull=False) | Q(facilitator__isnull=False),
+                name="personal_data_requires_owner",
+            ),
         )
 
     def __str__(self) -> str:

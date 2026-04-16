@@ -122,13 +122,17 @@ _ALL_WIZARD_STEPS: tuple[tuple[str, str], ...] = (
 
 
 def _wizard_steps(
-    service: ProposeSessionService, category: ProposalCategoryDTO | None
+    service: ProposeSessionService,
+    category: ProposalCategoryDTO | None,
+    *,
+    has_timeslots: bool | None = None,
 ) -> list[dict[str, str]]:
-    has_timeslots = (
-        True
-        if category is None
-        else bool(service.get_timeslot_requirements(category.pk))
-    )
+    if has_timeslots is None:
+        has_timeslots = (
+            True
+            if category is None
+            else bool(service.get_timeslot_requirements(category.pk))
+        )
     return [
         {"key": key, "label": label}
         for key, label in _ALL_WIZARD_STEPS
@@ -226,7 +230,7 @@ def _render_timeslots(
             "category": category,
             "slot_descriptors": _timeslot_descriptors(requirements, selected_ids),
             "current_step": "timeslots",
-            "wizard_steps": _wizard_steps(service, category),
+            "wizard_steps": _wizard_steps(service, category, has_timeslots=True),
         },
     )
 
@@ -336,7 +340,9 @@ def _render_review(
             "category": category,
             "review": review,
             "current_step": "review",
-            "wizard_steps": _wizard_steps(service, category),
+            "wizard_steps": _wizard_steps(
+                service, category, has_timeslots=bool(time_slot_ids)
+            ),
         },
     )
 
@@ -561,7 +567,9 @@ class ProposeSessionTimeslotsComponentView(ProposeWizardMixin, View):
                     "slot_descriptors": _timeslot_descriptors(requirements, []),
                     "error": _("Please select at least one time slot."),
                     "current_step": "timeslots",
-                    "wizard_steps": _wizard_steps(service, category),
+                    "wizard_steps": _wizard_steps(
+                        service, category, has_timeslots=True
+                    ),
                 },
             )
 
