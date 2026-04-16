@@ -1,6 +1,6 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import ANY, patch
+from unittest.mock import patch
 
 from django.contrib import messages
 from django.urls import reverse
@@ -123,7 +123,13 @@ class TestProposeSessionPageView:
                 ],
                 "step": "category",
                 "current_step": "category",
-                "wizard_steps": ANY,
+                "wizard_steps": [
+                    {"key": "category", "label": "Kategoria"},
+                    {"key": "personal", "label": "Twoje dane"},
+                    {"key": "timeslots", "label": "Bloki czasowe"},
+                    {"key": "details", "label": "Punkt programu"},
+                    {"key": "review", "label": "Podejrzyj"},
+                ],
                 "show_login_nudge": False,
                 "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
             },
@@ -146,7 +152,13 @@ class TestProposeSessionPageView:
                 "selected_category_id": str(proposal_category.pk),
                 "step": "category",
                 "current_step": "category",
-                "wizard_steps": ANY,
+                "wizard_steps": [
+                    {"key": "category", "label": "Kategoria"},
+                    {"key": "personal", "label": "Twoje dane"},
+                    {"key": "timeslots", "label": "Bloki czasowe"},
+                    {"key": "details", "label": "Punkt programu"},
+                    {"key": "review", "label": "Podejrzyj"},
+                ],
                 "show_login_nudge": False,
                 "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
             },

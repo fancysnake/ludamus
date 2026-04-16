@@ -130,7 +130,7 @@ def _wizard_steps(
         else bool(service.get_timeslot_requirements(category.pk))
     )
     return [
-        {"key": key, "label": str(label)}
+        {"key": key, "label": label}
         for key, label in _ALL_WIZARD_STEPS
         if key != "timeslots" or has_timeslots
     ]
