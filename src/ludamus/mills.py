@@ -358,6 +358,7 @@ class ProposeSessionService:
             create_data = SessionData(
                 sphere_id=event.sphere_id,
                 presenter_id=presenter_id,
+                proposed_by_id=facilitator.pk,
                 display_name=display_name,
                 category_id=category_id,
                 title=title,
