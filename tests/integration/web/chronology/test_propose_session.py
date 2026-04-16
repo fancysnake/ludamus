@@ -1791,6 +1791,41 @@ class TestProposeSessionPageView:
         field_names = [f["name"] for f in review["session_fields"]]
         assert "What is your optional info?" not in field_names
 
+    # -- Coverage: review passes non-string/list/bool values through (views.py:112) --
+
+    def test_review_passes_integer_field_values(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = SessionField.objects.create(
+            event=event,
+            name="Player Count",
+            question="How many players?",
+            slug="player-count",
+        )
+        SessionFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=False
+        )
+        integer_value = 42
+        self._set_wizard_full(
+            authenticated_client,
+            event,
+            proposal_category,
+            session_data={
+                "title": "Test Session",
+                "participants_limit": 6,
+                "session_player-count": integer_value,
+            },
+        )
+
+        response = authenticated_client.post(self._get_review_url(event.slug), {})
+
+        review = response.context["review"]
+        player_count_field = next(
+            f for f in review["session_fields"] if f["name"] == "How many players?"
+        )
+        assert player_count_field["value"] == integer_value
+
     # -- Coverage: review splits fields by public/private visibility --
 
     def test_review_separates_fields_by_visibility(
