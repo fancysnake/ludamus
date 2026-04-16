@@ -1,9 +1,7 @@
 from django.core.cache import cache
 
-from ludamus.pacts import CacheProtocol
 
-
-class DjangoCache(CacheProtocol):
+class DjangoCache:
     @staticmethod
     def get(key: str) -> object:
         result: object = cache.get(key)
