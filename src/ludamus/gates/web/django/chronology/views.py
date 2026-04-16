@@ -10,6 +10,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 from django.views.generic.base import View
 
 from ludamus.gates.web.django.helpers import get_client_ip
@@ -115,7 +116,7 @@ _ALL_WIZARD_STEPS: tuple[tuple[str, str], ...] = (
     ("category", _("Category")),
     ("personal", _("Your info")),
     ("timeslots", _("Time slots")),
-    ("details", _("Session")),
+    ("details", pgettext("wizard step", "Session")),
     ("review", _("Review")),
 )
 
