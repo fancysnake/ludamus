@@ -44,6 +44,9 @@ jobs:
       - name: Combine coverage reports
         run: mise run coverage:combine
         if: ${{ !cancelled() }}
+      - name: Check diff coverage
+        run: diff-cover coverage.xml --compare-branch=origin/main --fail-under=90
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         if: ${{ !cancelled() }}
