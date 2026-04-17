@@ -12,10 +12,10 @@ def populate_facilitators(apps, _schema_editor):
     # Cache: (event_id, user_id) -> Facilitator to avoid duplicates
     cache: dict[tuple[int, int], object] = {}
 
-    for session in Session.objects.filter(presenter_id__isnull=False).select_related(
-        "sphere"
-    ):
-        event_id = session.sphere.event_id
+    for session in Session.objects.filter(
+        presenter_id__isnull=False, category__isnull=False
+    ).select_related("category__event"):
+        event_id = session.category.event_id
         user_id = session.presenter_id
         key = (event_id, user_id)
 
