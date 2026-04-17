@@ -22,7 +22,17 @@
                             {% endif %}
                         </span>
                         <span class="mt-2 text-center text-xs sm:text-sm leading-tight {% if is_current_step %}text-foreground font-medium {% elif is_done_step %}text-foreground {% else %}text-foreground-muted{% endif %}">
-                            {{ step.label }}
+                            {% if step.key == "category" %}
+                                {% translate "Category" %}
+                            {% elif step.key == "personal" %}
+                                {% translate "Your info" %}
+                            {% elif step.key == "timeslots" %}
+                                {% translate "Time slots" %}
+                            {% elif step.key == "details" %}
+                                {% translate "Session" context "wizard step" %}
+                            {% elif step.key == "review" %}
+                                {% translate "Review" %}
+                            {% endif %}
                         </span>
                     </li>
                 {% endwith %}

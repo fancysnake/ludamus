@@ -10,7 +10,6 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
-from django.utils.translation import pgettext
 from django.views.generic.base import View
 
 from ludamus.gates.web.django.helpers import get_client_ip
@@ -112,12 +111,12 @@ def _display_value(
     return raw
 
 
-_ALL_WIZARD_STEPS: tuple[tuple[str, str], ...] = (
-    ("category", _("Category")),
-    ("personal", _("Your info")),
-    ("timeslots", _("Time slots")),
-    ("details", pgettext("wizard step", "Session")),
-    ("review", _("Review")),
+_ALL_WIZARD_STEP_KEYS: tuple[str, ...] = (
+    "category",
+    "personal",
+    "timeslots",
+    "details",
+    "review",
 )
 
 
@@ -134,8 +133,8 @@ def _wizard_steps(
             else bool(service.get_timeslot_requirements(category.pk))
         )
     return [
-        {"key": key, "label": label}
-        for key, label in _ALL_WIZARD_STEPS
+        {"key": key}
+        for key in _ALL_WIZARD_STEP_KEYS
         if key != "timeslots" or has_timeslots
     ]
 
