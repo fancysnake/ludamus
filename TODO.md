@@ -36,6 +36,10 @@ kanban
 
   Epics
     [Migrate to HTMX]@{ assigned: 'frontend', ticket: 10 }
+    [Add FastAPI API for MCP]@{ assigned: 'mcp' }
+    [Consider refactoring registration to event sourcing]@{
+      assigned: 'refactor'
+    }
 
   Backlog
     [Add blurred image placeholders - Plaiceholder-style progressive blur]@{
@@ -61,7 +65,8 @@ kanban
     }
     [Sphere creation command]@{ assigned: 'management', ticket: 14 }
     [Changelog - Keep a Changelog format, consider CalVer]@{
-      assigned: 'pre-launch', ticket: 23
+      assigned: 'pre-launch'
+      ticket: 23
     }
     [Resolve TODO comments - convert to GitHub issues]@{
       assigned: 'pre-launch'
