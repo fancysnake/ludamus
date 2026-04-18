@@ -60,7 +60,9 @@
                     {% if review.duration %}
                         <div>
                             <dt class="text-xs text-foreground-muted">{% translate "Duration" %}</dt>
-                            <dd class="text-foreground">{{ review.duration|format_duration }}</dd>
+                            <dd class="text-foreground">
+                                {{ review.duration|format_duration }}
+                            </dd>
                         </div>
                     {% endif %}
                     {% for field in review.session_fields %}
