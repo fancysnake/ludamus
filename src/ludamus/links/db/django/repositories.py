@@ -32,6 +32,7 @@ from ludamus.adapters.db.django.models import (
     Tag,
     TimeSlot,
     TimeSlotRequirement,
+    Track,
     UserEnrollmentConfig,
     Venue,
 )
@@ -100,6 +101,10 @@ from ludamus.pacts import (
     TimeSlotDTO,
     TimeSlotRepositoryProtocol,
     TimeSlotRequirementDTO,
+    TrackCreateData,
+    TrackDTO,
+    TrackRepositoryProtocol,
+    TrackUpdateData,
     UserData,
     UserDTO,
     UserEnrollmentConfigData,
@@ -408,6 +413,7 @@ class SessionRepository(SessionRepositoryProtocol):
         presenter_name: str | None = None,
         field_filters: dict[int, str] | None = None,
         search: str | None = None,
+        track_pk: int | None = None,
     ) -> list[SessionListItemDTO]:
         qs = Session.objects.filter(category__event_id=event_id).select_related(
             "presenter", "category"
@@ -426,6 +432,9 @@ class SessionRepository(SessionRepositoryProtocol):
         if search:
             qs = qs.filter(field_values__value__icontains=search).distinct()
 
+        if track_pk is not None:
+            qs = qs.filter(tracks__pk=track_pk)
+
         return [
             SessionListItemDTO(
                 pk=s.pk,
@@ -437,6 +446,15 @@ class SessionRepository(SessionRepositoryProtocol):
             )
             for s in qs.order_by("-creation_time")
         ]
+
+    @staticmethod
+    def set_session_tracks(session_pk: int, track_pks: list[int]) -> None:
+        try:
+            session = Session.objects.get(pk=session_pk)
+        except Session.DoesNotExist as err:
+            msg = f"Session with pk '{session_pk}' not found"
+            raise NotFoundError(msg) from err
+        session.tracks.set(track_pks)
 
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):
@@ -2293,3 +2311,96 @@ class EncounterRSVPRepository(EncounterRSVPRepositoryProtocol):
         EncounterRSVP.objects.filter(
             encounter_id=encounter_id, user_id=user_id
         ).delete()
+
+
+class TrackRepository(TrackRepositoryProtocol):
+    @transaction.atomic
+    def create(self, data: TrackCreateData) -> TrackDTO:
+        Event.objects.select_for_update().get(pk=data["event_pk"])
+        base_slug = slugify(data["name"])
+        slug = self.generate_unique_slug(data["event_pk"], base_slug)
+        track = Track.objects.create(
+            event_id=data["event_pk"],
+            name=data["name"],
+            slug=slug,
+            is_public=data["is_public"],
+        )
+        return TrackDTO.model_validate(track)
+
+    @staticmethod
+    def read(pk: int) -> TrackDTO:
+        try:
+            track = Track.objects.get(pk=pk)
+        except Track.DoesNotExist as err:
+            msg = f"Track with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+        return TrackDTO.model_validate(track)
+
+    @staticmethod
+    def read_by_slug(event_pk: int, slug: str) -> TrackDTO:
+        try:
+            track = Track.objects.get(event_id=event_pk, slug=slug)
+        except Track.DoesNotExist as err:
+            msg = f"Track with slug '{slug}' not found"
+            raise NotFoundError(msg) from err
+        return TrackDTO.model_validate(track)
+
+    @transaction.atomic
+    def update(self, pk: int, data: TrackUpdateData) -> TrackDTO:
+        try:
+            track = Track.objects.select_for_update().get(pk=pk)
+            Event.objects.select_for_update().get(pk=track.event_id)
+        except Track.DoesNotExist as err:
+            msg = f"Track with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+        needs_save = False
+        if track.name != data["name"]:
+            base_slug = slugify(data["name"])
+            track.slug = self.generate_unique_slug(
+                track.event_id, base_slug, exclude_pk=pk
+            )
+            track.name = data["name"]
+            needs_save = True
+        if track.is_public != data["is_public"]:
+            track.is_public = data["is_public"]
+            needs_save = True
+        if needs_save:
+            track.save()
+        track.spaces.set(data["space_pks"])
+        track.managers.set(data["manager_pks"])
+        return TrackDTO.model_validate(track)
+
+    @staticmethod
+    def delete(pk: int) -> None:
+        Track.objects.filter(pk=pk).delete()
+
+    @staticmethod
+    def list_by_event(event_pk: int) -> list[TrackDTO]:
+        tracks = Track.objects.filter(event_id=event_pk).order_by("name")
+        return [TrackDTO.model_validate(t) for t in tracks]
+
+    @staticmethod
+    def list_public_by_event(event_pk: int) -> list[TrackDTO]:
+        tracks = Track.objects.filter(event_id=event_pk, is_public=True).order_by(
+            "name"
+        )
+        return [TrackDTO.model_validate(t) for t in tracks]
+
+    @staticmethod
+    def list_by_manager(user_pk: int) -> list[TrackDTO]:
+        tracks = Track.objects.filter(managers__pk=user_pk).order_by("name")
+        return [TrackDTO.model_validate(t) for t in tracks]
+
+    @staticmethod
+    def generate_unique_slug(
+        event_id: int, base_slug: str, exclude_pk: int | None = None
+    ) -> str:
+        slug = base_slug
+        for _ in range(4):
+            query = Track.objects.filter(event_id=event_id, slug=slug)
+            if exclude_pk:
+                query = query.exclude(pk=exclude_pk)
+            if not query.exists():
+                return slug
+            slug = f"{base_slug}-{token_urlsafe(3)}"
+        return slug
