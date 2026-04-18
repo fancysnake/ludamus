@@ -92,7 +92,6 @@ show_missing = true
 skip_covered = true
 exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
 precision = 2
-fail_under = 97
 
 # DJLINT
 

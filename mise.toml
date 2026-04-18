@@ -151,7 +151,7 @@ description = "Combine integration + e2e coverage and export XML"
 run = """
 coverage combine .coverage.unit .coverage.e2e
 coverage xml -o coverage.xml
-coverage report
+coverage report --fail-under=97
 """
 env.PYTHONPATH = "src"
 
