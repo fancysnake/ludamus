@@ -208,6 +208,31 @@ class SpaceDTO(BaseModel):
     slug: str
 
 
+class TrackDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    creation_time: datetime
+    event_id: int
+    is_public: bool
+    modification_time: datetime
+    name: str
+    pk: int
+    slug: str
+
+
+class TrackCreateData(TypedDict):
+    event_pk: int
+    name: str
+    is_public: bool
+
+
+class TrackUpdateData(TypedDict):
+    name: str
+    is_public: bool
+    space_pks: list[int]
+    manager_pks: list[int]
+
+
 class VenueDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -609,6 +634,7 @@ class WizardData(TypedDict, total=False):
     personal_data: dict[str, str]
     session_data: dict[str, object]
     time_slot_ids: list[int]
+    track_pks: list[int]
 
 
 @dataclass
@@ -754,7 +780,27 @@ class SessionRepositoryProtocol(Protocol):
         presenter_name: str | None = None,
         field_filters: dict[int, str] | None = None,
         search: str | None = None,
+        track_pk: int | None = None,
     ) -> list[SessionListItemDTO]: ...
+    @staticmethod
+    def set_session_tracks(session_pk: int, track_pks: list[int]) -> None: ...
+
+
+class TrackRepositoryProtocol(Protocol):
+    def create(self, data: TrackCreateData) -> TrackDTO: ...
+    @staticmethod
+    def read(pk: int) -> TrackDTO: ...
+    @staticmethod
+    def read_by_slug(event_pk: int, slug: str) -> TrackDTO: ...
+    def update(self, pk: int, data: TrackUpdateData) -> TrackDTO: ...
+    @staticmethod
+    def delete(pk: int) -> None: ...
+    @staticmethod
+    def list_by_event(event_pk: int) -> list[TrackDTO]: ...
+    @staticmethod
+    def list_public_by_event(event_pk: int) -> list[TrackDTO]: ...
+    @staticmethod
+    def list_by_manager(user_pk: int) -> list[TrackDTO]: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):
@@ -1137,6 +1183,8 @@ class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     def venues(self) -> VenueRepositoryProtocol: ...
     @property
     def time_slots(self) -> TimeSlotRepositoryProtocol: ...
+    @property
+    def tracks(self) -> TrackRepositoryProtocol: ...
     @property
     def encounters(self) -> EncounterRepositoryProtocol: ...
     @property

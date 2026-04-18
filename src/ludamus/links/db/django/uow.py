@@ -93,6 +93,10 @@ class UnitOfWork(UnitOfWorkProtocol):  # noqa: PLR0904
         return repositories.TimeSlotRepository()
 
     @cached_property
+    def tracks(self) -> repositories.TrackRepository:
+        return repositories.TrackRepository()
+
+    @cached_property
     def encounters(self) -> repositories.EncounterRepository:
         return repositories.EncounterRepository()
 
