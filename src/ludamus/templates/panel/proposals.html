@@ -42,7 +42,9 @@
                 {% if all_tracks %}
                     <div>
                         <label for="filter-track"
-                               class="block text-xs font-medium text-foreground-muted mb-1">{% translate "Track" %}</label>
+                               class="block text-xs font-medium text-foreground-muted mb-1">
+                            {% translate "Track" %}
+                        </label>
                         <select id="filter-track"
                                 name="track"
                                 class="filter-input px-3 py-2 border border-border rounded-lg text-sm">
@@ -51,7 +53,8 @@
                                 <option value="{{ track.pk }}"
                                         {% if filter_track_pk == track.pk %}selected{% endif %}
                                         {% if track.pk in managed_track_pks %}class="font-semibold"{% endif %}>
-                                    {% if track.pk in managed_track_pks %}★ {% endif %}{{ track.name }}
+                                    {% if track.pk in managed_track_pks %}★{% endif %}
+                                    {{ track.name }}
                                 </option>
                             {% endfor %}
                         </select>
