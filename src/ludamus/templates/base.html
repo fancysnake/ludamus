@@ -85,14 +85,12 @@
             <!-- Page Header -->
             {% block header_section %}
                 <div class="mb-6 text-center">
-                    <h1 class="text-2xl sm:text-3xl font-bold"
-                        style="color: var(--color-foreground)">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-foreground">
                         {% block header %}
                         {% endblock header %}
                     </h1>
                     {% block description %}
-                        <p class="mt-2 text-sm sm:text-base"
-                           style="color: var(--color-foreground-muted)">
+                        <p class="mt-2 text-sm sm:text-base text-foreground-muted">
                             {% block description_text %}
                             {% endblock description_text %}
                         </p>
@@ -103,30 +101,23 @@
             {% endblock body %}
         </main>
         <!-- Footer -->
-        <footer class="border-t py-6 mt-8"
-                style="background-color: var(--theme-bg-secondary);
-                       border-color: var(--theme-border)">
+        <footer class="border-t py-6 mt-8 bg-bg-secondary border-border">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-end mb-4">{% include "components/theme_switcher.html" %}</div>
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm"
-                     style="color: var(--color-foreground-muted)">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-foreground-muted">
                     <p class="text-center sm:text-left">
                         © {% now "Y" %} Radosław Ganczarek.
                         <a href="https://github.com/fancysnake/ludamus"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">Source code</a>
+                           class="hover:underline text-primary">Source code</a>
                         available under BSD-3-Clause license.
                     </p>
                     <div class="flex flex-wrap justify-center sm:justify-end gap-4">
                         <a href="mailto:{{ SUPPORT_EMAIL }}"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">{% translate "Contact" %}</a>
+                           class="hover:underline text-primary">{% translate "Contact" %}</a>
                         <a href="{% url 'django.contrib.flatpages.views.flatpage' url='/privacy-policy/' %}"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">{% translate "Privacy Policy" %}</a>
+                           class="hover:underline text-primary">{% translate "Privacy Policy" %}</a>
                         <a href="{% url 'django.contrib.flatpages.views.flatpage' url='/terms-of-service/' %}"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">{% translate "Terms of Service" %}</a>
+                           class="hover:underline text-primary">{% translate "Terms of Service" %}</a>
                     </div>
                 </div>
             </div>

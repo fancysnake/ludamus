@@ -25,9 +25,8 @@
 {% endblock header_section %}
 {% block body %}
     {% include "chronology/decorative_background_blobs.html" %}
-    <div class="relative rounded-3xl shadow-xl overflow-hidden gradient-border mb-8"
-         style="background-color: var(--theme-bg-secondary);
-                box-shadow: var(--theme-shadow-lg)">
+    <div class="relative rounded-3xl shadow-xl overflow-hidden gradient-border mb-8 bg-bg-secondary"
+         style="box-shadow: var(--theme-shadow-lg)">
         <div class="p-6 sm:p-8">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                 <div class="flex-1">
@@ -157,21 +156,20 @@
     <!-- Enrollment Summary Banner -->
     {% if current_user and user_enrolled_sessions %}
         <div class="mb-6 bg-gradient-to-r from-coral-400 to-coral-500 rounded-2xl p-[2px]">
-            <div class="rounded-2xl p-5"
-                 style="background-color: var(--theme-bg-secondary)">
+            <div class="rounded-2xl p-5 bg-bg-secondary">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div class="w-12 h-12 bg-coral-100 dark:bg-coral-900/30 rounded-xl flex items-center justify-center shrink-0">
                         {% icon "check-circle" class="w-6 h-6 text-coral-600 dark:text-coral-400" variant="mini" %}
                     </div>
                     <div class="flex-1">
-                        <h3 class="font-semibold" style="color: var(--color-foreground)">
+                        <h3 class="font-semibold text-foreground">
                             {% blocktranslate count counter=user_enrolled_sessions|length %}
                                 You're signed up for {{ counter }} session!
                             {% plural %}
                                 You're signed up for {{ counter }} sessions!
                             {% endblocktranslate %}
                         </h3>
-                        <p class="text-sm" style="color: var(--color-foreground-muted)">
+                        <p class="text-sm text-foreground-muted">
                             {% for s in user_enrolled_sessions %}
                                 {{ s.session.title }}
                                 {% if not forloop.last %},{% endif %}
@@ -192,7 +190,7 @@
                     <p class="mb-2">
                         {% translate "Your Anonymous Code" %}: <strong class="text-lg">{{ anonymous_code }}</strong>
                         <br>
-                        <small style="color: var(--color-foreground-muted)">{% translate "Save this code to manage your enrollment later" %}</small>
+                        <small class="text-foreground-muted">{% translate "Save this code to manage your enrollment later" %}</small>
                     </p>
                     <div class="flex gap-2" role="group">
                         <a href="?enter-code=1"
@@ -213,7 +211,7 @@
         <dialog id="anonymousCodeModal"
                 class="modal p-0"
                 aria-labelledby="anonymousCodeModal-title">
-            <div class="px-6 py-4 border-b flex items-center justify-between border-border">
+            <div class="px-6 py-4 border-b border-border flex items-center justify-between">
                 <h3 id="anonymousCodeModal-title" class="font-semibold text-foreground">{% translate "Enter Different Code" %}</h3>
                 <button data-modal-close="anonymousCodeModal"
                         class="p-1 rounded-lg hover:opacity-70 text-foreground-muted"
@@ -232,7 +230,7 @@
                         <p class="text-xs mt-1 text-foreground-muted">{% translate "This will replace your current anonymous session" %}</p>
                     </div>
                 </div>
-                <div class="px-6 py-4 border-t flex justify-end gap-2 border-border">
+                <div class="px-6 py-4 border-t border-border flex justify-end gap-2">
                     <button type="button"
                             class="btn btn-secondary"
                             data-modal-close="anonymousCodeModal">{% translate "Cancel" %}</button>
@@ -267,14 +265,14 @@
                             {% icon "magnifying-glass" class="w-5 h-5" variant="mini" %}
                         </span>
                         <input type="text"
-                               class="filter-input w-full pl-11 pr-4 py-3 rounded-2xl border text-sm font-medium bg-bg-secondary text-foreground placeholder:text-foreground-muted placeholder:font-normal transition-all duration-150 border-border"
+                               class="filter-input w-full pl-11 pr-4 py-3 rounded-2xl border border-border text-sm font-medium bg-bg-secondary text-foreground placeholder:text-foreground-muted placeholder:font-normal transition-all duration-150"
                                id="session-filter"
                                placeholder="{% translate "Filter by title or host..." %}"
                                autocomplete="off">
                     </div>
                     <div class="filters-popover-wrapper relative overflow-visible">
                         <button type="button"
-                                class="filter-toggle filter-toggle-anchor inline-flex items-center gap-2 p-3 rounded-2xl text-sm font-semibold border whitespace-nowrap cursor-pointer bg-bg-secondary text-foreground-muted transition-all duration-150 border-border"
+                                class="filter-toggle filter-toggle-anchor inline-flex items-center gap-2 p-3 rounded-2xl text-sm font-semibold border border-border whitespace-nowrap cursor-pointer bg-bg-secondary text-foreground-muted transition-all duration-150"
                                 id="filter-toggle"
                                 aria-expanded="false"
                                 aria-controls="filter-panel">
@@ -290,7 +288,7 @@
                                         <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
                                                for="status-filter">{% translate "Status" %}</label>
                                         <select id="status-filter"
-                                                class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 border-border">
+                                                class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150">
                                             <option value="">{% translate "All statuses" %}</option>
                                             <option value="available">{% translate "Available spots" %}</option>
                                             <option value="full">{% translate "Full" %}</option>
@@ -305,7 +303,7 @@
                                         <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
                                                for="venue-filter">{% translate "Venue" %}</label>
                                         <select id="venue-filter"
-                                                class="filter-input grow w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 border-border">
+                                                class="filter-input grow w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150">
                                             <option value="">{% translate "All venues" %}</option>
                                         </select>
                                     </div>
@@ -315,14 +313,14 @@
                                         </label>
                                         <div class="flex items-center gap-2">
                                             <input type="number"
-                                                   class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] grow font-medium bg-bg-secondary text-foreground transition-all duration-150 border-border"
+                                                   class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] grow font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                                    id="min-age-filter"
                                                    placeholder="{% translate "Min" %}"
                                                    min="0"
                                                    max="99">
                                             <span class="text-xs font-bold text-foreground-muted">–</span>
                                             <input type="number"
-                                                   class="filter-input w-full py-2 px-3 rounded-xl grow border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 border-border"
+                                                   class="filter-input w-full py-2 px-3 rounded-xl grow border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
                                                    id="max-age-filter"
                                                    placeholder="{% translate "Max" %}"
                                                    min="0"
@@ -334,7 +332,7 @@
                                             <div class="flex flex-col gap-1.5 grow">
                                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest grow text-foreground-muted"
                                                        for="tag-filter-{{ field.slug }}">{{ field.name }}</label>
-                                                <select class="filter-input w-full py-2 px-3 rounded-xl border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter border-border"
+                                                <select class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
                                                         data-category="{{ field.slug }}"
                                                         id="tag-filter-{{ field.slug }}">
                                                     <option value="">{% translate "All" %} {{ field.name }}</option>
@@ -423,7 +421,7 @@
                                 {% translate "No sessions scheduled for this time slot" %}
                                 {% if event.is_proposal_active %}
                                     – <a href="{% url 'web:chronology:session-propose' event_slug=event.slug %}"
-    style="color: var(--theme-primary)">{% translate "be the first to propose!" %}</a>
+    class="text-primary">{% translate "be the first to propose!" %}</a>
                                 {% endif %}
                             </p>
                         </div>
@@ -477,10 +475,8 @@
                 <div class="w-16 h-16 bg-coral-100 dark:bg-coral-900/30 rounded-2xl flex items-center justify-center mb-4 rotate-3">
                     {% icon "plus" class="w-8 h-8 text-coral-500" %}
                 </div>
-                <h3 class="text-xl font-bold mb-2" style="color: var(--color-foreground)">
-                    {% translate "Want to host a session?" %}
-                </h3>
-                <p class="mb-4 max-w-md" style="color: var(--color-foreground-muted)">
+                <h3 class="text-xl font-bold mb-2 text-foreground">{% translate "Want to host a session?" %}</h3>
+                <p class="mb-4 max-w-md text-foreground-muted">
                     {% translate "Got a game you're dying to play? Propose your own session and find players!" %}
                 </p>
                 <a href="{% url 'web:chronology:session-propose' event_slug=event.slug %}"
@@ -492,12 +488,9 @@
     {% endif %}
     <!-- Proposals Section (Superuser Only) -->
     {% if user.is_superuser and event.is_proposal_active and pending_sessions %}
-        <div class="card mt-8" style="border-color: var(--theme-warning)">
-            <div class="px-6 py-4 flex items-center gap-3"
-                 style="background-color: var(--theme-warning-bg);
-                        border-bottom: 1px solid var(--theme-warning-light)">
-                <h3 class="text-base font-semibold flex items-center gap-2"
-                    style="color: var(--theme-warning-text)">
+        <div class="card mt-8 border-(--theme-warning)">
+            <div class="px-6 py-4 flex items-center gap-3 bg-(--theme-warning-bg) border-b border-(--theme-warning-light)">
+                <h3 class="text-base font-semibold flex items-center gap-2 text-(--theme-warning-text)">
                     {% icon "clipboard-document-check" class="w-5 h-5" variant="mini" %}
                     {% translate "Pending Proposals" %}
                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-800 text-warm-100">{{ pending_sessions|length }}</span>
@@ -506,31 +499,24 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr style="border-bottom: 1px solid var(--theme-border)">
-                            <th class="text-left py-3 px-4 font-medium"
-                                style="color: var(--color-foreground-secondary)">{% translate "Proposal" %}</th>
-                            <th class="text-left py-3 px-4 font-medium"
-                                style="color: var(--color-foreground-secondary)">{% translate "Host" %}</th>
-                            <th class="text-left py-3 px-4 font-medium"
-                                style="color: var(--color-foreground-secondary)">{% translate "Submitted" %}</th>
-                            <th class="text-left py-3 px-4 font-medium"
-                                style="color: var(--color-foreground-secondary)">{% translate "Preferred Times" %}</th>
-                            <th class="text-left py-3 px-4 font-medium"
-                                style="color: var(--color-foreground-secondary)">{% translate "Participants" %}</th>
-                            <th class="text-left py-3 px-4 font-medium"
-                                style="color: var(--color-foreground-secondary)">{% translate "Action" %}</th>
+                        <tr class="border-b border-border">
+                            <th class="text-left py-3 px-4 font-medium text-foreground-secondary">{% translate "Proposal" %}</th>
+                            <th class="text-left py-3 px-4 font-medium text-foreground-secondary">{% translate "Host" %}</th>
+                            <th class="text-left py-3 px-4 font-medium text-foreground-secondary">{% translate "Submitted" %}</th>
+                            <th class="text-left py-3 px-4 font-medium text-foreground-secondary">{% translate "Preferred Times" %}</th>
+                            <th class="text-left py-3 px-4 font-medium text-foreground-secondary">{% translate "Participants" %}</th>
+                            <th class="text-left py-3 px-4 font-medium text-foreground-secondary">{% translate "Action" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for pending in pending_sessions %}
-                            <tr class="hover:bg-warm-50 dark:hover:bg-neutral-800"
-                                style="border-bottom: 1px solid var(--color-border)">
+                            <tr class="hover:bg-warm-50 dark:hover:bg-neutral-800 border-b border-border">
                                 <td class="py-3 px-4">
                                     <div>
-                                        <span class="font-medium" style="color: var(--color-foreground)">{{ pending.title }}</span>
+                                        <span class="font-medium text-foreground">{{ pending.title }}</span>
                                         {% if pending.description %}
                                             <br>
-                                            <span class="text-xs" style="color: var(--color-foreground-muted)">{{ pending.description|truncatechars:100 }}</span>
+                                            <span class="text-xs text-foreground-muted">{{ pending.description|truncatechars:100 }}</span>
                                         {% endif %}
                                         {# TODO: Replace pending.tags (old Tag M2M) with session field values #}
                                         {% if pending.tags %}
@@ -541,8 +527,7 @@
                                             </div>
                                         {% endif %}
                                         {% if pending.needs %}
-                                            <div class="mt-1 text-xs flex items-center gap-1"
-                                                 style="color: var(--theme-info)">
+                                            <div class="mt-1 text-xs flex items-center gap-1 text-info">
                                                 {% icon "information-circle" class="w-3.5 h-3.5" variant="mini" %} {{ pending.needs|truncatechars:50 }}
                                             </div>
                                         {% endif %}
@@ -550,12 +535,12 @@
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="flex items-center gap-2">
-                                        <span style="color: var(--color-foreground-muted)">{% icon "user-circle" class="w-4 h-4" variant="mini" %}</span>
+                                        <span class="text-foreground-muted">{% icon "user-circle" class="w-4 h-4" variant="mini" %}</span>
                                         <span>{{ pending.display_name }}</span>
                                     </div>
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
-                                    <span class="text-xs" style="color: var(--color-foreground-muted)">{{ pending.creation_time|date:"M j" }}</span>
+                                    <span class="text-xs text-foreground-muted">{{ pending.creation_time|date:"M j" }}</span>
                                     <br>
                                     {{ pending.creation_time|date:"G:i" }}
                                 </td>
@@ -566,16 +551,15 @@
                                                 <div class="whitespace-nowrap">{{ slot.start_time|date:"M j, G:i" }} - {{ slot.end_time|date:"G:i" }}</div>
                                             {% endfor %}
                                             {% if pending.time_slots|length > 2 %}
-                                                <span style="color: var(--color-foreground-muted)">+{{ pending.time_slots|length|add:"-2" }} more</span>
+                                                <span class="text-foreground-muted">+{{ pending.time_slots|length|add:"-2" }} more</span>
                                             {% endif %}
                                         </div>
                                     {% else %}
-                                        <span style="color: var(--color-foreground-muted)">{% translate "Flexible" %}</span>
+                                        <span class="text-foreground-muted">{% translate "Flexible" %}</span>
                                     {% endif %}
                                 </td>
                                 <td class="py-3 px-4">
-                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-200 dark:bg-neutral-700"
-                                          style="color: var(--color-foreground-secondary)">{{ pending.participants_limit }}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-warm-200 dark:bg-neutral-700 text-foreground-secondary">{{ pending.participants_limit }}</span>
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="flex flex-col gap-1.5 grow">
@@ -602,37 +586,29 @@
             <dialog id="proposalModal{{ pending.pk }}"
                     class="modal"
                     aria-labelledby="proposalModal{{ pending.pk }}-title">
-                <div class="px-6 py-4 border-b flex items-center justify-between"
-                     style="border-color: var(--theme-border)">
+                <div class="px-6 py-4 border-b border-border flex items-center justify-between">
                     <h3 id="proposalModal{{ pending.pk }}-title"
-                        class="text-lg font-semibold"
-                        style="color: var(--color-foreground)">{{ pending.title }}</h3>
+                        class="text-lg font-semibold text-foreground">{{ pending.title }}</h3>
                     <button data-modal-close="proposalModal{{ pending.pk }}"
-                            class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700"
-                            style="color: var(--color-foreground-muted)">
+                            class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                         {% icon "x-mark" class="w-5 h-5" variant="mini" %}
                     </button>
                 </div>
-                <div class="px-6 py-4" style="color: var(--color-foreground)">
+                <div class="px-6 py-4 text-foreground">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-3">
                             <div>
-                                <h4 class="text-sm font-semibold mb-1"
-                                    style="color: var(--color-foreground-secondary)">{% translate "Host" %}</h4>
+                                <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Host" %}</h4>
                                 <p>{{ pending.display_name }}</p>
                             </div>
                             <div>
-                                <h4 class="text-sm font-semibold mb-1"
-                                    style="color: var(--color-foreground-secondary)">
-                                    {% translate "Participants Limit" %}
-                                </h4>
+                                <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Participants Limit" %}</h4>
                                 <p>{{ pending.participants_limit }}</p>
                             </div>
                             {# TODO: Replace pending.tags (old Tag M2M) with session field values #}
                             {% if pending.tags %}
                                 <div>
-                                    <h4 class="text-sm font-semibold mb-1"
-                                        style="color: var(--color-foreground-secondary)">{% translate "Tags" %}</h4>
+                                    <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Tags" %}</h4>
                                     <div class="flex flex-wrap gap-1.5">
                                         {% for tag in pending.tags %}
                                             {% include "components/_field_pill.html" with value=tag.name size="sm" %}
@@ -643,45 +619,37 @@
                         </div>
                         <div class="space-y-3">
                             <div>
-                                <h4 class="text-sm font-semibold mb-1"
-                                    style="color: var(--color-foreground-secondary)">{% translate "Submitted" %}</h4>
+                                <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Submitted" %}</h4>
                                 <p>{{ pending.creation_time|date:"F j, Y G:i" }}</p>
                             </div>
                             {% if pending.time_slots %}
                                 <div>
-                                    <h4 class="text-sm font-semibold mb-1"
-                                        style="color: var(--color-foreground-secondary)">
-                                        {% translate "Preferred Time Slots" %}
-                                    </h4>
+                                    <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Preferred Time Slots" %}</h4>
                                     {% for slot in pending.time_slots %}<div class="text-sm">{{ slot }}</div>{% endfor %}
                                 </div>
                             {% endif %}
                         </div>
                     </div>
                     {% if pending.description %}
-                        <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
-                            <h4 class="text-sm font-semibold mb-1"
-                                style="color: var(--color-foreground-secondary)">{% translate "Description" %}</h4>
+                        <div class="mt-4 pt-4 border-t border-border">
+                            <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Description" %}</h4>
                             <p>{{ pending.description }}</p>
                         </div>
                     {% endif %}
                     {% if pending.requirements %}
-                        <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
-                            <h4 class="text-sm font-semibold mb-1"
-                                style="color: var(--color-foreground-secondary)">{% translate "Requirements" %}</h4>
+                        <div class="mt-4 pt-4 border-t border-border">
+                            <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Requirements" %}</h4>
                             <p>{{ pending.requirements }}</p>
                         </div>
                     {% endif %}
                     {% if pending.needs %}
-                        <div class="mt-4 pt-4" style="border-top: 1px solid var(--theme-border)">
-                            <h4 class="text-sm font-semibold mb-1"
-                                style="color: var(--color-foreground-secondary)">{% translate "Special Needs" %}</h4>
+                        <div class="mt-4 pt-4 border-t border-border">
+                            <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Special Needs" %}</h4>
                             <p>{{ pending.needs }}</p>
                         </div>
                     {% endif %}
                 </div>
-                <div class="px-6 py-4 flex justify-end gap-2"
-                     style="border-top: 1px solid var(--theme-border)">
+                <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
                     <button data-modal-close="proposalModal{{ pending.pk }}"
                             class="btn btn-secondary text-sm">{% translate "Close" %}</button>
                     <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
@@ -696,14 +664,11 @@
                 class="modal max-w-[800px] w-full bg-transparent h-600 max-h-[90vh]"
                 aria-labelledby="session-{{ data.session.pk }}-title">
             <!-- Header -->
-            <div class="px-6 py-4 border-b flex items-center justify-between"
-                 style="border-color: var(--theme-border)">
+            <div class="px-6 py-4 border-b border-border flex items-center justify-between">
                 <h3 id="session-{{ data.session.pk }}-title"
-                    class="text-lg font-semibold"
-                    style="color: var(--color-foreground)">{{ data.session.title }}</h3>
+                    class="text-lg font-semibold text-foreground">{{ data.session.title }}</h3>
                 <button data-modal-close="session-{{ data.session.pk }}"
-                        class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700"
-                        style="color: var(--color-foreground-muted)">
+                        class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                     {% icon "x-mark" class="w-5 h-5" variant="mini" %}
                 </button>
             </div>
@@ -723,15 +688,12 @@
                     {% icon "users" class="w-4 h-4" variant="mini" %} {% translate "Participants" %}
                     <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-coral-100 dark:bg-coral-900/30 text-coral-700 dark:text-coral-400">{{ data.enrolled_count }}</span>
                     {% if data.waiting_count > 0 %}
-                        <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold"
-                              style="background-color: var(--theme-warning-light);
-                                     color: var(--theme-warning-text)">+{{ data.waiting_count }}</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold bg-(--theme-warning-light) text-(--theme-warning-text)">+{{ data.waiting_count }}</span>
                     {% endif %}
                 </button>
             </div>
             <!-- Tab Content -->
-            <div class="tab-content px-6 py-4 flex-1 overflow-y-auto"
-                 style="color: var(--color-foreground)">
+            <div class="tab-content px-6 py-4 flex-1 overflow-y-auto text-foreground">
                 <!-- Information Tab -->
                 <div id="info-{{ data.session.pk }}"
                      role="tabpanel"
@@ -741,10 +703,9 @@
                     <div class="flex items-center gap-3 mb-6 flex-wrap">
                         {% include "components/avatar.html" with user=data.presenter size="size-10" %}
                         <div class="flex items-center gap-3 flex-wrap min-w-0">
-                            <div class="font-medium" style="color: var(--color-foreground)">{{ data.presenter.full_name }}</div>
+                            <div class="font-medium text-foreground">{{ data.presenter.full_name }}</div>
                             {% if data.location_label %}
-                                <span class="flex items-center gap-1.5 text-sm min-w-0"
-                                      style="color: var(--color-foreground-muted)">
+                                <span class="flex items-center gap-1.5 text-sm min-w-0 text-foreground-muted">
                                     {% icon "map-pin" class="size-4 shrink-0 opacity-80" variant="mini" %}
                                     <span class="truncate" title="{{ data.location_label }}">{{ data.location_label }}</span>
                                 </span>
@@ -767,13 +728,8 @@
                     {% if data.session.description %}
                         <!-- Description -->
                         <div class="mb-6">
-                            <h3 class="font-semibold mb-2"
-                                style="color: var(--color-foreground-secondary)">
-                                {% translate "About this session" %}
-                            </h3>
-                            <div class="leading-relaxed" style="color: var(--color-foreground-muted)">
-                                {{ data.session.description|linebreaks }}
-                            </div>
+                            <h3 class="font-semibold mb-2 text-foreground-secondary">{% translate "About this session" %}</h3>
+                            <div class="leading-relaxed text-foreground-muted">{{ data.session.description|linebreaks }}</div>
                         </div>
                     {% endif %}
                     {% if data.field_values %}
@@ -781,8 +737,7 @@
                         <div class="space-y-4 mb-6">
                             {% for fv in data.field_values %}
                                 <div>
-                                    <h4 class="text-sm font-semibold mb-1"
-                                        style="color: var(--color-foreground-secondary)">
+                                    <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">
                                         {% if fv.field_icon %}
                                             {% icon fv.field_icon class="w-4 h-4 inline mr-1" variant="mini" %}
                                         {% endif %}
@@ -795,9 +750,7 @@
                                             {% endfor %}
                                         </div>
                                     {% else %}
-                                        <div class="leading-relaxed" style="color: var(--color-foreground-muted)">
-                                            {{ fv.value|format_field_value|linebreaks }}
-                                        </div>
+                                        <div class="leading-relaxed text-foreground-muted">{{ fv.value|format_field_value|linebreaks }}</div>
                                     {% endif %}
                                 </div>
                             {% endfor %}
@@ -806,30 +759,27 @@
                     <!-- Details grid -->
                     <div class="grid grid-cols-2 gap-3 mb-6">
                         <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                            <div class="text-sm mb-1" style="color: var(--color-foreground-muted)">{% translate "Time" %}</div>
-                            <div class="font-medium" style="color: var(--color-foreground)">
+                            <div class="text-sm mb-1 text-foreground-muted">{% translate "Time" %}</div>
+                            <div class="font-medium text-foreground">
                                 {{ data.agenda_item.start_time|date:"l, F j" }}
                                 <br>
                                 {{ data.agenda_item.start_time|time:"G:i" }} - {{ data.agenda_item.end_time|time:"G:i" }}
                             </div>
                         </div>
                         <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                            <div class="text-sm mb-1" style="color: var(--color-foreground-muted)">{% translate "Capacity" %}</div>
-                            <div class="font-medium flex flex-wrap items-center gap-1.5"
-                                 style="color: var(--color-foreground)">
+                            <div class="text-sm mb-1 text-foreground-muted">{% translate "Capacity" %}</div>
+                            <div class="font-medium flex flex-wrap items-center gap-1.5 text-foreground">
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
                                     {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
                                 </span>
                                 {% if data.waiting_count > 0 %}
-                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
-                                          style="background-color: var(--theme-warning-light);
-                                                 color: var(--theme-warning-text)">+{{ data.waiting_count }}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-(--theme-warning-light) text-(--theme-warning-text)">+{{ data.waiting_count }}</span>
                                 {% endif %}
                             </div>
                         </div>
                         <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                            <div class="text-sm mb-1" style="color: var(--color-foreground-muted)">{% translate "Minimum Age" %}</div>
-                            <div class="font-medium" style="color: var(--color-foreground)">
+                            <div class="text-sm mb-1 text-foreground-muted">{% translate "Minimum Age" %}</div>
+                            <div class="font-medium text-foreground">
                                 {% if data.session.min_age > 0 %}
                                     {{ data.session.min_age }}+ {% translate "years" %}
                                 {% else %}
@@ -840,28 +790,27 @@
                     </div>
                     <!-- Enrollment Status for Authenticated Users -->
                     {% if current_user and data.user_enrolled %}
-                        <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
+                        <div class="pt-4 border-t border-border">
                             <div class="alert alert-success inline-flex items-center gap-2 text-sm">
                                 {% icon "check-circle" class="w-4 h-4" variant="mini" %} {% translate "You are enrolled in this session" %}
                             </div>
                         </div>
                     {% elif current_user and data.user_waiting %}
-                        <div class="pt-4" style="border-top: 1px solid var(--theme-border)">
+                        <div class="pt-4 border-t border-border">
                             <div class="alert alert-warning inline-flex items-center gap-2 text-sm">
                                 {% icon "clock" class="w-4 h-4" variant="mini" %} {% translate "You are on the waiting list" %}
                             </div>
                         </div>
                     {% endif %}
                     {% if current_connected_users %}
-                        <div class="pt-4 mt-2" style="border-top: 1px solid var(--theme-border)">
-                            <h3 class="font-semibold mb-3"
-                                style="color: var(--color-foreground-secondary)">{% translate "Connected Users" %}</h3>
+                        <div class="pt-4 mt-2 border-t border-border">
+                            <h3 class="font-semibold mb-3 text-foreground-secondary">{% translate "Connected Users" %}</h3>
                             <div class="space-y-2">
                                 {% for connected_user in current_connected_users %}
                                     <div class="flex items-center justify-between p-3 rounded-xl bg-warm-100 dark:bg-neutral-800">
                                         <div class="flex items-center gap-3">
                                             {% include "components/avatar.html" with user=connected_user size="size-8" %}
-                                            <span class="font-medium" style="color: var(--color-foreground)">{{ connected_user.full_name }}</span>
+                                            <span class="font-medium text-foreground">{{ connected_user.full_name }}</span>
                                         </div>
                                         {% with participations=data.session_participations|dictsort:"creation_time" %}
                                             {% for participation in participations %}
@@ -869,13 +818,11 @@
                                                     {% if participation.status == 'confirmed' %}
                                                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-100 text-teal-700">{% translate "Enrolled" %}</span>
                                                     {% else %}
-                                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
-                                                              style="background-color: var(--theme-warning-light);
-                                                                     color: var(--theme-warning-text)">{% translate "Waiting List" %}</span>
+                                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-(--theme-warning-light) text-(--theme-warning-text)">{% translate "Waiting List" %}</span>
                                                     {% endif %}
                                                 {% endif %}
                                             {% empty %}
-                                                <span class="text-xs" style="color: var(--color-foreground-muted)">{% translate "Not enrolled" %}</span>
+                                                <span class="text-xs text-foreground-muted">{% translate "Not enrolled" %}</span>
                                             {% endfor %}
                                         {% endwith %}
                                     </div>
@@ -892,8 +839,7 @@
                     <!-- Enrolled Participants -->
                     {% with confirmed_participants=data.session_participations|dictsort:"creation_time" %}
                         {% if confirmed_participants %}
-                            <h3 class="font-semibold mb-3"
-                                style="color: var(--color-foreground-secondary)">
+                            <h3 class="font-semibold mb-3 text-foreground-secondary">
                                 {% translate "Enrolled" %} ({{ data.enrolled_count }}/{{ data.effective_participants_limit }})
                             </h3>
                             <div class="space-y-2 mb-6">
@@ -902,7 +848,7 @@
                                         <div class="flex items-center justify-between p-3 rounded-xl {% if participation.user.pk == current_user.pk %}bg-coral-50 dark:bg-coral-950 border border-coral-200 dark:border-coral-800{% else %}bg-warm-100 dark:bg-neutral-800{% endif %}">
                                             <div class="flex items-center gap-3">
                                                 {% include "components/avatar.html" with user=participation.user size="size-8" %}
-                                                <span class="font-medium" style="color: var(--color-foreground)">{{ participation.user.full_name }}</span>
+                                                <span class="font-medium text-foreground">{{ participation.user.full_name }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 {% with user=participation.user %}
@@ -927,50 +873,43 @@
                     {% endwith %}
                     <!-- Waiting List -->
                     {% if data.waiting_count > 0 %}
-                        <h3 class="font-semibold mb-3"
-                            style="color: var(--color-foreground-secondary)">{% translate "Waiting List" %}</h3>
+                        <h3 class="font-semibold mb-3 text-foreground-secondary">{% translate "Waiting List" %}</h3>
                         <div class="space-y-2">
                             {% for participation in data.session_participations|dictsort:"creation_time" %}
                                 {% if participation.status == 'waiting' %}
                                     <div class="waiting-list-row flex items-center justify-between p-3 rounded-xl bg-warm-100 dark:bg-neutral-800">
                                         <div class="flex items-center gap-3">
-                                            <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold waiting-position"
-                                                  style="background-color: var(--theme-warning-light);
-                                                         color: var(--theme-warning-text)"></span>
-                                            <span class="font-medium" style="color: var(--color-foreground)">{{ participation.user.full_name }}</span>
+                                            <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold waiting-position bg-(--theme-warning-light) text-(--theme-warning-text)"></span>
+                                            <span class="font-medium text-foreground">{{ participation.user.full_name }}</span>
                                         </div>
-                                        <span class="text-xs" style="color: var(--color-foreground-muted)">{{ participation.creation_time|date:"M j, G:i" }}</span>
+                                        <span class="text-xs text-foreground-muted">{{ participation.creation_time|date:"M j, G:i" }}</span>
                                     </div>
                                 {% endif %}
                             {% endfor %}
                         </div>
                     {% else %}
                         {% if data.session_participations %}
-                            <div class="text-center py-4" style="color: var(--color-foreground-muted)">
+                            <div class="text-center py-4 text-foreground-muted">
                                 <p class="text-sm">{% translate "No one on the waiting list." %}</p>
                             </div>
                         {% endif %}
                     {% endif %}
                     {% if not data.session_participations %}
-                        <div class="flex items-center justify-center p-4 border-2 border-dashed rounded-xl"
-                             style="border-color: var(--theme-border)">
-                            <span class="text-sm" style="color: var(--color-foreground-muted)">{% translate "No participants enrolled yet." %}</span>
+                        <div class="flex items-center justify-center p-4 border-2 border-dashed border-border rounded-xl">
+                            <span class="text-sm text-foreground-muted">{% translate "No participants enrolled yet." %}</span>
                         </div>
                     {% endif %}
                 </div>
             </div>
             <!-- Footer -->
-            <div class="px-6 py-4 flex justify-end gap-2"
-                 style="border-top: 1px solid var(--theme-border)">
+            <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
                 <button data-modal-close="session-{{ data.session.pk }}"
                         class="btn btn-secondary text-sm">{% translate "Close" %}</button>
                 {% if data.is_enrollment_available %}
                     {% if current_user %}
                         {% if data.user_enrolled or data.user_waiting %}
                             <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
-                               class="btn text-sm"
-                               style="background-color: var(--theme-warning);
-                                      color: white">
+                               class="btn text-sm bg-(--theme-warning) text-white">
                                 {% icon "cog-6-tooth" class="w-4 h-4" variant="mini" %} {% translate "Manage Enrollment" %}
                             </a>
                         {% else %}
@@ -984,9 +923,7 @@
                     {% elif request.session.anonymous_enrollment_active %}
                         {% if data.user_enrolled or data.user_waiting %}
                             <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
-                               class="btn text-sm"
-                               style="background-color: var(--theme-warning);
-                                      color: white">
+                               class="btn text-sm bg-(--theme-warning) text-white">
                                 {% icon "cog-6-tooth" class="w-4 h-4" variant="mini" %} {% translate "Manage Enrollment" %}
                             </a>
                         {% else %}

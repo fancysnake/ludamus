@@ -22,9 +22,12 @@ project's established Tailwind patterns and CSS conventions.
 
 ### Theme Architecture
 
-Ludamus uses Tailwind CSS v4 with a hybrid approach:
+Ludamus uses Tailwind CSS v4 with:
 
-- **Semantic CSS variables** (`--theme-*`, `--color-*`) for colors and shadows
+- **Semantic CSS variables** — `--color-*` is the canonical family (declared in
+  `@theme`, generates Tailwind utilities, overridden for dark mode).
+  `--theme-*` is a legacy parallel family kept in sync for existing `var()`
+  usage; prefer `--color-*` and plain utilities in new code.
 - **Tailwind utility classes** for spacing, typography, layout, and responsive
 - **Custom component classes** (`.btn-*`, `.card`, `.alert-*`, `.modal`,
   `.tab-*`, `.filter-*`) defined in `index.css` and split CSS files
@@ -50,33 +53,36 @@ Source files:
 **Disabled palettes**: `slate`, `gray`, `zinc`, `stone` — set to `initial`.
 Using these is always a violation.
 
-**Semantic CSS variables** (auto-switch for dark mode):
+**Semantic CSS variables** (auto-switch for dark mode). Prefer the `--color-*`
+Tailwind utilities (`text-primary`, `bg-bg-secondary`, `border-border`, etc.);
+fall back to `var(--color-*)` inline or arbitrary value syntax only when no
+utility fits:
 
-| Variable                  | Light            | Purpose              |
-|---------------------------|------------------|----------------------|
-| `--theme-primary`         | `#f85a3c` coral  | Primary actions      |
-| `--theme-primary-hover`   | `#e53e20`        | Hover state          |
-| `--theme-primary-light`   | `#fef5f3`        | Light tint           |
-| `--theme-secondary`       | `#14b89b` teal   | Secondary actions    |
-| `--theme-secondary-hover` | `#0d947e`        | Hover state          |
-| `--theme-border`          | `#e4ddd6`        | Default border       |
-| `--theme-border-light`    | `#f0ece8`        | Subtle border        |
-| `--theme-border-focus`    | `#f85a3c`        | Focus ring           |
-| `--theme-shadow`          | —                | Card shadow          |
-| `--theme-shadow-md`       | —                | Elevated shadow      |
-| `--color-foreground`      | `#252220`        | Body text            |
-| `--color-foreground-secondary` | `#5c534a`   | Secondary text       |
-| `--color-foreground-muted`| `#737373`        | Muted/helper text    |
-| `--color-background`      | `#f0f1f3`        | Page background      |
-| `--color-bg-secondary`    | `#fdfcfb`        | Card/surface bg      |
-| `--color-bg-tertiary`     | `#f7f5f3`        | Hover/tertiary bg    |
+| Variable                       | Light            | Purpose              |
+|--------------------------------|------------------|----------------------|
+| `--color-primary`              | `#f85a3c` coral  | Primary actions      |
+| `--color-primary-hover`        | `#e53e20`        | Hover state          |
+| `--color-primary-light`        | `#fef5f3`        | Light tint           |
+| `--color-secondary`            | `#14b89b` teal   | Secondary actions    |
+| `--color-secondary-hover`      | `#0d947e`        | Hover state          |
+| `--color-border`               | `#e4ddd6`        | Default border       |
+| `--color-border-focus`         | `#f85a3c`        | Focus ring           |
+| `--color-foreground`           | `#252220`        | Body text            |
+| `--color-foreground-secondary` | `#5c534a`        | Secondary text       |
+| `--color-foreground-muted`     | `#737373`        | Muted/helper text    |
+| `--color-background`           | `#f0f1f3`        | Page background      |
+| `--color-bg-secondary`         | `#fdfcfb`        | Card/surface bg      |
+| `--color-bg-tertiary`          | `#f7f5f3`        | Hover/tertiary bg    |
+| `--theme-shadow`               | —                | Card shadow          |
+| `--theme-shadow-md`            | —                | Elevated shadow      |
 
-**Semantic status colors** — each has `base`, `-light`, `-bg`, `-text` variants:
+**Semantic status colors** — each has base, `-light`, `-bg`, `-text` variants
+under `--color-*` (and mirrored `--theme-*`):
 
-- `--theme-success-*` (teal-based)
-- `--theme-warning-*` (amber-based)
-- `--theme-danger-*` (red-based)
-- `--theme-info-*` (blue-based)
+- `--color-success-*` (teal-based)
+- `--color-warning-*` (amber-based)
+- `--color-danger-*` (red-based)
+- `--color-info-*` (blue-based)
 
 **Dark mode**: handled via CSS variables that auto-switch in `.dark` class and
 `@media (prefers-color-scheme: dark)`. Templates should NOT hardcode light/dark
@@ -101,13 +107,12 @@ Use these instead of re-inventing:
 - `.btn-teal` — teal bg, white text
 - Base includes: `inline-flex items-center justify-content gap-2 rounded-xl
   px-4 py-2.5 font-medium transition-all`
-- Focus: ring with `--theme-primary`
+- Focus: ring with `--color-primary`
 - Disabled: `opacity-50 cursor-not-allowed`
 - Active: `scale-97`
 
 **Cards** (`.card`):
-- `rounded-2xl border border-[--theme-border] bg-[--theme-bg-secondary]
-  shadow-[--theme-shadow]`
+- `rounded-2xl border border-border bg-bg-secondary shadow-[--theme-shadow]`
 - `.card-header` — `px-6 py-4 border-b`
 - `.card-body` — `p-6`
 
@@ -121,12 +126,12 @@ Use these instead of re-inventing:
 - `rounded-2xl` with `--color-bg-secondary` background
 
 **Tabs** (`.tab-list`, `.tab-trigger`, `.tab-panel`):
-- Bottom border indicator with `--theme-primary`
+- Bottom border indicator with `--color-primary`
 - Uses `aria-selected` for active state
 - Grid-based panel switching
 
 **Filters** (`.filter-input`, `.filter-toggle`, `.filter-panel`, `.filter-chip`):
-- Focus ring with `--theme-primary` glow
+- Focus ring with `--color-primary` glow
 - Animated expand/collapse via grid-template-rows
 - Chip badges with primary color gradient
 
@@ -187,17 +192,20 @@ Use CSS variable shadows, not arbitrary Tailwind:
 - Elevated: `var(--theme-shadow-md)`
 - Deep: `var(--theme-shadow-lg)`
 
+(Shadows remain under `--theme-*` because Tailwind's `--shadow-*` namespace
+is separate; the rest of the `--theme-*` family is being phased out.)
+
 ### Focus & Accessibility
 
 Established pattern from `index.css`:
 ```css
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--theme-primary);
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
 }
 ```
 
-- Inputs use `border-color: var(--theme-border-focus)` on focus
+- Inputs use `border-color: var(--color-border-focus)` on focus
 - Tabs/filters use `aria-selected`, `aria-expanded` for state
 
 ### Transitions
@@ -209,8 +217,12 @@ Established pattern from `index.css`:
 
 ## Rules to Enforce
 
-1. **Use CSS variables for theming** — never hardcode hex colors that duplicate
-   a theme variable. Use `var(--theme-primary)` not `#f85a3c` inline.
+1. **Use semantic tokens, not hardcoded colors** — prefer Tailwind utilities
+   generated from `--color-*` (`text-primary`, `bg-bg-secondary`,
+   `border-border`, `text-info`, `border-danger`, …). For values without a
+   utility, use `var(--color-…)` or arbitrary syntax `bg-(--color-…)`. Only
+   fall back to `var(--theme-…)` when the token only exists there (e.g.,
+   shadows). Never hardcode hex duplicates.
 2. **Use existing component classes** — don't rebuild `.btn`, `.card`, `.alert`
    styling with raw utilities.
 3. **No disabled gray palettes** — `slate-*`, `gray-*`, `zinc-*`, `stone-*`
@@ -222,8 +234,9 @@ Established pattern from `index.css`:
 6. **Dark mode via variables** — don't add `dark:` overrides for colors
    already handled by CSS variables. Use `dark:` only for Tailwind utilities
    that don't map to a variable.
-7. **Semantic color intent** — use `--theme-success-*`, `--theme-danger-*`
-   etc. for status, not raw green/red classes.
+7. **Semantic color intent** — use `--color-success-*`, `--color-danger-*`,
+   etc. (or their Tailwind utilities like `text-danger`, `bg-warning-bg`)
+   for status, not raw green/red classes.
 8. **Focus states** — interactive elements must have visible focus indicators.
    Prefer the established `:focus-visible` pattern.
 9. **Font consistency** — Outfit is the only font. Don't add other font

@@ -115,23 +115,7 @@
         {% if messages %}
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-2">
                 {% for message in messages %}
-                    <div class="p-4 rounded-lg flex items-start {% if message.tags == 'error' %}border{% elif message.tags == 'warning' %}border{% elif message.tags == 'success' %}border{% elif message.tags == 'info' %}border{% else %}border{% endif %}"
-                         style="{% if message.tags == 'error' %}background-color: var(--theme-danger-bg);
-                                border-color: var(--theme-danger-light);
-                                color: var(--theme-danger-text);
-                                {% elif message.tags == 'warning' %}background-color: var(--theme-warning-bg);
-                                border-color: var(--theme-warning-light);
-                                color: var(--theme-warning-text);
-                                {% elif message.tags == 'success' %}background-color: var(--theme-success-bg);
-                                border-color: var(--theme-success-light);
-                                color: var(--theme-success-text);
-                                {% elif message.tags == 'info' %}background-color: var(--theme-info-bg);
-                                border-color: var(--theme-info-light);
-                                color: var(--theme-info-text);
-                                {% else %}background-color: var(--theme-bg-tertiary);
-                                border-color: var(--theme-border);
-                                color: var(--color-foreground-secondary);
-                                {% endif %}">
+                    <div class="p-4 rounded-lg flex items-start border {% if message.tags == 'error' %}bg-(--theme-danger-bg) border-(--theme-danger-light) text-(--theme-danger-text){% elif message.tags == 'warning' %}bg-(--theme-warning-bg) border-(--theme-warning-light) text-(--theme-warning-text){% elif message.tags == 'success' %}bg-(--theme-success-bg) border-(--theme-success-light) text-(--theme-success-text){% elif message.tags == 'info' %}bg-(--theme-info-bg) border-(--theme-info-light) text-(--theme-info-text){% else %}bg-bg-tertiary border-border text-foreground-secondary{% endif %}">
                         {% if message.tags == 'error' %}
                             {% icon "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
                         {% elif message.tags == 'warning' %}
@@ -153,14 +137,12 @@
             <!-- Page Header -->
             {% block header_section %}
                 <div class="mb-6 text-center">
-                    <h1 class="text-2xl sm:text-3xl font-bold"
-                        style="color: var(--color-foreground)">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-foreground">
                         {% block header %}
                         {% endblock header %}
                     </h1>
                     {% block description %}
-                        <p class="mt-2 text-sm sm:text-base"
-                           style="color: var(--color-foreground-muted)">
+                        <p class="mt-2 text-sm sm:text-base text-foreground-muted">
                             {% block description_text %}
                             {% endblock description_text %}
                         </p>
@@ -171,30 +153,23 @@
             {% endblock body %}
         </main>
         <!-- Footer -->
-        <footer class="border-t py-6 mt-8"
-                style="background-color: var(--theme-bg-secondary);
-                       border-color: var(--theme-border)">
+        <footer class="border-t py-6 mt-8 bg-bg-secondary border-border">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-end mb-4">{% include "components/theme_switcher.html" %}</div>
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm"
-                     style="color: var(--color-foreground-muted)">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-foreground-muted">
                     <p class="text-center sm:text-left">
                         © {% now "Y" %} Radosław Ganczarek.
                         <a href="https://github.com/fancysnake/ludamus"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">Source code</a>
+                           class="hover:underline text-primary">Source code</a>
                         available under BSD-3-Clause license.
                     </p>
                     <div class="flex flex-wrap justify-center sm:justify-end gap-4">
                         <a href="mailto:{{ SUPPORT_EMAIL }}"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">{% translate "Contact" %}</a>
+                           class="hover:underline text-primary">{% translate "Contact" %}</a>
                         <a href="{% url 'django.contrib.flatpages.views.flatpage' url='/privacy-policy/' %}"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">{% translate "Privacy Policy" %}</a>
+                           class="hover:underline text-primary">{% translate "Privacy Policy" %}</a>
                         <a href="{% url 'django.contrib.flatpages.views.flatpage' url='/terms-of-service/' %}"
-                           class="hover:underline"
-                           style="color: var(--theme-primary)">{% translate "Terms of Service" %}</a>
+                           class="hover:underline text-primary">{% translate "Terms of Service" %}</a>
                     </div>
                 </div>
             </div>
