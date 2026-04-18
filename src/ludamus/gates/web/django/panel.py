@@ -543,7 +543,7 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
 
         all_tracks = self.request.di.uow.tracks.list_by_event(current_event.pk)
         managed_tracks = self.request.di.uow.tracks.list_by_manager(
-            self.request.user.pk, event_pk=current_event.pk
+            self.request.context.current_user_id, event_pk=current_event.pk
         )
         managed_pks = {t.pk for t in managed_tracks}
 
