@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-18 22:32+0200\n"
+"POT-Creation-Date: 2026-04-18 22:41+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -923,7 +923,7 @@ msgstr "0 = bez limitu"
 #: src/ludamus/gates/web/django/chronology/forms.py:93
 #: src/ludamus/templates/chronology/propose/parts/details.html:20
 #: src/ludamus/templates/chronology/propose/parts/review.html:27
-#: src/ludamus/templates/panel/proposals.html:106
+#: src/ludamus/templates/panel/proposals.html:112
 msgid "Title"
 msgstr "Tytuł"
 
@@ -1209,7 +1209,9 @@ msgstr "Nazwa bloku programowego jest wymagana."
 #: src/ludamus/templates/panel/track-create.html:58
 #: src/ludamus/templates/panel/track-edit.html:57
 msgid "Public tracks are shown to proposers in the submission wizard."
-msgstr "Publiczne bloki programowe są widoczne dla zgłaszających w kreatorze propozycji."
+msgstr ""
+"Publiczne bloki programowe są widoczne dla zgłaszających w kreatorze "
+"propozycji."
 
 #: src/ludamus/gates/web/django/notice_board/forms.py:45
 msgid "Image too large. Maximum size is 2 MB."
@@ -1711,8 +1713,8 @@ msgstr "Wybierz przestrzeń i blok czasowy dla"
 #: src/ludamus/templates/chronology/event.html:508
 #: src/ludamus/templates/chronology/event.html:605
 #: src/ludamus/templates/panel/proposal-detail.html:30
-#: src/ludamus/templates/panel/proposals.html:22
-#: src/ludamus/templates/panel/proposals.html:110
+#: src/ludamus/templates/panel/proposals.html:46
+#: src/ludamus/templates/panel/proposals.html:116
 msgid "Host"
 msgstr "Prowadzący"
 
@@ -2263,7 +2265,7 @@ msgid "Filters"
 msgstr "Filtry"
 
 #: src/ludamus/templates/chronology/event.html:289
-#: src/ludamus/templates/panel/proposals.html:118
+#: src/ludamus/templates/panel/proposals.html:124
 msgid "Status"
 msgstr "Status"
 
@@ -2509,7 +2511,7 @@ msgstr "Postęp zgłoszenia"
 
 #: src/ludamus/templates/chronology/propose/parts/_stepper.html:26
 #: src/ludamus/templates/chronology/propose/parts/review.html:11
-#: src/ludamus/templates/panel/proposals.html:114
+#: src/ludamus/templates/panel/proposals.html:120
 msgid "Category"
 msgstr "Kategoria"
 
@@ -3489,7 +3491,7 @@ msgstr ""
 #: src/ludamus/templates/panel/index.html:69
 #: src/ludamus/templates/panel/personal-data-fields.html:136
 #: src/ludamus/templates/panel/proposal-settings.html:87
-#: src/ludamus/templates/panel/proposals.html:169
+#: src/ludamus/templates/panel/proposals.html:175
 #: src/ludamus/templates/panel/session-fields.html:137
 #: src/ludamus/templates/panel/settings.html:114
 #: src/ludamus/templates/panel/time-slots.html:184
@@ -4152,51 +4154,55 @@ msgstr "Zastosuj te daty do wszystkich kategorii zgłoszeń"
 msgid "Submitted Proposals"
 msgstr "Przesłane zgłoszenia"
 
-#: src/ludamus/templates/panel/proposals.html:27
-msgid "Filter by host name"
-msgstr "Filtruj po nazwie prowadzącego"
-
-#: src/ludamus/templates/panel/proposals.html:33
-msgid "Search"
-msgstr "Szukaj"
-
-#: src/ludamus/templates/panel/proposals.html:39
-msgid "Search field values"
-msgstr "Szukaj wartości pól"
-
-#: src/ludamus/templates/panel/proposals.html:45
+#: src/ludamus/templates/panel/proposals.html:22
 msgid "Track"
 msgstr "Blok programowy"
 
-#: src/ludamus/templates/panel/proposals.html:93
+#: src/ludamus/templates/panel/proposals.html:27
+msgid "All tracks"
+msgstr "Wszystkie bloki"
+
+#: src/ludamus/templates/panel/proposals.html:51
+msgid "Filter by host name"
+msgstr "Filtruj po nazwie prowadzącego"
+
+#: src/ludamus/templates/panel/proposals.html:57
+msgid "Search"
+msgstr "Szukaj"
+
+#: src/ludamus/templates/panel/proposals.html:63
+msgid "Search field values"
+msgstr "Szukaj wartości pól"
+
+#: src/ludamus/templates/panel/proposals.html:99
 msgid "Filter"
 msgstr "Filtruj"
 
-#: src/ludamus/templates/panel/proposals.html:95
+#: src/ludamus/templates/panel/proposals.html:101
 msgid "Clear"
 msgstr "Wyczyść"
 
-#: src/ludamus/templates/panel/proposals.html:122
+#: src/ludamus/templates/panel/proposals.html:128
 msgid "Created"
 msgstr "Utworzono"
 
-#: src/ludamus/templates/panel/proposals.html:138
+#: src/ludamus/templates/panel/proposals.html:144
 msgid "Pending"
 msgstr "Oczekujące"
 
-#: src/ludamus/templates/panel/proposals.html:142
+#: src/ludamus/templates/panel/proposals.html:148
 msgid "Accepted"
 msgstr "Zaakceptowane"
 
-#: src/ludamus/templates/panel/proposals.html:146
+#: src/ludamus/templates/panel/proposals.html:152
 msgid "Rejected"
 msgstr "Odrzucone"
 
-#: src/ludamus/templates/panel/proposals.html:150
+#: src/ludamus/templates/panel/proposals.html:156
 msgid "Scheduled"
 msgstr "Zaplanowane"
 
-#: src/ludamus/templates/panel/proposals.html:164
+#: src/ludamus/templates/panel/proposals.html:170
 msgid "No proposals submitted yet."
 msgstr "Brak przesłanych zgłoszeń."
 
@@ -4486,7 +4492,8 @@ msgstr "Czy na pewno chcesz usunąć ten blok programowy?"
 
 #: src/ludamus/templates/panel/tracks.html:84
 msgid "No tracks yet. Add a track to organize proposals by thematic area."
-msgstr "Brak bloków programowych. Dodaj blok, aby grupować propozycje tematycznie."
+msgstr ""
+"Brak bloków programowych. Dodaj blok, aby grupować propozycje tematycznie."
 
 #: src/ludamus/templates/panel/venue-copy.html:5
 #: src/ludamus/templates/panel/venue-copy.html:8
