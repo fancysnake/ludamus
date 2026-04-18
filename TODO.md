@@ -56,7 +56,6 @@ kanban
     [Door cards - printable room schedules]@{ assigned: 'panel' }
     [Konwencik app sync]@{ assigned: 'panel' }
     [Add gh cli]@{ assigned: 'agent-readiness' }
-    [Test coverage thresholds]@{ assigned: 'agent-readiness' }
     [Isolated/parallel test execution]@{ assigned: 'agent-readiness' }
     [AGENTS.md file]@{ assigned: 'agent-readiness' }
     [Claude skills definitions]@{ assigned: 'agent-readiness' }
@@ -131,6 +130,7 @@ kanban
     [Event settings - discount tiers, submission periods]@{ assigned: 'panel' }
 
   Done
+    [Test coverage thresholds]@{ assigned: 'agent-readiness' }
     [TypeScript/mypy strict mode]@{ assigned: 'agent-readiness' }
     [Reasonable Cyclomatic Complexity thresholds]@{
       assigned: 'agent-readiness'
