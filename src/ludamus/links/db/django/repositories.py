@@ -153,6 +153,14 @@ class SphereRepository(SphereRepositoryProtocol):
     def is_manager(sphere_id: int, user_slug: str) -> bool:
         return Sphere.objects.filter(id=sphere_id, managers__slug=user_slug).exists()
 
+    @staticmethod
+    def list_managers(sphere_id: int) -> list[UserDTO]:
+        try:
+            sphere = Sphere.objects.get(pk=sphere_id)
+        except Sphere.DoesNotExist as err:
+            raise NotFoundError from err
+        return [UserDTO.model_validate(u) for u in sphere.managers.order_by("name")]
+
 
 class UserRepository(UserRepositoryProtocol):
     def __init__(self, user_type: UserType) -> None:
@@ -1202,6 +1210,19 @@ class SpaceRepository(SpaceRepositoryProtocol):
             List of SpaceDTO objects for the area.
         """
         spaces = Space.objects.filter(area_id=area_pk).order_by("order", "name")
+
+        return [SpaceDTO.model_validate(space) for space in spaces]
+
+    @staticmethod
+    def list_by_event(event_pk: int) -> list[SpaceDTO]:
+        """List all spaces for an event, ordered by name.
+
+        Returns:
+            List of SpaceDTO objects for the event.
+        """
+        spaces = Space.objects.filter(area__venue__event_id=event_pk).order_by(
+            "area__venue__order", "area__order", "order", "name"
+        )
 
         return [SpaceDTO.model_validate(space) for space in spaces]
 
@@ -2404,3 +2425,21 @@ class TrackRepository(TrackRepositoryProtocol):
                 return slug
             slug = f"{base_slug}-{token_urlsafe(3)}"
         return slug
+
+    @staticmethod
+    def list_space_pks(pk: int) -> list[int]:
+        try:
+            track = Track.objects.get(pk=pk)
+        except Track.DoesNotExist as err:
+            msg = f"Track with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+        return list(track.spaces.values_list("pk", flat=True))
+
+    @staticmethod
+    def list_manager_pks(pk: int) -> list[int]:
+        try:
+            track = Track.objects.get(pk=pk)
+        except Track.DoesNotExist as err:
+            msg = f"Track with pk '{pk}' not found"
+            raise NotFoundError(msg) from err
+        return list(track.managers.values_list("pk", flat=True))

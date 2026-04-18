@@ -339,3 +339,21 @@ class SpaceForm(forms.Form):
         min_value=1,
         error_messages={"min_value": _("Capacity must be at least 1.")},
     )
+
+
+class TrackForm(forms.Form):
+    """Form for creating/editing tracks."""
+
+    name = forms.CharField(
+        max_length=255,
+        strip=True,
+        error_messages={
+            "max_length": _("Track name is too long (max 255 characters)."),
+            "required": _("Track name is required."),
+        },
+    )
+    is_public = forms.BooleanField(
+        required=False,
+        initial=True,
+        help_text=_("Public tracks are shown to proposers in the submission wizard."),
+    )
