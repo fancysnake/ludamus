@@ -244,15 +244,11 @@ convention = "pep257"
 DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
 
 [tool.pytest-gremlins]
-operators = ["comparison", "arithmetic", "boolean", "boundary", "return"]
-
 paths = ["src"]
 
 exclude = ["**/migrations/*"]
 
 report = ["console", "json"]
-
-max-pardons-pct = 5.0
 
 # IMPORT LINTER
 
