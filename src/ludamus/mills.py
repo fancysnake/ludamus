@@ -366,6 +366,7 @@ class ProposeSessionService:
                 description=description,
                 requirements="",
                 needs="",
+                duration=str(session_data.get("duration") or ""),
                 participants_limit=participants_limit,
                 min_age=int(str(session_data.get("min_age") or 0)),
                 contact_email=wizard_data.get("contact_email", ""),

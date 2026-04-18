@@ -135,3 +135,53 @@ class TestBuildSessionDetailsFormParticipantLimits:
         field = form.fields["participants_limit"]
         assert field.required is False
         assert field.min_value == 0
+
+
+class TestBuildSessionDetailsFormDurations:
+    def test_no_duration_field_when_durations_is_none(self):
+        form_class = build_session_details_form([], durations=None)
+        form = form_class()
+
+        assert "duration" not in form.fields
+
+    def test_no_duration_field_when_durations_is_empty(self):
+        form_class = build_session_details_form([], durations=[])
+        form = form_class()
+
+        assert "duration" not in form.fields
+
+    def test_duration_field_present_when_durations_provided(self):
+        form_class = build_session_details_form([], durations=["PT30M", "PT1H"])
+        form = form_class()
+
+        assert "duration" in form.fields
+
+    def test_duration_choices_include_empty_sentinel(self):
+        form_class = build_session_details_form([], durations=["PT30M"])
+        form = form_class()
+
+        choices = form.fields["duration"].choices
+        assert choices[0] == ("", "---")
+
+    def test_duration_choices_include_one_entry_per_duration(self):
+        durations = ["PT30M", "PT1H", "PT1H30M"]
+        form_class = build_session_details_form([], durations=durations)
+        form = form_class()
+
+        choices = form.fields["duration"].choices
+        # sentinel + one per duration
+        assert len(choices) == len(durations) + 1
+
+    def test_duration_choices_use_human_readable_labels(self):
+        form_class = build_session_details_form([], durations=["PT30M", "PT1H"])
+        form = form_class()
+
+        choice_map = dict(form.fields["duration"].choices)
+        assert choice_map["PT30M"] == "30min"
+        assert choice_map["PT1H"] == "1h"
+
+    def test_duration_field_is_not_required(self):
+        form_class = build_session_details_form([], durations=["PT30M"])
+        form = form_class()
+
+        assert form.fields["duration"].required is False

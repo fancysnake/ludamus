@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from ludamus.gates.web.django.templatetags.cfp_tags import format_duration
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
@@ -70,6 +72,7 @@ def build_session_details_form(
     *,
     min_limit: int = 0,
     max_limit: int = 0,
+    durations: list[str] | None = None,
 ) -> type[forms.Form]:
     participants_kwargs: dict[str, Any] = {"label": _("Max participants")}
     if min_limit == 0 and max_limit == 0:
@@ -102,6 +105,14 @@ def build_session_details_form(
         ),
         "display_name": forms.CharField(label=_("Presenter name"), max_length=255),
     }
+
+    if durations:
+        duration_choices = [(d, format_duration(d)) for d in durations]
+        fields["duration"] = forms.ChoiceField(
+            label=_("Duration"),
+            choices=[("", "---"), *duration_choices],
+            required=False,
+        )
 
     for req in requirements:
         _build_field_from_requirement(fields, f"session_{req.field.slug}", req)

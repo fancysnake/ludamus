@@ -673,6 +673,12 @@ class Session(models.Model):
     description = models.TextField(default="", blank=True)
     requirements = models.TextField(blank=True)
     needs = models.TextField(default="", blank=True)
+    duration = models.CharField(
+        max_length=20,
+        default="",
+        blank=True,
+        help_text="ISO 8601 duration, e.g. PT1H30M",
+    )
     tags = models.ManyToManyField(Tag, blank=True)
     # Preferences
     time_slots = models.ManyToManyField(TimeSlot, blank=True)

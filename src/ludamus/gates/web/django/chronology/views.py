@@ -251,6 +251,7 @@ def _render_details(
         requirements,
         min_limit=category.min_participants_limit,
         max_limit=category.max_participants_limit,
+        durations=category.durations,
     )(initial=initial)
 
     return TemplateResponse(
@@ -260,6 +261,7 @@ def _render_details(
             "event": event,
             "category": category,
             "form": form,
+            "durations": category.durations,
             "field_descriptors": _field_descriptors("session", requirements, form),
             "current_step": "details",
             "wizard_steps": _wizard_steps(service, category),
@@ -322,6 +324,7 @@ def _render_review(
         "description": session_data.get("description", ""),
         "participants_limit": session_data.get("participants_limit", ""),
         "min_age": session_data.get("min_age", 0),
+        "duration": session_data.get("duration", ""),
         "contact_email": wizard.get("contact_email", ""),
         "session_fields": session_fields,
         "private_session_fields": [f for f in session_fields if not f["is_public"]],
@@ -595,6 +598,7 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
             requirements,
             min_limit=category.min_participants_limit,
             max_limit=category.max_participants_limit,
+            durations=category.durations,
         )
         form = form_class(data=request.POST)
 
@@ -606,6 +610,7 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
                     "event": event,
                     "category": category,
                     "form": form,
+                    "durations": category.durations,
                     "field_descriptors": _field_descriptors(
                         "session", requirements, form
                     ),
