@@ -241,6 +241,7 @@ def _render_details(
     category: ProposalCategoryDTO,
 ) -> HttpResponse:
     requirements = service.get_session_requirements(category.pk)
+    public_tracks = service.get_public_tracks(event.pk)
 
     wizard = request.session.get(_session_key(event.slug), {})
     initial = wizard.get("session_data", {})
@@ -254,6 +255,8 @@ def _render_details(
         durations=category.durations,
     )(initial=initial)
 
+    selected_track_pks = wizard.get("track_pks", [])
+
     return TemplateResponse(
         request,
         "chronology/propose/parts/details.html",
@@ -263,6 +266,8 @@ def _render_details(
             "form": form,
             "durations": category.durations,
             "field_descriptors": _field_descriptors("session", requirements, form),
+            "public_tracks": public_tracks,
+            "selected_track_pks": selected_track_pks,
             "current_step": "details",
             "wizard_steps": _wizard_steps(service, category),
         },
@@ -603,6 +608,10 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
         form = form_class(data=request.POST)
 
         if not form.is_valid():
+            public_tracks = service.get_public_tracks(event.pk)
+            selected_track_pks = [
+                int(pk) for pk in request.POST.getlist("track_pks") if pk.isdigit()
+            ]
             return TemplateResponse(
                 request,
                 "chronology/propose/parts/details.html",
@@ -616,13 +625,21 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
                     ),
                     "current_step": "details",
                     "wizard_steps": _wizard_steps(service, category),
+                    "public_tracks": public_tracks,
+                    "selected_track_pks": selected_track_pks,
                 },
             )
+
+        tracks = service.get_public_tracks(event.pk)
+        selected_track_ids = request.POST.getlist("track_pks")
+        valid_track_ids = {str(t.pk) for t in tracks}
+        track_pks = [int(tid) for tid in selected_track_ids if tid in valid_track_ids]
 
         wizard = request.session.get(_session_key(event_slug), {})
         wizard["session_data"] = {
             key: value for key, value in form.cleaned_data.items() if value
         }
+        wizard["track_pks"] = track_pks
         request.session[_session_key(event_slug)] = wizard
 
         return _render_review(request, service, event, category, event_slug)
