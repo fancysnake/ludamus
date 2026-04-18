@@ -3,11 +3,11 @@ name: CI
 
 on:
   pull_request:
-    paths-ignore: ["docs/**"]
+    paths-ignore: [ "docs/**" ]
 
   push:
-    branches: ["master", "main"]
-    paths-ignore: ["docs/**"]
+    branches: [ "master", "main" ]
+    paths-ignore: [ "docs/**" ]
 
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
@@ -45,7 +45,8 @@ jobs:
         run: mise run coverage:combine
         if: ${{ !cancelled() }}
       - name: Check diff coverage
-        run: diff-cover coverage.xml --compare-branch=origin/main --fail-under=90
+        run: mise run exec -- diff-cover coverage.xml --compare-branch=origin/main
+          --fail-under=90
         if: ${{ !cancelled() && github.event_name == 'pull_request' }}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
