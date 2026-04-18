@@ -964,10 +964,8 @@ msgstr "Nazwa prowadzącego"
 #: src/ludamus/gates/web/django/chronology/forms.py:112
 #: src/ludamus/templates/chronology/propose/parts/details.html:85
 #: src/ludamus/templates/chronology/propose/parts/review.html:62
-#, fuzzy
-#| msgid "Allowed Durations"
 msgid "Duration"
-msgstr "Dozwolone czasy trwania"
+msgstr "Czas trwania"
 
 #: src/ludamus/gates/web/django/chronology/views.py:407
 msgid "Proposal submission is not currently active for this event."
