@@ -42,6 +42,7 @@ from ludamus.gates.web.django.forms import (
     SessionFieldForm,
     SpaceForm,
     TimeSlotForm,
+    TrackForm,
     VenueDuplicateForm,
     VenueForm,
     create_venue_copy_form,
@@ -52,6 +53,8 @@ from ludamus.pacts import (
     EventUpdateData,
     FieldUsageSummary,
     NotFoundError,
+    TrackCreateData,
+    TrackUpdateData,
 )
 
 if TYPE_CHECKING:
@@ -2765,3 +2768,216 @@ class IconPreviewPartView(PanelAccessMixin, View):
         except IconDoesNotExist:
             return HttpResponse("")
         return HttpResponse(html)
+
+
+class TracksPageView(PanelAccessMixin, EventContextMixin, View):
+    """List tracks for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "tracks"
+        context["tracks"] = self.request.di.uow.tracks.list_by_event(current_event.pk)
+        return TemplateResponse(self.request, "panel/tracks.html", context)
+
+
+class TrackCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    """Create a new track for an event."""
+
+    request: PanelRequest
+
+    def _get_choices(
+        self, event_pk: int, sphere_id: int
+    ) -> tuple[list[Any], list[Any]]:
+        spaces = self.request.di.uow.spaces.list_by_event(event_pk)
+        managers = self.request.di.uow.spheres.list_managers(sphere_id)
+        return spaces, managers
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        sphere_id = self.request.context.current_sphere_id
+        spaces, managers = self._get_choices(current_event.pk, sphere_id)
+        context["active_nav"] = "tracks"
+        context["form"] = TrackForm(initial={"is_public": True})
+        context["spaces"] = spaces
+        context["managers"] = managers
+        context["selected_space_pks"] = []
+        context["selected_manager_pks"] = []
+        return TemplateResponse(self.request, "panel/track-create.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        sphere_id = self.request.context.current_sphere_id
+        spaces, managers = self._get_choices(current_event.pk, sphere_id)
+        form = TrackForm(self.request.POST)
+
+        if not form.is_valid():
+            context["active_nav"] = "tracks"
+            context["form"] = form
+            context["spaces"] = spaces
+            context["managers"] = managers
+            context["selected_space_pks"] = [
+                int(pk) for pk in self.request.POST.getlist("space_pks") if pk.isdigit()
+            ]
+            context["selected_manager_pks"] = [
+                int(pk)
+                for pk in self.request.POST.getlist("manager_pks")
+                if pk.isdigit()
+            ]
+            return TemplateResponse(self.request, "panel/track-create.html", context)
+
+        data = TrackCreateData(
+            event_pk=current_event.pk,
+            name=form.cleaned_data["name"],
+            is_public=form.cleaned_data.get("is_public", True),
+        )
+        track = self.request.di.uow.tracks.create(data)
+
+        space_pks = [
+            int(pk) for pk in self.request.POST.getlist("space_pks") if pk.isdigit()
+        ]
+        manager_pks = [
+            int(pk) for pk in self.request.POST.getlist("manager_pks") if pk.isdigit()
+        ]
+        if space_pks or manager_pks:
+            self.request.di.uow.tracks.update(
+                track.pk,
+                TrackUpdateData(
+                    name=track.name,
+                    is_public=track.is_public,
+                    space_pks=space_pks,
+                    manager_pks=manager_pks,
+                ),
+            )
+
+        messages.success(self.request, _("Track created successfully."))
+        return redirect("panel:tracks", slug=slug)
+
+
+class TrackEditPageView(PanelAccessMixin, EventContextMixin, View):
+    """Edit an existing track."""
+
+    request: PanelRequest
+
+    def _get_choices(
+        self, event_pk: int, sphere_id: int
+    ) -> tuple[list[Any], list[Any]]:
+        spaces = self.request.di.uow.spaces.list_by_event(event_pk)
+        managers = self.request.di.uow.spheres.list_managers(sphere_id)
+        return spaces, managers
+
+    def get(self, _request: PanelRequest, slug: str, track_slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            track = self.request.di.uow.tracks.read_by_slug(
+                current_event.pk, track_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Track not found."))
+            return redirect("panel:tracks", slug=slug)
+
+        sphere_id = self.request.context.current_sphere_id
+        spaces, managers = self._get_choices(current_event.pk, sphere_id)
+        context["active_nav"] = "tracks"
+        context["track"] = track
+        context["form"] = TrackForm(
+            initial={"name": track.name, "is_public": track.is_public}
+        )
+        context["spaces"] = spaces
+        context["managers"] = managers
+        context["selected_space_pks"] = self.request.di.uow.tracks.list_space_pks(
+            track.pk
+        )
+        context["selected_manager_pks"] = self.request.di.uow.tracks.list_manager_pks(
+            track.pk
+        )
+        return TemplateResponse(self.request, "panel/track-edit.html", context)
+
+    def post(self, _request: PanelRequest, slug: str, track_slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            track = self.request.di.uow.tracks.read_by_slug(
+                current_event.pk, track_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Track not found."))
+            return redirect("panel:tracks", slug=slug)
+
+        sphere_id = self.request.context.current_sphere_id
+        spaces, managers = self._get_choices(current_event.pk, sphere_id)
+        form = TrackForm(self.request.POST)
+
+        if not form.is_valid():
+            context["active_nav"] = "tracks"
+            context["track"] = track
+            context["form"] = form
+            context["spaces"] = spaces
+            context["managers"] = managers
+            context["selected_space_pks"] = [
+                int(pk) for pk in self.request.POST.getlist("space_pks") if pk.isdigit()
+            ]
+            context["selected_manager_pks"] = [
+                int(pk)
+                for pk in self.request.POST.getlist("manager_pks")
+                if pk.isdigit()
+            ]
+            return TemplateResponse(self.request, "panel/track-edit.html", context)
+
+        space_pks = [
+            int(pk) for pk in self.request.POST.getlist("space_pks") if pk.isdigit()
+        ]
+        manager_pks = [
+            int(pk) for pk in self.request.POST.getlist("manager_pks") if pk.isdigit()
+        ]
+        self.request.di.uow.tracks.update(
+            track.pk,
+            TrackUpdateData(
+                name=form.cleaned_data["name"],
+                is_public=form.cleaned_data.get("is_public", False),
+                space_pks=space_pks,
+                manager_pks=manager_pks,
+            ),
+        )
+
+        messages.success(self.request, _("Track updated successfully."))
+        return redirect("panel:tracks", slug=slug)
+
+
+class TrackDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+    """Delete a track (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, track_slug: str) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            track = self.request.di.uow.tracks.read_by_slug(
+                current_event.pk, track_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Track not found."))
+            return redirect("panel:tracks", slug=slug)
+
+        self.request.di.uow.tracks.delete(track.pk)
+        messages.success(self.request, _("Track deleted."))
+        return redirect("panel:tracks", slug=slug)

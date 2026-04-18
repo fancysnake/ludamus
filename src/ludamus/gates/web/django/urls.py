@@ -242,6 +242,22 @@ panel_urlpatterns = [
     path(
         "parts/icon-preview/", panel.IconPreviewPartView.as_view(), name="icon-preview"
     ),
+    path("event/<slug:slug>/tracks/", panel.TracksPageView.as_view(), name="tracks"),
+    path(
+        "event/<slug:slug>/tracks/create/",
+        panel.TrackCreatePageView.as_view(),
+        name="track-create",
+    ),
+    path(
+        "event/<slug:slug>/tracks/<str:track_slug>/edit/",
+        panel.TrackEditPageView.as_view(),
+        name="track-edit",
+    ),
+    path(
+        "event/<slug:slug>/tracks/<str:track_slug>/do/delete",
+        panel.TrackDeleteActionView.as_view(),
+        name="track-delete",
+    ),
 ]
 
 
