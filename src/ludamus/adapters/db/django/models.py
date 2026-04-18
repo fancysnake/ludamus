@@ -699,6 +699,9 @@ class Session(models.Model):
     participants: models.ManyToManyField[User, Never] = models.ManyToManyField(
         User, through="SessionParticipation"
     )
+    tracks: models.ManyToManyField[Track, Never] = models.ManyToManyField(
+        "Track", blank=True, related_name="sessions"
+    )
 
     objects = SessionManager()
 
@@ -1225,6 +1228,35 @@ class EventSettings(models.Model):
 
     def __str__(self) -> str:
         return f"Settings for {self.event}"
+
+
+class Track(models.Model):
+    """Thematic track for organizing sessions within an event."""
+
+    # Owner
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tracks")
+    # ID
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    # Settings
+    is_public = models.BooleanField(default=True)
+    spaces = models.ManyToManyField(Space, blank=True, related_name="tracks")
+    managers = models.ManyToManyField(User, blank=True, related_name="managed_tracks")
+    # Time
+    creation_time = models.DateTimeField(auto_now_add=True)
+    modification_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "track"
+        ordering: ClassVar = ["name"]
+        constraints = (
+            models.UniqueConstraint(
+                fields=("event", "slug"), name="track_unique_slug_per_event"
+            ),
+        )
+
+    def __str__(self) -> str:
+        return self.name
 
 
 def can_enroll_users(
