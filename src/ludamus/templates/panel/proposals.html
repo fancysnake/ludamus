@@ -39,6 +39,24 @@
                            placeholder="{% translate "Search field values" %}"
                            class="filter-input px-3 py-2 border border-border rounded-lg text-sm">
                 </div>
+                {% if all_tracks %}
+                    <div>
+                        <label for="filter-track"
+                               class="block text-xs font-medium text-foreground-muted mb-1">{% translate "Track" %}</label>
+                        <select id="filter-track"
+                                name="track"
+                                class="filter-input px-3 py-2 border border-border rounded-lg text-sm">
+                            <option value="">—</option>
+                            {% for track in all_tracks %}
+                                <option value="{{ track.pk }}"
+                                        {% if filter_track_pk == track.pk %}selected{% endif %}
+                                        {% if track.pk in managed_track_pks %}class="font-semibold"{% endif %}>
+                                    {% if track.pk in managed_track_pks %}★ {% endif %}{{ track.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
                 {% for field in session_fields %}
                     <div>
                         <label for="filter-field-{{ field.pk }}"

@@ -24,6 +24,13 @@ from tests.integration.utils import assert_response
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
 
 
+_TRACK_FILTER_CONTEXT = {
+    "all_tracks": [],
+    "managed_track_pks": set(),
+    "filter_track_pk": None,
+}
+
+
 def _base_context(event):
     return {
         "current_event": EventDTO.model_validate(event),
@@ -96,6 +103,7 @@ class TestProposalsPageView:
             template_name="panel/proposals.html",
             context_data={
                 **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
                 "proposals": [],
                 "session_fields": [],
                 "filter_host": "",
@@ -128,6 +136,7 @@ class TestProposalsPageView:
             template_name="panel/proposals.html",
             context_data={
                 **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
                 "stats": {
                     "hosts_count": 1,
                     "pending_proposals": 1,
@@ -188,6 +197,7 @@ class TestProposalsPageView:
             template_name="panel/proposals.html",
             context_data={
                 **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
                 "stats": {
                     "hosts_count": 2,
                     "pending_proposals": 1,
@@ -260,6 +270,7 @@ class TestProposalsPageView:
             template_name="panel/proposals.html",
             context_data={
                 **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
                 "stats": {
                     "hosts_count": 1,
                     "pending_proposals": 2,
@@ -339,6 +350,7 @@ class TestProposalsPageView:
             template_name="panel/proposals.html",
             context_data={
                 **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
                 "stats": {
                     "hosts_count": 1,
                     "pending_proposals": 2,
@@ -391,6 +403,7 @@ class TestProposalsPageView:
             template_name="panel/proposals.html",
             context_data={
                 **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
                 "proposals": [],
                 "session_fields": [
                     SessionFieldDTO(

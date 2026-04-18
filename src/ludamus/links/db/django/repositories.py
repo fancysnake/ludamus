@@ -2408,9 +2408,11 @@ class TrackRepository(TrackRepositoryProtocol):
         return [TrackDTO.model_validate(t) for t in tracks]
 
     @staticmethod
-    def list_by_manager(user_pk: int) -> list[TrackDTO]:
-        tracks = Track.objects.filter(managers__pk=user_pk).order_by("name")
-        return [TrackDTO.model_validate(t) for t in tracks]
+    def list_by_manager(user_pk: int, event_pk: int | None = None) -> list[TrackDTO]:
+        qs = Track.objects.filter(managers__pk=user_pk)
+        if event_pk is not None:
+            qs = qs.filter(event_id=event_pk)
+        return [TrackDTO.model_validate(t) for t in qs.order_by("name")]
 
     @staticmethod
     def generate_unique_slug(

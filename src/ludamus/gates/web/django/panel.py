@@ -541,11 +541,26 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
             if value := self.request.GET.get(f"field_{field.pk}", "").strip():
                 field_filters[field.pk] = value
 
+        all_tracks = self.request.di.uow.tracks.list_by_event(current_event.pk)
+        managed_tracks = self.request.di.uow.tracks.list_by_manager(
+            self.request.user.pk, event_pk=current_event.pk
+        )
+        managed_pks = {t.pk for t in managed_tracks}
+
+        track_param = self.request.GET.get("track", "").strip()
+        if "track" not in self.request.GET and len(managed_tracks) == 1:
+            filter_track_pk: int | None = managed_tracks[0].pk
+        elif track_param.isdigit():
+            filter_track_pk = int(track_param)
+        else:
+            filter_track_pk = None
+
         context["proposals"] = self.request.di.uow.sessions.list_sessions_by_event(
             current_event.pk,
             presenter_name=host_name,
             field_filters=field_filters or None,
             search=search,
+            track_pk=filter_track_pk,
         )
         context["session_fields"] = filterable_fields
         context["filter_host"] = host_name or ""
@@ -554,6 +569,13 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
             field.pk: self.request.GET.get(f"field_{field.pk}", "")
             for field in filterable_fields
         }
+        # Managed tracks first, then remaining alphabetically
+        sorted_tracks = sorted(
+            all_tracks, key=lambda t: (t.pk not in managed_pks, t.name)
+        )
+        context["all_tracks"] = sorted_tracks
+        context["managed_track_pks"] = managed_pks
+        context["filter_track_pk"] = filter_track_pk
         return TemplateResponse(self.request, "panel/proposals.html", context)
 
 
