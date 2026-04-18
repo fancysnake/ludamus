@@ -139,6 +139,11 @@ description = "Run all tests"
 run = "mise run _pytest -- tests tests/integration tests/unit"
 env.COVERAGE_FILE = "{{ config_root }}/.coverage.unit"
 
+[tasks."test:mutation"]
+description = "Run mutation tests"
+run = "mise run _pytest -- --gremlins tests"
+env.COVERAGE_FILE = "{{ config_root }}/.coverage.unit"
+
 [tasks.diff-cover]
 depends = ["coverage"]
 run = """

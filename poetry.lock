@@ -2701,6 +2701,25 @@ freezeblaster = "0.6.0"
 pytest = ">=6.2.5"
 
 [[package]]
+name = "pytest-gremlins"
+version = "1.8.1"
+description = "Fast-first mutation testing for pytest. Let the gremlins loose, see which ones survive."
+optional = false
+python-versions = ">=3.11"
+groups = ["dev"]
+files = [
+    {file = "pytest_gremlins-1.8.1-py3-none-any.whl", hash = "sha256:13e1ab7c15dedf2acaa19bba995cf7f7c7d69f7ed258189e852c011adf0deed1"},
+    {file = "pytest_gremlins-1.8.1.tar.gz", hash = "sha256:906b55f55148272fda95e39d66bbbea7f4b4f8c13d20818fde67ccc7818ec8cb"},
+]
+
+[package.dependencies]
+coverage = ">=7.12.0"
+pytest = ">=7.0.0"
+
+[package.extras]
+docs = ["mkdocs (>=1.5.0)", "mkdocs-material[imaging] (>=9.0.0)", "mkdocs-minify-plugin (>=0.7.0)", "mkdocstrings[python] (>=0.24.0)"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -3449,4 +3468,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14.0,<3.15"
-content-hash = "f98e31efbe53823a4585674e118288d03cdd09b195788d27133d1e81e8a53705"
+content-hash = "333cbda541c90424a736667fbcc5e66b4d275e96590dc36c364c631556ed2174"

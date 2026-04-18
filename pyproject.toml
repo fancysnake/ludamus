@@ -63,6 +63,7 @@ types-requests = "^2.32.4.20250809"
 diff-cover = "^10.2.0"
 import-linter = "^2.11"
 vulture = "^2.16"
+pytest-gremlins = "^1.8.1"
 
 [tool.black]
 line-length = 88
@@ -241,6 +242,13 @@ convention = "pep257"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "ludamus.edges.settings"
+
+[tool.pytest-gremlins]
+paths = ["src"]
+
+exclude = ["**/migrations/*"]
+
+report = ["console", "json"]
 
 # IMPORT LINTER
 
