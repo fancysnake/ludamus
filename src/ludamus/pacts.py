@@ -103,6 +103,7 @@ class SessionDTO(BaseModel):
     contact_email: str
     creation_time: datetime
     description: str
+    duration: str = ""
     min_age: int
     modification_time: datetime
     needs: str
@@ -263,6 +264,7 @@ class SessionData(TypedDict, total=False):
     category_id: int | None
     contact_email: str
     description: str
+    duration: str
     min_age: int
     needs: str
     participants_limit: int
