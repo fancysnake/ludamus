@@ -109,9 +109,7 @@ def build_session_details_form(
     if durations:
         duration_choices = [(d, format_duration(d)) for d in durations]
         fields["duration"] = forms.ChoiceField(
-            label=_("Duration"),
-            choices=[("", "---"), *duration_choices],
-            required=False,
+            label=_("Duration"), choices=[("", "---"), *duration_choices]
         )
 
     for req in requirements:
