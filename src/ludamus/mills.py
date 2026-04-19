@@ -40,6 +40,7 @@ from ludamus.pacts import (
     SessionUpdateData,
     TicketAPIProtocol,
     TimeSlotRequirementDTO,
+    TrackDTO,
     UnitOfWorkProtocol,
     UserData,
     UserDTO,
@@ -290,6 +291,9 @@ class ProposeSessionService:
     ) -> list[TimeSlotRequirementDTO]:
         return self._uow.proposal_categories.list_time_slot_requirements(category_id)
 
+    def get_public_tracks(self, event_id: int) -> list[TrackDTO]:
+        return self._uow.tracks.list_public_by_event(event_id)
+
     def get_saved_personal_data(
         self, event_id: int
     ) -> dict[str, str | list[str] | bool]:
@@ -384,6 +388,9 @@ class ProposeSessionService:
 
             if personal_data := wizard_data.get("personal_data", {}):
                 self._save_personal_data(event.pk, personal_data, facilitator)
+
+            if track_pks := wizard_data.get("track_pks", []):
+                self._uow.sessions.set_session_tracks(session_id, track_pks)
 
         return ProposeSessionResult(session_id=session_id, title=title)
 

@@ -19,11 +19,11 @@
             {% for field in session_fields %}<input type="hidden" name="field_{{ field.pk }}" value="{{ filter_fields|get_item:field.pk }}">{% endfor %}
             {% if filter_host %}<input type="hidden" name="host" value="{{ filter_host }}">{% endif %}
             {% if filter_search %}<input type="hidden" name="search" value="{{ filter_search }}">{% endif %}
-            <label for="track-scope" class="text-xs text-neutral-500 whitespace-nowrap hidden sm:inline">{% translate "Track" %}</label>
+            <label for="track-scope" class="text-xs text-foreground-muted whitespace-nowrap hidden sm:inline">{% translate "Track" %}</label>
             <select id="track-scope"
                     name="track"
                     onchange="this.form.submit()"
-                    class="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm bg-white text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary">
+                    class="px-3 py-1.5 border border-border rounded-lg text-sm bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
                 <option value="">{% translate "All tracks" %}</option>
                 {% for track in all_tracks %}
                     <option value="{{ track.pk }}"
