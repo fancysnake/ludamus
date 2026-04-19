@@ -47,6 +47,20 @@ class FacilitatorData(TypedDict, total=False):
     user_id: int | None
 
 
+class FacilitatorUpdateData(TypedDict, total=False):
+    display_name: str
+
+
+class FacilitatorListItemDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    display_name: str
+    pk: int
+    session_count: int
+    slug: str
+    user_id: int | None
+
+
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -306,9 +320,18 @@ class SessionData(TypedDict, total=False):
 
 
 class SessionUpdateData(TypedDict, total=False):
+    category_id: int | None
+    contact_email: str
+    description: str
     display_name: str
+    duration: str
+    min_age: int
+    needs: str
+    participants_limit: int
+    requirements: str
     slug: str
     status: SessionStatus
+    title: str
 
 
 class AgendaItemData(TypedDict):
@@ -731,7 +754,7 @@ class UserRepositoryProtocol(Protocol):
     def email_exists(email: str, exclude_slug: str | None = None) -> bool: ...
 
 
-class SessionRepositoryProtocol(Protocol):
+class SessionRepositoryProtocol(Protocol):  # noqa: PLR0904
     @staticmethod
     def create(
         session_data: SessionData,
@@ -788,6 +811,10 @@ class SessionRepositoryProtocol(Protocol):
     ) -> list[SessionListItemDTO]: ...
     @staticmethod
     def set_session_tracks(session_pk: int, track_pks: list[int]) -> None: ...
+    @staticmethod
+    def read_facilitators(session_id: int) -> list[FacilitatorDTO]: ...
+    @staticmethod
+    def set_facilitators(session_id: int, facilitator_ids: list[int]) -> None: ...
 
 
 class TrackRepositoryProtocol(Protocol):
@@ -1140,9 +1167,19 @@ class FacilitatorRepositoryProtocol(Protocol):
     @staticmethod
     def create(data: FacilitatorData) -> FacilitatorDTO: ...
     @staticmethod
+    def read(pk: int) -> FacilitatorDTO: ...
+    @staticmethod
     def read_by_user_and_event(user_id: int, event_id: int) -> FacilitatorDTO: ...
     @staticmethod
+    def update(pk: int, data: FacilitatorUpdateData) -> FacilitatorDTO: ...
+    @staticmethod
+    def list_by_event(event_id: int) -> list[FacilitatorListItemDTO]: ...
+    @staticmethod
+    def delete(pk: int) -> None: ...
+    @staticmethod
     def slug_exists(event_id: int, slug: str) -> bool: ...
+    @staticmethod
+    def merge(target_id: int, source_ids: list[int]) -> None: ...
 
 
 class HostPersonalDataRepositoryProtocol(Protocol):
