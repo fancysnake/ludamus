@@ -29,7 +29,7 @@
             </p>
         </div>
         {% if tracks %}
-            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border overflow-x-auto">
+            <div class="card overflow-x-auto">
                 <table class="min-w-full divide-y divide-border">
                     <thead class="bg-bg-tertiary">
                         <tr>
@@ -79,14 +79,14 @@
                 </table>
             </div>
         {% else %}
-            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
+            <div class="card p-8 text-center">
                 <p class="text-foreground-muted">
                     {% translate "No tracks yet. Add a track to organize proposals by thematic area." %}
                 </p>
             </div>
         {% endif %}
     {% else %}
-        <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
+        <div class="card p-8 text-center">
             <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}

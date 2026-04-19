@@ -14,7 +14,7 @@
 {% endblock page_subtitle %}
 {% block header_actions %}
     {% if current_event %}
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center gap-3">
             <a href="{% url 'panel:tracks' slug=current_event.slug %}"
                class="btn btn-secondary">{% translate "Cancel" %}</a>
             <button type="submit"
