@@ -33,6 +33,7 @@ from ludamus.adapters.db.django.models import (
     TagCategory,
     TimeSlot,
     TimeSlotRequirement,
+    Track,
     User,
     UserEnrollmentConfig,
     Venue,
@@ -425,3 +426,10 @@ class TestSessionFieldRequirement:
         )
 
         assert str(requirement) == f"{field_name} (optional) for {category_name}"
+
+
+class TestTrack:
+    def test_str(self, faker):
+        name = faker.word()
+
+        assert str(Track(name=name)) == name
