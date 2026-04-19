@@ -10,6 +10,7 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
 from ._registry import register
+from ._utils import parse_tag_attrs
 
 if TYPE_CHECKING:
     from django.template.base import FilterExpression, Parser, Token
@@ -63,13 +64,7 @@ def do_select(parser: Parser, token: Token) -> SelectNode:
     Returns:
         A SelectNode that renders a themed ``<select>`` wrapping its body.
     """
-    bits = token.split_contents()[1:]
-    attrs: dict[str, FilterExpression] = {}
-
-    for bit in bits:
-        key, _, value = bit.partition("=")
-        attrs[key] = parser.compile_filter(value)
-
+    attrs = parse_tag_attrs(parser, token)
     nodelist = parser.parse(("end_select",))
     parser.delete_first_token()
 

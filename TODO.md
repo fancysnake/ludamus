@@ -16,7 +16,6 @@ kanban
     [Split check_proposal_rate_limit into query + command]@{
       assigned: 'GLIMPSE'
     }
-    [Duplicate code detection tooling]@{ assigned: 'agent-readiness' }
     [Technical debt markers tracking]@{ assigned: 'agent-readiness' }
     [Feature flag system]@{ assigned: 'agent-readiness' }
     [Automated release notes]@{ assigned: 'agent-readiness' }
@@ -137,4 +136,5 @@ kanban
     }
     [Dead code detection tooling]@{ assigned: 'agent-readiness' }
     [Program categories - configurable submission forms]@{ assigned: 'panel' }
+    [Duplicate code detection tooling]@{ assigned: 'agent-readiness' }
 ```
