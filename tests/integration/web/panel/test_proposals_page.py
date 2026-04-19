@@ -8,6 +8,7 @@ from ludamus.adapters.db.django.models import (
     Session,
     SessionField,
     SessionFieldValue,
+    Track,
 )
 from ludamus.pacts import (
     EventDTO,
@@ -16,6 +17,7 @@ from ludamus.pacts import (
     SessionFieldValueDTO,
     SessionListItemDTO,
     SessionStatus,
+    TrackDTO,
     UserDTO,
 )
 from tests.integration.conftest import UserFactory
@@ -373,6 +375,65 @@ class TestProposalsPageView:
                 "filter_host": "",
                 "filter_fields": {},
                 "filter_search": "D&D",
+            },
+        )
+
+    def test_auto_selects_single_managed_track_when_no_track_param(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        """Single managed track is auto-selected when no track param is given."""
+        sphere.managers.add(active_user)
+        track = Track.objects.create(
+            event=event, name="My Track", slug="my-track", is_public=True
+        )
+        track.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/proposals.html",
+            context_data={
+                **_base_context(event),
+                "proposals": [],
+                "session_fields": [],
+                "filter_host": "",
+                "filter_fields": {},
+                "filter_search": "",
+                "all_tracks": [TrackDTO.model_validate(track)],
+                "managed_track_pks": {track.pk},
+                "filter_track_pk": track.pk,
+            },
+        )
+
+    def test_filters_by_numeric_track_param(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        """When track param is a digit string, it is parsed as filter_track_pk."""
+        sphere.managers.add(active_user)
+        track = Track.objects.create(
+            event=event, name="Alpha Track", slug="alpha-track", is_public=True
+        )
+
+        response = authenticated_client.get(
+            self.get_url(event), {"track": str(track.pk)}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/proposals.html",
+            context_data={
+                **_base_context(event),
+                "proposals": [],
+                "session_fields": [],
+                "filter_host": "",
+                "filter_fields": {},
+                "filter_search": "",
+                "all_tracks": [TrackDTO.model_validate(track)],
+                "managed_track_pks": set(),
+                "filter_track_pk": track.pk,
             },
         )
 
