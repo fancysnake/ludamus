@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Track
-from ludamus.pacts import EventDTO, TrackDTO
+from ludamus.pacts import EventDTO, TrackDTO, UserDTO
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -121,7 +121,7 @@ class TestTrackEditPageView:
                 "track": TrackDTO.model_validate(track),
                 "form": ANY,
                 "spaces": [],
-                "managers": ANY,
+                "managers": [UserDTO.model_validate(active_user)],
                 "selected_space_pks": [],
                 "selected_manager_pks": [],
             },
@@ -192,7 +192,7 @@ class TestTrackEditPageView:
                 "track": TrackDTO.model_validate(track),
                 "form": ANY,
                 "spaces": [],
-                "managers": ANY,
+                "managers": [UserDTO.model_validate(active_user)],
                 "selected_space_pks": [],
                 "selected_manager_pks": [],
             },

@@ -60,7 +60,13 @@ from ludamus.pacts import (
 if TYPE_CHECKING:
     from django import forms
 
-    from ludamus.pacts import AuthenticatedRequestContext, EventDTO, TimeSlotDTO
+    from ludamus.pacts import (
+        AuthenticatedRequestContext,
+        EventDTO,
+        SpaceDTO,
+        TimeSlotDTO,
+        UserDTO,
+    )
 
 
 class _FieldDTO(Protocol):
@@ -2792,6 +2798,14 @@ class IconPreviewPartView(PanelAccessMixin, View):
         return HttpResponse(html)
 
 
+def _track_get_choices(
+    request: PanelRequest, event_pk: int, sphere_id: int
+) -> tuple[list[SpaceDTO], list[UserDTO]]:
+    spaces = request.di.uow.spaces.list_by_event(event_pk)
+    managers = request.di.uow.spheres.list_managers(sphere_id)
+    return spaces, managers
+
+
 class TracksPageView(PanelAccessMixin, EventContextMixin, View):
     """List tracks for an event."""
 
@@ -2812,20 +2826,13 @@ class TrackCreatePageView(PanelAccessMixin, EventContextMixin, View):
 
     request: PanelRequest
 
-    def _get_choices(
-        self, event_pk: int, sphere_id: int
-    ) -> tuple[list[Any], list[Any]]:
-        spaces = self.request.di.uow.spaces.list_by_event(event_pk)
-        managers = self.request.di.uow.spheres.list_managers(sphere_id)
-        return spaces, managers
-
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
 
         sphere_id = self.request.context.current_sphere_id
-        spaces, managers = self._get_choices(current_event.pk, sphere_id)
+        spaces, managers = _track_get_choices(self.request, current_event.pk, sphere_id)
         context["active_nav"] = "tracks"
         context["form"] = TrackForm(initial={"is_public": True})
         context["spaces"] = spaces
@@ -2840,7 +2847,7 @@ class TrackCreatePageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:index")
 
         sphere_id = self.request.context.current_sphere_id
-        spaces, managers = self._get_choices(current_event.pk, sphere_id)
+        spaces, managers = _track_get_choices(self.request, current_event.pk, sphere_id)
         form = TrackForm(self.request.POST)
 
         if not form.is_valid():
@@ -2858,30 +2865,23 @@ class TrackCreatePageView(PanelAccessMixin, EventContextMixin, View):
             ]
             return TemplateResponse(self.request, "panel/track-create.html", context)
 
-        data = TrackCreateData(
-            event_pk=current_event.pk,
-            name=form.cleaned_data["name"],
-            is_public=form.cleaned_data.get("is_public", True),
-        )
-        track = self.request.di.uow.tracks.create(data)
-
-        space_pks = [
-            int(pk) for pk in self.request.POST.getlist("space_pks") if pk.isdigit()
-        ]
-        manager_pks = [
-            int(pk) for pk in self.request.POST.getlist("manager_pks") if pk.isdigit()
-        ]
-        if space_pks or manager_pks:
-            self.request.di.uow.tracks.update(
-                track.pk,
-                TrackUpdateData(
-                    name=track.name,
-                    is_public=track.is_public,
-                    space_pks=space_pks,
-                    manager_pks=manager_pks,
-                ),
+        self.request.di.uow.tracks.create(
+            TrackCreateData(
+                event_pk=current_event.pk,
+                name=form.cleaned_data["name"],
+                is_public=form.cleaned_data.get("is_public", True),
+                space_pks=[
+                    int(pk)
+                    for pk in self.request.POST.getlist("space_pks")
+                    if pk.isdigit()
+                ],
+                manager_pks=[
+                    int(pk)
+                    for pk in self.request.POST.getlist("manager_pks")
+                    if pk.isdigit()
+                ],
             )
-
+        )
         messages.success(self.request, _("Track created successfully."))
         return redirect("panel:tracks", slug=slug)
 
@@ -2890,13 +2890,6 @@ class TrackEditPageView(PanelAccessMixin, EventContextMixin, View):
     """Edit an existing track."""
 
     request: PanelRequest
-
-    def _get_choices(
-        self, event_pk: int, sphere_id: int
-    ) -> tuple[list[Any], list[Any]]:
-        spaces = self.request.di.uow.spaces.list_by_event(event_pk)
-        managers = self.request.di.uow.spheres.list_managers(sphere_id)
-        return spaces, managers
 
     def get(self, _request: PanelRequest, slug: str, track_slug: str) -> HttpResponse:
         context, current_event = self.get_event_context(slug)
@@ -2912,7 +2905,7 @@ class TrackEditPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:tracks", slug=slug)
 
         sphere_id = self.request.context.current_sphere_id
-        spaces, managers = self._get_choices(current_event.pk, sphere_id)
+        spaces, managers = _track_get_choices(self.request, current_event.pk, sphere_id)
         context["active_nav"] = "tracks"
         context["track"] = track
         context["form"] = TrackForm(
@@ -2942,7 +2935,7 @@ class TrackEditPageView(PanelAccessMixin, EventContextMixin, View):
             return redirect("panel:tracks", slug=slug)
 
         sphere_id = self.request.context.current_sphere_id
-        spaces, managers = self._get_choices(current_event.pk, sphere_id)
+        spaces, managers = _track_get_choices(self.request, current_event.pk, sphere_id)
         form = TrackForm(self.request.POST)
 
         if not form.is_valid():

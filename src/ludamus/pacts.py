@@ -224,6 +224,8 @@ class TrackCreateData(TypedDict):
     event_pk: int
     name: str
     is_public: bool
+    space_pks: list[int]
+    manager_pks: list[int]
 
 
 class TrackUpdateData(TypedDict):

@@ -2346,6 +2346,8 @@ class TrackRepository(TrackRepositoryProtocol):
             slug=slug,
             is_public=data["is_public"],
         )
+        track.spaces.set(data["space_pks"])
+        track.managers.set(data["manager_pks"])
         return TrackDTO.model_validate(track)
 
     @staticmethod
@@ -2430,18 +2432,10 @@ class TrackRepository(TrackRepositoryProtocol):
 
     @staticmethod
     def list_space_pks(pk: int) -> list[int]:
-        try:
-            track = Track.objects.get(pk=pk)
-        except Track.DoesNotExist as err:
-            msg = f"Track with pk '{pk}' not found"
-            raise NotFoundError(msg) from err
-        return list(track.spaces.values_list("pk", flat=True))
+        return list(Space.objects.filter(tracks__pk=pk).values_list("pk", flat=True))
 
     @staticmethod
     def list_manager_pks(pk: int) -> list[int]:
-        try:
-            track = Track.objects.get(pk=pk)
-        except Track.DoesNotExist as err:
-            msg = f"Track with pk '{pk}' not found"
-            raise NotFoundError(msg) from err
-        return list(track.managers.values_list("pk", flat=True))
+        return list(
+            User.objects.filter(managed_tracks__pk=pk).values_list("pk", flat=True)
+        )
