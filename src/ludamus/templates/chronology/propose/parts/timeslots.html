@@ -8,7 +8,7 @@
         <form method="post"
               hx-post="{% url 'web:chronology:session-propose-timeslots' event_slug=event.slug %}"
               hx-target="#wizard-content"
-              hx-swap="outerHTML scroll:#wizard-content:top">
+              hx-swap="outerHTML show:#wizard-content:top">
             {% csrf_token %}
             <div class="space-y-5">
                 {% for group in slot_descriptors %}
@@ -36,7 +36,7 @@
                         class="btn btn-secondary py-3"
                         hx-post="{% url 'web:chronology:session-propose-personal' event_slug=event.slug %}"
                         hx-target="#wizard-content"
-                        hx-swap="outerHTML scroll:#wizard-content:top"
+                        hx-swap="outerHTML show:#wizard-content:top"
                         hx-vals='{"back": "1"}'>← {% translate "Back" %}</button>
                 <button type="submit" class="btn btn-primary py-3">{% translate "Continue" %} →</button>
             </div>
@@ -47,7 +47,7 @@
         <p class="text-sm text-foreground-muted">{% translate "No time slot selection needed. Proceeding to next step." %}</p>
         <div hx-post="{% url 'web:chronology:session-propose-timeslots' event_slug=event.slug %}"
              hx-target="#wizard-content"
-             hx-swap="outerHTML scroll:#wizard-content:top"
+             hx-swap="outerHTML show:#wizard-content:top"
              hx-trigger="load"
              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
              hx-vals='{"skip": "1"}'></div>
