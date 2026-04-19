@@ -180,8 +180,8 @@ class TestBuildSessionDetailsFormDurations:
         assert choice_map["PT30M"] == "30min"
         assert choice_map["PT1H"] == "1h"
 
-    def test_duration_field_is_not_required(self):
+    def test_duration_field_is_required(self):
         form_class = build_session_details_form([], durations=["PT30M"])
         form = form_class()
 
-        assert form.fields["duration"].required is False
+        assert form.fields["duration"].required is True
