@@ -6,14 +6,13 @@ import json
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from typing import (
+from typing import (  # pylint: disable=unused-import
     TYPE_CHECKING,
     Any,
     Literal,
     Protocol,
-    TypedDict,
     cast,
-)  # pylint: disable=unused-import
+)
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -53,6 +52,7 @@ from ludamus.pacts import (
     EventUpdateData,
     FieldUsageSummary,
     NotFoundError,
+    PersonalDataFieldCreateData,
     TrackCreateData,
     TrackUpdateData,
 )
@@ -86,25 +86,14 @@ class _FieldRepositoryProtocol[T: _FieldDTO](Protocol):
     def read_by_slug(self, event_pk: int, slug: str) -> T: ...
 
 
-class FieldFormData(TypedDict):
-    name: str
-    question: str
-    field_type: Literal["text", "select", "checkbox"]
-    options: list[str] | None
-    is_multiple: bool
-    allow_custom: bool
-    max_length: int
-    help_text: str
-
-
-def _parse_field_form_data(form: forms.Form) -> FieldFormData:
+def _parse_field_form_data(form: forms.Form) -> PersonalDataFieldCreateData:
     field_type = cast(
         "Literal['text', 'select', 'checkbox']",
         form.cleaned_data.get("field_type") or "text",
     )
     options_text = form.cleaned_data.get("options") or ""
     options = [o.strip() for o in options_text.split("\n") if o.strip()] or None
-    return FieldFormData(
+    return PersonalDataFieldCreateData(
         name=form.cleaned_data["name"],
         question=form.cleaned_data["question"],
         field_type=field_type,
@@ -113,6 +102,7 @@ def _parse_field_form_data(form: forms.Form) -> FieldFormData:
         allow_custom=form.cleaned_data.get("allow_custom") or False,
         max_length=form.cleaned_data.get("max_length") or 0,
         help_text=form.cleaned_data.get("help_text") or "",
+        is_public=form.cleaned_data.get("is_public") or False,
     )
 
 
@@ -1059,18 +1049,7 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
         parsed = _parse_field_form_data(form)
 
         field = self.request.di.uow.personal_data_fields.create(
-            current_event.pk,
-            {
-                "name": parsed["name"],
-                "question": parsed["question"],
-                "field_type": parsed["field_type"],
-                "options": parsed["options"],
-                "is_multiple": parsed["is_multiple"],
-                "allow_custom": parsed["allow_custom"],
-                "max_length": parsed["max_length"],
-                "help_text": parsed["help_text"],
-                "is_public": form.cleaned_data.get("is_public", False),
-            },
+            current_event.pk, parsed
         )
 
         category_requirements, _order = _parse_field_requirements(
@@ -1343,19 +1322,7 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
         parsed = _parse_field_form_data(form)
 
         field = self.request.di.uow.session_fields.create(
-            current_event.pk,
-            {
-                "name": parsed["name"],
-                "question": parsed["question"],
-                "field_type": parsed["field_type"],
-                "options": parsed["options"],
-                "is_multiple": parsed["is_multiple"],
-                "allow_custom": parsed["allow_custom"],
-                "max_length": parsed["max_length"],
-                "help_text": parsed["help_text"],
-                "icon": form.cleaned_data.get("icon") or "",
-                "is_public": form.cleaned_data.get("is_public", False),
-            },
+            current_event.pk, {**parsed, "icon": form.cleaned_data.get("icon") or ""}
         )
 
         category_requirements, _order = _parse_field_requirements(

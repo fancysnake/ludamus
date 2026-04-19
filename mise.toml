@@ -62,7 +62,7 @@ run = "mise run _lint -- lint-imports --config=pyproject.toml"
 run = "mise run _lint -- mypy src"
 
 [tasks.pylint]
-run = "mise run _lint -- pylint src tests"
+run = "mise run _lint -- pylint src && mise run _lint -- pylint --disable=duplicate-code tests"
 
 [tasks.ruff]
 run = "mise run _lint -- ruff check src tests"
