@@ -18,6 +18,7 @@ from ludamus.adapters.db.django.models import (
     SessionFieldRequirement,
     SessionFieldValue,
     TimeSlotRequirement,
+    Track,
 )
 from ludamus.pacts import EventDTO, ProposalCategoryDTO
 from tests.integration.conftest import ProposalCategoryFactory, TimeSlotFactory
@@ -541,6 +542,28 @@ class TestProposeSessionPageView:
 
         assert response.status_code == HTTPStatus.OK
         assert response.context["form"].errors
+
+    def test_post_session_details_requires_track_when_tracks_exist(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+        Track.objects.create(
+            event=event, name="Fantasy", slug="fantasy", is_public=True
+        )
+
+        response = authenticated_client.post(
+            self._get_details_url(event.slug),
+            {
+                "display_name": "Presenter",
+                "title": "My Session",
+                "description": "A test session",
+                "participants_limit": "4",
+            },
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["track_error"] == "Please select at least one track."
 
     def test_post_session_details_with_session_fields(
         self, authenticated_client, event, faker, time_zone, proposal_category
