@@ -607,11 +607,15 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
         )
         form = form_class(data=request.POST)
 
-        if not form.is_valid():
-            public_tracks = service.get_public_tracks(event.pk)
-            selected_track_pks = [
-                int(pk) for pk in request.POST.getlist("track_pks") if pk.isdigit()
-            ]
+        public_tracks = service.get_public_tracks(event.pk)
+        selected_track_pks = [
+            int(pk) for pk in request.POST.getlist("track_pks") if pk.isdigit()
+        ]
+        track_error: str | None = None
+        if public_tracks and not selected_track_pks:
+            track_error = _("Please select at least one track.")
+
+        if not form.is_valid() or track_error:
             return TemplateResponse(
                 request,
                 "chronology/propose/parts/details.html",
@@ -627,13 +631,16 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
                     "wizard_steps": _wizard_steps(service, category),
                     "public_tracks": public_tracks,
                     "selected_track_pks": selected_track_pks,
+                    "track_error": track_error,
                 },
             )
 
-        tracks = service.get_public_tracks(event.pk)
-        selected_track_ids = request.POST.getlist("track_pks")
-        valid_track_ids = {str(t.pk) for t in tracks}
-        track_pks = [int(tid) for tid in selected_track_ids if tid in valid_track_ids]
+        valid_track_ids = {str(t.pk) for t in public_tracks}
+        track_pks = [
+            int(tid)
+            for tid in request.POST.getlist("track_pks")
+            if tid in valid_track_ids
+        ]
 
         wizard = request.session.get(_session_key(event_slug), {})
         wizard["session_data"] = {

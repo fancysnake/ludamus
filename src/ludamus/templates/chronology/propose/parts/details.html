@@ -114,7 +114,10 @@
                 </div>
                 {% if public_tracks %}
                     <div>
-                        <h3 class="text-sm font-medium text-foreground-secondary mb-3">{% translate "Tracks" %}</h3>
+                        <h3 class="text-sm font-medium text-foreground-secondary mb-3">
+                            {% translate "Tracks" %}
+                            <span class="text-danger" aria-hidden="true">*</span>
+                        </h3>
                         <p class="text-xs text-foreground-muted mb-3">{% translate "Select the tracks your session belongs to." %}</p>
                         <div class="flex flex-wrap gap-2">
                             {% for track in public_tracks %}
@@ -130,6 +133,7 @@
                                 </label>
                             {% endfor %}
                         </div>
+                        {% if track_error %}<p class="text-sm text-danger mt-2">{{ track_error }}</p>{% endif %}
                     </div>
                 {% endif %}
                 {% for desc in field_descriptors|default:"" %}
