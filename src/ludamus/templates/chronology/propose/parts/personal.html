@@ -9,7 +9,7 @@
     <form method="post"
           hx-post="{% url 'web:chronology:session-propose-personal' event_slug=event.slug %}"
           hx-target="#wizard-content"
-          hx-swap="outerHTML scroll:#wizard-content:top">
+          hx-swap="outerHTML show:#wizard-content:top">
         {% csrf_token %}
         <div class="space-y-6">
             <div>
@@ -114,7 +114,7 @@
                     class="btn btn-secondary py-3"
                     hx-post="{% url 'web:chronology:session-propose-category' event_slug=event.slug %}"
                     hx-target="#wizard-content"
-                    hx-swap="outerHTML scroll:#wizard-content:top"
+                    hx-swap="outerHTML show:#wizard-content:top"
                     hx-vals='{"back": "1"}'>← {% translate "Back" %}</button>
             <button type="submit" class="btn btn-primary py-3">{% translate "Continue" %} →</button>
         </div>

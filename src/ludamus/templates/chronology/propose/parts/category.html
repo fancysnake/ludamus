@@ -23,7 +23,7 @@
         <form method="post"
               hx-post="{% url 'web:chronology:session-propose-category' event_slug=event.slug %}"
               hx-target="#wizard-content"
-              hx-swap="outerHTML scroll:#wizard-content:top">
+              hx-swap="outerHTML show:#wizard-content:top">
             {% csrf_token %}
             <div class="space-y-3">
                 {% for cat in categories %}
