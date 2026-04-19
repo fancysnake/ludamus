@@ -1336,6 +1336,9 @@ test.describe('Backoffice Panel', () => {
           .locator('#id_display_name')
           .fill('Game Master Alex');
         await page
+          .locator('#id_duration')
+          .selectOption('PT2H');
+        await page
           .locator('input[name="session_game-system"]')
           .fill('D&D 5e');
         await page
