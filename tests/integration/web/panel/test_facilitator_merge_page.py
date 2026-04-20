@@ -73,7 +73,35 @@ class TestFacilitatorMergePageView:
             response,
             HTTPStatus.OK,
             template_name="panel/facilitator-merge.html",
-            context_data={**_base_context(event), "facilitators": ANY, "error": None},
+            context_data={
+                **_base_context(event),
+                "facilitators": ANY,
+                "preselected_ids": set(),
+                "error": None,
+            },
+        )
+
+    def test_get_preselects_ids_from_query_params(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        f1 = _make_facilitator(event, "Alice", "alice")
+        f2 = _make_facilitator(event, "Bob", "bob")
+
+        response = authenticated_client.get(
+            self.get_url(event), data={"ids": [f1.pk, f2.pk]}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/facilitator-merge.html",
+            context_data={
+                **_base_context(event),
+                "facilitators": ANY,
+                "preselected_ids": {f1.pk, f2.pk},
+                "error": None,
+            },
         )
 
     def test_post_merges_facilitators_and_redirects(
@@ -125,5 +153,10 @@ class TestFacilitatorMergePageView:
             response,
             HTTPStatus.OK,
             template_name="panel/facilitator-merge.html",
-            context_data={**_base_context(event), "facilitators": ANY, "error": ANY},
+            context_data={
+                **_base_context(event),
+                "facilitators": ANY,
+                "preselected_ids": ANY,
+                "error": ANY,
+            },
         )
