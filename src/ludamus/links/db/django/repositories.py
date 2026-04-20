@@ -2119,11 +2119,13 @@ class FacilitatorRepository(FacilitatorRepositoryProtocol):
 
     @staticmethod
     def update(pk: int, data: FacilitatorUpdateData) -> FacilitatorDTO:
-        Facilitator.objects.filter(pk=pk).update(**data)
         try:
             facilitator = Facilitator.objects.get(pk=pk)
         except Facilitator.DoesNotExist as exc:
             raise NotFoundError from exc
+        for field, value in data.items():
+            setattr(facilitator, field, value)
+        facilitator.save()
         return FacilitatorDTO.model_validate(facilitator)
 
     @staticmethod
