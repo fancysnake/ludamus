@@ -7,14 +7,7 @@ import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from secrets import token_urlsafe
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Protocol,
-    TypedDict,
-    cast,
-)  # pylint: disable=unused-import
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict, cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -67,6 +60,8 @@ from ludamus.pacts import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from django import forms
 
     from ludamus.pacts import (
@@ -74,7 +69,6 @@ if TYPE_CHECKING:
         EventDTO,
         SpaceDTO,
         TimeSlotDTO,
-        UnitOfWorkProtocol,
         UserDTO,
     )
 
@@ -717,13 +711,13 @@ class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
         return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
 
 
-def _make_unique_session_slug(
-    title: str, sphere_id: int, uow: UnitOfWorkProtocol
+def _make_unique_slug(
+    name: str, default: str, check_exists: Callable[[str], bool]
 ) -> str:
-    base_slug = slugify(title) or "session"
+    base_slug = slugify(name) or default
     slug = base_slug
     for _attempt in range(4):
-        if not uow.sessions.slug_exists(sphere_id, slug):
+        if not check_exists(slug):
             break
         slug = f"{base_slug}-{token_urlsafe(3)}"
     return slug
@@ -766,7 +760,11 @@ class ProposalCreatePageView(PanelAccessMixin, EventContextMixin, View):
 
         title = form.cleaned_data["title"]
         sphere_id = self.request.context.current_sphere_id
-        session_slug = _make_unique_session_slug(title, sphere_id, self.request.di.uow)
+        session_slug = _make_unique_slug(
+            title,
+            "session",
+            lambda s: self.request.di.uow.sessions.slug_exists(sphere_id, s),
+        )
 
         self.request.di.uow.sessions.create(
             SessionData(
@@ -3234,29 +3232,12 @@ class TrackDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         return redirect("panel:tracks", slug=slug)
 
 
-def _make_unique_facilitator_slug(
-    display_name: str, event_id: int, uow: UnitOfWorkProtocol
-) -> str:
-    base_slug = slugify(display_name) or "facilitator"
-    slug = base_slug
-    for _attempt in range(4):
-        if not uow.facilitators.slug_exists(event_id, slug):
-            break
-        slug = f"{base_slug}-{token_urlsafe(3)}"
-    return slug
-
-
 class FacilitatorsPageView(PanelAccessMixin, EventContextMixin, View):
     """List facilitators for an event."""
 
     request: PanelRequest
 
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display facilitators list.
-
-        Returns:
-            TemplateResponse with the facilitators list or redirect if not found.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
@@ -3274,11 +3255,6 @@ class FacilitatorCreatePageView(PanelAccessMixin, EventContextMixin, View):
     request: PanelRequest
 
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display the facilitator creation form.
-
-        Returns:
-            TemplateResponse with the form or redirect if event not found.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
@@ -3288,11 +3264,6 @@ class FacilitatorCreatePageView(PanelAccessMixin, EventContextMixin, View):
         return TemplateResponse(self.request, "panel/facilitator-create.html", context)
 
     def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Handle facilitator creation.
-
-        Returns:
-            Redirect response to facilitators list on success, or form with errors.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
@@ -3306,8 +3277,10 @@ class FacilitatorCreatePageView(PanelAccessMixin, EventContextMixin, View):
             )
 
         display_name = form.cleaned_data["display_name"]
-        facilitator_slug = _make_unique_facilitator_slug(
-            display_name, current_event.pk, self.request.di.uow
+        facilitator_slug = _make_unique_slug(
+            display_name,
+            "facilitator",
+            lambda s: self.request.di.uow.facilitators.slug_exists(current_event.pk, s),
         )
         self.request.di.uow.facilitators.create(
             FacilitatorData(
@@ -3329,20 +3302,15 @@ class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
     def get(
         self, _request: PanelRequest, slug: str, facilitator_slug: str
     ) -> HttpResponse:
-        """Display the facilitator edit form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
 
-        facilitators = self.request.di.uow.facilitators.list_by_event(current_event.pk)
-        facilitator = next(
-            (f for f in facilitators if f.slug == facilitator_slug), None
-        )
-        if facilitator is None:
+        try:
+            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
+                current_event.pk, facilitator_slug
+            )
+        except NotFoundError:
             messages.error(self.request, _("Facilitator not found."))
             return redirect("panel:facilitators", slug=slug)
 
@@ -3356,20 +3324,15 @@ class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
     def post(
         self, _request: PanelRequest, slug: str, facilitator_slug: str
     ) -> HttpResponse:
-        """Handle facilitator update.
-
-        Returns:
-            Redirect response to facilitators list on success, or form with errors.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
 
-        facilitators = self.request.di.uow.facilitators.list_by_event(current_event.pk)
-        facilitator = next(
-            (f for f in facilitators if f.slug == facilitator_slug), None
-        )
-        if facilitator is None:
+        try:
+            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
+                current_event.pk, facilitator_slug
+            )
+        except NotFoundError:
             messages.error(self.request, _("Facilitator not found."))
             return redirect("panel:facilitators", slug=slug)
 
@@ -3396,11 +3359,6 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
     request: PanelRequest
 
     def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display the facilitator merge form.
-
-        Returns:
-            TemplateResponse with the merge form or redirect if event not found.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
@@ -3417,11 +3375,6 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
         return TemplateResponse(self.request, "panel/facilitator-merge.html", context)
 
     def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Handle facilitator merge.
-
-        Returns:
-            Redirect to facilitators list on success, or form with errors.
-        """
         context, current_event = self.get_event_context(slug)
         if current_event is None:
             return redirect("panel:index")
@@ -3432,7 +3385,7 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
         valid_pks = {f.pk for f in all_facilitators}
         raw_selected = self.request.POST.getlist("facilitator_ids")
         selected_ids = [
-            int(fid) for fid in raw_selected if fid.isdigit() and int(fid) in valid_pks
+            n for fid in raw_selected if fid.isdigit() and (n := int(fid)) in valid_pks
         ]
         raw_target = self.request.POST.get("target_id", "")
         target_id = (
