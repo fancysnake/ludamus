@@ -65,6 +65,24 @@ class TestFacilitatorEditPageView:
             url="/",
         )
 
+    def test_get_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:facilitator-edit",
+            kwargs={"slug": "nonexistent", "facilitator_slug": "alice"},
+        )
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
     def test_get_redirects_when_facilitator_not_found(
         self, authenticated_client, active_user, sphere, event
     ):
@@ -92,6 +110,40 @@ class TestFacilitatorEditPageView:
             HTTPStatus.OK,
             template_name="panel/facilitator-edit.html",
             context_data={**_base_context(event), "form": ANY, "facilitator": ANY},
+        )
+
+    def test_post_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:facilitator-edit",
+            kwargs={"slug": "nonexistent", "facilitator_slug": "alice"},
+        )
+
+        response = authenticated_client.post(url, data={"display_name": "Alice"})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
+    def test_post_redirects_when_facilitator_not_found(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(
+            self.get_url(event, "nonexistent"), data={"display_name": "Alice"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Facilitator not found.")],
+            url=reverse("panel:facilitators", kwargs={"slug": event.slug}),
         )
 
     def test_post_updates_facilitator_and_redirects(

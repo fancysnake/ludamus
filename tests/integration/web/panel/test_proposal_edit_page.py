@@ -86,6 +86,37 @@ class TestProposalEditPageView:
             url="/",
         )
 
+    def test_get_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:proposal-edit", kwargs={"slug": "nonexistent", "proposal_id": 1}
+        )
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
+    def test_get_redirects_when_proposal_not_found(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event, 99999))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Proposal not found.")],
+            url=reverse("panel:proposals", kwargs={"slug": event.slug}),
+        )
+
     def test_get_redirects_when_proposal_belongs_to_different_event(
         self, authenticated_client, active_user, sphere, event
     ):
@@ -155,6 +186,56 @@ class TestProposalEditPageView:
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, PERMISSION_ERROR)],
             url="/",
+        )
+
+    def test_post_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:proposal-edit", kwargs={"slug": "nonexistent", "proposal_id": 1}
+        )
+
+        response = authenticated_client.post(url, data={})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
+    def test_post_redirects_when_proposal_not_found(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(self.get_url(event, 99999), data={})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Proposal not found.")],
+            url=reverse("panel:proposals", kwargs={"slug": event.slug}),
+        )
+
+    def test_post_redirects_when_proposal_belongs_to_different_event(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        other_event = EventFactory(sphere=sphere)
+        session = _make_session(other_event, sphere)
+
+        response = authenticated_client.post(
+            self.get_url(event, session.pk),
+            data={"title": "Updated", "display_name": "Host"},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Proposal not found.")],
+            url=reverse("panel:proposals", kwargs={"slug": event.slug}),
         )
 
     def test_post_updates_session_and_redirects(
