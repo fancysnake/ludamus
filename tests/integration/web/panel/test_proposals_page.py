@@ -582,6 +582,9 @@ class TestProposalDetailPageView:
                 "proposal": SessionDTO.model_validate(session),
                 "host": UserDTO.model_validate(active_user),
                 "field_values": [],
+                "facilitators": [],
+                "all_facilitators": [],
+                "assigned_facilitator_pks": set(),
             },
         )
 
@@ -631,6 +634,9 @@ class TestProposalDetailPageView:
                         value="D&D 5e",
                     )
                 ],
+                "facilitators": [],
+                "all_facilitators": [],
+                "assigned_facilitator_pks": set(),
             },
         )
 
