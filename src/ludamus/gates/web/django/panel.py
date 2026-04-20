@@ -3344,3 +3344,60 @@ class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         messages.success(self.request, _("Facilitator updated successfully."))
         return redirect("panel:facilitators", slug=slug)
+
+
+class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
+    """Merge multiple facilitators into one."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Display the facilitator merge form.
+
+        Returns:
+            TemplateResponse with the merge form or redirect if event not found.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "facilitators"
+        context["facilitators"] = self.request.di.uow.facilitators.list_by_event(
+            current_event.pk
+        )
+        context["error"] = None
+        return TemplateResponse(self.request, "panel/facilitator-merge.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        """Handle facilitator merge.
+
+        Returns:
+            Redirect to facilitators list on success, or form with errors.
+        """
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(
+            current_event.pk
+        )
+        raw_selected = self.request.POST.getlist("facilitator_ids")
+        selected_ids = [int(fid) for fid in raw_selected if fid.isdigit()]
+        raw_target = self.request.POST.get("target_id", "")
+        target_id = int(raw_target) if raw_target.isdigit() else None
+
+        min_required = 2
+        if len(selected_ids) < min_required or target_id not in selected_ids:
+            context["active_nav"] = "facilitators"
+            context["facilitators"] = all_facilitators
+            context["error"] = _(
+                "Select at least two facilitators and choose a merge target."
+            )
+            return TemplateResponse(
+                self.request, "panel/facilitator-merge.html", context
+            )
+
+        source_ids = [fid for fid in selected_ids if fid != target_id]
+        self.request.di.uow.facilitators.merge(target_id, source_ids)
+        messages.success(self.request, _("Facilitators merged successfully."))
+        return redirect("panel:facilitators", slug=slug)

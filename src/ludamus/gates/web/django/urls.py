@@ -293,6 +293,11 @@ panel_urlpatterns = [
         panel.FacilitatorEditPageView.as_view(),
         name="facilitator-edit",
     ),
+    path(
+        "event/<slug:slug>/facilitators/merge/",
+        panel.FacilitatorMergePageView.as_view(),
+        name="facilitator-merge",
+    ),
 ]
 
 
