@@ -245,7 +245,7 @@ dir = "src/ludamus/gates/web/django/theme/static_src"
 # OTHER
 
 [tasks.shitcheck]
-run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|object|cast\\()'"
+run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\bobject\b|cast\\()'"
 
 [tasks.coverage]
 depends = ["test --cov", "e2e", "coverage:combine"]
