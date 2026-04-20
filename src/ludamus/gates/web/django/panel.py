@@ -54,6 +54,7 @@ from ludamus.pacts import (
     EventUpdateData,
     FieldUsageSummary,
     NotFoundError,
+    SessionStatus,
     TrackCreateData,
     TrackUpdateData,
 )
@@ -697,6 +698,35 @@ class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         messages.success(self.request, _("Proposal updated successfully."))
         return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
+
+
+class ProposalRejectActionView(PanelAccessMixin, EventContextMixin, View):
+    """Reject a proposal (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            session = self.request.di.uow.sessions.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        self.request.di.uow.sessions.update(
+            session.pk, {"status": SessionStatus.REJECTED}
+        )
+        messages.success(self.request, _("Proposal rejected."))
+        return redirect("panel:proposals", slug=slug)
 
 
 class CFPPageView(PanelAccessMixin, EventContextMixin, View):
