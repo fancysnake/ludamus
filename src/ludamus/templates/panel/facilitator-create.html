@@ -17,9 +17,7 @@
         <div class="flex items-center space-x-3">
             <a href="{% url 'panel:facilitators' slug=current_event.slug %}"
                class="btn btn-secondary">{% translate "Cancel" %}</a>
-            <button type="submit"
-                    form="facilitator-create-form"
-                    class="btn btn-primary flex items-center">
+            <button type="submit" form="facilitator-create-form" class="btn btn-primary">
                 {% icon "plus" class="w-4 h-4 mr-2" %}
                 {% translate "Create Facilitator" %}
             </button>
