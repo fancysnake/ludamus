@@ -3361,10 +3361,14 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
+        raw_ids = self.request.GET.getlist("ids")
+        preselected_ids = {int(fid) for fid in raw_ids if fid.isdigit()}
+
         context["active_nav"] = "facilitators"
         context["facilitators"] = self.request.di.uow.facilitators.list_by_event(
             current_event.pk
         )
+        context["preselected_ids"] = preselected_ids
         context["error"] = None
         return TemplateResponse(self.request, "panel/facilitator-merge.html", context)
 
@@ -3390,6 +3394,7 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
         if len(selected_ids) < min_required or target_id not in selected_ids:
             context["active_nav"] = "facilitators"
             context["facilitators"] = all_facilitators
+            context["preselected_ids"] = set(selected_ids)
             context["error"] = _(
                 "Select at least two facilitators and choose a merge target."
             )
