@@ -56,6 +56,21 @@ class TestFacilitatorCreatePageView:
             url="/",
         )
 
+    def test_get_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:facilitator-create", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
     def test_get_ok_for_sphere_manager(
         self, authenticated_client, active_user, sphere, event
     ):
@@ -87,6 +102,21 @@ class TestFacilitatorCreatePageView:
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, PERMISSION_ERROR)],
             url="/",
+        )
+
+    def test_post_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:facilitator-create", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.post(url, data={"display_name": "Alice"})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
         )
 
     def test_post_creates_facilitator_and_redirects(

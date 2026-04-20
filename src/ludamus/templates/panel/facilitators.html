@@ -15,6 +15,11 @@
 {% block header_actions %}
     {% if current_event %}
         <div class="flex items-center space-x-3">
+            <a href="{% url 'panel:facilitator-merge' slug=current_event.slug %}"
+               class="btn btn-secondary">
+                {% icon "funnel" class="w-4 h-4 mr-2" %}
+                {% translate "Merge view" %}
+            </a>
             <button type="submit"
                     form="facilitators-list-form"
                     id="merge-selected-btn"

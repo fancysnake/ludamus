@@ -55,6 +55,21 @@ class TestFacilitatorsPageView:
             url="/",
         )
 
+    def test_get_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:facilitators", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
     def test_get_ok_for_sphere_manager(
         self, authenticated_client, active_user, sphere, event
     ):

@@ -58,6 +58,21 @@ class TestProposalCreatePageView:
             url="/",
         )
 
+    def test_get_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:proposal-create", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
     def test_get_ok_for_sphere_manager(
         self, authenticated_client, active_user, sphere, event
     ):
@@ -93,6 +108,63 @@ class TestProposalCreatePageView:
             messages=[(messages.ERROR, PERMISSION_ERROR)],
             url="/",
         )
+
+    def test_post_redirects_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:proposal-create", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.post(url, data={})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url=reverse("panel:index"),
+        )
+
+    def test_post_creates_session_with_unique_slug_on_collision(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
+        Session.objects.create(
+            category=category,
+            presenter=None,
+            display_name="Host",
+            title="Existing Session",
+            slug="my-new-session",
+            sphere=sphere,
+            participants_limit=0,
+            status="pending",
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            data={
+                "category_id": category.pk,
+                "title": "My New Session",
+                "display_name": "Test Host",
+                "description": "",
+                "requirements": "",
+                "needs": "",
+                "contact_email": "",
+                "participants_limit": "",
+                "min_age": "",
+                "duration": "",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Proposal created successfully.")],
+            url=reverse("panel:proposals", kwargs={"slug": event.slug}),
+        )
+        assert Session.objects.filter(title="My New Session", status="pending").exists()
+        new_session = Session.objects.get(title="My New Session", status="pending")
+        assert new_session.slug != "my-new-session"
 
     def test_post_creates_session_and_redirects(
         self, authenticated_client, active_user, sphere, event
