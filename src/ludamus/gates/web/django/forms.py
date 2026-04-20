@@ -359,6 +359,27 @@ class TrackForm(forms.Form):
     )
 
 
+def create_proposal_form(categories: list[tuple[int, str]]) -> type[SessionEditForm]:
+    """Create a proposal form with a dynamic category choice field.
+
+    Args:
+        categories: List of (category_id, category_name) tuples.
+
+    Returns:
+        A form class with category_id, title, display_name and other session fields.
+    """
+    category_field = forms.ChoiceField(
+        choices=[("", _("— Select category —")), *categories],
+        error_messages={
+            "required": _("Please select a category."),
+            "invalid_choice": _("Invalid category selection."),
+        },
+    )
+    return type(
+        "ProposalCreateForm", (SessionEditForm,), {"category_id": category_field}
+    )
+
+
 class SessionEditForm(forms.Form):
     """Form for editing session fields by an organizer."""
 
