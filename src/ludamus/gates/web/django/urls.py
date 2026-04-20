@@ -183,6 +183,11 @@ panel_urlpatterns = [
         panel.ProposalDetailPageView.as_view(),
         name="proposal-detail",
     ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/edit/",
+        panel.ProposalEditPageView.as_view(),
+        name="proposal-edit",
+    ),
     path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
     path(
         "event/<slug:slug>/cfp/create/",

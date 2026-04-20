@@ -357,3 +357,27 @@ class TrackForm(forms.Form):
         initial=True,
         help_text=_("Public tracks are shown to proposers in the submission wizard."),
     )
+
+
+class SessionEditForm(forms.Form):
+    """Form for editing session fields by an organizer."""
+
+    title = forms.CharField(
+        max_length=255, strip=True, error_messages={"required": _("Title is required.")}
+    )
+    display_name = forms.CharField(
+        max_length=255,
+        strip=True,
+        error_messages={"required": _("Display name is required.")},
+    )
+    description = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 5})
+    )
+    requirements = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 3})
+    )
+    needs = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}))
+    contact_email = forms.EmailField(required=False)
+    participants_limit = forms.IntegerField(required=False, min_value=0)
+    min_age = forms.IntegerField(required=False, min_value=0)
+    duration = forms.CharField(required=False)
