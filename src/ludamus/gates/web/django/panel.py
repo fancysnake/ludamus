@@ -39,6 +39,7 @@ from ludamus.gates.web.django.forms import (
     PersonalDataFieldForm,
     ProposalCategoryForm,
     ProposalSettingsForm,
+    SessionEditForm,
     SessionFieldForm,
     SpaceForm,
     TimeSlotForm,
@@ -617,6 +618,85 @@ class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
         context["host"] = presenter
         context["field_values"] = field_values
         return TemplateResponse(self.request, "panel/proposal-detail.html", context)
+
+
+class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
+    """Edit session fields for a proposal."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            session = self.request.di.uow.sessions.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        context["active_nav"] = "proposals"
+        context["proposal"] = session
+        context["form"] = SessionEditForm(
+            initial={
+                "title": session.title,
+                "display_name": session.display_name,
+                "description": session.description,
+                "requirements": session.requirements,
+                "needs": session.needs,
+                "contact_email": session.contact_email,
+                "participants_limit": session.participants_limit,
+                "min_age": session.min_age,
+                "duration": session.duration,
+            }
+        )
+        return TemplateResponse(self.request, "panel/proposal-edit.html", context)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            session = self.request.di.uow.sessions.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        form = SessionEditForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "proposals"
+            context["proposal"] = session
+            context["form"] = form
+            return TemplateResponse(self.request, "panel/proposal-edit.html", context)
+
+        self.request.di.uow.sessions.update(
+            proposal_id,
+            {
+                "title": form.cleaned_data["title"],
+                "display_name": form.cleaned_data["display_name"],
+                "description": form.cleaned_data.get("description") or "",
+                "requirements": form.cleaned_data.get("requirements") or "",
+                "needs": form.cleaned_data.get("needs") or "",
+                "contact_email": form.cleaned_data.get("contact_email") or "",
+                "participants_limit": form.cleaned_data.get("participants_limit") or 0,
+                "min_age": form.cleaned_data.get("min_age") or 0,
+                "duration": form.cleaned_data.get("duration") or "",
+            },
+        )
+        messages.success(self.request, _("Proposal updated successfully."))
+        return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
 
 
 class CFPPageView(PanelAccessMixin, EventContextMixin, View):
