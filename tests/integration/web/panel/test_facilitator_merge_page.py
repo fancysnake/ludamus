@@ -1,13 +1,12 @@
 """Integration tests for the facilitator merge page."""
 
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Facilitator, ProposalCategory, Session
-from ludamus.pacts import EventDTO
+from ludamus.pacts import EventDTO, FacilitatorListItemDTO
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -90,7 +89,7 @@ class TestFacilitatorMergePageView:
             template_name="panel/facilitator-merge.html",
             context_data={
                 **_base_context(event),
-                "facilitators": ANY,
+                "facilitators": [],
                 "preselected_ids": set(),
                 "error": None,
             },
@@ -113,7 +112,22 @@ class TestFacilitatorMergePageView:
             template_name="panel/facilitator-merge.html",
             context_data={
                 **_base_context(event),
-                "facilitators": ANY,
+                "facilitators": [
+                    FacilitatorListItemDTO(
+                        display_name="Alice",
+                        pk=f1.pk,
+                        slug="alice",
+                        user_id=None,
+                        session_count=0,
+                    ),
+                    FacilitatorListItemDTO(
+                        display_name="Bob",
+                        pk=f2.pk,
+                        slug="bob",
+                        user_id=None,
+                        session_count=0,
+                    ),
+                ],
                 "preselected_ids": {f1.pk, f2.pk},
                 "error": None,
             },
@@ -185,8 +199,16 @@ class TestFacilitatorMergePageView:
             template_name="panel/facilitator-merge.html",
             context_data={
                 **_base_context(event),
-                "facilitators": ANY,
-                "preselected_ids": ANY,
-                "error": ANY,
+                "facilitators": [
+                    FacilitatorListItemDTO(
+                        display_name="Alice",
+                        pk=facilitator.pk,
+                        slug="alice",
+                        user_id=None,
+                        session_count=0,
+                    )
+                ],
+                "preselected_ids": {facilitator.pk},
+                "error": "Select at least two facilitators and choose a merge target.",
             },
         )
