@@ -1876,4 +1876,154 @@ test.describe('Backoffice Panel', () => {
       page.getByText('Time slot deleted successfully.'),
     ).toBeVisible();
   });
+
+  // --- Facilitators: merge ---
+
+  test('facilitators list shows always-enabled merge view button and disabled merge selected', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/facilitators/');
+
+    // "Merge view" is a plain link — always accessible
+    await expect(
+      page.getByRole('link', { name: /Merge view/ }),
+    ).toBeVisible();
+
+    // "Merge selected" starts disabled
+    await expect(
+      page.getByRole('button', { name: /Merge selected/ }),
+    ).toBeDisabled();
+  });
+
+  test('merge selected button enables after checking 2+ facilitators', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/facilitators/');
+
+    const mergeSelectedBtn = page.getByRole('button', {
+      name: /Merge selected/,
+    });
+
+    // One checkbox checked — still disabled
+    await page.locator('.facilitator-checkbox').first().check();
+    await expect(mergeSelectedBtn).toBeDisabled();
+
+    // Two checkboxes checked — now enabled
+    await page.locator('.facilitator-checkbox').nth(1).check();
+    await expect(mergeSelectedBtn).not.toBeDisabled();
+  });
+
+  test('merge view button opens merge page with no pre-selection', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/facilitators/');
+
+    await page.getByRole('link', { name: /Merge view/ }).click();
+
+    await expect(page).toHaveURL(
+      '/panel/event/autumn-open/facilitators/merge/',
+    );
+
+    // Search field is present
+    await expect(page.locator('#facilitator-search')).toBeVisible();
+
+    // All facilitator checkboxes are unchecked
+    const checkboxes = page.locator('.facilitator-checkbox');
+    const count = await checkboxes.count();
+    expect(count).toBeGreaterThanOrEqual(3);
+    for (let i = 0; i < count; i++) {
+      await expect(checkboxes.nth(i)).not.toBeChecked();
+    }
+  });
+
+  test('merge selected passes preselected ids to merge page', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/facilitators/');
+
+    // Check Alice Morgan and Alice Morgan Copy
+    const aliceRow = page.locator('tr').filter({
+      has: page.getByRole('cell', { name: 'Alice Morgan', exact: true }),
+    });
+    const aliceCopyRow = page.locator('tr').filter({
+      has: page.getByRole('cell', {
+        name: 'Alice Morgan Copy',
+        exact: true,
+      }),
+    });
+    await aliceRow.locator('.facilitator-checkbox').check();
+    await aliceCopyRow.locator('.facilitator-checkbox').check();
+
+    await page
+      .getByRole('button', { name: /Merge selected/ })
+      .click();
+
+    await expect(page).toHaveURL(/\/facilitators\/merge\/\?ids=/);
+
+    // Both should be pre-checked on the merge page
+    await expect(
+      page.getByLabel('Alice Morgan', { exact: true }),
+    ).toBeChecked();
+    await expect(
+      page.getByLabel('Alice Morgan Copy', { exact: true }),
+    ).toBeChecked();
+  });
+
+  test('merge page search filters facilitators by name', async ({ page }) => {
+    await page.goto(
+      '/panel/event/autumn-open/facilitators/merge/',
+    );
+
+    await page.locator('#facilitator-search').fill('Alice');
+
+    // Alice rows remain visible
+    await expect(
+      page
+        .locator('.facilitator-row')
+        .filter({ hasText: 'Alice Morgan Copy' }),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator('.facilitator-row')
+        .filter({ has: page.locator('label', { hasText: /^Alice Morgan$/ }) }),
+    ).toBeVisible();
+
+    // Bob Chen row is hidden
+    await expect(
+      page.locator('.facilitator-row').filter({ hasText: 'Bob Chen' }),
+    ).toBeHidden();
+  });
+
+  test('merge page merges selected facilitators into target', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/panel/event/autumn-open/facilitators/merge/',
+    );
+
+    // Select Alice Morgan and Alice Morgan Copy via their labels
+    await page.getByLabel('Alice Morgan', { exact: true }).check();
+    await page.getByLabel('Alice Morgan Copy', { exact: true }).check();
+
+    // Pick Alice Morgan as the keep target
+    const aliceRow = page.locator('.facilitator-row').filter({
+      has: page.locator('label', { hasText: /^Alice Morgan$/ }),
+    });
+    await aliceRow.locator('input[name="target_id"]').check();
+
+    await page.getByRole('button', { name: /Merge/ }).click();
+
+    await expect(
+      page.getByText('Facilitators merged successfully.'),
+    ).toBeVisible();
+    await expect(page).toHaveURL(
+      '/panel/event/autumn-open/facilitators/',
+    );
+
+    // Alice Morgan Copy is gone; Alice Morgan and Bob Chen remain
+    await expect(page.getByText('Alice Morgan Copy')).not.toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Alice Morgan', exact: true }),
+    ).toBeVisible();
+  });
 });
