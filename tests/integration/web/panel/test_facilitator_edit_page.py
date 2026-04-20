@@ -1,0 +1,132 @@
+"""Integration tests for the facilitator edit page."""
+
+from http import HTTPStatus
+from unittest.mock import ANY
+
+from django.contrib import messages
+from django.urls import reverse
+
+from ludamus.adapters.db.django.models import Facilitator
+from ludamus.pacts import EventDTO
+from tests.integration.utils import assert_response
+
+PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+def _make_facilitator(event, **kwargs):
+    defaults = {"display_name": "Alice", "slug": "alice", "user": None}
+    defaults.update(kwargs)
+    return Facilitator.objects.create(event=event, **defaults)
+
+
+def _base_context(event):
+    return {
+        "current_event": EventDTO.model_validate(event),
+        "events": [EventDTO.model_validate(event)],
+        "is_proposal_active": False,
+        "stats": {
+            "hosts_count": 0,
+            "pending_proposals": 0,
+            "rooms_count": 0,
+            "scheduled_sessions": 0,
+            "total_proposals": 0,
+            "total_sessions": 0,
+        },
+        "active_nav": "facilitators",
+    }
+
+
+class TestFacilitatorEditPageView:
+    """Tests for /panel/event/<slug>/facilitators/<facilitator_slug>/edit/ page."""
+
+    @staticmethod
+    def get_url(event, facilitator_slug="alice"):
+        return reverse(
+            "panel:facilitator-edit",
+            kwargs={"slug": event.slug, "facilitator_slug": facilitator_slug},
+        )
+
+    def test_get_redirects_anonymous_user_to_login(self, client, event):
+        url = self.get_url(event)
+
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
+
+    def test_get_redirects_non_manager_user(self, authenticated_client, event):
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, PERMISSION_ERROR)],
+            url="/",
+        )
+
+    def test_get_redirects_when_facilitator_not_found(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event, "nonexistent"))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Facilitator not found.")],
+            url=reverse("panel:facilitators", kwargs={"slug": event.slug}),
+        )
+
+    def test_get_ok_for_sphere_manager(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        _make_facilitator(event)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/facilitator-edit.html",
+            context_data={**_base_context(event), "form": ANY, "facilitator": ANY},
+        )
+
+    def test_post_updates_facilitator_and_redirects(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        facilitator = _make_facilitator(event)
+
+        response = authenticated_client.post(
+            self.get_url(event), data={"display_name": "Updated Name"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Facilitator updated successfully.")],
+            url=reverse("panel:facilitators", kwargs={"slug": event.slug}),
+        )
+        facilitator.refresh_from_db()
+        assert facilitator.display_name == "Updated Name"
+
+    def test_post_shows_errors_on_invalid_data(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        _make_facilitator(event)
+
+        response = authenticated_client.post(
+            self.get_url(event), data={"display_name": ""}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/facilitator-edit.html",
+            context_data={**_base_context(event), "form": ANY, "facilitator": ANY},
+        )
+        assert response.context["form"].errors
