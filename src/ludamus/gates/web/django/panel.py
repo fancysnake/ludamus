@@ -844,7 +844,12 @@ class ProposalSetFacilitatorsActionView(PanelAccessMixin, EventContextMixin, Vie
             return redirect("panel:proposals", slug=slug)
 
         raw_ids = self.request.POST.getlist("facilitator_ids")
-        facilitator_ids = [int(fid) for fid in raw_ids if fid.isdigit()]
+        submitted_ids = {int(fid) for fid in raw_ids if fid.isdigit()}
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(
+            current_event.pk
+        )
+        valid_pks = {f.pk for f in all_facilitators}
+        facilitator_ids = list(submitted_ids & valid_pks)
         self.request.di.uow.sessions.set_facilitators(session.pk, facilitator_ids)
         messages.success(self.request, _("Facilitators updated."))
         return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
@@ -3424,10 +3429,17 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
         all_facilitators = self.request.di.uow.facilitators.list_by_event(
             current_event.pk
         )
+        valid_pks = {f.pk for f in all_facilitators}
         raw_selected = self.request.POST.getlist("facilitator_ids")
-        selected_ids = [int(fid) for fid in raw_selected if fid.isdigit()]
+        selected_ids = [
+            int(fid) for fid in raw_selected if fid.isdigit() and int(fid) in valid_pks
+        ]
         raw_target = self.request.POST.get("target_id", "")
-        target_id = int(raw_target) if raw_target.isdigit() else None
+        target_id = (
+            int(raw_target)
+            if raw_target.isdigit() and int(raw_target) in valid_pks
+            else None
+        )
 
         min_required = 2
         if len(selected_ids) < min_required or target_id not in selected_ids:

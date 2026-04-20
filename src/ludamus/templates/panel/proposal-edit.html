@@ -17,9 +17,7 @@
         <div class="flex items-center space-x-3">
             <a href="{% url 'panel:proposal-detail' slug=current_event.slug proposal_id=proposal.pk %}"
                class="btn btn-secondary">{% translate "Cancel" %}</a>
-            <button type="submit"
-                    form="proposal-edit-form"
-                    class="btn btn-primary flex items-center">
+            <button type="submit" form="proposal-edit-form" class="btn btn-primary">
                 {% icon "check" class="w-4 h-4 mr-2" %}
                 {% translate "Save" %}
             </button>

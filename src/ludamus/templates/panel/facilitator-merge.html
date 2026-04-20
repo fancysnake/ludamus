@@ -21,8 +21,8 @@
 {% block content %}
     {% if current_event %}
         {% if error %}
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <p class="text-sm text-red-700">{{ error }}</p>
+            <div class="alert alert-danger mb-6">
+                <p class="text-sm">{{ error }}</p>
             </div>
         {% endif %}
         <form method="post">
@@ -98,8 +98,7 @@
                             {% translate "No facilitators match your search." %}
                         </p>
                         <div class="mt-6">
-                            <button type="submit"
-                                    class="btn bg-danger text-white hover:bg-danger/90 flex items-center">
+                            <button type="submit" class="btn bg-danger text-white hover:bg-danger/90">
                                 {% icon "funnel" class="w-4 h-4 mr-2" %}
                                 {% translate "Merge" %}
                             </button>

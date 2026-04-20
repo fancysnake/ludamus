@@ -16,7 +16,7 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:proposal-create' slug=current_event.slug %}"
-           class="btn btn-primary flex items-center">
+           class="btn btn-primary">
             {% icon "plus" class="w-4 h-4 mr-2" %}
             {% translate "Create Session" %}
         </a>
