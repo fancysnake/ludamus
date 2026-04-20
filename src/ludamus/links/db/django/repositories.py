@@ -2110,6 +2110,14 @@ class FacilitatorRepository(FacilitatorRepositoryProtocol):
         return FacilitatorDTO.model_validate(facilitator)
 
     @staticmethod
+    def read_by_event_and_slug(event_id: int, slug: str) -> FacilitatorDTO:
+        try:
+            facilitator = Facilitator.objects.get(event_id=event_id, slug=slug)
+        except Facilitator.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
     def read_by_user_and_event(user_id: int, event_id: int) -> FacilitatorDTO:
         try:
             facilitator = Facilitator.objects.get(user_id=user_id, event_id=event_id)
