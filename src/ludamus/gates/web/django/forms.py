@@ -402,3 +402,16 @@ class SessionEditForm(forms.Form):
     participants_limit = forms.IntegerField(required=False, min_value=0)
     min_age = forms.IntegerField(required=False, min_value=0)
     duration = forms.CharField(required=False)
+
+
+class FacilitatorForm(forms.Form):
+    """Form for creating/editing a facilitator."""
+
+    display_name = forms.CharField(
+        max_length=255,
+        strip=True,
+        error_messages={
+            "max_length": _("Display name is too long (max 255 characters)."),
+            "required": _("Display name is required."),
+        },
+    )
