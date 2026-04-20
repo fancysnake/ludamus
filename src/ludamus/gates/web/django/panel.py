@@ -6,13 +6,8 @@ import json
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from typing import (  # pylint: disable=unused-import
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Protocol,
-    cast,
-)
+from secrets import token_urlsafe
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -27,6 +22,7 @@ from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.text import slugify
 from django.utils.timezone import get_current_timezone, localtime
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
@@ -45,6 +41,7 @@ from ludamus.gates.web.django.forms import (
     TrackForm,
     VenueDuplicateForm,
     VenueForm,
+    create_proposal_form,
     create_venue_copy_form,
 )
 from ludamus.mills import PanelService, is_proposal_active
@@ -54,6 +51,7 @@ from ludamus.pacts import (
     FieldUsageSummary,
     NotFoundError,
     PersonalDataFieldCreateData,
+    SessionData,
     SessionStatus,
     TrackCreateData,
     TrackUpdateData,
@@ -67,6 +65,7 @@ if TYPE_CHECKING:
         EventDTO,
         SpaceDTO,
         TimeSlotDTO,
+        UnitOfWorkProtocol,
         UserDTO,
     )
 
@@ -688,6 +687,81 @@ class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
         )
         messages.success(self.request, _("Proposal updated successfully."))
         return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
+
+
+def _make_unique_session_slug(
+    title: str, sphere_id: int, uow: UnitOfWorkProtocol
+) -> str:
+    base_slug = slugify(title) or "session"
+    slug = base_slug
+    for _attempt in range(4):
+        if not uow.sessions.slug_exists(sphere_id, slug):
+            break
+        slug = f"{base_slug}-{token_urlsafe(3)}"
+    return slug
+
+
+class ProposalCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    """Create a new session from the organizer panel."""
+
+    request: PanelRequest
+
+    def _get_form(
+        self, current_event: EventDTO, data: QueryDict | None = None
+    ) -> forms.Form:
+        categories = self.request.di.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
+        choices = [(c.pk, c.name) for c in categories]
+        form_class = create_proposal_form(choices)
+        return form_class(data) if data is not None else form_class()
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "proposals"
+        context["form"] = self._get_form(current_event)
+        return TemplateResponse(self.request, "panel/proposal-create.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        form = self._get_form(current_event, self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "proposals"
+            context["form"] = form
+            return TemplateResponse(self.request, "panel/proposal-create.html", context)
+
+        title = form.cleaned_data["title"]
+        sphere_id = self.request.context.current_sphere_id
+        session_slug = _make_unique_session_slug(title, sphere_id, self.request.di.uow)
+
+        self.request.di.uow.sessions.create(
+            SessionData(
+                category_id=int(form.cleaned_data["category_id"]),
+                contact_email=form.cleaned_data.get("contact_email") or "",
+                description=form.cleaned_data.get("description") or "",
+                display_name=form.cleaned_data["display_name"],
+                duration=form.cleaned_data.get("duration") or "",
+                min_age=form.cleaned_data.get("min_age") or 0,
+                needs=form.cleaned_data.get("needs") or "",
+                participants_limit=form.cleaned_data.get("participants_limit") or 0,
+                presenter_id=None,
+                proposed_by_id=None,
+                requirements=form.cleaned_data.get("requirements") or "",
+                slug=session_slug,
+                sphere_id=sphere_id,
+                status=SessionStatus.PENDING,
+                title=title,
+            ),
+            tag_ids=[],
+        )
+        messages.success(self.request, _("Proposal created successfully."))
+        return redirect("panel:proposals", slug=slug)
 
 
 class ProposalRejectActionView(PanelAccessMixin, EventContextMixin, View):

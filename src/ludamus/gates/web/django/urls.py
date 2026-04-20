@@ -179,6 +179,11 @@ panel_urlpatterns = [
         name="proposals",
     ),
     path(
+        "event/<slug:slug>/proposals/create/",
+        panel.ProposalCreatePageView.as_view(),
+        name="proposal-create",
+    ),
+    path(
         "event/<slug:slug>/proposals/<int:proposal_id>/",
         panel.ProposalDetailPageView.as_view(),
         name="proposal-detail",
