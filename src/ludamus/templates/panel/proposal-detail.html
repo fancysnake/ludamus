@@ -13,6 +13,22 @@
         {{ current_event.name }} · {% translate "Proposal Details" %}
     {% endif %}
 {% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'panel:proposal-edit' slug=current_event.slug proposal_id=proposal.pk %}"
+               class="btn btn-secondary">{% translate "Edit" %}</a>
+            {% if proposal.status == "pending" %}
+                <form method="post"
+                      action="{% url 'panel:proposal-reject' slug=current_event.slug proposal_id=proposal.pk %}"
+                      onsubmit="return confirm('{% translate "Are you sure you want to reject this proposal?" %}');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn bg-danger text-white hover:bg-danger/90">{% translate "Reject" %}</button>
+                </form>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock header_actions %}
 {% block content %}
     {% if current_event %}
         <nav class="mb-4 text-sm">
