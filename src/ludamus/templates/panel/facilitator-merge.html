@@ -1,0 +1,72 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% block title_prefix %}
+    {% translate "Merge Facilitators" %} -
+{% endblock title_prefix %}
+{% block page_title %}
+    {% translate "Merge Facilitators" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Facilitators" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:facilitators' slug=current_event.slug %}"
+           class="btn btn-secondary">{% translate "Cancel" %}</a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        {% if error %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p class="text-sm text-red-700">{{ error }}</p>
+            </div>
+        {% endif %}
+        <form method="post" class="max-w-2xl">
+            {% csrf_token %}
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="text-lg font-semibold text-foreground mb-2">{% translate "Select Facilitators to Merge" %}</h3>
+                    <p class="text-sm text-foreground-muted mb-6">
+                        {% translate "Check at least two facilitators. Select the merge target (the one to keep) with the radio button." %}
+                    </p>
+                    {% if facilitators %}
+                        <div class="space-y-3">
+                            {% for f in facilitators %}
+                                <div class="flex items-center space-x-4 p-3 border border-border rounded-lg">
+                                    <input type="checkbox"
+                                           name="facilitator_ids"
+                                           value="{{ f.pk }}"
+                                           id="check-{{ f.pk }}"
+                                           class="w-4 h-4">
+                                    <input type="radio"
+                                           name="target_id"
+                                           value="{{ f.pk }}"
+                                           id="target-{{ f.pk }}"
+                                           class="w-4 h-4"
+                                           title="{% translate "Keep this facilitator" %}">
+                                    <label for="check-{{ f.pk }}" class="flex-1 text-sm text-foreground">
+                                        {{ f.display_name }}
+                                        <span class="text-foreground-muted ml-2">({{ f.session_count }} {% translate "sessions" %})</span>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-6 flex items-center space-x-3">
+                            <button type="submit"
+                                    class="btn bg-danger text-white hover:bg-danger/90 flex items-center">
+                                {% icon "funnel" class="w-4 h-4 mr-2" %}
+                                {% translate "Merge" %}
+                            </button>
+                        </div>
+                    {% else %}
+                        <p class="text-foreground-muted">{% translate "No facilitators available to merge." %}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    {% endif %}
+{% endblock content %}
