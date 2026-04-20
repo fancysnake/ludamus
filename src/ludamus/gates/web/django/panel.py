@@ -605,11 +605,20 @@ class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
         except NotFoundError:
             presenter = None
         field_values = self.request.di.uow.sessions.read_field_values(proposal_id)
+        assigned_facilitators = self.request.di.uow.sessions.read_facilitators(
+            proposal_id
+        )
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(
+            current_event.pk
+        )
 
         context["active_nav"] = "proposals"
         context["proposal"] = session
         context["host"] = presenter
         context["field_values"] = field_values
+        context["facilitators"] = assigned_facilitators
+        context["all_facilitators"] = all_facilitators
+        context["assigned_facilitator_pks"] = {f.pk for f in assigned_facilitators}
         return TemplateResponse(self.request, "panel/proposal-detail.html", context)
 
 
@@ -794,6 +803,35 @@ class ProposalRejectActionView(PanelAccessMixin, EventContextMixin, View):
         )
         messages.success(self.request, _("Proposal rejected."))
         return redirect("panel:proposals", slug=slug)
+
+
+class ProposalSetFacilitatorsActionView(PanelAccessMixin, EventContextMixin, View):
+    """Set facilitators on a session (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            session = self.request.di.uow.sessions.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        raw_ids = self.request.POST.getlist("facilitator_ids")
+        facilitator_ids = [int(fid) for fid in raw_ids if fid.isdigit()]
+        self.request.di.uow.sessions.set_facilitators(session.pk, facilitator_ids)
+        messages.success(self.request, _("Facilitators updated."))
+        return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
 
 
 class CFPPageView(PanelAccessMixin, EventContextMixin, View):

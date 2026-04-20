@@ -198,6 +198,11 @@ panel_urlpatterns = [
         panel.ProposalRejectActionView.as_view(),
         name="proposal-reject",
     ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/do/set-facilitators",
+        panel.ProposalSetFacilitatorsActionView.as_view(),
+        name="proposal-set-facilitators",
+    ),
     path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
     path(
         "event/<slug:slug>/cfp/create/",
