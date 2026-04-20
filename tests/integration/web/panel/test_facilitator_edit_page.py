@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Facilitator
-from ludamus.pacts import EventDTO
+from ludamus.pacts import EventDTO, FacilitatorDTO
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -101,7 +101,7 @@ class TestFacilitatorEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        _make_facilitator(event)
+        facilitator = _make_facilitator(event)
 
         response = authenticated_client.get(self.get_url(event))
 
@@ -109,7 +109,11 @@ class TestFacilitatorEditPageView:
             response,
             HTTPStatus.OK,
             template_name="panel/facilitator-edit.html",
-            context_data={**_base_context(event), "form": ANY, "facilitator": ANY},
+            context_data={
+                **_base_context(event),
+                "form": ANY,
+                "facilitator": FacilitatorDTO.model_validate(facilitator),
+            },
         )
 
     def test_post_redirects_when_event_not_found(
@@ -169,7 +173,7 @@ class TestFacilitatorEditPageView:
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
-        _make_facilitator(event)
+        facilitator = _make_facilitator(event)
 
         response = authenticated_client.post(
             self.get_url(event), data={"display_name": ""}
@@ -179,6 +183,10 @@ class TestFacilitatorEditPageView:
             response,
             HTTPStatus.OK,
             template_name="panel/facilitator-edit.html",
-            context_data={**_base_context(event), "form": ANY, "facilitator": ANY},
+            context_data={
+                **_base_context(event),
+                "form": ANY,
+                "facilitator": FacilitatorDTO.model_validate(facilitator),
+            },
         )
         assert response.context["form"].errors
