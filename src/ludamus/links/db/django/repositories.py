@@ -61,7 +61,9 @@ from ludamus.pacts import (
     EventUpdateData,
     FacilitatorData,
     FacilitatorDTO,
+    FacilitatorListItemDTO,
     FacilitatorRepositoryProtocol,
+    FacilitatorUpdateData,
     HostPersonalDataEntry,
     HostPersonalDataRepositoryProtocol,
     NotFoundError,
@@ -208,7 +210,7 @@ class UserRepository(UserRepositoryProtocol):
         return query.exists()
 
 
-class SessionRepository(SessionRepositoryProtocol):
+class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
     @staticmethod
     def create(
         session_data: SessionData,
@@ -463,6 +465,24 @@ class SessionRepository(SessionRepositoryProtocol):
             msg = f"Session with pk '{session_pk}' not found"
             raise NotFoundError(msg) from err
         session.tracks.set(track_pks)
+
+    @staticmethod
+    def read_facilitators(session_id: int) -> list[FacilitatorDTO]:
+        try:
+            session = Session.objects.get(pk=session_id)
+        except Session.DoesNotExist as err:
+            msg = f"Session with pk '{session_id}' not found"
+            raise NotFoundError(msg) from err
+        return [FacilitatorDTO.model_validate(f) for f in session.facilitators.all()]
+
+    @staticmethod
+    def set_facilitators(session_id: int, facilitator_ids: list[int]) -> None:
+        try:
+            session = Session.objects.get(pk=session_id)
+        except Session.DoesNotExist as err:
+            msg = f"Session with pk '{session_id}' not found"
+            raise NotFoundError(msg) from err
+        session.facilitators.set(facilitator_ids)
 
 
 class AgendaItemRepository(AgendaItemRepositoryProtocol):
@@ -2082,6 +2102,14 @@ class FacilitatorRepository(FacilitatorRepositoryProtocol):
         return FacilitatorDTO.model_validate(facilitator)
 
     @staticmethod
+    def read(pk: int) -> FacilitatorDTO:
+        try:
+            facilitator = Facilitator.objects.get(pk=pk)
+        except Facilitator.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
     def read_by_user_and_event(user_id: int, event_id: int) -> FacilitatorDTO:
         try:
             facilitator = Facilitator.objects.get(user_id=user_id, event_id=event_id)
@@ -2090,8 +2118,42 @@ class FacilitatorRepository(FacilitatorRepositoryProtocol):
         return FacilitatorDTO.model_validate(facilitator)
 
     @staticmethod
+    def update(pk: int, data: FacilitatorUpdateData) -> FacilitatorDTO:
+        Facilitator.objects.filter(pk=pk).update(**data)
+        try:
+            facilitator = Facilitator.objects.get(pk=pk)
+        except Facilitator.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
+    def list_by_event(event_id: int) -> list[FacilitatorListItemDTO]:
+        qs = Facilitator.objects.filter(event_id=event_id).annotate(
+            session_count=Count("sessions")
+        )
+        return [FacilitatorListItemDTO.model_validate(f) for f in qs]
+
+    @staticmethod
+    def delete(pk: int) -> None:
+        Facilitator.objects.filter(pk=pk).delete()
+
+    @staticmethod
     def slug_exists(event_id: int, slug: str) -> bool:
         return Facilitator.objects.filter(event_id=event_id, slug=slug).exists()
+
+    @staticmethod
+    def merge(target_id: int, source_ids: list[int]) -> None:
+        with transaction.atomic():
+            Session.objects.filter(proposed_by_id__in=source_ids).update(
+                proposed_by_id=target_id
+            )
+            for session in Session.objects.filter(
+                facilitators__in=source_ids
+            ).distinct():
+                session.facilitators.add(target_id)
+                session.facilitators.remove(*source_ids)
+            HostPersonalData.objects.filter(facilitator_id__in=source_ids).delete()
+            Facilitator.objects.filter(pk__in=source_ids).delete()
 
 
 class HostPersonalDataRepository(HostPersonalDataRepositoryProtocol):
