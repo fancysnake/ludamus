@@ -273,6 +273,21 @@ panel_urlpatterns = [
         panel.TrackDeleteActionView.as_view(),
         name="track-delete",
     ),
+    path(
+        "event/<slug:slug>/facilitators/",
+        panel.FacilitatorsPageView.as_view(),
+        name="facilitators",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/create/",
+        panel.FacilitatorCreatePageView.as_view(),
+        name="facilitator-create",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/<str:facilitator_slug>/edit/",
+        panel.FacilitatorEditPageView.as_view(),
+        name="facilitator-edit",
+    ),
 ]
 
 
