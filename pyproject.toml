@@ -20,7 +20,7 @@ build-backend = "poetry.core.masonry.api"
 package-mode = false
 
 [tool.poetry.dependencies]
-authlib = "~1.6.0"
+authlib = "~1.7.0"
 django = "~6.0.0"
 gunicorn = "^25.0.1"
 django-environ = "^0.13.0"
