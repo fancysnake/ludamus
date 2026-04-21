@@ -113,6 +113,7 @@ class TestFacilitatorEditPageView:
                 **_base_context(event),
                 "form": ANY,
                 "facilitator": FacilitatorDTO.model_validate(facilitator),
+                "personal_fields": [],
             },
         )
 
@@ -164,7 +165,10 @@ class TestFacilitatorEditPageView:
             response,
             HTTPStatus.FOUND,
             messages=[(messages.SUCCESS, "Facilitator updated successfully.")],
-            url=reverse("panel:facilitators", kwargs={"slug": event.slug}),
+            url=reverse(
+                "panel:facilitator-detail",
+                kwargs={"slug": event.slug, "facilitator_slug": "alice"},
+            ),
         )
         facilitator.refresh_from_db()
         assert facilitator.display_name == "Updated Name"
@@ -187,6 +191,7 @@ class TestFacilitatorEditPageView:
                 **_base_context(event),
                 "form": ANY,
                 "facilitator": FacilitatorDTO.model_validate(facilitator),
+                "personal_fields": [],
             },
         )
         assert response.context["form"].errors

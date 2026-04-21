@@ -1675,7 +1675,6 @@ class ProposalAcceptPageView(LoginRequiredMixin, View):
         field_values = session_repository.read_field_values(session.pk)
         return {
             "session": session,
-            "presenter": session_repository.read_presenter(session.pk),
             "event": event,
             "spaces": session_repository.read_spaces(session.pk),
             "time_slots": session_repository.read_time_slots(session.pk),

@@ -580,11 +580,9 @@ class TestProposalDetailPageView:
                 },
                 "active_nav": "proposals",
                 "proposal": SessionDTO.model_validate(session),
-                "host": UserDTO.model_validate(active_user),
                 "field_values": [],
                 "facilitators": [],
-                "all_facilitators": [],
-                "assigned_facilitator_pks": set(),
+                "presenter": UserDTO.model_validate(active_user),
             },
         )
 
@@ -624,7 +622,6 @@ class TestProposalDetailPageView:
                 },
                 "active_nav": "proposals",
                 "proposal": SessionDTO.model_validate(session),
-                "host": UserDTO.model_validate(active_user),
                 "field_values": [
                     SessionFieldValueDTO(
                         field_id=field.pk,
@@ -635,8 +632,7 @@ class TestProposalDetailPageView:
                     )
                 ],
                 "facilitators": [],
-                "all_facilitators": [],
-                "assigned_facilitator_pks": set(),
+                "presenter": UserDTO.model_validate(active_user),
             },
         )
 

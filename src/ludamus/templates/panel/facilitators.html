@@ -42,9 +42,9 @@
     {% if current_event %}
         {% if facilitators %}
             <form id="facilitators-list-form">
-                <div class="bg-white rounded-xl shadow-sm border border-neutral-100">
-                    <table class="min-w-full divide-y divide-neutral-200">
-                        <thead class="bg-neutral-50">
+                <div class="card overflow-hidden">
+                    <table class="min-w-full divide-y divide-border">
+                        <thead class="bg-bg-tertiary">
                             <tr>
                                 <th scope="col" class="w-10 px-4 py-3">
                                     <input type="checkbox"
@@ -70,7 +70,7 @@
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-neutral-200">
+                        <tbody class="divide-y divide-border">
                             {% for facilitator in facilitators %}
                                 <tr class="hover:bg-neutral-50">
                                     <td class="px-4 py-4">
@@ -79,7 +79,10 @@
                                                value="{{ facilitator.pk }}"
                                                class="facilitator-checkbox w-4 h-4">
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ facilitator.display_name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
+                                        <a href="{% url 'panel:facilitator-detail' slug=current_event.slug facilitator_slug=facilitator.slug %}"
+                                           class="text-primary hover:text-primary/80">{{ facilitator.display_name }}</a>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                                         {% if facilitator.user_id %}
                                             {% translate "Linked" %}
@@ -123,12 +126,12 @@
                 })();
             </script>
         {% else %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+            <div class="card p-8 text-center">
                 <p class="text-neutral-500">{% translate "No facilitators yet." %}</p>
             </div>
         {% endif %}
     {% else %}
-        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+        <div class="card p-8 text-center">
             <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}

@@ -893,11 +893,9 @@ class TestProposeSessionPageView:
         session = Session.objects.get(title="Test Session")
         assert session.participants_limit == int("6")
         assert session.category == proposal_category
-        assert session.proposed_by is not None
-        assert session.proposed_by.user_id == session.presenter_id
-        assert list(session.facilitators.values_list("pk", flat=True)) == [
-            session.proposed_by_id
-        ]
+        facilitators = list(session.facilitators.all())
+        assert len(facilitators) == 1
+        assert facilitators[0].user_id == session.presenter_id
 
     def test_submit_stores_min_age(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -2052,8 +2050,7 @@ class TestAnonymousProposalSubmission:
         assert facilitator.user_id is None
         assert facilitator.event_id == event.pk
 
-        # Verify: Session linked to the Facilitator via FK + M2M
-        assert session.proposed_by_id == facilitator.pk
+        # Verify: Session linked to the Facilitator via M2M
         assert list(session.facilitators.values_list("pk", flat=True)) == [
             facilitator.pk
         ]
