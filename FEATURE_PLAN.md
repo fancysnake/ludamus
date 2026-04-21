@@ -26,7 +26,7 @@
   _Test: `mise run test tests/integration/web/panel/test_facilitator_merge_page.py`
   passes; lines 3560–3566 turn green_
 
-- [ ] 3. Add tests to `test_facilitator_edit_page.py` covering the three
+- [x] 3. Add tests to `test_facilitator_edit_page.py` covering the three
   personal data field branches in the POST handler: `field_type="checkbox"`
   (line 3478), `is_multiple=True` (line 3480), and `allow_custom=True` with an
   empty primary value falling back to the `_custom` key (lines 3483–3484) —

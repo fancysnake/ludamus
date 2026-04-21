@@ -6,7 +6,11 @@ from unittest.mock import ANY
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import Facilitator
+from ludamus.adapters.db.django.models import (
+    Facilitator,
+    HostPersonalData,
+    PersonalDataField,
+)
 from ludamus.pacts import EventDTO, FacilitatorDTO
 from tests.integration.utils import assert_response
 
@@ -195,3 +199,75 @@ class TestFacilitatorEditPageView:
             },
         )
         assert response.context["form"].errors
+
+    def test_post_saves_checkbox_personal_data_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        facilitator = _make_facilitator(event)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Vegan",
+            question="Are you vegan?",
+            slug="vegan",
+            field_type="checkbox",
+            order=0,
+        )
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={"display_name": "Alice", "personal_vegan": "true"},
+        )
+
+        hpd = HostPersonalData.objects.get(facilitator=facilitator, field=field)
+        assert hpd.value is True
+
+    def test_post_saves_multiple_personal_data_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        facilitator = _make_facilitator(event)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="Languages",
+            question="Which languages?",
+            slug="languages",
+            field_type="select",
+            is_multiple=True,
+            order=0,
+        )
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={"display_name": "Alice", "personal_languages": ["en", "pl"]},
+        )
+
+        hpd = HostPersonalData.objects.get(facilitator=facilitator, field=field)
+        assert hpd.value == ["en", "pl"]
+
+    def test_post_saves_allow_custom_personal_data_field_from_custom_input(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        facilitator = _make_facilitator(event)
+        field = PersonalDataField.objects.create(
+            event=event,
+            name="System",
+            question="Which RPG system?",
+            slug="system",
+            field_type="text",
+            allow_custom=True,
+            order=0,
+        )
+
+        authenticated_client.post(
+            self.get_url(event),
+            data={
+                "display_name": "Alice",
+                "personal_system": "",
+                "personal_system_custom": "Homebrew",
+            },
+        )
+
+        hpd = HostPersonalData.objects.get(facilitator=facilitator, field=field)
+        assert hpd.value == "Homebrew"
