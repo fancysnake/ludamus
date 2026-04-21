@@ -21,7 +21,7 @@ GLIMPSE system:
 - `inits` (DI)
 - `mills` (logic)
 - `pacts` (protocols, DTOs, aggregates)
-- `specs` (configuration options)
+- `specs` (business invariants — pure constants, no IO, consumed only by mills)
 - `edges` (infrastructure boundary modules)
 
 Access data: `request.di.uow.{repository}.read(id)` — returns Pydantic DTOs,
@@ -35,13 +35,17 @@ Relation `X -> Y` means (Y can import X). It is transitive and reflexive.
 
 Relaxed rules:
 
-`pacts` -> `specs` -> `mills` -> `links` -> `gates` -> `inits`
+`pacts` -> `mills` -> `links` -> `gates` -> `inits`
+
+`specs` sits alongside `pacts` at the bottom but is imported only by `mills`:
+`pacts` -> `specs` -> `mills` (specs forbidden in links, gates, inits)
 
 Strict rules:
 
 - `(anything) -> inits -> (nothing) (top level)`
 - `mills -> gates | links | inits`
 - `pacts -> (anything) (bottom level)`
+- `specs -> links | gates | inits` (forbidden)
 
 ## Rules
 

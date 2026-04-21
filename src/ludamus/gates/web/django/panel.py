@@ -53,6 +53,7 @@ from ludamus.gates.web.django.forms import (
 )
 from ludamus.mills import FacilitatorMergeService, PanelService, is_proposal_active
 from ludamus.pacts import (
+    DEFAULT_FIELD_MAX_LENGTH,
     DependencyInjectorProtocol,
     EventUpdateData,
     FacilitatorData,
@@ -1323,7 +1324,7 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
 
         context["active_nav"] = "cfp"
         context["form"] = PersonalDataFieldForm(
-            initial={"max_length": self.request.di.config.panel.field_max_length}
+            initial={"max_length": DEFAULT_FIELD_MAX_LENGTH}
         )
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
@@ -1596,7 +1597,7 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["form"] = SessionFieldForm(
-            initial={"max_length": self.request.di.config.panel.field_max_length}
+            initial={"max_length": DEFAULT_FIELD_MAX_LENGTH}
         )
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk

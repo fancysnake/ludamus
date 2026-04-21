@@ -297,7 +297,6 @@ forbidden_modules = [
     "ludamus.gates",
     "ludamus.links",
     "ludamus.inits",
-    "ludamus.specs",
     "ludamus.edges",
     "django",
 ]

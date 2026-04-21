@@ -1386,8 +1386,7 @@ class TicketAPIProtocol(Protocol):
     def fetch_membership_count(self, user_email: str) -> int: ...
 
 
-class PanelConfigProtocol(Protocol):
-    field_max_length: int
+DEFAULT_FIELD_MAX_LENGTH = 50
 
 
 class CacheProtocol(Protocol):
@@ -1397,14 +1396,7 @@ class CacheProtocol(Protocol):
     def set(key: str, value: object, timeout: int | None = None) -> None: ...
 
 
-class ConfigProtocol(Protocol):
-    @property
-    def panel(self) -> PanelConfigProtocol: ...
-
-
 class DependencyInjectorProtocol(Protocol):
-    @property
-    def config(self) -> ConfigProtocol: ...
     @property
     def uow(self) -> UnitOfWorkProtocol: ...
     @property

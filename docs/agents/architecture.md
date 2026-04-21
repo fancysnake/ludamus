@@ -4,30 +4,39 @@
 
 | Layer | Location | Purpose |
 | ----- | -------- | ------- |
-| pacts | `pacts.py` | Protocols, DTOs (Pydantic) |
-| mills | `mills.py` | Business logic |
-| links | `links/db/django/` | Repositories, UoW |
-| gates | `gates/web/django/` | Views, forms (panel) |
-| adapters | `adapters/web/django/` | Views, forms (other) |
-| norms | `config/` | Settings |
-| binds | `binds.py` | DI middleware |
+| pacts | `pacts.py` | Protocols, DTOs (Pydantic), errors, enums, TypedDicts |
+| specs | `specs/{subdomain}.py` | Business invariants — pure constants, no IO |
+| mills | `mills.py` | Business logic, Django-free |
+| links | `links/` | Repositories, UoW, external clients |
+| gates | `gates/` | Views, forms, URLs, templatetags |
+| inits | `inits.py` | DI container, middleware wiring |
+| edges | `edges/` | settings, wsgi/asgi — outside GLIMPSE |
+| adapters | `adapters/` | Legacy — new code goes into GLIMPSE layers |
 
 ## Import Rules
 
 Enforced by `importlinter`:
 
 ```text
-mills  ✗ gates, links, norms
-links  ✗ gates, mills, norms
-gates  ✗ links, norms
-```
+General flow (Y can import X):
+pacts -> mills -> links -> gates -> inits
 
-Inner layers can't import outer.
+specs sits at the bottom alongside pacts, consumed only by mills:
+pacts -> specs -> mills
+
+Forbidden:
+mills   ✗ gates, links, inits, edges, django
+links   ✗ gates, mills, inits, specs, edges
+gates   ✗ links, inits, specs, edges
+inits   ✗ edges
+specs   ✗ gates, links, inits, mills, edges, django
+pacts   ✗ gates, links, inits, mills, specs, edges, django
+```
 
 ## Repository Pattern
 
 ```python
-# links/db/django/repositories.py
+# links/db/django/proposal.py
 class ProposalRepository(ProposalRepositoryProtocol):
     def read(self, pk: int) -> ProposalDTO:
         try:
@@ -47,11 +56,11 @@ class UnitOfWork(UnitOfWorkProtocol):
         return ProposalRepository()
 ```
 
-Injected by middleware in `binds.py`. Views use `request.di.uow.proposals.read(id)`.
+Injected by middleware in `inits.py`. Views access data via `request.di.uow.proposals.read(id)`.
 
 ## Views
 
-Use `TemplateResponse`, type hint request as `RootRequestProtocol`:
+Use `TemplateResponse`, type-hint request as `RootRequestProtocol`:
 
 ```python
 def get(self, request: RootRequestProtocol, slug: str) -> TemplateResponse:
@@ -59,16 +68,35 @@ def get(self, request: RootRequestProtocol, slug: str) -> TemplateResponse:
     return TemplateResponse(request, "panel/event.html", {"event": event})
 ```
 
-Mixins: `PanelAccessMixin` (permissions), `EventContextMixin` (loads `request.context.current_event`).
-
 ## Services (mills)
 
-Services take UoW via constructor:
+Services take UoW via constructor — never via method args or imports:
 
 ```python
-class PanelService:
+class SessionService:
     def __init__(self, uow: UnitOfWorkProtocol) -> None:
         self._uow = uow
+```
+
+## Specs
+
+Business invariants consumed only by mills. No IO, no Django.
+Sliced by subdomain, mirroring pacts and mills:
+
+```python
+# specs/event.py
+MAX_SESSIONS_PER_USER = 5
+```
+
+Pacts can define the structure; specs provide the values:
+
+```python
+# pacts/event.py
+class SessionLimits(TypedDict):
+    max_per_user: int
+
+# specs/event.py
+SESSION_LIMITS: SessionLimits = {"max_per_user": 5}
 ```
 
 ---
