@@ -362,7 +362,6 @@ class ProposeSessionService:
             create_data = SessionData(
                 sphere_id=event.sphere_id,
                 presenter_id=presenter_id,
-                proposed_by_id=facilitator.pk,
                 display_name=display_name,
                 category_id=category_id,
                 title=title,
@@ -503,7 +502,6 @@ class AcceptProposalService:
         space_id: int,
         time_slot_id: int,
     ) -> None:
-        presenter = self._uow.sessions.read_presenter(session.pk)
         time_slot = self._uow.sessions.read_time_slot(session.pk, time_slot_id)
 
         with self._uow.atomic():
@@ -511,7 +509,7 @@ class AcceptProposalService:
                 session.pk,
                 SessionUpdateData(
                     status=SessionStatus.ACCEPTED,
-                    display_name=presenter.name,
+                    display_name=session.display_name,
                     slug=slugifier(session.title),
                 ),
             )

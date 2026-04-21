@@ -648,13 +648,7 @@ class Session(models.Model):
         blank=True,
         related_name="presented_sessions",
     )
-    proposed_by = models.ForeignKey(
-        Facilitator,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="proposed_sessions",
-    )
+
     facilitators = models.ManyToManyField(
         Facilitator, blank=True, related_name="sessions"
     )

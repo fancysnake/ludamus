@@ -158,6 +158,9 @@ class TestProposalEditPageView:
                 },
                 "proposal": SessionDTO.model_validate(session),
                 "form": ANY,
+                "all_facilitators": [],
+                "assigned_facilitator_pks": set(),
+                "session_fields": [],
             },
         )
 
@@ -304,6 +307,9 @@ class TestProposalEditPageView:
                 },
                 "proposal": SessionDTO.model_validate(session),
                 "form": ANY,
+                "all_facilitators": [],
+                "assigned_facilitator_pks": set(),
+                "session_fields": [],
             },
         )
         assert response.context["form"].errors

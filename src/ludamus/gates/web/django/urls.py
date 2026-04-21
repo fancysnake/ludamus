@@ -289,14 +289,19 @@ panel_urlpatterns = [
         name="facilitator-create",
     ),
     path(
-        "event/<slug:slug>/facilitators/<str:facilitator_slug>/edit/",
-        panel.FacilitatorEditPageView.as_view(),
-        name="facilitator-edit",
-    ),
-    path(
         "event/<slug:slug>/facilitators/merge/",
         panel.FacilitatorMergePageView.as_view(),
         name="facilitator-merge",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/<str:facilitator_slug>/",
+        panel.FacilitatorDetailPageView.as_view(),
+        name="facilitator-detail",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/<str:facilitator_slug>/edit/",
+        panel.FacilitatorEditPageView.as_view(),
+        name="facilitator-edit",
     ),
 ]
 

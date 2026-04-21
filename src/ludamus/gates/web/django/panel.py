@@ -52,9 +52,11 @@ from ludamus.pacts import (
     FacilitatorData,
     FacilitatorUpdateData,
     FieldUsageSummary,
+    HostPersonalDataEntry,
     NotFoundError,
     PersonalDataFieldCreateData,
     SessionData,
+    SessionFieldValueData,
     SessionStatus,
     TrackCreateData,
     TrackUpdateData,
@@ -68,6 +70,9 @@ if TYPE_CHECKING:
     from ludamus.pacts import (
         AuthenticatedRequestContext,
         EventDTO,
+        FacilitatorListItemDTO,
+        PersonalDataFieldDTO,
+        SessionFieldDTO,
         SpaceDTO,
         TimeSlotDTO,
         UserDTO,
@@ -601,25 +606,21 @@ class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Proposal not found."))
             return redirect("panel:proposals", slug=slug)
 
-        try:
-            presenter = self.request.di.uow.sessions.read_presenter(proposal_id)
-        except NotFoundError:
-            presenter = None
         field_values = self.request.di.uow.sessions.read_field_values(proposal_id)
         assigned_facilitators = self.request.di.uow.sessions.read_facilitators(
             proposal_id
         )
-        all_facilitators = self.request.di.uow.facilitators.list_by_event(
-            current_event.pk
-        )
+        presenter = None
+        if session.presenter_id is not None:
+            presenter = self.request.di.uow.active_users.read_by_id(
+                session.presenter_id
+            )
 
         context["active_nav"] = "proposals"
         context["proposal"] = session
-        context["host"] = presenter
         context["field_values"] = field_values
         context["facilitators"] = assigned_facilitators
-        context["all_facilitators"] = all_facilitators
-        context["assigned_facilitator_pks"] = {f.pk for f in assigned_facilitators}
+        context["presenter"] = presenter
         return TemplateResponse(self.request, "panel/proposal-detail.html", context)
 
 
@@ -627,6 +628,52 @@ class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
     """Edit session fields for a proposal."""
 
     request: PanelRequest
+
+    def _get_facilitator_context(
+        self, event_pk: int, proposal_id: int
+    ) -> tuple[list[FacilitatorListItemDTO], set[int]]:
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(event_pk)
+        assigned = self.request.di.uow.sessions.read_facilitators(proposal_id)
+        assigned_pks = {f.pk for f in assigned}
+        return all_facilitators, assigned_pks
+
+    def _update_facilitators(self, session_pk: int, event_pk: int) -> None:
+        raw_ids = self.request.POST.getlist("facilitator_ids")
+        submitted_ids = {int(fid) for fid in raw_ids if fid.isdigit()}
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(event_pk)
+        valid_pks = {f.pk for f in all_facilitators}
+        self.request.di.uow.sessions.set_facilitators(
+            session_pk, list(submitted_ids & valid_pks)
+        )
+
+    def _save_session_fields(self, session_pk: int, event_pk: int) -> None:
+        event_fields = self.request.di.uow.session_fields.list_by_event(event_pk)
+        field_entries: list[SessionFieldValueData] = []
+        for field in event_fields:
+            key = f"session_field_{field.slug}"
+            if field.field_type == "checkbox":
+                value: str | list[str] | bool = self.request.POST.get(key) == "true"
+            elif field.is_multiple:
+                value = self.request.POST.getlist(key)
+            else:
+                value = self.request.POST.get(key, "")
+                if field.allow_custom and not value:
+                    value = self.request.POST.get(f"{key}_custom", "")
+            field_entries.append(
+                SessionFieldValueData(
+                    session_id=session_pk, field_id=field.pk, value=value
+                )
+            )
+        if field_entries:
+            self.request.di.uow.sessions.save_field_values(session_pk, field_entries)
+
+    def _get_session_fields(
+        self, event_pk: int, proposal_id: int
+    ) -> list[tuple[SessionFieldDTO, str | list[str] | bool | None]]:
+        fields = self.request.di.uow.session_fields.list_by_event(event_pk)
+        existing = self.request.di.uow.sessions.read_field_values(proposal_id)
+        values_by_slug = {fv.field_slug: fv.value for fv in existing}
+        return [(field, values_by_slug.get(field.slug)) for field in fields]
 
     def get(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
         context, current_event = self.get_event_context(slug)
@@ -644,6 +691,9 @@ class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Proposal not found."))
             return redirect("panel:proposals", slug=slug)
 
+        all_facilitators, assigned_pks = self._get_facilitator_context(
+            current_event.pk, proposal_id
+        )
         context["active_nav"] = "proposals"
         context["proposal"] = session
         context["form"] = SessionEditForm(
@@ -659,6 +709,10 @@ class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "duration": session.duration,
             }
         )
+        session_fields = self._get_session_fields(current_event.pk, proposal_id)
+        context["all_facilitators"] = all_facilitators
+        context["assigned_facilitator_pks"] = assigned_pks
+        context["session_fields"] = session_fields
         return TemplateResponse(self.request, "panel/proposal-edit.html", context)
 
     def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
@@ -679,9 +733,16 @@ class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         form = SessionEditForm(self.request.POST)
         if not form.is_valid():
+            all_facilitators, assigned_pks = self._get_facilitator_context(
+                current_event.pk, proposal_id
+            )
+            session_fields = self._get_session_fields(current_event.pk, proposal_id)
             context["active_nav"] = "proposals"
             context["proposal"] = session
             context["form"] = form
+            context["all_facilitators"] = all_facilitators
+            context["assigned_facilitator_pks"] = assigned_pks
+            context["session_fields"] = session_fields
             return TemplateResponse(self.request, "panel/proposal-edit.html", context)
 
         self.request.di.uow.sessions.update(
@@ -698,6 +759,10 @@ class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "duration": form.cleaned_data.get("duration") or "",
             },
         )
+
+        self._update_facilitators(session.pk, current_event.pk)
+        self._save_session_fields(session.pk, current_event.pk)
+
         messages.success(self.request, _("Proposal updated successfully."))
         return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
 
@@ -768,7 +833,6 @@ class ProposalCreatePageView(PanelAccessMixin, EventContextMixin, View):
                 needs=form.cleaned_data.get("needs") or "",
                 participants_limit=form.cleaned_data.get("participants_limit") or 0,
                 presenter_id=None,
-                proposed_by_id=None,
                 requirements=form.cleaned_data.get("requirements") or "",
                 slug=session_slug,
                 sphere_id=sphere_id,
@@ -3217,6 +3281,45 @@ class FacilitatorsPageView(PanelAccessMixin, EventContextMixin, View):
         return TemplateResponse(self.request, "panel/facilitators.html", context)
 
 
+class FacilitatorDetailPageView(PanelAccessMixin, EventContextMixin, View):
+    """View facilitator details and personal data."""
+
+    request: PanelRequest
+
+    def get(
+        self, _request: PanelRequest, slug: str, facilitator_slug: str
+    ) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
+                current_event.pk, facilitator_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Facilitator not found."))
+            return redirect("panel:facilitators", slug=slug)
+
+        personal_data_fields = self.request.di.uow.personal_data_fields.list_by_event(
+            current_event.pk
+        )
+        personal_data_values = (
+            self.request.di.uow.host_personal_data.read_for_facilitator_event(
+                facilitator.pk, current_event.pk
+            )
+        )
+        personal_data_items = [
+            (field, personal_data_values.get(field.slug))
+            for field in personal_data_fields
+        ]
+
+        context["active_nav"] = "facilitators"
+        context["facilitator"] = facilitator
+        context["personal_data_items"] = personal_data_items
+        return TemplateResponse(self.request, "panel/facilitator-detail.html", context)
+
+
 class FacilitatorCreatePageView(PanelAccessMixin, EventContextMixin, View):
     """Create a new facilitator for an event."""
 
@@ -3267,6 +3370,15 @@ class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
 
     request: PanelRequest
 
+    def _get_personal_fields(
+        self, event_pk: int, facilitator_pk: int
+    ) -> list[tuple[PersonalDataFieldDTO, str | list[str] | bool | None]]:
+        fields = self.request.di.uow.personal_data_fields.list_by_event(event_pk)
+        values = self.request.di.uow.host_personal_data.read_for_facilitator_event(
+            facilitator_pk, event_pk
+        )
+        return [(field, values.get(field.slug)) for field in fields]
+
     def get(
         self, _request: PanelRequest, slug: str, facilitator_slug: str
     ) -> HttpResponse:
@@ -3282,11 +3394,13 @@ class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Facilitator not found."))
             return redirect("panel:facilitators", slug=slug)
 
+        personal_fields = self._get_personal_fields(current_event.pk, facilitator.pk)
         context["active_nav"] = "facilitators"
         context["facilitator"] = facilitator
         context["form"] = FacilitatorForm(
             initial={"display_name": facilitator.display_name}
         )
+        context["personal_fields"] = personal_fields
         return TemplateResponse(self.request, "panel/facilitator-edit.html", context)
 
     def post(
@@ -3306,9 +3420,13 @@ class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
 
         form = FacilitatorForm(self.request.POST)
         if not form.is_valid():
+            personal_fields = self._get_personal_fields(
+                current_event.pk, facilitator.pk
+            )
             context["active_nav"] = "facilitators"
             context["facilitator"] = facilitator
             context["form"] = form
+            context["personal_fields"] = personal_fields
             return TemplateResponse(
                 self.request, "panel/facilitator-edit.html", context
             )
@@ -3317,8 +3435,36 @@ class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
             facilitator.pk,
             FacilitatorUpdateData(display_name=form.cleaned_data["display_name"]),
         )
+
+        all_personal_fields = self.request.di.uow.personal_data_fields.list_by_event(
+            current_event.pk
+        )
+        entries: list[HostPersonalDataEntry] = []
+        for field in all_personal_fields:
+            key = f"personal_{field.slug}"
+            if field.field_type == "checkbox":
+                value: str | list[str] | bool = self.request.POST.get(key) == "true"
+            elif field.is_multiple:
+                value = self.request.POST.getlist(key)
+            else:
+                value = self.request.POST.get(key, "")
+                if field.allow_custom and not value:
+                    value = self.request.POST.get(f"{key}_custom", "")
+            entries.append(
+                HostPersonalDataEntry(
+                    facilitator_id=facilitator.pk,
+                    event_id=current_event.pk,
+                    field_id=field.pk,
+                    value=value,
+                )
+            )
+        if entries:
+            self.request.di.uow.host_personal_data.save(entries)
+
         messages.success(self.request, _("Facilitator updated successfully."))
-        return redirect("panel:facilitators", slug=slug)
+        return redirect(
+            "panel:facilitator-detail", slug=slug, facilitator_slug=facilitator_slug
+        )
 
 
 class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
@@ -3369,6 +3515,21 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
             context["preselected_ids"] = set(selected_ids)
             context["error"] = _(
                 "Select at least two facilitators and choose a merge target."
+            )
+            return TemplateResponse(
+                self.request, "panel/facilitator-merge.html", context
+            )
+
+        selected_set = set(selected_ids)
+        linked_count = sum(
+            1 for f in all_facilitators if f.pk in selected_set and f.user_id
+        )
+        if linked_count > 1:
+            context["active_nav"] = "facilitators"
+            context["facilitators"] = all_facilitators
+            context["preselected_ids"] = selected_set
+            context["error"] = _(
+                "Cannot merge facilitators that each have a linked user account."
             )
             return TemplateResponse(
                 self.request, "panel/facilitator-merge.html", context
