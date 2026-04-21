@@ -463,7 +463,6 @@ disable=import-outside-toplevel,
         unused-argument,
         invalid-str-returned,
         line-too-long,
-        duplicate-code,
         protected-access,
         no-self-use,
         magic-value-comparison,
@@ -472,7 +471,7 @@ disable=import-outside-toplevel,
         too-few-public-methods,
         too-many-statements,
         no-member,
-        missing-docstring,
+        missing-docstring
 
 
 # Enable the message, report, category or checker with the given id(s). You can
