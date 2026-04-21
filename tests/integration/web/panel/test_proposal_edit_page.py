@@ -6,7 +6,12 @@ from unittest.mock import ANY
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import ProposalCategory, Session
+from ludamus.adapters.db.django.models import (
+    ProposalCategory,
+    Session,
+    SessionField,
+    SessionFieldValue,
+)
 from ludamus.pacts import EventDTO, SessionDTO
 from tests.integration.conftest import EventFactory
 from tests.integration.utils import assert_response
@@ -313,3 +318,90 @@ class TestProposalEditPageView:
             },
         )
         assert response.context["form"].errors
+
+    def test_post_saves_checkbox_session_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        session = _make_session(event, sphere)
+        field = SessionField.objects.create(
+            event=event,
+            name="18+",
+            question="Is this session 18+?",
+            slug="adult",
+            field_type="checkbox",
+            order=0,
+        )
+
+        authenticated_client.post(
+            self.get_url(event, session.pk),
+            data={
+                "title": "Updated",
+                "display_name": "Host",
+                "participants_limit": 5,
+                "min_age": 0,
+                "session_field_adult": "true",
+            },
+        )
+
+        sfv = SessionFieldValue.objects.get(session=session, field=field)
+        assert sfv.value is True
+
+    def test_post_saves_multiple_session_field(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        session = _make_session(event, sphere)
+        field = SessionField.objects.create(
+            event=event,
+            name="Genres",
+            question="Which genres?",
+            slug="genres",
+            field_type="select",
+            is_multiple=True,
+            order=0,
+        )
+
+        authenticated_client.post(
+            self.get_url(event, session.pk),
+            data={
+                "title": "Updated",
+                "display_name": "Host",
+                "participants_limit": 5,
+                "min_age": 0,
+                "session_field_genres": ["horror", "comedy"],
+            },
+        )
+
+        sfv = SessionFieldValue.objects.get(session=session, field=field)
+        assert sfv.value == ["horror", "comedy"]
+
+    def test_post_saves_allow_custom_session_field_from_custom_input(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        session = _make_session(event, sphere)
+        field = SessionField.objects.create(
+            event=event,
+            name="System",
+            question="Which RPG system?",
+            slug="system",
+            field_type="text",
+            allow_custom=True,
+            order=0,
+        )
+
+        authenticated_client.post(
+            self.get_url(event, session.pk),
+            data={
+                "title": "Updated",
+                "display_name": "Host",
+                "participants_limit": 5,
+                "min_age": 0,
+                "session_field_system": "",
+                "session_field_system_custom": "Homebrew",
+            },
+        )
+
+        sfv = SessionFieldValue.objects.get(session=session, field=field)
+        assert sfv.value == "Homebrew"

@@ -34,7 +34,7 @@
   _Test: `mise run test tests/integration/web/panel/test_facilitator_edit_page.py`
   passes; lines 3476–3494 turn green_
 
-- [ ] 4. Add tests to `test_proposal_edit_page.py` covering the three session
+- [x] 4. Add tests to `test_proposal_edit_page.py` covering the three session
   field branches in `_save_session_fields`: `field_type="checkbox"` (line 664),
   `is_multiple=True` (line 666), and `allow_custom=True` with empty primary
   (lines 669–671) — each test posts a valid proposal-edit form alongside the
