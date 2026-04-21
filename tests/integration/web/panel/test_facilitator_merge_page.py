@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Facilitator, ProposalCategory, Session
 from ludamus.pacts import EventDTO, FacilitatorListItemDTO
+from tests.integration.conftest import UserFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -180,6 +181,53 @@ class TestFacilitatorMergePageView:
         assert not Facilitator.objects.filter(pk=source.pk).exists()
         assert Facilitator.objects.filter(pk=target.pk).exists()
         assert list(session.facilitators.values_list("pk", flat=True)) == [target.pk]
+
+    def test_post_rejects_merge_when_multiple_linked_users(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        user_1 = UserFactory(username="user-one", email="user1@example.com")
+        user_2 = UserFactory(username="user-two", email="user2@example.com")
+        f1 = _make_facilitator(event, "Alice", "alice")
+        f2 = _make_facilitator(event, "Bob", "bob")
+        Facilitator.objects.filter(pk=f1.pk).update(user=user_1)
+        Facilitator.objects.filter(pk=f2.pk).update(user=user_2)
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            data={"facilitator_ids": [f1.pk, f2.pk], "target_id": f1.pk},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/facilitator-merge.html",
+            context_data={
+                **_base_context(event),
+                "facilitators": [
+                    FacilitatorListItemDTO(
+                        display_name="Alice",
+                        pk=f1.pk,
+                        slug="alice",
+                        user_id=user_1.pk,
+                        session_count=0,
+                    ),
+                    FacilitatorListItemDTO(
+                        display_name="Bob",
+                        pk=f2.pk,
+                        slug="bob",
+                        user_id=user_2.pk,
+                        session_count=0,
+                    ),
+                ],
+                "preselected_ids": {f1.pk, f2.pk},
+                "error": (
+                    "Cannot merge facilitators that each have a linked user account."
+                ),
+            },
+        )
+        assert Facilitator.objects.filter(pk=f1.pk).exists()
+        assert Facilitator.objects.filter(pk=f2.pk).exists()
 
     def test_post_rejects_insufficient_selection(
         self, authenticated_client, active_user, sphere, event

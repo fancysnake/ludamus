@@ -19,7 +19,7 @@
   _Test: `mise run test tests/integration/web/panel/test_facilitator_detail_page.py`
   passes; lines 3324–3352 turn green_
 
-- [ ] 2. Add a test to `test_facilitator_merge_page.py` for the case where two
+- [x] 2. Add a test to `test_facilitator_merge_page.py` for the case where two
   or more selected facilitators each have a linked user account — POST should
   return the merge form with the error "Cannot merge facilitators that each have
   a linked user account." rather than performing the merge —
