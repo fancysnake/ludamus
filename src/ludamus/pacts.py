@@ -124,7 +124,6 @@ class SessionDTO(BaseModel):
     participants_limit: int
     pk: int
     presenter_id: int | None
-    proposed_by_id: int | None = None
     display_name: str
     requirements: str
     slug: str
@@ -310,7 +309,6 @@ class SessionData(TypedDict, total=False):
     needs: str
     participants_limit: int
     presenter_id: int | None
-    proposed_by_id: int | None
     display_name: str
     requirements: str
     slug: str
@@ -768,8 +766,6 @@ class SessionRepositoryProtocol(Protocol):  # noqa: PLR0904
     def update(pk: int, data: SessionUpdateData) -> None: ...
     @staticmethod
     def read_event(session_id: int) -> EventDTO: ...
-    @staticmethod
-    def read_presenter(session_id: int) -> UserDTO: ...
     @staticmethod
     def read_spaces(session_id: int) -> list[SpaceDTO]: ...
     @staticmethod

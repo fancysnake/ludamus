@@ -249,16 +249,6 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
         return _event_dto(event)
 
     @staticmethod
-    def read_presenter(session_id: int) -> UserDTO:
-        try:
-            session = Session.objects.select_related("presenter").get(id=session_id)
-        except Session.DoesNotExist as exception:
-            raise NotFoundError from exception
-        if session.presenter is None:
-            raise NotFoundError
-        return UserDTO.model_validate(session.presenter)
-
-    @staticmethod
     def read_spaces(session_id: int) -> list[SpaceDTO]:
         spaces = Space.objects.filter(
             area__venue__event__proposal_categories__sessions__id=session_id
@@ -2154,9 +2144,6 @@ class FacilitatorRepository(FacilitatorRepositoryProtocol):
     @staticmethod
     def merge(target_id: int, source_ids: list[int]) -> None:
         with transaction.atomic():
-            Session.objects.filter(proposed_by_id__in=source_ids).update(
-                proposed_by_id=target_id
-            )
             for session in Session.objects.filter(
                 facilitators__in=source_ids
             ).distinct():

@@ -157,7 +157,6 @@ class TestFacilitatorMergePageView:
         category = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
         session = Session.objects.create(
             category=category,
-            proposed_by=source,
             display_name="Alice Duplicate",
             title="A Session",
             slug="a-session",
@@ -165,6 +164,7 @@ class TestFacilitatorMergePageView:
             participants_limit=0,
             status="pending",
         )
+        session.facilitators.add(source)
 
         response = authenticated_client.post(
             self.get_url(event),
@@ -179,8 +179,7 @@ class TestFacilitatorMergePageView:
         )
         assert not Facilitator.objects.filter(pk=source.pk).exists()
         assert Facilitator.objects.filter(pk=target.pk).exists()
-        session.refresh_from_db()
-        assert session.proposed_by_id == target.pk
+        assert list(session.facilitators.values_list("pk", flat=True)) == [target.pk]
 
     def test_post_rejects_insufficient_selection(
         self, authenticated_client, active_user, sphere, event

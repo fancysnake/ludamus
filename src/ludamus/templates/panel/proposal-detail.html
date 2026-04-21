@@ -44,11 +44,9 @@
         <div class="card mb-6">
             <div class="card-body">
                 <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Host" %}</h3>
-                {% if host %}
-                    <p class="text-foreground">{{ host.name }}</p>
-                    {% if host.email %}<p class="text-sm text-foreground-muted">{{ host.email }}</p>{% endif %}
-                {% else %}
-                    <p class="text-foreground-muted">{{ proposal.display_name }}</p>
+                <p class="text-foreground">{{ proposal.display_name }}</p>
+                {% if presenter %}
+                    <p class="text-foreground-muted text-sm mt-1">{{ presenter.name }} · {{ presenter.email }}</p>
                 {% endif %}
             </div>
         </div>
@@ -116,30 +114,11 @@
             <div class="card-body">
                 <h3 class="text-sm font-medium text-foreground-muted mb-4">{% translate "Facilitators" %}</h3>
                 {% if facilitators %}
-                    <ul class="mb-4 space-y-1">
+                    <ul class="space-y-1">
                         {% for f in facilitators %}<li class="text-foreground text-sm">{{ f.display_name }}</li>{% endfor %}
                     </ul>
                 {% else %}
-                    <p class="text-foreground-muted text-sm mb-4">{% translate "No facilitators assigned." %}</p>
-                {% endif %}
-                {% if all_facilitators %}
-                    <form method="post"
-                          action="{% url 'panel:proposal-set-facilitators' slug=current_event.slug proposal_id=proposal.pk %}">
-                        {% csrf_token %}
-                        <div class="space-y-2">
-                            {% for f in all_facilitators %}
-                                <label class="flex items-center text-sm">
-                                    <input type="checkbox"
-                                           name="facilitator_ids"
-                                           value="{{ f.pk }}"
-                                           {% if f.pk in assigned_facilitator_pks %}checked{% endif %}
-                                           class="mr-2">
-                                    {{ f.display_name }}
-                                </label>
-                            {% endfor %}
-                        </div>
-                        <button type="submit" class="btn btn-secondary mt-4">{% translate "Update Facilitators" %}</button>
-                    </form>
+                    <p class="text-foreground-muted text-sm">{% translate "No facilitators assigned." %}</p>
                 {% endif %}
             </div>
         </div>

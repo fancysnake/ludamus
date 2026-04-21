@@ -39,9 +39,9 @@
                            autocomplete="off"
                            class="w-full border border-border rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-primary text-sm">
                     {% if facilitators %}
-                        <div class="bg-white rounded-xl border border-neutral-100 overflow-hidden">
-                            <table class="min-w-full divide-y divide-neutral-200">
-                                <thead class="bg-neutral-50">
+                        <div class="card overflow-hidden">
+                            <table class="min-w-full divide-y divide-border">
+                                <thead class="bg-bg-tertiary">
                                     <tr>
                                         <th scope="col" class="w-10 px-4 py-3">
                                             <input type="checkbox"
@@ -64,7 +64,7 @@
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody id="merge-list" class="bg-white divide-y divide-neutral-200">
+                                <tbody id="merge-list" class="divide-y divide-border">
                                     {% for f in facilitators %}
                                         <tr class="facilitator-row hover:bg-neutral-50"
                                             data-name="{{ f.display_name|lower }}">

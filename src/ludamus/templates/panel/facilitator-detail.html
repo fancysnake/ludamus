@@ -1,0 +1,85 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% block title_prefix %}
+    {{ facilitator.display_name }} - {% translate "Facilitators" %} -
+{% endblock title_prefix %}
+{% block page_title %}
+    {{ facilitator.display_name }}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}
+        {{ current_event.name }} · {% translate "Facilitators" %}
+    {% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <a href="{% url 'panel:facilitator-edit' slug=current_event.slug facilitator_slug=facilitator.slug %}"
+           class="btn btn-primary">
+            {% icon "pencil-square" class="w-4 h-4 mr-2" %}
+            {% translate "Edit" %}
+        </a>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event and facilitator %}
+        <nav class="mb-4 text-sm">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a href="{% url 'panel:facilitators' slug=current_event.slug %}"
+                       class="text-foreground-muted hover:text-primary">{% translate "Facilitators" %}</a>
+                </li>
+                <li class="text-foreground-muted/50">/</li>
+                <li class="text-foreground font-medium">{{ facilitator.display_name }}</li>
+            </ol>
+        </nav>
+        <div class="card mb-6">
+            <div class="card-body">
+                <h3 class="text-sm font-medium text-foreground-muted mb-4">{% translate "Facilitator Details" %}</h3>
+                <dl class="space-y-3">
+                    <div>
+                        <dt class="text-xs text-foreground-muted">{% translate "Display Name" %}</dt>
+                        <dd class="text-foreground">
+                            {{ facilitator.display_name }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-foreground-muted">{% translate "Linked User" %}</dt>
+                        <dd class="text-foreground">
+                            {% if facilitator.user_id %}
+                                {% translate "Linked" %}
+                            {% else %}
+                                <span class="text-foreground-muted">{% translate "None" %}</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+        {% if personal_data_items %}
+            <div class="card mb-6">
+                <div class="card-body">
+                    <h3 class="text-sm font-medium text-foreground-muted mb-4">{% translate "Personal Information" %}</h3>
+                    <dl class="space-y-3">
+                        {% for field, value in personal_data_items %}
+                            <div>
+                                <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
+                                <dd class="text-foreground">
+                                    {% if value == True %}
+                                        {% translate "Yes" %}
+                                    {% elif value == False or value is None %}
+                                        <span class="text-foreground-muted">—</span>
+                                    {% elif value %}
+                                        {{ value }}
+                                    {% else %}
+                                        <span class="text-foreground-muted">—</span>
+                                    {% endif %}
+                                </dd>
+                            </div>
+                        {% endfor %}
+                    </dl>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock content %}
