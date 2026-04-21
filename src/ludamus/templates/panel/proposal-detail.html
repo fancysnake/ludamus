@@ -23,7 +23,7 @@
                       action="{% url 'panel:proposal-reject' slug=current_event.slug proposal_id=proposal.pk %}"
                       onsubmit="return confirm('{% translate "Are you sure you want to reject this proposal?" %}');">
                     {% csrf_token %}
-                    <button type="submit" class="btn bg-danger text-white hover:bg-danger/90">{% translate "Reject" %}</button>
+                    <button type="submit" class="btn btn-danger">{% translate "Reject" %}</button>
                 </form>
             {% endif %}
         </div>

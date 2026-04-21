@@ -422,6 +422,15 @@ a, button {
   background-color: var(--theme-secondary-hover);
 }
 
+.btn-danger {
+  background-color: var(--theme-danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: color-mix(in srgb, var(--theme-danger) 85%, black);
+}
+
 .card {
   border-radius: 1rem;
   border: 1px solid var(--theme-border);
