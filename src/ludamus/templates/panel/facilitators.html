@@ -53,44 +53,44 @@
                                            title="{% translate "Select all" %}">
                                 </th>
                                 <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
                                     {% translate "Display Name" %}
                                 </th>
                                 <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
                                     {% translate "Linked User" %}
                                 </th>
                                 <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
                                     {% translate "Sessions" %}
                                 </th>
                                 <th scope="col"
-                                    class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                    class="px-6 py-3 text-right text-xs font-medium text-foreground-muted uppercase tracking-wider">
                                     {% translate "Actions" %}
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border">
                             {% for facilitator in facilitators %}
-                                <tr class="hover:bg-neutral-50">
+                                <tr class="hover:bg-bg-tertiary">
                                     <td class="px-4 py-4">
                                         <input type="checkbox"
                                                name="ids"
                                                value="{{ facilitator.pk }}"
                                                class="facilitator-checkbox w-4 h-4">
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                                         <a href="{% url 'panel:facilitator-detail' slug=current_event.slug facilitator_slug=facilitator.slug %}"
                                            class="text-primary hover:text-primary/80">{{ facilitator.display_name }}</a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">
                                         {% if facilitator.user_id %}
                                             {% translate "Linked" %}
                                         {% else %}
-                                            <span class="text-neutral-300">{% translate "None" %}</span>
+                                            <span class="text-foreground-muted">{% translate "None" %}</span>
                                         {% endif %}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ facilitator.session_count }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">{{ facilitator.session_count }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <a href="{% url 'panel:facilitator-edit' slug=current_event.slug facilitator_slug=facilitator.slug %}"
                                            class="text-primary hover:text-primary/80 inline-flex items-center">
@@ -127,7 +127,7 @@
             </script>
         {% else %}
             <div class="card p-8 text-center">
-                <p class="text-neutral-500">{% translate "No facilitators yet." %}</p>
+                <p class="text-foreground-muted">{% translate "No facilitators yet." %}</p>
             </div>
         {% endif %}
     {% else %}
