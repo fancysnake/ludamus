@@ -52,6 +52,8 @@ from ludamus.pacts import (
     VirtualEnrollmentConfig,
     WizardData,
 )
+from ludamus.specs.encounter import ENCOUNTER_DEFAULT_DURATION
+from ludamus.specs.proposal import PROPOSAL_RATE_LIMIT_SECONDS
 
 _BASE62_CHARS = string.ascii_letters + string.digits
 
@@ -103,7 +105,7 @@ def _gcal_dt(dt: datetime) -> str:
 
 
 def google_calendar_url(encounter: EncounterDTO, url: str) -> str:
-    end = encounter.end_time or (encounter.start_time + timedelta(hours=2))
+    end = encounter.end_time or (encounter.start_time + ENCOUNTER_DEFAULT_DURATION)
     params = {
         "action": "TEMPLATE",
         "text": encounter.title,
@@ -118,7 +120,7 @@ def google_calendar_url(encounter: EncounterDTO, url: str) -> str:
 
 
 def outlook_calendar_url(encounter: EncounterDTO, url: str) -> str:
-    end = encounter.end_time or (encounter.start_time + timedelta(hours=2))
+    end = encounter.end_time or (encounter.start_time + ENCOUNTER_DEFAULT_DURATION)
     params = {
         "rru": "addevent",
         "subject": encounter.title,
@@ -441,9 +443,6 @@ class ProposeSessionService:
             )
         if entries:
             self._uow.host_personal_data.save(entries)
-
-
-PROPOSAL_RATE_LIMIT_SECONDS = 300
 
 
 def check_proposal_rate_limit(cache: CacheProtocol, ip: str, event_id: int) -> bool:

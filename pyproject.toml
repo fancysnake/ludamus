@@ -262,12 +262,7 @@ root_package = "ludamus"
 name = "gates"
 type = "forbidden"
 source_modules = ["ludamus.gates"]
-forbidden_modules = [
-    "ludamus.links",
-    "ludamus.inits",
-    "ludamus.specs",
-    "ludamus.edges",
-]
+forbidden_modules = ["ludamus.links", "ludamus.inits", "ludamus.edges"]
 
 
 [[tool.importlinter.contracts]]
