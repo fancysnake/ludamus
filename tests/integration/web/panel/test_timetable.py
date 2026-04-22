@@ -1,0 +1,172 @@
+from datetime import timedelta
+from http import HTTPStatus
+from unittest.mock import ANY
+
+import pytest
+from django.contrib import messages
+from django.urls import reverse
+
+from ludamus.adapters.db.django.models import Track
+from ludamus.pacts import EventDTO
+from tests.integration.conftest import AgendaItemFactory, SpaceFactory
+from tests.integration.utils import assert_response
+
+PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+def _base_context(event):
+    return {
+        "current_event": EventDTO.model_validate(event),
+        "events": [EventDTO.model_validate(event)],
+        "is_proposal_active": False,
+        "stats": {
+            "hosts_count": 0,
+            "pending_proposals": 0,
+            "rooms_count": 0,
+            "scheduled_sessions": 0,
+            "total_proposals": 0,
+            "total_sessions": 0,
+        },
+        "active_nav": "timetable",
+        "all_tracks": [],
+        "managed_track_pks": set(),
+        "filter_track_pk": None,
+    }
+
+
+class TestTimetablePageView:
+    """Tests for /panel/event/<slug>/timetable/ page."""
+
+    @staticmethod
+    def get_url(event):
+        return reverse("panel:timetable", kwargs={"slug": event.slug})
+
+    def test_redirects_anonymous_user_to_login(self, client, event):
+        url = self.get_url(event)
+
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
+
+    def test_redirects_non_manager_user(self, authenticated_client, event):
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, PERMISSION_ERROR)],
+            url="/",
+        )
+
+    def test_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:timetable", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
+        )
+
+    def test_ok_for_sphere_manager_empty_grid(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/timetable.html",
+            context_data=ANY,
+        )
+        assert response.context["grid"].spaces == []
+
+    def test_grid_shows_spaces_and_rows(
+        self, authenticated_client, active_user, sphere, event, space
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert response.status_code == HTTPStatus.OK
+        grid = response.context["grid"]
+        assert len(grid.spaces) == 1
+        assert grid.spaces[0].pk == space.pk
+        assert len(grid.rows) > 0
+
+    def test_grid_contains_scheduled_session(
+        self, authenticated_client, active_user, sphere, event, session, space
+    ):
+        sphere.managers.add(active_user)
+        start = event.start_time
+        end = start + timedelta(hours=1)
+        AgendaItemFactory(session=session, space=space, start_time=start, end_time=end)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert response.status_code == HTTPStatus.OK
+        grid = response.context["grid"]
+        first_row = grid.rows[0]
+        scheduled_cells = [c for c in first_row.cells if c.agenda_item is not None]
+        assert len(scheduled_cells) == 1
+        assert scheduled_cells[0].agenda_item.session_title == session.title
+
+    def test_filters_by_track(
+        self, authenticated_client, active_user, sphere, event, space, area
+    ):
+        sphere.managers.add(active_user)
+        track = Track.objects.create(
+            event=event, name="My Track", slug="my-track", is_public=True
+        )
+        track.spaces.add(space)
+        other_space = SpaceFactory(area=area)
+
+        response = authenticated_client.get(
+            self.get_url(event), {"track": str(track.pk)}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        grid = response.context["grid"]
+        space_pks = [s.pk for s in grid.spaces]
+        assert space.pk in space_pks
+        assert other_space.pk not in space_pks
+
+    def test_auto_selects_single_managed_track(
+        self, authenticated_client, active_user, sphere, event, space, area
+    ):
+        sphere.managers.add(active_user)
+        track = Track.objects.create(
+            event=event, name="My Track", slug="my-track", is_public=True
+        )
+        track.spaces.add(space)
+        track.managers.add(active_user)
+        other_space = SpaceFactory(area=area)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["filter_track_pk"] == track.pk
+        grid = response.context["grid"]
+        space_pks = [s.pk for s in grid.spaces]
+        assert other_space.pk not in space_pks
+
+    @pytest.mark.parametrize("room_page", ("0", "-1", "abc", "999"))
+    def test_room_page_invalid_values_dont_raise(
+        self, authenticated_client, active_user, sphere, event, room_page
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(
+            self.get_url(event), {"room_page": room_page}
+        )
+
+        assert response.status_code == HTTPStatus.OK
