@@ -247,6 +247,35 @@ class EventContextMixin:
 
         return context, current_event
 
+    def get_track_filter_context(
+        self, event_pk: int
+    ) -> tuple[list[Any], set[int], int | None]:
+        """Return track filter context tuple for track switcher.
+
+        Auto-selects a single managed track when track GET param is absent.
+
+        Returns:
+            Tuple of (sorted_tracks, managed_track_pks, filter_track_pk).
+        """
+        all_tracks = self.request.di.uow.tracks.list_by_event(event_pk)
+        managed_tracks = self.request.di.uow.tracks.list_by_manager(
+            self.request.context.current_user_id, event_pk=event_pk
+        )
+        managed_pks = {t.pk for t in managed_tracks}
+
+        track_param = self.request.GET.get("track", "").strip()
+        if "track" not in self.request.GET and len(managed_tracks) == 1:
+            filter_track_pk: int | None = managed_tracks[0].pk
+        elif track_param.isdigit():
+            filter_track_pk = int(track_param)
+        else:
+            filter_track_pk = None
+
+        sorted_tracks = sorted(
+            all_tracks, key=lambda t: (t.pk not in managed_pks, t.name)
+        )
+        return sorted_tracks, managed_pks, filter_track_pk
+
     def _read_field_or_redirect[T: _FieldDTO](
         self,
         repository: _FieldRepositoryProtocol[T],
@@ -547,19 +576,9 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
             if value := self.request.GET.get(f"field_{field.pk}", "").strip():
                 field_filters[field.pk] = value
 
-        all_tracks = self.request.di.uow.tracks.list_by_event(current_event.pk)
-        managed_tracks = self.request.di.uow.tracks.list_by_manager(
-            self.request.context.current_user_id, event_pk=current_event.pk
+        sorted_tracks, managed_pks, filter_track_pk = self.get_track_filter_context(
+            current_event.pk
         )
-        managed_pks = {t.pk for t in managed_tracks}
-
-        track_param = self.request.GET.get("track", "").strip()
-        if "track" not in self.request.GET and len(managed_tracks) == 1:
-            filter_track_pk: int | None = managed_tracks[0].pk
-        elif track_param.isdigit():
-            filter_track_pk = int(track_param)
-        else:
-            filter_track_pk = None
 
         context["proposals"] = self.request.di.uow.sessions.list_sessions_by_event(
             current_event.pk,
@@ -575,10 +594,6 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
             field.pk: self.request.GET.get(f"field_{field.pk}", "")
             for field in filterable_fields
         }
-        # Managed tracks first, then remaining alphabetically
-        sorted_tracks = sorted(
-            all_tracks, key=lambda t: (t.pk not in managed_pks, t.name)
-        )
         context["all_tracks"] = sorted_tracks
         context["managed_track_pks"] = managed_pks
         context["filter_track_pk"] = filter_track_pk

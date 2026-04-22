@@ -12,6 +12,7 @@ from django.urls import include, path
 from django.views.decorators.cache import never_cache
 
 from ludamus.gates.web.django import panel
+from ludamus.gates.web.django.chronology.panel.urls import timetable_urlpatterns
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
@@ -47,7 +48,7 @@ def healthz(request: HttpRequest) -> JsonResponse:  # noqa: ARG001
     return JsonResponse({"status": "ok"})
 
 
-panel_urlpatterns = [
+panel_urlpatterns: list[URLPattern | URLResolver] = [
     path("", panel.PanelIndexRedirectView.as_view(), name="index"),
     path("event/<slug:slug>/", panel.EventIndexPageView.as_view(), name="event-index"),
     path(
@@ -303,6 +304,7 @@ panel_urlpatterns = [
         panel.FacilitatorEditPageView.as_view(),
         name="facilitator-edit",
     ),
+    path("event/<slug:slug>/timetable/", include(timetable_urlpatterns)),
 ]
 
 
