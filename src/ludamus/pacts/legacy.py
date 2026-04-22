@@ -884,6 +884,20 @@ class AgendaItemRepositoryProtocol(Protocol):
     @staticmethod
     def read_by_session(session_pk: int) -> AgendaItemDTO | None: ...
     @staticmethod
+    def list_overlapping_in_space(
+        space_pk: int,
+        start_time: datetime,
+        end_time: datetime,
+        exclude_session_pk: int | None = None,
+    ) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def list_overlapping_by_facilitator(
+        facilitator_pk: int,
+        start_time: datetime,
+        end_time: datetime,
+        exclude_session_pk: int | None = None,
+    ) -> list[AgendaItemDTO]: ...
+    @staticmethod
     def update(pk: int, data: AgendaItemUpdateData) -> None: ...
     @staticmethod
     def delete(pk: int) -> None: ...
@@ -953,6 +967,8 @@ class SpaceRepositoryProtocol(Protocol):
     def create(
         self, area_id: int, name: str, capacity: int | None = None
     ) -> SpaceDTO: ...
+    @staticmethod
+    def read(pk: int) -> SpaceDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
     @staticmethod

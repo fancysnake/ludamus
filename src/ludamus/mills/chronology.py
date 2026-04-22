@@ -9,6 +9,9 @@ from ludamus.pacts import NotFoundError, SessionStatus
 from ludamus.pacts.chronology import (
     TIMETABLE_ROOM_PAGE_SIZE,
     TIMETABLE_SLOT_MINUTES,
+    ConflictDTO,
+    ConflictSeverity,
+    ConflictType,
     TimetableCellDTO,
     TimetableGridDTO,
     TimetableRowDTO,
@@ -117,3 +120,73 @@ class TimetableService:
             raise NotFoundError
         self._uow.agenda_items.delete(agenda_item.pk)
         self._uow.sessions.update(session_pk, {"status": SessionStatus.ACCEPTED})
+
+
+class ConflictDetectionService:
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+
+    def detect_for_assignment(
+        self, session_pk: int, space_pk: int, start_time: datetime, end_time: datetime
+    ) -> list[ConflictDTO]:
+        conflicts: list[ConflictDTO] = []
+        session = self._uow.sessions.read(session_pk)
+
+        # Space overlap
+        overlapping_in_space = self._uow.agenda_items.list_overlapping_in_space(
+            space_pk, start_time, end_time, exclude_session_pk=session_pk
+        )
+        conflicts.extend(
+            [
+                ConflictDTO(
+                    type=ConflictType.SPACE_OVERLAP,
+                    severity=ConflictSeverity.ERROR,
+                    session_title=item.session_title,
+                    session_pk=item.session_id,
+                    description=f"Sala zajęta przez: {item.session_title}",
+                )
+                for item in overlapping_in_space
+            ]
+        )
+
+        # Capacity exceeded
+        space = self._uow.spaces.read(space_pk)
+        if space.capacity is not None and space.capacity < session.participants_limit:
+            conflicts.append(
+                ConflictDTO(
+                    type=ConflictType.CAPACITY_EXCEEDED,
+                    severity=ConflictSeverity.WARNING,
+                    session_title=session.title,
+                    session_pk=session_pk,
+                    description=(
+                        f"Sala mieści {space.capacity} os., "
+                        f"sesja wymaga {session.participants_limit}"
+                    ),
+                )
+            )
+
+        # Facilitator overlap
+        facilitators = self._uow.sessions.read_facilitators(session_pk)
+        for facilitator in facilitators:
+            overlapping_for_facilitator = (
+                self._uow.agenda_items.list_overlapping_by_facilitator(
+                    facilitator.pk, start_time, end_time, exclude_session_pk=session_pk
+                )
+            )
+            conflicts.extend(
+                [
+                    ConflictDTO(
+                        type=ConflictType.FACILITATOR_OVERLAP,
+                        severity=ConflictSeverity.ERROR,
+                        session_title=item.session_title,
+                        session_pk=item.session_id,
+                        description=(
+                            f"{facilitator.display_name} prowadzi "
+                            f"równocześnie: {item.session_title}"
+                        ),
+                    )
+                    for item in overlapping_for_facilitator
+                ]
+            )
+
+        return conflicts

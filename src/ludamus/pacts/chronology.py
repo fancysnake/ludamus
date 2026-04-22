@@ -1,6 +1,7 @@
 """Timetable DTOs and constants for the agenda scheduling feature."""
 
 from datetime import datetime
+from enum import StrEnum, auto
 
 from pydantic import BaseModel
 
@@ -28,3 +29,22 @@ class TimetableGridDTO(BaseModel):
     page: int
     total_pages: int
     total_spaces: int
+
+
+class ConflictType(StrEnum):
+    SPACE_OVERLAP = auto()
+    FACILITATOR_OVERLAP = auto()
+    CAPACITY_EXCEEDED = auto()
+
+
+class ConflictSeverity(StrEnum):
+    ERROR = auto()
+    WARNING = auto()
+
+
+class ConflictDTO(BaseModel):
+    type: ConflictType
+    severity: ConflictSeverity
+    session_title: str
+    session_pk: int
+    description: str

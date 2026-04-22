@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ludamus.adapters.db.django.models import AgendaItem
 from ludamus.pacts import (
     AgendaItemData,
@@ -7,6 +11,9 @@ from ludamus.pacts import (
     NotFoundError,
     SessionStatus,
 )
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 _SELECT_RELATED = ("session", "session__category")
 
@@ -73,6 +80,36 @@ class AgendaItemRepository(AgendaItemRepositoryProtocol):
         except AgendaItem.DoesNotExist:
             return None
         return _to_dto(item)
+
+    @staticmethod
+    def list_overlapping_in_space(
+        space_pk: int,
+        start_time: datetime,
+        end_time: datetime,
+        exclude_session_pk: int | None = None,
+    ) -> list[AgendaItemDTO]:
+        qs = AgendaItem.objects.filter(
+            space_id=space_pk, start_time__lt=end_time, end_time__gt=start_time
+        ).select_related(*_SELECT_RELATED)
+        if exclude_session_pk is not None:
+            qs = qs.exclude(session_id=exclude_session_pk)
+        return [_to_dto(item) for item in qs]
+
+    @staticmethod
+    def list_overlapping_by_facilitator(
+        facilitator_pk: int,
+        start_time: datetime,
+        end_time: datetime,
+        exclude_session_pk: int | None = None,
+    ) -> list[AgendaItemDTO]:
+        qs = AgendaItem.objects.filter(
+            session__facilitators__pk=facilitator_pk,
+            start_time__lt=end_time,
+            end_time__gt=start_time,
+        ).select_related(*_SELECT_RELATED)
+        if exclude_session_pk is not None:
+            qs = qs.exclude(session_id=exclude_session_pk)
+        return [_to_dto(item) for item in qs]
 
     @staticmethod
     def update(pk: int, data: AgendaItemUpdateData) -> None:
