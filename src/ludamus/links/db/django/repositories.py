@@ -37,8 +37,6 @@ from ludamus.adapters.db.django.models import (
     Venue,
 )
 from ludamus.pacts import (
-    AgendaItemData,
-    AgendaItemRepositoryProtocol,
     AreaDTO,
     AreaRepositoryProtocol,
     CategoryStats,
@@ -473,12 +471,6 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
             msg = f"Session with pk '{session_id}' not found"
             raise NotFoundError(msg) from err
         session.facilitators.set(facilitator_ids)
-
-
-class AgendaItemRepository(AgendaItemRepositoryProtocol):
-    @staticmethod
-    def create(agenda_item_data: AgendaItemData) -> None:
-        AgendaItem.objects.create(**agenda_item_data)
 
 
 class ConnectedUserRepository(ConnectedUserRepositoryProtocol):

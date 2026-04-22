@@ -108,6 +108,13 @@ class AgendaItemDTO(BaseModel):
     pk: int
     session_confirmed: bool
     start_time: datetime
+    space_id: int = 0
+    session_id: int = 0
+    session_title: str = ""
+    presenter_name: str = ""
+    session_duration_minutes: int = 0
+    session_status: "SessionStatus | None" = None
+    category_name: str | None = None
 
 
 class SessionDTO(BaseModel):
@@ -336,6 +343,12 @@ class AgendaItemData(TypedDict):
     end_time: datetime
     session_confirmed: bool
     session_id: int
+    space_id: int
+    start_time: datetime
+
+
+class AgendaItemUpdateData(TypedDict, total=False):
+    end_time: datetime
     space_id: int
     start_time: datetime
 
@@ -839,6 +852,18 @@ class TrackRepositoryProtocol(Protocol):
 class AgendaItemRepositoryProtocol(Protocol):
     @staticmethod
     def create(agenda_item_data: AgendaItemData) -> None: ...
+    @staticmethod
+    def read(pk: int) -> AgendaItemDTO: ...
+    @staticmethod
+    def list_by_event(event_pk: int) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def list_by_space(space_pk: int) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def list_by_track(track_pk: int) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def update(pk: int, data: AgendaItemUpdateData) -> None: ...
+    @staticmethod
+    def delete(pk: int) -> None: ...
 
 
 class ConnectedUserRepositoryProtocol(Protocol):
