@@ -1236,6 +1236,14 @@ class SpaceRepository(SpaceRepositoryProtocol):
         return SpaceDTO.model_validate(space)
 
     @staticmethod
+    def read(pk: int) -> SpaceDTO:
+        try:
+            space = Space.objects.get(pk=pk)
+        except Space.DoesNotExist as err:
+            raise NotFoundError from err
+        return SpaceDTO.model_validate(space)
+
+    @staticmethod
     def delete(pk: int) -> None:
         """Delete a space.
 

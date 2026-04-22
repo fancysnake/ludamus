@@ -15,7 +15,7 @@ from ludamus.gates.web.django.panel import (
     PanelAccessMixin,
     PanelRequest,
 )
-from ludamus.mills.chronology import TimetableService
+from ludamus.mills.chronology import ConflictDetectionService, TimetableService
 from ludamus.pacts import NotFoundError
 
 
@@ -175,8 +175,16 @@ class TimetableAssignView(PanelAccessMixin, EventContextMixin, View):
         except KeyError, ValueError:
             return HttpResponse(status=422)
 
+        uow = self.request.di.uow
+        conflicts = ConflictDetectionService(uow).detect_for_assignment(
+            session_pk=session_pk,
+            space_pk=space_pk,
+            start_time=start_time,
+            end_time=end_time,
+        )
+
         try:
-            TimetableService(self.request.di.uow).assign_session(
+            TimetableService(uow).assign_session(
                 session_pk=session_pk,
                 space_pk=space_pk,
                 start_time=start_time,
@@ -185,8 +193,13 @@ class TimetableAssignView(PanelAccessMixin, EventContextMixin, View):
         except ValueError, NotFoundError:
             return HttpResponse(status=422)
 
+        trigger_data: dict[str, object] = {"timetableChanged": {}}
+        if conflicts:
+            trigger_data["timetableConflicts"] = {
+                "conflicts": [c.model_dump(mode="json") for c in conflicts]
+            }
         response = HttpResponse(status=204)
-        response["HX-Trigger"] = json.dumps({"timetableChanged": {}})
+        response["HX-Trigger"] = json.dumps(trigger_data)
         return response
 
 
