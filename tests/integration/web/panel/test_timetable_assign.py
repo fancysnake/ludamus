@@ -1,0 +1,211 @@
+from datetime import timedelta
+from http import HTTPStatus
+from unittest.mock import ANY
+
+from django.contrib import messages
+from django.urls import reverse
+
+from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
+from tests.integration.utils import assert_response
+
+PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+class TestTimetableGridPartView:
+    """Tests for /panel/event/<slug>/timetable/parts/grid/ partial."""
+
+    @staticmethod
+    def get_url(event):
+        return reverse("panel:timetable-grid-part", kwargs={"slug": event.slug})
+
+    def test_redirects_anonymous_user_to_login(self, client, event):
+        url = self.get_url(event)
+
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
+
+    def test_ok_returns_grid_partial(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/parts/timetable-grid.html",
+            context_data=ANY,
+        )
+
+
+class TestTimetableAssignView:
+    """Tests for /panel/event/<slug>/timetable/do/assign/ POST endpoint."""
+
+    @staticmethod
+    def get_url(event):
+        return reverse("panel:timetable-assign", kwargs={"slug": event.slug})
+
+    def test_redirects_anonymous_user_to_login(self, client, event):
+        url = self.get_url(event)
+
+        response = client.post(url, {})
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
+
+    def test_redirects_non_manager_user(self, authenticated_client, event):
+        response = authenticated_client.post(self.get_url(event), {})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, PERMISSION_ERROR)],
+            url="/",
+        )
+
+    def test_returns_422_on_missing_params(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(self.get_url(event), {})
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def test_assigns_session_and_returns_204(
+        self, authenticated_client, active_user, sphere, event, proposal_category, area
+    ):
+        sphere.managers.add(active_user)
+        space = SpaceFactory(area=area)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=10,
+            min_age=0,
+        )
+        start_time = event.start_time
+        end_time = start_time + timedelta(hours=1)
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            {
+                "session_pk": session.pk,
+                "space_pk": space.pk,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
+
+        assert response.status_code == HTTPStatus.NO_CONTENT
+        assert response.get("HX-Trigger") is not None
+        session.refresh_from_db()
+        assert session.status == "scheduled"
+
+    def test_returns_422_for_already_scheduled_session(
+        self, authenticated_client, active_user, sphere, event, proposal_category, area
+    ):
+        sphere.managers.add(active_user)
+        space = SpaceFactory(area=area)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=10,
+            min_age=0,
+        )
+        start_time = event.start_time
+        end_time = start_time + timedelta(hours=1)
+        AgendaItemFactory(
+            session=session, space=space, start_time=start_time, end_time=end_time
+        )
+        session.status = "scheduled"
+        session.save()
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            {
+                "session_pk": session.pk,
+                "space_pk": space.pk,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+class TestTimetableUnassignView:
+    """Tests for /panel/event/<slug>/timetable/do/unassign/ POST endpoint."""
+
+    @staticmethod
+    def get_url(event):
+        return reverse("panel:timetable-unassign", kwargs={"slug": event.slug})
+
+    def test_redirects_anonymous_user_to_login(self, client, event):
+        url = self.get_url(event)
+
+        response = client.post(url, {})
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
+
+    def test_returns_422_on_missing_params(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(self.get_url(event), {})
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def test_unassigns_session_and_returns_204(
+        self, authenticated_client, active_user, sphere, event, proposal_category, area
+    ):
+        sphere.managers.add(active_user)
+        space = SpaceFactory(area=area)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=10,
+            min_age=0,
+        )
+        start_time = event.start_time
+        end_time = start_time + timedelta(hours=1)
+        AgendaItemFactory(
+            session=session, space=space, start_time=start_time, end_time=end_time
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event), {"session_pk": session.pk}
+        )
+
+        assert response.status_code == HTTPStatus.NO_CONTENT
+        assert response.get("HX-Trigger") is not None
+        session.refresh_from_db()
+        assert session.status == "accepted"
+
+    def test_returns_422_for_unscheduled_session(
+        self, authenticated_client, active_user, sphere, event, proposal_category
+    ):
+        sphere.managers.add(active_user)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=10,
+            min_age=0,
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event), {"session_pk": session.pk}
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
