@@ -226,3 +226,25 @@ class TimetableUnassignView(PanelAccessMixin, EventContextMixin, View):
         response = HttpResponse(status=204)
         response["HX-Trigger"] = json.dumps({"timetableChanged": {}})
         return response
+
+
+class TimetableConflictsPartView(PanelAccessMixin, EventContextMixin, View):
+    """HTMX partial: permanent conflict panel."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        _, _, filter_track_pk = self.get_track_filter_context(current_event.pk)
+
+        conflicts = ConflictDetectionService(self.request.di.uow).list_all_for_track(
+            event_pk=current_event.pk, track_pk=filter_track_pk
+        )
+
+        context = {"conflicts": conflicts, "slug": slug}
+        return TemplateResponse(
+            self.request, "panel/parts/timetable-conflict-panel.html", context
+        )

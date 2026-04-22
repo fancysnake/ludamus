@@ -51,6 +51,15 @@
                  hx-get="{% url 'panel:timetable-grid-part' slug=current_event.slug %}"
                  hx-trigger="timetableChanged from:body">{% include "panel/parts/timetable-grid.html" %}</div>
         </div>
+        <!-- Conflict panel (permanent right rail) -->
+        <div class="w-56 flex-none bg-white border border-neutral-200 rounded-lg p-3">
+            <div class="font-medium text-sm text-neutral-700 mb-2">{% translate "Konflikty" %}</div>
+            <div id="conflict-panel"
+                 hx-get="{% url 'panel:timetable-conflicts-part' slug=current_event.slug %}"
+                 hx-trigger="load, timetableChanged from:body">
+                <div class="text-xs text-neutral-400">{% translate "Ładowanie…" %}</div>
+            </div>
+        </div>
         <!-- Right pane: session detail drawer -->
         <div id="session-drawer"
              class="w-72 flex-none bg-white border border-neutral-200 rounded-lg p-3 hidden"></div>
