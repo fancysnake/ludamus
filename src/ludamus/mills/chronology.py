@@ -2,9 +2,10 @@
 
 import math
 from collections import defaultdict
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
+from ludamus.pacts import NotFoundError, SessionStatus
 from ludamus.pacts.chronology import (
     TIMETABLE_ROOM_PAGE_SIZE,
     TIMETABLE_SLOT_MINUTES,
@@ -92,3 +93,27 @@ class TimetableService:
             total_pages=total_pages,
             total_spaces=total_spaces,
         )
+
+    def assign_session(
+        self, session_pk: int, space_pk: int, start_time: datetime, end_time: datetime
+    ) -> None:
+        session = self._uow.sessions.read(session_pk)
+        if session.status != SessionStatus.ACCEPTED:
+            msg = f"Session {session_pk} is not in ACCEPTED status"
+            raise ValueError(msg)
+        self._uow.agenda_items.create(
+            {
+                "session_id": session_pk,
+                "space_id": space_pk,
+                "start_time": start_time,
+                "end_time": end_time,
+                "session_confirmed": False,
+            }
+        )
+        self._uow.sessions.update(session_pk, {"status": SessionStatus.SCHEDULED})
+
+    def unassign_session(self, session_pk: int) -> None:
+        if (agenda_item := self._uow.agenda_items.read_by_session(session_pk)) is None:
+            raise NotFoundError
+        self._uow.agenda_items.delete(agenda_item.pk)
+        self._uow.sessions.update(session_pk, {"status": SessionStatus.ACCEPTED})

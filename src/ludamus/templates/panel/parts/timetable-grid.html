@@ -1,0 +1,81 @@
+{% load i18n %}
+{% if not grid.spaces %}
+    <div class="text-center py-16 text-neutral-500">
+        <p class="text-lg">{% translate "Brak sal dla tej ścieżki." %}</p>
+        <p class="text-sm mt-2">{% translate "Dodaj sale lub wybierz inną ścieżkę." %}</p>
+    </div>
+{% elif not grid.rows %}
+    <div class="text-center py-16 text-neutral-500">
+        <p class="text-lg">{% translate "Brak slotów czasowych dla tego wydarzenia." %}</p>
+        <p class="text-sm mt-2">{% translate "Sprawdź czas trwania wydarzenia." %}</p>
+    </div>
+{% else %}
+    <!-- Room pagination -->
+    {% if grid.total_pages > 1 %}
+        <div class="mb-4 flex items-center gap-2">
+            <span class="text-sm text-neutral-500">
+                {% translate "Sale" %} {{ grid.page }}/{{ grid.total_pages }}
+                ({% translate "łącznie" %} {{ grid.total_spaces }})
+            </span>
+            {% if grid.page > 1 %}
+                <a href="?{% if filter_track_pk %}track={{ filter_track_pk }}&{% endif %}room_page={{ grid.page|add:"-1" }}"
+                   class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">
+                    ← {% translate "Poprzednia strona" %}
+                </a>
+            {% endif %}
+            {% if grid.page < grid.total_pages %}
+                <a href="?{% if filter_track_pk %}track={{ filter_track_pk }}&{% endif %}room_page={{ grid.page|add:"1" }}"
+                   class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">
+                    {% translate "Następna strona" %} →
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+    <!-- Timetable grid -->
+    <div class="overflow-auto border border-neutral-200 rounded-lg">
+        <table class="min-w-full border-collapse text-sm">
+            <!-- Header row: spaces -->
+            <thead>
+                <tr>
+                    <th class="sticky left-0 z-10 bg-neutral-900 text-white px-3 py-2 text-left w-20 min-w-[5rem]">
+                        {% translate "Czas" %}
+                    </th>
+                    {% for space in grid.spaces %}
+                        <th class="bg-neutral-800 text-white px-3 py-2 text-left min-w-[10rem] border-l border-neutral-700">
+                            <div class="font-medium">{{ space.name }}</div>
+                            {% if space.capacity %}<div class="text-xs text-neutral-400">{{ space.capacity }} os.</div>{% endif %}
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <!-- Time rows -->
+            <tbody>
+                {% for row in grid.rows %}
+                    <tr class="border-t border-neutral-100">
+                        <td class="sticky left-0 z-10 bg-white border-r border-neutral-200 px-3 py-1 text-xs text-neutral-500 font-mono whitespace-nowrap">
+                            {{ row.time|time:"H:i" }}
+                        </td>
+                        {% for cell in row.cells %}
+                            {% if not cell.is_continuation %}
+                                {% if cell.agenda_item %}
+                                    <td rowspan="{{ cell.rowspan }}"
+                                        class="px-2 py-1 align-top border-l border-neutral-200 bg-blue-50 border-l-4 border-l-blue-400 cursor-pointer hover:bg-blue-100"
+                                        hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=cell.agenda_item.session_id %}"
+                                        hx-target="#session-drawer"
+                                        hx-swap="innerHTML"
+                                        hx-on::after-request="document.getElementById('session-drawer').classList.remove('hidden')">
+                                        <div class="text-xs font-medium text-blue-900 truncate">{{ cell.agenda_item.session_title }}</div>
+                                        <div class="text-xs text-blue-700 truncate">{{ cell.agenda_item.presenter_name }}</div>
+                                        <div class="text-xs text-blue-500">{{ cell.agenda_item.session_duration_minutes }} min</div>
+                                    </td>
+                                {% else %}
+                                    <td class="px-2 py-1 border-l border-neutral-200 h-8"></td>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
