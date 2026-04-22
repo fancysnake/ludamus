@@ -6,6 +6,7 @@ from django.db import transaction
 
 from ludamus.adapters.db.django.models import User
 from ludamus.links.db.django import repositories
+from ludamus.links.db.django.agenda_item import AgendaItemRepository
 from ludamus.pacts import UnitOfWorkProtocol, UserType
 
 if TYPE_CHECKING:
@@ -29,8 +30,8 @@ class UnitOfWork(UnitOfWorkProtocol):  # noqa: PLR0904
         return repositories.UserRepository(user_type=UserType.ACTIVE)
 
     @cached_property
-    def agenda_items(self) -> repositories.AgendaItemRepository:
-        return repositories.AgendaItemRepository()
+    def agenda_items(self) -> AgendaItemRepository:
+        return AgendaItemRepository()
 
     @cached_property
     def anonymous_users(self) -> repositories.UserRepository:
