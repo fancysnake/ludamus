@@ -14,6 +14,7 @@ from ludamus.gates.web.django.panel import (
     PanelRequest,
 )
 from ludamus.mills.chronology import TimetableService
+from ludamus.pacts import NotFoundError
 
 if TYPE_CHECKING:
     from django.http import HttpResponse
@@ -93,4 +94,37 @@ class TimetableSessionListPartView(PanelAccessMixin, EventContextMixin, View):
         }
         return TemplateResponse(
             self.request, "panel/parts/timetable-session-list.html", context
+        )
+
+
+class TimetableSessionDetailPartView(PanelAccessMixin, EventContextMixin, View):
+    """HTMX partial: session detail drawer for the right pane."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str, pk: int) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        uow = self.request.di.uow
+        try:
+            session = uow.sessions.read(pk)
+        except NotFoundError:
+            return redirect("panel:timetable", slug=slug)
+
+        agenda_item = uow.agenda_items.read_by_session(pk)
+        facilitators = uow.sessions.read_facilitators(pk)
+        time_slots = uow.sessions.read_time_slots(pk)
+
+        context = {
+            "session": session,
+            "agenda_item": agenda_item,
+            "facilitators": facilitators,
+            "time_slots": time_slots,
+            "slug": slug,
+            "event": current_event,
+        }
+        return TemplateResponse(
+            self.request, "panel/parts/timetable-session-detail.html", context
         )
