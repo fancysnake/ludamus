@@ -1,0 +1,62 @@
+{% load i18n %}
+<!-- Session count -->
+<div class="text-xs text-neutral-500 mb-2">
+    {% blocktranslate count count=sessions|length %}{{ count }} sesja{% plural %}{{ count }} sesji{% endblocktranslate %}
+</div>
+<!-- Category filter chips -->
+{% if categories %}
+    <div class="flex flex-wrap gap-1 mb-2">
+        <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?max_duration={{ max_duration_minutes|default:'' }}"
+           hx-target="#session-list"
+           class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if not category_pk %}bg-primary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
+            {% translate "Wszystkie" %}
+        </a>
+        {% for cat in categories %}
+            <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ cat.pk }}&max_duration={{ max_duration_minutes|default:'' }}"
+               hx-target="#session-list"
+               class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if category_pk == cat.pk %}bg-primary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
+                {{ cat.name }}
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}
+<!-- Duration filter chips -->
+<div class="flex flex-wrap gap-1 mb-3">
+    <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ category_pk|default:'' }}"
+       hx-target="#session-list"
+       class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if not max_duration_minutes %}bg-secondary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
+        {% translate "Każdy czas" %}
+    </a>
+    {% for label, value in duration_chips %}
+        <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ category_pk|default:'' }}&max_duration={{ value }}"
+           hx-target="#session-list"
+           class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if max_duration_minutes == value %}bg-secondary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
+            {{ label }}
+        </a>
+    {% endfor %}
+</div>
+<!-- Session cards -->
+{% if sessions %}
+    <div class="space-y-2">
+        {% for session in sessions %}
+            <div class="bg-white border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:shadow-sm transition"
+                 data-session-pk="{{ session.pk }}">
+                <div class="text-sm font-medium text-neutral-900 truncate">{{ session.title }}</div>
+                <div class="text-xs text-neutral-600 truncate">{{ session.display_name }}</div>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-xs text-neutral-500">{{ session.duration_minutes }} min</span>
+                    <span class="text-xs text-neutral-400">·</span>
+                    <span class="text-xs text-neutral-500">{{ session.participants_limit }} os.</span>
+                    {% if session.category_name %}
+                        <span class="text-xs text-neutral-400">·</span>
+                        <span class="text-xs text-neutral-500">{{ session.category_name }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-8 text-neutral-400">
+        <p class="text-sm">{% translate "Brak nieprzypisanych sesji." %}</p>
+    </div>
+{% endif %}
