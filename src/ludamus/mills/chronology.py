@@ -190,3 +190,30 @@ class ConflictDetectionService:
             )
 
         return conflicts
+
+    def list_all_for_track(
+        self, event_pk: int, track_pk: int | None
+    ) -> list[ConflictDTO]:
+        scheduled = (
+            self._uow.agenda_items.list_by_event(event_pk)
+            if track_pk is None
+            else self._uow.agenda_items.list_by_track(track_pk)
+        )
+
+        all_conflicts: list[ConflictDTO] = []
+        seen: set[tuple[int, int]] = set()
+        for item in scheduled:
+            conflicts = self.detect_for_assignment(
+                session_pk=item.session_id,
+                space_pk=item.space_id,
+                start_time=item.start_time,
+                end_time=item.end_time,
+            )
+            for conflict in conflicts:
+                key = (item.session_id, conflict.session_pk)
+                reverse_key = (conflict.session_pk, item.session_id)
+                if key not in seen and reverse_key not in seen:
+                    seen.add(key)
+                    all_conflicts.append(conflict)
+
+        return all_conflicts

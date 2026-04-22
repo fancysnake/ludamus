@@ -19,6 +19,11 @@ timetable_urlpatterns = [
     path(
         "parts/grid/", views.TimetableGridPartView.as_view(), name="timetable-grid-part"
     ),
+    path(
+        "parts/conflicts/",
+        views.TimetableConflictsPartView.as_view(),
+        name="timetable-conflicts-part",
+    ),
     path("do/assign/", views.TimetableAssignView.as_view(), name="timetable-assign"),
     path(
         "do/unassign/", views.TimetableUnassignView.as_view(), name="timetable-unassign"
