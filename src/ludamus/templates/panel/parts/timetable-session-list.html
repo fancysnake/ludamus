@@ -40,7 +40,11 @@
     <div class="space-y-2">
         {% for session in sessions %}
             <div class="bg-white border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:shadow-sm transition"
-                 data-session-pk="{{ session.pk }}">
+                 data-session-pk="{{ session.pk }}"
+                 hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=session.pk %}"
+                 hx-target="#session-drawer"
+                 hx-swap="innerHTML"
+                 hx-on::after-request="document.getElementById('session-drawer').classList.remove('hidden')">
                 <div class="text-sm font-medium text-neutral-900 truncate">{{ session.title }}</div>
                 <div class="text-xs text-neutral-600 truncate">{{ session.display_name }}</div>
                 <div class="flex items-center gap-2 mt-1">

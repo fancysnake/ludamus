@@ -24,7 +24,7 @@
             {% endfor %}
         </div>
     {% endif %}
-    <!-- Three-pane layout: session list | grid | (future: drawer) -->
+    <!-- Three-pane layout: session list | grid | detail drawer -->
     <div class="flex gap-4 items-start">
         <!-- Left pane: unscheduled sessions -->
         <div class="w-64 flex-none bg-neutral-50 border border-neutral-200 rounded-lg p-3 flex flex-col gap-2">
@@ -107,7 +107,11 @@
                                         {% if not cell.is_continuation %}
                                             {% if cell.agenda_item %}
                                                 <td rowspan="{{ cell.rowspan }}"
-                                                    class="px-2 py-1 align-top border-l border-neutral-200 bg-blue-50 border-l-4 border-l-blue-400">
+                                                    class="px-2 py-1 align-top border-l border-neutral-200 bg-blue-50 border-l-4 border-l-blue-400 cursor-pointer hover:bg-blue-100"
+                                                    hx-get="{% url 'panel:timetable-session-detail-part' slug=current_event.slug pk=cell.agenda_item.session_id %}"
+                                                    hx-target="#session-drawer"
+                                                    hx-swap="innerHTML"
+                                                    hx-on::after-request="document.getElementById('session-drawer').classList.remove('hidden')">
                                                     <div class="text-xs font-medium text-blue-900 truncate">{{ cell.agenda_item.session_title }}</div>
                                                     <div class="text-xs text-blue-700 truncate">{{ cell.agenda_item.presenter_name }}</div>
                                                     <div class="text-xs text-blue-500">{{ cell.agenda_item.session_duration_minutes }} min</div>
@@ -124,5 +128,8 @@
                 </div>
             {% endif %}
         </div>
+        <!-- Right pane: session detail drawer -->
+        <div id="session-drawer"
+             class="w-72 flex-none bg-white border border-neutral-200 rounded-lg p-3 hidden"></div>
     </div>
 {% endblock content %}

@@ -65,6 +65,16 @@ class AgendaItemRepository(AgendaItemRepositoryProtocol):
         return [_to_dto(item) for item in items]
 
     @staticmethod
+    def read_by_session(session_pk: int) -> AgendaItemDTO | None:
+        try:
+            item = AgendaItem.objects.select_related(*_SELECT_RELATED).get(
+                session_id=session_pk
+            )
+        except AgendaItem.DoesNotExist:
+            return None
+        return _to_dto(item)
+
+    @staticmethod
     def update(pk: int, data: AgendaItemUpdateData) -> None:
         AgendaItem.objects.filter(pk=pk).update(**data)
 
