@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime, timedelta
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Literal, cast  # pylint: disable=unused-import
@@ -105,6 +106,7 @@ from ludamus.pacts import (
     TrackDTO,
     TrackRepositoryProtocol,
     TrackUpdateData,
+    UnscheduledSessionDTO,
     UserData,
     UserDTO,
     UserEnrollmentConfigData,
@@ -123,6 +125,16 @@ else:
     from django.contrib.auth import get_user_model
 
     User = get_user_model()
+
+_ISO8601_DURATION_RE = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?")
+
+
+def _parse_iso8601_duration_minutes(duration: str) -> int:
+    if not (m := _ISO8601_DURATION_RE.match(duration)):
+        return 0
+    hours = int(m.group(1) or 0)
+    minutes = int(m.group(2) or 0)
+    return hours * 60 + minutes
 
 
 class SphereRepository(SphereRepositoryProtocol):
@@ -471,6 +483,51 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
             msg = f"Session with pk '{session_id}' not found"
             raise NotFoundError(msg) from err
         session.facilitators.set(facilitator_ids)
+
+    @staticmethod
+    def list_unscheduled_by_event(
+        event_pk: int,
+        *,
+        track_pk: int | None = None,
+        search: str | None = None,
+        max_duration_minutes: int | None = None,
+        category_pk: int | None = None,
+    ) -> list[UnscheduledSessionDTO]:
+        qs = (
+            Session.objects.filter(
+                category__event_id=event_pk, status=SessionStatus.ACCEPTED
+            )
+            .filter(agenda_item__isnull=True)
+            .select_related("category")
+        )
+        if track_pk is not None:
+            qs = qs.filter(tracks__pk=track_pk)
+        if category_pk is not None:
+            qs = qs.filter(category__pk=category_pk)
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(display_name__icontains=search)
+            ).distinct()
+        results = []
+        for s in qs.order_by("title"):
+            duration_minutes = _parse_iso8601_duration_minutes(s.duration)
+            if (
+                max_duration_minutes is not None
+                and duration_minutes > max_duration_minutes
+            ):
+                continue
+            results.append(
+                UnscheduledSessionDTO(
+                    pk=s.pk,
+                    title=s.title,
+                    display_name=s.display_name,
+                    category_name=s.category.name if s.category else "",
+                    category_pk=s.category_id,
+                    duration_minutes=duration_minutes,
+                    participants_limit=s.participants_limit,
+                )
+            )
+        return results
 
 
 class ConnectedUserRepository(ConnectedUserRepositoryProtocol):

@@ -90,6 +90,18 @@ class SessionFieldValueDTO(BaseModel):
     value: str | list[str] | bool
 
 
+class UnscheduledSessionDTO(BaseModel):
+    """Session accepted but not yet placed in the timetable."""
+
+    pk: int
+    title: str
+    display_name: str
+    category_name: str
+    category_pk: int | None
+    duration_minutes: int
+    participants_limit: int
+
+
 class SessionListItemDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -824,6 +836,15 @@ class SessionRepositoryProtocol(Protocol):  # noqa: PLR0904
     def read_facilitators(session_id: int) -> list[FacilitatorDTO]: ...
     @staticmethod
     def set_facilitators(session_id: int, facilitator_ids: list[int]) -> None: ...
+    @staticmethod
+    def list_unscheduled_by_event(
+        event_pk: int,
+        *,
+        track_pk: int | None = None,
+        search: str | None = None,
+        max_duration_minutes: int | None = None,
+        category_pk: int | None = None,
+    ) -> list[UnscheduledSessionDTO]: ...
 
 
 class TrackRepositoryProtocol(Protocol):
