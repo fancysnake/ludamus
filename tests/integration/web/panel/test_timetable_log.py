@@ -1,0 +1,170 @@
+from datetime import timedelta
+from http import HTTPStatus
+from unittest.mock import ANY
+
+from django.contrib import messages
+from django.urls import reverse
+
+from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
+from tests.integration.utils import assert_response
+
+PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+class TestTimetableLogPageView:
+    """Tests for /panel/event/<slug>/timetable/log/ activity log page."""
+
+    @staticmethod
+    def get_url(event):
+        return reverse("panel:timetable-log", kwargs={"slug": event.slug})
+
+    def test_redirects_anonymous_user_to_login(self, client, event):
+        url = self.get_url(event)
+
+        response = client.get(url)
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
+
+    def test_redirects_non_manager_user(self, authenticated_client, event):
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, PERMISSION_ERROR)],
+            url="/",
+        )
+
+    def test_ok_returns_log_template(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/timetable-log.html",
+            context_data=ANY,
+        )
+
+    def test_empty_log_when_no_changes(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["logs"] == []
+
+    def test_assign_creates_log_entry(
+        self, authenticated_client, active_user, sphere, event, proposal_category, area
+    ):
+        sphere.managers.add(active_user)
+        space = SpaceFactory(area=area)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=5,
+            min_age=0,
+        )
+        start = event.start_time
+        end = start + timedelta(hours=1)
+
+        authenticated_client.post(
+            reverse("panel:timetable-assign", kwargs={"slug": event.slug}),
+            data={
+                "session_pk": session.pk,
+                "space_pk": space.pk,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+            },
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert response.status_code == HTTPStatus.OK
+        logs = response.context["logs"]
+        assert len(logs) == 1
+        assert logs[0].action == "assign"
+        assert logs[0].session_title == session.title
+        assert logs[0].new_space_name == space.name
+
+    def test_unassign_creates_log_entry(
+        self, authenticated_client, active_user, sphere, event, proposal_category, area
+    ):
+        sphere.managers.add(active_user)
+        space = SpaceFactory(area=area)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=5,
+            min_age=0,
+        )
+        start = event.start_time
+        end = start + timedelta(hours=1)
+        AgendaItemFactory(session=session, space=space, start_time=start, end_time=end)
+        session.status = "scheduled"
+        session.save()
+
+        authenticated_client.post(
+            reverse("panel:timetable-unassign", kwargs={"slug": event.slug}),
+            data={"session_pk": session.pk},
+        )
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert response.status_code == HTTPStatus.OK
+        logs = response.context["logs"]
+        assert len(logs) == 1
+        assert logs[0].action == "unassign"
+        assert logs[0].old_space_name == space.name
+
+    def test_space_filter_returns_only_matching_logs(
+        self, authenticated_client, active_user, sphere, event, proposal_category, area
+    ):
+        sphere.managers.add(active_user)
+        space_a = SpaceFactory(area=area)
+        space_b = SpaceFactory(area=area)
+        session_a = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=5,
+            min_age=0,
+        )
+        session_b = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=5,
+            min_age=0,
+        )
+        start = event.start_time
+        end = start + timedelta(hours=1)
+
+        for session, space in ((session_a, space_a), (session_b, space_b)):
+            authenticated_client.post(
+                reverse("panel:timetable-assign", kwargs={"slug": event.slug}),
+                data={
+                    "session_pk": session.pk,
+                    "space_pk": space.pk,
+                    "start_time": start.isoformat(),
+                    "end_time": end.isoformat(),
+                },
+            )
+
+        response = authenticated_client.get(
+            self.get_url(event), data={"space": space_a.pk}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        logs = response.context["logs"]
+        assert len(logs) == 1
+        assert logs[0].new_space_name == space_a.name

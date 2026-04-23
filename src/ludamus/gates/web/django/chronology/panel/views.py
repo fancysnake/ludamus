@@ -189,6 +189,7 @@ class TimetableAssignView(PanelAccessMixin, EventContextMixin, View):
                 space_pk=space_pk,
                 start_time=start_time,
                 end_time=end_time,
+                user_pk=self.request.user.pk,
             )
         except ValueError, NotFoundError:
             return HttpResponse(status=422)
@@ -219,13 +220,44 @@ class TimetableUnassignView(PanelAccessMixin, EventContextMixin, View):
             return HttpResponse(status=422)
 
         try:
-            TimetableService(self.request.di.uow).unassign_session(session_pk)
+            TimetableService(self.request.di.uow).unassign_session(
+                session_pk, user_pk=self.request.user.pk
+            )
         except NotFoundError:
             return HttpResponse(status=422)
 
         response = HttpResponse(status=204)
         response["HX-Trigger"] = json.dumps({"timetableChanged": {}})
         return response
+
+
+class TimetableLogPageView(PanelAccessMixin, EventContextMixin, View):
+    """Full page: timetable assignment activity log with filters."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "timetable"
+
+        uow = self.request.di.uow
+
+        space_pk_raw = self.request.GET.get("space", "").strip()
+        space_pk = int(space_pk_raw) if space_pk_raw.isdigit() else None
+
+        logs = uow.schedule_change_logs.list_by_event(
+            current_event.pk, space_pk=space_pk
+        )
+        spaces = uow.spaces.list_by_event(current_event.pk)
+
+        context["logs"] = logs
+        context["spaces"] = spaces
+        context["space_pk"] = space_pk
+        context["slug"] = slug
+        return TemplateResponse(self.request, "panel/timetable-log.html", context)
 
 
 class TimetableConflictsPartView(PanelAccessMixin, EventContextMixin, View):

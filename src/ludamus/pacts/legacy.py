@@ -1257,6 +1257,54 @@ class HostPersonalDataRepositoryProtocol(Protocol):
     ) -> dict[str, str | list[str] | bool]: ...
 
 
+class ScheduleChangeAction(StrEnum):
+    ASSIGN = auto()
+    UNASSIGN = auto()
+    REVERT = auto()
+
+
+class ScheduleChangeLogData(TypedDict, total=False):
+    event_id: int
+    session_id: int
+    user_id: int | None
+    action: str
+    old_space_id: int | None
+    new_space_id: int | None
+    old_start_time: datetime | None
+    old_end_time: datetime | None
+    new_start_time: datetime | None
+    new_end_time: datetime | None
+
+
+class ScheduleChangeLogDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    event_id: int
+    session_id: int
+    session_title: str
+    user_id: int | None
+    user_name: str
+    action: ScheduleChangeAction
+    old_space_name: str | None
+    new_space_name: str | None
+    old_start_time: datetime | None
+    old_end_time: datetime | None
+    new_start_time: datetime | None
+    new_end_time: datetime | None
+    creation_time: datetime
+
+
+class ScheduleChangeLogRepositoryProtocol(Protocol):
+    @staticmethod
+    def create(data: ScheduleChangeLogData) -> None: ...
+
+    @staticmethod
+    def list_by_event(
+        event_pk: int, *, space_pk: int | None = None
+    ) -> list[ScheduleChangeLogDTO]: ...
+
+
 class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     @staticmethod
     def atomic() -> AbstractContextManager[None]: ...
@@ -1308,6 +1356,8 @@ class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     def enrollment_configs(self) -> EnrollmentConfigRepositoryProtocol: ...
     @property
     def host_personal_data(self) -> HostPersonalDataRepositoryProtocol: ...
+    @property
+    def schedule_change_logs(self) -> ScheduleChangeLogRepositoryProtocol: ...
 
 
 class TicketAPIProtocol(Protocol):
