@@ -5,7 +5,12 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-from ludamus.pacts import NotFoundError, SessionStatus
+from ludamus.pacts import (
+    NotFoundError,
+    ScheduleChangeAction,
+    ScheduleChangeLogData,
+    SessionStatus,
+)
 from ludamus.pacts.chronology import (
     TIMETABLE_ROOM_PAGE_SIZE,
     TIMETABLE_SLOT_MINUTES,
@@ -98,7 +103,12 @@ class TimetableService:
         )
 
     def assign_session(
-        self, session_pk: int, space_pk: int, start_time: datetime, end_time: datetime
+        self,
+        session_pk: int,
+        space_pk: int,
+        start_time: datetime,
+        end_time: datetime,
+        user_pk: int | None = None,
     ) -> None:
         session = self._uow.sessions.read(session_pk)
         if session.status != SessionStatus.ACCEPTED:
@@ -114,12 +124,34 @@ class TimetableService:
             }
         )
         self._uow.sessions.update(session_pk, {"status": SessionStatus.SCHEDULED})
+        event = self._uow.sessions.read_event(session_pk)
+        log_data: ScheduleChangeLogData = {
+            "event_id": event.pk,
+            "session_id": session_pk,
+            "user_id": user_pk,
+            "action": ScheduleChangeAction.ASSIGN,
+            "new_space_id": space_pk,
+            "new_start_time": start_time,
+            "new_end_time": end_time,
+        }
+        self._uow.schedule_change_logs.create(log_data)
 
-    def unassign_session(self, session_pk: int) -> None:
+    def unassign_session(self, session_pk: int, user_pk: int | None = None) -> None:
         if (agenda_item := self._uow.agenda_items.read_by_session(session_pk)) is None:
             raise NotFoundError
+        event = self._uow.sessions.read_event(session_pk)
         self._uow.agenda_items.delete(agenda_item.pk)
         self._uow.sessions.update(session_pk, {"status": SessionStatus.ACCEPTED})
+        log_data: ScheduleChangeLogData = {
+            "event_id": event.pk,
+            "session_id": session_pk,
+            "user_id": user_pk,
+            "action": ScheduleChangeAction.UNASSIGN,
+            "old_space_id": agenda_item.space_id,
+            "old_start_time": agenda_item.start_time,
+            "old_end_time": agenda_item.end_time,
+        }
+        self._uow.schedule_change_logs.create(log_data)
 
 
 class ConflictDetectionService:

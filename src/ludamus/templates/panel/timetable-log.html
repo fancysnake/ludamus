@@ -1,0 +1,83 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% block title_prefix %}
+    {% translate "Dziennik harmonogramu" %} —
+{% endblock title_prefix %}
+{% block page_title %}
+    {% translate "Dziennik zmian harmonogramu" %}
+{% endblock page_title %}
+{% block content %}
+    <div class="mb-4 flex items-center gap-2">
+        <a href="{% url 'panel:timetable' slug=slug %}"
+           class="text-sm text-primary hover:underline">← {% translate "Wróć do harmonogramu" %}</a>
+    </div>
+    <!-- Filters -->
+    <form method="get" class="mb-4 flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs text-neutral-500 mb-1">{% translate "Sala" %}</label>
+            <select name="space"
+                    class="text-sm border border-neutral-200 rounded px-2 py-1"
+                    onchange="this.form.submit()">
+                <option value="">{% translate "Wszystkie" %}</option>
+                {% for space in spaces %}
+                    <option value="{{ space.pk }}"
+                            {% if space.pk == space_pk %}selected{% endif %}>{{ space.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if space_pk %}
+            <a href="{% url 'panel:timetable-log' slug=slug %}"
+               class="text-xs text-neutral-500 hover:underline">{% translate "Wyczyść filtry" %}</a>
+        {% endif %}
+    </form>
+    <!-- Log table -->
+    {% if logs %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+                <thead>
+                    <tr class="border-b border-neutral-200 text-left">
+                        <th class="py-2 pr-4 font-medium text-neutral-600">{% translate "Czas" %}</th>
+                        <th class="py-2 pr-4 font-medium text-neutral-600">{% translate "Użytkownik" %}</th>
+                        <th class="py-2 pr-4 font-medium text-neutral-600">{% translate "Akcja" %}</th>
+                        <th class="py-2 pr-4 font-medium text-neutral-600">{% translate "Sesja" %}</th>
+                        <th class="py-2 font-medium text-neutral-600">{% translate "Zmiana" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-100">
+                    {% for log in logs %}
+                        <tr class="hover:bg-neutral-50">
+                            <td class="py-2 pr-4 text-neutral-500 whitespace-nowrap">{{ log.creation_time|date:"d.m H:i" }}</td>
+                            <td class="py-2 pr-4">{{ log.user_name|default:"—" }}</td>
+                            <td class="py-2 pr-4">
+                                {% if log.action == "assign" %}
+                                    <span class="text-green-700 font-medium">{% translate "Przypisano" %}</span>
+                                {% elif log.action == "unassign" %}
+                                    <span class="text-red-700 font-medium">{% translate "Usunięto" %}</span>
+                                {% elif log.action == "revert" %}
+                                    <span class="text-yellow-700 font-medium">{% translate "Cofnięto" %}</span>
+                                {% else %}
+                                    {{ log.action }}
+                                {% endif %}
+                            </td>
+                            <td class="py-2 pr-4">{{ log.session_title }}</td>
+                            <td class="py-2 text-neutral-600">
+                                {% if log.old_space_name and log.new_space_name %}
+                                    {{ log.old_space_name }} → {{ log.new_space_name }}
+                                {% elif log.new_space_name %}
+                                    → {{ log.new_space_name }}
+                                    {% if log.new_start_time %}({{ log.new_start_time|date:"H:i" }}){% endif %}
+                                {% elif log.old_space_name %}
+                                    {{ log.old_space_name }}
+                                    {% if log.old_start_time %}({{ log.old_start_time|date:"H:i" }}){% endif %}
+                                    →
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-sm text-neutral-500">{% translate "Brak wpisów w dzienniku." %}</div>
+    {% endif %}
+{% endblock content %}

@@ -7,6 +7,7 @@ from django.db import transaction
 from ludamus.adapters.db.django.models import User
 from ludamus.links.db.django import repositories
 from ludamus.links.db.django.agenda_item import AgendaItemRepository
+from ludamus.links.db.django.schedule_change_log import ScheduleChangeLogRepository
 from ludamus.pacts import UnitOfWorkProtocol, UserType
 
 if TYPE_CHECKING:
@@ -112,3 +113,7 @@ class UnitOfWork(UnitOfWorkProtocol):  # noqa: PLR0904
     @cached_property
     def host_personal_data(self) -> repositories.HostPersonalDataRepository:
         return repositories.HostPersonalDataRepository()
+
+    @cached_property
+    def schedule_change_logs(self) -> ScheduleChangeLogRepository:
+        return ScheduleChangeLogRepository()
