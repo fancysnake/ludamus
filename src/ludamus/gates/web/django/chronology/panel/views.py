@@ -15,7 +15,11 @@ from ludamus.gates.web.django.panel import (
     PanelAccessMixin,
     PanelRequest,
 )
-from ludamus.mills.chronology import ConflictDetectionService, TimetableService
+from ludamus.mills.chronology import (
+    ConflictDetectionService,
+    TimetableOverviewService,
+    TimetableService,
+)
 from ludamus.pacts import NotFoundError
 
 
@@ -229,6 +233,28 @@ class TimetableUnassignView(PanelAccessMixin, EventContextMixin, View):
         response = HttpResponse(status=204)
         response["HX-Trigger"] = json.dumps({"timetableChanged": {}})
         return response
+
+
+class TimetableOverviewPageView(PanelAccessMixin, EventContextMixin, View):
+    """Full page: sphere-manager overview — heatmap, all conflicts, track progress."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "timetable"
+
+        uow = self.request.di.uow
+        overview = TimetableOverviewService(uow)
+
+        context["heatmap"] = overview.build_heatmap(current_event.pk)
+        context["conflicts_grouped"] = overview.all_conflicts_grouped(current_event.pk)
+        context["track_progress"] = overview.track_progress(current_event.pk)
+        context["slug"] = slug
+        return TemplateResponse(self.request, "panel/timetable-overview.html", context)
 
 
 class TimetableLogPageView(PanelAccessMixin, EventContextMixin, View):

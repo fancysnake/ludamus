@@ -28,6 +28,11 @@ timetable_urlpatterns = [
     path(
         "do/unassign/", views.TimetableUnassignView.as_view(), name="timetable-unassign"
     ),
+    path(
+        "overview/",
+        views.TimetableOverviewPageView.as_view(),
+        name="timetable-overview",
+    ),
     path("log/", views.TimetableLogPageView.as_view(), name="timetable-log"),
     path("do/revert/", views.TimetableRevertView.as_view(), name="timetable-revert"),
 ]
