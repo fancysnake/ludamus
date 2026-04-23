@@ -48,3 +48,5 @@ class ConflictDTO(BaseModel):
     session_title: str
     session_pk: int
     description: str
+    track_name: str | None = None
+    manager_names: list[str] = []

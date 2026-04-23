@@ -214,6 +214,29 @@ class ConflictDetectionService:
                 reverse_key = (conflict.session_pk, item.session_id)
                 if key not in seen and reverse_key not in seen:
                     seen.add(key)
-                    all_conflicts.append(conflict)
+                    all_conflicts.append(
+                        self._add_track_attribution(conflict, track_pk)
+                    )
 
         return all_conflicts
+
+    def _add_track_attribution(
+        self, conflict: ConflictDTO, current_track_pk: int | None
+    ) -> ConflictDTO:
+        if conflict.type != ConflictType.FACILITATOR_OVERLAP:
+            return conflict
+        other_tracks = self._uow.tracks.list_by_session(conflict.session_pk)
+        if current_track_pk is not None:
+            other_tracks = [t for t in other_tracks if t.pk != current_track_pk]
+        if not other_tracks:
+            return conflict
+        track = other_tracks[0]
+        return ConflictDTO(
+            type=conflict.type,
+            severity=conflict.severity,
+            session_title=conflict.session_title,
+            session_pk=conflict.session_pk,
+            description=conflict.description,
+            track_name=track.name,
+            manager_names=self._uow.tracks.list_manager_names(track.pk),
+        )

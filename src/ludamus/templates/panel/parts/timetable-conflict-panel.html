@@ -27,6 +27,14 @@
                         <div class="text-xs {% if conflict.severity == 'error' %}text-red-600{% else %}text-yellow-700{% endif %} mt-0.5">
                             {{ conflict.description }}
                         </div>
+                        {% if conflict.track_name %}
+                            <div class="text-xs text-neutral-500 mt-0.5">
+                                {% translate "Ścieżka:" %} {{ conflict.track_name }}
+                                {% if conflict.manager_names %}
+                                    ({% translate "zarządza:" %} {{ conflict.manager_names|join:", " }})
+                                {% endif %}
+                            </div>
+                        {% endif %}
                         <button type="button"
                                 class="mt-1 text-xs underline {% if conflict.severity == 'error' %}text-red-700 hover:text-red-900{% else %}text-yellow-700 hover:text-yellow-900{% endif %}"
                                 hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=conflict.session_pk %}"

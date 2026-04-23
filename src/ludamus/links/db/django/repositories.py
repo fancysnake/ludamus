@@ -2555,3 +2555,16 @@ class TrackRepository(TrackRepositoryProtocol):
         return list(
             User.objects.filter(managed_tracks__pk=pk).values_list("pk", flat=True)
         )
+
+    @staticmethod
+    def list_by_session(session_pk: int) -> list[TrackDTO]:
+        tracks = Track.objects.filter(sessions__pk=session_pk).order_by("name")
+        return [TrackDTO.model_validate(t) for t in tracks]
+
+    @staticmethod
+    def list_manager_names(track_pk: int) -> list[str]:
+        return list(
+            User.objects.filter(managed_tracks__pk=track_pk)
+            .order_by("name")
+            .values_list("name", flat=True)
+        )
