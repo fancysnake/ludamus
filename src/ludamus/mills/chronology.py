@@ -153,6 +153,52 @@ class TimetableService:
         }
         self._uow.schedule_change_logs.create(log_data)
 
+    def revert_change(self, log_pk: int, user_pk: int | None = None) -> None:
+        log = self._uow.schedule_change_logs.read(log_pk)
+        if log.action == ScheduleChangeAction.ASSIGN:
+            agenda_item = self._uow.agenda_items.read_by_session(log.session_id)
+            if agenda_item is None:
+                raise NotFoundError
+            self._uow.agenda_items.delete(agenda_item.pk)
+            self._uow.sessions.update(
+                log.session_id, {"status": SessionStatus.ACCEPTED}
+            )
+        elif log.action == ScheduleChangeAction.UNASSIGN:
+            if (
+                log.old_space_id is None
+                or log.old_start_time is None
+                or log.old_end_time is None
+            ):
+                msg = "Cannot revert UNASSIGN: missing original placement data"
+                raise ValueError(msg)
+            session = self._uow.sessions.read(log.session_id)
+            if session.status != SessionStatus.ACCEPTED:
+                msg = f"Session {log.session_id} is not in ACCEPTED status"
+                raise ValueError(msg)
+            self._uow.agenda_items.create(
+                {
+                    "session_id": log.session_id,
+                    "space_id": log.old_space_id,
+                    "start_time": log.old_start_time,
+                    "end_time": log.old_end_time,
+                    "session_confirmed": False,
+                }
+            )
+            self._uow.sessions.update(
+                log.session_id, {"status": SessionStatus.SCHEDULED}
+            )
+        else:
+            msg = f"Cannot revert action: {log.action}"
+            raise ValueError(msg)
+        event = self._uow.sessions.read_event(log.session_id)
+        revert_log: ScheduleChangeLogData = {
+            "event_id": event.pk,
+            "session_id": log.session_id,
+            "user_id": user_pk,
+            "action": ScheduleChangeAction.REVERT,
+        }
+        self._uow.schedule_change_logs.create(revert_log)
+
 
 class ConflictDetectionService:
     def __init__(self, uow: UnitOfWorkProtocol) -> None:
