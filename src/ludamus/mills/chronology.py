@@ -329,14 +329,20 @@ class TimetableOverviewService:
     def __init__(self, uow: UnitOfWorkProtocol) -> None:
         self._uow = uow
 
-    def build_heatmap(self, event_pk: int) -> HeatmapDTO:
+    def get_all_conflicts(self, event_pk: int) -> list[ConflictDTO]:
+        return ConflictDetectionService(self._uow).list_all_for_track(
+            event_pk, track_pk=None
+        )
+
+    def build_heatmap(
+        self, event_pk: int, conflicts: list[ConflictDTO] | None = None
+    ) -> HeatmapDTO:
         event = self._uow.events.read(event_pk)
         spaces = self._uow.spaces.list_by_event(event_pk)
         all_items = self._uow.agenda_items.list_by_event(event_pk)
-        all_conflicts = ConflictDetectionService(self._uow).list_all_for_track(
-            event_pk, track_pk=None
-        )
-        conflict_session_pks = {c.session_pk for c in all_conflicts}
+        if conflicts is None:
+            conflicts = self.get_all_conflicts(event_pk)
+        conflict_session_pks = {c.session_pk for c in conflicts}
 
         space_pk_set = {s.pk for s in spaces}
         space_items: dict[int, list[AgendaItemDTO]] = defaultdict(list)
@@ -372,10 +378,11 @@ class TimetableOverviewService:
 
         return HeatmapDTO(spaces=spaces, rows=rows)
 
-    def all_conflicts_grouped(self, event_pk: int) -> dict[str, list[ConflictDTO]]:
-        conflicts = ConflictDetectionService(self._uow).list_all_for_track(
-            event_pk, track_pk=None
-        )
+    def all_conflicts_grouped(
+        self, event_pk: int, conflicts: list[ConflictDTO] | None = None
+    ) -> dict[str, list[ConflictDTO]]:
+        if conflicts is None:
+            conflicts = self.get_all_conflicts(event_pk)
         grouped: dict[str, list[ConflictDTO]] = {}
         for conflict in conflicts:
             if (key := conflict.type) not in grouped:

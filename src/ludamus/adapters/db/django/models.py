@@ -793,6 +793,12 @@ class AgendaItem(models.Model):
 
     class Meta:
         db_table = "agenda_item"
+        indexes: ClassVar = [
+            models.Index(
+                fields=["space_id", "start_time", "end_time"],
+                name="agenda_item_space_time_idx",
+            )
+        ]
         constraints = (
             models.CheckConstraint(
                 condition=(

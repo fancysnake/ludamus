@@ -249,9 +249,14 @@ class TimetableOverviewPageView(PanelAccessMixin, EventContextMixin, View):
 
         uow = self.request.di.uow
         overview = TimetableOverviewService(uow)
+        all_conflicts = overview.get_all_conflicts(current_event.pk)
 
-        context["heatmap"] = overview.build_heatmap(current_event.pk)
-        context["conflicts_grouped"] = overview.all_conflicts_grouped(current_event.pk)
+        context["heatmap"] = overview.build_heatmap(
+            current_event.pk, conflicts=all_conflicts
+        )
+        context["conflicts_grouped"] = overview.all_conflicts_grouped(
+            current_event.pk, conflicts=all_conflicts
+        )
         context["track_progress"] = overview.track_progress(current_event.pk)
         context["slug"] = slug
         return TemplateResponse(self.request, "panel/timetable-overview.html", context)
