@@ -17,9 +17,14 @@ from ludamus.pacts.chronology import (
     ConflictDTO,
     ConflictSeverity,
     ConflictType,
+    HeatmapCellDTO,
+    HeatmapCellStatus,
+    HeatmapDTO,
+    HeatmapRowDTO,
     TimetableCellDTO,
     TimetableGridDTO,
     TimetableRowDTO,
+    TrackProgressDTO,
 )
 
 if TYPE_CHECKING:
@@ -318,3 +323,93 @@ class ConflictDetectionService:
             track_name=track.name,
             manager_names=self._uow.tracks.list_manager_names(track.pk),
         )
+
+
+class TimetableOverviewService:
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+
+    def build_heatmap(self, event_pk: int) -> HeatmapDTO:
+        event = self._uow.events.read(event_pk)
+        spaces = self._uow.spaces.list_by_event(event_pk)
+        all_items = self._uow.agenda_items.list_by_event(event_pk)
+        all_conflicts = ConflictDetectionService(self._uow).list_all_for_track(
+            event_pk, track_pk=None
+        )
+        conflict_session_pks = {c.session_pk for c in all_conflicts}
+
+        space_pk_set = {s.pk for s in spaces}
+        space_items: dict[int, list[AgendaItemDTO]] = defaultdict(list)
+        for item in all_items:
+            if item.space_id in space_pk_set:
+                space_items[item.space_id].append(item)
+
+        slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
+        total_seconds = (event.end_time - event.start_time).total_seconds()
+        num_slots = int(total_seconds / (TIMETABLE_SLOT_MINUTES * 60))
+        time_slots = [event.start_time + slot_delta * i for i in range(num_slots)]
+
+        rows = []
+        for slot_time in time_slots:
+            cells = []
+            for space in spaces:
+                overlapping = next(
+                    (
+                        it
+                        for it in space_items.get(space.pk, [])
+                        if it.start_time <= slot_time < it.end_time
+                    ),
+                    None,
+                )
+                if overlapping is None:
+                    status = HeatmapCellStatus.EMPTY
+                elif overlapping.session_id in conflict_session_pks:
+                    status = HeatmapCellStatus.CONFLICT
+                else:
+                    status = HeatmapCellStatus.SCHEDULED
+                cells.append(HeatmapCellDTO(space_pk=space.pk, status=status))
+            rows.append(HeatmapRowDTO(time=slot_time, cells=cells))
+
+        return HeatmapDTO(spaces=spaces, rows=rows)
+
+    def all_conflicts_grouped(self, event_pk: int) -> dict[str, list[ConflictDTO]]:
+        conflicts = ConflictDetectionService(self._uow).list_all_for_track(
+            event_pk, track_pk=None
+        )
+        grouped: dict[str, list[ConflictDTO]] = {}
+        for conflict in conflicts:
+            if (key := conflict.type) not in grouped:
+                grouped[key] = []
+            grouped[key].append(conflict)
+        return grouped
+
+    def track_progress(self, event_pk: int) -> list[TrackProgressDTO]:
+        tracks = self._uow.tracks.list_by_event(event_pk)
+        result = []
+        for track in tracks:
+            sessions = self._uow.sessions.list_sessions_by_event(
+                event_pk, track_pk=track.pk
+            )
+            accepted = [
+                s
+                for s in sessions
+                if s.status in {SessionStatus.ACCEPTED, SessionStatus.SCHEDULED}
+            ]
+            scheduled = [s for s in sessions if s.status == SessionStatus.SCHEDULED]
+            accepted_count = len(accepted)
+            scheduled_count = len(scheduled)
+            progress_pct = (
+                round(scheduled_count * 100 / accepted_count) if accepted_count else 0
+            )
+            manager_names = self._uow.tracks.list_manager_names(track.pk)
+            result.append(
+                TrackProgressDTO(
+                    track_pk=track.pk,
+                    track_name=track.name,
+                    manager_names=manager_names,
+                    accepted_count=accepted_count,
+                    scheduled_count=scheduled_count,
+                    progress_pct=progress_pct,
+                )
+            )
+        return result

@@ -50,3 +50,33 @@ class ConflictDTO(BaseModel):
     description: str
     track_name: str | None = None
     manager_names: list[str] = []
+
+
+class HeatmapCellStatus(StrEnum):
+    EMPTY = auto()
+    SCHEDULED = auto()
+    CONFLICT = auto()
+
+
+class HeatmapCellDTO(BaseModel):
+    space_pk: int
+    status: HeatmapCellStatus
+
+
+class HeatmapRowDTO(BaseModel):
+    time: datetime
+    cells: list[HeatmapCellDTO]
+
+
+class HeatmapDTO(BaseModel):
+    spaces: list[SpaceDTO]
+    rows: list[HeatmapRowDTO]
+
+
+class TrackProgressDTO(BaseModel):
+    track_pk: int
+    track_name: str
+    manager_names: list[str]
+    accepted_count: int
+    scheduled_count: int
+    progress_pct: int
