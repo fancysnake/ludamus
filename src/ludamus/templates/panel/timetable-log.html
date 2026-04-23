@@ -40,7 +40,8 @@
                         <th class="py-2 pr-4 font-medium text-neutral-600">{% translate "Użytkownik" %}</th>
                         <th class="py-2 pr-4 font-medium text-neutral-600">{% translate "Akcja" %}</th>
                         <th class="py-2 pr-4 font-medium text-neutral-600">{% translate "Sesja" %}</th>
-                        <th class="py-2 font-medium text-neutral-600">{% translate "Zmiana" %}</th>
+                        <th class="py-2 pr-4 font-medium text-neutral-600">{% translate "Zmiana" %}</th>
+                        <th class="py-2 font-medium text-neutral-600"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-neutral-100">
@@ -60,7 +61,7 @@
                                 {% endif %}
                             </td>
                             <td class="py-2 pr-4">{{ log.session_title }}</td>
-                            <td class="py-2 text-neutral-600">
+                            <td class="py-2 pr-4 text-neutral-600">
                                 {% if log.old_space_name and log.new_space_name %}
                                     {{ log.old_space_name }} → {{ log.new_space_name }}
                                 {% elif log.new_space_name %}
@@ -70,6 +71,20 @@
                                     {{ log.old_space_name }}
                                     {% if log.old_start_time %}({{ log.old_start_time|date:"H:i" }}){% endif %}
                                     →
+                                {% endif %}
+                            </td>
+                            <td class="py-2">
+                                {% if log.action == "assign" or log.action == "unassign" %}
+                                    <form method="post"
+                                          action="{% url 'panel:timetable-revert' slug=slug %}"
+                                          onsubmit="return confirm('{% translate "Czy na pewno cofnąć tę zmianę?" %}')">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="log_pk" value="{{ log.pk }}">
+                                        <button type="submit"
+                                                class="text-xs text-neutral-500 hover:text-red-700 underline">
+                                            {% translate "Cofnij" %}
+                                        </button>
+                                    </form>
                                 {% endif %}
                             </td>
                         </tr>

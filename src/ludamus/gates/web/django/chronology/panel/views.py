@@ -260,6 +260,31 @@ class TimetableLogPageView(PanelAccessMixin, EventContextMixin, View):
         return TemplateResponse(self.request, "panel/timetable-log.html", context)
 
 
+class TimetableRevertView(PanelAccessMixin, EventContextMixin, View):
+    """POST: revert a logged timetable change."""
+
+    request: PanelRequest
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            log_pk = int(self.request.POST["log_pk"])
+        except KeyError, ValueError:
+            return HttpResponse(status=422)
+
+        try:
+            TimetableService(self.request.di.uow).revert_change(
+                log_pk, user_pk=self.request.user.pk
+            )
+        except ValueError, NotFoundError:
+            return HttpResponse(status=422)
+
+        return redirect("panel:timetable-log", slug=slug)
+
+
 class TimetableConflictsPartView(PanelAccessMixin, EventContextMixin, View):
     """HTMX partial: permanent conflict panel."""
 

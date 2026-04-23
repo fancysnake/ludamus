@@ -1286,7 +1286,9 @@ class ScheduleChangeLogDTO(BaseModel):
     user_id: int | None
     user_name: str
     action: ScheduleChangeAction
+    old_space_id: int | None
     old_space_name: str | None
+    new_space_id: int | None
     new_space_name: str | None
     old_start_time: datetime | None
     old_end_time: datetime | None
@@ -1298,6 +1300,9 @@ class ScheduleChangeLogDTO(BaseModel):
 class ScheduleChangeLogRepositoryProtocol(Protocol):
     @staticmethod
     def create(data: ScheduleChangeLogData) -> None: ...
+
+    @staticmethod
+    def read(pk: int) -> ScheduleChangeLogDTO: ...
 
     @staticmethod
     def list_by_event(
