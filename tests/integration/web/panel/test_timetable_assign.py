@@ -27,6 +27,32 @@ class TestTimetableGridPartView:
             response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
         )
 
+    def test_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:timetable-grid-part", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
+        )
+
+    def test_room_page_invalid_value_defaults_to_one(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.get(
+            self.get_url(event), {"room_page": "not-a-number"}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+
     def test_ok_returns_grid_partial(
         self, authenticated_client, active_user, sphere, event
     ):
@@ -66,6 +92,21 @@ class TestTimetableAssignView:
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, PERMISSION_ERROR)],
             url="/",
+        )
+
+    def test_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:timetable-assign", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.post(url, {})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
         )
 
     def test_returns_422_on_missing_params(
@@ -154,6 +195,21 @@ class TestTimetableUnassignView:
 
         assert_response(
             response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={url}"
+        )
+
+    def test_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:timetable-unassign", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.post(url, {})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
         )
 
     def test_returns_422_on_missing_params(
