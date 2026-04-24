@@ -213,6 +213,7 @@ src/ludamus/static/css/dist/
 .django_tailwind_cli/
 screenshots/
 tmp
+*.gitignored.md
 
 # TypeScript compiled output
 src/ludamus/static/js/
