@@ -1,6 +1,5 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import ANY
 
 import pytest
 from django.contrib import messages
@@ -69,7 +68,15 @@ class TestTimetableSessionListPartView:
             response,
             HTTPStatus.OK,
             template_name="panel/parts/timetable-session-list.html",
-            context_data=ANY,
+            context_data={
+                "sessions": [],
+                "categories": [],
+                "search": "",
+                "category_pk": None,
+                "max_duration_minutes": None,
+                "duration_chips": [("≤30 min", 30), ("≤60 min", 60), ("≤90 min", 90)],
+                "slug": event.slug,
+            },
         )
 
     def test_lists_unscheduled_accepted_sessions(

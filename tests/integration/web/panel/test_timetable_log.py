@@ -1,10 +1,10 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
 
+from ludamus.pacts import EventDTO
 from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
 from tests.integration.utils import assert_response
 
@@ -63,7 +63,33 @@ class TestTimetableLogPageView:
             response,
             HTTPStatus.OK,
             template_name="panel/timetable-log.html",
-            context_data=ANY,
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "timetable",
+                "logs": [],
+                "spaces": [],
+                "space_pk": None,
+                "slug": event.slug,
+                "tab_urls": {
+                    "timetable": reverse(
+                        "panel:timetable", kwargs={"slug": event.slug}
+                    ),
+                    "log": reverse("panel:timetable-log", kwargs={"slug": event.slug}),
+                    "overview": reverse(
+                        "panel:timetable-overview", kwargs={"slug": event.slug}
+                    ),
+                },
+            },
         )
 
     def test_empty_log_when_no_changes(

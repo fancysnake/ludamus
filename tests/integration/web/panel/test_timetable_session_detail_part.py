@@ -1,10 +1,11 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
 
+from ludamus.pacts import EventDTO
+from ludamus.pacts.legacy import SessionDTO
 from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
 from tests.integration.utils import assert_response
 
@@ -86,7 +87,15 @@ class TestTimetableSessionDetailPartView:
             response,
             HTTPStatus.OK,
             template_name="panel/parts/timetable-session-detail.html",
-            context_data=ANY,
+            context_data={
+                "session": SessionDTO.model_validate(session),
+                "agenda_item": None,
+                "facilitators": [],
+                "time_slots": [],
+                "duration_minutes": 60,
+                "slug": event.slug,
+                "event": EventDTO.model_validate(event),
+            },
         )
 
     def test_shows_session_title(
