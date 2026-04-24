@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.views.generic.base import View
 
 from ludamus.gates.web.django.panel import (
@@ -21,6 +23,22 @@ from ludamus.mills.chronology import (
     TimetableService,
 )
 from ludamus.pacts import NotFoundError
+
+
+def _parse_iso_duration_minutes(iso: str) -> int:
+    if not (match := re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?", iso)):
+        return 60
+    hours = int(match.group(1) or 0)
+    minutes = int(match.group(2) or 0)
+    return hours * 60 + minutes
+
+
+def _timetable_tab_urls(slug: str) -> dict[str, str]:
+    return {
+        "timetable": reverse("panel:timetable", kwargs={"slug": slug}),
+        "log": reverse("panel:timetable-log", kwargs={"slug": slug}),
+        "overview": reverse("panel:timetable-overview", kwargs={"slug": slug}),
+    }
 
 
 class TimetablePageView(PanelAccessMixin, EventContextMixin, View):
@@ -44,8 +62,12 @@ class TimetablePageView(PanelAccessMixin, EventContextMixin, View):
         except ValueError:
             room_page = 1
 
-        grid = TimetableService(self.request.di.uow).build_grid(
+        uow = self.request.di.uow
+        grid = TimetableService(uow).build_grid(
             event_pk=current_event.pk, track_pk=filter_track_pk, space_page=room_page
+        )
+        conflicts = ConflictDetectionService(uow).list_all_for_track(
+            event_pk=current_event.pk, track_pk=filter_track_pk
         )
 
         context["all_tracks"] = sorted_tracks
@@ -53,7 +75,9 @@ class TimetablePageView(PanelAccessMixin, EventContextMixin, View):
         context["filter_track_pk"] = filter_track_pk
         context["room_page"] = room_page
         context["grid"] = grid
+        context["conflict_session_pks"] = {c.session_pk for c in conflicts}
         context["slug"] = slug
+        context["tab_urls"] = _timetable_tab_urls(slug)
         return TemplateResponse(self.request, "panel/timetable.html", context)
 
 
@@ -121,11 +145,14 @@ class TimetableSessionDetailPartView(PanelAccessMixin, EventContextMixin, View):
         facilitators = uow.sessions.read_facilitators(pk)
         time_slots = uow.sessions.read_time_slots(pk)
 
+        duration_minutes = _parse_iso_duration_minutes(session.duration)
+
         context = {
             "session": session,
             "agenda_item": agenda_item,
             "facilitators": facilitators,
             "time_slots": time_slots,
+            "duration_minutes": duration_minutes,
             "slug": slug,
             "event": current_event,
         }
@@ -155,7 +182,12 @@ class TimetableGridPartView(PanelAccessMixin, EventContextMixin, View):
             event_pk=current_event.pk, track_pk=filter_track_pk, space_page=room_page
         )
 
-        context = {"grid": grid, "filter_track_pk": filter_track_pk, "slug": slug}
+        context: dict[str, object] = {
+            "grid": grid,
+            "filter_track_pk": filter_track_pk,
+            "conflict_session_pks": set(),
+            "slug": slug,
+        }
         return TemplateResponse(
             self.request, "panel/parts/timetable-grid.html", context
         )
@@ -259,6 +291,7 @@ class TimetableOverviewPageView(PanelAccessMixin, EventContextMixin, View):
         )
         context["track_progress"] = overview.track_progress(current_event.pk)
         context["slug"] = slug
+        context["tab_urls"] = _timetable_tab_urls(slug)
         return TemplateResponse(self.request, "panel/timetable-overview.html", context)
 
 
@@ -288,6 +321,7 @@ class TimetableLogPageView(PanelAccessMixin, EventContextMixin, View):
         context["spaces"] = spaces
         context["space_pk"] = space_pk
         context["slug"] = slug
+        context["tab_urls"] = _timetable_tab_urls(slug)
         return TemplateResponse(self.request, "panel/timetable-log.html", context)
 
 

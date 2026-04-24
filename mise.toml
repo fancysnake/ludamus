@@ -228,6 +228,7 @@ mise run _e2e -- django-admin createcachetable
 mise run _e2e -- django-admin downloadvendor
 mise run _e2e -- python tests/e2e/scripts/bootstrap_data.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_facilitators.py
+mise run _e2e -- python tests/e2e/scripts/bootstrap_timetable.py
 mise run _e2e -- django-admin tailwind install
 mise run _e2e -- django-admin tailwind build
 exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload

@@ -1,7 +1,7 @@
 {% load i18n %}
 <!-- Session count -->
 <div class="text-xs text-neutral-500 mb-2">
-    {% blocktranslate count count=sessions|length %}{{ count }} sesja{% plural %}{{ count }} sesji{% endblocktranslate %}
+    {% blocktranslate count count=sessions|length %}{{ count }} session{% plural %}{{ count }} sessions{% endblocktranslate %}
 </div>
 <!-- Category filter chips -->
 {% if categories %}
@@ -9,7 +9,7 @@
         <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?max_duration={{ max_duration_minutes|default:'' }}"
            hx-target="#session-list"
            class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if not category_pk %}bg-primary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
-            {% translate "Wszystkie" %}
+            {% translate "All" %}
         </a>
         {% for cat in categories %}
             <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ cat.pk }}&max_duration={{ max_duration_minutes|default:'' }}"
@@ -25,7 +25,7 @@
     <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ category_pk|default:'' }}"
        hx-target="#session-list"
        class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if not max_duration_minutes %}bg-secondary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
-        {% translate "Każdy czas" %}
+        {% translate "Any duration" %}
     </a>
     {% for label, value in duration_chips %}
         <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ category_pk|default:'' }}&max_duration={{ value }}"
@@ -39,7 +39,7 @@
 {% if sessions %}
     <div class="space-y-2">
         {% for session in sessions %}
-            <div class="bg-white border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:shadow-sm transition"
+            <div class="card p-3 cursor-pointer hover:border-primary hover:shadow-sm transition"
                  data-session-pk="{{ session.pk }}"
                  hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=session.pk %}"
                  hx-target="#session-drawer"
@@ -61,6 +61,6 @@
     </div>
 {% else %}
     <div class="text-center py-8 text-neutral-400">
-        <p class="text-sm">{% translate "Brak nieprzypisanych sesji." %}</p>
+        <p class="text-sm">{% translate "No unassigned sessions." %}</p>
     </div>
 {% endif %}

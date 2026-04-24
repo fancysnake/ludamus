@@ -1,0 +1,475 @@
+import { expect, test } from '@playwright/test';
+
+test.describe.configure({ mode: 'serial' });
+
+test.describe('Timetable', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/admin/login/');
+    await page.getByLabel('Username:').fill('e2e-manager');
+    await page.getByLabel('Password:').fill('e2e-manager-123');
+    await page.getByRole('button', { name: /Log in/i }).click();
+  });
+
+  // --- Page Loading ---
+
+  test('opens timetable page with grid and session list', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    await expect(
+      page.getByRole('heading', { name: 'Schedule' }),
+    ).toBeVisible();
+
+    // Session list panel
+    await expect(
+      page.getByText('Sessions to assign'),
+    ).toBeVisible();
+
+    // Grid area exists
+    await expect(page.locator('#timetable-grid')).toBeVisible();
+
+    // Conflict panel
+    await expect(page.getByText('Conflicts')).toBeVisible();
+
+    await page.screenshot({
+      path: 'test-results/timetable-page.png',
+      fullPage: true,
+    });
+  });
+
+  test('session list loads via HTMX and shows unscheduled sessions', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    // Wait for HTMX to load the session list
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    await expect(
+      page.locator('#session-list').getByText('Dungeon Crawl'),
+    ).toBeVisible();
+
+    await expect(
+      page.locator('#session-list').getByText('Storytelling Workshop'),
+    ).toBeVisible();
+  });
+
+  // --- Session Search ---
+
+  test('search filters session list', async ({ page }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    // Wait for initial load — all 3 sessions visible
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.locator('#session-list').getByText('Storytelling Workshop'),
+    ).toBeVisible();
+
+    // Type search term — use pressSequentially so keyup events fire
+    // (HTMX listens for keyup, which .fill() does not trigger)
+    const searchInput = page.locator('input[name="search"]');
+    await searchInput.click();
+    await searchInput.pressSequentially('Dungeon', { delay: 30 });
+
+    // Wait for Storytelling Workshop to disappear, confirming
+    // the HTMX swap with filtered results has completed.
+    await expect(
+      page.locator('#session-list').getByText('Storytelling Workshop'),
+    ).not.toBeVisible({ timeout: 10000 });
+
+    // Only Dungeon Crawl should remain
+    await expect(
+      page.locator('#session-list').getByText('Dungeon Crawl'),
+    ).toBeVisible();
+
+    // Other sessions should be filtered out
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).not.toBeVisible();
+
+    await expect(
+      page.locator('#session-list').getByText('Storytelling Workshop'),
+    ).not.toBeVisible();
+  });
+
+  // --- Session Detail Drawer ---
+
+  test('clicking a session card opens the detail drawer', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    // Wait for session list
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Click the session card
+    await page
+      .locator('#session-list')
+      .locator('[data-session-pk]', {
+        hasText: 'RPG Introduction',
+      })
+      .click();
+
+    // Drawer should become visible
+    const drawer = page.locator('#session-drawer');
+    await expect(drawer).not.toHaveClass(/hidden/, {
+      timeout: 5000,
+    });
+
+    // Drawer content
+    await expect(drawer.getByText('Session details')).toBeVisible();
+    await expect(
+      drawer.getByText('RPG Introduction'),
+    ).toBeVisible();
+    await expect(drawer.getByText('Not assigned')).toBeVisible();
+
+    // Assign button should be present
+    await expect(
+      drawer.getByRole('button', { name: 'Assign' }),
+    ).toBeVisible();
+  });
+
+  test('drawer close button hides the drawer', async ({ page }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Open drawer
+    await page
+      .locator('#session-list')
+      .locator('[data-session-pk]', {
+        hasText: 'RPG Introduction',
+      })
+      .click();
+
+    const drawer = page.locator('#session-drawer');
+    await expect(drawer).not.toHaveClass(/hidden/, {
+      timeout: 5000,
+    });
+
+    // Close it
+    await drawer.locator('button', { hasText: '×' }).click();
+    await expect(drawer).toHaveClass(/hidden/);
+  });
+
+  // --- Assignment Mode ---
+
+  test('clicking Assign enters assignment mode with banner', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Open drawer
+    await page
+      .locator('#session-list')
+      .locator('[data-session-pk]', {
+        hasText: 'RPG Introduction',
+      })
+      .click();
+
+    const drawer = page.locator('#session-drawer');
+    await expect(drawer).not.toHaveClass(/hidden/, {
+      timeout: 5000,
+    });
+
+    // Click Assign
+    await drawer
+      .getByRole('button', { name: 'Assign' })
+      .click();
+
+    // Banner should appear
+    await expect(
+      page.locator('#assign-mode-banner'),
+    ).not.toHaveClass(/hidden/);
+    await expect(
+      page.getByText('Click a position on the grid'),
+    ).toBeVisible();
+
+    // Grid columns should have assignment mode class
+    await expect(
+      page.locator('.timetable-column.assign-mode-active').first(),
+    ).toBeVisible();
+
+    // Drawer should be hidden
+    await expect(drawer).toHaveClass(/hidden/);
+  });
+
+  test('Escape key cancels assignment mode', async ({ page }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Enter assignment mode
+    await page
+      .locator('#session-list')
+      .locator('[data-session-pk]', {
+        hasText: 'RPG Introduction',
+      })
+      .click();
+
+    await page
+      .locator('#session-drawer')
+      .getByRole('button', { name: 'Assign' })
+      .click();
+
+    await expect(
+      page.locator('#assign-mode-banner'),
+    ).not.toHaveClass(/hidden/);
+
+    // Press Escape
+    await page.keyboard.press('Escape');
+
+    // Banner should hide
+    await expect(page.locator('#assign-mode-banner')).toHaveClass(
+      /hidden/,
+    );
+
+    // Columns should lose assignment mode
+    await expect(
+      page.locator('.timetable-column.assign-mode-active'),
+    ).toHaveCount(0);
+  });
+
+  test('cancel button exits assignment mode', async ({ page }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Enter assignment mode
+    await page
+      .locator('#session-list')
+      .locator('[data-session-pk]', {
+        hasText: 'RPG Introduction',
+      })
+      .click();
+
+    await page
+      .locator('#session-drawer')
+      .getByRole('button', { name: 'Assign' })
+      .click();
+
+    await expect(
+      page.locator('#assign-mode-banner'),
+    ).not.toHaveClass(/hidden/);
+
+    // Click cancel button
+    await page.locator('#assign-mode-cancel').click();
+
+    // Banner should hide
+    await expect(page.locator('#assign-mode-banner')).toHaveClass(
+      /hidden/,
+    );
+  });
+
+  // --- Assign and Unassign Flow ---
+
+  test('assigns a session by clicking grid column', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Enter assignment mode for RPG Introduction
+    await page
+      .locator('#session-list')
+      .locator('[data-session-pk]', {
+        hasText: 'RPG Introduction',
+      })
+      .click();
+
+    await page
+      .locator('#session-drawer')
+      .getByRole('button', { name: 'Assign' })
+      .click();
+
+    await expect(
+      page.locator('#assign-mode-banner'),
+    ).not.toHaveClass(/hidden/);
+
+    // Click on first grid column near the top (to assign at event start)
+    const column = page
+      .locator('.timetable-column.assign-mode-active')
+      .first();
+    await column.click({ position: { x: 50, y: 30 } });
+
+    // Banner should disappear after assignment
+    await expect(page.locator('#assign-mode-banner')).toHaveClass(
+      /hidden/,
+      { timeout: 5000 },
+    );
+
+    // Wait for grid refresh — session should now appear in grid
+    await expect(
+      page
+        .locator('#timetable-grid')
+        .getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Session should disappear from unscheduled list
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).not.toBeVisible({ timeout: 10000 });
+  });
+
+  test('clicking scheduled session in grid shows Unassign button', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    // Wait for grid to show the assigned session
+    const gridSession = page
+      .locator('#timetable-grid')
+      .getByText('RPG Introduction');
+    await expect(gridSession).toBeVisible({ timeout: 10000 });
+
+    // Click the session in the grid
+    await gridSession.click();
+
+    // Drawer should show with Unassign button
+    const drawer = page.locator('#session-drawer');
+    await expect(drawer).not.toHaveClass(/hidden/, {
+      timeout: 5000,
+    });
+    await expect(
+      drawer.getByRole('button', { name: 'Unassign' }),
+    ).toBeVisible();
+  });
+
+  test('unassigns a session', async ({ page }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    // Click the assigned session in grid
+    const gridSession = page
+      .locator('#timetable-grid')
+      .getByText('RPG Introduction');
+    await expect(gridSession).toBeVisible({ timeout: 10000 });
+    await gridSession.click();
+
+    // Click Unassign
+    const drawer = page.locator('#session-drawer');
+    await expect(
+      drawer.getByRole('button', { name: 'Unassign' }),
+    ).toBeVisible({ timeout: 5000 });
+    await drawer
+      .getByRole('button', { name: 'Unassign' })
+      .click();
+
+    // Session should reappear in unscheduled list
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Session should be gone from grid
+    await expect(
+      page
+        .locator('#timetable-grid')
+        .getByText('RPG Introduction'),
+    ).not.toBeVisible({ timeout: 5000 });
+  });
+
+  // --- Conflict Panel ---
+
+  test('conflict panel loads and shows conflict status', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    // Wait for conflict panel HTMX load — it should show either
+    // "All clear" or a conflict count
+    const panel = page.locator('#conflict-panel');
+    await expect(
+      panel.getByText(/All clear|conflict/),
+    ).toBeVisible({ timeout: 10000 });
+  });
+
+  // --- Activity Log ---
+
+  test('activity log page loads and shows tab navigation', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/log/');
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'Schedule Activity Log',
+      }),
+    ).toBeVisible();
+
+    // Tab navigation
+    await expect(
+      page.getByRole('link', { name: 'Activity Log' }),
+    ).toBeVisible();
+  });
+
+  // --- Overview Page ---
+
+  test('overview page loads with heatmap and track progress', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/panel/event/autumn-open/timetable/overview/',
+    );
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'Organizer Overview',
+      }),
+    ).toBeVisible();
+
+    // Tab navigation
+    await expect(
+      page.getByRole('link', { name: 'Organizer Overview' }),
+    ).toBeVisible();
+
+    await page.screenshot({
+      path: 'test-results/timetable-overview.png',
+      fullPage: true,
+    });
+  });
+
+  // --- Tab Navigation ---
+
+  test('tabs navigate between timetable sub-pages', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/timetable/');
+
+    // Click Activity Log tab
+    await page
+      .getByRole('link', { name: 'Activity Log' })
+      .click();
+    await expect(page).toHaveURL(/\/timetable\/log\//);
+
+    // Click Organizer Overview tab
+    await page
+      .getByRole('link', { name: 'Organizer Overview' })
+      .click();
+    await expect(page).toHaveURL(/\/timetable\/overview\//);
+
+    // Click Schedule tab to go back
+    await page
+      .getByRole('link', { name: 'Schedule', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/timetable\/$/);
+  });
+});
