@@ -56,4 +56,10 @@ def format_datetime_range(obj: DateTimeRangeProtocol) -> str:
     start = timezone.localtime(obj.start_time)
     end = timezone.localtime(obj.end_time)
 
-    return _format_date_range(start, end)
+    result = _format_date_range(start, end)
+
+    # if year is current, we don't need to show it
+    if start.year == timezone.now().year:
+        return result.replace(f"{start.year},", "")
+
+    return result
