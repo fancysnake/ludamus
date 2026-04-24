@@ -105,17 +105,11 @@
                 border-right: 2px solid #d97706;
                 border-bottom: 2px solid #d97706;
             }
-
-            /* TEMP: impeccable CI annotation smoke test — reverted in follow-up commit */
-            .ci-impeccable-test {
-                border-left: 4px solid #4a5d7a;
-            }
         </style>
         {% block extra_head %}
         {% endblock extra_head %}
     </head>
     <body class="relative flex flex-col min-h-screen font-sans antialiased bg-background text-foreground">
-        <div class="ci-impeccable-test"></div>
         {% include "components/navbar.html" %}
         <!-- Flash Messages -->
         {% if messages %}
