@@ -57,6 +57,12 @@ Strict rules:
 - When making UI changes, use agent-browser to take screenshots of affected
   pages and include before/after images in the PR description
 
+## Translation conventions (Polish)
+
+- **session** → "punkt programu" (except in "RPG session" → "sesja RPG")
+- **track** → "blok" or "blok programowy"
+- **facilitator** → "twórca programu"
+
 ## Details
 
 - [Architecture](docs/agents/architecture.md) — layers, repos, UoW

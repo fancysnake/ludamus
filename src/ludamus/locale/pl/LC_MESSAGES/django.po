@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-20 22:05+0200\n"
+"POT-Creation-Date: 2026-04-24 07:10+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -579,6 +579,7 @@ msgstr "Brak dostępnych opcji zapisu"
 
 #: src/ludamus/adapters/web/django/forms.py:188
 #: src/ludamus/templates/chronology/enroll_select.html:79
+#: src/ludamus/templates/panel/timetable-log.html:46
 msgid "User"
 msgstr "Nazwa użytkownika"
 
@@ -727,8 +728,8 @@ msgstr "siebie"
 
 #: src/ludamus/adapters/web/django/views.py:1217
 #: src/ludamus/adapters/web/django/views.py:1645
-#: src/ludamus/adapters/web/django/views.py:1823
-#: src/ludamus/adapters/web/django/views.py:1933
+#: src/ludamus/adapters/web/django/views.py:1822
+#: src/ludamus/adapters/web/django/views.py:1932
 msgid "Session not found."
 msgstr "Punkt programu nie został znaleziony."
 
@@ -737,7 +738,7 @@ msgid "No enrollment configuration is available for this session."
 msgstr "Brak dostępnej konfiguracji zapisów dla tego punktu programu."
 
 #: src/ludamus/adapters/web/django/views.py:1363
-msgid "Email address is required for enrollment in this session."
+msgid "Email address is required for enrollment i this session."
 msgstr "Do zapisu na ten punkt programu wymagany jest adres email."
 
 #: src/ludamus/adapters/web/django/views.py:1380
@@ -806,68 +807,68 @@ msgstr "To zgłoszenie zostało już zaakceptowane."
 msgid "You don't have permission to accept proposals for this event."
 msgstr "Nie masz uprawnień do akceptowania propozycji dla tego wydarzenia."
 
-#: src/ludamus/adapters/web/django/views.py:1727
+#: src/ludamus/adapters/web/django/views.py:1726
 #, python-brace-format
 msgid "Proposal '{}' has been accepted and added to the agenda."
 msgstr "Zgłoszenie '{}' zostało zaakceptowane i dodane do programu."
 
-#: src/ludamus/adapters/web/django/views.py:1744
+#: src/ludamus/adapters/web/django/views.py:1743
 msgid "No spaces configured for this event. Please create spaces first."
 msgstr ""
 "Brak skonfigurowanych przestrzeni dla tego wydarzenia. Najpierw utwórz "
 "przestrzenie."
 
-#: src/ludamus/adapters/web/django/views.py:1759
+#: src/ludamus/adapters/web/django/views.py:1758
 msgid ""
 "No time slots configured for this event. Please create time slots first."
 msgstr ""
 "Brak skonfigurowanych przedziałów czasowych dla tego wydarzenia. Najpierw "
 "utwórz przedziały czasowe."
 
-#: src/ludamus/adapters/web/django/views.py:1776
+#: src/ludamus/adapters/web/django/views.py:1775
 #: src/ludamus/gates/web/django/chronology/views.py:395
-#: src/ludamus/gates/web/django/panel.py:240
-#: src/ludamus/gates/web/django/panel.py:362
-#: src/ludamus/gates/web/django/panel.py:396
-#: src/ludamus/gates/web/django/panel.py:432
-#: src/ludamus/gates/web/django/panel.py:490
+#: src/ludamus/gates/web/django/panel.py:241
+#: src/ludamus/gates/web/django/panel.py:392
+#: src/ludamus/gates/web/django/panel.py:426
+#: src/ludamus/gates/web/django/panel.py:462
+#: src/ludamus/gates/web/django/panel.py:520
 msgid "Event not found."
 msgstr "Festiwal nie został znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:1785
+#: src/ludamus/adapters/web/django/views.py:1784
 msgid "Anonymous enrollment is not available for this event."
 msgstr "Anonimowy zapis nie jest dostępny dla tego wydarzenia."
 
-#: src/ludamus/adapters/web/django/views.py:1809
-#: src/ludamus/adapters/web/django/views.py:1915
+#: src/ludamus/adapters/web/django/views.py:1808
+#: src/ludamus/adapters/web/django/views.py:1914
 msgid "Anonymous enrollment is not active."
 msgstr "Anonimowy zapis nie jest aktywny."
 
-#: src/ludamus/adapters/web/django/views.py:1814
-#: src/ludamus/adapters/web/django/views.py:1923
+#: src/ludamus/adapters/web/django/views.py:1813
+#: src/ludamus/adapters/web/django/views.py:1922
 msgid "Anonymous enrollment session is not valid for this site."
 msgstr "Anonimowa sesja zapisu nie jest ważna dla tej strony."
 
-#: src/ludamus/adapters/web/django/views.py:1827
-#: src/ludamus/adapters/web/django/views.py:1938
+#: src/ludamus/adapters/web/django/views.py:1826
+#: src/ludamus/adapters/web/django/views.py:1937
 msgid "Anonymous session expired."
 msgstr "Anonimowa sesja wygasła."
 
-#: src/ludamus/adapters/web/django/views.py:1834
-#: src/ludamus/adapters/web/django/views.py:1947
+#: src/ludamus/adapters/web/django/views.py:1833
+#: src/ludamus/adapters/web/django/views.py:1946
 msgid "Anonymous user not found."
 msgstr "Anonimowy użytkownik nie znaleziony."
 
-#: src/ludamus/adapters/web/django/views.py:1850
+#: src/ludamus/adapters/web/django/views.py:1849
 #, python-format
 msgid "Successfully cancelled enrollment in session: %(title)s"
 msgstr "Pomyślnie anulowano zapis na sesję: %(title)s"
 
-#: src/ludamus/adapters/web/django/views.py:1854
+#: src/ludamus/adapters/web/django/views.py:1853
 msgid "No enrollment found to cancel."
 msgstr "Nie znaleziono zapisu do anulowania."
 
-#: src/ludamus/adapters/web/django/views.py:1864
+#: src/ludamus/adapters/web/django/views.py:1863
 msgid ""
 "Cannot enroll: You are already enrolled in another session that conflicts "
 "with this time slot."
@@ -875,33 +876,33 @@ msgstr ""
 "Nie można się zapisać: Jesteś już zapisany na inną sesję, która koliduje z "
 "tym terminem."
 
-#: src/ludamus/adapters/web/django/views.py:1881
+#: src/ludamus/adapters/web/django/views.py:1880
 #, python-format
 msgid "Session is full. You have been added to the waiting list for: %(title)s"
 msgstr "Sesja jest pełna. Zostałeś dodany do listy oczekujących na: %(title)s"
 
-#: src/ludamus/adapters/web/django/views.py:1900
+#: src/ludamus/adapters/web/django/views.py:1899
 #, python-format
 msgid "Successfully enrolled in session: %(title)s"
 msgstr "Pomyślnie zapisano na sesję: %(title)s"
 
-#: src/ludamus/adapters/web/django/views.py:1981
+#: src/ludamus/adapters/web/django/views.py:1980
 msgid "Name is required."
 msgstr "Imię jest wymagane."
 
-#: src/ludamus/adapters/web/django/views.py:2010
+#: src/ludamus/adapters/web/django/views.py:2009
 msgid "Please enter a code."
 msgstr "Proszę wprowadzić kod."
 
-#: src/ludamus/adapters/web/django/views.py:2023
+#: src/ludamus/adapters/web/django/views.py:2022
 msgid "Invalid code. Please check and try again."
 msgstr "Nieprawidłowy kod. Sprawdź i spróbuj ponownie."
 
-#: src/ludamus/adapters/web/django/views.py:2038
+#: src/ludamus/adapters/web/django/views.py:2037
 msgid "No enrollments found for this code."
 msgstr "Nie znaleziono zapisów dla tego kodu."
 
-#: src/ludamus/adapters/web/django/views.py:2052
+#: src/ludamus/adapters/web/django/views.py:2051
 msgid "Code loaded successfully. You can now manage your enrollments."
 msgstr "Kod załadowany pomyślnie. Możesz teraz zarządzać swoimi zapisami."
 
@@ -941,7 +942,7 @@ msgstr "Tytuł"
 #: src/ludamus/templates/panel/area-edit.html:50
 #: src/ludamus/templates/panel/cfp-edit.html:49
 #: src/ludamus/templates/panel/proposal-create.html:72
-#: src/ludamus/templates/panel/proposal-detail.html:58
+#: src/ludamus/templates/panel/proposal-detail.html:56
 #: src/ludamus/templates/panel/proposal-edit.html:57
 #: src/ludamus/templates/panel/settings.html:72
 #: src/ludamus/templates/panel/venue-detail.html:70
@@ -1399,286 +1400,288 @@ msgstr "Zapisano!"
 msgid "You have been removed from this encounter."
 msgstr "Zostałeś/aś wypisany/a z tego spotkania."
 
-#: src/ludamus/gates/web/django/panel.py:218
+#: src/ludamus/gates/web/django/panel.py:219
 msgid "You don't have permission to access the backoffice panel."
 msgstr "Nie masz uprawnień do panelu organizatora."
 
-#: src/ludamus/gates/web/django/panel.py:285
+#: src/ludamus/gates/web/django/panel.py:315
 msgid "No events available for this sphere."
 msgstr "Brak wydarzeń dostępnych dla tej sfery."
 
-#: src/ludamus/gates/web/django/panel.py:378
+#: src/ludamus/gates/web/django/panel.py:408
 msgid "An event with this slug already exists."
 msgstr "Wydarzenie o tym slugu już istnieje."
 
-#: src/ludamus/gates/web/django/panel.py:399
+#: src/ludamus/gates/web/django/panel.py:429
 msgid "Event settings saved successfully."
 msgstr "Ustawienia wydarzenia zostały zapisane."
 
-#: src/ludamus/gates/web/django/panel.py:450
+#: src/ludamus/gates/web/django/panel.py:480
 msgid "Display settings saved successfully."
 msgstr "Ustawienia wyświetlania zostały zapisane."
 
-#: src/ludamus/gates/web/django/panel.py:528
+#: src/ludamus/gates/web/django/panel.py:558
 msgid "Proposal settings saved successfully."
 msgstr "Ustawienia zgłoszeń zostały zapisane."
 
-#: src/ludamus/gates/web/django/panel.py:606
-#: src/ludamus/gates/web/django/panel.py:611
-#: src/ludamus/gates/web/django/panel.py:657
-#: src/ludamus/gates/web/django/panel.py:662
-#: src/ludamus/gates/web/django/panel.py:695
-#: src/ludamus/gates/web/django/panel.py:700
-#: src/ludamus/gates/web/django/panel.py:837
-#: src/ludamus/gates/web/django/panel.py:842
-#: src/ludamus/gates/web/django/panel.py:866
-#: src/ludamus/gates/web/django/panel.py:871
+#: src/ludamus/gates/web/django/panel.py:622
+#: src/ludamus/gates/web/django/panel.py:627
+#: src/ludamus/gates/web/django/panel.py:707
+#: src/ludamus/gates/web/django/panel.py:712
+#: src/ludamus/gates/web/django/panel.py:747
+#: src/ludamus/gates/web/django/panel.py:752
+#: src/ludamus/gates/web/django/panel.py:883
+#: src/ludamus/gates/web/django/panel.py:888
+#: src/ludamus/gates/web/django/panel.py:912
+#: src/ludamus/gates/web/django/panel.py:917
 msgid "Proposal not found."
 msgstr "Nie znaleziono zgłoszenia."
 
-#: src/ludamus/gates/web/django/panel.py:740
+#: src/ludamus/gates/web/django/panel.py:787
 msgid "Proposal updated successfully."
 msgstr "Zgłoszenie zostało zaktualizowane."
 
-#: src/ludamus/gates/web/django/panel.py:819
+#: src/ludamus/gates/web/django/panel.py:865
 msgid "Proposal created successfully."
 msgstr "Zgłoszenie zostało utworzone."
 
-#: src/ludamus/gates/web/django/panel.py:848
+#: src/ludamus/gates/web/django/panel.py:894
 msgid "Proposal rejected."
 msgstr "Zgłoszenie zostało odrzucone."
 
-#: src/ludamus/gates/web/django/panel.py:882
+#: src/ludamus/gates/web/django/panel.py:928
 msgid "Facilitators updated."
 msgstr "Twórcy programu zostali zaktualizowani."
 
-#: src/ludamus/gates/web/django/panel.py:953
+#: src/ludamus/gates/web/django/panel.py:999
 msgid "Session type created successfully."
 msgstr "Typ punktu programu został utworzony."
 
-#: src/ludamus/gates/web/django/panel.py:984
-#: src/ludamus/gates/web/django/panel.py:1075
-#: src/ludamus/gates/web/django/panel.py:1214
+#: src/ludamus/gates/web/django/panel.py:1030
+#: src/ludamus/gates/web/django/panel.py:1121
+#: src/ludamus/gates/web/django/panel.py:1260
 msgid "Session type not found."
 msgstr "Typ punktu programu nie został znaleziony."
 
-#: src/ludamus/gates/web/django/panel.py:1187
+#: src/ludamus/gates/web/django/panel.py:1233
 msgid "Session type updated successfully."
 msgstr "Typ punktu programu został zaktualizowany."
 
-#: src/ludamus/gates/web/django/panel.py:1220
+#: src/ludamus/gates/web/django/panel.py:1266
 msgid "Cannot delete session type with existing proposals."
 msgstr "Nie można usunąć typu punktu programu z istniejącymi zgłoszeniami."
 
-#: src/ludamus/gates/web/django/panel.py:1224
+#: src/ludamus/gates/web/django/panel.py:1270
 msgid "Session type deleted successfully."
 msgstr "Typ punktu programu został usunięty."
 
-#: src/ludamus/gates/web/django/panel.py:1348
+#: src/ludamus/gates/web/django/panel.py:1383
 msgid "Personal data field created successfully."
 msgstr "Pole danych osobowych zostało utworzone."
 
-#: src/ludamus/gates/web/django/panel.py:1372
-#: src/ludamus/gates/web/django/panel.py:1422
-#: src/ludamus/gates/web/django/panel.py:1500
+#: src/ludamus/gates/web/django/panel.py:1407
+#: src/ludamus/gates/web/django/panel.py:1457
+#: src/ludamus/gates/web/django/panel.py:1535
 msgid "Personal data field not found."
 msgstr "Pole danych osobowych nie zostało znalezione."
 
-#: src/ludamus/gates/web/django/panel.py:1475
+#: src/ludamus/gates/web/django/panel.py:1510
 msgid "Personal data field updated successfully."
 msgstr "Pole danych osobowych zostało zaktualizowane."
 
-#: src/ludamus/gates/web/django/panel.py:1508
-#: src/ludamus/gates/web/django/panel.py:1793
+#: src/ludamus/gates/web/django/panel.py:1543
+#: src/ludamus/gates/web/django/panel.py:1816
 msgid "Cannot delete field that is used in session types."
 msgstr "Nie można usunąć pola używanego w typach punktów programu."
 
-#: src/ludamus/gates/web/django/panel.py:1512
+#: src/ludamus/gates/web/django/panel.py:1547
 msgid "Personal data field deleted successfully."
 msgstr "Pole danych osobowych zostało usunięte."
 
-#: src/ludamus/gates/web/django/panel.py:1633
+#: src/ludamus/gates/web/django/panel.py:1656
 msgid "Session field created successfully."
 msgstr "Pole punktu programu zostało utworzone."
 
-#: src/ludamus/gates/web/django/panel.py:1657
-#: src/ludamus/gates/web/django/panel.py:1706
-#: src/ludamus/gates/web/django/panel.py:1785
+#: src/ludamus/gates/web/django/panel.py:1680
+#: src/ludamus/gates/web/django/panel.py:1729
+#: src/ludamus/gates/web/django/panel.py:1808
 msgid "Session field not found."
 msgstr "Pole punktu programu nie zostało znalezione."
 
-#: src/ludamus/gates/web/django/panel.py:1760
+#: src/ludamus/gates/web/django/panel.py:1783
 msgid "Session field updated successfully."
 msgstr "Pole punktu programu zostało zaktualizowane."
 
-#: src/ludamus/gates/web/django/panel.py:1797
+#: src/ludamus/gates/web/django/panel.py:1820
 msgid "Session field deleted successfully."
 msgstr "Pole punktu programu zostało usunięte."
 
-#: src/ludamus/gates/web/django/panel.py:1923
+#: src/ludamus/gates/web/django/panel.py:1946
 msgid "Venue created successfully."
 msgstr "Lokalizacja została utworzona."
 
-#: src/ludamus/gates/web/django/panel.py:1947
-#: src/ludamus/gates/web/django/panel.py:1972
-#: src/ludamus/gates/web/django/panel.py:2010
-#: src/ludamus/gates/web/django/panel.py:2042
-#: src/ludamus/gates/web/django/panel.py:2109
-#: src/ludamus/gates/web/django/panel.py:2134
-#: src/ludamus/gates/web/django/panel.py:2171
-#: src/ludamus/gates/web/django/panel.py:2202
-#: src/ludamus/gates/web/django/panel.py:2251
+#: src/ludamus/gates/web/django/panel.py:1970
+#: src/ludamus/gates/web/django/panel.py:1995
+#: src/ludamus/gates/web/django/panel.py:2033
+#: src/ludamus/gates/web/django/panel.py:2065
+#: src/ludamus/gates/web/django/panel.py:2132
+#: src/ludamus/gates/web/django/panel.py:2157
+#: src/ludamus/gates/web/django/panel.py:2194
+#: src/ludamus/gates/web/django/panel.py:2225
 #: src/ludamus/gates/web/django/panel.py:2274
-#: src/ludamus/gates/web/django/panel.py:2314
-#: src/ludamus/gates/web/django/panel.py:2348
-#: src/ludamus/gates/web/django/panel.py:2396
-#: src/ludamus/gates/web/django/panel.py:2476
-#: src/ludamus/gates/web/django/panel.py:2516
-#: src/ludamus/gates/web/django/panel.py:2548
-#: src/ludamus/gates/web/django/panel.py:2602
-#: src/ludamus/gates/web/django/panel.py:2653
-#: src/ludamus/gates/web/django/panel.py:2720
+#: src/ludamus/gates/web/django/panel.py:2297
+#: src/ludamus/gates/web/django/panel.py:2337
+#: src/ludamus/gates/web/django/panel.py:2371
+#: src/ludamus/gates/web/django/panel.py:2419
+#: src/ludamus/gates/web/django/panel.py:2499
+#: src/ludamus/gates/web/django/panel.py:2539
+#: src/ludamus/gates/web/django/panel.py:2571
+#: src/ludamus/gates/web/django/panel.py:2625
+#: src/ludamus/gates/web/django/panel.py:2676
+#: src/ludamus/gates/web/django/panel.py:2743
 msgid "Venue not found."
 msgstr "Lokalizacja nie została znaleziona."
 
-#: src/ludamus/gates/web/django/panel.py:1986
+#: src/ludamus/gates/web/django/panel.py:2009
 msgid "Venue updated successfully."
 msgstr "Lokalizacja została zaktualizowana."
 
-#: src/ludamus/gates/web/django/panel.py:2048
+#: src/ludamus/gates/web/django/panel.py:2071
 msgid "Cannot delete venue with scheduled sessions."
 msgstr "Nie można usunąć lokalizacji z zaplanowanymi sesjami."
 
-#: src/ludamus/gates/web/django/panel.py:2052
+#: src/ludamus/gates/web/django/panel.py:2075
 msgid "Venue deleted successfully."
 msgstr "Lokalizacja została usunięta."
 
-#: src/ludamus/gates/web/django/panel.py:2147
+#: src/ludamus/gates/web/django/panel.py:2170
 msgid "Venue duplicated successfully."
 msgstr "Lokalizacja została zduplikowana."
 
-#: src/ludamus/gates/web/django/panel.py:2179
+#: src/ludamus/gates/web/django/panel.py:2202
 msgid "No other events available to copy to."
 msgstr "Brak innych wydarzeń do skopiowania."
 
-#: src/ludamus/gates/web/django/panel.py:2226
+#: src/ludamus/gates/web/django/panel.py:2249
 #, python-format
 msgid "Venue copied to %(event)s successfully."
 msgstr "Lokalizacja została skopiowana do %(event)s."
 
-#: src/ludamus/gates/web/django/panel.py:2288
+#: src/ludamus/gates/web/django/panel.py:2311
 msgid "Area created successfully."
 msgstr "Strefa została utworzona."
 
-#: src/ludamus/gates/web/django/panel.py:2320
-#: src/ludamus/gates/web/django/panel.py:2354
-#: src/ludamus/gates/web/django/panel.py:2402
-#: src/ludamus/gates/web/django/panel.py:2482
-#: src/ludamus/gates/web/django/panel.py:2522
-#: src/ludamus/gates/web/django/panel.py:2554
-#: src/ludamus/gates/web/django/panel.py:2608
-#: src/ludamus/gates/web/django/panel.py:2659
-#: src/ludamus/gates/web/django/panel.py:2726
+#: src/ludamus/gates/web/django/panel.py:2343
+#: src/ludamus/gates/web/django/panel.py:2377
+#: src/ludamus/gates/web/django/panel.py:2425
+#: src/ludamus/gates/web/django/panel.py:2505
+#: src/ludamus/gates/web/django/panel.py:2545
+#: src/ludamus/gates/web/django/panel.py:2577
+#: src/ludamus/gates/web/django/panel.py:2631
+#: src/ludamus/gates/web/django/panel.py:2682
+#: src/ludamus/gates/web/django/panel.py:2749
 msgid "Area not found."
 msgstr "Strefa nie została znaleziona."
 
-#: src/ludamus/gates/web/django/panel.py:2369
+#: src/ludamus/gates/web/django/panel.py:2392
 msgid "Area updated successfully."
 msgstr "Strefa została zaktualizowana."
 
-#: src/ludamus/gates/web/django/panel.py:2408
+#: src/ludamus/gates/web/django/panel.py:2431
 msgid "Cannot delete area with scheduled sessions."
 msgstr "Nie można usunąć strefy z zaplanowanymi sesjami."
 
-#: src/ludamus/gates/web/django/panel.py:2412
+#: src/ludamus/gates/web/django/panel.py:2435
 msgid "Area deleted successfully."
 msgstr "Strefa została usunięta."
 
-#: src/ludamus/gates/web/django/panel.py:2569
+#: src/ludamus/gates/web/django/panel.py:2592
 msgid "Space created successfully."
 msgstr "Sala została utworzona."
 
-#: src/ludamus/gates/web/django/panel.py:2614
-#: src/ludamus/gates/web/django/panel.py:2665
-#: src/ludamus/gates/web/django/panel.py:2732
+#: src/ludamus/gates/web/django/panel.py:2637
+#: src/ludamus/gates/web/django/panel.py:2688
+#: src/ludamus/gates/web/django/panel.py:2755
 msgid "Space not found."
 msgstr "Sala nie została znaleziona."
 
-#: src/ludamus/gates/web/django/panel.py:2686
+#: src/ludamus/gates/web/django/panel.py:2709
 msgid "Space updated successfully."
 msgstr "Sala została zaktualizowana."
 
-#: src/ludamus/gates/web/django/panel.py:2743
+#: src/ludamus/gates/web/django/panel.py:2766
 msgid "Cannot delete space with scheduled sessions."
 msgstr "Nie można usunąć sali z zaplanowanymi sesjami."
 
-#: src/ludamus/gates/web/django/panel.py:2752
+#: src/ludamus/gates/web/django/panel.py:2775
 msgid "Space deleted successfully."
 msgstr "Sala została usunięta."
 
-#: src/ludamus/gates/web/django/panel.py:2935
+#: src/ludamus/gates/web/django/panel.py:2958
 msgid "Time slot created successfully."
 msgstr "Blok czasowy został utworzony."
 
-#: src/ludamus/gates/web/django/panel.py:2954
-#: src/ludamus/gates/web/django/panel.py:2981
-#: src/ludamus/gates/web/django/panel.py:3032
+#: src/ludamus/gates/web/django/panel.py:2977
+#: src/ludamus/gates/web/django/panel.py:3004
+#: src/ludamus/gates/web/django/panel.py:3055
 msgid "Time slot not found."
 msgstr "Blok czasowy nie został znaleziony."
 
-#: src/ludamus/gates/web/django/panel.py:3014
+#: src/ludamus/gates/web/django/panel.py:3037
 msgid "Time slot updated successfully."
 msgstr "Blok czasowy został zaktualizowany."
 
-#: src/ludamus/gates/web/django/panel.py:3038
+#: src/ludamus/gates/web/django/panel.py:3061
 msgid "Cannot delete time slot used in proposals."
 msgstr "Nie można usunąć bloku czasowego używanego w zgłoszeniach."
 
-#: src/ludamus/gates/web/django/panel.py:3042
+#: src/ludamus/gates/web/django/panel.py:3065
 msgid "Time slot deleted successfully."
 msgstr "Blok czasowy został usunięty."
 
-#: src/ludamus/gates/web/django/panel.py:3149
+#: src/ludamus/gates/web/django/panel.py:3172
 msgid "Track created successfully."
 msgstr "Blok programowy został utworzony."
 
-#: src/ludamus/gates/web/django/panel.py:3168
-#: src/ludamus/gates/web/django/panel.py:3198
-#: src/ludamus/gates/web/django/panel.py:3257
+#: src/ludamus/gates/web/django/panel.py:3191
+#: src/ludamus/gates/web/django/panel.py:3221
+#: src/ludamus/gates/web/django/panel.py:3280
 msgid "Track not found."
 msgstr "Blok programowy nie został znaleziony."
 
-#: src/ludamus/gates/web/django/panel.py:3237
+#: src/ludamus/gates/web/django/panel.py:3260
 msgid "Track updated successfully."
 msgstr "Blok programowy został zaktualizowany."
 
-#: src/ludamus/gates/web/django/panel.py:3261
+#: src/ludamus/gates/web/django/panel.py:3284
 msgid "Track deleted."
 msgstr "Blok programowy usunięty."
 
-#: src/ludamus/gates/web/django/panel.py:3299
-#: src/ludamus/gates/web/django/panel.py:3390
-#: src/ludamus/gates/web/django/panel.py:3414
+#: src/ludamus/gates/web/django/panel.py:3322
+#: src/ludamus/gates/web/django/panel.py:3415
+#: src/ludamus/gates/web/django/panel.py:3439
 msgid "Facilitator not found."
 msgstr "Twórca programu nie został znaleziony."
 
-#: src/ludamus/gates/web/django/panel.py:3362
+#: src/ludamus/gates/web/django/panel.py:3385
 msgid "Facilitator created successfully."
 msgstr "Twórca programu został utworzony."
 
-#: src/ludamus/gates/web/django/panel.py:3460
+#: src/ludamus/gates/web/django/panel.py:3485
 msgid "Facilitator updated successfully."
 msgstr "Twórca programu został zaktualizowany."
 
-#: src/ludamus/gates/web/django/panel.py:3513
+#: src/ludamus/gates/web/django/panel.py:3538
 msgid "Select at least two facilitators and choose a merge target."
 msgstr "Wybierz co najmniej dwóch twórców programu i wskaż cel scalania."
 
-#: src/ludamus/gates/web/django/panel.py:3528
+#: src/ludamus/gates/web/django/panel.py:3553
 msgid "Cannot merge facilitators that each have a linked user account."
-msgstr "Nie można scalić twórców programu, z których każdy ma powiązane konto użytkownika."
+msgstr ""
+"Nie można scalić twórców programu, z których każdy ma powiązane konto "
+"użytkownika."
 
-#: src/ludamus/gates/web/django/panel.py:3536
+#: src/ludamus/gates/web/django/panel.py:3561
 msgid "Facilitators merged successfully."
 msgstr "Twórcy programu zostali pomyślnie scaleni."
 
@@ -1703,13 +1706,28 @@ msgid "Active"
 msgstr "Aktywne"
 
 #: src/ludamus/gates/web/django/templatetags/cfp_tags.py:111
-#: src/ludamus/templates/panel/facilitator-detail.html:67
+#: src/ludamus/templates/panel/facilitator-detail.html:69
 msgid "Yes"
 msgstr "Tak"
 
 #: src/ludamus/gates/web/django/templatetags/cfp_tags.py:111
 msgid "No"
 msgstr "Nie"
+
+#: src/ludamus/mills/chronology.py:275
+#, python-format
+msgid "Room occupied by: %(title)s"
+msgstr "Sala zajęta przez: %(title)s"
+
+#: src/ludamus/mills/chronology.py:292
+#, python-format
+msgid "Room fits %(capacity)s people, session requires %(limit)s"
+msgstr "Sala mieści %(capacity)s os., wymagane %(limit)s"
+
+#: src/ludamus/mills/chronology.py:313
+#, python-format
+msgid "%(name)s facilitates simultaneously: %(title)s"
+msgstr "%(name)s prowadzi równocześnie: %(title)s"
 
 #: src/ludamus/templates/404_dynamic.html:5
 msgid "Page Not Found"
@@ -1802,7 +1820,7 @@ msgstr "Prowadzący"
 #: src/ludamus/templates/chronology/accept_proposal.html:27
 #: src/ludamus/templates/chronology/event.html:609
 #: src/ludamus/templates/panel/proposal-create.html:109
-#: src/ludamus/templates/panel/proposal-detail.html:84
+#: src/ludamus/templates/panel/proposal-detail.html:82
 #: src/ludamus/templates/panel/proposal-edit.html:96
 msgid "Participants Limit"
 msgstr "Limit uczestników"
@@ -1828,7 +1846,7 @@ msgstr "Pola punktu programu"
 #: src/ludamus/templates/chronology/accept_proposal.html:52
 #: src/ludamus/templates/chronology/event.html:645
 #: src/ludamus/templates/panel/proposal-create.html:81
-#: src/ludamus/templates/panel/proposal-detail.html:66
+#: src/ludamus/templates/panel/proposal-detail.html:64
 #: src/ludamus/templates/panel/proposal-edit.html:68
 msgid "Requirements"
 msgstr "Wymagania"
@@ -1901,6 +1919,8 @@ msgstr "Uczestnicy"
 #: src/ludamus/templates/chronology/anonymous_manage.html:77
 #: src/ludamus/templates/chronology/enroll_select.html:35
 #: src/ludamus/templates/chronology/event.html:766
+#: src/ludamus/templates/panel/parts/timetable-grid.html:41
+#: src/ludamus/templates/panel/timetable-log.html:45
 msgid "Time"
 msgstr "Czas"
 
@@ -1908,7 +1928,7 @@ msgstr "Czas"
 #: src/ludamus/templates/chronology/enroll_select.html:45
 #: src/ludamus/templates/chronology/event.html:785
 #: src/ludamus/templates/panel/proposal-create.html:122
-#: src/ludamus/templates/panel/proposal-detail.html:90
+#: src/ludamus/templates/panel/proposal-detail.html:88
 #: src/ludamus/templates/panel/proposal-edit.html:109
 msgid "Minimum Age"
 msgstr "Minimalny Wiek"
@@ -2120,6 +2140,7 @@ msgstr "Dołącz do listy oczekujących"
 #: src/ludamus/templates/panel/space-edit.html:19
 #: src/ludamus/templates/panel/time-slot-create.html:20
 #: src/ludamus/templates/panel/time-slot-edit.html:20
+#: src/ludamus/templates/panel/timetable.html:20
 #: src/ludamus/templates/panel/track-create.html:19
 #: src/ludamus/templates/panel/track-edit.html:19
 #: src/ludamus/templates/panel/venue-copy.html:17
@@ -2185,12 +2206,13 @@ msgid "Completed"
 msgstr "Ukończone"
 
 #: src/ludamus/templates/chronology/event.html:53
-#: src/ludamus/templates/panel/base.html:168
+#: src/ludamus/templates/panel/base.html:173
 #: src/ludamus/templates/panel/proposal-settings.html:63
 msgid "Proposals Open"
 msgstr "Zgłoszenia otwarte"
 
 #: src/ludamus/templates/chronology/event.html:80
+#: src/ludamus/templates/panel/timetable-log.html:48
 msgid "Session"
 msgid_plural "Sessions"
 msgstr[0] "Punkt programu"
@@ -2416,6 +2438,8 @@ msgid "Max"
 msgstr "Max"
 
 #: src/ludamus/templates/chronology/event.html:338
+#: src/ludamus/templates/panel/parts/timetable-session-list.html:12
+#: src/ludamus/templates/panel/timetable-log.html:27
 msgid "All"
 msgstr "Wszystkie"
 
@@ -2495,6 +2519,7 @@ msgid "Preferred Times"
 msgstr "Preferowane czasy"
 
 #: src/ludamus/templates/chronology/event.html:512
+#: src/ludamus/templates/panel/timetable-log.html:47
 msgid "Action"
 msgstr "Akcja"
 
@@ -2697,6 +2722,8 @@ msgstr "(wymagane)"
 #: src/ludamus/templates/chronology/propose/parts/personal.html:104
 #: src/ludamus/templates/panel/facilitator-edit.html:88
 #: src/ludamus/templates/panel/facilitator-edit.html:110
+#: src/ludamus/templates/panel/proposal-edit.html:170
+#: src/ludamus/templates/panel/proposal-edit.html:192
 msgid "Or type a custom value"
 msgstr "Lub wpisz własną wartość"
 
@@ -2929,7 +2956,7 @@ msgstr "Awatar"
 #: src/ludamus/templates/crowd/user/avatar.html:14
 #: src/ludamus/templates/crowd/user/connected.html:14
 #: src/ludamus/templates/crowd/user/edit.html:14
-#: src/ludamus/templates/panel/facilitator-detail.html:60
+#: src/ludamus/templates/panel/facilitator-detail.html:62
 #: src/ludamus/templates/panel/facilitator-edit.html:52
 msgid "Personal Information"
 msgstr "Dane osobiste"
@@ -3637,7 +3664,7 @@ msgid "Backoffice"
 msgstr "Panel organizatora"
 
 #: src/ludamus/templates/panel/base.html:84
-#: src/ludamus/templates/panel/base.html:152
+#: src/ludamus/templates/panel/base.html:157
 #: src/ludamus/templates/panel/index.html:5
 #: src/ludamus/templates/panel/index.html:8
 msgid "Dashboard"
@@ -3674,16 +3701,20 @@ msgstr "Zgłoszenia"
 #: src/ludamus/templates/panel/facilitator-merge.html:12
 #: src/ludamus/templates/panel/facilitators.html:5
 #: src/ludamus/templates/panel/facilitators.html:8
-#: src/ludamus/templates/panel/proposal-detail.html:117
-#: src/ludamus/templates/panel/proposal-edit.html:134
+#: src/ludamus/templates/panel/proposal-detail.html:115
+#: src/ludamus/templates/panel/proposal-edit.html:206
 msgid "Facilitators"
 msgstr "Twórcy programu"
 
-#: src/ludamus/templates/panel/base.html:112
+#: src/ludamus/templates/panel/base.html:114
+msgid "Harmonogram"
+msgstr ""
+
+#: src/ludamus/templates/panel/base.html:117
 msgid "Settings"
 msgstr "Ustawienia"
 
-#: src/ludamus/templates/panel/base.html:116
+#: src/ludamus/templates/panel/base.html:121
 #: src/ludamus/templates/panel/display-settings.html:8
 #: src/ludamus/templates/panel/proposal-settings.html:8
 #: src/ludamus/templates/panel/settings.html:5
@@ -3691,19 +3722,19 @@ msgstr "Ustawienia"
 msgid "Event Settings"
 msgstr "Ustawienia wydarzenia"
 
-#: src/ludamus/templates/panel/base.html:126
+#: src/ludamus/templates/panel/base.html:131
 msgid "Back to website"
 msgstr "Wróć do strony"
 
-#: src/ludamus/templates/panel/base.html:134
+#: src/ludamus/templates/panel/base.html:139
 msgid "Organizer"
 msgstr "Organizator"
 
-#: src/ludamus/templates/panel/base.html:165
+#: src/ludamus/templates/panel/base.html:170
 msgid "Event:"
 msgstr "Wydarzenie:"
 
-#: src/ludamus/templates/panel/base.html:170
+#: src/ludamus/templates/panel/base.html:175
 msgid "Proposals Closed"
 msgstr "Zgłoszenia zamknięte"
 
@@ -3869,7 +3900,8 @@ msgstr "Skonfiguruj pola danych twórcy"
 #: src/ludamus/templates/panel/cfp-edit.html:299
 #: src/ludamus/templates/panel/cfp.html:31
 #: src/ludamus/templates/panel/personal-data-fields.html:28
-#: src/ludamus/templates/panel/proposal-detail.html:101
+#: src/ludamus/templates/panel/proposal-detail.html:99
+#: src/ludamus/templates/panel/proposal-edit.html:134
 #: src/ludamus/templates/panel/session-fields.html:5
 #: src/ludamus/templates/panel/session-fields.html:28
 #: src/ludamus/templates/panel/time-slots.html:31
@@ -4021,17 +4053,17 @@ msgstr "Nazwa wyświetlana"
 msgid "e.g., Jan Kowalski"
 msgstr "np. Jan Kowalski"
 
-#: src/ludamus/templates/panel/facilitator-detail.html:45
+#: src/ludamus/templates/panel/facilitator-detail.html:47
 #: src/ludamus/templates/panel/facilitators.html:61
 msgid "Linked User"
 msgstr "Powiązany użytkownik"
 
-#: src/ludamus/templates/panel/facilitator-detail.html:48
+#: src/ludamus/templates/panel/facilitator-detail.html:50
 #: src/ludamus/templates/panel/facilitators.html:88
 msgid "Linked"
 msgstr "Powiązany"
 
-#: src/ludamus/templates/panel/facilitator-detail.html:50
+#: src/ludamus/templates/panel/facilitator-detail.html:52
 #: src/ludamus/templates/panel/facilitators.html:90
 msgid "None"
 msgstr "Brak"
@@ -4059,8 +4091,7 @@ msgstr ""
 "usunięte."
 
 #: src/ludamus/templates/panel/facilitator-merge.html:38
-#: src/ludamus/templates/panel/proposal-detail.html:131
-#: src/ludamus/templates/panel/proposal-edit.html:137
+#: src/ludamus/templates/panel/proposal-edit.html:209
 msgid "Search by name…"
 msgstr "Szukaj po nazwie…"
 
@@ -4079,8 +4110,7 @@ msgid "Keep"
 msgstr "Zachowaj"
 
 #: src/ludamus/templates/panel/facilitator-merge.html:98
-#: src/ludamus/templates/panel/proposal-detail.html:148
-#: src/ludamus/templates/panel/proposal-edit.html:154
+#: src/ludamus/templates/panel/proposal-edit.html:227
 msgid "No facilitators match your search."
 msgstr "Żaden twórca programu nie pasuje do wyszukiwania."
 
@@ -4130,8 +4160,127 @@ msgid "Program Hosts"
 msgstr "Twórcy programu"
 
 #: src/ludamus/templates/panel/index.html:47
+#: src/ludamus/templates/panel/parts/timetable-grid.html:17
 msgid "Rooms"
 msgstr "Sale"
+
+#: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:6
+msgid "All clear"
+msgstr "Brak problemów"
+
+#: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:10
+#, python-format
+msgid "%(count)s conflict"
+msgid_plural "%(count)s conflicts"
+msgstr[0] "%(count)s konflikt"
+msgstr[1] "%(count)s konflikty"
+msgstr[2] "%(count)s konfliktów"
+msgstr[3] "%(count)s konfliktów"
+
+#: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:32
+#: src/ludamus/templates/panel/timetable.html:35
+msgid "Track:"
+msgstr "Blok:"
+
+#: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:34
+msgid "managed by:"
+msgstr "zarządza:"
+
+#: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:44
+msgid "Show session"
+msgstr "Pokaż punkt programu"
+
+#: src/ludamus/templates/panel/parts/timetable-grid.html:4
+msgid "No rooms for this track."
+msgstr "Brak sal dla tego bloku programowego."
+
+#: src/ludamus/templates/panel/parts/timetable-grid.html:5
+msgid "Add rooms or select a different track."
+msgstr "Dodaj sale lub wybierz inny blok programowy."
+
+#: src/ludamus/templates/panel/parts/timetable-grid.html:9
+msgid "No time slots for this event."
+msgstr "Brak slotów czasowych dla tego wydarzenia."
+
+#: src/ludamus/templates/panel/parts/timetable-grid.html:10
+msgid "Check the event time range."
+msgstr "Sprawdź czas trwania wydarzenia."
+
+#: src/ludamus/templates/panel/parts/timetable-grid.html:18
+msgid "total"
+msgstr "łącznie"
+
+#: src/ludamus/templates/panel/parts/timetable-grid.html:23
+#: src/ludamus/templates/panel/time-slots.html:55
+msgid "Previous"
+msgstr "Poprzednia"
+
+#: src/ludamus/templates/panel/parts/timetable-grid.html:28
+#: src/ludamus/templates/panel/time-slots.html:66
+msgid "Next"
+msgstr "Następna"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:3
+msgid "Session details"
+msgstr "Szczegóły punktu programu"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:16
+msgid "No facilitator"
+msgstr "Brak twórcy programu"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:24
+#, python-format
+msgid "%(age)s+"
+msgstr ""
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:34
+#: src/ludamus/templates/panel/proposal-create.html:90
+#: src/ludamus/templates/panel/proposal-detail.html:72
+#: src/ludamus/templates/panel/proposal-edit.html:77
+msgid "Needs"
+msgstr "Potrzeby"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:40
+msgid "Assignment"
+msgstr "Przypisanie"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:46
+#: src/ludamus/templates/panel/timetable-log.html:23
+msgid "Room"
+msgstr "Sala"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:55
+msgid "Unassign"
+msgstr "Usuń z harmonogramu"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:59
+msgid "Not assigned"
+msgstr "Nieprzypisane"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:63
+msgid "Assign"
+msgstr "Przypisz"
+
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:69
+msgid "Preferred slots"
+msgstr "Preferowane bloki czasowe"
+
+#: src/ludamus/templates/panel/parts/timetable-session-list.html:4
+#, python-format
+msgid "%(count)s session"
+msgid_plural "%(count)s sessions"
+msgstr[0] "%(count)s punkt programu"
+msgstr[1] "%(count)s punkty programu"
+msgstr[2] "%(count)s punktów programu"
+msgstr[3] "%(count)s punktów programu"
+
+#: src/ludamus/templates/panel/parts/timetable-session-list.html:28
+msgid "Any duration"
+msgstr "Każdy czas"
+
+#: src/ludamus/templates/panel/parts/timetable-session-list.html:64
+msgid "No unassigned sessions."
+msgstr "Brak nieprzypisanych punktów programu."
 
 #: src/ludamus/templates/panel/personal-data-field-create.html:5
 #: src/ludamus/templates/panel/personal-data-field-create.html:8
@@ -4351,12 +4500,6 @@ msgstr ""
 msgid "Create Session"
 msgstr "Utwórz punkt programu"
 
-#: src/ludamus/templates/panel/proposal-create.html:90
-#: src/ludamus/templates/panel/proposal-detail.html:74
-#: src/ludamus/templates/panel/proposal-edit.html:77
-msgid "Needs"
-msgstr "Potrzeby"
-
 #: src/ludamus/templates/panel/proposal-detail.html:13
 msgid "Proposal Details"
 msgstr "Szczegóły zgłoszenia"
@@ -4369,17 +4512,13 @@ msgstr "Czy na pewno chcesz odrzucić to zgłoszenie?"
 msgid "Reject"
 msgstr "Odrzuć"
 
-#: src/ludamus/templates/panel/proposal-detail.html:81
+#: src/ludamus/templates/panel/proposal-detail.html:79
 msgid "Details"
 msgstr "Szczegóły"
 
-#: src/ludamus/templates/panel/proposal-detail.html:123
+#: src/ludamus/templates/panel/proposal-detail.html:121
 msgid "No facilitators assigned."
 msgstr "Brak przypisanych twórców programu."
-
-#: src/ludamus/templates/panel/proposal-detail.html:150
-msgid "Update Facilitators"
-msgstr "Aktualizuj twórców programu"
 
 #: src/ludamus/templates/panel/proposal-edit.html:5
 msgid "Edit Proposal"
@@ -4428,10 +4567,12 @@ msgid "Submitted Proposals"
 msgstr "Przesłane zgłoszenia"
 
 #: src/ludamus/templates/panel/proposals.html:35
+#: src/ludamus/templates/panel/timetable-overview.html:100
 msgid "Track"
 msgstr "Blok programowy"
 
 #: src/ludamus/templates/panel/proposals.html:41
+#: src/ludamus/templates/panel/timetable.html:41
 msgid "All tracks"
 msgstr "Wszystkie bloki"
 
@@ -4472,6 +4613,8 @@ msgid "Rejected"
 msgstr "Odrzucone"
 
 #: src/ludamus/templates/panel/proposals.html:171
+#: src/ludamus/templates/panel/timetable-overview.html:52
+#: src/ludamus/templates/panel/timetable-overview.html:102
 msgid "Scheduled"
 msgstr "Zaplanowane"
 
@@ -4647,18 +4790,10 @@ msgstr ""
 "Twórcy wybierają, w których blokach czasowych są dostępni podczas składania "
 "zgłoszeń. Punkty programu są następnie planowane w tych blokach."
 
-#: src/ludamus/templates/panel/time-slots.html:55
-msgid "Previous"
-msgstr "Poprzednia"
-
 #: src/ludamus/templates/panel/time-slots.html:60
 #, python-format
 msgid "Page %(current)s of %(total)s"
 msgstr "Strona %(current)s z %(total)s"
-
-#: src/ludamus/templates/panel/time-slots.html:66
-msgid "Next"
-msgstr "Następna"
 
 #: src/ludamus/templates/panel/time-slots.html:82
 msgid "Event starts at"
@@ -4698,6 +4833,146 @@ msgid "No time slots defined. Add time slots to configure the event schedule."
 msgstr ""
 "Nie zdefiniowano bloków czasowych. Dodaj bloki czasowe, aby skonfigurować "
 "harmonogram wydarzenia."
+
+#: src/ludamus/templates/panel/timetable-log.html:5
+#: src/ludamus/templates/panel/timetable-log.html:15
+#: src/ludamus/templates/panel/timetable-overview.html:15
+#: src/ludamus/templates/panel/timetable.html:27
+msgid "Activity Log"
+msgstr "Dziennik zmian"
+
+#: src/ludamus/templates/panel/timetable-log.html:8
+msgid "Schedule Activity Log"
+msgstr "Dziennik zmian harmonogramu"
+
+#: src/ludamus/templates/panel/timetable-log.html:14
+#: src/ludamus/templates/panel/timetable-overview.html:14
+#: src/ludamus/templates/panel/timetable.html:6
+#: src/ludamus/templates/panel/timetable.html:9
+#: src/ludamus/templates/panel/timetable.html:26
+msgid "Schedule"
+msgstr "Harmonogram"
+
+#: src/ludamus/templates/panel/timetable-log.html:16
+#: src/ludamus/templates/panel/timetable-overview.html:5
+#: src/ludamus/templates/panel/timetable-overview.html:8
+#: src/ludamus/templates/panel/timetable-overview.html:16
+#: src/ludamus/templates/panel/timetable.html:28
+msgid "Organizer Overview"
+msgstr "Przegląd harmonogramu"
+
+#: src/ludamus/templates/panel/timetable-log.html:36
+msgid "Clear filters"
+msgstr "Wyczyść filtry"
+
+#: src/ludamus/templates/panel/timetable-log.html:49
+msgid "Change"
+msgstr "Zmiana"
+
+#: src/ludamus/templates/panel/timetable-log.html:60
+msgid "Assigned"
+msgstr "Przypisano"
+
+#: src/ludamus/templates/panel/timetable-log.html:62
+msgid "Removed"
+msgstr "Usunięto"
+
+#: src/ludamus/templates/panel/timetable-log.html:64
+msgid "Reverted"
+msgstr "Cofnięto"
+
+#: src/ludamus/templates/panel/timetable-log.html:86
+msgid "Are you sure you want to revert this change?"
+msgstr "Czy na pewno cofnąć tę zmianę?"
+
+#: src/ludamus/templates/panel/timetable-log.html:91
+msgid "Revert"
+msgstr "Cofnij"
+
+#: src/ludamus/templates/panel/timetable-log.html:102
+msgid "No entries in the log."
+msgstr "Brak wpisów w dzienniku."
+
+#: src/ludamus/templates/panel/timetable-overview.html:22
+msgid "Occupancy map"
+msgstr "Mapa obłożenia"
+
+#: src/ludamus/templates/panel/timetable-overview.html:51
+msgid "Empty"
+msgstr "Puste"
+
+#: src/ludamus/templates/panel/timetable-overview.html:53
+msgid "Conflict"
+msgstr "Konflikt"
+
+#: src/ludamus/templates/panel/timetable-overview.html:56
+msgid "No rooms for this event."
+msgstr "Brak sal dla tego wydarzenia."
+
+#: src/ludamus/templates/panel/timetable-overview.html:61
+msgid "All conflicts"
+msgstr "Wszystkie konflikty"
+
+#: src/ludamus/templates/panel/timetable-overview.html:67
+msgid "Room overlaps"
+msgstr "Nakładanie sal"
+
+#: src/ludamus/templates/panel/timetable-overview.html:69
+msgid "Facilitator overlaps"
+msgstr "Nakładanie twórców programu"
+
+#: src/ludamus/templates/panel/timetable-overview.html:71
+msgid "Capacity exceeded"
+msgstr "Przekroczona pojemność"
+
+#: src/ludamus/templates/panel/timetable-overview.html:82
+msgid "track:"
+msgstr "blok:"
+
+#: src/ludamus/templates/panel/timetable-overview.html:90
+msgid "No conflicts."
+msgstr "Brak konfliktów."
+
+#: src/ludamus/templates/panel/timetable-overview.html:95
+msgid "Track progress"
+msgstr "Postęp bloków"
+
+#: src/ludamus/templates/panel/timetable-overview.html:101
+msgid "Managed by"
+msgstr "Zarządza"
+
+#: src/ludamus/templates/panel/timetable-overview.html:103
+msgid "Progress"
+msgstr "Postęp"
+
+#: src/ludamus/templates/panel/timetable-overview.html:114
+msgid "unassigned"
+msgstr "nieprzypisane"
+
+#: src/ludamus/templates/panel/timetable-overview.html:131
+msgid "No tracks for this event."
+msgstr "Brak bloków programowych dla tego wydarzenia."
+
+#: src/ludamus/templates/panel/timetable.html:16
+msgid "Click a position on the grid to place the session"
+msgstr "Kliknij pozycję na siatce, aby umieścić punkt programu"
+
+#: src/ludamus/templates/panel/timetable.html:57
+msgid "Sessions to assign"
+msgstr "Punkty programu do przypisania"
+
+#: src/ludamus/templates/panel/timetable.html:61
+msgid "Search…"
+msgstr "Szukaj…"
+
+#: src/ludamus/templates/panel/timetable.html:71
+#: src/ludamus/templates/panel/timetable.html:87
+msgid "Loading…"
+msgstr "Ładowanie…"
+
+#: src/ludamus/templates/panel/timetable.html:83
+msgid "Conflicts"
+msgstr "Konflikty"
 
 #: src/ludamus/templates/panel/track-create.html:5
 #: src/ludamus/templates/panel/track-create.html:8
