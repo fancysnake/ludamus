@@ -90,7 +90,7 @@ class TestTimetablePageView:
         )
         assert response.context["grid"].spaces == []
 
-    def test_grid_shows_spaces_and_rows(
+    def test_grid_shows_spaces_and_time_labels(
         self, authenticated_client, active_user, sphere, event, space
     ):
         sphere.managers.add(active_user)
@@ -101,7 +101,7 @@ class TestTimetablePageView:
         grid = response.context["grid"]
         assert len(grid.spaces) == 1
         assert grid.spaces[0].pk == space.pk
-        assert len(grid.rows) > 0
+        assert len(grid.time_labels) > 0
 
     def test_grid_contains_scheduled_session(
         self, authenticated_client, active_user, sphere, event, session, space
@@ -115,10 +115,9 @@ class TestTimetablePageView:
 
         assert response.status_code == HTTPStatus.OK
         grid = response.context["grid"]
-        first_row = grid.rows[0]
-        scheduled_cells = [c for c in first_row.cells if c.agenda_item is not None]
-        assert len(scheduled_cells) == 1
-        assert scheduled_cells[0].agenda_item.session_title == session.title
+        col = next(c for c in grid.columns if c.space.pk == space.pk)
+        assert len(col.sessions) == 1
+        assert col.sessions[0].agenda_item.session_title == session.title
 
     def test_filters_by_track(
         self, authenticated_client, active_user, sphere, event, space, area

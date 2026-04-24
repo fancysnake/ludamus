@@ -9,23 +9,35 @@ from ludamus.pacts.legacy import AgendaItemDTO, SpaceDTO
 
 TIMETABLE_ROOM_PAGE_SIZE = 20
 TIMETABLE_SLOT_MINUTES = 30
+TIMETABLE_SLOT_HEIGHT_PX = 40  # pixels per TIMETABLE_SLOT_MINUTES block
 
 
-class TimetableCellDTO(BaseModel):
-    space_pk: int
-    agenda_item: AgendaItemDTO | None = None
-    rowspan: int = 1
-    is_continuation: bool = False
+class SessionPositionDTO(BaseModel):
+    agenda_item: AgendaItemDTO
+    top_px: int
+    height_px: int
+    left_pct: float = 0.0
+    width_pct: float = 100.0
 
 
-class TimetableRowDTO(BaseModel):
+class TimeLabelDTO(BaseModel):
     time: datetime
-    cells: list[TimetableCellDTO]
+    top_px: int
+
+
+class SpaceColumnDTO(BaseModel):
+    space: SpaceDTO
+    sessions: list[SessionPositionDTO] = []
 
 
 class TimetableGridDTO(BaseModel):
     spaces: list[SpaceDTO]
-    rows: list[TimetableRowDTO]
+    columns: list[SpaceColumnDTO]
+    time_labels: list[TimeLabelDTO]
+    total_height_px: int
+    event_start_iso: str
+    slot_minutes: int
+    slot_height_px: int
     page: int
     total_pages: int
     total_spaces: int
