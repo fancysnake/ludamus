@@ -77,7 +77,14 @@
                     <div class="space-y-1">
                         {% for conflict in conflicts %}
                             <div class="text-xs text-neutral-600 pl-2 border-l-2 {% if conflict.severity == 'error' %}border-red-400{% else %}border-yellow-400{% endif %}">
-                                {{ conflict.session_title }} — {{ conflict.description }}
+                                {{ conflict.session_title }} —
+                                {% if conflict.type == "space_overlap" %}
+                                    {% blocktranslate with title=conflict.session_title %}Room occupied by: {{ title }}{% endblocktranslate %}
+                                {% elif conflict.type == "capacity_exceeded" %}
+                                    {% blocktranslate with capacity=conflict.space_capacity limit=conflict.session_limit %}Room fits {{ capacity }} people, session requires {{ limit }}{% endblocktranslate %}
+                                {% elif conflict.type == "facilitator_overlap" %}
+                                    {% blocktranslate with name=conflict.facilitator_name title=conflict.session_title %}{{ name }} facilitates simultaneously: {{ title }}{% endblocktranslate %}
+                                {% endif %}
                                 {% if conflict.track_name %}
                                     <span class="text-neutral-400">({% translate "track:" %} {{ conflict.track_name }})</span>
                                 {% endif %}
