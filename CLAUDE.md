@@ -9,6 +9,7 @@ mise run start      # dev server :8000
 mise run test       # all tests
 mise run check      # format + lint
 mise run dj <cmd>   # django-admin
+mise tasks          # list all tasks with descriptions
 ```
 
 ## Architecture
