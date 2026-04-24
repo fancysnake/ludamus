@@ -59,7 +59,9 @@ class ConflictDTO(BaseModel):
     severity: ConflictSeverity
     session_title: str
     session_pk: int
-    description: str
+    facilitator_name: str | None = None
+    space_capacity: int | None = None
+    session_limit: int | None = None
     track_name: str | None = None
     manager_names: list[str] = []
 

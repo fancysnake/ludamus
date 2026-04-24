@@ -5,8 +5,6 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-from django.utils.translation import gettext as _
-
 from ludamus.pacts import (
     NotFoundError,
     ScheduleChangeAction,
@@ -272,8 +270,6 @@ class ConflictDetectionService:
                     severity=ConflictSeverity.ERROR,
                     session_title=item.session_title,
                     session_pk=item.session_id,
-                    description=_("Room occupied by: %(title)s")
-                    % {"title": item.session_title},
                 )
                 for item in overlapping_in_space
             ]
@@ -288,10 +284,8 @@ class ConflictDetectionService:
                     severity=ConflictSeverity.WARNING,
                     session_title=session.title,
                     session_pk=session_pk,
-                    description=_(
-                        "Room fits %(capacity)s people, session requires %(limit)s"
-                    )
-                    % {"capacity": space.capacity, "limit": session.participants_limit},
+                    space_capacity=space.capacity,
+                    session_limit=session.participants_limit,
                 )
             )
 
@@ -310,11 +304,7 @@ class ConflictDetectionService:
                         severity=ConflictSeverity.ERROR,
                         session_title=item.session_title,
                         session_pk=item.session_id,
-                        description=_("%(name)s facilitates simultaneously: %(title)s")
-                        % {
-                            "name": facilitator.display_name,
-                            "title": item.session_title,
-                        },
+                        facilitator_name=facilitator.display_name,
                     )
                     for item in overlapping_for_facilitator
                 ]
@@ -367,7 +357,7 @@ class ConflictDetectionService:
             severity=conflict.severity,
             session_title=conflict.session_title,
             session_pk=conflict.session_pk,
-            description=conflict.description,
+            facilitator_name=conflict.facilitator_name,
             track_name=track.name,
             manager_names=self._uow.tracks.list_manager_names(track.pk),
         )
