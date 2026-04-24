@@ -5,6 +5,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
+from django.utils.translation import gettext as _
+
 from ludamus.pacts import (
     NotFoundError,
     ScheduleChangeAction,
@@ -13,6 +15,7 @@ from ludamus.pacts import (
 )
 from ludamus.pacts.chronology import (
     TIMETABLE_ROOM_PAGE_SIZE,
+    TIMETABLE_SLOT_HEIGHT_PX,
     TIMETABLE_SLOT_MINUTES,
     ConflictDTO,
     ConflictSeverity,
@@ -21,14 +24,60 @@ from ludamus.pacts.chronology import (
     HeatmapCellStatus,
     HeatmapDTO,
     HeatmapRowDTO,
-    TimetableCellDTO,
+    SessionPositionDTO,
+    SpaceColumnDTO,
+    TimeLabelDTO,
     TimetableGridDTO,
-    TimetableRowDTO,
     TrackProgressDTO,
 )
 
 if TYPE_CHECKING:
     from ludamus.pacts import AgendaItemDTO, UnitOfWorkProtocol
+
+
+def _position_sessions(
+    items: list[AgendaItemDTO], event_start: datetime, px_per_minute: float
+) -> list[SessionPositionDTO]:
+    # Compute absolute pixel positions for sessions in a single space column.
+    # Overlapping sessions are placed side by side by splitting the column width.
+    if not items:
+        return []
+
+    # Group items into non-overlapping clusters using a sweep
+    groups: list[list[AgendaItemDTO]] = []
+    current_group: list[AgendaItemDTO] = []
+    group_end: datetime | None = None
+
+    for item in items:
+        if group_end is None or item.start_time >= group_end:
+            if current_group:
+                groups.append(current_group)
+            current_group = [item]
+            group_end = item.end_time
+        else:
+            current_group.append(item)
+            group_end = max(group_end, item.end_time)
+    if current_group:
+        groups.append(current_group)
+
+    positions: list[SessionPositionDTO] = []
+    for group in groups:
+        n = len(group)
+        width_pct = 100.0 / n
+        for i, item in enumerate(group):
+            offset_min = (item.start_time - event_start).total_seconds() / 60
+            duration_min = (item.end_time - item.start_time).total_seconds() / 60
+            positions.append(
+                SessionPositionDTO(
+                    agenda_item=item,
+                    top_px=round(offset_min * px_per_minute),
+                    height_px=max(20, round(duration_min * px_per_minute)),
+                    left_pct=i * width_pct,
+                    width_pct=width_pct,
+                )
+            )
+
+    return positions
 
 
 class TimetableService:
@@ -51,57 +100,54 @@ class TimetableService:
         start = (space_page - 1) * TIMETABLE_ROOM_PAGE_SIZE
         spaces = all_spaces[start : start + TIMETABLE_ROOM_PAGE_SIZE]
 
-        all_items = self._uow.agenda_items.list_by_event(event_pk)
+        all_items = (
+            self._uow.agenda_items.list_by_track(track_pk)
+            if track_pk is not None
+            else self._uow.agenda_items.list_by_event(event_pk)
+        )
         space_pk_set = {s.pk for s in spaces}
         space_items: dict[int, list[AgendaItemDTO]] = defaultdict(list)
         for item in all_items:
             if item.space_id in space_pk_set:
                 space_items[item.space_id].append(item)
 
-        slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
         total_seconds = (event.end_time - event.start_time).total_seconds()
         num_slots = int(total_seconds / (TIMETABLE_SLOT_MINUTES * 60))
-        time_slots = [event.start_time + slot_delta * i for i in range(num_slots)]
+        total_height_px = num_slots * TIMETABLE_SLOT_HEIGHT_PX
+        px_per_minute = TIMETABLE_SLOT_HEIGHT_PX / TIMETABLE_SLOT_MINUTES
 
-        rows = []
-        for slot_time in time_slots:
-            cells = []
-            for space in spaces:
-                items_in_space = space_items.get(space.pk, [])
-                overlapping = next(
-                    (
-                        it
-                        for it in items_in_space
-                        if it.start_time <= slot_time < it.end_time
+        slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
+        time_labels = [
+            TimeLabelDTO(
+                time=event.start_time + slot_delta * i,
+                top_px=i * TIMETABLE_SLOT_HEIGHT_PX,
+            )
+            for i in range(num_slots)
+        ]
+
+        columns: list[SpaceColumnDTO] = []
+        for space in spaces:
+            items_for_space = space_items.get(space.pk, [])
+            items_for_space.sort(key=lambda x: x.start_time)
+            columns.append(
+                SpaceColumnDTO(
+                    space=space,
+                    sessions=_position_sessions(
+                        items_for_space,
+                        event_start=event.start_time,
+                        px_per_minute=px_per_minute,
                     ),
-                    None,
                 )
-                if overlapping is None:
-                    cells.append(TimetableCellDTO(space_pk=space.pk))
-                elif overlapping.start_time == slot_time:
-                    rowspan = max(
-                        1,
-                        round(
-                            (
-                                overlapping.end_time - overlapping.start_time
-                            ).total_seconds()
-                            / (TIMETABLE_SLOT_MINUTES * 60)
-                        ),
-                    )
-                    cells.append(
-                        TimetableCellDTO(
-                            space_pk=space.pk, agenda_item=overlapping, rowspan=rowspan
-                        )
-                    )
-                else:
-                    cells.append(
-                        TimetableCellDTO(space_pk=space.pk, is_continuation=True)
-                    )
-            rows.append(TimetableRowDTO(time=slot_time, cells=cells))
+            )
 
         return TimetableGridDTO(
             spaces=spaces,
-            rows=rows,
+            columns=columns,
+            time_labels=time_labels,
+            total_height_px=total_height_px,
+            event_start_iso=event.start_time.isoformat(),
+            slot_minutes=TIMETABLE_SLOT_MINUTES,
+            slot_height_px=TIMETABLE_SLOT_HEIGHT_PX,
             page=space_page,
             total_pages=total_pages,
             total_spaces=total_spaces,
@@ -226,7 +272,8 @@ class ConflictDetectionService:
                     severity=ConflictSeverity.ERROR,
                     session_title=item.session_title,
                     session_pk=item.session_id,
-                    description=f"Sala zajęta przez: {item.session_title}",
+                    description=_("Room occupied by: %(title)s")
+                    % {"title": item.session_title},
                 )
                 for item in overlapping_in_space
             ]
@@ -241,10 +288,10 @@ class ConflictDetectionService:
                     severity=ConflictSeverity.WARNING,
                     session_title=session.title,
                     session_pk=session_pk,
-                    description=(
-                        f"Sala mieści {space.capacity} os., "
-                        f"sesja wymaga {session.participants_limit}"
-                    ),
+                    description=_(
+                        "Room fits %(capacity)s people, session requires %(limit)s"
+                    )
+                    % {"capacity": space.capacity, "limit": session.participants_limit},
                 )
             )
 
@@ -263,10 +310,11 @@ class ConflictDetectionService:
                         severity=ConflictSeverity.ERROR,
                         session_title=item.session_title,
                         session_pk=item.session_id,
-                        description=(
-                            f"{facilitator.display_name} prowadzi "
-                            f"równocześnie: {item.session_title}"
-                        ),
+                        description=_("%(name)s facilitates simultaneously: %(title)s")
+                        % {
+                            "name": facilitator.display_name,
+                            "title": item.session_title,
+                        },
                     )
                     for item in overlapping_for_facilitator
                 ]
