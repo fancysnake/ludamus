@@ -6,7 +6,8 @@
 <a href="{% url 'web:chronology:event' slug=event.slug %}"
    class="relative min-h-56 flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 ring-offset-[.5px] hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-600 duration-100 ring-offset-background bg-bg-secondary"
    {% if variant == 'past' %}style="filter: saturate(0.7)"{% endif %}>
-    <div class="relative min-h-32 bg-cover bg-center p-3 pb-16 z-10 rounded-xl mt-1 mx-1 [--bg-tint:transparent] dark:[--bg-tint:hsl(0_0_15%/.15)]" style="background-image: linear-gradient(to bottom, var(--bg-tint), var(--bg-tint)), url('{{ event.cover_image_url }}')">
+    <div class="relative min-h-32 bg-cover bg-center p-3 pb-16 z-10 rounded-xl mt-1 mx-1 [--bg-tint:transparent] dark:[--bg-tint:hsl(0_0_15%/.15)]"
+         style="background-image: linear-gradient(to bottom, var(--bg-tint), var(--bg-tint)), url('{{ event.cover_image_url }}')">
         <div class="flex flex-wrap gap-2">
             {% if event.is_live %}
                 <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white"
