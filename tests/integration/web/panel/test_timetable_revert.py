@@ -48,6 +48,21 @@ class TestTimetableRevertView:
             url="/",
         )
 
+    def test_redirects_on_invalid_event_slug(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:timetable-revert", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.post(url, data={"log_pk": 1})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.ERROR, "Event not found.")],
+            url="/panel/",
+        )
+
     def test_missing_log_pk_returns_422(
         self, authenticated_client, active_user, sphere, event
     ):
