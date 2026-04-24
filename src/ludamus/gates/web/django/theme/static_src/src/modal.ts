@@ -85,7 +85,7 @@ const openModal = (
 
 const closeModal = (
   id: string,
-  { updateUrl = true, replaceHistory = false } = {},
+  { updateUrl = true, replaceHistory = true } = {},
 ): void => {
   const dialog = getDialog(id);
   if (dialog.open) {
