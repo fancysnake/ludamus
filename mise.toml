@@ -76,6 +76,9 @@ run = "ast-grep scan --error src"
 [tasks.vulture]
 run = "vulture --config=pyproject.toml src"
 
+[tasks.impeccable]
+run = "python scripts/impeccable_lint.py"
+
 [tasks.check]
 depends = [
   "black",
@@ -88,6 +91,7 @@ depends = [
   "pylint",
   "vulture",
   "ast-grep",
+  "impeccable",
 ]
 
 [tasks.prcheck]
