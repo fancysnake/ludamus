@@ -1,15 +1,31 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Track
+from ludamus.pacts import EventDTO
+from ludamus.pacts.chronology import TIMETABLE_SLOT_MINUTES, HeatmapDTO, HeatmapRowDTO
 from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+def _empty_heatmap(event):
+    num_slots = int(
+        (event.end_time - event.start_time).total_seconds()
+        / (TIMETABLE_SLOT_MINUTES * 60)
+    )
+    slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
+    return HeatmapDTO(
+        spaces=[],
+        rows=[
+            HeatmapRowDTO(time=event.start_time + slot_delta * i, cells=[])
+            for i in range(num_slots)
+        ],
+    )
 
 
 class TestTimetableOverviewPageView:
@@ -64,7 +80,33 @@ class TestTimetableOverviewPageView:
             response,
             HTTPStatus.OK,
             template_name="panel/timetable-overview.html",
-            context_data=ANY,
+            context_data={
+                "current_event": EventDTO.model_validate(event),
+                "events": [EventDTO.model_validate(event)],
+                "is_proposal_active": False,
+                "stats": {
+                    "hosts_count": 0,
+                    "pending_proposals": 0,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 0,
+                    "total_sessions": 0,
+                },
+                "active_nav": "timetable",
+                "heatmap": _empty_heatmap(event),
+                "conflicts_grouped": {},
+                "track_progress": [],
+                "slug": event.slug,
+                "tab_urls": {
+                    "timetable": reverse(
+                        "panel:timetable", kwargs={"slug": event.slug}
+                    ),
+                    "log": reverse("panel:timetable-log", kwargs={"slug": event.slug}),
+                    "overview": reverse(
+                        "panel:timetable-overview", kwargs={"slug": event.slug}
+                    ),
+                },
+            },
         )
 
     def test_heatmap_has_correct_structure(

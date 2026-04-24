@@ -1,6 +1,5 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -72,7 +71,7 @@ class TestTimetableConflictsPartView:
             response,
             HTTPStatus.OK,
             template_name="panel/parts/timetable-conflict-panel.html",
-            context_data=ANY,
+            context_data={"conflicts": [], "slug": event.slug},
         )
 
     def test_empty_conflicts_when_no_sessions(

@@ -1,14 +1,45 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import ANY
 
 from django.contrib import messages
 from django.urls import reverse
 
+from ludamus.pacts.chronology import (
+    TIMETABLE_SLOT_HEIGHT_PX,
+    TIMETABLE_SLOT_MINUTES,
+    TimeLabelDTO,
+    TimetableGridDTO,
+)
 from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
+
+
+def _empty_grid(event):
+    num_slots = int(
+        (event.end_time - event.start_time).total_seconds()
+        / (TIMETABLE_SLOT_MINUTES * 60)
+    )
+    slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
+    return TimetableGridDTO(
+        spaces=[],
+        columns=[],
+        time_labels=[
+            TimeLabelDTO(
+                time=event.start_time + slot_delta * i,
+                top_px=i * TIMETABLE_SLOT_HEIGHT_PX,
+            )
+            for i in range(num_slots)
+        ],
+        total_height_px=num_slots * TIMETABLE_SLOT_HEIGHT_PX,
+        event_start_iso=event.start_time.isoformat(),
+        slot_minutes=TIMETABLE_SLOT_MINUTES,
+        slot_height_px=TIMETABLE_SLOT_HEIGHT_PX,
+        page=1,
+        total_pages=1,
+        total_spaces=0,
+    )
 
 
 class TestTimetableGridPartView:
@@ -64,7 +95,12 @@ class TestTimetableGridPartView:
             response,
             HTTPStatus.OK,
             template_name="panel/parts/timetable-grid.html",
-            context_data=ANY,
+            context_data={
+                "grid": _empty_grid(event),
+                "filter_track_pk": None,
+                "conflict_session_pks": set(),
+                "slug": event.slug,
+            },
         )
 
 
