@@ -6,26 +6,15 @@ from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Track
 from ludamus.pacts import EventDTO
-from ludamus.pacts.chronology import TIMETABLE_SLOT_MINUTES, HeatmapDTO, HeatmapRowDTO
+from ludamus.pacts.chronology import HeatmapDTO
 from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
 
 
-def _empty_heatmap(event):
-    num_slots = int(
-        (event.end_time - event.start_time).total_seconds()
-        / (TIMETABLE_SLOT_MINUTES * 60)
-    )
-    slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
-    return HeatmapDTO(
-        spaces=[],
-        rows=[
-            HeatmapRowDTO(time=event.start_time + slot_delta * i, cells=[])
-            for i in range(num_slots)
-        ],
-    )
+def _empty_heatmap():
+    return HeatmapDTO(spaces=[], rows=[], days=[])
 
 
 class TestTimetableOverviewPageView:
@@ -93,7 +82,7 @@ class TestTimetableOverviewPageView:
                     "total_sessions": 0,
                 },
                 "active_nav": "timetable",
-                "heatmap": _empty_heatmap(event),
+                "heatmap": _empty_heatmap(),
                 "conflicts_grouped": {},
                 "track_progress": [],
                 "slug": event.slug,
@@ -110,7 +99,7 @@ class TestTimetableOverviewPageView:
         )
 
     def test_heatmap_has_correct_structure(
-        self, authenticated_client, active_user, sphere, event, area
+        self, authenticated_client, active_user, sphere, event, area, time_slot
     ):
         sphere.managers.add(active_user)
         SpaceFactory(area=area)
@@ -121,6 +110,8 @@ class TestTimetableOverviewPageView:
         heatmap = response.context["heatmap"]
         assert len(heatmap.spaces) == 1
         assert len(heatmap.rows) > 0
+        assert len(heatmap.days) == 1
+        assert time_slot is not None
 
     def test_empty_conflicts_when_no_sessions(
         self, authenticated_client, active_user, sphere, event
@@ -160,7 +151,14 @@ class TestTimetableOverviewPageView:
         assert progress[0].scheduled_count == 0
 
     def test_heatmap_shows_scheduled_cell_status(
-        self, authenticated_client, active_user, sphere, event, proposal_category, area
+        self,
+        authenticated_client,
+        active_user,
+        sphere,
+        event,
+        proposal_category,
+        area,
+        time_slot,
     ):
         sphere.managers.add(active_user)
         space = SpaceFactory(area=area)
@@ -183,3 +181,4 @@ class TestTimetableOverviewPageView:
         first_row = heatmap.rows[0]
         statuses = {cell.status for cell in first_row.cells}
         assert "scheduled" in statuses
+        assert time_slot is not None

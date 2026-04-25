@@ -7,7 +7,7 @@
 {% elif not grid.time_labels %}
     <div class="text-center py-16 text-neutral-500">
         <p class="text-lg">{% translate "No time slots for this event." %}</p>
-        <p class="text-sm mt-2">{% translate "Check the event time range." %}</p>
+        <p class="text-sm mt-2">{% translate "Add time slots to see the schedule grid." %}</p>
     </div>
 {% else %}
     <!-- Room pagination -->
@@ -18,13 +18,13 @@
                 ({% translate "total" %} {{ grid.total_spaces }})
             </span>
             {% if grid.page > 1 %}
-                <a href="?{% if filter_track_pk %}track={{ filter_track_pk }}&{% endif %}room_page={{ grid.page|add:"-1" }}"
+                <a href="?{% if filter_track_pk %}track={{ filter_track_pk }}&{% endif %}{% if grid.selected_date %}date={{ grid.selected_date|date:'Y-m-d' }}&{% endif %}room_page={{ grid.page|add:"-1" }}"
                    class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">
                     ← {% translate "Previous" %}
                 </a>
             {% endif %}
             {% if grid.page < grid.total_pages %}
-                <a href="?{% if filter_track_pk %}track={{ filter_track_pk }}&{% endif %}room_page={{ grid.page|add:"1" }}"
+                <a href="?{% if filter_track_pk %}track={{ filter_track_pk }}&{% endif %}{% if grid.selected_date %}date={{ grid.selected_date|date:'Y-m-d' }}&{% endif %}room_page={{ grid.page|add:"1" }}"
                    class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">{% translate "Next" %} →</a>
             {% endif %}
         </div>
@@ -36,15 +36,42 @@
          data-slot-minutes="{{ grid.slot_minutes }}"
          data-slot-height="{{ grid.slot_height_px }}"
          data-total-height="{{ grid.total_height_px }}">
-        <!-- Space headers (sticky) -->
-        <div class="flex sticky top-0 z-20 border-b border-neutral-700 bg-neutral-800">
-            <div class="w-16 flex-none px-2 py-2 text-xs text-neutral-300 shrink-0 text-right">{% translate "Time" %}</div>
-            {% for col in grid.columns %}
-                <div class="flex-1 min-w-36 px-3 py-2 border-l border-neutral-700 overflow-hidden">
-                    <div class="text-sm font-medium text-white truncate">{{ col.space.name }}</div>
-                    {% if col.space.capacity %}<div class="text-xs text-neutral-400">{{ col.space.capacity }} cap.</div>{% endif %}
-                </div>
-            {% endfor %}
+        <!-- Space headers (sticky, three rows: venue / area / space) -->
+        <div class="sticky top-0 z-20 border-b border-neutral-700">
+            <!-- Venue row -->
+            <div class="flex bg-neutral-900 border-b border-neutral-700">
+                <div class="w-16 flex-none shrink-0 bg-neutral-900"></div>
+                {% for venue in grid.venue_groups %}
+                    <div class="px-3 py-1 border-l border-neutral-700 overflow-hidden text-center bg-neutral-900"
+                         style="flex: {{ venue.span }} 1 0;
+                                min-width: calc(9rem * {{ venue.span }})">
+                        <div class="text-xs font-semibold text-white truncate uppercase tracking-wide">{{ venue.venue_name }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Area row -->
+            <div class="flex bg-neutral-800 border-b border-neutral-700">
+                <div class="w-16 flex-none shrink-0 bg-neutral-800"></div>
+                {% for venue in grid.venue_groups %}
+                    {% for area in venue.areas %}
+                        <div class="px-3 py-1 border-l border-neutral-700 overflow-hidden text-center bg-neutral-800"
+                             style="flex: {{ area.span }} 1 0;
+                                    min-width: calc(9rem * {{ area.span }})">
+                            <div class="text-xs font-medium text-white truncate">{{ area.area_name }}</div>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            <!-- Space row -->
+            <div class="flex bg-neutral-800">
+                <div class="w-16 flex-none px-2 py-2 text-xs text-neutral-300 shrink-0 text-right">{% translate "Time" %}</div>
+                {% for col in grid.columns %}
+                    <div class="flex-1 min-w-36 px-3 py-2 border-l border-neutral-700 overflow-hidden">
+                        <div class="text-sm font-medium text-white truncate">{{ col.space.name }}</div>
+                        {% if col.space.capacity %}<div class="text-xs text-neutral-400">{{ col.space.capacity }} cap.</div>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
         </div>
         <!-- Grid body -->
         <div class="flex bg-bg-secondary">

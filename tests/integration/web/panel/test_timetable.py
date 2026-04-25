@@ -10,7 +10,6 @@ from ludamus.pacts import EventDTO
 from ludamus.pacts.chronology import (
     TIMETABLE_SLOT_HEIGHT_PX,
     TIMETABLE_SLOT_MINUTES,
-    TimeLabelDTO,
     TimetableGridDTO,
 )
 from tests.integration.conftest import AgendaItemFactory, SpaceFactory
@@ -19,29 +18,21 @@ from tests.integration.utils import assert_response
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
 
 
-def _empty_grid(event):
-    num_slots = int(
-        (event.end_time - event.start_time).total_seconds()
-        / (TIMETABLE_SLOT_MINUTES * 60)
-    )
-    slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
+def _empty_grid():
     return TimetableGridDTO(
         spaces=[],
         columns=[],
-        time_labels=[
-            TimeLabelDTO(
-                time=event.start_time + slot_delta * i,
-                top_px=i * TIMETABLE_SLOT_HEIGHT_PX,
-            )
-            for i in range(num_slots)
-        ],
-        total_height_px=num_slots * TIMETABLE_SLOT_HEIGHT_PX,
-        event_start_iso=event.start_time.isoformat(),
+        venue_groups=[],
+        time_labels=[],
+        total_height_px=0,
+        event_start_iso="",
         slot_minutes=TIMETABLE_SLOT_MINUTES,
         slot_height_px=TIMETABLE_SLOT_HEIGHT_PX,
         page=1,
         total_pages=1,
         total_spaces=0,
+        available_dates=[],
+        selected_date=None,
     )
 
 
@@ -120,7 +111,7 @@ class TestTimetablePageView:
             context_data={
                 **_base_context(event),
                 "room_page": 1,
-                "grid": _empty_grid(event),
+                "grid": _empty_grid(),
                 "conflict_session_pks": set(),
                 "slug": event.slug,
                 "tab_urls": {
@@ -137,7 +128,7 @@ class TestTimetablePageView:
         assert response.context["grid"].spaces == []
 
     def test_grid_shows_spaces_and_time_labels(
-        self, authenticated_client, active_user, sphere, event, space
+        self, authenticated_client, active_user, sphere, event, space, time_slot
     ):
         sphere.managers.add(active_user)
 
@@ -148,9 +139,19 @@ class TestTimetablePageView:
         assert len(grid.spaces) == 1
         assert grid.spaces[0].pk == space.pk
         assert len(grid.time_labels) > 0
+        assert grid.selected_date is not None
+        assert grid.available_dates == [grid.selected_date]
+        assert time_slot is not None
 
     def test_grid_contains_scheduled_session(
-        self, authenticated_client, active_user, sphere, event, session, space
+        self,
+        authenticated_client,
+        active_user,
+        sphere,
+        event,
+        session,
+        space,
+        time_slot,
     ):
         sphere.managers.add(active_user)
         start = event.start_time
@@ -164,6 +165,7 @@ class TestTimetablePageView:
         col = next(c for c in grid.columns if c.space.pk == space.pk)
         assert len(col.sessions) == 1
         assert col.sessions[0].agenda_item.session_title == session.title
+        assert time_slot is not None
 
     def test_filters_by_track(
         self, authenticated_client, active_user, sphere, event, space, area
