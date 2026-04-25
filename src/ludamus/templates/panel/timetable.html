@@ -88,7 +88,7 @@
         <div class="flex-1 min-w-0">
             <div id="timetable-grid"
                  data-assign-url="{% url 'panel:timetable-assign' slug=current_event.slug %}"
-                 hx-get="{% url 'panel:timetable-grid-part' slug=current_event.slug %}?track={{ filter_track_pk|default:'' }}{% if grid.selected_date %}&date={{ grid.selected_date|date:'Y-m-d' }}{% endif %}"
+                 hx-get="{% url 'panel:timetable-grid-part' slug=current_event.slug %}?track={{ filter_track_pk|default:'' }}{% if grid.selected_date %}&date={{ grid.selected_date|date:'Y-m-d' }}{% endif %}&room_page={{ grid.page }}"
                  hx-trigger="timetableChanged from:body">{% include "panel/parts/timetable-grid.html" %}</div>
         </div>
         <!-- Conflict panel (permanent right rail) -->
@@ -118,6 +118,37 @@
             background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.08);
             pointer-events: none;
             z-index: 5;
+        }
+
+        /* Hover expansion: lift the cell above siblings, grow to fit, un-truncate text. */
+        .timetable-session:hover,
+        .timetable-session:focus-within {
+            height: auto !important;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+            opacity: 1;
+        }
+
+        .timetable-session:hover .timetable-session-body,
+        .timetable-session:focus-within .timetable-session-body {
+            height: auto;
+            overflow: visible;
+        }
+
+        .timetable-session:hover .timetable-session-title,
+        .timetable-session:focus-within .timetable-session-title,
+        .timetable-session:hover .timetable-session-meta,
+        .timetable-session:focus-within .timetable-session-meta {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            overflow-wrap: anywhere;
+        }
+
+        /* Reveal hidden meta lines on hover so the full session info is visible. */
+        .timetable-session:hover .timetable-session-meta.hidden,
+        .timetable-session:focus-within .timetable-session-meta.hidden {
+            display: block;
         }
     </style>
     <script src="{% static 'js/timetable.js' %}?v={{ STATIC_VERSION }}"></script>

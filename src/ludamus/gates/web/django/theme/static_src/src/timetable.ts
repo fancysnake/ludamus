@@ -76,6 +76,8 @@ document.addEventListener("click", (e) => {
       body.append("end_time", endDt.toISOString());
       body.append("csrfmiddlewaretoken", csrfToken());
 
+      const sessionPkAtClick = assignSessionPk;
+      const durationAtClick = assignDuration;
       exitAssignMode();
 
       fetch(assignUrl, { method: "POST", body })
@@ -84,16 +86,48 @@ document.addEventListener("click", (e) => {
             document.body.dispatchEvent(
               new CustomEvent("timetableChanged"),
             );
+          } else {
+            alert(
+              `Could not place session (server returned ${resp.status}). ` +
+              `Please try again.`,
+            );
+            enterAssignMode(sessionPkAtClick, durationAtClick);
           }
+        })
+        .catch(() => {
+          alert("Network error placing session. Please try again.");
+          enterAssignMode(sessionPkAtClick, durationAtClick);
         });
       return;
     }
   }
 });
 
-// Cancel button
-document.getElementById("assign-mode-cancel")?.addEventListener("click", () => {
-  exitAssignMode();
+// Re-apply assignment mode UI after HTMX swaps the grid (e.g. room pagination).
+// Module state survives HTMX swaps but DOM classes do not.
+document.body.addEventListener("htmx:afterSwap", () => {
+  if (assignSessionPk) {
+    banner().classList.remove("hidden");
+    columns().forEach((col) => col.classList.add("assign-mode-active"));
+  }
+});
+
+// Keep #timetable-grid's auto-refresh URL aligned with the current browser URL,
+// so an assign/unassign after pagination reloads the page the user is viewing
+// (not the page that was originally rendered).
+document.body.addEventListener("htmx:pushedIntoHistory", () => {
+  const gridEl = grid();
+  const hxGet = gridEl.getAttribute("hx-get") ?? "";
+  const baseUrl = hxGet.split("?")[0];
+  gridEl.setAttribute("hx-get", baseUrl + window.location.search);
+});
+
+// Cancel button — delegated so it survives HTMX swaps of any ancestor
+document.addEventListener("click", (e) => {
+  const target = e.target as Element;
+  if (target.closest("#assign-mode-cancel")) {
+    exitAssignMode();
+  }
 });
 
 // Escape key

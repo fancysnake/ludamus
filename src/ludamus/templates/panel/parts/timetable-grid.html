@@ -18,14 +18,24 @@
                 ({% translate "total" %} {{ grid.total_spaces }})
             </span>
             {% if grid.page > 1 %}
-                <a href="?{% if filter_track_pk %}track={{ filter_track_pk }}&{% endif %}{% if grid.selected_date %}date={{ grid.selected_date|date:'Y-m-d' }}&{% endif %}room_page={{ grid.page|add:"-1" }}"
-                   class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">
+                <button type="button"
+                        hx-get="{% url 'panel:timetable-grid-part' slug=slug %}?track={{ filter_track_pk|default:'' }}{% if grid.selected_date %}&date={{ grid.selected_date|date:'Y-m-d' }}{% endif %}&room_page={{ grid.page|add:'-1' }}"
+                        hx-target="#timetable-grid"
+                        hx-swap="innerHTML"
+                        hx-push-url="true"
+                        class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">
                     ← {% translate "Previous" %}
-                </a>
+                </button>
             {% endif %}
             {% if grid.page < grid.total_pages %}
-                <a href="?{% if filter_track_pk %}track={{ filter_track_pk }}&{% endif %}{% if grid.selected_date %}date={{ grid.selected_date|date:'Y-m-d' }}&{% endif %}room_page={{ grid.page|add:"1" }}"
-                   class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">{% translate "Next" %} →</a>
+                <button type="button"
+                        hx-get="{% url 'panel:timetable-grid-part' slug=slug %}?track={{ filter_track_pk|default:'' }}{% if grid.selected_date %}&date={{ grid.selected_date|date:'Y-m-d' }}{% endif %}&room_page={{ grid.page|add:'1' }}"
+                        hx-target="#timetable-grid"
+                        hx-swap="innerHTML"
+                        hx-push-url="true"
+                        class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">
+                    {% translate "Next" %} →
+                </button>
             {% endif %}
         </div>
     {% endif %}
@@ -97,8 +107,9 @@
                     {% endfor %}
                     <!-- Sessions -->
                     {% for pos in col.sessions %}
-                        <div class="absolute rounded overflow-hidden cursor-pointer border text-xs opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {% if pos.agenda_item.session_id in conflict_session_pks %} bg-danger-bg border-danger hover:opacity-100 {% else %} bg-info-bg border-info hover:opacity-100 {% endif %}"
+                        <div class="timetable-session absolute rounded overflow-hidden cursor-pointer border text-xs opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {% if pos.agenda_item.session_id in conflict_session_pks %} bg-danger-bg border-danger hover:opacity-100 {% else %} bg-info-bg border-info hover:opacity-100 {% endif %}"
                              tabindex="0"
+                             title="{{ pos.agenda_item.session_title }}"
                              style="top: calc({{ pos.top_px }}px + 20px);
                                     height: {{ pos.height_px }}px;
                                     left: calc({{ pos.left_pct }}% + 2px);
@@ -107,21 +118,17 @@
                              hx-target="#session-drawer"
                              hx-swap="innerHTML"
                              hx-on::after-request="document.getElementById('session-drawer').classList.remove('hidden')">
-                            <div class="px-1 py-0.5 h-full overflow-hidden">
-                                <div class="font-medium truncate {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger-text{% else %}text-info-text{% endif %}">
+                            <div class="timetable-session-body px-1 py-0.5 h-full overflow-hidden">
+                                <div class="timetable-session-title font-medium wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger-text{% else %}text-info-text{% endif %}">
                                     {% if pos.agenda_item.session_id in conflict_session_pks %}⚠{% endif %}
-                                    {{ pos.agenda_item.session_title }}
+                                    {{ pos.agenda_item.session_title|truncatechars:256 }}
                                 </div>
-                                {% if pos.height_px > 32 %}
-                                    <div class="truncate {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% else %}text-info{% endif %}">
-                                        {{ pos.agenda_item.presenter_name }}
-                                    </div>
-                                {% endif %}
-                                {% if pos.height_px > 52 %}
-                                    <div class="{% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% else %}text-info{% endif %}">
-                                        {{ pos.agenda_item.session_duration_minutes }} min
-                                    </div>
-                                {% endif %}
+                                <div class="timetable-session-meta wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% else %}text-info{% endif %} {% if pos.height_px <= 32 %}hidden{% endif %}">
+                                    {{ pos.agenda_item.presenter_name }}
+                                </div>
+                                <div class="timetable-session-meta {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% else %}text-info{% endif %} {% if pos.height_px <= 52 %}hidden{% endif %}">
+                                    {{ pos.agenda_item.session_duration_minutes }} min
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
