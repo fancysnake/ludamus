@@ -38,6 +38,7 @@ from ludamus.adapters.db.django.models import (
     Venue,
 )
 from ludamus.pacts import (
+    UNSCHEDULED_LIST_LIMIT,
     AreaDTO,
     AreaRepositoryProtocol,
     CategoryStats,
@@ -492,11 +493,10 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
         search: str | None = None,
         max_duration_minutes: int | None = None,
         category_pk: int | None = None,
-    ) -> list[UnscheduledSessionDTO]:
+    ) -> tuple[list[UnscheduledSessionDTO], bool]:
         qs = (
-            Session.objects.filter(
-                category__event_id=event_pk, status=SessionStatus.ACCEPTED
-            )
+            Session.objects.filter(category__event_id=event_pk)
+            .exclude(status=SessionStatus.REJECTED)
             .filter(agenda_item__isnull=True)
             .select_related("category")
         )
@@ -508,14 +508,18 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
             qs = qs.filter(
                 Q(title__icontains=search) | Q(display_name__icontains=search)
             ).distinct()
-        results = []
-        for s in qs.order_by("title"):
+        results: list[UnscheduledSessionDTO] = []
+        has_more = False
+        for s in qs.order_by("title").iterator():
             duration_minutes = _parse_iso8601_duration_minutes(s.duration)
             if (
                 max_duration_minutes is not None
                 and duration_minutes > max_duration_minutes
             ):
                 continue
+            if len(results) >= UNSCHEDULED_LIST_LIMIT:
+                has_more = True
+                break
             results.append(
                 UnscheduledSessionDTO(
                     pk=s.pk,
@@ -527,7 +531,7 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
                     participants_limit=s.participants_limit,
                 )
             )
-        return results
+        return results, has_more
 
 
 class ConnectedUserRepository(ConnectedUserRepositoryProtocol):
@@ -1288,7 +1292,7 @@ class SpaceRepository(SpaceRepositoryProtocol):
             List of SpaceDTO objects for the event.
         """
         spaces = Space.objects.filter(area__venue__event_id=event_pk).order_by(
-            "area__venue__order", "area__order", "order", "name"
+            *Space.HIERARCHICAL_ORDER
         )
 
         return [SpaceDTO.model_validate(space) for space in spaces]

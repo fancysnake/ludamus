@@ -414,6 +414,15 @@ class DomainEnrollmentConfig(models.Model):
 class Space(models.Model):
     """Bookable room/location within an area."""
 
+    HIERARCHICAL_ORDER: ClassVar = (
+        "area__venue__order",
+        "area__venue__name",
+        "area__order",
+        "area__name",
+        "order",
+        "name",
+    )
+
     # Owner - spaces belong to an area
     area = models.ForeignKey("Area", on_delete=models.CASCADE, related_name="spaces")
     # ID

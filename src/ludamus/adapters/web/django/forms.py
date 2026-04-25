@@ -379,14 +379,7 @@ def create_proposal_acceptance_form(event: EventDTO) -> type[forms.Form]:
     spaces = (
         Space.objects.filter(area__venue__event_id=event.pk)
         .select_related("area__venue")
-        .order_by(
-            "area__venue__order",
-            "area__venue__name",
-            "area__order",
-            "area__name",
-            "order",
-            "name",
-        )
+        .order_by(*Space.HIERARCHICAL_ORDER)
     )
 
     # Build grouped choices: {(venue_name, area_name): [(space_id, space_name), ...]}

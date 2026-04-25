@@ -90,6 +90,9 @@ class SessionFieldValueDTO(BaseModel):
     value: str | list[str] | bool
 
 
+UNSCHEDULED_LIST_LIMIT = 20
+
+
 class UnscheduledSessionDTO(BaseModel):
     """Session accepted but not yet placed in the timetable."""
 
@@ -290,6 +293,7 @@ class AreaDTO(BaseModel):
     pk: int
     slug: str
     spaces_count: int = 0
+    venue_id: int
 
 
 class TimeSlotDTO(BaseModel):
@@ -843,7 +847,7 @@ class SessionRepositoryProtocol(Protocol):  # noqa: PLR0904
         search: str | None = None,
         max_duration_minutes: int | None = None,
         category_pk: int | None = None,
-    ) -> list[UnscheduledSessionDTO]: ...
+    ) -> tuple[list[UnscheduledSessionDTO], bool]: ...
 
 
 class TrackRepositoryProtocol(Protocol):
