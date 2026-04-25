@@ -52,7 +52,11 @@
                 {% if grid.available_dates %}
                     <span class="text-sm text-neutral-500 ml-2">{% translate "Day:" %}</span>
                     <select name="date"
-                            onchange="this.form.submit()"
+                            hx-get="{% url 'panel:timetable-grid-part' slug=current_event.slug %}?track={{ filter_track_pk|default:'' }}"
+                            hx-target="#timetable-grid"
+                            hx-swap="innerHTML"
+                            hx-trigger="change"
+                            hx-push-url="true"
                             class="text-sm border border-border rounded-lg px-3 py-1.5 bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
                         {% for d in grid.available_dates %}
                             <option value="{{ d|date:"Y-m-d" }}"
@@ -114,6 +118,17 @@
             background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.08);
             pointer-events: none;
             z-index: 5;
+        }
+
+        .timetable-preferred-slot {
+            position: absolute;
+            left: 0;
+            right: 0;
+            background: rgba(250, 204, 21, 0.28);
+            border-top: 1px dashed rgba(202, 138, 4, 0.7);
+            border-bottom: 1px dashed rgba(202, 138, 4, 0.7);
+            pointer-events: none;
+            z-index: 6;
         }
 
         /* Hover expansion: lift the cell above siblings, grow to fit, un-truncate text. */

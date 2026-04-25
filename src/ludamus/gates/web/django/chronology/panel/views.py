@@ -214,17 +214,28 @@ class TimetableSessionDetailPartView(PanelAccessMixin, EventContextMixin, View):
 
         agenda_item = uow.agenda_items.read_by_session(pk)
         facilitators = uow.sessions.read_facilitators(pk)
-        time_slots = uow.sessions.read_time_slots(pk)
+        preferred_ids = set(uow.sessions.read_preferred_time_slot_ids(pk))
+        time_slots = [
+            s for s in uow.sessions.read_time_slots(pk) if s.pk in preferred_ids
+        ]
 
         duration_minutes = _parse_iso_duration_minutes(session.duration)
 
         back_url = _build_back_url(slug, self.request.GET)
+
+        time_slots_json = json.dumps(
+            [
+                {"start": s.start_time.isoformat(), "end": s.end_time.isoformat()}
+                for s in time_slots
+            ]
+        )
 
         context = {
             "session": session,
             "agenda_item": agenda_item,
             "facilitators": facilitators,
             "time_slots": time_slots,
+            "time_slots_json": time_slots_json,
             "duration_minutes": duration_minutes,
             "slug": slug,
             "event": current_event,
