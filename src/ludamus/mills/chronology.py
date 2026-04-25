@@ -2,7 +2,7 @@
 
 import math
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, tzinfo
 from typing import TYPE_CHECKING
 
 from ludamus.pacts import (
@@ -15,11 +15,13 @@ from ludamus.pacts.chronology import (
     TIMETABLE_ROOM_PAGE_SIZE,
     TIMETABLE_SLOT_HEIGHT_PX,
     TIMETABLE_SLOT_MINUTES,
+    AreaGroupDTO,
     ConflictDTO,
     ConflictSeverity,
     ConflictType,
     HeatmapCellDTO,
     HeatmapCellStatus,
+    HeatmapDayDTO,
     HeatmapDTO,
     HeatmapRowDTO,
     SessionPositionDTO,
@@ -27,10 +29,38 @@ from ludamus.pacts.chronology import (
     TimeLabelDTO,
     TimetableGridDTO,
     TrackProgressDTO,
+    VenueGroupDTO,
 )
 
 if TYPE_CHECKING:
-    from ludamus.pacts import AgendaItemDTO, UnitOfWorkProtocol
+    from ludamus.pacts import (
+        AgendaItemDTO,
+        AreaDTO,
+        SpaceDTO,
+        TimeSlotDTO,
+        UnitOfWorkProtocol,
+    )
+
+
+def _slot_windows_by_local_date(
+    slots: list[TimeSlotDTO], tz: tzinfo
+) -> dict[date, list[tuple[datetime, datetime]]]:
+    # A slot spanning multiple local dates contributes one (start, end) window
+    # to each date it touches, clamped to that date's [00:00, 24:00) range.
+    grouped: dict[date, list[tuple[datetime, datetime]]] = defaultdict(list)
+    for slot in slots:
+        local_start = slot.start_time.astimezone(tz)
+        local_end = slot.end_time.astimezone(tz)
+        days_span = (local_end.date() - local_start.date()).days + 1
+        for offset in range(days_span):
+            cursor_date = local_start.date() + timedelta(days=offset)
+            day_start = datetime.combine(cursor_date, datetime.min.time(), tzinfo=tz)
+            day_end = day_start + timedelta(days=1)
+            window_start = max(local_start, day_start)
+            window_end = min(local_end, day_end)
+            if window_start < window_end:
+                grouped[cursor_date].append((window_start, window_end))
+    return grouped
 
 
 def _position_sessions(
@@ -83,10 +113,13 @@ class TimetableService:
         self._uow = uow
 
     def build_grid(
-        self, event_pk: int, track_pk: int | None = None, space_page: int = 1
+        self,
+        event_pk: int,
+        tz: tzinfo,
+        track_pk: int | None = None,
+        space_page: int = 1,
+        selected_date: date | None = None,
     ) -> TimetableGridDTO:
-        event = self._uow.events.read(event_pk)
-
         all_spaces = self._uow.spaces.list_by_event(event_pk)
         if track_pk is not None:
             track_space_pks = set(self._uow.tracks.list_space_pks(track_pk))
@@ -98,6 +131,54 @@ class TimetableService:
         start = (space_page - 1) * TIMETABLE_ROOM_PAGE_SIZE
         spaces = all_spaces[start : start + TIMETABLE_ROOM_PAGE_SIZE]
 
+        all_slots = self._uow.time_slots.list_by_event(event_pk)
+        windows_by_date = _slot_windows_by_local_date(all_slots, tz)
+        available_dates = sorted(windows_by_date.keys())
+
+        if selected_date is None or selected_date not in windows_by_date:
+            selected_date = available_dates[0] if available_dates else None
+
+        venue_groups = self._build_venue_groups(event_pk, spaces)
+
+        if selected_date is None:
+            return TimetableGridDTO(
+                spaces=spaces,
+                columns=[SpaceColumnDTO(space=s, sessions=[]) for s in spaces],
+                venue_groups=venue_groups,
+                time_labels=[],
+                total_height_px=0,
+                event_start_iso="",
+                slot_minutes=TIMETABLE_SLOT_MINUTES,
+                slot_height_px=TIMETABLE_SLOT_HEIGHT_PX,
+                page=space_page,
+                total_pages=total_pages,
+                total_spaces=total_spaces,
+                available_dates=available_dates,
+                selected_date=None,
+            )
+
+        day_windows = windows_by_date[selected_date]
+        grid_start = min(w[0] for w in day_windows).replace(
+            minute=0, second=0, microsecond=0
+        )
+        latest_end = max(w[1] for w in day_windows)
+        grid_end = latest_end.replace(minute=0, second=0, microsecond=0)
+        if latest_end != grid_end:
+            grid_end += timedelta(hours=1)
+
+        total_minutes = (grid_end - grid_start).total_seconds() / 60
+        num_slots = int(total_minutes / TIMETABLE_SLOT_MINUTES)
+        total_height_px = num_slots * TIMETABLE_SLOT_HEIGHT_PX
+        px_per_minute = TIMETABLE_SLOT_HEIGHT_PX / TIMETABLE_SLOT_MINUTES
+
+        slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
+        time_labels = [
+            TimeLabelDTO(
+                time=grid_start + slot_delta * i, top_px=i * TIMETABLE_SLOT_HEIGHT_PX
+            )
+            for i in range(num_slots + 1)
+        ]
+
         all_items = (
             self._uow.agenda_items.list_by_track(track_pk)
             if track_pk is not None
@@ -106,22 +187,12 @@ class TimetableService:
         space_pk_set = {s.pk for s in spaces}
         space_items: dict[int, list[AgendaItemDTO]] = defaultdict(list)
         for item in all_items:
-            if item.space_id in space_pk_set:
+            if (
+                item.space_id in space_pk_set
+                and item.start_time < grid_end
+                and item.end_time > grid_start
+            ):
                 space_items[item.space_id].append(item)
-
-        total_seconds = (event.end_time - event.start_time).total_seconds()
-        num_slots = int(total_seconds / (TIMETABLE_SLOT_MINUTES * 60))
-        total_height_px = num_slots * TIMETABLE_SLOT_HEIGHT_PX
-        px_per_minute = TIMETABLE_SLOT_HEIGHT_PX / TIMETABLE_SLOT_MINUTES
-
-        slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
-        time_labels = [
-            TimeLabelDTO(
-                time=event.start_time + slot_delta * i,
-                top_px=i * TIMETABLE_SLOT_HEIGHT_PX,
-            )
-            for i in range(num_slots)
-        ]
 
         columns: list[SpaceColumnDTO] = []
         for space in spaces:
@@ -132,7 +203,7 @@ class TimetableService:
                     space=space,
                     sessions=_position_sessions(
                         items_for_space,
-                        event_start=event.start_time,
+                        event_start=grid_start,
                         px_per_minute=px_per_minute,
                     ),
                 )
@@ -141,15 +212,53 @@ class TimetableService:
         return TimetableGridDTO(
             spaces=spaces,
             columns=columns,
+            venue_groups=venue_groups,
             time_labels=time_labels,
             total_height_px=total_height_px,
-            event_start_iso=event.start_time.isoformat(),
+            event_start_iso=grid_start.isoformat(),
             slot_minutes=TIMETABLE_SLOT_MINUTES,
             slot_height_px=TIMETABLE_SLOT_HEIGHT_PX,
             page=space_page,
             total_pages=total_pages,
             total_spaces=total_spaces,
+            available_dates=available_dates,
+            selected_date=selected_date,
         )
+
+    def _build_venue_groups(
+        self, event_pk: int, spaces: list[SpaceDTO]
+    ) -> list[VenueGroupDTO]:
+        if not (area_ids := [s.area_id for s in spaces if s.area_id is not None]):
+            return []
+
+        venues_by_pk = {v.pk: v for v in self._uow.venues.list_by_event(event_pk)}
+        areas_by_pk: dict[int, AreaDTO] = {
+            area.pk: area
+            for venue_pk in venues_by_pk
+            for area in self._uow.areas.list_by_venue(venue_pk)
+        }
+
+        venue_groups: list[VenueGroupDTO] = []
+        for area_id in area_ids:
+            area = areas_by_pk[area_id]
+            venue_pk = area.venue_id
+            if not venue_groups or venue_groups[-1].venue_pk != venue_pk:
+                venue_groups.append(
+                    VenueGroupDTO(
+                        venue_pk=venue_pk,
+                        venue_name=venues_by_pk[venue_pk].name,
+                        span=0,
+                        areas=[],
+                    )
+                )
+            current_venue = venue_groups[-1]
+            current_venue.span += 1
+            if not current_venue.areas or current_venue.areas[-1].area_pk != area_id:
+                current_venue.areas.append(
+                    AreaGroupDTO(area_pk=area_id, area_name=area.name, span=0)
+                )
+            current_venue.areas[-1].span += 1
+        return venue_groups
 
     def assign_session(
         self,
@@ -373,9 +482,8 @@ class TimetableOverviewService:
         )
 
     def build_heatmap(
-        self, event_pk: int, conflicts: list[ConflictDTO] | None = None
+        self, event_pk: int, tz: tzinfo, conflicts: list[ConflictDTO] | None = None
     ) -> HeatmapDTO:
-        event = self._uow.events.read(event_pk)
         spaces = self._uow.spaces.list_by_event(event_pk)
         all_items = self._uow.agenda_items.list_by_event(event_pk)
         if conflicts is None:
@@ -388,33 +496,53 @@ class TimetableOverviewService:
             if item.space_id in space_pk_set:
                 space_items[item.space_id].append(item)
 
+        windows_by_date = _slot_windows_by_local_date(
+            self._uow.time_slots.list_by_event(event_pk), tz
+        )
+
         slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
-        total_seconds = (event.end_time - event.start_time).total_seconds()
-        num_slots = int(total_seconds / (TIMETABLE_SLOT_MINUTES * 60))
-        time_slots = [event.start_time + slot_delta * i for i in range(num_slots)]
+        days: list[HeatmapDayDTO] = []
+        all_rows: list[HeatmapRowDTO] = []
 
-        rows = []
-        for slot_time in time_slots:
-            cells = []
-            for space in spaces:
-                overlapping = next(
-                    (
-                        it
-                        for it in space_items.get(space.pk, [])
-                        if it.start_time <= slot_time < it.end_time
-                    ),
-                    None,
-                )
-                if overlapping is None:
-                    status = HeatmapCellStatus.EMPTY
-                elif overlapping.session_id in conflict_session_pks:
-                    status = HeatmapCellStatus.CONFLICT
-                else:
-                    status = HeatmapCellStatus.SCHEDULED
-                cells.append(HeatmapCellDTO(space_pk=space.pk, status=status))
-            rows.append(HeatmapRowDTO(time=slot_time, cells=cells))
+        for day_date in sorted(windows_by_date.keys()):
+            day_windows = windows_by_date[day_date]
+            day_start = min(w[0] for w in day_windows).replace(
+                minute=0, second=0, microsecond=0
+            )
+            latest_end = max(w[1] for w in day_windows)
+            day_end = latest_end.replace(minute=0, second=0, microsecond=0)
+            if latest_end != day_end:
+                day_end += slot_delta
 
-        return HeatmapDTO(spaces=spaces, rows=rows)
+            num_slots = int(
+                (day_end - day_start).total_seconds() / 60 / TIMETABLE_SLOT_MINUTES
+            )
+            day_rows: list[HeatmapRowDTO] = []
+            for i in range(num_slots):
+                slot_time = day_start + slot_delta * i
+                cells = []
+                for space in spaces:
+                    overlapping = next(
+                        (
+                            it
+                            for it in space_items.get(space.pk, [])
+                            if it.start_time <= slot_time < it.end_time
+                        ),
+                        None,
+                    )
+                    if overlapping is None:
+                        status = HeatmapCellStatus.EMPTY
+                    elif overlapping.session_id in conflict_session_pks:
+                        status = HeatmapCellStatus.CONFLICT
+                    else:
+                        status = HeatmapCellStatus.SCHEDULED
+                    cells.append(HeatmapCellDTO(space_pk=space.pk, status=status))
+                day_rows.append(HeatmapRowDTO(time=slot_time, cells=cells))
+
+            days.append(HeatmapDayDTO(date=day_date, rows=day_rows))
+            all_rows.extend(day_rows)
+
+        return HeatmapDTO(spaces=spaces, rows=all_rows, days=days)
 
     def all_conflicts_grouped(
         self, event_pk: int, conflicts: list[ConflictDTO] | None = None

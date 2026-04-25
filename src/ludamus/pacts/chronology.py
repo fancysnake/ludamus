@@ -1,15 +1,15 @@
 """Timetable DTOs and constants for the agenda scheduling feature."""
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum, auto
 
 from pydantic import BaseModel
 
 from ludamus.pacts.legacy import AgendaItemDTO, SpaceDTO
 
-TIMETABLE_ROOM_PAGE_SIZE = 20
-TIMETABLE_SLOT_MINUTES = 30
-TIMETABLE_SLOT_HEIGHT_PX = 40  # pixels per TIMETABLE_SLOT_MINUTES block
+TIMETABLE_ROOM_PAGE_SIZE = 5
+TIMETABLE_SLOT_MINUTES = 60
+TIMETABLE_SLOT_HEIGHT_PX = 60  # pixels per TIMETABLE_SLOT_MINUTES block
 
 
 class SessionPositionDTO(BaseModel):
@@ -30,9 +30,23 @@ class SpaceColumnDTO(BaseModel):
     sessions: list[SessionPositionDTO] = []
 
 
+class AreaGroupDTO(BaseModel):
+    area_pk: int
+    area_name: str
+    span: int
+
+
+class VenueGroupDTO(BaseModel):
+    venue_pk: int
+    venue_name: str
+    span: int
+    areas: list[AreaGroupDTO]
+
+
 class TimetableGridDTO(BaseModel):
     spaces: list[SpaceDTO]
     columns: list[SpaceColumnDTO]
+    venue_groups: list[VenueGroupDTO]
     time_labels: list[TimeLabelDTO]
     total_height_px: int
     event_start_iso: str
@@ -41,6 +55,8 @@ class TimetableGridDTO(BaseModel):
     page: int
     total_pages: int
     total_spaces: int
+    available_dates: list[date] = []
+    selected_date: date | None = None
 
 
 class ConflictType(StrEnum):
@@ -82,9 +98,15 @@ class HeatmapRowDTO(BaseModel):
     cells: list[HeatmapCellDTO]
 
 
+class HeatmapDayDTO(BaseModel):
+    date: date
+    rows: list[HeatmapRowDTO]
+
+
 class HeatmapDTO(BaseModel):
     spaces: list[SpaceDTO]
     rows: list[HeatmapRowDTO]
+    days: list[HeatmapDayDTO] = []
 
 
 class TrackProgressDTO(BaseModel):

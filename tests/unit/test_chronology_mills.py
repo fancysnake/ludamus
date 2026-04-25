@@ -10,10 +10,13 @@ from ludamus.mills.chronology import (
 )
 from ludamus.pacts import (
     AgendaItemDTO,
+    AreaDTO,
     NotFoundError,
     ScheduleChangeAction,
     SessionStatus,
     SpaceDTO,
+    TimeSlotDTO,
+    VenueDTO,
 )
 from ludamus.pacts.chronology import ConflictType
 
@@ -42,8 +45,29 @@ class TestBuildGridOverlappingSessions:
         uow.events.read.return_value = event
 
         now = datetime(2026, 1, 1, 10, 0, tzinfo=UTC)
+        venue = VenueDTO(
+            address="",
+            areas_count=1,
+            creation_time=now,
+            modification_time=now,
+            name="Venue 1",
+            order=0,
+            pk=1,
+            slug="venue-1",
+        )
+        area = AreaDTO(
+            creation_time=now,
+            description="",
+            modification_time=now,
+            name="Area 1",
+            order=0,
+            pk=1,
+            slug="area-1",
+            spaces_count=1,
+            venue_id=1,
+        )
         space = SpaceDTO(
-            area_id=None,
+            area_id=1,
             capacity=None,
             creation_time=now,
             modification_time=now,
@@ -53,6 +77,15 @@ class TestBuildGridOverlappingSessions:
             slug="room-1",
         )
         uow.spaces.list_by_event.return_value = [space]
+        uow.venues.list_by_event.return_value = [venue]
+        uow.areas.list_by_venue.return_value = [area]
+        uow.time_slots.list_by_event.return_value = [
+            TimeSlotDTO(
+                pk=1,
+                start_time=datetime(2026, 1, 1, 10, 0, tzinfo=UTC),
+                end_time=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
+            )
+        ]
 
         item_a = _make_item(
             pk=1,
@@ -69,7 +102,7 @@ class TestBuildGridOverlappingSessions:
         uow.agenda_items.list_by_event.return_value = [item_a, item_b]
 
         svc = TimetableService(uow)
-        grid = svc.build_grid(event_pk=1)
+        grid = svc.build_grid(event_pk=1, tz=UTC)
 
         sessions = grid.columns[0].sessions
         expected_count = 2
@@ -211,14 +244,16 @@ class TestTimetableOverviewServiceDefaults:
         uow.events.read.return_value = event
         uow.spaces.list_by_event.return_value = []
         uow.agenda_items.list_by_event.return_value = []
+        uow.time_slots.list_by_event.return_value = []
         return uow
 
     def test_build_heatmap_fetches_conflicts_when_none(self, mock_uow):
         """Line 382: conflicts=None triggers self.get_all_conflicts."""
         svc = TimetableOverviewService(mock_uow)
-        result = svc.build_heatmap(event_pk=1, conflicts=None)
+        result = svc.build_heatmap(event_pk=1, tz=UTC, conflicts=None)
 
         assert result.spaces == []
+        assert not result.days
 
     def test_all_conflicts_grouped_fetches_conflicts_when_none(self, mock_uow):
         """Line 423: conflicts=None triggers self.get_all_conflicts."""
