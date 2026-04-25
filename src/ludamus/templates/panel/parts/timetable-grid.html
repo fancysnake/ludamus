@@ -114,10 +114,9 @@
                                     height: {{ pos.height_px }}px;
                                     left: calc({{ pos.left_pct }}% + 2px);
                                     width: calc({{ pos.width_pct }}% - 4px)"
-                             hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=pos.agenda_item.session_id %}"
-                             hx-target="#session-drawer"
-                             hx-swap="innerHTML"
-                             hx-on::after-request="document.getElementById('session-drawer').classList.remove('hidden')">
+                             hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=pos.agenda_item.session_id %}?track={{ filter_track_pk|default:'' }}"
+                             hx-target="#left-pane"
+                             hx-swap="outerHTML">
                             <div class="timetable-session-body px-1 py-0.5 h-full overflow-hidden">
                                 <div class="timetable-session-title font-medium wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger-text{% else %}text-info-text{% endif %}">
                                     {% if pos.agenda_item.session_id in conflict_session_pks %}⚠{% endif %}

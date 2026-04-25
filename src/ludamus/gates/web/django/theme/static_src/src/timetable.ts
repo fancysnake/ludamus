@@ -4,9 +4,6 @@ let assignDuration: number = 0;
 const banner = (): HTMLElement =>
   document.getElementById("assign-mode-banner")!;
 
-const drawer = (): HTMLElement =>
-  document.getElementById("session-drawer")!;
-
 const grid = (): HTMLElement =>
   document.getElementById("timetable-grid")!;
 
@@ -25,7 +22,6 @@ function enterAssignMode(sessionPk: string, duration: number): void {
   assignDuration = duration;
 
   banner().classList.remove("hidden");
-  drawer().classList.add("hidden");
   columns().forEach((col) => col.classList.add("assign-mode-active"));
 }
 
@@ -37,7 +33,7 @@ function exitAssignMode(): void {
   columns().forEach((col) => col.classList.remove("assign-mode-active"));
 }
 
-// Delegate click on Assign buttons inside the drawer
+// Delegate click on Assign buttons inside the left pane
 document.addEventListener("click", (e) => {
   const target = e.target as Element;
 
