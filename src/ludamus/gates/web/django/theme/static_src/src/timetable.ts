@@ -1,6 +1,12 @@
+interface PreferredSlot {
+  start: string;
+  end: string;
+}
+
 let assignSessionPk: string | null = null;
 let assignDuration: number = 0;
 let assignBackUrl: string | null = null;
+let assignPreferredSlots: PreferredSlot[] = [];
 
 declare const htmx: {
   ajax: (
@@ -16,8 +22,8 @@ const banner = (): HTMLElement =>
 const grid = (): HTMLElement =>
   document.getElementById("timetable-grid")!;
 
-const calendar = (): HTMLElement =>
-  document.getElementById("timetable-calendar")!;
+const calendar = (): HTMLElement | null =>
+  document.getElementById("timetable-calendar");
 
 const columns = (): NodeListOf<HTMLElement> =>
   document.querySelectorAll<HTMLElement>(".timetable-column");
@@ -26,26 +32,93 @@ const csrfToken = (): string =>
   (document.querySelector("[name=csrfmiddlewaretoken]") as HTMLInputElement)
     .value;
 
+function parsePreferredSlots(raw: string | undefined): PreferredSlot[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (s): s is PreferredSlot =>
+        typeof s === "object" &&
+        s !== null &&
+        typeof (s as PreferredSlot).start === "string" &&
+        typeof (s as PreferredSlot).end === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function clearPreferredSlotOverlays(): void {
+  document
+    .querySelectorAll<HTMLElement>(".timetable-preferred-slot")
+    .forEach((el) => el.remove());
+}
+
+function renderPreferredSlotOverlays(): void {
+  clearPreferredSlotOverlays();
+  if (!assignPreferredSlots.length) return;
+  const cal = calendar();
+  if (!cal) return;
+  const eventStart = cal.dataset.eventStart;
+  if (!eventStart) return;
+
+  const slotMinutes = Number(cal.dataset.slotMinutes);
+  const slotHeight = Number(cal.dataset.slotHeight);
+  const totalHeightPx = Number(cal.dataset.totalHeight);
+  if (!slotMinutes || !slotHeight) return;
+
+  const eventStartMs = new Date(eventStart).getTime();
+  const pxPerMs = slotHeight / (slotMinutes * 60_000);
+  const cols = columns();
+  if (!cols.length) return;
+
+  for (const slot of assignPreferredSlots) {
+    const startMs = new Date(slot.start).getTime();
+    const endMs = new Date(slot.end).getTime();
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) continue;
+
+    const rawTop = (startMs - eventStartMs) * pxPerMs;
+    const rawBottom = (endMs - eventStartMs) * pxPerMs;
+    const top = Math.max(0, rawTop);
+    const bottom = Math.min(totalHeightPx, rawBottom);
+    if (bottom <= top) continue;
+
+    cols.forEach((col) => {
+      const overlay = document.createElement("div");
+      overlay.className = "timetable-preferred-slot";
+      overlay.style.top = `calc(${top}px + 20px)`;
+      overlay.style.height = `${bottom - top}px`;
+      col.appendChild(overlay);
+    });
+  }
+}
+
 function enterAssignMode(
   sessionPk: string,
   duration: number,
   backUrl: string | null,
+  preferredSlots: PreferredSlot[],
 ): void {
   assignSessionPk = sessionPk;
   assignDuration = duration;
   assignBackUrl = backUrl;
+  assignPreferredSlots = preferredSlots;
 
   banner().classList.remove("hidden");
   columns().forEach((col) => col.classList.add("assign-mode-active"));
+  renderPreferredSlotOverlays();
 }
 
 function exitAssignMode(): void {
   assignSessionPk = null;
   assignDuration = 0;
   assignBackUrl = null;
+  assignPreferredSlots = [];
 
   banner().classList.add("hidden");
   columns().forEach((col) => col.classList.remove("assign-mode-active"));
+  clearPreferredSlotOverlays();
 }
 
 // Delegate click on Assign buttons inside the left pane
@@ -57,7 +130,8 @@ document.addEventListener("click", (e) => {
     const pk = assignBtn.dataset.assignSessionPk!;
     const duration = Number(assignBtn.dataset.assignDuration) || 60;
     const backUrl = assignBtn.dataset.assignBackUrl ?? null;
-    enterAssignMode(pk, duration, backUrl);
+    const slots = parsePreferredSlots(assignBtn.dataset.assignPreferredSlots);
+    enterAssignMode(pk, duration, backUrl, slots);
     return;
   }
 
@@ -66,7 +140,7 @@ document.addEventListener("click", (e) => {
     const col = target.closest<HTMLElement>(".timetable-column.assign-mode-active");
     if (col) {
       const spacePk = col.dataset.spacePk!;
-      const cal = calendar();
+      const cal = calendar()!;
       const eventStart = cal.dataset.eventStart!;
       const slotMinutes = Number(cal.dataset.slotMinutes);
       const slotHeight = Number(cal.dataset.slotHeight);
@@ -91,6 +165,7 @@ document.addEventListener("click", (e) => {
       const sessionPkAtClick = assignSessionPk;
       const durationAtClick = assignDuration;
       const backUrlAtClick = assignBackUrl;
+      const slotsAtClick = assignPreferredSlots;
       exitAssignMode();
 
       fetch(assignUrl, { method: "POST", body })
@@ -110,12 +185,12 @@ document.addEventListener("click", (e) => {
               `Could not place session (server returned ${resp.status}). ` +
               `Please try again.`,
             );
-            enterAssignMode(sessionPkAtClick, durationAtClick, backUrlAtClick);
+            enterAssignMode(sessionPkAtClick, durationAtClick, backUrlAtClick, slotsAtClick);
           }
         })
         .catch(() => {
           alert("Network error placing session. Please try again.");
-          enterAssignMode(sessionPkAtClick, durationAtClick, backUrlAtClick);
+          enterAssignMode(sessionPkAtClick, durationAtClick, backUrlAtClick, slotsAtClick);
         });
       return;
     }
@@ -128,6 +203,7 @@ document.body.addEventListener("htmx:afterSwap", () => {
   if (assignSessionPk) {
     banner().classList.remove("hidden");
     columns().forEach((col) => col.classList.add("assign-mode-active"));
+    renderPreferredSlotOverlays();
   }
 });
 

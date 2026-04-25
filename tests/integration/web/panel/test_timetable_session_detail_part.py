@@ -92,6 +92,7 @@ class TestTimetableSessionDetailPartView:
                 "agenda_item": None,
                 "facilitators": [],
                 "time_slots": [],
+                "time_slots_json": "[]",
                 "duration_minutes": 60,
                 "slug": event.slug,
                 "event": EventDTO.model_validate(event),
