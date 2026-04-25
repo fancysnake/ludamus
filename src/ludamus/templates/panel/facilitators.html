@@ -81,7 +81,8 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                                         <a href="{% url 'panel:facilitator-detail' slug=current_event.slug facilitator_slug=facilitator.slug %}"
-                                           class="text-primary hover:text-primary/80">{{ facilitator.display_name }}</a>
+                                           class="text-primary hover:text-primary/80"
+                                           title="{{ facilitator.display_name }}">{{ facilitator.display_name|truncatechars:50 }}</a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">
                                         {% if facilitator.user_id %}
