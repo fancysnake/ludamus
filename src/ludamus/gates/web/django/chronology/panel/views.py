@@ -292,6 +292,16 @@ class TimetableAssignView(PanelAccessMixin, EventContextMixin, View):
             return HttpResponse(status=422)
 
         uow = self.request.di.uow
+        timetable_service = TimetableService(uow)
+
+        if uow.agenda_items.read_by_session(session_pk) is not None:
+            try:
+                timetable_service.unassign_session(
+                    session_pk, user_pk=self.request.user.pk
+                )
+            except NotFoundError:
+                return HttpResponse(status=422)
+
         conflicts = ConflictDetectionService(uow).detect_for_assignment(
             session_pk=session_pk,
             space_pk=space_pk,
@@ -300,7 +310,7 @@ class TimetableAssignView(PanelAccessMixin, EventContextMixin, View):
         )
 
         try:
-            TimetableService(uow).assign_session(
+            timetable_service.assign_session(
                 session_pk=session_pk,
                 space_pk=space_pk,
                 start_time=start_time,

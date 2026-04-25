@@ -1,5 +1,14 @@
 let assignSessionPk: string | null = null;
 let assignDuration: number = 0;
+let assignBackUrl: string | null = null;
+
+declare const htmx: {
+  ajax: (
+    method: string,
+    url: string,
+    opts: { target: string; swap: string },
+  ) => void;
+};
 
 const banner = (): HTMLElement =>
   document.getElementById("assign-mode-banner")!;
@@ -17,9 +26,14 @@ const csrfToken = (): string =>
   (document.querySelector("[name=csrfmiddlewaretoken]") as HTMLInputElement)
     .value;
 
-function enterAssignMode(sessionPk: string, duration: number): void {
+function enterAssignMode(
+  sessionPk: string,
+  duration: number,
+  backUrl: string | null,
+): void {
   assignSessionPk = sessionPk;
   assignDuration = duration;
+  assignBackUrl = backUrl;
 
   banner().classList.remove("hidden");
   columns().forEach((col) => col.classList.add("assign-mode-active"));
@@ -28,6 +42,7 @@ function enterAssignMode(sessionPk: string, duration: number): void {
 function exitAssignMode(): void {
   assignSessionPk = null;
   assignDuration = 0;
+  assignBackUrl = null;
 
   banner().classList.add("hidden");
   columns().forEach((col) => col.classList.remove("assign-mode-active"));
@@ -41,7 +56,8 @@ document.addEventListener("click", (e) => {
   if (assignBtn) {
     const pk = assignBtn.dataset.assignSessionPk!;
     const duration = Number(assignBtn.dataset.assignDuration) || 60;
-    enterAssignMode(pk, duration);
+    const backUrl = assignBtn.dataset.assignBackUrl ?? null;
+    enterAssignMode(pk, duration, backUrl);
     return;
   }
 
@@ -74,6 +90,7 @@ document.addEventListener("click", (e) => {
 
       const sessionPkAtClick = assignSessionPk;
       const durationAtClick = assignDuration;
+      const backUrlAtClick = assignBackUrl;
       exitAssignMode();
 
       fetch(assignUrl, { method: "POST", body })
@@ -82,17 +99,23 @@ document.addEventListener("click", (e) => {
             document.body.dispatchEvent(
               new CustomEvent("timetableChanged"),
             );
+            if (backUrlAtClick) {
+              htmx.ajax("GET", backUrlAtClick, {
+                target: "#left-pane",
+                swap: "outerHTML",
+              });
+            }
           } else {
             alert(
               `Could not place session (server returned ${resp.status}). ` +
               `Please try again.`,
             );
-            enterAssignMode(sessionPkAtClick, durationAtClick);
+            enterAssignMode(sessionPkAtClick, durationAtClick, backUrlAtClick);
           }
         })
         .catch(() => {
           alert("Network error placing session. Please try again.");
-          enterAssignMode(sessionPkAtClick, durationAtClick);
+          enterAssignMode(sessionPkAtClick, durationAtClick, backUrlAtClick);
         });
       return;
     }

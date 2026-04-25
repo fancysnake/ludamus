@@ -46,22 +46,31 @@
                 </div>
                 <div class="text-blue-700 text-xs">{% translate "Room" %} #{{ agenda_item.space_id }}</div>
             </div>
-            <form hx-post="{% url 'panel:timetable-unassign' slug=slug %}"
-                  hx-swap="none"
-                  hx-on::after-request="if(event.detail.successful){htmx.ajax('GET','{{ back_url }}',{target:'#left-pane',swap:'outerHTML'})}">
-                {% csrf_token %}
-                <input type="hidden" name="session_pk" value="{{ session.pk }}">
-                <button type="submit"
-                        class="w-full text-sm py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 transition">
-                    {% translate "Unassign" %}
-                </button>
-            </form>
+            <div class="flex gap-2">
+                <button type="button"
+                        class="flex-1 text-sm py-1.5 rounded border border-primary text-primary hover:bg-primary hover:text-white transition"
+                        data-assign-session-pk="{{ session.pk }}"
+                        data-assign-duration="{{ duration_minutes }}"
+                        data-assign-back-url="{{ back_url }}">{% translate "Reassign" %}</button>
+                <form class="flex-1"
+                      hx-post="{% url 'panel:timetable-unassign' slug=slug %}"
+                      hx-swap="none"
+                      hx-on::after-request="if(event.detail.successful){htmx.ajax('GET','{{ back_url }}',{target:'#left-pane',swap:'outerHTML'})}">
+                    {% csrf_token %}
+                    <input type="hidden" name="session_pk" value="{{ session.pk }}">
+                    <button type="submit"
+                            class="w-full text-sm py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 transition">
+                        {% translate "Unassign" %}
+                    </button>
+                </form>
+            </div>
         {% else %}
             <div class="text-sm text-neutral-400 mb-2">{% translate "Not assigned" %}</div>
             <button type="button"
                     class="w-full text-sm py-1.5 rounded border border-primary text-primary hover:bg-primary hover:text-white transition"
                     data-assign-session-pk="{{ session.pk }}"
-                    data-assign-duration="{{ duration_minutes }}">{% translate "Assign" %}</button>
+                    data-assign-duration="{{ duration_minutes }}"
+                    data-assign-back-url="{{ back_url }}">{% translate "Assign" %}</button>
         {% endif %}
     </div>
     <!-- Preferred time slots -->
