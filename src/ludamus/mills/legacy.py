@@ -508,7 +508,7 @@ class AcceptProposalService:
             self._uow.sessions.update(
                 session.pk,
                 SessionUpdateData(
-                    status=SessionStatus.ACCEPTED,
+                    status=SessionStatus.SCHEDULED,
                     display_name=session.display_name,
                     slug=slugifier(session.title),
                 ),

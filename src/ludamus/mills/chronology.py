@@ -269,8 +269,8 @@ class TimetableService:
         user_pk: int | None = None,
     ) -> None:
         session = self._uow.sessions.read(session_pk)
-        if session.status in {SessionStatus.REJECTED, SessionStatus.SCHEDULED}:
-            msg = f"Session {session_pk} cannot be scheduled (status={session.status})"
+        if session.status != SessionStatus.PENDING:
+            msg = f"Session {session_pk} is not in PENDING status"
             raise ValueError(msg)
         self._uow.agenda_items.create(
             {
@@ -299,7 +299,7 @@ class TimetableService:
             raise NotFoundError
         event = self._uow.sessions.read_event(session_pk)
         self._uow.agenda_items.delete(agenda_item.pk)
-        self._uow.sessions.update(session_pk, {"status": SessionStatus.ACCEPTED})
+        self._uow.sessions.update(session_pk, {"status": SessionStatus.PENDING})
         log_data: ScheduleChangeLogData = {
             "event_id": event.pk,
             "session_id": session_pk,
@@ -318,9 +318,7 @@ class TimetableService:
             if agenda_item is None:
                 raise NotFoundError
             self._uow.agenda_items.delete(agenda_item.pk)
-            self._uow.sessions.update(
-                log.session_id, {"status": SessionStatus.ACCEPTED}
-            )
+            self._uow.sessions.update(log.session_id, {"status": SessionStatus.PENDING})
         elif log.action == ScheduleChangeAction.UNASSIGN:
             if (
                 log.old_space_id is None
@@ -330,8 +328,8 @@ class TimetableService:
                 msg = "Cannot revert UNASSIGN: missing original placement data"
                 raise ValueError(msg)
             session = self._uow.sessions.read(log.session_id)
-            if session.status != SessionStatus.ACCEPTED:
-                msg = f"Session {log.session_id} is not in ACCEPTED status"
+            if session.status != SessionStatus.PENDING:
+                msg = f"Session {log.session_id} is not in PENDING status"
                 raise ValueError(msg)
             self._uow.agenda_items.create(
                 {
@@ -566,7 +564,7 @@ class TimetableOverviewService:
             accepted = [
                 s
                 for s in sessions
-                if s.status in {SessionStatus.ACCEPTED, SessionStatus.SCHEDULED}
+                if s.status in {SessionStatus.PENDING, SessionStatus.SCHEDULED}
             ]
             scheduled = [s for s in sessions if s.status == SessionStatus.SCHEDULED]
             accepted_count = len(accepted)

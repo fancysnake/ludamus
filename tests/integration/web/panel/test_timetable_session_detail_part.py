@@ -76,7 +76,7 @@ class TestTimetableSessionDetailPartView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )
@@ -108,7 +108,7 @@ class TestTimetableSessionDetailPartView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )
@@ -131,7 +131,7 @@ class TestTimetableSessionDetailPartView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             title="My Awesome Session",
             participants_limit=10,
             min_age=0,
@@ -150,7 +150,7 @@ class TestTimetableSessionDetailPartView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )
@@ -174,7 +174,7 @@ class TestTimetableSessionDetailPartView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )

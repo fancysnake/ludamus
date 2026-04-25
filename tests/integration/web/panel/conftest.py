@@ -15,7 +15,7 @@ def timetable_scale_data_fixture(event, area, proposal_category, sphere):
         SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=20,
             min_age=0,
         )

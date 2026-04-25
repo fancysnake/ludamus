@@ -188,7 +188,7 @@ class TestProposalsPageView:
             slug="session-b",
             sphere=sphere,
             participants_limit=5,
-            status="accepted",
+            status="pending",
         )
 
         response = authenticated_client.get(self.get_url(event), {"host": "Other"})
@@ -202,11 +202,11 @@ class TestProposalsPageView:
                 **_TRACK_FILTER_CONTEXT,
                 "stats": {
                     "hosts_count": 2,
-                    "pending_proposals": 1,
+                    "pending_proposals": 2,
                     "rooms_count": 0,
                     "scheduled_sessions": 0,
                     "total_proposals": 2,
-                    "total_sessions": 1,
+                    "total_sessions": 2,
                 },
                 "proposals": [
                     SessionListItemDTO(
@@ -214,7 +214,7 @@ class TestProposalsPageView:
                         title="Session B",
                         display_name="Other Person",
                         category_name="RPG",
-                        status=SessionStatus.ACCEPTED,
+                        status=SessionStatus.PENDING,
                         creation_time=session_b.creation_time,
                     )
                 ],

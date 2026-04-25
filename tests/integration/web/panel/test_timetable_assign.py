@@ -153,36 +153,6 @@ class TestTimetableAssignView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
-            participants_limit=10,
-            min_age=0,
-        )
-        start_time = event.start_time
-        end_time = start_time + timedelta(hours=1)
-
-        response = authenticated_client.post(
-            self.get_url(event),
-            {
-                "session_pk": session.pk,
-                "space_pk": space.pk,
-                "start_time": start_time.isoformat(),
-                "end_time": end_time.isoformat(),
-            },
-        )
-
-        assert response.status_code == HTTPStatus.NO_CONTENT
-        assert response.get("HX-Trigger") is not None
-        session.refresh_from_db()
-        assert session.status == "scheduled"
-
-    def test_assigns_pending_session_and_promotes_to_scheduled(
-        self, authenticated_client, active_user, sphere, event, proposal_category, area
-    ):
-        sphere.managers.add(active_user)
-        space = SpaceFactory(area=area)
-        session = SessionFactory(
-            category=proposal_category,
-            sphere=sphere,
             status="pending",
             participants_limit=10,
             min_age=0,
@@ -201,6 +171,7 @@ class TestTimetableAssignView:
         )
 
         assert response.status_code == HTTPStatus.NO_CONTENT
+        assert response.get("HX-Trigger") is not None
         session.refresh_from_db()
         assert session.status == "scheduled"
 
@@ -240,7 +211,7 @@ class TestTimetableAssignView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )
@@ -321,7 +292,7 @@ class TestTimetableUnassignView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="scheduled",
             participants_limit=10,
             min_age=0,
         )
@@ -338,7 +309,7 @@ class TestTimetableUnassignView:
         assert response.status_code == HTTPStatus.NO_CONTENT
         assert response.get("HX-Trigger") is not None
         session.refresh_from_db()
-        assert session.status == "accepted"
+        assert session.status == "pending"
 
     def test_returns_422_for_unscheduled_session(
         self, authenticated_client, active_user, sphere, event, proposal_category
@@ -347,7 +318,7 @@ class TestTimetableUnassignView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )

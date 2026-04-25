@@ -90,7 +90,7 @@ class TestTimetableSessionListPartView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )
@@ -101,7 +101,7 @@ class TestTimetableSessionListPartView:
         session_pks = [s.pk for s in response.context["sessions"]]
         assert session.pk in session_pks
 
-    def test_includes_non_rejected_statuses(
+    def test_excludes_rejected_sessions(
         self, authenticated_client, active_user, sphere, event, proposal_category
     ):
         sphere.managers.add(active_user)
@@ -109,13 +109,6 @@ class TestTimetableSessionListPartView:
             category=proposal_category,
             sphere=sphere,
             status="pending",
-            participants_limit=10,
-            min_age=0,
-        )
-        accepted = SessionFactory(
-            category=proposal_category,
-            sphere=sphere,
-            status="accepted",
             participants_limit=10,
             min_age=0,
         )
@@ -132,7 +125,6 @@ class TestTimetableSessionListPartView:
         assert response.status_code == HTTPStatus.OK
         session_pks = [s.pk for s in response.context["sessions"]]
         assert pending.pk in session_pks
-        assert accepted.pk in session_pks
         assert rejected.pk not in session_pks
 
     def test_excludes_scheduled_sessions(
@@ -143,7 +135,7 @@ class TestTimetableSessionListPartView:
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )
@@ -167,7 +159,7 @@ class TestTimetableSessionListPartView:
         matching = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             title="HTMX Magic Workshop",
             participants_limit=10,
             min_age=0,
@@ -175,7 +167,7 @@ class TestTimetableSessionListPartView:
         other = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             title="Board Games Evening",
             participants_limit=10,
             min_age=0,
@@ -196,14 +188,14 @@ class TestTimetableSessionListPartView:
         matching = SessionFactory(
             category=proposal_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )
         other = SessionFactory(
             category=other_category,
             sphere=sphere,
-            status="accepted",
+            status="pending",
             participants_limit=10,
             min_age=0,
         )
