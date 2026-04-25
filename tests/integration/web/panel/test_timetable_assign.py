@@ -175,6 +175,62 @@ class TestTimetableAssignView:
         session.refresh_from_db()
         assert session.status == "scheduled"
 
+    def test_assigns_pending_session_and_promotes_to_scheduled(
+        self, authenticated_client, active_user, sphere, event, proposal_category, area
+    ):
+        sphere.managers.add(active_user)
+        space = SpaceFactory(area=area)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="pending",
+            participants_limit=10,
+            min_age=0,
+        )
+        start_time = event.start_time
+        end_time = start_time + timedelta(hours=1)
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            {
+                "session_pk": session.pk,
+                "space_pk": space.pk,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
+
+        assert response.status_code == HTTPStatus.NO_CONTENT
+        session.refresh_from_db()
+        assert session.status == "scheduled"
+
+    def test_returns_422_for_rejected_session(
+        self, authenticated_client, active_user, sphere, event, proposal_category, area
+    ):
+        sphere.managers.add(active_user)
+        space = SpaceFactory(area=area)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="rejected",
+            participants_limit=10,
+            min_age=0,
+        )
+        start_time = event.start_time
+        end_time = start_time + timedelta(hours=1)
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            {
+                "session_pk": session.pk,
+                "space_pk": space.pk,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
     def test_returns_422_for_already_scheduled_session(
         self, authenticated_client, active_user, sphere, event, proposal_category, area
     ):

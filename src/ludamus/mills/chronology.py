@@ -269,8 +269,8 @@ class TimetableService:
         user_pk: int | None = None,
     ) -> None:
         session = self._uow.sessions.read(session_pk)
-        if session.status != SessionStatus.ACCEPTED:
-            msg = f"Session {session_pk} is not in ACCEPTED status"
+        if session.status in {SessionStatus.REJECTED, SessionStatus.SCHEDULED}:
+            msg = f"Session {session_pk} cannot be scheduled (status={session.status})"
             raise ValueError(msg)
         self._uow.agenda_items.create(
             {
