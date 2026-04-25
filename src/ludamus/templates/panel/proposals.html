@@ -28,7 +28,6 @@
                        name="field_{{ field.pk }}"
                        value="{{ filter_fields|get_item:field.pk }}">
             {% endfor %}
-            {% if filter_host %}<input type="hidden" name="host" value="{{ filter_host }}">{% endif %}
             {% if filter_search %}<input type="hidden" name="search" value="{{ filter_search }}">{% endif %}
             <label for="track-scope"
                    class="text-xs text-foreground-muted whitespace-nowrap hidden sm:inline">
@@ -57,19 +56,6 @@
             <form method="get" class="flex flex-wrap gap-4 items-end">
                 {% if filter_track_pk %}<input type="hidden" name="track" value="{{ filter_track_pk }}">{% endif %}
                 <div class="w-full sm:w-48 min-w-0">
-                    <label for="filter-host"
-                           title="{% translate "Host" %}"
-                           class="block text-xs font-medium text-foreground-muted mb-1 truncate">
-                        {% translate "Host" %}
-                    </label>
-                    <input type="text"
-                           id="filter-host"
-                           name="host"
-                           value="{{ filter_host }}"
-                           placeholder="{% translate "Filter by host name" %}"
-                           class="filter-input w-full px-3 py-2 border border-border rounded-lg text-sm">
-                </div>
-                <div class="w-full sm:w-48 min-w-0">
                     <label for="filter-search"
                            title="{% translate "Search" %}"
                            class="block text-xs font-medium text-foreground-muted mb-1 truncate">
@@ -79,7 +65,7 @@
                            id="filter-search"
                            name="search"
                            value="{{ filter_search }}"
-                           placeholder="{% translate "Search field values" %}"
+                           placeholder="{% translate "Search by host or field values" %}"
                            class="filter-input w-full px-3 py-2 border border-border rounded-lg text-sm">
                 </div>
                 {% for field in session_fields %}
