@@ -834,7 +834,6 @@ class SessionRepositoryProtocol(Protocol):  # noqa: PLR0904
     def list_sessions_by_event(
         event_id: int,
         *,
-        presenter_name: str | None = None,
         field_filters: dict[int, str] | None = None,
         search: str | None = None,
         track_pk: int | None = None,

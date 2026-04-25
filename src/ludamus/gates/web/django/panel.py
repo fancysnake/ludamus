@@ -565,7 +565,6 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "proposals"
 
-        host_name = self.request.GET.get("host", "").strip() or None
         search = self.request.GET.get("search", "").strip() or None
         session_fields = self.request.di.uow.session_fields.list_by_event(
             current_event.pk
@@ -582,13 +581,11 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["proposals"] = self.request.di.uow.sessions.list_sessions_by_event(
             current_event.pk,
-            presenter_name=host_name,
             field_filters=field_filters or None,
             search=search,
             track_pk=filter_track_pk,
         )
         context["session_fields"] = filterable_fields
-        context["filter_host"] = host_name or ""
         context["filter_search"] = search or ""
         context["filter_fields"] = {
             field.pk: self.request.GET.get(f"field_{field.pk}", "")

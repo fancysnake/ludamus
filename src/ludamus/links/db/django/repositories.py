@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import UTC, datetime, timedelta
 from secrets import token_urlsafe
@@ -453,7 +454,6 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
     def list_sessions_by_event(
         event_id: int,
         *,
-        presenter_name: str | None = None,
         field_filters: dict[int, str] | None = None,
         search: str | None = None,
         track_pk: int | None = None,
@@ -462,9 +462,6 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
             "presenter", "category"
         )
 
-        if presenter_name:
-            qs = qs.filter(presenter__name__icontains=presenter_name)
-
         if field_filters:
             for field_id, value in field_filters.items():
                 qs = qs.filter(
@@ -472,7 +469,17 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
                 )
 
         if search:
-            qs = qs.filter(field_values__value__icontains=search).distinct()
+            # SessionFieldValue.value is a JSONField. SQLite stores strings
+            # JSON-encoded with ensure_ascii=True, so non-ASCII chars are
+            # escaped (e.g. "przekleństwa"); Postgres jsonb cast to text keeps
+            # literal Unicode. OR both forms so the lookup works on both.
+            encoded = json.dumps(search)[1:-1]
+            qs = qs.filter(
+                Q(display_name__icontains=search)
+                | Q(presenter__name__icontains=search)
+                | Q(field_values__value__icontains=search)
+                | Q(field_values__value__icontains=encoded)
+            ).distinct()
 
         if track_pk is not None:
             qs = qs.filter(tracks__pk=track_pk)
