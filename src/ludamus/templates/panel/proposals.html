@@ -158,10 +158,6 @@
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--theme-warning-bg)] text-[var(--theme-warning-text)]">
                                             {% translate "Pending" %}
                                         </span>
-                                    {% elif proposal.status == "accepted" %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--theme-success-bg)] text-[var(--theme-success-text)]">
-                                            {% translate "Accepted" %}
-                                        </span>
                                     {% elif proposal.status == "rejected" %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--theme-danger-bg)] text-[var(--theme-danger-text)]">
                                             {% translate "Rejected" %}

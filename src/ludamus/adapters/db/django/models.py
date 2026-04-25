@@ -680,7 +680,7 @@ class Session(models.Model):
     status = models.CharField(
         max_length=15,
         choices=[(item.value, item.name) for item in SessionStatus],
-        default=SessionStatus.ACCEPTED,
+        default=SessionStatus.PENDING,
     )
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)

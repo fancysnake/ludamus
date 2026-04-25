@@ -151,8 +151,8 @@ class TestRevertChange:
         with pytest.raises(ValueError, match="missing original placement data"):
             service.revert_change(log_pk=1)
 
-    def test_revert_unassign_raises_when_session_not_accepted(self, service, mock_uow):
-        """Lines 225-226: session not in ACCEPTED status."""
+    def test_revert_unassign_raises_when_session_not_pending(self, service, mock_uow):
+        """Session must be in PENDING status to revert an unassign."""
         log = MagicMock()
         log.action = ScheduleChangeAction.UNASSIGN
         log.session_id = 1
@@ -165,7 +165,7 @@ class TestRevertChange:
         session.status = SessionStatus.SCHEDULED
         mock_uow.sessions.read.return_value = session
 
-        with pytest.raises(ValueError, match="is not in ACCEPTED status"):
+        with pytest.raises(ValueError, match="is not in PENDING status"):
             service.revert_change(log_pk=1)
 
     def test_revert_unknown_action_raises(self, service, mock_uow):

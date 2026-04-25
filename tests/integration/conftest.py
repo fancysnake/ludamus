@@ -171,7 +171,7 @@ class SessionFactory(DjangoModelFactory):
     category = SubFactory("tests.integration.conftest.ProposalCategoryFactory")
     participants_limit = Faker("random_int", min=2, max=20)
     sphere = SubFactory(SphereFactory)
-    status = "accepted"
+    status = "pending"
 
 
 class SessionParticipationFactory(DjangoModelFactory):
