@@ -19,6 +19,12 @@
   transform: scale(1) translateY(0);
 }
 
+.modal[open].session-detail-modal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 @starting-style {
   .modal[open] {
     opacity: 0;
