@@ -90,6 +90,7 @@ class TestTimetableGridPartView:
                 "grid": _empty_grid(),
                 "filter_track_pk": None,
                 "conflict_session_pks": set(),
+                "slot_violation_session_pks": set(),
                 "slug": event.slug,
             },
         )

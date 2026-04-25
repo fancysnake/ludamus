@@ -82,6 +82,21 @@ class ConflictDTO(BaseModel):
     manager_names: list[str] = []
 
 
+class PreferredSlotRangeDTO(BaseModel):
+    start_time: datetime
+    end_time: datetime
+
+
+class PreferredSlotViolationDTO(BaseModel):
+    session_pk: int
+    session_title: str
+    scheduled_start: datetime
+    scheduled_end: datetime
+    preferred_slots: list[PreferredSlotRangeDTO]
+    track_name: str | None = None
+    manager_names: list[str] = []
+
+
 class HeatmapCellStatus(StrEnum):
     EMPTY = auto()
     SCHEDULED = auto()

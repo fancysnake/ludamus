@@ -83,7 +83,6 @@ class TestTimetableOverviewPageView:
                 },
                 "active_nav": "timetable",
                 "heatmap": _empty_heatmap(),
-                "conflicts_grouped": {},
                 "track_progress": [],
                 "slug": event.slug,
                 "tab_urls": {
@@ -93,6 +92,9 @@ class TestTimetableOverviewPageView:
                     "log": reverse("panel:timetable-log", kwargs={"slug": event.slug}),
                     "overview": reverse(
                         "panel:timetable-overview", kwargs={"slug": event.slug}
+                    ),
+                    "problems": reverse(
+                        "panel:timetable-problems", kwargs={"slug": event.slug}
                     ),
                 },
             },
@@ -112,16 +114,6 @@ class TestTimetableOverviewPageView:
         assert len(heatmap.rows) > 0
         assert len(heatmap.days) == 1
         assert time_slot is not None
-
-    def test_empty_conflicts_when_no_sessions(
-        self, authenticated_client, active_user, sphere, event
-    ):
-        sphere.managers.add(active_user)
-
-        response = authenticated_client.get(self.get_url(event))
-
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["conflicts_grouped"] == {}
 
     def test_track_progress_shows_tracks(
         self, authenticated_client, active_user, sphere, event, proposal_category, area

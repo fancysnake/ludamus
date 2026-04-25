@@ -88,6 +88,9 @@ class TestTimetableLogPageView:
                     "overview": reverse(
                         "panel:timetable-overview", kwargs={"slug": event.slug}
                     ),
+                    "problems": reverse(
+                        "panel:timetable-problems", kwargs={"slug": event.slug}
+                    ),
                 },
             },
         )

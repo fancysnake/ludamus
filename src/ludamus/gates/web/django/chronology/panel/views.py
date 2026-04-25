@@ -40,6 +40,7 @@ def _timetable_tab_urls(slug: str) -> dict[str, str]:
         "timetable": reverse("panel:timetable", kwargs={"slug": slug}),
         "log": reverse("panel:timetable-log", kwargs={"slug": slug}),
         "overview": reverse("panel:timetable-overview", kwargs={"slug": slug}),
+        "problems": reverse("panel:timetable-problems", kwargs={"slug": slug}),
     }
 
 
@@ -97,7 +98,11 @@ class TimetablePageView(PanelAccessMixin, EventContextMixin, View):
             space_page=room_page,
             selected_date=selected_date,
         )
-        conflicts = ConflictDetectionService(uow).list_all_for_track(
+        conflict_service = ConflictDetectionService(uow)
+        conflicts = conflict_service.list_all_for_track(
+            event_pk=current_event.pk, track_pk=filter_track_pk
+        )
+        slot_violations = conflict_service.list_preferred_slot_violations(
             event_pk=current_event.pk, track_pk=filter_track_pk
         )
         categories = uow.proposal_categories.list_by_event(current_event.pk)
@@ -109,6 +114,7 @@ class TimetablePageView(PanelAccessMixin, EventContextMixin, View):
         context["grid"] = grid
         context["conflict_session_pks"] = {c.session_pk for c in conflicts}
         context["conflicts_count"] = len(conflicts)
+        context["slot_violation_session_pks"] = {v.session_pk for v in slot_violations}
         context["categories"] = categories
         context["category_pk"] = category_pk
         context["max_duration_minutes"] = max_duration_minutes
@@ -265,18 +271,23 @@ class TimetableGridPartView(PanelAccessMixin, EventContextMixin, View):
 
         selected_date = _parse_date_param(self.request.GET.get("date"))
 
-        grid = TimetableService(self.request.di.uow).build_grid(
+        uow = self.request.di.uow
+        grid = TimetableService(uow).build_grid(
             event_pk=current_event.pk,
             tz=get_current_timezone(),
             track_pk=filter_track_pk,
             space_page=room_page,
             selected_date=selected_date,
         )
+        slot_violations = ConflictDetectionService(uow).list_preferred_slot_violations(
+            event_pk=current_event.pk, track_pk=filter_track_pk
+        )
 
         context: dict[str, object] = {
             "grid": grid,
             "filter_track_pk": filter_track_pk,
             "conflict_session_pks": set(),
+            "slot_violation_session_pks": {v.session_pk for v in slot_violations},
             "slug": slug,
         }
         return TemplateResponse(
@@ -369,7 +380,7 @@ class TimetableUnassignView(PanelAccessMixin, EventContextMixin, View):
 
 
 class TimetableOverviewPageView(PanelAccessMixin, EventContextMixin, View):
-    """Full page: sphere-manager overview — heatmap, all conflicts, track progress."""
+    """Full page: sphere-manager overview — heatmap and track progress."""
 
     request: PanelRequest
 
@@ -382,18 +393,43 @@ class TimetableOverviewPageView(PanelAccessMixin, EventContextMixin, View):
 
         uow = self.request.di.uow
         overview = TimetableOverviewService(uow)
-        all_conflicts = overview.get_all_conflicts(current_event.pk)
 
         context["heatmap"] = overview.build_heatmap(
-            current_event.pk, tz=get_current_timezone(), conflicts=all_conflicts
-        )
-        context["conflicts_grouped"] = overview.all_conflicts_grouped(
-            current_event.pk, conflicts=all_conflicts
+            current_event.pk, tz=get_current_timezone()
         )
         context["track_progress"] = overview.track_progress(current_event.pk)
         context["slug"] = slug
         context["tab_urls"] = _timetable_tab_urls(slug)
         return TemplateResponse(self.request, "panel/timetable-overview.html", context)
+
+
+class TimetableProblemsPageView(PanelAccessMixin, EventContextMixin, View):
+    """Full page: consolidated triage of conflicts and preferred-slot violations."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "timetable"
+
+        uow = self.request.di.uow
+        conflict_service = ConflictDetectionService(uow)
+        overview = TimetableOverviewService(uow)
+        all_conflicts = overview.get_all_conflicts(current_event.pk)
+        slot_violations = conflict_service.list_preferred_slot_violations(
+            event_pk=current_event.pk, track_pk=None
+        )
+
+        context["conflicts_grouped"] = overview.all_conflicts_grouped(
+            current_event.pk, conflicts=all_conflicts
+        )
+        context["slot_violations"] = slot_violations
+        context["slug"] = slug
+        context["tab_urls"] = _timetable_tab_urls(slug)
+        return TemplateResponse(self.request, "panel/timetable-problems.html", context)
 
 
 class TimetableLogPageView(PanelAccessMixin, EventContextMixin, View):

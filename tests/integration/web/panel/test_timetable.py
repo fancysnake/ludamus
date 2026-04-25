@@ -12,7 +12,12 @@ from ludamus.pacts.chronology import (
     TIMETABLE_SLOT_MINUTES,
     TimetableGridDTO,
 )
-from tests.integration.conftest import AgendaItemFactory, SpaceFactory
+from tests.integration.conftest import (
+    AgendaItemFactory,
+    SessionFactory,
+    SpaceFactory,
+    TimeSlotFactory,
+)
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -118,6 +123,7 @@ class TestTimetablePageView:
                 "category_pk": None,
                 "max_duration_minutes": None,
                 "duration_chips": [("≤30 min", 30), ("≤60 min", 60), ("≤90 min", 90)],
+                "slot_violation_session_pks": set(),
                 "slug": event.slug,
                 "tab_urls": {
                     "timetable": reverse(
@@ -126,6 +132,9 @@ class TestTimetablePageView:
                     "log": reverse("panel:timetable-log", kwargs={"slug": event.slug}),
                     "overview": reverse(
                         "panel:timetable-overview", kwargs={"slug": event.slug}
+                    ),
+                    "problems": reverse(
+                        "panel:timetable-problems", kwargs={"slug": event.slug}
                     ),
                 },
             },
@@ -222,3 +231,30 @@ class TestTimetablePageView:
         )
 
         assert response.status_code == HTTPStatus.OK
+
+    def test_grid_marks_session_outside_preferred_slot(
+        self, authenticated_client, active_user, sphere, event, proposal_category, space
+    ):
+        sphere.managers.add(active_user)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="pending",
+            participants_limit=5,
+            min_age=0,
+        )
+        preferred = TimeSlotFactory(
+            event=event,
+            start_time=event.start_time + timedelta(hours=4),
+            end_time=event.start_time + timedelta(hours=6),
+        )
+        session.time_slots.add(preferred)
+        start = event.start_time
+        end = start + timedelta(hours=1)
+        AgendaItemFactory(session=session, space=space, start_time=start, end_time=end)
+
+        response = authenticated_client.get(self.get_url(event))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["slot_violation_session_pks"] == {session.pk}
+        assert response.context["conflict_session_pks"] == set()

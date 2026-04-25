@@ -24,6 +24,8 @@ from ludamus.pacts.chronology import (
     HeatmapDayDTO,
     HeatmapDTO,
     HeatmapRowDTO,
+    PreferredSlotRangeDTO,
+    PreferredSlotViolationDTO,
     SessionPositionDTO,
     SpaceColumnDTO,
     TimeLabelDTO,
@@ -468,6 +470,63 @@ class ConflictDetectionService:
             track_name=track.name,
             manager_names=self._uow.tracks.list_manager_names(track.pk),
         )
+
+    def list_preferred_slot_violations(
+        self, event_pk: int, track_pk: int | None
+    ) -> list[PreferredSlotViolationDTO]:
+        scheduled = (
+            self._uow.agenda_items.list_by_event(event_pk)
+            if track_pk is None
+            else self._uow.agenda_items.list_by_track(track_pk)
+        )
+        if not scheduled:
+            return []
+
+        preferred_by_session = self._uow.sessions.read_preferred_time_slots_by_sessions(
+            {item.session_id for item in scheduled}
+        )
+
+        violations: list[PreferredSlotViolationDTO] = []
+        for item in scheduled:
+            if not (preferred := preferred_by_session.get(item.session_id, [])):
+                continue
+            if any(
+                slot.start_time <= item.start_time and slot.end_time >= item.end_time
+                for slot in preferred
+            ):
+                continue
+            track_name, manager_names = self._slot_violation_track_attribution(
+                item.session_id, track_pk
+            )
+            violations.append(
+                PreferredSlotViolationDTO(
+                    session_pk=item.session_id,
+                    session_title=item.session_title,
+                    scheduled_start=item.start_time,
+                    scheduled_end=item.end_time,
+                    preferred_slots=[
+                        PreferredSlotRangeDTO(
+                            start_time=slot.start_time, end_time=slot.end_time
+                        )
+                        for slot in preferred
+                    ],
+                    track_name=track_name,
+                    manager_names=manager_names,
+                )
+            )
+
+        return violations
+
+    def _slot_violation_track_attribution(
+        self, session_pk: int, current_track_pk: int | None
+    ) -> tuple[str | None, list[str]]:
+        tracks = self._uow.tracks.list_by_session(session_pk)
+        if current_track_pk is not None:
+            tracks = [t for t in tracks if t.pk != current_track_pk]
+        if not tracks:
+            return None, []
+        track = tracks[0]
+        return track.name, self._uow.tracks.list_manager_names(track.pk)
 
 
 class TimetableOverviewService:
