@@ -44,11 +44,8 @@
                         <button type="button"
                                 class="mt-1 text-xs underline {% if conflict.severity == 'error' %}text-danger hover:text-danger-text{% else %}text-warning hover:text-warning-text{% endif %}"
                                 hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=conflict.session_pk %}"
-                                hx-target="#session-drawer"
-                                hx-swap="innerHTML"
-                                hx-on::after-request="document.getElementById('session-drawer').classList.remove('hidden')">
-                            {% translate "Show session" %}
-                        </button>
+                                hx-target="#left-pane"
+                                hx-swap="outerHTML">{% translate "Show session" %}</button>
                     </div>
                 </div>
             </div>

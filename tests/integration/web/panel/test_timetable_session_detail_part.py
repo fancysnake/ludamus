@@ -95,8 +95,34 @@ class TestTimetableSessionDetailPartView:
                 "duration_minutes": 60,
                 "slug": event.slug,
                 "event": EventDTO.model_validate(event),
+                "back_url": reverse(
+                    "panel:timetable-browse-pane-part", kwargs={"slug": event.slug}
+                ),
             },
         )
+
+    def test_back_url_preserves_filters(
+        self, authenticated_client, active_user, sphere, event, proposal_category
+    ):
+        sphere.managers.add(active_user)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="accepted",
+            participants_limit=10,
+            min_age=0,
+        )
+
+        response = authenticated_client.get(
+            self.get_url(event, session.pk),
+            {"category": "5", "max_duration": "60", "search": "magic"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        back_url = response.context["back_url"]
+        assert "category=5" in back_url
+        assert "max_duration=60" in back_url
+        assert "search=magic" in back_url
 
     def test_shows_session_title(
         self, authenticated_client, active_user, sphere, event, proposal_category

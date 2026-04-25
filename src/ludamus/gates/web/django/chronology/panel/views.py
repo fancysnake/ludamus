@@ -5,8 +5,9 @@ from __future__ import annotations
 import json
 import re
 from datetime import date, datetime
+from urllib.parse import urlencode
 
-from django.http import HttpResponse
+from django.http import HttpResponse, QueryDict
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -42,6 +43,15 @@ def _timetable_tab_urls(slug: str) -> dict[str, str]:
     }
 
 
+_BACK_URL_KEYS = ("track", "category", "max_duration", "search")
+
+
+def _build_back_url(slug: str, query: QueryDict) -> str:
+    base = reverse("panel:timetable-browse-pane-part", kwargs={"slug": slug})
+    params = [(key, query[key]) for key in _BACK_URL_KEYS if query.get(key, "").strip()]
+    return f"{base}?{urlencode(params)}" if params else base
+
+
 def _parse_date_param(raw: str | None) -> date | None:
     if not raw:
         return None
@@ -74,6 +84,11 @@ class TimetablePageView(PanelAccessMixin, EventContextMixin, View):
 
         selected_date = _parse_date_param(self.request.GET.get("date"))
 
+        category_pk_raw = self.request.GET.get("category", "").strip()
+        category_pk = int(category_pk_raw) if category_pk_raw.isdigit() else None
+        max_dur_raw = self.request.GET.get("max_duration", "").strip()
+        max_duration_minutes = int(max_dur_raw) if max_dur_raw.isdigit() else None
+
         uow = self.request.di.uow
         grid = TimetableService(uow).build_grid(
             event_pk=current_event.pk,
@@ -85,6 +100,7 @@ class TimetablePageView(PanelAccessMixin, EventContextMixin, View):
         conflicts = ConflictDetectionService(uow).list_all_for_track(
             event_pk=current_event.pk, track_pk=filter_track_pk
         )
+        categories = uow.proposal_categories.list_by_event(current_event.pk)
 
         context["all_tracks"] = sorted_tracks
         context["managed_track_pks"] = managed_pks
@@ -92,6 +108,11 @@ class TimetablePageView(PanelAccessMixin, EventContextMixin, View):
         context["room_page"] = room_page
         context["grid"] = grid
         context["conflict_session_pks"] = {c.session_pk for c in conflicts}
+        context["conflicts_count"] = len(conflicts)
+        context["categories"] = categories
+        context["category_pk"] = category_pk
+        context["max_duration_minutes"] = max_duration_minutes
+        context["duration_chips"] = [("≤30 min", 30), ("≤60 min", 60), ("≤90 min", 90)]
         context["slug"] = slug
         context["tab_urls"] = _timetable_tab_urls(slug)
         return TemplateResponse(self.request, "panel/timetable.html", context)
@@ -136,6 +157,7 @@ class TimetableSessionListPartView(PanelAccessMixin, EventContextMixin, View):
             "category_pk": category_pk,
             "max_duration_minutes": max_duration_minutes,
             "duration_chips": duration_chips,
+            "filter_track_pk": filter_track_pk,
             "slug": slug,
         }
         return TemplateResponse(
@@ -143,8 +165,39 @@ class TimetableSessionListPartView(PanelAccessMixin, EventContextMixin, View):
         )
 
 
+class TimetableBrowsePanePartView(PanelAccessMixin, EventContextMixin, View):
+    """HTMX partial: full browse-mode left pane (search + initial session list)."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        _, _, filter_track_pk = self.get_track_filter_context(current_event.pk)
+
+        category_pk_raw = self.request.GET.get("category", "").strip()
+        category_pk = int(category_pk_raw) if category_pk_raw.isdigit() else None
+        max_dur_raw = self.request.GET.get("max_duration", "").strip()
+        max_duration_minutes = int(max_dur_raw) if max_dur_raw.isdigit() else None
+        search = self.request.GET.get("search", "").strip()
+
+        context = {
+            "filter_track_pk": filter_track_pk,
+            "category_pk": category_pk,
+            "max_duration_minutes": max_duration_minutes,
+            "search": search,
+            "slug": slug,
+            "current_event": current_event,
+        }
+        return TemplateResponse(
+            self.request, "panel/parts/timetable-browse-pane.html", context
+        )
+
+
 class TimetableSessionDetailPartView(PanelAccessMixin, EventContextMixin, View):
-    """HTMX partial: session detail drawer for the right pane."""
+    """HTMX partial: session detail in the left pane."""
 
     request: PanelRequest
 
@@ -165,6 +218,8 @@ class TimetableSessionDetailPartView(PanelAccessMixin, EventContextMixin, View):
 
         duration_minutes = _parse_iso_duration_minutes(session.duration)
 
+        back_url = _build_back_url(slug, self.request.GET)
+
         context = {
             "session": session,
             "agenda_item": agenda_item,
@@ -173,6 +228,7 @@ class TimetableSessionDetailPartView(PanelAccessMixin, EventContextMixin, View):
             "duration_minutes": duration_minutes,
             "slug": slug,
             "event": current_event,
+            "back_url": back_url,
         }
         return TemplateResponse(
             self.request, "panel/parts/timetable-session-detail.html", context

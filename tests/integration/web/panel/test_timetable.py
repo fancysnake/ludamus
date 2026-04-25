@@ -113,6 +113,11 @@ class TestTimetablePageView:
                 "room_page": 1,
                 "grid": _empty_grid(),
                 "conflict_session_pks": set(),
+                "conflicts_count": 0,
+                "categories": [],
+                "category_pk": None,
+                "max_duration_minutes": None,
+                "duration_chips": [("≤30 min", 30), ("≤60 min", 60), ("≤90 min", 90)],
                 "slug": event.slug,
                 "tab_urls": {
                     "timetable": reverse(

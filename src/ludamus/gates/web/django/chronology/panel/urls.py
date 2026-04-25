@@ -12,6 +12,11 @@ timetable_urlpatterns = [
         name="timetable-sessions-part",
     ),
     path(
+        "parts/browse-pane/",
+        views.TimetableBrowsePanePartView.as_view(),
+        name="timetable-browse-pane-part",
+    ),
+    path(
         "parts/session/<int:pk>/",
         views.TimetableSessionDetailPartView.as_view(),
         name="timetable-session-detail-part",

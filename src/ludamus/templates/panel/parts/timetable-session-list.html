@@ -1,39 +1,11 @@
 {% load i18n %}
 <!-- Session count -->
 <div class="text-xs text-neutral-500 mb-2">
-    {% blocktranslate count count=sessions|length %}{{ count }} session{% plural %}{{ count }} sessions{% endblocktranslate %}
-</div>
-<!-- Category filter chips -->
-{% if categories %}
-    <div class="flex flex-wrap gap-1 mb-2">
-        <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?max_duration={{ max_duration_minutes|default:'' }}"
-           hx-target="#session-list"
-           class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if not category_pk %}bg-primary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
-            {% translate "All" %}
-        </a>
-        {% for cat in categories %}
-            <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ cat.pk }}&max_duration={{ max_duration_minutes|default:'' }}"
-               hx-target="#session-list"
-               class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if category_pk == cat.pk %}bg-primary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
-                {{ cat.name }}
-            </a>
-        {% endfor %}
-    </div>
-{% endif %}
-<!-- Duration filter chips -->
-<div class="flex flex-wrap gap-1 mb-3">
-    <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ category_pk|default:'' }}"
-       hx-target="#session-list"
-       class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if not max_duration_minutes %}bg-secondary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
-        {% translate "Any duration" %}
-    </a>
-    {% for label, value in duration_chips %}
-        <a hx-get="{% url 'panel:timetable-sessions-part' slug=slug %}?category={{ category_pk|default:'' }}&max_duration={{ value }}"
-           hx-target="#session-list"
-           class="px-2 py-0.5 rounded-full text-xs cursor-pointer {% if max_duration_minutes == value %}bg-secondary text-white{% else %}bg-neutral-100 text-neutral-700 hover:bg-neutral-200{% endif %}">
-            {{ label }}
-        </a>
-    {% endfor %}
+    {% if has_more %}
+        {% blocktranslate with limit=limit %}Showing first {{ limit }} — narrow with search or filters{% endblocktranslate %}
+    {% else %}
+        {% blocktranslate count count=sessions|length %}{{ count }} session{% plural %}{{ count }} sessions{% endblocktranslate %}
+    {% endif %}
 </div>
 <!-- Session cards -->
 {% if sessions %}
@@ -41,10 +13,9 @@
         {% for session in sessions %}
             <div class="card p-3 cursor-pointer hover:border-primary hover:shadow-sm transition"
                  data-session-pk="{{ session.pk }}"
-                 hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=session.pk %}"
-                 hx-target="#session-drawer"
-                 hx-swap="innerHTML"
-                 hx-on::after-request="document.getElementById('session-drawer').classList.remove('hidden')">
+                 hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=session.pk %}?track={{ filter_track_pk|default:'' }}&category={{ category_pk|default:'' }}&max_duration={{ max_duration_minutes|default:'' }}&search={{ search|urlencode }}"
+                 hx-target="#left-pane"
+                 hx-swap="outerHTML">
                 <div class="text-sm font-medium text-neutral-900 truncate">{{ session.title }}</div>
                 <div class="text-xs text-neutral-600 truncate">{{ session.display_name }}</div>
                 <div class="flex items-center gap-2 mt-1">
@@ -64,3 +35,7 @@
         <p class="text-sm">{% translate "No unassigned sessions." %}</p>
     </div>
 {% endif %}
+<!-- OOB swap: keep top filter chip bar's active classes in sync after a chip click. -->
+<div id="filter-chips"
+     hx-swap-oob="true"
+     class="flex items-center gap-4 flex-wrap">{% include "panel/parts/timetable-filter-chips.html" %}</div>
