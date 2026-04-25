@@ -62,6 +62,8 @@ Strict rules:
 - **session** → "punkt programu" (except in "RPG session" → "sesja RPG")
 - **track** → "blok" or "blok programowy"
 - **facilitator** → "twórca programu"
+- **time slot** → "przedział czasowy" (do **not** use "blok czasowy" — collides
+  with the "track" translation)
 
 ## Details
 

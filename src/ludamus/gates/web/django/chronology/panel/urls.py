@@ -39,5 +39,10 @@ timetable_urlpatterns = [
         name="timetable-overview",
     ),
     path("log/", views.TimetableLogPageView.as_view(), name="timetable-log"),
+    path(
+        "problems/",
+        views.TimetableProblemsPageView.as_view(),
+        name="timetable-problems",
+    ),
     path("do/revert/", views.TimetableRevertView.as_view(), name="timetable-revert"),
 ]

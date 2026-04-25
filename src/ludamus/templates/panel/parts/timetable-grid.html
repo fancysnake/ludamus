@@ -107,7 +107,7 @@
                     {% endfor %}
                     <!-- Sessions -->
                     {% for pos in col.sessions %}
-                        <div class="timetable-session absolute rounded overflow-hidden cursor-pointer border text-xs opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {% if pos.agenda_item.session_id in conflict_session_pks %} bg-danger-bg border-danger hover:opacity-100 {% else %} bg-info-bg border-info hover:opacity-100 {% endif %}"
+                        <div class="timetable-session absolute rounded overflow-hidden cursor-pointer border text-xs opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {% if pos.agenda_item.session_id in conflict_session_pks %} bg-danger-bg border-danger hover:opacity-100 {% elif pos.agenda_item.session_id in slot_violation_session_pks %} bg-warning-bg border-warning hover:opacity-100 {% else %} bg-info-bg border-info hover:opacity-100 {% endif %}"
                              tabindex="0"
                              title="{{ pos.agenda_item.session_title }}"
                              style="top: calc({{ pos.top_px }}px + 20px);
@@ -119,14 +119,18 @@
                              hx-target="#left-pane"
                              hx-swap="outerHTML">
                             <div class="timetable-session-body px-1 py-0.5 h-full overflow-hidden">
-                                <div class="timetable-session-title font-medium wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger-text{% else %}text-info-text{% endif %}">
-                                    {% if pos.agenda_item.session_id in conflict_session_pks %}⚠{% endif %}
+                                <div class="timetable-session-title font-medium wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger-text{% elif pos.agenda_item.session_id in slot_violation_session_pks %}text-warning-text{% else %}text-info-text{% endif %}">
+                                    {% if pos.agenda_item.session_id in conflict_session_pks %}
+                                        ⚠
+                                    {% elif pos.agenda_item.session_id in slot_violation_session_pks %}
+                                        ⏰
+                                    {% endif %}
                                     {{ pos.agenda_item.session_title|truncatechars:256 }}
                                 </div>
-                                <div class="timetable-session-meta wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% else %}text-info{% endif %} {% if pos.height_px <= 32 %}hidden{% endif %}">
+                                <div class="timetable-session-meta wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% elif pos.agenda_item.session_id in slot_violation_session_pks %}text-warning{% else %}text-info{% endif %} {% if pos.height_px <= 32 %}hidden{% endif %}">
                                     {{ pos.agenda_item.presenter_name }}
                                 </div>
-                                <div class="timetable-session-meta {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% else %}text-info{% endif %} {% if pos.height_px <= 52 %}hidden{% endif %}">
+                                <div class="timetable-session-meta {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% elif pos.agenda_item.session_id in slot_violation_session_pks %}text-warning{% else %}text-info{% endif %} {% if pos.height_px <= 52 %}hidden{% endif %}">
                                     {{ pos.agenda_item.session_duration_minutes }} min
                                 </div>
                             </div>

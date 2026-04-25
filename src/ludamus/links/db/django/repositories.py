@@ -380,6 +380,38 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
         )
 
     @staticmethod
+    def read_preferred_time_slots(session_id: int) -> list[TimeSlotDTO]:
+        time_slots = TimeSlot.objects.filter(session__id=session_id)
+        return [TimeSlotDTO.model_validate(ts) for ts in time_slots]
+
+    @staticmethod
+    def read_preferred_time_slots_by_sessions(
+        session_ids: Iterable[int],
+    ) -> dict[int, list[TimeSlotDTO]]:
+        if not (ids := list(session_ids)):
+            return {}
+        rows = (
+            Session.time_slots.through.objects.filter(session_id__in=ids)
+            .select_related("timeslot")
+            .values(
+                "session_id",
+                "timeslot__id",
+                "timeslot__start_time",
+                "timeslot__end_time",
+            )
+        )
+        result: dict[int, list[TimeSlotDTO]] = {sid: [] for sid in ids}
+        for row in rows:
+            result[row["session_id"]].append(
+                TimeSlotDTO(
+                    pk=row["timeslot__id"],
+                    start_time=row["timeslot__start_time"],
+                    end_time=row["timeslot__end_time"],
+                )
+            )
+        return result
+
+    @staticmethod
     def slug_exists(sphere_id: int, slug: str) -> bool:
         return Session.objects.filter(sphere_id=sphere_id, slug=slug).exists()
 
@@ -436,8 +468,7 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
         if field_filters:
             for field_id, value in field_filters.items():
                 qs = qs.filter(
-                    field_values__field_id=field_id,
-                    field_values__value__icontains=value,
+                    field_values__field_id=field_id, field_values__value=value
                 )
 
         if search:

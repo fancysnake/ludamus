@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-25 11:00+0200\n"
+"POT-Creation-Date: 2026-04-25 12:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -101,7 +101,7 @@ msgstr "użytkownicy"
 
 #: src/ludamus/adapters/db/django/models.py:548
 msgid "Time slots can't overlap!"
-msgstr "Bloki czasowe nie mogą się nakładać!"
+msgstr "Przedziały czasowe nie mogą się nakładać!"
 
 #: src/ludamus/adapters/db/django/models.py:553
 msgid "Select from list"
@@ -579,7 +579,7 @@ msgstr "Brak dostępnych opcji zapisu"
 
 #: src/ludamus/adapters/web/django/forms.py:188
 #: src/ludamus/templates/chronology/enroll_select.html:79
-#: src/ludamus/templates/panel/timetable-log.html:46
+#: src/ludamus/templates/panel/timetable-log.html:47
 msgid "User"
 msgstr "Nazwa użytkownika"
 
@@ -621,16 +621,16 @@ msgstr "Wybierz przestrzeń, gdzie odbędzie się ten punkt programu"
 
 #: src/ludamus/adapters/web/django/forms.py:409
 msgid "Time slot"
-msgstr "Blok czasowy"
+msgstr "Przedział czasowy"
 
 #: src/ludamus/adapters/web/django/forms.py:411
 msgid "Select the time slot for this session"
-msgstr "Wybierz blok czasowy dla tego punktu programu"
+msgstr "Wybierz przedział czasowy dla tego punktu programu"
 
 #: src/ludamus/adapters/web/django/forms.py:412
 #: src/ludamus/templates/chronology/accept_proposal.html:97
 msgid "Select a time slot..."
-msgstr "Wybierz blok czasowy..."
+msgstr "Wybierz przedział czasowy..."
 
 #: src/ludamus/adapters/web/django/forms.py:418
 msgid "This field is required."
@@ -988,7 +988,7 @@ msgstr "Wybierz kategorię."
 
 #: src/ludamus/gates/web/django/chronology/views.py:575
 msgid "Please select at least one time slot."
-msgstr "Wybierz przynajmniej jeden blok czasowy."
+msgstr "Wybierz przynajmniej jeden przedział czasowy."
 
 #: src/ludamus/gates/web/django/chronology/views.py:616
 msgid "Please select at least one track."
@@ -1612,25 +1612,25 @@ msgstr "Sala została usunięta."
 
 #: src/ludamus/gates/web/django/panel.py:2958
 msgid "Time slot created successfully."
-msgstr "Blok czasowy został utworzony."
+msgstr "Przedział czasowy został utworzony."
 
 #: src/ludamus/gates/web/django/panel.py:2977
 #: src/ludamus/gates/web/django/panel.py:3004
 #: src/ludamus/gates/web/django/panel.py:3055
 msgid "Time slot not found."
-msgstr "Blok czasowy nie został znaleziony."
+msgstr "Przedział czasowy nie został znaleziony."
 
 #: src/ludamus/gates/web/django/panel.py:3037
 msgid "Time slot updated successfully."
-msgstr "Blok czasowy został zaktualizowany."
+msgstr "Przedział czasowy został zaktualizowany."
 
 #: src/ludamus/gates/web/django/panel.py:3061
 msgid "Cannot delete time slot used in proposals."
-msgstr "Nie można usunąć bloku czasowego używanego w zgłoszeniach."
+msgstr "Nie można usunąć przedziału czasowego używanego w zgłoszeniach."
 
 #: src/ludamus/gates/web/django/panel.py:3065
 msgid "Time slot deleted successfully."
-msgstr "Blok czasowy został usunięty."
+msgstr "Przedział czasowy został usunięty."
 
 #: src/ludamus/gates/web/django/panel.py:3172
 msgid "Track created successfully."
@@ -1781,7 +1781,7 @@ msgstr "Zaakceptuj zgłoszenie"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:12
 msgid "Select space and time slot for"
-msgstr "Wybierz przestrzeń i blok czasowy dla"
+msgstr "Wybierz przestrzeń i przedział czasowy dla"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:25
 #: src/ludamus/templates/chronology/anonymous_enroll.html:35
@@ -1840,7 +1840,7 @@ msgstr "Specjalne potrzeby"
 #: src/ludamus/templates/chronology/propose/parts/review.html:144
 #: src/ludamus/templates/chronology/propose/parts/timeslots.html:5
 msgid "Preferred Time Slots"
-msgstr "Preferowane bloki czasowe"
+msgstr "Preferowane przedziały czasowe"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:75
 msgid "Assign to Schedule"
@@ -1848,7 +1848,7 @@ msgstr "Przypisz do harmonogramu"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:91
 msgid "Time Slot"
-msgstr "Wybrany blok czasowy:"
+msgstr "Wybrany przedział czasowy:"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:103
 msgid "Preferred"
@@ -1856,7 +1856,7 @@ msgstr "Preferowany"
 
 #: src/ludamus/templates/chronology/accept_proposal.html:108
 msgid "Preferred time slots are highlighted in bold."
-msgstr "Preferowane bloki czasowe są pogrubione."
+msgstr "Preferowane przedziały czasowe są pogrubione."
 
 #: src/ludamus/templates/chronology/accept_proposal.html:113
 msgid "Accept and Add to Agenda"
@@ -1899,7 +1899,7 @@ msgstr "Uczestnicy"
 #: src/ludamus/templates/chronology/enroll_select.html:35
 #: src/ludamus/templates/chronology/event.html:766
 #: src/ludamus/templates/panel/parts/timetable-grid.html:77
-#: src/ludamus/templates/panel/timetable-log.html:45
+#: src/ludamus/templates/panel/timetable-log.html:46
 msgid "Time"
 msgstr "Czas"
 
@@ -2418,7 +2418,7 @@ msgstr "Max"
 
 #: src/ludamus/templates/chronology/event.html:338
 #: src/ludamus/templates/panel/parts/timetable-filter-chips.html:8
-#: src/ludamus/templates/panel/timetable-log.html:27
+#: src/ludamus/templates/panel/timetable-log.html:28
 msgid "All"
 msgstr "Wszystkie"
 
@@ -2448,7 +2448,7 @@ msgstr "Zgłoś"
 
 #: src/ludamus/templates/chronology/event.html:424
 msgid "No sessions scheduled for this time slot"
-msgstr "Brak punktów programu zaplanowanych w tym bloku czasowym"
+msgstr "Brak punktów programu zaplanowanych w tym przedziale czasowym"
 
 #: src/ludamus/templates/chronology/event.html:427
 msgid "be the first to propose!"
@@ -2460,7 +2460,7 @@ msgstr "Jeszcze Niedostępne"
 
 #: src/ludamus/templates/chronology/event.html:461
 msgid "No sessions or time slots available yet"
-msgstr "Brak dostępnych punktów programu lub bloków czasowych"
+msgstr "Brak dostępnych punktów programu lub przedziałów czasowych"
 
 #: src/ludamus/templates/chronology/event.html:465
 msgid "Be the first to propose a session!"
@@ -2498,7 +2498,7 @@ msgid "Preferred Times"
 msgstr "Preferowane czasy"
 
 #: src/ludamus/templates/chronology/event.html:512
-#: src/ludamus/templates/panel/timetable-log.html:47
+#: src/ludamus/templates/panel/timetable-log.html:48
 msgid "Action"
 msgstr "Akcja"
 
@@ -2624,7 +2624,7 @@ msgstr "Twoje dane"
 
 #: src/ludamus/templates/chronology/propose/parts/_stepper.html:30
 msgid "Time slots"
-msgstr "Bloki czasowe"
+msgstr "Przedziały czasowe"
 
 #: src/ludamus/templates/chronology/propose/parts/_stepper.html:32
 msgctxt "wizard step"
@@ -2759,16 +2759,17 @@ msgstr "Prześlij zgłoszenie"
 
 #: src/ludamus/templates/chronology/propose/parts/timeslots.html:6
 msgid "Pick every slot you could host."
-msgstr "Zaznacz każdy blok, w którym możesz poprowadzić."
+msgstr "Zaznacz każdy przedział, w którym możesz poprowadzić."
 
 #: src/ludamus/templates/chronology/propose/parts/timeslots.html:45
 msgid "Time slots saved. Next step coming soon."
-msgstr "Bloki czasowe zapisane. Następny krok wkrótce."
+msgstr "Przedziały czasowe zapisane. Następny krok wkrótce."
 
 #: src/ludamus/templates/chronology/propose/parts/timeslots.html:47
 msgid "No time slot selection needed. Proceeding to next step."
 msgstr ""
-"Wybór bloków czasowych nie jest wymagany. Przechodź do następnego kroku."
+"Wybór przedziałów czasowych nie jest wymagany. Przechodź do następnego "
+"kroku."
 
 #: src/ludamus/templates/components/encounter_card.html:12
 msgid "You organize"
@@ -3467,7 +3468,7 @@ msgstr "Przykładowe spotkania"
 
 #: src/ludamus/templates/panel/_time-slot-form.html:7
 msgid "Time Slot Details"
-msgstr "Szczegóły bloku czasowego"
+msgstr "Szczegóły przedziału czasowego"
 
 #: src/ludamus/templates/panel/_time-slot-form.html:8
 msgid "Timezone:"
@@ -3908,12 +3909,12 @@ msgstr "Skonfiguruj pola punktu programu"
 #: src/ludamus/templates/panel/time-slots.html:9
 #: src/ludamus/templates/panel/time-slots.html:32
 msgid "Time Slots"
-msgstr "Bloki czasowe"
+msgstr "Przedziały czasowe"
 
 #: src/ludamus/templates/panel/cfp-edit.html:342
 msgid "Select which time slots are available for this session type."
 msgstr ""
-"Wybierz, które bloki czasowe są dostępne dla tego typu punktu programu."
+"Wybierz, które przedziały czasowe są dostępne dla tego typu punktu programu."
 
 #: src/ludamus/templates/panel/cfp-edit.html:361
 #: src/ludamus/templates/panel/cfp-edit.html:382
@@ -3922,11 +3923,11 @@ msgstr "Uwzględnione"
 
 #: src/ludamus/templates/panel/cfp-edit.html:371
 msgid "No time slots defined for this event."
-msgstr "Nie zdefiniowano bloków czasowych dla tego wydarzenia."
+msgstr "Nie zdefiniowano przedziałów czasowych dla tego wydarzenia."
 
 #: src/ludamus/templates/panel/cfp-edit.html:373
 msgid "Configure time slots"
-msgstr "Skonfiguruj bloki czasowe"
+msgstr "Skonfiguruj przedziały czasowe"
 
 #: src/ludamus/templates/panel/cfp-edit.html:378
 msgid "Chosen"
@@ -4153,17 +4154,17 @@ msgid "Search…"
 msgstr "Szukaj…"
 
 #: src/ludamus/templates/panel/parts/timetable-browse-pane.html:17
-#: src/ludamus/templates/panel/timetable.html:90
+#: src/ludamus/templates/panel/timetable.html:95
 msgid "Loading…"
 msgstr "Ładowanie…"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:6
-#: src/ludamus/templates/panel/timetable.html:83
+#: src/ludamus/templates/panel/timetable.html:88
 msgid "All clear"
 msgstr "Brak problemów"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:10
-#: src/ludamus/templates/panel/timetable.html:80
+#: src/ludamus/templates/panel/timetable.html:85
 #, python-format
 msgid "%(count)s conflict"
 msgid_plural "%(count)s conflicts"
@@ -4173,29 +4174,31 @@ msgstr[2] "%(count)s konfliktów"
 msgstr[3] "%(count)s konfliktów"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:29
-#: src/ludamus/templates/panel/timetable-overview.html:89
+#: src/ludamus/templates/panel/timetable-problems.html:44
 #, python-format
 msgid "Room occupied by: %(title)s"
 msgstr "Sala zajęta przez: %(title)s"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:31
-#: src/ludamus/templates/panel/timetable-overview.html:91
+#: src/ludamus/templates/panel/timetable-problems.html:46
 #, python-format
 msgid "Room fits %(capacity)s people, session requires %(limit)s"
 msgstr "Sala mieści %(capacity)s os., wymagane %(limit)s"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:33
-#: src/ludamus/templates/panel/timetable-overview.html:93
+#: src/ludamus/templates/panel/timetable-problems.html:48
 #, python-format
 msgid "%(name)s facilitates simultaneously: %(title)s"
 msgstr "%(name)s prowadzi równocześnie: %(title)s"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:38
-#: src/ludamus/templates/panel/timetable.html:38
+#: src/ludamus/templates/panel/timetable-problems.html:84
+#: src/ludamus/templates/panel/timetable.html:39
 msgid "Track:"
 msgstr "Blok:"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:40
+#: src/ludamus/templates/panel/timetable-problems.html:86
 msgid "managed by:"
 msgstr "zarządza:"
 
@@ -4224,13 +4227,13 @@ msgid "Add rooms or select a different track."
 msgstr "Dodaj sale lub wybierz inny blok programowy."
 
 #: src/ludamus/templates/panel/parts/timetable-grid.html:9
-#: src/ludamus/templates/panel/timetable-overview.html:26
+#: src/ludamus/templates/panel/timetable-overview.html:27
 msgid "No time slots for this event."
 msgstr "Brak slotów czasowych dla tego wydarzenia."
 
 #: src/ludamus/templates/panel/parts/timetable-grid.html:10
 msgid "Add time slots to see the schedule grid."
-msgstr "Dodaj bloki czasowe, aby zobaczyć siatkę harmonogramu."
+msgstr "Dodaj przedziały czasowe, aby zobaczyć siatkę harmonogramu."
 
 #: src/ludamus/templates/panel/parts/timetable-grid.html:18
 msgid "total"
@@ -4271,29 +4274,29 @@ msgid "Assignment"
 msgstr "Przypisanie"
 
 #: src/ludamus/templates/panel/parts/timetable-session-detail.html:47
-#: src/ludamus/templates/panel/timetable-log.html:23
+#: src/ludamus/templates/panel/timetable-log.html:24
 msgid "Room"
 msgstr "Sala"
 
-#: src/ludamus/templates/panel/parts/timetable-session-detail.html:54
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:55
 msgid "Reassign"
 msgstr "Zmień przypisanie"
 
-#: src/ludamus/templates/panel/parts/timetable-session-detail.html:63
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:64
 msgid "Unassign"
 msgstr "Usuń z harmonogramu"
 
-#: src/ludamus/templates/panel/parts/timetable-session-detail.html:68
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:69
 msgid "Not assigned"
 msgstr "Nieprzypisane"
 
-#: src/ludamus/templates/panel/parts/timetable-session-detail.html:73
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:75
 msgid "Assign"
 msgstr "Przypisz"
 
-#: src/ludamus/templates/panel/parts/timetable-session-detail.html:79
+#: src/ludamus/templates/panel/parts/timetable-session-detail.html:81
 msgid "Preferred slots"
-msgstr "Preferowane bloki czasowe"
+msgstr "Preferowane przedziały czasowe"
 
 #: src/ludamus/templates/panel/parts/timetable-session-list.html:5
 #, python-format
@@ -4598,12 +4601,12 @@ msgid "Submitted Proposals"
 msgstr "Przesłane zgłoszenia"
 
 #: src/ludamus/templates/panel/proposals.html:35
-#: src/ludamus/templates/panel/timetable-overview.html:114
+#: src/ludamus/templates/panel/timetable-overview.html:74
 msgid "Track"
 msgstr "Blok programowy"
 
 #: src/ludamus/templates/panel/proposals.html:41
-#: src/ludamus/templates/panel/timetable.html:42
+#: src/ludamus/templates/panel/timetable.html:43
 msgid "All tracks"
 msgstr "Wszystkie bloki"
 
@@ -4641,8 +4644,8 @@ msgid "Rejected"
 msgstr "Odrzucone"
 
 #: src/ludamus/templates/panel/proposals.html:174
-#: src/ludamus/templates/panel/timetable-overview.html:61
-#: src/ludamus/templates/panel/timetable-overview.html:116
+#: src/ludamus/templates/panel/timetable-overview.html:62
+#: src/ludamus/templates/panel/timetable-overview.html:76
 msgid "Scheduled"
 msgstr "Zaplanowane"
 
@@ -4787,7 +4790,7 @@ msgstr "Usuń przestrzeń"
 #: src/ludamus/templates/panel/time-slot-create.html:6
 #: src/ludamus/templates/panel/time-slot-create.html:9
 msgid "New Time Slot"
-msgstr "Nowy blok czasowy"
+msgstr "Nowy przedział czasowy"
 
 #: src/ludamus/templates/panel/time-slot-create.html:13
 #: src/ludamus/templates/panel/time-slot-edit.html:13
@@ -4798,15 +4801,15 @@ msgstr "Konfiguracja harmonogramu"
 #: src/ludamus/templates/panel/time-slot-edit.html:6
 #: src/ludamus/templates/panel/time-slot-edit.html:9
 msgid "Edit Time Slot"
-msgstr "Edytuj blok czasowy"
+msgstr "Edytuj przedział czasowy"
 
 #: src/ludamus/templates/panel/time-slots.html:21
 msgid "Add Time Slot"
-msgstr "Dodaj blok czasowy"
+msgstr "Dodaj przedział czasowy"
 
 #: src/ludamus/templates/panel/time-slots.html:40
 msgid "What are Time Slots?"
-msgstr "Czym są bloki czasowe?"
+msgstr "Czym są przedziały czasowe?"
 
 #: src/ludamus/templates/panel/time-slots.html:42
 msgid ""
@@ -4814,9 +4817,9 @@ msgid ""
 "select which time slots they are available for when submitting proposals. "
 "Sessions are then scheduled into these slots."
 msgstr ""
-"Bloki czasowe określają dostępne przedziały w harmonogramie wydarzenia. "
-"Twórcy wybierają, w których blokach czasowych są dostępni podczas składania "
-"zgłoszeń. Punkty programu są następnie planowane w tych blokach."
+"Przedziały czasowe wyznaczają dostępne okna w harmonogramie wydarzenia. "
+"Twórcy wybierają, w których przedziałach są dostępni podczas składania "
+"zgłoszeń. Punkty programu są następnie planowane w tych przedziałach."
 
 #: src/ludamus/templates/panel/time-slots.html:60
 #, python-format
@@ -4834,11 +4837,11 @@ msgstr "kontynuacja z"
 #: src/ludamus/templates/panel/time-slots.html:111
 #: src/ludamus/templates/panel/time-slots.html:164
 msgid "Are you sure you want to delete this time slot?"
-msgstr "Czy na pewno chcesz usunąć ten blok czasowy?"
+msgstr "Czy na pewno chcesz usunąć ten przedział czasowy?"
 
 #: src/ludamus/templates/panel/time-slots.html:120
 msgid "No slots"
-msgstr "Brak bloków czasowych"
+msgstr "Brak przedziałów czasowych"
 
 #: src/ludamus/templates/panel/time-slots.html:124
 msgid "Event ends at"
@@ -4846,25 +4849,26 @@ msgstr "Wydarzenie kończy się"
 
 #: src/ludamus/templates/panel/time-slots.html:143
 msgid "Orphaned Time Slots"
-msgstr "Osierocone bloki czasowe"
+msgstr "Osierocone przedziały czasowe"
 
 #: src/ludamus/templates/panel/time-slots.html:145
 msgid ""
 "These time slots fall outside the current event dates. Edit them to move "
 "within event dates, or delete them."
 msgstr ""
-"Te bloki czasowe wykraczają poza daty bieżącego wydarzenia. Edytuj je, aby "
-"przenieść w zakres dat wydarzenia, lub usuń je."
+"Te przedziały czasowe wykraczają poza daty bieżącego wydarzenia. Edytuj je, "
+"aby przenieść w zakres dat wydarzenia, lub usuń je."
 
 #: src/ludamus/templates/panel/time-slots.html:177
 msgid "No time slots defined. Add time slots to configure the event schedule."
 msgstr ""
-"Nie zdefiniowano bloków czasowych. Dodaj bloki czasowe, aby skonfigurować "
-"harmonogram wydarzenia."
+"Nie zdefiniowano przedziałów czasowych. Dodaj przedziały czasowe, aby "
+"skonfigurować harmonogram wydarzenia."
 
 #: src/ludamus/templates/panel/timetable-log.html:5
 #: src/ludamus/templates/panel/timetable-log.html:15
 #: src/ludamus/templates/panel/timetable-overview.html:15
+#: src/ludamus/templates/panel/timetable-problems.html:15
 #: src/ludamus/templates/panel/timetable.html:27
 msgid "Activity Log"
 msgstr "Dziennik zmian"
@@ -4875,6 +4879,7 @@ msgstr "Dziennik zmian harmonogramu"
 
 #: src/ludamus/templates/panel/timetable-log.html:14
 #: src/ludamus/templates/panel/timetable-overview.html:14
+#: src/ludamus/templates/panel/timetable-problems.html:14
 #: src/ludamus/templates/panel/timetable.html:6
 #: src/ludamus/templates/panel/timetable.html:9
 #: src/ludamus/templates/panel/timetable.html:26
@@ -4885,112 +4890,144 @@ msgstr "Harmonogram"
 #: src/ludamus/templates/panel/timetable-overview.html:5
 #: src/ludamus/templates/panel/timetable-overview.html:8
 #: src/ludamus/templates/panel/timetable-overview.html:16
+#: src/ludamus/templates/panel/timetable-problems.html:16
 #: src/ludamus/templates/panel/timetable.html:28
 msgid "Organizer Overview"
 msgstr "Przegląd harmonogramu"
 
-#: src/ludamus/templates/panel/timetable-log.html:36
+#: src/ludamus/templates/panel/timetable-log.html:17
+#: src/ludamus/templates/panel/timetable-overview.html:17
+#: src/ludamus/templates/panel/timetable-problems.html:5
+#: src/ludamus/templates/panel/timetable-problems.html:8
+#: src/ludamus/templates/panel/timetable-problems.html:17
+#: src/ludamus/templates/panel/timetable.html:29
+msgid "Problems"
+msgstr "Problemy"
+
+#: src/ludamus/templates/panel/timetable-log.html:37
 msgid "Clear filters"
 msgstr "Wyczyść filtry"
 
-#: src/ludamus/templates/panel/timetable-log.html:48
+#: src/ludamus/templates/panel/timetable-log.html:49
 msgctxt "table column"
 msgid "Session"
 msgstr "Punkt programu"
 
-#: src/ludamus/templates/panel/timetable-log.html:49
+#: src/ludamus/templates/panel/timetable-log.html:50
 msgid "Change"
 msgstr "Zmiana"
 
-#: src/ludamus/templates/panel/timetable-log.html:60
+#: src/ludamus/templates/panel/timetable-log.html:61
 msgid "Assigned"
 msgstr "Przypisano"
 
-#: src/ludamus/templates/panel/timetable-log.html:62
+#: src/ludamus/templates/panel/timetable-log.html:63
 msgid "Removed"
 msgstr "Usunięto"
 
-#: src/ludamus/templates/panel/timetable-log.html:64
+#: src/ludamus/templates/panel/timetable-log.html:65
 msgid "Reverted"
 msgstr "Cofnięto"
 
-#: src/ludamus/templates/panel/timetable-log.html:86
+#: src/ludamus/templates/panel/timetable-log.html:87
 msgid "Are you sure you want to revert this change?"
 msgstr "Czy na pewno cofnąć tę zmianę?"
 
-#: src/ludamus/templates/panel/timetable-log.html:91
+#: src/ludamus/templates/panel/timetable-log.html:92
 msgid "Revert"
 msgstr "Cofnij"
 
-#: src/ludamus/templates/panel/timetable-log.html:102
+#: src/ludamus/templates/panel/timetable-log.html:103
 msgid "No entries in the log."
 msgstr "Brak wpisów w dzienniku."
 
-#: src/ludamus/templates/panel/timetable-overview.html:22
+#: src/ludamus/templates/panel/timetable-overview.html:23
 msgid "Occupancy map"
 msgstr "Mapa obłożenia"
 
-#: src/ludamus/templates/panel/timetable-overview.html:24
+#: src/ludamus/templates/panel/timetable-overview.html:25
 msgid "No rooms for this event."
 msgstr "Brak sal dla tego wydarzenia."
 
-#: src/ludamus/templates/panel/timetable-overview.html:60
+#: src/ludamus/templates/panel/timetable-overview.html:61
 msgid "Empty"
 msgstr "Puste"
 
-#: src/ludamus/templates/panel/timetable-overview.html:62
+#: src/ludamus/templates/panel/timetable-overview.html:63
 msgid "Conflict"
 msgstr "Konflikt"
 
-#: src/ludamus/templates/panel/timetable-overview.html:68
-msgid "All conflicts"
-msgstr "Wszystkie konflikty"
-
-#: src/ludamus/templates/panel/timetable-overview.html:74
-msgid "Room overlaps"
-msgstr "Nakładanie sal"
-
-#: src/ludamus/templates/panel/timetable-overview.html:76
-msgid "Facilitator overlaps"
-msgstr "Nakładanie twórców programu"
-
-#: src/ludamus/templates/panel/timetable-overview.html:78
-msgid "Capacity exceeded"
-msgstr "Przekroczona pojemność"
-
-#: src/ludamus/templates/panel/timetable-overview.html:96
-msgid "track:"
-msgstr "blok:"
-
-#: src/ludamus/templates/panel/timetable-overview.html:104
-msgid "No conflicts."
-msgstr "Brak konfliktów."
-
-#: src/ludamus/templates/panel/timetable-overview.html:109
+#: src/ludamus/templates/panel/timetable-overview.html:69
 msgid "Track progress"
 msgstr "Postęp bloków"
 
-#: src/ludamus/templates/panel/timetable-overview.html:115
+#: src/ludamus/templates/panel/timetable-overview.html:75
 msgid "Managed by"
 msgstr "Zarządza"
 
-#: src/ludamus/templates/panel/timetable-overview.html:117
+#: src/ludamus/templates/panel/timetable-overview.html:77
 msgid "Progress"
 msgstr "Postęp"
 
-#: src/ludamus/templates/panel/timetable-overview.html:128
+#: src/ludamus/templates/panel/timetable-overview.html:88
 msgid "unassigned"
 msgstr "nieprzypisane"
 
-#: src/ludamus/templates/panel/timetable-overview.html:145
+#: src/ludamus/templates/panel/timetable-overview.html:105
 msgid "No tracks for this event."
 msgstr "Brak bloków programowych dla tego wydarzenia."
+
+#: src/ludamus/templates/panel/timetable-problems.html:23
+msgid "Conflicts"
+msgstr "Konflikty"
+
+#: src/ludamus/templates/panel/timetable-problems.html:29
+msgid "Room overlaps"
+msgstr "Nakładanie sal"
+
+#: src/ludamus/templates/panel/timetable-problems.html:31
+msgid "Facilitator overlaps"
+msgstr "Nakładanie twórców programu"
+
+#: src/ludamus/templates/panel/timetable-problems.html:33
+msgid "Capacity exceeded"
+msgstr "Przekroczona pojemność"
+
+#: src/ludamus/templates/panel/timetable-problems.html:51
+msgid "track:"
+msgstr "blok:"
+
+#: src/ludamus/templates/panel/timetable-problems.html:59
+msgid "No conflicts."
+msgstr "Brak konfliktów."
+
+#: src/ludamus/templates/panel/timetable-problems.html:64
+msgid "Sessions outside preferred slots"
+msgstr "Punkty programu poza preferowanymi przedziałami"
+
+#: src/ludamus/templates/panel/timetable-problems.html:74
+#, python-format
+msgid "Scheduled: %(start)s – %(end)s"
+msgstr "Zaplanowano: %(start)s – %(end)s"
+
+#: src/ludamus/templates/panel/timetable-problems.html:76
+msgid "Preferred slots:"
+msgstr "Preferowane przedziały:"
+
+#: src/ludamus/templates/panel/timetable-problems.html:91
+msgid "Open in Schedule"
+msgstr "Otwórz w harmonogramie"
+
+#: src/ludamus/templates/panel/timetable-problems.html:98
+msgid "All scheduled sessions are inside their preferred slots."
+msgstr ""
+"Wszystkie zaplanowane punkty programu są w preferowanych przedziałach."
 
 #: src/ludamus/templates/panel/timetable.html:16
 msgid "Click a position on the grid to place the session"
 msgstr "Kliknij pozycję na siatce, aby umieścić punkt programu"
 
-#: src/ludamus/templates/panel/timetable.html:53
+#: src/ludamus/templates/panel/timetable.html:54
 msgid "Day:"
 msgstr "Dzień:"
 
@@ -5266,3 +5303,6 @@ msgstr "Kopiuj"
 #: src/ludamus/templates/panel/venues.html:196
 msgid "No venues yet. Venues will be managed here once available."
 msgstr "Brak lokalizacji. Lokalizacje będą tutaj zarządzane po ich utworzeniu."
+
+#~ msgid "All conflicts"
+#~ msgstr "Wszystkie konflikty"
