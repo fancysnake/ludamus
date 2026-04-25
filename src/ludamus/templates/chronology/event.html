@@ -766,17 +766,19 @@
                                 {{ data.agenda_item.start_time|time:"G:i" }} - {{ data.agenda_item.end_time|time:"G:i" }}
                             </div>
                         </div>
-                        <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
-                            <div class="text-sm mb-1 text-foreground-muted">{% translate "Capacity" %}</div>
-                            <div class="font-medium flex flex-wrap items-center gap-1.5 text-foreground">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
-                                    {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
-                                </span>
-                                {% if data.waiting_count > 0 %}
-                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-(--theme-warning-light) text-(--theme-warning-text)">+{{ data.waiting_count }}</span>
-                                {% endif %}
+                        {% if not data.is_unlimited %}
+                            <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
+                                <div class="text-sm mb-1 text-foreground-muted">{% translate "Capacity" %}</div>
+                                <div class="font-medium flex flex-wrap items-center gap-1.5 text-foreground">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {% if data.is_full %}bg-coral-100 text-coral-700{% else %}bg-teal-100 text-teal-700{% endif %}">
+                                        {{ data.enrolled_count }}/{{ data.effective_participants_limit }}
+                                    </span>
+                                    {% if data.waiting_count > 0 %}
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-(--theme-warning-light) text-(--theme-warning-text)">+{{ data.waiting_count }}</span>
+                                    {% endif %}
+                                </div>
                             </div>
-                        </div>
+                        {% endif %}
                         <div class="bg-warm-100 dark:bg-neutral-800 rounded-xl p-4">
                             <div class="text-sm mb-1 text-foreground-muted">{% translate "Minimum Age" %}</div>
                             <div class="font-medium text-foreground">
@@ -840,7 +842,11 @@
                     {% with confirmed_participants=data.session_participations|dictsort:"creation_time" %}
                         {% if confirmed_participants %}
                             <h3 class="font-semibold mb-3 text-foreground-secondary">
-                                {% translate "Enrolled" %} ({{ data.enrolled_count }}/{{ data.effective_participants_limit }})
+                                {% if data.is_unlimited %}
+                                    {% translate "Enrolled" %} ({{ data.enrolled_count }})
+                                {% else %}
+                                    {% translate "Enrolled" %} ({{ data.enrolled_count }}/{{ data.effective_participants_limit }})
+                                {% endif %}
                             </h3>
                             <div class="space-y-2 mb-6">
                                 {% for participation in confirmed_participants %}
