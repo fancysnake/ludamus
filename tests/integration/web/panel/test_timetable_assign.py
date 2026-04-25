@@ -231,11 +231,12 @@ class TestTimetableAssignView:
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_returns_422_for_already_scheduled_session(
+    def test_reassigns_already_scheduled_session_to_new_slot(
         self, authenticated_client, active_user, sphere, event, proposal_category, area
     ):
         sphere.managers.add(active_user)
-        space = SpaceFactory(area=area)
+        old_space = SpaceFactory(area=area)
+        new_space = SpaceFactory(area=area)
         session = SessionFactory(
             category=proposal_category,
             sphere=sphere,
@@ -243,25 +244,33 @@ class TestTimetableAssignView:
             participants_limit=10,
             min_age=0,
         )
-        start_time = event.start_time
-        end_time = start_time + timedelta(hours=1)
+        old_start = event.start_time
+        old_end = old_start + timedelta(hours=1)
         AgendaItemFactory(
-            session=session, space=space, start_time=start_time, end_time=end_time
+            session=session, space=old_space, start_time=old_start, end_time=old_end
         )
         session.status = "scheduled"
         session.save()
+        new_start = old_start + timedelta(hours=2)
+        new_end = new_start + timedelta(hours=1)
 
         response = authenticated_client.post(
             self.get_url(event),
             {
                 "session_pk": session.pk,
-                "space_pk": space.pk,
-                "start_time": start_time.isoformat(),
-                "end_time": end_time.isoformat(),
+                "space_pk": new_space.pk,
+                "start_time": new_start.isoformat(),
+                "end_time": new_end.isoformat(),
             },
         )
 
-        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert response.status_code == HTTPStatus.NO_CONTENT
+        session.refresh_from_db()
+        assert session.status == "scheduled"
+        agenda_item = session.agenda_item
+        assert agenda_item.space_id == new_space.pk
+        assert agenda_item.start_time == new_start
+        assert agenda_item.end_time == new_end
 
 
 class TestTimetableUnassignView:
