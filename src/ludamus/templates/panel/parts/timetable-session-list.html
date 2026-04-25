@@ -20,8 +20,10 @@
                 <div class="text-xs text-neutral-600 truncate">{{ session.display_name }}</div>
                 <div class="flex items-center gap-2 mt-1">
                     <span class="text-xs text-neutral-500">{{ session.duration_minutes }} min</span>
-                    <span class="text-xs text-neutral-400">·</span>
-                    <span class="text-xs text-neutral-500">{{ session.participants_limit }} os.</span>
+                    {% if session.participants_limit %}
+                        <span class="text-xs text-neutral-400">·</span>
+                        <span class="text-xs text-neutral-500">{{ session.participants_limit }} os.</span>
+                    {% endif %}
                     {% if session.category_name %}
                         <span class="text-xs text-neutral-400">·</span>
                         <span class="text-xs text-neutral-500">{{ session.category_name }}</span>
