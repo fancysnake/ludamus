@@ -112,6 +112,7 @@
                              title="{{ pos.agenda_item.session_title }}"
                              style="top: calc({{ pos.top_px }}px + 20px);
                                     height: {{ pos.height_px }}px;
+                                    min-height: {{ pos.height_px }}px;
                                     left: calc({{ pos.left_pct }}% + 2px);
                                     width: calc({{ pos.width_pct }}% - 4px)"
                              hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=pos.agenda_item.session_id %}?track={{ filter_track_pk|default:'' }}"
