@@ -14,6 +14,6 @@
     <div id="session-list"
          hx-get="{% url 'panel:timetable-sessions-part' slug=current_event.slug %}?track={{ filter_track_pk|default:'' }}&category={{ category_pk|default:'' }}&max_duration={{ max_duration_minutes|default:'' }}&search={{ search|urlencode }}"
          hx-trigger="load, timetableChanged from:body">
-        <div class="text-xs text-neutral-400">{% translate "Loading…" %}</div>
+        <div class="text-xs text-foreground-muted">{% translate "Loading…" %}</div>
     </div>
 </div>
