@@ -91,6 +91,7 @@
                 <div id="conflict-panel"
                      class="mt-2"
                      hx-get="{% url 'panel:timetable-conflicts-part' slug=current_event.slug %}?track={{ filter_track_pk|default:'' }}"
+                     hx-swap="innerHTML"
                      hx-trigger="load, timetableChanged from:body">
                     <div class="text-xs text-foreground-muted">{% translate "Loading…" %}</div>
                 </div>
@@ -101,6 +102,7 @@
             <div id="timetable-grid"
                  data-assign-url="{% url 'panel:timetable-assign' slug=current_event.slug %}"
                  hx-get="{% url 'panel:timetable-grid-part' slug=current_event.slug %}?track={{ filter_track_pk|default:'' }}{% if grid.selected_date %}&date={{ grid.selected_date|date:'Y-m-d' }}{% endif %}&room_page={{ grid.page }}"
+                 hx-swap="innerHTML"
                  hx-trigger="timetableChanged from:body">{% include "panel/parts/timetable-grid.html" %}</div>
         </div>
     </div>

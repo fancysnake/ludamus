@@ -10,9 +10,11 @@
            hx-get="{% url 'panel:timetable-sessions-part' slug=current_event.slug %}?track={{ filter_track_pk|default:'' }}&category={{ category_pk|default:'' }}&max_duration={{ max_duration_minutes|default:'' }}"
            hx-trigger="keyup changed delay:300ms"
            hx-target="#session-list"
+           hx-swap="innerHTML"
            hx-include="[name=search]">
     <div id="session-list"
          hx-get="{% url 'panel:timetable-sessions-part' slug=current_event.slug %}?track={{ filter_track_pk|default:'' }}&category={{ category_pk|default:'' }}&max_duration={{ max_duration_minutes|default:'' }}&search={{ search|urlencode }}"
+         hx-swap="innerHTML"
          hx-trigger="load, timetableChanged from:body">
         <div class="text-xs text-foreground-muted">{% translate "Loading…" %}</div>
     </div>

@@ -50,3 +50,13 @@
 .timetable-session:focus-within .timetable-session-meta.hidden {
   display: block;
 }
+
+#session-list.htmx-request,
+#timetable-grid.htmx-request,
+#conflict-panel.htmx-request,
+#left-pane.htmx-request,
+#timetable-content.htmx-request {
+  opacity: 0.6;
+  transition: opacity 120ms;
+  pointer-events: none;
+}
