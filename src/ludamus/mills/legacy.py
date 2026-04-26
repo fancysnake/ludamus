@@ -24,6 +24,7 @@ from ludamus.pacts import (
     EventStatsData,
     FacilitatorData,
     FacilitatorDTO,
+    FacilitatorMergeError,
     HostPersonalDataEntry,
     MembershipAPIError,
     NotFoundError,
@@ -819,3 +820,30 @@ def get_user_enrollment_config(
         if (virtual_config.has_user_config or virtual_config.has_domain_config)
         else None
     )
+
+
+class FacilitatorMergeService:
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+
+    def merge(self, target_id: int, source_ids: list[int]) -> None:
+        if not source_ids:
+            msg = "At least one source facilitator is required"
+            raise FacilitatorMergeError(msg)
+        if target_id in source_ids:
+            msg = "Target cannot be among source facilitators"
+            raise FacilitatorMergeError(msg)
+
+        all_ids = [target_id, *source_ids]
+        linked_count = sum(
+            1 for fid in all_ids if self._uow.facilitators.read(fid).user_id is not None
+        )
+        if linked_count > 1:
+            msg = "Cannot merge facilitators that each have a linked user account."
+            raise FacilitatorMergeError(msg)
+
+        with self._uow.atomic():
+            self._uow.sessions.replace_facilitators_in_sessions(source_ids, target_id)
+            self._uow.host_personal_data.delete_by_facilitators(source_ids)
+            for source_id in source_ids:
+                self._uow.facilitators.delete(source_id)

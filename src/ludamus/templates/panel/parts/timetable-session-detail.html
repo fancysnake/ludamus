@@ -44,7 +44,7 @@
                 <div class="text-blue-900 font-medium">
                     {{ agenda_item.start_time|time:"H:i" }} – {{ agenda_item.end_time|time:"H:i" }}
                 </div>
-                <div class="text-blue-700 text-xs">{% translate "Room" %} #{{ agenda_item.space_id }}</div>
+                <div class="text-blue-700 text-xs">{% translate "Room" %}: {{ agenda_item.space_name }}</div>
             </div>
             <div class="flex gap-2">
                 <button type="button"

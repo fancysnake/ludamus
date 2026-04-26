@@ -15,7 +15,7 @@ from ludamus.pacts import (
 if TYPE_CHECKING:
     from datetime import datetime
 
-_SELECT_RELATED = ("session", "session__category")
+_SELECT_RELATED = ("session", "session__category", "space")
 
 
 def _to_dto(item: AgendaItem) -> AgendaItemDTO:
@@ -26,6 +26,7 @@ def _to_dto(item: AgendaItem) -> AgendaItemDTO:
         session_confirmed=item.session_confirmed,
         start_time=item.start_time,
         space_id=item.space_id,
+        space_name=item.space.name,
         session_id=item.session_id,
         session_title=item.session.title,
         presenter_name=item.session.display_name,
