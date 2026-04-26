@@ -38,7 +38,7 @@
                     </div>
                     <div class="space-y-1">
                         {% for conflict in conflicts %}
-                            <div class="text-xs text-neutral-600 pl-2 border-l-2 {% if conflict.severity == 'error' %}border-red-400{% else %}border-yellow-400{% endif %}">
+                            <div class="text-xs text-neutral-600 pl-2 border-l-2 {% if conflict.severity == 'error' %}border-danger{% else %}border-warning{% endif %}">
                                 {{ conflict.session_title }} —
                                 {% if conflict.type == "space_overlap" %}
                                     {% blocktranslate with title=conflict.session_title %}Room occupied by: {{ title }}{% endblocktranslate %}
@@ -56,7 +56,7 @@
                 </div>
             {% endfor %}
         {% else %}
-            <p class="text-sm text-green-600">{% translate "No conflicts." %}</p>
+            <p class="text-sm text-success">{% translate "No conflicts." %}</p>
         {% endif %}
     </section>
     <!-- Sessions outside preferred slots section -->
@@ -95,7 +95,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p class="text-sm text-green-600">{% translate "All scheduled sessions are inside their preferred slots." %}</p>
+            <p class="text-sm text-success">{% translate "All scheduled sessions are inside their preferred slots." %}</p>
         {% endif %}
     </section>
 </div>
