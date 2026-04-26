@@ -6,6 +6,9 @@ on:
     - cron: '0 2 * * *'  # 2:00 AM UTC daily, on main branch
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   mutation:
     runs-on: ubuntu-latest

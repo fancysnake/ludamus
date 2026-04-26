@@ -3,6 +3,9 @@ name: Deploy on staging
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Rebuild and upstart dockers
