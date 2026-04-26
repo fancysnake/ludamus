@@ -127,7 +127,6 @@ class SessionCoverImageForm(forms.Form):
     )
 
     def clean_cover_image(self) -> object:
-        image = self.cleaned_data.get("cover_image")
-        if image:
+        if image := self.cleaned_data.get("cover_image"):
             validate_uploaded_image_size(image)
         return image
