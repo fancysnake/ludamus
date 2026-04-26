@@ -347,7 +347,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Event not found."))
             return redirect("panel:index")
 
-        form = EventSettingsForm(self.request.POST)
+        form = EventSettingsForm(self.request.POST, self.request.FILES)
         if not form.is_valid():
             for field_errors in form.errors.values():
                 messages.error(self.request, str(field_errors[0]))
@@ -374,6 +374,8 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
             "end_time": cd["end_time"],
             "publication_time": cd.get("publication_time"),
         }
+        if cover_image := cd.get("cover_image"):
+            data["cover_image"] = cover_image
 
         try:
             self.request.di.uow.events.update(current_event.pk, data)

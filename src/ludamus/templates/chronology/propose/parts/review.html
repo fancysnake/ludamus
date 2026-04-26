@@ -160,10 +160,25 @@
             {% endif %}
         </div>
         <form method="post"
+              enctype="multipart/form-data"
+              hx-encoding="multipart/form-data"
               hx-post="{% url 'web:chronology:session-propose-submit' event_slug=event.slug %}"
               hx-target="this"
               hx-swap="none">
             {% csrf_token %}
+            <div class="pt-6">
+                <label for="id_cover_image"
+                       class="block text-sm font-medium text-foreground-secondary mb-2">{% translate "Cover image" %}</label>
+                <input type="file"
+                       name="cover_image"
+                       id="id_cover_image"
+                       accept="image/*"
+                       class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                <p class="text-sm text-foreground-muted mt-1">{{ image_form.cover_image.field.help_text }}</p>
+                {% if image_form.cover_image.errors %}
+                    <p class="text-sm text-danger mt-1">{{ image_form.cover_image.errors.0 }}</p>
+                {% endif %}
+            </div>
             <div class="flex flex-col-reverse sm:grid sm:grid-cols-2 gap-3 pt-6">
                 <button type="button"
                         class="btn btn-secondary py-3"
