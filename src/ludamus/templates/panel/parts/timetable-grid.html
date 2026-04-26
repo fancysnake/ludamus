@@ -41,16 +41,16 @@
          data-event-start="{{ grid.event_start_iso }}"
          data-slot-minutes="{{ grid.slot_minutes }}"
          data-slot-height="{{ grid.slot_height_px }}"
-         data-total-height="{{ grid.total_height_px }}">
+         data-total-height="{{ grid.total_height_px }}"
+         style="--total-height: {{ grid.total_height_px }}px">
         <!-- Space headers (sticky, three rows: venue / area / space) -->
         <div class="sticky top-0 z-20 border-b border-neutral-700">
             <!-- Venue row -->
             <div class="flex bg-neutral-900 border-b border-neutral-700">
                 <div class="w-16 flex-none shrink-0 bg-neutral-900"></div>
                 {% for venue in grid.venue_groups %}
-                    <div class="px-3 py-1 border-l border-neutral-700 text-center bg-neutral-900"
-                         style="flex: {{ venue.span }} 1 0;
-                                min-width: calc(9rem * {{ venue.span }})">
+                    <div class="timetable-header-cell px-3 py-1 border-l border-neutral-700 text-center bg-neutral-900"
+                         style="--span: {{ venue.span }}">
                         <div class="text-xs font-semibold text-white uppercase tracking-wide">{{ venue.venue_name }}</div>
                     </div>
                 {% endfor %}
@@ -60,9 +60,8 @@
                 <div class="w-16 flex-none shrink-0 bg-neutral-800"></div>
                 {% for venue in grid.venue_groups %}
                     {% for area in venue.areas %}
-                        <div class="px-3 py-1 border-l border-neutral-700 text-center bg-neutral-800"
-                             style="flex: {{ area.span }} 1 0;
-                                    min-width: calc(9rem * {{ area.span }})">
+                        <div class="timetable-header-cell px-3 py-1 border-l border-neutral-700 text-center bg-neutral-800"
+                             style="--span: {{ area.span }}">
                             <div class="text-xs font-medium text-white">{{ area.area_name }}</div>
                         </div>
                     {% endfor %}
@@ -82,11 +81,10 @@
         <!-- Grid body -->
         <div class="flex bg-bg-secondary">
             <!-- Time labels -->
-            <div class="w-16 flex-none relative shrink-0 border-r border-border"
-                 style="height: calc({{ grid.total_height_px }}px + 20px)">
+            <div class="timetable-time-axis w-16 flex-none relative shrink-0 border-r border-border">
                 {% for label in grid.time_labels %}
-                    <div class="absolute left-0 right-0 flex items-center justify-end -translate-y-1/2"
-                         style="top: calc({{ label.top_px }}px + 20px)">
+                    <div class="timetable-time-label absolute left-0 right-0 flex items-center justify-end -translate-y-1/2"
+                         style="--top: {{ label.top_px }}px">
                         <span class="text-xs text-neutral-400 font-mono pr-2 leading-none">{{ label.time|time:"H:i" }}</span>
                     </div>
                 {% endfor %}
@@ -94,23 +92,21 @@
             <!-- Space columns -->
             {% for col in grid.columns %}
                 <div class="flex-1 min-w-36 relative border-l border-border timetable-column"
-                     data-space-pk="{{ col.space.pk }}"
-                     style="height: calc({{ grid.total_height_px }}px + 20px)">
+                     data-space-pk="{{ col.space.pk }}">
                     <!-- Slot grid lines -->
                     {% for label in grid.time_labels %}
-                        <div class="absolute left-0 right-0 border-t border-border"
-                             style="top: calc({{ label.top_px }}px + 20px)"></div>
+                        <div class="timetable-slot-line absolute left-0 right-0 border-t border-border"
+                             style="--top: {{ label.top_px }}px"></div>
                     {% endfor %}
                     <!-- Sessions -->
                     {% for pos in col.sessions %}
                         <div class="timetable-session absolute rounded-md overflow-hidden cursor-pointer border text-xs opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {% if pos.agenda_item.session_id in conflict_session_pks %} bg-danger-bg border-danger hover:opacity-100 {% elif pos.agenda_item.session_id in slot_violation_session_pks %} bg-warning-bg border-warning hover:opacity-100 {% else %} bg-info-bg border-info hover:opacity-100 {% endif %}"
                              tabindex="0"
                              title="{{ pos.agenda_item.session_title }}"
-                             style="top: calc({{ pos.top_px }}px + 20px);
-                                    height: {{ pos.height_px }}px;
-                                    min-height: {{ pos.height_px }}px;
-                                    left: calc({{ pos.left_pct }}% + 2px);
-                                    width: calc({{ pos.width_pct }}% - 4px)"
+                             style="--top: {{ pos.top_px }}px;
+                                    --height: {{ pos.height_px }}px;
+                                    --left: {{ pos.left_pct }}%;
+                                    --width: {{ pos.width_pct }}%"
                              hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=pos.agenda_item.session_id %}?track={{ filter_track_pk|default:'' }}"
                              hx-target="#left-pane"
                              hx-swap="outerHTML">
