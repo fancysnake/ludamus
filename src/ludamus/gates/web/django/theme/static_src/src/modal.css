@@ -15,14 +15,10 @@
 }
 
 .modal[open] {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.modal[open].session-detail-modal {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  opacity: 1;
+  transform: scale(1) translateY(0);
 }
 
 @starting-style {
