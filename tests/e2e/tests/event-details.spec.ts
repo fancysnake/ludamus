@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { devices, expect, test } from '@playwright/test';
 
 test.describe('Event detail page', () => {
   test.beforeEach(async ({ page }) => {
@@ -33,4 +33,52 @@ test.describe('Event detail page', () => {
     await detailDialog.getByRole('button', { name: 'Close' }).first().click();
     await expect(detailDialog).toBeHidden();
   });
+
+  test(
+    'keeps mobile session modal footer inside the clickable dialog bounds',
+    async ({ browser }) => {
+      const context = await browser.newContext({
+        ...devices['iPhone 14 Pro'],
+        baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8000',
+      });
+      const page = await context.newPage();
+
+      await page.goto('/chronology/event/autumn-open/');
+      await page
+        .locator('.session-card')
+        .nth(1)
+        .getByRole('link')
+        .click();
+      await page.waitForTimeout(1000);
+
+      const detailDialog = page.getByRole('dialog', {
+        name: 'Cozy Storytellers Circle',
+      });
+      const footerClose = detailDialog.getByRole('button', { name: 'Close' });
+      await expect(footerClose).toBeInViewport();
+
+      const isFooterInsideDialog = await page.evaluate(() => {
+        const dialog = document.querySelector('dialog[open]');
+        const close = dialog?.querySelector('.btn[data-modal-close]');
+        if (!dialog || !close) return false;
+
+        const dialogBox = dialog.getBoundingClientRect();
+        const closeBox = close.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          closeBox.left + closeBox.width / 2,
+          closeBox.top + closeBox.height / 2,
+        );
+
+        return (
+          closeBox.bottom <= dialogBox.bottom &&
+          (hit === close || close.contains(hit))
+        );
+      });
+      expect(isFooterInsideDialog).toBe(true);
+
+      await footerClose.click();
+      await expect(detailDialog).toBeHidden();
+      await context.close();
+    },
+  );
 });

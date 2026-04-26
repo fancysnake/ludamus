@@ -662,10 +662,10 @@
     <!-- Session Detail Modals -->
     {% for data in sessions %}
         <dialog id="session-{{ data.session.pk }}"
-                class="modal max-w-[800px] w-full bg-transparent h-600 max-h-[90vh]"
+                class="modal max-w-[800px] w-full bg-transparent h-600 max-h-[90dvh] overflow-hidden"
                 aria-labelledby="session-{{ data.session.pk }}-title">
             <!-- Header -->
-            <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
                 <h3 id="session-{{ data.session.pk }}-title"
                     class="text-lg font-semibold text-foreground">{{ data.session.title }}</h3>
                 <button data-modal-close="session-{{ data.session.pk }}"
@@ -674,7 +674,7 @@
                 </button>
             </div>
             <!-- Tabs -->
-            <div class="tab-list" role="tablist">
+            <div class="tab-list shrink-0" role="tablist">
                 <button role="tab"
                         aria-selected="true"
                         aria-controls="info-{{ data.session.pk }}"
@@ -694,7 +694,7 @@
                 </button>
             </div>
             <!-- Tab Content -->
-            <div class="tab-content px-6 py-4 flex-1 overflow-y-auto text-foreground">
+            <div class="tab-content px-6 py-4 flex-1 min-h-0 overflow-y-auto text-foreground">
                 <!-- Information Tab -->
                 <div id="info-{{ data.session.pk }}"
                      role="tabpanel"
@@ -909,7 +909,7 @@
                 </div>
             </div>
             <!-- Footer -->
-            <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
+            <div class="px-6 py-4 flex justify-end gap-2 border-t border-border shrink-0">
                 <button data-modal-close="session-{{ data.session.pk }}"
                         class="btn btn-secondary text-sm">{% translate "Close" %}</button>
                 {% if data.is_enrollment_available %}
