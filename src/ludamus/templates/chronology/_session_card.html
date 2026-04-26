@@ -16,8 +16,8 @@
          data-user-enrolled="{% if data.user_enrolled %}true{% else %}false{% endif %}"
          data-user-waiting="{% if data.user_waiting %}true{% else %}false{% endif %}"
          data-min-age="{{ data.session.min_age }}"
-        data-venue="{{ data.loc.venue.slug }}"
-        data-venue-name="{{ data.loc.venue.name }}">
+         data-venue="{{ data.loc.venue.slug }}"
+         data-venue-name="{{ data.loc.venue.name }}">
         <div class="relative z-10 flex h-full flex-col px-5 pb-5">
             <a href="?session={{ data.session.pk }}"
                class="session-card-link absolute inset-0 z-10 rounded-2xl"
