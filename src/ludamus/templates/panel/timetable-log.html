@@ -58,11 +58,11 @@
                             <td class="py-2 pr-4">{{ log.user_name|default:"—" }}</td>
                             <td class="py-2 pr-4">
                                 {% if log.action == "assign" %}
-                                    <span class="text-green-700 font-medium">{% translate "Assigned" %}</span>
+                                    <span class="text-success-text font-medium">{% translate "Assigned" %}</span>
                                 {% elif log.action == "unassign" %}
-                                    <span class="text-red-700 font-medium">{% translate "Removed" %}</span>
+                                    <span class="text-danger-text font-medium">{% translate "Removed" %}</span>
                                 {% elif log.action == "revert" %}
-                                    <span class="text-yellow-700 font-medium">{% translate "Reverted" %}</span>
+                                    <span class="text-warning-text font-medium">{% translate "Reverted" %}</span>
                                 {% else %}
                                     {{ log.action }}
                                 {% endif %}
@@ -88,7 +88,7 @@
                                         {% csrf_token %}
                                         <input type="hidden" name="log_pk" value="{{ log.pk }}">
                                         <button type="submit"
-                                                class="text-xs text-neutral-500 hover:text-red-700 underline">
+                                                class="text-xs text-neutral-500 hover:text-danger-text underline">
                                             {% translate "Revert" %}
                                         </button>
                                     </form>
