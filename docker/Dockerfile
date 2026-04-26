@@ -15,7 +15,7 @@ ENV ENV=${ENV}
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=src
 ENV PYTHONUNBUFFERED=1
-# Build-only: Django settings need these to load for tailwind/compilemessages.
+# Build-only: Django settings need these to load for compilemessages.
 # Overridden at runtime by env_file / environment in compose.
 ENV SECRET_KEY=build-only-not-used-at-runtime
 ENV DB_NAME=:memory:
@@ -37,7 +37,7 @@ RUN mkdir -p staticfiles media logs \
 # Development stage with dev dependencies
 FROM base AS dev
 
-COPY docker/Procfile.tailwind /app/
+COPY docker/Procfile.dev /app/
 
 # Switch to non-root user
 USER appuser
@@ -49,7 +49,7 @@ RUN mise trust && mise install && mise run p install
 COPY --chown=appuser:appuser src ./src
 
 # Run Django commands that need source code
-RUN mise run dj tailwind install && mise run dj tailwind build && mise run dj compilemessages
+RUN mise run build-frontend && mise run dj compilemessages
 
 # Expose port
 EXPOSE 8000
@@ -71,7 +71,7 @@ RUN mise trust && mise install && mise run p install --only main
 COPY --chown=appuser:appuser src ./src
 
 # Run Django commands that need source code
-RUN mise run dj tailwind install && mise run dj tailwind build && mise run dj compilemessages
+RUN mise run build-frontend && mise run dj compilemessages
 
 # Expose port
 EXPOSE 8000

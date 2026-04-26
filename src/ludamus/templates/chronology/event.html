@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load tessera %}
 {% load cfp_tags %}
+{% load django_vite %}
 {% block title %}
     {{ event.name }}
 {% endblock title %}
@@ -956,6 +957,8 @@
     </div>
 {% endblock body %}
 {% block extra_scripts %}
+    {% vite_asset 'src/modal.ts' %}
+    {% vite_asset 'src/tabs.ts' %}
     <script>
         // Event delegation for copy Discord buttons (works with htmx-loaded content)
         document.addEventListener('click', function(e) {

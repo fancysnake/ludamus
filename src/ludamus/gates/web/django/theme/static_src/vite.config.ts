@@ -17,7 +17,12 @@ export default defineConfig({
     emptyOutDir: true,
     manifest: "manifest.json",
     rollupOptions: {
-      input: resolve(__dirname, "src/index.ts"),
+      input: {
+        index: resolve(__dirname, "src/index.ts"),
+        modal: resolve(__dirname, "src/modal.ts"),
+        tabs: resolve(__dirname, "src/tabs.ts"),
+        timetable: resolve(__dirname, "src/timetable.ts"),
+      },
     },
   },
 });

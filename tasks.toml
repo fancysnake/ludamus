@@ -8,4 +8,4 @@ run = "django-admin"
 
 [start]
 description = "Start Django dev server with frontend watch"
-run = "django-admin tailwind dev"
+run = "honcho start -f Procfile.dev"

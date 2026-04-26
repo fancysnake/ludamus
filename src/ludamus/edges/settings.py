@@ -76,7 +76,6 @@ INSTALLED_APPS = [
     # Third Party
     "django_extensions",
     "django_vite",
-    "tailwind",
     "ludamus.gates.web.django.theme",
     "heroicons",
     # First Party
@@ -389,9 +388,6 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
 ]
 
 VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
-
-# Tailwind CSS Configuration
-TAILWIND_APP_NAME = "ludamus.gates.web.django.theme"
 
 # Vite asset pipeline
 DJANGO_VITE = {
