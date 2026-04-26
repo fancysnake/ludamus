@@ -484,14 +484,18 @@ class EventsPageView(TemplateView):
         if not _is_manager(self.request):
             all_events = [e for e in all_events if e.is_published]
         event_datas: list[EventInfo] = []
-        # Assign placeholder images based on index
         for i, event in enumerate(all_events):
             img = EVENT_PLACEHOLDER_IMAGES[i % len(EVENT_PLACEHOLDER_IMAGES)]
+            cover_image_url = (
+                event.cover_image_url
+                if event.cover_image
+                else staticfiles_storage.url(img)
+            )
             event_datas.append(
                 EventInfo.from_event(
                     event=event,
                     session_count=event.session_count,
-                    cover_image_url=staticfiles_storage.url(img),
+                    cover_image_url=cover_image_url,
                 )
             )
         context["upcoming_events"] = [e for e in event_datas if not e.is_ended]
