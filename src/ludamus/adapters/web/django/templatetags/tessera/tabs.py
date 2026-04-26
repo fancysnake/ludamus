@@ -25,7 +25,8 @@ TAB_ACTIVE_CLASS = (
     " -mb-px relative z-10 shadow-[0_-1px_3px_0_rgba(0,0,0,0.06)]"
 )
 TAB_INACTIVE_CLASS = (
-    f"{_TAB_BASE} py-2 text-foreground-muted hover:text-foreground hover:bg-warm-100"
+    f"{_TAB_BASE} py-2 text-foreground-muted hover:text-foreground"
+    " hover:bg-warm-100 dark:hover:bg-bg-tertiary"
 )
 
 
