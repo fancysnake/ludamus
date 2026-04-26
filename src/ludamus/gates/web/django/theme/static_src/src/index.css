@@ -7,6 +7,7 @@
 @import "./tabs.css";
 
 @plugin "@tailwindcss/typography";
+@plugin "@hasparus/tailwind/scrollview-fade";
 
 @source "../../../../../../**/*.{html,py,js}";
 

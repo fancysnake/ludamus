@@ -693,11 +693,11 @@
                 </button>
             </div>
             <!-- Tab Content -->
-            <div class="tab-content px-6 py-4 flex-1 min-h-0 overflow-y-auto text-foreground">
+            <div class="tab-content scrollview-fade scrollview-fade-y-16 flex-1 min-h-0 overflow-y-auto [-webkit-overflow-scrolling:touch] text-foreground">
                 <!-- Information Tab -->
                 <div id="info-{{ data.session.pk }}"
                      role="tabpanel"
-                     class="tab-panel"
+                     class="tab-panel px-6 py-4"
                      data-active>
                     <!-- Host & location -->
                     <div class="flex items-center gap-3 mb-6 flex-wrap">
@@ -834,7 +834,7 @@
                 <!-- Participants Tab -->
                 <div id="participants-{{ data.session.pk }}"
                      role="tabpanel"
-                     class="tab-panel"
+                     class="tab-panel px-6 py-4"
                      inert>
                     <!-- Enrolled Participants -->
                     {% with confirmed_participants=data.session_participations|dictsort:"creation_time" %}
