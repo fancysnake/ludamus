@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from django.http import HttpResponse
 
 
-def _event_settings_update_data(cd: dict[str, object], slug: str) -> EventUpdateData:
+def _event_settings_update_data(cd: dict[str, Any], slug: str) -> EventUpdateData:
     data: EventUpdateData = {
         "name": cd["name"],
         "slug": slug,
