@@ -22,25 +22,9 @@ interface Navigation {
 const navigation = (globalThis as { navigation?: Navigation }).navigation;
 
 const scrollLockTargets = new Map<HTMLDialogElement, HTMLElement>();
-let previousRootOverflow: string | null = null;
 
 const getScrollLockTarget = (dialog: HTMLDialogElement): HTMLElement =>
   dialog.querySelector<HTMLElement>(".tab-content") ?? dialog;
-
-const setRootScrollLock = (locked: boolean): void => {
-  if (locked) {
-    if (previousRootOverflow !== null) return;
-
-    previousRootOverflow = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    return;
-  }
-
-  if (previousRootOverflow === null) return;
-
-  document.documentElement.style.overflow = previousRootOverflow;
-  previousRootOverflow = null;
-};
 
 const syncPageScrollLock = (): void => {
   const openDialogs = [
@@ -52,7 +36,7 @@ const syncPageScrollLock = (): void => {
     if (scrollLockTargets.has(dialog)) continue;
 
     const target = getScrollLockTarget(dialog);
-    disableBodyScroll(target, { reserveScrollBarGap: true });
+    disableBodyScroll(target);
     scrollLockTargets.set(dialog, target);
   }
 
@@ -62,8 +46,6 @@ const syncPageScrollLock = (): void => {
     enableBodyScroll(target);
     scrollLockTargets.delete(dialog);
   }
-
-  setRootScrollLock(openDialogs.length > 0);
 };
 
 const getDialog = (id: string): HTMLDialogElement => {
@@ -208,7 +190,6 @@ document.addEventListener("close", syncPageScrollLock, true);
 window.addEventListener("pagehide", () => {
   clearAllBodyScrollLocks();
   scrollLockTargets.clear();
-  setRootScrollLock(false);
 });
 
 if (navigation) {
