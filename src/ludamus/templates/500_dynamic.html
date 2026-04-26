@@ -21,7 +21,8 @@
             })();
         </script>
         {% vite_hmr_client %}
-        {% vite_asset 'src/index.ts' %}
+        <link rel="stylesheet"
+              href="{% vite_asset_url 'src/index.css' %}{% if VITE_DEV_MODE %}?direct{% endif %}">
     </head>
     <body class="min-h-screen font-sans antialiased flex items-center justify-center bg-background text-foreground">
         <div class="max-w-screen-sm xl:min-w-[600px] mx-auto px-4">

@@ -58,6 +58,10 @@ def static_version(request: HttpRequest) -> dict[str, str]:  # noqa: ARG001
     return {"STATIC_VERSION": settings.STATIC_VERSION}
 
 
+def vite(request: HttpRequest) -> dict[str, bool]:  # noqa: ARG001
+    return {"VITE_DEV_MODE": settings.DJANGO_VITE["default"]["dev_mode"]}
+
+
 class CurrentUserContextData(TypedDict):
     current_user_info: NotRequired[UserInfo]
     current_connected_users: list[UserInfo]

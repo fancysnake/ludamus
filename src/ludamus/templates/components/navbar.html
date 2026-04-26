@@ -24,14 +24,14 @@
                             {% if "events" in current_sphere.enabled_pages %}
                                 <a href="{% url 'web:events' %}"
                                    aria-current="{% if 'events' in ns %}page{% endif %}"
-                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors text-foreground-secondary hover:text-foreground aria-current:text-foreground aria-current:[--anchor-name:--anc]">
+                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors text-foreground-secondary hover:text-foreground aria-current:text-foreground hover:[anchor-name:--anc] aria-current:[anchor-name:--anc]">
                                     {% translate "Events" %}
                                 </a>
                             {% endif %}
                             {% if "encounters" in current_sphere.enabled_pages %}
                                 <a aria-current="{% if 'notice-board' in ns %}page{% endif %}"
                                    href="{% url 'web:notice-board:index' %}"
-                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors hover text-foreground-secondary hover:text-foreground aria-current:text-foreground aria-current:[--anchor-name:--anc]">
+                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors hover text-foreground-secondary hover:text-foreground aria-current:text-foreground hover:[anchor-name:--anc] aria-current:[anchor-name:--anc]">
                                     {% translate "Encounters" %}
                                 </a>
                             {% endif %}
