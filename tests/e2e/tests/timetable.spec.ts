@@ -29,8 +29,8 @@ test.describe('Timetable', () => {
     // Grid area exists
     await expect(page.locator('#timetable-grid')).toBeVisible();
 
-    // Conflict panel
-    await expect(page.getByText('Conflicts')).toBeVisible();
+    // Conflict panel (shows "All clear" or "N conflict(s)")
+    await expect(page.locator('#conflicts-fold')).toBeVisible();
 
     await page.screenshot({
       path: 'test-results/timetable-page.png',
@@ -97,9 +97,9 @@ test.describe('Timetable', () => {
     ).not.toBeVisible();
   });
 
-  // --- Session Detail Drawer ---
+  // --- Session Detail (Left Pane) ---
 
-  test('clicking a session card opens the detail drawer', async ({
+  test('clicking a session card opens the detail view', async ({
     page,
   }) => {
     await page.goto('/panel/event/autumn-open/timetable/');
@@ -117,33 +117,32 @@ test.describe('Timetable', () => {
       })
       .click();
 
-    // Drawer should become visible
-    const drawer = page.locator('#session-drawer');
-    await expect(drawer).not.toHaveClass(/hidden/, {
-      timeout: 5000,
-    });
-
-    // Drawer content
-    await expect(drawer.getByText('Session details')).toBeVisible();
+    // Left pane should swap to detail view
+    const leftPane = page.locator('#left-pane');
     await expect(
-      drawer.getByText('RPG Introduction'),
+      leftPane.getByText('Session details'),
+    ).toBeVisible({ timeout: 5000 });
+    await expect(
+      leftPane.getByText('RPG Introduction'),
     ).toBeVisible();
-    await expect(drawer.getByText('Not assigned')).toBeVisible();
+    await expect(
+      leftPane.getByText('Not assigned'),
+    ).toBeVisible();
 
     // Assign button should be present
     await expect(
-      drawer.getByRole('button', { name: 'Assign' }),
+      leftPane.getByRole('button', { name: 'Assign' }),
     ).toBeVisible();
   });
 
-  test('drawer close button hides the drawer', async ({ page }) => {
+  test('back button returns to session list', async ({ page }) => {
     await page.goto('/panel/event/autumn-open/timetable/');
 
     await expect(
       page.locator('#session-list').getByText('RPG Introduction'),
     ).toBeVisible({ timeout: 10000 });
 
-    // Open drawer
+    // Open detail view
     await page
       .locator('#session-list')
       .locator('[data-session-pk]', {
@@ -151,14 +150,18 @@ test.describe('Timetable', () => {
       })
       .click();
 
-    const drawer = page.locator('#session-drawer');
-    await expect(drawer).not.toHaveClass(/hidden/, {
-      timeout: 5000,
-    });
+    const leftPane = page.locator('#left-pane');
+    await expect(
+      leftPane.getByText('Session details'),
+    ).toBeVisible({ timeout: 5000 });
 
-    // Close it
-    await drawer.locator('button', { hasText: '×' }).click();
-    await expect(drawer).toHaveClass(/hidden/);
+    // Click Back
+    await leftPane.getByText('Back').click();
+
+    // Session list should reappear
+    await expect(
+      page.locator('#session-list').getByText('RPG Introduction'),
+    ).toBeVisible({ timeout: 5000 });
   });
 
   // --- Assignment Mode ---
@@ -172,7 +175,7 @@ test.describe('Timetable', () => {
       page.locator('#session-list').getByText('RPG Introduction'),
     ).toBeVisible({ timeout: 10000 });
 
-    // Open drawer
+    // Open detail view
     await page
       .locator('#session-list')
       .locator('[data-session-pk]', {
@@ -180,13 +183,13 @@ test.describe('Timetable', () => {
       })
       .click();
 
-    const drawer = page.locator('#session-drawer');
-    await expect(drawer).not.toHaveClass(/hidden/, {
-      timeout: 5000,
-    });
+    const leftPane = page.locator('#left-pane');
+    await expect(
+      leftPane.getByText('Session details'),
+    ).toBeVisible({ timeout: 5000 });
 
     // Click Assign
-    await drawer
+    await leftPane
       .getByRole('button', { name: 'Assign' })
       .click();
 
@@ -202,9 +205,6 @@ test.describe('Timetable', () => {
     await expect(
       page.locator('.timetable-column.assign-mode-active').first(),
     ).toBeVisible();
-
-    // Drawer should be hidden
-    await expect(drawer).toHaveClass(/hidden/);
   });
 
   test('Escape key cancels assignment mode', async ({ page }) => {
@@ -222,8 +222,12 @@ test.describe('Timetable', () => {
       })
       .click();
 
-    await page
-      .locator('#session-drawer')
+    const leftPane = page.locator('#left-pane');
+    await expect(
+      leftPane.getByText('Session details'),
+    ).toBeVisible({ timeout: 5000 });
+
+    await leftPane
       .getByRole('button', { name: 'Assign' })
       .click();
 
@@ -260,8 +264,12 @@ test.describe('Timetable', () => {
       })
       .click();
 
-    await page
-      .locator('#session-drawer')
+    const leftPane = page.locator('#left-pane');
+    await expect(
+      leftPane.getByText('Session details'),
+    ).toBeVisible({ timeout: 5000 });
+
+    await leftPane
       .getByRole('button', { name: 'Assign' })
       .click();
 
@@ -297,8 +305,12 @@ test.describe('Timetable', () => {
       })
       .click();
 
-    await page
-      .locator('#session-drawer')
+    const leftPane = page.locator('#left-pane');
+    await expect(
+      leftPane.getByText('Session details'),
+    ).toBeVisible({ timeout: 5000 });
+
+    await leftPane
       .getByRole('button', { name: 'Assign' })
       .click();
 
@@ -345,13 +357,13 @@ test.describe('Timetable', () => {
     // Click the session in the grid
     await gridSession.click();
 
-    // Drawer should show with Unassign button
-    const drawer = page.locator('#session-drawer');
-    await expect(drawer).not.toHaveClass(/hidden/, {
-      timeout: 5000,
-    });
+    // Left pane should show detail with Unassign button
+    const leftPane = page.locator('#left-pane');
     await expect(
-      drawer.getByRole('button', { name: 'Unassign' }),
+      leftPane.getByText('Session details'),
+    ).toBeVisible({ timeout: 5000 });
+    await expect(
+      leftPane.getByRole('button', { name: 'Unassign' }),
     ).toBeVisible();
   });
 
@@ -366,11 +378,11 @@ test.describe('Timetable', () => {
     await gridSession.click();
 
     // Click Unassign
-    const drawer = page.locator('#session-drawer');
+    const leftPane = page.locator('#left-pane');
     await expect(
-      drawer.getByRole('button', { name: 'Unassign' }),
+      leftPane.getByRole('button', { name: 'Unassign' }),
     ).toBeVisible({ timeout: 5000 });
-    await drawer
+    await leftPane
       .getByRole('button', { name: 'Unassign' })
       .click();
 
