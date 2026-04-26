@@ -524,6 +524,12 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
         session.facilitators.set(facilitator_ids)
 
     @staticmethod
+    def replace_facilitators_in_sessions(source_ids: list[int], target_id: int) -> None:
+        for session in Session.objects.filter(facilitators__in=source_ids).distinct():
+            session.facilitators.add(target_id)
+            session.facilitators.remove(*source_ids)
+
+    @staticmethod
     def list_unscheduled_by_event(
         event_pk: int,
         *,
@@ -2240,17 +2246,6 @@ class FacilitatorRepository(FacilitatorRepositoryProtocol):
     def slug_exists(event_id: int, slug: str) -> bool:
         return Facilitator.objects.filter(event_id=event_id, slug=slug).exists()
 
-    @staticmethod
-    def merge(target_id: int, source_ids: list[int]) -> None:
-        with transaction.atomic():
-            for session in Session.objects.filter(
-                facilitators__in=source_ids
-            ).distinct():
-                session.facilitators.add(target_id)
-                session.facilitators.remove(*source_ids)
-            HostPersonalData.objects.filter(facilitator_id__in=source_ids).delete()
-            Facilitator.objects.filter(pk__in=source_ids).delete()
-
 
 class HostPersonalDataRepository(HostPersonalDataRepositoryProtocol):
     @staticmethod
@@ -2271,6 +2266,10 @@ class HostPersonalDataRepository(HostPersonalDataRepositoryProtocol):
             facilitator_id=facilitator_id, event_id=event_id
         ).select_related("field")
         return {hpd.field.slug: hpd.value for hpd in records}
+
+    @staticmethod
+    def delete_by_facilitators(facilitator_ids: list[int]) -> None:
+        HostPersonalData.objects.filter(facilitator_id__in=facilitator_ids).delete()
 
 
 class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):

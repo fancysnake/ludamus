@@ -45,11 +45,12 @@ from ludamus.gates.web.django.forms import (
     create_proposal_form,
     create_venue_copy_form,
 )
-from ludamus.mills import PanelService, is_proposal_active
+from ludamus.mills import FacilitatorMergeService, PanelService, is_proposal_active
 from ludamus.pacts import (
     DependencyInjectorProtocol,
     EventUpdateData,
     FacilitatorData,
+    FacilitatorMergeError,
     FacilitatorUpdateData,
     FieldUsageSummary,
     HostPersonalDataEntry,
@@ -3532,14 +3533,13 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
                 self.request, "panel/facilitator-merge.html", context
             )
 
-        selected_set = set(selected_ids)
-        linked_count = sum(
-            1 for f in all_facilitators if f.pk in selected_set and f.user_id
-        )
-        if linked_count > 1:
+        source_ids = [fid for fid in selected_ids if fid != target_id]
+        try:
+            FacilitatorMergeService(self.request.di.uow).merge(target_id, source_ids)
+        except FacilitatorMergeError:
             context["active_nav"] = "facilitators"
             context["facilitators"] = all_facilitators
-            context["preselected_ids"] = selected_set
+            context["preselected_ids"] = set(selected_ids)
             context["error"] = _(
                 "Cannot merge facilitators that each have a linked user account."
             )
@@ -3547,7 +3547,5 @@ class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
                 self.request, "panel/facilitator-merge.html", context
             )
 
-        source_ids = [fid for fid in selected_ids if fid != target_id]
-        self.request.di.uow.facilitators.merge(target_id, source_ids)
         messages.success(self.request, _("Facilitators merged successfully."))
         return redirect("panel:facilitators", slug=slug)

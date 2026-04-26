@@ -220,10 +220,7 @@ class TimetableSessionDetailPartView(PanelAccessMixin, EventContextMixin, View):
 
         agenda_item = uow.agenda_items.read_by_session(pk)
         facilitators = uow.sessions.read_facilitators(pk)
-        preferred_ids = set(uow.sessions.read_preferred_time_slot_ids(pk))
-        time_slots = [
-            s for s in uow.sessions.read_time_slots(pk) if s.pk in preferred_ids
-        ]
+        time_slots = uow.sessions.read_preferred_time_slots(pk)
 
         duration_minutes = _parse_iso_duration_minutes(session.duration)
 

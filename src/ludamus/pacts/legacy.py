@@ -14,6 +14,10 @@ class NotFoundError(Exception):
     pass
 
 
+class FacilitatorMergeError(Exception):
+    """Raised when a facilitator merge violates a domain invariant."""
+
+
 class RedirectError(Exception):
     def __init__(
         self, url: str, *, error: str | None = None, warning: str | None = None
@@ -124,6 +128,7 @@ class AgendaItemDTO(BaseModel):
     session_confirmed: bool
     start_time: datetime
     space_id: int = 0
+    space_name: str = ""
     session_id: int = 0
     session_title: str = ""
     presenter_name: str = ""
@@ -845,6 +850,10 @@ class SessionRepositoryProtocol(Protocol):  # noqa: PLR0904
     @staticmethod
     def set_facilitators(session_id: int, facilitator_ids: list[int]) -> None: ...
     @staticmethod
+    def replace_facilitators_in_sessions(
+        source_ids: list[int], target_id: int
+    ) -> None: ...
+    @staticmethod
     def list_unscheduled_by_event(
         event_pk: int,
         *,
@@ -1252,8 +1261,6 @@ class FacilitatorRepositoryProtocol(Protocol):
     def delete(pk: int) -> None: ...
     @staticmethod
     def slug_exists(event_id: int, slug: str) -> bool: ...
-    @staticmethod
-    def merge(target_id: int, source_ids: list[int]) -> None: ...
 
 
 class HostPersonalDataRepositoryProtocol(Protocol):
@@ -1263,6 +1270,8 @@ class HostPersonalDataRepositoryProtocol(Protocol):
     def read_for_facilitator_event(
         facilitator_id: int, event_id: int
     ) -> dict[str, str | list[str] | bool]: ...
+    @staticmethod
+    def delete_by_facilitators(facilitator_ids: list[int]) -> None: ...
 
 
 class ScheduleChangeAction(StrEnum):
