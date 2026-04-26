@@ -60,24 +60,32 @@
             <div class="card mb-6">
                 <div class="card-body">
                     <h3 class="text-sm font-medium text-foreground-muted mb-4">{% translate "Personal Information" %}</h3>
-                    <dl class="space-y-3">
-                        {% for field, value in personal_data_items %}
-                            <div>
-                                <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
-                                <dd class="text-foreground">
-                                    {% if value == True %}
-                                        {% translate "Yes" %}
-                                    {% elif value == False or value is None %}
-                                        <span class="text-foreground-muted">—</span>
-                                    {% elif value %}
-                                        {{ value }}
-                                    {% else %}
-                                        <span class="text-foreground-muted">—</span>
-                                    {% endif %}
-                                </dd>
-                            </div>
-                        {% endfor %}
-                    </dl>
+                    {% if has_personal_data %}
+                        <dl class="space-y-3">
+                            {% for field, value in personal_data_items %}
+                                <div>
+                                    <dt class="text-xs text-foreground-muted">{{ field.name }}</dt>
+                                    <dd class="text-foreground">
+                                        {% if value == True %}
+                                            {% translate "Yes" %}
+                                        {% elif value == False or value is None %}
+                                            <span class="text-foreground-muted">—</span>
+                                        {% elif value %}
+                                            {{ value }}
+                                        {% else %}
+                                            <span class="text-foreground-muted">—</span>
+                                        {% endif %}
+                                    </dd>
+                                </div>
+                            {% endfor %}
+                        </dl>
+                    {% else %}
+                        <p class="text-sm text-foreground-muted">
+                            {% translate "No personal information provided." %}
+                            <a href="{% url 'panel:facilitator-edit' slug=current_event.slug facilitator_slug=facilitator.slug %}"
+                               class="text-primary hover:underline ml-1">{% translate "Edit" %}</a>
+                        </p>
+                    {% endif %}
                 </div>
             </div>
         {% endif %}

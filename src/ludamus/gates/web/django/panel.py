@@ -3327,9 +3327,12 @@ class FacilitatorDetailPageView(PanelAccessMixin, EventContextMixin, View):
             for field in personal_data_fields
         ]
 
+        has_personal_data = any(v for _, v in personal_data_items)
+
         context["active_nav"] = "facilitators"
         context["facilitator"] = facilitator
         context["personal_data_items"] = personal_data_items
+        context["has_personal_data"] = has_personal_data
         return TemplateResponse(self.request, "panel/facilitator-detail.html", context)
 
 
