@@ -403,8 +403,9 @@
                         <span class="text-xs text-foreground-muted">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
                         {% if event.is_proposal_active %}
                             <a href="{% url 'web:chronology:session-propose' event_slug=event.slug %}"
-                               class="btn btn-teal text-xs py-1.5 px-3 shrink-0">
-                                {% icon "plus" class="w-4 h-4" variant="mini" %} {% translate "Propose" %}
+                               class="text-teal-600 bg-teal-400/20 dark:bg-teal-800/20 dark:text-teal-400 gap-1.5 p-1.5 rounded-lg hover:bg-teal-400/30 dark:hover:bg-teal-800/30 transition-colors hover:duration-0 shrink-0">
+                                {% icon "plus" class="w-4 h-4" variant="mini" %}
+                                <span class="sr-only">{% translate "Propose" %}</span>
                             </a>
                         {% endif %}
                     </div>
