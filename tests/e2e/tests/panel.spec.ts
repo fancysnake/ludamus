@@ -785,29 +785,29 @@ test.describe('Backoffice Panel', () => {
     // Click the per-day "Add" link (pre-fills the date)
     await addLink.click();
 
-    // Fill times 1h–2h into the event
+    // Fill times 2h–3h into the event (in the 12–14 gap after bootstrapped slot)
     await page
       .locator('#id_start_time')
-      .fill(timeHHMM(baseHour, safeMin, 60));
+      .fill(timeHHMM(baseHour, safeMin, 120));
     await page
       .locator('#id_end_time')
-      .fill(timeHHMM(baseHour, safeMin, 120));
+      .fill(timeHHMM(baseHour, safeMin, 180));
     await page.getByRole('button', { name: 'Create' }).click();
 
     await expect(
       page.getByText('Time slot created successfully.'),
     ).toBeVisible();
 
-    // Edit — find the slot and click edit
+    // Edit — find the last slot (the one we just created) and click edit
     await page
       .getByRole('link', { name: 'Edit' })
-      .first()
+      .last()
       .click();
 
     // Extend by 30 min
     await page
       .locator('#id_end_time')
-      .fill(timeHHMM(baseHour, safeMin, 150));
+      .fill(timeHHMM(baseHour, safeMin, 210));
     await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(
@@ -818,7 +818,7 @@ test.describe('Backoffice Panel', () => {
     page.on('dialog', (dialog) => dialog.accept());
     await page
       .getByRole('button', { name: /Delete/i })
-      .first()
+      .last()
       .click();
 
     await expect(
@@ -912,10 +912,11 @@ test.describe('Backoffice Panel', () => {
         const rawMin = parseInt(hourMatch?.[2] ?? '0', 10);
         const safeMin = rawMin + 1;
 
-        // Create 3 time slots (1h each)
+        // Create 3 time slots (30min each), starting 2h after event start
+        // to avoid overlap with the bootstrapped 10:00–12:00 slot
         for (let i = 0; i < 3; i++) {
-          const start = dateTimeAfter(dateStr, baseHour, safeMin, i * 60);
-          const end = dateTimeAfter(dateStr, baseHour, safeMin, (i + 1) * 60);
+          const start = dateTimeAfter(dateStr, baseHour, safeMin, 120 + i * 30);
+          const end = dateTimeAfter(dateStr, baseHour, safeMin, 120 + (i + 1) * 30);
           await page.goto(
             '/panel/event/autumn-open/cfp/time-slots/create/',
           );
@@ -1810,12 +1811,11 @@ test.describe('Backoffice Panel', () => {
     const rawMin = parseInt(hourMatch?.[2] ?? '0', 10);
     const safeMin = rawMin + 1;
 
-    // Use baseHour+3h offset to avoid collisions with serial flow slots.
-    // 30-min slot, then overlap test with 15-min offset.
-    // Use dateTimeAfter to handle midnight rollover correctly.
-    const offsetMin = 3 * 60;
+    // Use baseHour+3.5h offset to avoid collisions with CFP flow slots
+    // (which occupy 12:01–13:31). 15-min slot, then overlap test.
+    const offsetMin = 3 * 60 + 30;
     const slotStart = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin);
-    const slotEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 30);
+    const slotEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 15);
 
     await page.goto(
       '/panel/event/autumn-open/cfp/time-slots/create/',
@@ -1835,10 +1835,10 @@ test.describe('Backoffice Panel', () => {
       page.getByText('Time slot created successfully.'),
     ).toBeVisible();
 
-    // Try creating overlapping slot: offset+15 to offset+45
+    // Try creating overlapping slot: offset+5 to offset+20
     // This overlaps with the first slot
-    const overlapStart = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 15);
-    const overlapEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 45);
+    const overlapStart = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 5);
+    const overlapEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 20);
     await page.goto(
       '/panel/event/autumn-open/cfp/time-slots/create/',
     );

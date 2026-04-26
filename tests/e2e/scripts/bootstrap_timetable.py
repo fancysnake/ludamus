@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import sys
+from datetime import datetime, time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -26,12 +27,16 @@ import django  # noqa: E402
 
 django.setup()
 
+from django.utils.timezone import get_current_timezone  # noqa: E402
+
 from ludamus.adapters.db.django.models import (  # noqa: E402
     Event,
     Facilitator,
     ProposalCategory,
     Session,
     Space,
+    TimeSlot,
+    TimeSlotRequirement,
     Track,
 )
 
@@ -39,10 +44,29 @@ from ludamus.adapters.db.django.models import (  # noqa: E402
 def main() -> None:
     event = Event.objects.get(slug="autumn-open")
 
+    # Time slot — morning block; leaves 12-14 free for panel e2e tests
+    # that create/edit/delete their own slots.
+    local_tz = get_current_timezone()
+    event_day = event.start_time.astimezone(local_tz).date()
+    slot, _ = TimeSlot.objects.get_or_create(
+        event=event,
+        start_time=datetime.combine(event_day, time(10, 0), tzinfo=local_tz),
+        end_time=datetime.combine(event_day, time(12, 0), tzinfo=local_tz),
+    )
+    slots: list[TimeSlot] = [slot]
+
     # Category
     cat, _ = ProposalCategory.objects.get_or_create(
         event=event, slug="rpg", defaults={"name": "RPG"}
     )
+
+    # Wire time slots to the category so the proposal form offers them
+    for order, slot in enumerate(slots):
+        TimeSlotRequirement.objects.get_or_create(
+            category=cat,
+            time_slot=slot,
+            defaults={"is_required": False, "order": order},
+        )
 
     # Track — link existing spaces
     track, _ = Track.objects.get_or_create(
@@ -77,6 +101,7 @@ def main() -> None:
     if created:
         s1.tracks.add(track)
         s1.facilitators.add(alice)
+        s1.time_slots.set(slots)  # prefers morning slot
 
     s2, created = Session.objects.get_or_create(
         sphere=event.sphere,
@@ -95,6 +120,7 @@ def main() -> None:
     if created:
         s2.tracks.add(track)
         s2.facilitators.add(alice)
+        s2.time_slots.set(slots)  # prefers morning slot
 
     s3, created = Session.objects.get_or_create(
         sphere=event.sphere,
@@ -114,6 +140,7 @@ def main() -> None:
         s3.tracks.add(track)
         bob = Facilitator.objects.get(event=event, slug="bob-chen")
         s3.facilitators.add(bob)
+        # no preferred time slot for s3
 
 
 if __name__ == "__main__":
