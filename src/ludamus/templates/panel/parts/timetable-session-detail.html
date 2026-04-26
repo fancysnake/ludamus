@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load tessera %}
 <div id="left-pane" class="card w-full lg:w-72 flex-none p-3">
     <div class="flex items-center justify-between mb-3">
         <button type="button"
@@ -19,10 +20,14 @@
     </div>
     <!-- Meta: duration, capacity, age -->
     <div class="flex flex-wrap gap-3 text-xs text-neutral-500 mb-3">
-        {% if duration_minutes %}<span>⏱ {{ duration_minutes }} min</span>{% endif %}
-        {% if session.participants_limit %}<span>👥 {{ session.participants_limit }}</span>{% endif %}
+        {% if duration_minutes %}
+            <span>{% icon "clock" class="w-3.5 h-3.5 inline" %} {{ duration_minutes }} min</span>
+        {% endif %}
+        {% if session.participants_limit %}
+            <span>{% icon "users" class="w-3.5 h-3.5 inline" %} {{ session.participants_limit }}</span>
+        {% endif %}
         {% if session.min_age %}
-            <span>🔞 {% blocktranslate with age=session.min_age %}{{ age }}+{% endblocktranslate %}</span>
+            <span>{% icon "shield-exclamation" class="w-3.5 h-3.5 inline" %} {% blocktranslate with age=session.min_age %}{{ age }}+{% endblocktranslate %}</span>
         {% endif %}
     </div>
     <!-- Description -->

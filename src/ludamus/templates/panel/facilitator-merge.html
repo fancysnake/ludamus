@@ -31,7 +31,7 @@
                 <div class="card-body">
                     <h3 class="text-lg font-semibold text-foreground mb-1">{% translate "Select Facilitators to Merge" %}</h3>
                     <p class="text-sm text-foreground-muted mb-4">
-                        {% translate "Check the facilitators to merge. Mark one as Keep — all sessions will be moved to that record and the others deleted." %}
+                        {% translate "Check the facilitators to merge. Mark one to keep — the other facilitators will be removed and all their sessions transferred to the kept one." %}
                     </p>
                     <input type="text"
                            id="facilitator-search"
@@ -98,7 +98,10 @@
                             {% translate "No facilitators match your search." %}
                         </p>
                         <div class="mt-6">
-                            <button type="submit" class="btn btn-danger">
+                            <button type="submit"
+                                    id="merge-submit-btn"
+                                    class="btn btn-danger disabled:opacity-40 disabled:cursor-not-allowed"
+                                    disabled>
                                 {% icon "funnel" class="w-4 h-4 mr-2" %}
                                 {% translate "Merge" %}
                             </button>
@@ -124,6 +127,14 @@
                     if (radio) radio.checked = true;
                 }
 
+                const submitBtn = document.getElementById('merge-submit-btn');
+
+                function updateSubmitBtn() {
+                    const checkedCount = document.querySelectorAll('.facilitator-checkbox:checked').length;
+                    const hasTarget = document.querySelector('.target-radio:checked') !== null;
+                    submitBtn.disabled = !(checkedCount >= 2 && hasTarget);
+                }
+
                 // Checking a single checkbox auto-picks its radio as target
                 document.querySelectorAll('.facilitator-checkbox').forEach(function(cb) {
                     cb.addEventListener('change', function() {
@@ -136,7 +147,11 @@
                             selectAll.indeterminate = checked.length > 0 && checked.length < rows.length;
                             selectAll.checked = checked.length === rows.length;
                         }
+                        updateSubmitBtn();
                     });
+                });
+                document.querySelectorAll('.target-radio').forEach(function(r) {
+                    r.addEventListener('change', updateSubmitBtn);
                 });
 
                 if (selectAll) {
@@ -144,8 +159,10 @@
                         document.querySelectorAll('.facilitator-checkbox').forEach(function(cb) {
                             cb.checked = selectAll.checked;
                         });
+                        updateSubmitBtn();
                     });
                 }
+                updateSubmitBtn();
 
                 // Search filtering
                 if (searchInput) {

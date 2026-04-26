@@ -34,7 +34,9 @@
                     <div class="space-y-6">
                         <div>
                             <label class="block text-sm font-medium text-foreground-secondary mb-2"
-                                   for="id_category_id">{% translate "Category" %}</label>
+                                   for="id_category_id">
+                                {% translate "Category" %}<span class="text-danger ml-0.5">*</span>
+                            </label>
                             <select name="category_id"
                                     id="id_category_id"
                                     class="w-full border {% if form.category_id.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
@@ -49,7 +51,9 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-foreground-secondary mb-2"
-                                   for="id_title">{% translate "Title" %}</label>
+                                   for="id_title">
+                                {% translate "Title" %}<span class="text-danger ml-0.5">*</span>
+                            </label>
                             <input type="text"
                                    name="title"
                                    id="id_title"
@@ -59,7 +63,9 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-foreground-secondary mb-2"
-                                   for="id_display_name">{% translate "Display Name" %}</label>
+                                   for="id_display_name">
+                                {% translate "Display Name" %}<span class="text-danger ml-0.5">*</span>
+                            </label>
                             <input type="text"
                                    name="display_name"
                                    id="id_display_name"
@@ -74,7 +80,9 @@
                                       id="id_description"
                                       rows="5"
                                       class="w-full border {% if form.description.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">{{ form.description.value|default:'' }}</textarea>
-                            {% if form.description.errors %}<p class="mt-1 text-sm text-danger">{{ form.description.errors.0 }}</p>{% endif %}
+                            {% if form.description.errors %}
+                                <p class="mt-1 text-sm text-danger">{{ form.description.errors.0 }}</p>
+                            {% endif %}
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-foreground-secondary mb-2"
