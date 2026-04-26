@@ -19,7 +19,7 @@
     </div>
     <!-- Meta: duration, capacity, age -->
     <div class="flex flex-wrap gap-3 text-xs text-neutral-500 mb-3">
-        {% if session.duration %}<span>⏱ {{ session.duration }}</span>{% endif %}
+        {% if duration_minutes %}<span>⏱ {{ duration_minutes }} min</span>{% endif %}
         {% if session.participants_limit %}<span>👥 {{ session.participants_limit }}</span>{% endif %}
         {% if session.min_age %}
             <span>🔞 {% blocktranslate with age=session.min_age %}{{ age }}+{% endblocktranslate %}</span>

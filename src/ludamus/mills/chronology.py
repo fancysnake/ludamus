@@ -355,6 +355,14 @@ class TimetableService:
             "user_id": user_pk,
             "action": ScheduleChangeAction.REVERT,
         }
+        if log.action == ScheduleChangeAction.ASSIGN:
+            revert_log["old_space_id"] = log.new_space_id
+            revert_log["old_start_time"] = log.new_start_time
+            revert_log["old_end_time"] = log.new_end_time
+        elif log.action == ScheduleChangeAction.UNASSIGN:
+            revert_log["new_space_id"] = log.old_space_id
+            revert_log["new_start_time"] = log.old_start_time
+            revert_log["new_end_time"] = log.old_end_time
         self._uow.schedule_change_logs.create(revert_log)
 
 
