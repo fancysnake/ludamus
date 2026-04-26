@@ -2,7 +2,6 @@
 {% load i18n %}
 {% load tessera %}
 {% load cfp_tags %}
-{% load static %}
 {% block title %}
     {{ event.name }}
 {% endblock title %}
@@ -957,8 +956,6 @@
     </div>
 {% endblock body %}
 {% block extra_scripts %}
-    <script type="module" src="{% static 'js/modal.js' %}?v={{ STATIC_VERSION }}"></script>
-    <script src="{% static 'js/tabs.js' %}?v={{ STATIC_VERSION }}"></script>
     <script>
         // Event delegation for copy Discord buttons (works with htmx-loaded content)
         document.addEventListener('click', function(e) {

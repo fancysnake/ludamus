@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load static %}
+{% load django_vite %}
 {% load heroicons %}
 {% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
@@ -51,9 +52,8 @@
                 }
             })();
         </script>
-        <!-- Tailwind CSS (compiled) -->
-        <link rel="stylesheet"
-              href="{% static 'css/output.css' %}?v={{ STATIC_VERSION }}">
+        {% vite_hmr_client %}
+        {% vite_asset 'src/index.ts' %}
         {% block extra_head %}
         {% endblock extra_head %}
     </head>

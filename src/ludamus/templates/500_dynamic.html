@@ -1,4 +1,5 @@
 {% load static %}
+{% load django_vite %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -19,7 +20,8 @@
                 }
             })();
         </script>
-        <link rel="stylesheet" href="{% static 'css/output.css' %}">
+        {% vite_hmr_client %}
+        {% vite_asset 'src/index.ts' %}
     </head>
     <body class="min-h-screen font-sans antialiased flex items-center justify-center bg-background text-foreground">
         <div class="max-w-screen-sm xl:min-w-[600px] mx-auto px-4">
