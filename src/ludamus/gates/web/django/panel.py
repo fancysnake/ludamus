@@ -7,7 +7,13 @@ import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
+from typing import (  # pylint: disable=unused-import
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Protocol,
+    cast,
+)
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
