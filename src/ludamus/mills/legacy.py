@@ -24,6 +24,7 @@ from ludamus.pacts import (
     EventStatsData,
     FacilitatorData,
     FacilitatorDTO,
+    FacilitatorMergeError,
     HostPersonalDataEntry,
     MembershipAPIError,
     NotFoundError,
@@ -51,6 +52,8 @@ from ludamus.pacts import (
     VirtualEnrollmentConfig,
     WizardData,
 )
+from ludamus.specs.encounter import ENCOUNTER_DEFAULT_DURATION
+from ludamus.specs.proposal import PROPOSAL_RATE_LIMIT_SECONDS
 
 _BASE62_CHARS = string.ascii_letters + string.digits
 
@@ -102,7 +105,7 @@ def _gcal_dt(dt: datetime) -> str:
 
 
 def google_calendar_url(encounter: EncounterDTO, url: str) -> str:
-    end = encounter.end_time or (encounter.start_time + timedelta(hours=2))
+    end = encounter.end_time or (encounter.start_time + ENCOUNTER_DEFAULT_DURATION)
     params = {
         "action": "TEMPLATE",
         "text": encounter.title,
@@ -117,7 +120,7 @@ def google_calendar_url(encounter: EncounterDTO, url: str) -> str:
 
 
 def outlook_calendar_url(encounter: EncounterDTO, url: str) -> str:
-    end = encounter.end_time or (encounter.start_time + timedelta(hours=2))
+    end = encounter.end_time or (encounter.start_time + ENCOUNTER_DEFAULT_DURATION)
     params = {
         "rru": "addevent",
         "subject": encounter.title,
@@ -362,7 +365,6 @@ class ProposeSessionService:
             create_data = SessionData(
                 sphere_id=event.sphere_id,
                 presenter_id=presenter_id,
-                proposed_by_id=facilitator.pk,
                 display_name=display_name,
                 category_id=category_id,
                 title=title,
@@ -443,9 +445,6 @@ class ProposeSessionService:
             self._uow.host_personal_data.save(entries)
 
 
-PROPOSAL_RATE_LIMIT_SECONDS = 300
-
-
 def check_proposal_rate_limit(cache: CacheProtocol, ip: str, event_id: int) -> bool:
     """Check if an IP is rate-limited for proposal submission on an event.
 
@@ -503,15 +502,14 @@ class AcceptProposalService:
         space_id: int,
         time_slot_id: int,
     ) -> None:
-        presenter = self._uow.sessions.read_presenter(session.pk)
         time_slot = self._uow.sessions.read_time_slot(session.pk, time_slot_id)
 
         with self._uow.atomic():
             self._uow.sessions.update(
                 session.pk,
                 SessionUpdateData(
-                    status=SessionStatus.ACCEPTED,
-                    display_name=presenter.name,
+                    status=SessionStatus.SCHEDULED,
+                    display_name=session.display_name,
                     slug=slugifier(session.title),
                 ),
             )
@@ -821,3 +819,30 @@ def get_user_enrollment_config(
         if (virtual_config.has_user_config or virtual_config.has_domain_config)
         else None
     )
+
+
+class FacilitatorMergeService:
+    def __init__(self, uow: UnitOfWorkProtocol) -> None:
+        self._uow = uow
+
+    def merge(self, target_id: int, source_ids: list[int]) -> None:
+        if not source_ids:
+            msg = "At least one source facilitator is required"
+            raise FacilitatorMergeError(msg)
+        if target_id in source_ids:
+            msg = "Target cannot be among source facilitators"
+            raise FacilitatorMergeError(msg)
+
+        all_ids = [target_id, *source_ids]
+        linked_count = sum(
+            1 for fid in all_ids if self._uow.facilitators.read(fid).user_id is not None
+        )
+        if linked_count > 1:
+            msg = "Cannot merge facilitators that each have a linked user account."
+            raise FacilitatorMergeError(msg)
+
+        with self._uow.atomic():
+            self._uow.sessions.replace_facilitators_in_sessions(source_ids, target_id)
+            self._uow.host_personal_data.delete_by_facilitators(source_ids)
+            for source_id in source_ids:
+                self._uow.facilitators.delete(source_id)

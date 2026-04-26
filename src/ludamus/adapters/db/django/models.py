@@ -414,6 +414,15 @@ class DomainEnrollmentConfig(models.Model):
 class Space(models.Model):
     """Bookable room/location within an area."""
 
+    HIERARCHICAL_ORDER: ClassVar = (
+        "area__venue__order",
+        "area__venue__name",
+        "area__order",
+        "area__name",
+        "order",
+        "name",
+    )
+
     # Owner - spaces belong to an area
     area = models.ForeignKey("Area", on_delete=models.CASCADE, related_name="spaces")
     # ID
@@ -648,13 +657,7 @@ class Session(models.Model):
         blank=True,
         related_name="presented_sessions",
     )
-    proposed_by = models.ForeignKey(
-        Facilitator,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="proposed_sessions",
-    )
+
     facilitators = models.ManyToManyField(
         Facilitator, blank=True, related_name="sessions"
     )
@@ -686,7 +689,7 @@ class Session(models.Model):
     status = models.CharField(
         max_length=15,
         choices=[(item.value, item.name) for item in SessionStatus],
-        default=SessionStatus.ACCEPTED,
+        default=SessionStatus.PENDING,
     )
     # Time
     creation_time = models.DateTimeField(auto_now_add=True)
@@ -799,6 +802,12 @@ class AgendaItem(models.Model):
 
     class Meta:
         db_table = "agenda_item"
+        indexes: ClassVar = [
+            models.Index(
+                fields=["space_id", "start_time", "end_time"],
+                name="agenda_item_space_time_idx",
+            )
+        ]
         constraints = (
             models.CheckConstraint(
                 condition=(
@@ -1257,6 +1266,51 @@ class Track(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class ScheduleChangeAction(models.TextChoices):
+    ASSIGN = "assign", "Assign"
+    UNASSIGN = "unassign", "Unassign"
+    REVERT = "revert", "Revert"
+
+
+class ScheduleChangeLog(models.Model):
+    """Audit trail for timetable assignment changes."""
+
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="schedule_change_logs"
+    )
+    session = models.ForeignKey(
+        Session, on_delete=models.CASCADE, related_name="schedule_change_logs"
+    )
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=16, choices=ScheduleChangeAction.choices)
+    old_space = models.ForeignKey(
+        Space,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="old_schedule_change_logs",
+    )
+    new_space = models.ForeignKey(
+        Space,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="new_schedule_change_logs",
+    )
+    old_start_time = models.DateTimeField(null=True, blank=True)
+    old_end_time = models.DateTimeField(null=True, blank=True)
+    new_start_time = models.DateTimeField(null=True, blank=True)
+    new_end_time = models.DateTimeField(null=True, blank=True)
+    creation_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "schedule_change_log"
+        ordering: ClassVar = ["-creation_time"]
+
+    def __str__(self) -> str:
+        return f"{self.action} {self.session} by {self.user}"
 
 
 def can_enroll_users(

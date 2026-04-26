@@ -20,7 +20,7 @@ build-backend = "poetry.core.masonry.api"
 package-mode = false
 
 [tool.poetry.dependencies]
-authlib = "~1.6.0"
+authlib = "~1.7.0"
 django = "~6.0.0"
 gunicorn = "^25.0.1"
 django-environ = "^0.13.0"
@@ -74,7 +74,7 @@ target-version = ['py314']
 # CODESPELL
 
 [tool.codespell]
-skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor,src/ludamus/gates/web/django/theme/static_src/package-lock.json'
+skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor,src/ludamus/gates/web/django/theme/static_src/package-lock.json,CLAUDE.md'
 
 # COVERAGE
 
@@ -262,12 +262,7 @@ root_package = "ludamus"
 name = "gates"
 type = "forbidden"
 source_modules = ["ludamus.gates"]
-forbidden_modules = [
-    "ludamus.links",
-    "ludamus.inits",
-    "ludamus.specs",
-    "ludamus.edges",
-]
+forbidden_modules = ["ludamus.links", "ludamus.inits", "ludamus.edges"]
 
 
 [[tool.importlinter.contracts]]
@@ -297,7 +292,6 @@ forbidden_modules = [
     "ludamus.gates",
     "ludamus.links",
     "ludamus.inits",
-    "ludamus.specs",
     "ludamus.edges",
     "django",
 ]

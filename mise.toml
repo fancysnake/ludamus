@@ -17,6 +17,7 @@ _.file = ".env"
 includes = ["tasks.toml"]
 
 [tasks.update]
+description = "Update all dependencies: pre-commit hooks, pip, Poetry packages"
 run = """
 pre-commit autoupdate
 pip install -U pip
@@ -38,45 +39,62 @@ env.PYTHONPATH = "src"
 env.SECRET_KEY = "dev-secret-key"
 
 [tasks.black]
+description = "Format Python code with Black"
 run = "mise run _lint -- black src tests"
 
 [tasks.black-check]
+description = "Check Python formatting without modifying files"
 run = "mise run _lint -- black --check src tests"
 
 [tasks.codespell]
+description = "Find typos in source and test files"
 run = "mise run _lint -- codespell src tests/unit tests/integration"
 
 [tasks.deptry]
+description = "Detect missing, unused, or transitive dependency imports"
 run = "mise run _lint -- deptry src tests"
 
 [tasks.djlint]
+description = "Lint Django templates"
 run = "mise run _lint -- djlint src --profile=django"
 
 [tasks.djlint-format]
+description = "Reformat Django templates, CSS, and JS"
 run = "mise run _lint -- djlint src --reformat --format-css --format-js --profile=django"
 
 [tasks.il]
+description = "Enforce GLIMPSE layer import rules"
 run = "mise run _lint -- lint-imports --config=pyproject.toml"
 
 [tasks.mypy]
+description = "Type-check Python source with mypy"
 run = "mise run _lint -- mypy src"
 
 [tasks.pylint]
+description = "Run Pylint on source and tests (duplicate-code disabled for tests)"
 run = "mise run _lint -- pylint src && mise run _lint -- pylint --disable=duplicate-code tests"
 
 [tasks.ruff]
+description = "Lint Python with Ruff (report only)"
 run = "mise run _lint -- ruff check src tests"
 
 [tasks.ruff-fix]
+description = "Lint Python with Ruff and auto-fix violations"
 run = "mise run _lint -- ruff check --fix src tests"
 
 [tasks.ast-grep]
+description = "Run structural code pattern checks via ast-grep"
 run = "ast-grep scan --error src"
 
 [tasks.vulture]
+description = "Find dead Python code"
 run = "vulture --config=pyproject.toml src"
 
+[tasks.impeccable]
+run = "python scripts/impeccable_lint.py"
+
 [tasks.check]
+description = "Format, lint, and fix — run all code quality tools"
 depends = [
   "black",
   "ruff-fix",
@@ -88,9 +106,11 @@ depends = [
   "pylint",
   "vulture",
   "ast-grep",
+  "impeccable",
 ]
 
 [tasks.prcheck]
+description = "CI-style lint pass: report violations without fixing"
 depends = [
   "black-check",
   "ruff",
@@ -105,6 +125,7 @@ depends = [
 # DJANGO
 
 [tasks.dj]
+description = "Run any django-admin subcommand"
 run = "django-admin"
 
 [tasks.start]
@@ -151,6 +172,7 @@ run = "mise run _pytest -- --gremlins tests"
 env.COVERAGE_FILE = "{{ config_root }}/.coverage.unit"
 
 [tasks.diff-cover]
+description = "Show test coverage for lines changed since main"
 depends = ["coverage"]
 run = """
 coverage xml --data-file=.coverage
@@ -169,6 +191,7 @@ env.PYTHONPATH = "src"
 # E2E
 
 [tasks._e2e]
+description = "Base env vars for e2e tasks (internal)"
 run = ''
 env.ALLOWED_HOSTS = ".localhost"
 env.AUTH0_CLIENT_ID = "test-auth0-client-id"
@@ -208,6 +231,8 @@ mise run _e2e -- django-admin migrate --noinput
 mise run _e2e -- django-admin createcachetable
 mise run _e2e -- django-admin downloadvendor
 mise run _e2e -- python tests/e2e/scripts/bootstrap_data.py
+mise run _e2e -- python tests/e2e/scripts/bootstrap_facilitators.py
+mise run _e2e -- python tests/e2e/scripts/bootstrap_timetable.py
 mise run _e2e -- django-admin tailwind install
 mise run _e2e -- django-admin tailwind build
 exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload
@@ -216,6 +241,7 @@ exec mise run _e2e -- coverage run --source=src -m django runserver --insecure -
 # DEPLOYMENT
 
 [tasks.dc]
+description = "Run docker compose for a target environment (local or prod)"
 usage = '''
 arg "<environment>" help="Target environment" {
   choices "local" "prod"
@@ -234,17 +260,21 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch'
 # FRONTEND
 
 [tasks.ts-check]
+description = "Type-check frontend TypeScript"
 run = "cd src/ludamus/gates/web/django/theme/static_src && npm typecheck"
 
 
 [tasks.npm]
+description = "Run npm in the frontend static_src directory"
 run = "npm"
 dir = "src/ludamus/gates/web/django/theme/static_src"
 
 # OTHER
 
 [tasks.shitcheck]
-run = "git diff main|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|cast\\()'"
+description = "Flag suspicious additions vs main: noqa, type: ignore, Any, cast"
+run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\bobject\b|cast\\()'"
 
 [tasks.coverage]
+description = "Run all tests, collect coverage, enforce 97% threshold"
 depends = ["test --cov", "e2e", "coverage:combine"]

@@ -9,6 +9,7 @@ mise run start      # dev server :8000
 mise run test       # all tests
 mise run check      # format + lint
 mise run dj <cmd>   # django-admin
+mise tasks          # list all tasks with descriptions
 ```
 
 ## Architecture
@@ -20,7 +21,7 @@ GLIMPSE system:
 - `inits` (DI)
 - `mills` (logic)
 - `pacts` (protocols, DTOs, aggregates)
-- `specs` (configuration options)
+- `specs` (business invariants — pure constants, no IO, consumed only by mills)
 - `edges` (infrastructure boundary modules)
 
 Access data: `request.di.uow.{repository}.read(id)` — returns Pydantic DTOs,
@@ -34,13 +35,17 @@ Relation `X -> Y` means (Y can import X). It is transitive and reflexive.
 
 Relaxed rules:
 
-`pacts` -> `specs` -> `mills` -> `links` -> `gates` -> `inits`
+`pacts` -> `mills` -> `links` -> `gates` -> `inits`
+
+`specs` sits alongside `pacts` at the bottom but is imported only by `mills`:
+`pacts` -> `specs` -> `mills` (specs forbidden in links, gates, inits)
 
 Strict rules:
 
 - `(anything) -> inits -> (nothing) (top level)`
 - `mills -> gates | links | inits`
 - `pacts -> (anything) (bottom level)`
+- `specs -> links | gates | inits` (forbidden)
 
 ## Rules
 
@@ -55,6 +60,14 @@ Strict rules:
   per-case approval.
 - When making UI changes, use agent-browser to take screenshots of affected
   pages and include before/after images in the PR description
+
+## Translation conventions (Polish)
+
+- **session** → "punkt programu" (except in "RPG session" → "sesja RPG")
+- **track** → "blok" or "blok programowy"
+- **facilitator** → "twórca programu"
+- **time slot** → "przedział czasowy" (do **not** use "blok czasowy" — collides
+  with the "track" translation)
 
 ## Details
 

@@ -1,7 +1,9 @@
 [p]
+description = "Run any Poetry subcommand"
 run = "poetry"
 
 [dj]
+description = "Run any django-admin subcommand"
 run = "django-admin"
 
 [start]

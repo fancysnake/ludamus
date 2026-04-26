@@ -101,7 +101,8 @@ class TestProposalDetailPageView:
                     "total_sessions": 1,
                 },
                 "proposal": SessionDTO.model_validate(session),
-                "host": None,
                 "field_values": [],
+                "facilitators": [],
+                "presenter": None,
             },
         )

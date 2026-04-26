@@ -397,7 +397,7 @@ class TestCFPPageView:
             slug="accepted",
             sphere=sphere,
             participants_limit=5,
-            status="accepted",
+            status="scheduled",
         )
 
         response = authenticated_client.get(self.get_url(event))
@@ -479,7 +479,7 @@ class TestCFPPageView:
             slug="rpg-accepted",
             sphere=sphere,
             participants_limit=5,
-            status="accepted",
+            status="scheduled",
         )
         # Category2: 1 session, 0 accepted
         Session.objects.create(

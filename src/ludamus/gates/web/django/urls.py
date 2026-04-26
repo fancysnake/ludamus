@@ -12,6 +12,7 @@ from django.urls import include, path
 from django.views.decorators.cache import never_cache
 
 from ludamus.gates.web.django import panel
+from ludamus.gates.web.django.chronology.panel.urls import timetable_urlpatterns
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
@@ -47,7 +48,7 @@ def healthz(request: HttpRequest) -> JsonResponse:  # noqa: ARG001
     return JsonResponse({"status": "ok"})
 
 
-panel_urlpatterns = [
+panel_urlpatterns: list[URLPattern | URLResolver] = [
     path("", panel.PanelIndexRedirectView.as_view(), name="index"),
     path("event/<slug:slug>/", panel.EventIndexPageView.as_view(), name="event-index"),
     path(
@@ -179,9 +180,29 @@ panel_urlpatterns = [
         name="proposals",
     ),
     path(
+        "event/<slug:slug>/proposals/create/",
+        panel.ProposalCreatePageView.as_view(),
+        name="proposal-create",
+    ),
+    path(
         "event/<slug:slug>/proposals/<int:proposal_id>/",
         panel.ProposalDetailPageView.as_view(),
         name="proposal-detail",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/edit/",
+        panel.ProposalEditPageView.as_view(),
+        name="proposal-edit",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/do/reject",
+        panel.ProposalRejectActionView.as_view(),
+        name="proposal-reject",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/do/set-facilitators",
+        panel.ProposalSetFacilitatorsActionView.as_view(),
+        name="proposal-set-facilitators",
     ),
     path("event/<slug:slug>/cfp/", panel.CFPPageView.as_view(), name="cfp"),
     path(
@@ -258,6 +279,32 @@ panel_urlpatterns = [
         panel.TrackDeleteActionView.as_view(),
         name="track-delete",
     ),
+    path(
+        "event/<slug:slug>/facilitators/",
+        panel.FacilitatorsPageView.as_view(),
+        name="facilitators",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/create/",
+        panel.FacilitatorCreatePageView.as_view(),
+        name="facilitator-create",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/merge/",
+        panel.FacilitatorMergePageView.as_view(),
+        name="facilitator-merge",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/<str:facilitator_slug>/",
+        panel.FacilitatorDetailPageView.as_view(),
+        name="facilitator-detail",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/<str:facilitator_slug>/edit/",
+        panel.FacilitatorEditPageView.as_view(),
+        name="facilitator-edit",
+    ),
+    path("event/<slug:slug>/timetable/", include(timetable_urlpatterns)),
 ]
 
 

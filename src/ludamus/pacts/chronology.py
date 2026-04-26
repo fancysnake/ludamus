@@ -1,0 +1,133 @@
+"""Timetable DTOs and constants for the agenda scheduling feature."""
+
+from datetime import date, datetime
+from enum import StrEnum, auto
+
+from pydantic import BaseModel
+
+from ludamus.pacts.legacy import AgendaItemDTO, SpaceDTO
+
+TIMETABLE_ROOM_PAGE_SIZE = 5
+TIMETABLE_SLOT_MINUTES = 60
+TIMETABLE_SLOT_HEIGHT_PX = 60  # pixels per TIMETABLE_SLOT_MINUTES block
+
+
+class SessionPositionDTO(BaseModel):
+    agenda_item: AgendaItemDTO
+    top_px: int
+    height_px: int
+    left_pct: float = 0.0
+    width_pct: float = 100.0
+
+
+class TimeLabelDTO(BaseModel):
+    time: datetime
+    top_px: int
+
+
+class SpaceColumnDTO(BaseModel):
+    space: SpaceDTO
+    sessions: list[SessionPositionDTO] = []
+
+
+class AreaGroupDTO(BaseModel):
+    area_pk: int
+    area_name: str
+    span: int
+
+
+class VenueGroupDTO(BaseModel):
+    venue_pk: int
+    venue_name: str
+    span: int
+    areas: list[AreaGroupDTO]
+
+
+class TimetableGridDTO(BaseModel):
+    spaces: list[SpaceDTO]
+    columns: list[SpaceColumnDTO]
+    venue_groups: list[VenueGroupDTO]
+    time_labels: list[TimeLabelDTO]
+    total_height_px: int
+    event_start_iso: str
+    slot_minutes: int
+    slot_height_px: int
+    page: int
+    total_pages: int
+    total_spaces: int
+    available_dates: list[date] = []
+    selected_date: date | None = None
+
+
+class ConflictType(StrEnum):
+    SPACE_OVERLAP = auto()
+    FACILITATOR_OVERLAP = auto()
+    CAPACITY_EXCEEDED = auto()
+
+
+class ConflictSeverity(StrEnum):
+    ERROR = auto()
+    WARNING = auto()
+
+
+class ConflictDTO(BaseModel):
+    type: ConflictType
+    severity: ConflictSeverity
+    session_title: str
+    session_pk: int
+    facilitator_name: str | None = None
+    space_capacity: int | None = None
+    session_limit: int | None = None
+    track_name: str | None = None
+    manager_names: list[str] = []
+
+
+class PreferredSlotRangeDTO(BaseModel):
+    start_time: datetime
+    end_time: datetime
+
+
+class PreferredSlotViolationDTO(BaseModel):
+    session_pk: int
+    session_title: str
+    scheduled_start: datetime
+    scheduled_end: datetime
+    preferred_slots: list[PreferredSlotRangeDTO]
+    track_name: str | None = None
+    manager_names: list[str] = []
+
+
+class HeatmapCellStatus(StrEnum):
+    EMPTY = auto()
+    SCHEDULED = auto()
+    CONFLICT = auto()
+
+
+class HeatmapCellDTO(BaseModel):
+    space_pk: int
+    status: HeatmapCellStatus
+
+
+class HeatmapRowDTO(BaseModel):
+    time: datetime
+    cells: list[HeatmapCellDTO]
+
+
+class HeatmapDayDTO(BaseModel):
+    date: date
+    rows: list[HeatmapRowDTO]
+
+
+class HeatmapDTO(BaseModel):
+    spaces: list[SpaceDTO]
+    rows: list[HeatmapRowDTO]
+    days: list[HeatmapDayDTO] = []
+
+
+class TrackProgressDTO(BaseModel):
+    track_pk: int
+    track_name: str
+    manager_names: list[str]
+    accepted_count: int
+    scheduled_count: int
+    progress_pct: int

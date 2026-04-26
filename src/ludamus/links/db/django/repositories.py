@@ -1,3 +1,5 @@
+import json
+import re
 from datetime import UTC, datetime, timedelta
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Literal, cast  # pylint: disable=unused-import
@@ -37,8 +39,7 @@ from ludamus.adapters.db.django.models import (
     Venue,
 )
 from ludamus.pacts import (
-    AgendaItemData,
-    AgendaItemRepositoryProtocol,
+    UNSCHEDULED_LIST_LIMIT,
     AreaDTO,
     AreaRepositoryProtocol,
     CategoryStats,
@@ -61,7 +62,9 @@ from ludamus.pacts import (
     EventUpdateData,
     FacilitatorData,
     FacilitatorDTO,
+    FacilitatorListItemDTO,
     FacilitatorRepositoryProtocol,
+    FacilitatorUpdateData,
     HostPersonalDataEntry,
     HostPersonalDataRepositoryProtocol,
     NotFoundError,
@@ -105,6 +108,7 @@ from ludamus.pacts import (
     TrackDTO,
     TrackRepositoryProtocol,
     TrackUpdateData,
+    UnscheduledSessionDTO,
     UserData,
     UserDTO,
     UserEnrollmentConfigData,
@@ -123,6 +127,16 @@ else:
     from django.contrib.auth import get_user_model
 
     User = get_user_model()
+
+_ISO8601_DURATION_RE = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?")
+
+
+def _parse_iso8601_duration_minutes(duration: str) -> int:
+    if not (m := _ISO8601_DURATION_RE.match(duration)):
+        return 0
+    hours = int(m.group(1) or 0)
+    minutes = int(m.group(2) or 0)
+    return hours * 60 + minutes
 
 
 class SphereRepository(SphereRepositoryProtocol):
@@ -208,7 +222,7 @@ class UserRepository(UserRepositoryProtocol):
         return query.exists()
 
 
-class SessionRepository(SessionRepositoryProtocol):
+class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
     @staticmethod
     def create(
         session_data: SessionData,
@@ -245,16 +259,6 @@ class SessionRepository(SessionRepositoryProtocol):
         except Event.DoesNotExist as exception:
             raise NotFoundError from exception
         return _event_dto(event)
-
-    @staticmethod
-    def read_presenter(session_id: int) -> UserDTO:
-        try:
-            session = Session.objects.select_related("presenter").get(id=session_id)
-        except Session.DoesNotExist as exception:
-            raise NotFoundError from exception
-        if session.presenter is None:
-            raise NotFoundError
-        return UserDTO.model_validate(session.presenter)
 
     @staticmethod
     def read_spaces(session_id: int) -> list[SpaceDTO]:
@@ -377,6 +381,38 @@ class SessionRepository(SessionRepositoryProtocol):
         )
 
     @staticmethod
+    def read_preferred_time_slots(session_id: int) -> list[TimeSlotDTO]:
+        time_slots = TimeSlot.objects.filter(session__id=session_id)
+        return [TimeSlotDTO.model_validate(ts) for ts in time_slots]
+
+    @staticmethod
+    def read_preferred_time_slots_by_sessions(
+        session_ids: Iterable[int],
+    ) -> dict[int, list[TimeSlotDTO]]:
+        if not (ids := list(session_ids)):
+            return {}
+        rows = (
+            Session.time_slots.through.objects.filter(session_id__in=ids)
+            .select_related("timeslot")
+            .values(
+                "session_id",
+                "timeslot__id",
+                "timeslot__start_time",
+                "timeslot__end_time",
+            )
+        )
+        result: dict[int, list[TimeSlotDTO]] = {sid: [] for sid in ids}
+        for row in rows:
+            result[row["session_id"]].append(
+                TimeSlotDTO(
+                    pk=row["timeslot__id"],
+                    start_time=row["timeslot__start_time"],
+                    end_time=row["timeslot__end_time"],
+                )
+            )
+        return result
+
+    @staticmethod
     def slug_exists(sphere_id: int, slug: str) -> bool:
         return Session.objects.filter(sphere_id=sphere_id, slug=slug).exists()
 
@@ -418,7 +454,6 @@ class SessionRepository(SessionRepositoryProtocol):
     def list_sessions_by_event(
         event_id: int,
         *,
-        presenter_name: str | None = None,
         field_filters: dict[int, str] | None = None,
         search: str | None = None,
         track_pk: int | None = None,
@@ -427,18 +462,24 @@ class SessionRepository(SessionRepositoryProtocol):
             "presenter", "category"
         )
 
-        if presenter_name:
-            qs = qs.filter(presenter__name__icontains=presenter_name)
-
         if field_filters:
             for field_id, value in field_filters.items():
                 qs = qs.filter(
-                    field_values__field_id=field_id,
-                    field_values__value__icontains=value,
+                    field_values__field_id=field_id, field_values__value=value
                 )
 
         if search:
-            qs = qs.filter(field_values__value__icontains=search).distinct()
+            # SessionFieldValue.value is a JSONField. SQLite stores strings
+            # JSON-encoded with ensure_ascii=True, so non-ASCII chars are
+            # escaped (e.g. "przekleństwa"); Postgres jsonb cast to text keeps
+            # literal Unicode. OR both forms so the lookup works on both.
+            encoded = json.dumps(search)[1:-1]
+            qs = qs.filter(
+                Q(display_name__icontains=search)
+                | Q(presenter__name__icontains=search)
+                | Q(field_values__value__icontains=search)
+                | Q(field_values__value__icontains=encoded)
+            ).distinct()
 
         if track_pk is not None:
             qs = qs.filter(tracks__pk=track_pk)
@@ -464,11 +505,77 @@ class SessionRepository(SessionRepositoryProtocol):
             raise NotFoundError(msg) from err
         session.tracks.set(track_pks)
 
-
-class AgendaItemRepository(AgendaItemRepositoryProtocol):
     @staticmethod
-    def create(agenda_item_data: AgendaItemData) -> None:
-        AgendaItem.objects.create(**agenda_item_data)
+    def read_facilitators(session_id: int) -> list[FacilitatorDTO]:
+        try:
+            session = Session.objects.get(pk=session_id)
+        except Session.DoesNotExist as err:
+            msg = f"Session with pk '{session_id}' not found"
+            raise NotFoundError(msg) from err
+        return [FacilitatorDTO.model_validate(f) for f in session.facilitators.all()]
+
+    @staticmethod
+    def set_facilitators(session_id: int, facilitator_ids: list[int]) -> None:
+        try:
+            session = Session.objects.get(pk=session_id)
+        except Session.DoesNotExist as err:
+            msg = f"Session with pk '{session_id}' not found"
+            raise NotFoundError(msg) from err
+        session.facilitators.set(facilitator_ids)
+
+    @staticmethod
+    def replace_facilitators_in_sessions(source_ids: list[int], target_id: int) -> None:
+        for session in Session.objects.filter(facilitators__in=source_ids).distinct():
+            session.facilitators.add(target_id)
+            session.facilitators.remove(*source_ids)
+
+    @staticmethod
+    def list_unscheduled_by_event(
+        event_pk: int,
+        *,
+        track_pk: int | None = None,
+        search: str | None = None,
+        max_duration_minutes: int | None = None,
+        category_pk: int | None = None,
+    ) -> tuple[list[UnscheduledSessionDTO], bool]:
+        qs = (
+            Session.objects.filter(category__event_id=event_pk)
+            .exclude(status=SessionStatus.REJECTED)
+            .filter(agenda_item__isnull=True)
+            .select_related("category")
+        )
+        if track_pk is not None:
+            qs = qs.filter(tracks__pk=track_pk)
+        if category_pk is not None:
+            qs = qs.filter(category__pk=category_pk)
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(display_name__icontains=search)
+            ).distinct()
+        results: list[UnscheduledSessionDTO] = []
+        has_more = False
+        for s in qs.order_by("title").iterator():
+            duration_minutes = _parse_iso8601_duration_minutes(s.duration)
+            if (
+                max_duration_minutes is not None
+                and duration_minutes > max_duration_minutes
+            ):
+                continue
+            if len(results) >= UNSCHEDULED_LIST_LIMIT:
+                has_more = True
+                break
+            results.append(
+                UnscheduledSessionDTO(
+                    pk=s.pk,
+                    title=s.title,
+                    display_name=s.display_name,
+                    category_name=s.category.name if s.category else "",
+                    category_pk=s.category_id,
+                    duration_minutes=duration_minutes,
+                    participants_limit=s.participants_limit,
+                )
+            )
+        return results, has_more
 
 
 class ConnectedUserRepository(ConnectedUserRepositoryProtocol):
@@ -1177,6 +1284,14 @@ class SpaceRepository(SpaceRepositoryProtocol):
         return SpaceDTO.model_validate(space)
 
     @staticmethod
+    def read(pk: int) -> SpaceDTO:
+        try:
+            space = Space.objects.get(pk=pk)
+        except Space.DoesNotExist as err:
+            raise NotFoundError from err
+        return SpaceDTO.model_validate(space)
+
+    @staticmethod
     def delete(pk: int) -> None:
         """Delete a space.
 
@@ -1221,7 +1336,7 @@ class SpaceRepository(SpaceRepositoryProtocol):
             List of SpaceDTO objects for the event.
         """
         spaces = Space.objects.filter(area__venue__event_id=event_pk).order_by(
-            "area__venue__order", "area__order", "order", "name"
+            *Space.HIERARCHICAL_ORDER
         )
 
         return [SpaceDTO.model_validate(space) for space in spaces]
@@ -2082,12 +2197,50 @@ class FacilitatorRepository(FacilitatorRepositoryProtocol):
         return FacilitatorDTO.model_validate(facilitator)
 
     @staticmethod
+    def read(pk: int) -> FacilitatorDTO:
+        try:
+            facilitator = Facilitator.objects.get(pk=pk)
+        except Facilitator.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
+    def read_by_event_and_slug(event_id: int, slug: str) -> FacilitatorDTO:
+        try:
+            facilitator = Facilitator.objects.get(event_id=event_id, slug=slug)
+        except Facilitator.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
     def read_by_user_and_event(user_id: int, event_id: int) -> FacilitatorDTO:
         try:
             facilitator = Facilitator.objects.get(user_id=user_id, event_id=event_id)
         except Facilitator.DoesNotExist as exc:
             raise NotFoundError from exc
         return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
+    def update(pk: int, data: FacilitatorUpdateData) -> FacilitatorDTO:
+        try:
+            facilitator = Facilitator.objects.get(pk=pk)
+        except Facilitator.DoesNotExist as exc:
+            raise NotFoundError from exc
+        for field, value in data.items():
+            setattr(facilitator, field, value)
+        facilitator.save()
+        return FacilitatorDTO.model_validate(facilitator)
+
+    @staticmethod
+    def list_by_event(event_id: int) -> list[FacilitatorListItemDTO]:
+        qs = Facilitator.objects.filter(event_id=event_id).annotate(
+            session_count=Count("sessions")
+        )
+        return [FacilitatorListItemDTO.model_validate(f) for f in qs]
+
+    @staticmethod
+    def delete(pk: int) -> None:
+        Facilitator.objects.filter(pk=pk).delete()
 
     @staticmethod
     def slug_exists(event_id: int, slug: str) -> bool:
@@ -2113,6 +2266,10 @@ class HostPersonalDataRepository(HostPersonalDataRepositoryProtocol):
             facilitator_id=facilitator_id, event_id=event_id
         ).select_related("field")
         return {hpd.field.slug: hpd.value for hpd in records}
+
+    @staticmethod
+    def delete_by_facilitators(facilitator_ids: list[int]) -> None:
+        HostPersonalData.objects.filter(facilitator_id__in=facilitator_ids).delete()
 
 
 class EnrollmentConfigRepository(EnrollmentConfigRepositoryProtocol):
@@ -2438,4 +2595,17 @@ class TrackRepository(TrackRepositoryProtocol):
     def list_manager_pks(pk: int) -> list[int]:
         return list(
             User.objects.filter(managed_tracks__pk=pk).values_list("pk", flat=True)
+        )
+
+    @staticmethod
+    def list_by_session(session_pk: int) -> list[TrackDTO]:
+        tracks = Track.objects.filter(sessions__pk=session_pk).order_by("name")
+        return [TrackDTO.model_validate(t) for t in tracks]
+
+    @staticmethod
+    def list_manager_names(track_pk: int) -> list[str]:
+        return list(
+            User.objects.filter(managed_tracks__pk=track_pk)
+            .order_by("name")
+            .values_list("name", flat=True)
         )

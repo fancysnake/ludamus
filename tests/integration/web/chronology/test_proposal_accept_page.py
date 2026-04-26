@@ -18,7 +18,6 @@ from ludamus.pacts import (
     SessionFieldValueDTO,
     SpaceDTO,
     TimeSlotDTO,
-    UserDTO,
 )
 from tests.integration.utils import assert_response
 
@@ -40,7 +39,7 @@ class TestProposalAcceptPageView:
         )
 
     def test_get_error_session_exists(self, event, pending_session, staff_client):
-        pending_session.status = "accepted"
+        pending_session.status = "scheduled"
         pending_session.save()
         response = staff_client.get(self._get_url(pending_session.id))
 
@@ -51,9 +50,7 @@ class TestProposalAcceptPageView:
             url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
         )
 
-    def test_get_ok(
-        self, active_user, event, pending_session, space, staff_client, time_slot
-    ):
+    def test_get_ok(self, event, pending_session, space, staff_client, time_slot):
         response = staff_client.get(self._get_url(pending_session.id))
 
         assert_response(
@@ -63,7 +60,6 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "session": SessionDTO.model_validate(pending_session),
-                "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "field_values": [],
@@ -166,7 +162,7 @@ class TestProposalAcceptPageView:
         )
 
     def test_post_error_session_exists(self, event, pending_session, staff_client):
-        pending_session.status = "accepted"
+        pending_session.status = "scheduled"
         pending_session.save()
         response = staff_client.post(self._get_url(pending_session.id))
 
@@ -177,9 +173,7 @@ class TestProposalAcceptPageView:
             url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
         )
 
-    def test_post_invalid_form(
-        self, active_user, event, pending_session, staff_client, time_slot
-    ):
+    def test_post_invalid_form(self, event, pending_session, staff_client, time_slot):
         response = staff_client.post(self._get_url(pending_session.id))
 
         assert_response(
@@ -189,7 +183,6 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "session": SessionDTO.model_validate(pending_session),
-                "presenter": UserDTO.model_validate(active_user),
                 "spaces": [],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "field_values": [],
@@ -221,7 +214,7 @@ class TestProposalAcceptPageView:
             url=reverse("web:chronology:event", kwargs={"slug": event.slug}),
         )
         session = Session.objects.get(pk=pending_session.pk)
-        assert session.status == "accepted"
+        assert session.status == "scheduled"
         assert session.display_name == active_user.name
         assert session.agenda_item.space == space
         assert session.agenda_item.session == session
@@ -250,7 +243,7 @@ class TestProposalAcceptPageView:
         )
 
     def test_post_invalid_space_id(
-        self, active_user, event, pending_session, space, staff_client, time_slot
+        self, event, pending_session, space, staff_client, time_slot
     ):
         response = staff_client.post(
             self._get_url(pending_session.id),
@@ -264,7 +257,6 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "session": SessionDTO.model_validate(pending_session),
-                "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "field_values": [],
@@ -302,7 +294,6 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "session": SessionDTO.model_validate(pending_session),
-                "presenter": UserDTO.model_validate(pending_session.presenter),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "field_values": [],
@@ -312,7 +303,7 @@ class TestProposalAcceptPageView:
         )
 
     def test_get_ok_with_select_field_values(
-        self, active_user, event, pending_session, space, staff_client, time_slot
+        self, event, pending_session, space, staff_client, time_slot
     ):
         """Public select field values are shown in context."""
         session_field = SessionField.objects.create(
@@ -338,7 +329,6 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "session": SessionDTO.model_validate(pending_session),
-                "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "field_values": [
@@ -360,7 +350,7 @@ class TestProposalAcceptPageView:
         )
 
     def test_get_ok_with_text_field_in_field_values(
-        self, active_user, event, pending_session, space, staff_client, time_slot
+        self, event, pending_session, space, staff_client, time_slot
     ):
         """Text field values appear in field_values context."""
         session_field = SessionField.objects.create(
@@ -384,7 +374,6 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "session": SessionDTO.model_validate(pending_session),
-                "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "field_values": [
@@ -406,7 +395,7 @@ class TestProposalAcceptPageView:
         )
 
     def test_get_ok_with_boolean_select_field_in_field_values(
-        self, active_user, event, pending_session, space, staff_client, time_slot
+        self, event, pending_session, space, staff_client, time_slot
     ):
         """Public select field with a boolean value appears in field_values."""
         session_field = SessionField.objects.create(
@@ -430,7 +419,6 @@ class TestProposalAcceptPageView:
                 "event": EventDTO.model_validate(event),
                 "form": ANY,
                 "session": SessionDTO.model_validate(pending_session),
-                "presenter": UserDTO.model_validate(active_user),
                 "spaces": [SpaceDTO.model_validate(space)],
                 "time_slots": [TimeSlotDTO.model_validate(time_slot)],
                 "field_values": [

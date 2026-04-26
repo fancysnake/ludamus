@@ -4,8 +4,6 @@ import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
-import ludamus.pacts
-
 
 class Migration(migrations.Migration):
 
@@ -48,7 +46,7 @@ class Migration(migrations.Migration):
                     ("rejected", "REJECTED"),
                     ("scheduled", "SCHEDULED"),
                 ],
-                default=ludamus.pacts.SessionStatus["ACCEPTED"],
+                default="accepted",
                 max_length=15,
             ),
         ),

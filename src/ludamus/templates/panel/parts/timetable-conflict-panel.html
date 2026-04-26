@@ -1,0 +1,54 @@
+{% load i18n %}
+{% if not conflicts %}
+    <!-- Clean state -->
+    <div class="flex items-center gap-2 text-success">
+        <span class="text-lg">✓</span>
+        <span class="text-sm font-medium">{% translate "All clear" %}</span>
+    </div>
+{% else %}
+    <div class="font-medium text-sm text-danger mb-2">
+        {% blocktranslate count count=conflicts|length %}{{ count }} conflict{% plural %}{{ count }} conflicts{% endblocktranslate %}
+    </div>
+    <div class="space-y-2">
+        {% for conflict in conflicts %}
+            <div class="border rounded-lg p-2 {% if conflict.severity == 'error' %}border-danger bg-danger-bg{% else %}border-warning bg-warning-bg{% endif %}">
+                <div class="flex items-start gap-1">
+                    <span class="text-xs mt-0.5">
+                        {% if conflict.severity == 'error' %}
+                            ⚠
+                        {% else %}
+                            !
+                        {% endif %}
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-xs font-medium {% if conflict.severity == 'error' %}text-danger-text{% else %}text-warning-text{% endif %} truncate">
+                            {{ conflict.session_title }}
+                        </div>
+                        <div class="text-xs {% if conflict.severity == 'error' %}text-danger{% else %}text-warning{% endif %} mt-0.5">
+                            {% if conflict.type == "space_overlap" %}
+                                {% blocktranslate with title=conflict.session_title %}Room occupied by: {{ title }}{% endblocktranslate %}
+                            {% elif conflict.type == "capacity_exceeded" %}
+                                {% blocktranslate with capacity=conflict.space_capacity limit=conflict.session_limit %}Room fits {{ capacity }} people, session requires {{ limit }}{% endblocktranslate %}
+                            {% elif conflict.type == "facilitator_overlap" %}
+                                {% blocktranslate with name=conflict.facilitator_name title=conflict.session_title %}{{ name }} facilitates simultaneously: {{ title }}{% endblocktranslate %}
+                            {% endif %}
+                        </div>
+                        {% if conflict.track_name %}
+                            <div class="text-xs text-foreground-muted mt-0.5">
+                                {% translate "Track:" %} {{ conflict.track_name }}
+                                {% if conflict.manager_names %}
+                                    ({% translate "managed by:" %} {{ conflict.manager_names|join:", " }})
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        <button type="button"
+                                class="mt-1 text-xs underline {% if conflict.severity == 'error' %}text-danger hover:text-danger-text{% else %}text-warning hover:text-warning-text{% endif %}"
+                                hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=conflict.session_pk %}?track={{ filter_track_pk|default:'' }}"
+                                hx-target="#left-pane"
+                                hx-swap="outerHTML">{% translate "Show session" %}</button>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

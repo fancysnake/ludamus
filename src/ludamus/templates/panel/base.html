@@ -93,6 +93,11 @@
                                 {% icon "document-text" class="w-5 h-5 mr-3" %}
                                 {% translate "Proposals" %}
                             </a>
+                            <a href="{% url 'panel:facilitators' slug=current_event.slug %}"
+                               class="flex items-center px-4 py-3 {% if active_nav == 'facilitators' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
+                                {% icon "user-group" class="w-5 h-5 mr-3" %}
+                                {% translate "Facilitators" %}
+                            </a>
                             <a href="{% url 'panel:venues' slug=current_event.slug %}"
                                class="flex items-center px-4 py-3 {% if active_nav == 'venues' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
                                 {% icon "building-office-2" class="w-5 h-5 mr-3" %}
@@ -102,6 +107,11 @@
                                class="flex items-center px-4 py-3 {% if active_nav == 'tracks' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
                                 {% icon "tag" class="w-5 h-5 mr-3" %}
                                 {% translate "Tracks" %}
+                            </a>
+                            <a href="{% url 'panel:timetable' slug=current_event.slug %}"
+                               class="flex items-center px-4 py-3 {% if active_nav == 'timetable' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition">
+                                {% icon "calendar-days" class="w-5 h-5 mr-3" %}
+                                {% translate "Harmonogram" %}
                             </a>
                             <div class="pt-4 mt-4 border-t border-neutral-800">
                                 <p class="px-4 text-xs text-neutral-500 uppercase tracking-wider mb-2">{% translate "Settings" %}</p>

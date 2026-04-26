@@ -785,29 +785,29 @@ test.describe('Backoffice Panel', () => {
     // Click the per-day "Add" link (pre-fills the date)
     await addLink.click();
 
-    // Fill times 1h–2h into the event
+    // Fill times 2h–3h into the event (in the 12–14 gap after bootstrapped slot)
     await page
       .locator('#id_start_time')
-      .fill(timeHHMM(baseHour, safeMin, 60));
+      .fill(timeHHMM(baseHour, safeMin, 120));
     await page
       .locator('#id_end_time')
-      .fill(timeHHMM(baseHour, safeMin, 120));
+      .fill(timeHHMM(baseHour, safeMin, 180));
     await page.getByRole('button', { name: 'Create' }).click();
 
     await expect(
       page.getByText('Time slot created successfully.'),
     ).toBeVisible();
 
-    // Edit — find the slot and click edit
+    // Edit — find the last slot (the one we just created) and click edit
     await page
       .getByRole('link', { name: 'Edit' })
-      .first()
+      .last()
       .click();
 
     // Extend by 30 min
     await page
       .locator('#id_end_time')
-      .fill(timeHHMM(baseHour, safeMin, 150));
+      .fill(timeHHMM(baseHour, safeMin, 210));
     await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(
@@ -818,7 +818,7 @@ test.describe('Backoffice Panel', () => {
     page.on('dialog', (dialog) => dialog.accept());
     await page
       .getByRole('button', { name: /Delete/i })
-      .first()
+      .last()
       .click();
 
     await expect(
@@ -912,10 +912,11 @@ test.describe('Backoffice Panel', () => {
         const rawMin = parseInt(hourMatch?.[2] ?? '0', 10);
         const safeMin = rawMin + 1;
 
-        // Create 3 time slots (1h each)
+        // Create 3 time slots (30min each), starting 2h after event start
+        // to avoid overlap with the bootstrapped 10:00–12:00 slot
         for (let i = 0; i < 3; i++) {
-          const start = dateTimeAfter(dateStr, baseHour, safeMin, i * 60);
-          const end = dateTimeAfter(dateStr, baseHour, safeMin, (i + 1) * 60);
+          const start = dateTimeAfter(dateStr, baseHour, safeMin, 120 + i * 30);
+          const end = dateTimeAfter(dateStr, baseHour, safeMin, 120 + (i + 1) * 30);
           await page.goto(
             '/panel/event/autumn-open/cfp/time-slots/create/',
           );
@@ -1810,12 +1811,11 @@ test.describe('Backoffice Panel', () => {
     const rawMin = parseInt(hourMatch?.[2] ?? '0', 10);
     const safeMin = rawMin + 1;
 
-    // Use baseHour+3h offset to avoid collisions with serial flow slots.
-    // 30-min slot, then overlap test with 15-min offset.
-    // Use dateTimeAfter to handle midnight rollover correctly.
-    const offsetMin = 3 * 60;
+    // Use baseHour+3.5h offset to avoid collisions with CFP flow slots
+    // (which occupy 12:01–13:31). 15-min slot, then overlap test.
+    const offsetMin = 3 * 60 + 30;
     const slotStart = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin);
-    const slotEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 30);
+    const slotEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 15);
 
     await page.goto(
       '/panel/event/autumn-open/cfp/time-slots/create/',
@@ -1835,10 +1835,10 @@ test.describe('Backoffice Panel', () => {
       page.getByText('Time slot created successfully.'),
     ).toBeVisible();
 
-    // Try creating overlapping slot: offset+15 to offset+45
+    // Try creating overlapping slot: offset+5 to offset+20
     // This overlaps with the first slot
-    const overlapStart = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 15);
-    const overlapEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 45);
+    const overlapStart = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 5);
+    const overlapEnd = dateTimeAfter(dateStr, baseHour, safeMin, offsetMin + 20);
     await page.goto(
       '/panel/event/autumn-open/cfp/time-slots/create/',
     );
@@ -1874,6 +1874,156 @@ test.describe('Backoffice Panel', () => {
       .click();
     await expect(
       page.getByText('Time slot deleted successfully.'),
+    ).toBeVisible();
+  });
+
+  // --- Facilitators: merge ---
+
+  test('facilitators list shows always-enabled merge view button and disabled merge selected', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/facilitators/');
+
+    // "Merge view" is a plain link — always accessible
+    await expect(
+      page.getByRole('link', { name: /Merge view/ }),
+    ).toBeVisible();
+
+    // "Merge selected" starts disabled
+    await expect(
+      page.getByRole('button', { name: /Merge selected/ }),
+    ).toBeDisabled();
+  });
+
+  test('merge selected button enables after checking 2+ facilitators', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/facilitators/');
+
+    const mergeSelectedBtn = page.getByRole('button', {
+      name: /Merge selected/,
+    });
+
+    // One checkbox checked — still disabled
+    await page.locator('.facilitator-checkbox').first().check();
+    await expect(mergeSelectedBtn).toBeDisabled();
+
+    // Two checkboxes checked — now enabled
+    await page.locator('.facilitator-checkbox').nth(1).check();
+    await expect(mergeSelectedBtn).not.toBeDisabled();
+  });
+
+  test('merge view button opens merge page with no pre-selection', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/facilitators/');
+
+    await page.getByRole('link', { name: /Merge view/ }).click();
+
+    await expect(page).toHaveURL(
+      '/panel/event/autumn-open/facilitators/merge/',
+    );
+
+    // Search field is present
+    await expect(page.locator('#facilitator-search')).toBeVisible();
+
+    // All facilitator checkboxes are unchecked
+    const checkboxes = page.locator('.facilitator-checkbox');
+    const count = await checkboxes.count();
+    expect(count).toBeGreaterThanOrEqual(3);
+    for (let i = 0; i < count; i++) {
+      await expect(checkboxes.nth(i)).not.toBeChecked();
+    }
+  });
+
+  test('merge selected passes preselected ids to merge page', async ({
+    page,
+  }) => {
+    await page.goto('/panel/event/autumn-open/facilitators/');
+
+    // Check Alice Morgan and Alice Morgan Copy
+    const aliceRow = page.locator('tr').filter({
+      has: page.getByRole('cell', { name: 'Alice Morgan', exact: true }),
+    });
+    const aliceCopyRow = page.locator('tr').filter({
+      has: page.getByRole('cell', {
+        name: 'Alice Morgan Copy',
+        exact: true,
+      }),
+    });
+    await aliceRow.locator('.facilitator-checkbox').check();
+    await aliceCopyRow.locator('.facilitator-checkbox').check();
+
+    await page
+      .getByRole('button', { name: /Merge selected/ })
+      .click();
+
+    await expect(page).toHaveURL(/\/facilitators\/merge\/\?ids=/);
+
+    // Both should be pre-checked on the merge page
+    await expect(
+      page.getByLabel('Alice Morgan', { exact: true }),
+    ).toBeChecked();
+    await expect(
+      page.getByLabel('Alice Morgan Copy', { exact: true }),
+    ).toBeChecked();
+  });
+
+  test('merge page search filters facilitators by name', async ({ page }) => {
+    await page.goto(
+      '/panel/event/autumn-open/facilitators/merge/',
+    );
+
+    await page.locator('#facilitator-search').fill('Alice');
+
+    // Alice rows remain visible
+    await expect(
+      page
+        .locator('.facilitator-row')
+        .filter({ hasText: 'Alice Morgan Copy' }),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator('.facilitator-row')
+        .filter({ has: page.locator('label', { hasText: /^Alice Morgan$/ }) }),
+    ).toBeVisible();
+
+    // Bob Chen row is hidden
+    await expect(
+      page.locator('.facilitator-row').filter({ hasText: 'Bob Chen' }),
+    ).toBeHidden();
+  });
+
+  test('merge page merges selected facilitators into target', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/panel/event/autumn-open/facilitators/merge/',
+    );
+
+    // Select Alice Morgan and Alice Morgan Copy via their labels
+    await page.getByLabel('Alice Morgan', { exact: true }).check();
+    await page.getByLabel('Alice Morgan Copy', { exact: true }).check();
+
+    // Pick Alice Morgan as the keep target
+    const aliceRow = page.locator('.facilitator-row').filter({
+      has: page.locator('label', { hasText: /^Alice Morgan$/ }),
+    });
+    await aliceRow.locator('input[name="target_id"]').check();
+
+    await page.getByRole('button', { name: /Merge/ }).click();
+
+    await expect(
+      page.getByText('Facilitators merged successfully.'),
+    ).toBeVisible();
+    await expect(page).toHaveURL(
+      '/panel/event/autumn-open/facilitators/',
+    );
+
+    // Alice Morgan Copy is gone; Alice Morgan and Bob Chen remain
+    await expect(page.getByText('Alice Morgan Copy')).not.toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Alice Morgan', exact: true }),
     ).toBeVisible();
   });
 });

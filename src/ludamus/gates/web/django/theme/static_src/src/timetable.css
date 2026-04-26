@@ -1,0 +1,85 @@
+.timetable-header-cell {
+  flex: var(--span) 1 0;
+  min-width: calc(9rem * var(--span));
+}
+
+.timetable-time-axis,
+.timetable-column {
+  height: calc(var(--total-height) + 20px);
+}
+
+.timetable-time-label,
+.timetable-slot-line {
+  top: calc(var(--top) + 20px);
+}
+
+.timetable-session {
+  top: calc(var(--top) + 20px);
+  height: var(--height);
+  min-height: var(--height);
+  left: calc(var(--left) + 2px);
+  width: calc(var(--width) - 4px);
+}
+
+.timetable-column.assign-mode-active {
+  cursor: crosshair;
+}
+
+.timetable-column.assign-mode-active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--theme-primary-rgb) / 0.08);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.timetable-preferred-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(250, 204, 21, 0.28);
+  border-top: 1px dashed rgba(202, 138, 4, 0.7);
+  border-bottom: 1px dashed rgba(202, 138, 4, 0.7);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.timetable-session:hover,
+.timetable-session:focus-within {
+  height: auto !important;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  opacity: 1;
+}
+
+.timetable-session:hover .timetable-session-body,
+.timetable-session:focus-within .timetable-session-body {
+  height: auto;
+  overflow: visible;
+}
+
+.timetable-session:hover .timetable-session-title,
+.timetable-session:focus-within .timetable-session-title,
+.timetable-session:hover .timetable-session-meta,
+.timetable-session:focus-within .timetable-session-meta {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+.timetable-session:hover .timetable-session-meta.hidden,
+.timetable-session:focus-within .timetable-session-meta.hidden {
+  display: block;
+}
+
+#session-list.htmx-request,
+#timetable-grid.htmx-request,
+#conflict-panel.htmx-request,
+#left-pane.htmx-request,
+#timetable-content.htmx-request {
+  opacity: 0.6;
+  transition: opacity 120ms;
+  pointer-events: none;
+}

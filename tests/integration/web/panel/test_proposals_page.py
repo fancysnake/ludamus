@@ -108,7 +108,6 @@ class TestProposalsPageView:
                 **_TRACK_FILTER_CONTEXT,
                 "proposals": [],
                 "session_fields": [],
-                "filter_host": "",
                 "filter_fields": {},
                 "filter_search": "",
             },
@@ -158,13 +157,73 @@ class TestProposalsPageView:
                     )
                 ],
                 "session_fields": [],
-                "filter_host": "",
                 "filter_fields": {},
                 "filter_search": "",
             },
         )
 
-    def test_filters_by_host_name(
+    def test_search_matches_display_name(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
+        Session.objects.create(
+            category=category,
+            presenter=active_user,
+            display_name=active_user.name,
+            title="Session A",
+            slug="session-a",
+            sphere=sphere,
+            participants_limit=5,
+            status="pending",
+        )
+        session_pseudonym = Session.objects.create(
+            category=category,
+            presenter=active_user,
+            display_name="Mysterious Stranger",
+            title="Session B",
+            slug="session-b",
+            sphere=sphere,
+            participants_limit=5,
+            status="pending",
+        )
+
+        response = authenticated_client.get(
+            self.get_url(event), {"search": "Mysterious"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/proposals.html",
+            context_data={
+                **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
+                "stats": {
+                    "hosts_count": 1,
+                    "pending_proposals": 2,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 2,
+                    "total_sessions": 2,
+                },
+                "proposals": [
+                    SessionListItemDTO(
+                        pk=session_pseudonym.pk,
+                        title="Session B",
+                        display_name="Mysterious Stranger",
+                        category_name="RPG",
+                        status=SessionStatus.PENDING,
+                        creation_time=session_pseudonym.creation_time,
+                    )
+                ],
+                "session_fields": [],
+                "filter_fields": {},
+                "filter_search": "Mysterious",
+            },
+        )
+
+    def test_search_matches_host_name(
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
@@ -188,10 +247,10 @@ class TestProposalsPageView:
             slug="session-b",
             sphere=sphere,
             participants_limit=5,
-            status="accepted",
+            status="pending",
         )
 
-        response = authenticated_client.get(self.get_url(event), {"host": "Other"})
+        response = authenticated_client.get(self.get_url(event), {"search": "Other"})
 
         assert_response(
             response,
@@ -202,11 +261,11 @@ class TestProposalsPageView:
                 **_TRACK_FILTER_CONTEXT,
                 "stats": {
                     "hosts_count": 2,
-                    "pending_proposals": 1,
+                    "pending_proposals": 2,
                     "rooms_count": 0,
                     "scheduled_sessions": 0,
                     "total_proposals": 2,
-                    "total_sessions": 1,
+                    "total_sessions": 2,
                 },
                 "proposals": [
                     SessionListItemDTO(
@@ -214,14 +273,13 @@ class TestProposalsPageView:
                         title="Session B",
                         display_name="Other Person",
                         category_name="RPG",
-                        status=SessionStatus.ACCEPTED,
+                        status=SessionStatus.PENDING,
                         creation_time=session_b.creation_time,
                     )
                 ],
                 "session_fields": [],
-                "filter_host": "Other",
                 "filter_fields": {},
-                "filter_search": "",
+                "filter_search": "Other",
             },
         )
 
@@ -263,7 +321,7 @@ class TestProposalsPageView:
         )
 
         response = authenticated_client.get(
-            self.get_url(event), {f"field_{field.pk}": "D&D"}
+            self.get_url(event), {f"field_{field.pk}": "D&D 5e"}
         )
 
         assert_response(
@@ -301,8 +359,88 @@ class TestProposalsPageView:
                         order=0,
                     )
                 ],
-                "filter_host": "",
-                "filter_fields": {field.pk: "D&D"},
+                "filter_fields": {field.pk: "D&D 5e"},
+                "filter_search": "",
+            },
+        )
+
+    def test_filters_by_session_field_with_polish_characters(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
+        field = SessionField.objects.create(
+            event=event,
+            name="Treści",
+            question="Treści?",
+            slug="tresci",
+            field_type="select",
+        )
+        session1 = Session.objects.create(
+            category=category,
+            presenter=active_user,
+            display_name=active_user.name,
+            title="Mroczna sesja",
+            slug="mroczna-sesja",
+            sphere=sphere,
+            participants_limit=5,
+            status="pending",
+        )
+        SessionFieldValue.objects.create(
+            session=session1, field=field, value="przekleństwa"
+        )
+        session2 = Session.objects.create(
+            category=category,
+            presenter=active_user,
+            display_name=active_user.name,
+            title="Inna sesja",
+            slug="inna-sesja",
+            sphere=sphere,
+            participants_limit=5,
+            status="pending",
+        )
+        SessionFieldValue.objects.create(session=session2, field=field, value="przemoc")
+
+        response = authenticated_client.get(
+            self.get_url(event), {f"field_{field.pk}": "przekleństwa"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/proposals.html",
+            context_data={
+                **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
+                "stats": {
+                    "hosts_count": 1,
+                    "pending_proposals": 2,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 2,
+                    "total_sessions": 2,
+                },
+                "proposals": [
+                    SessionListItemDTO(
+                        pk=session1.pk,
+                        title="Mroczna sesja",
+                        display_name=active_user.name,
+                        category_name="RPG",
+                        status=SessionStatus.PENDING,
+                        creation_time=session1.creation_time,
+                    )
+                ],
+                "session_fields": [
+                    SessionFieldDTO(
+                        pk=field.pk,
+                        name="Treści",
+                        question="Treści?",
+                        slug="tresci",
+                        field_type="select",
+                        order=0,
+                    )
+                ],
+                "filter_fields": {field.pk: "przekleństwa"},
                 "filter_search": "",
             },
         )
@@ -372,9 +510,82 @@ class TestProposalsPageView:
                     )
                 ],
                 "session_fields": [],
-                "filter_host": "",
                 "filter_fields": {},
                 "filter_search": "D&D",
+            },
+        )
+
+    def test_search_with_polish_characters(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        category = ProposalCategory.objects.create(event=event, name="RPG", slug="rpg")
+        field = SessionField.objects.create(
+            event=event,
+            name="Treści",
+            question="Treści?",
+            slug="tresci",
+            field_type="text",
+        )
+        session1 = Session.objects.create(
+            category=category,
+            presenter=active_user,
+            display_name=active_user.name,
+            title="Mroczna sesja",
+            slug="mroczna-sesja",
+            sphere=sphere,
+            participants_limit=5,
+            status="pending",
+        )
+        SessionFieldValue.objects.create(
+            session=session1, field=field, value="Zawiera przekleństwa"
+        )
+        session2 = Session.objects.create(
+            category=category,
+            presenter=active_user,
+            display_name=active_user.name,
+            title="Inna sesja",
+            slug="inna-sesja",
+            sphere=sphere,
+            participants_limit=5,
+            status="pending",
+        )
+        SessionFieldValue.objects.create(
+            session=session2, field=field, value="Zawiera przemoc"
+        )
+
+        response = authenticated_client.get(
+            self.get_url(event), {"search": "przekleństwa"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="panel/proposals.html",
+            context_data={
+                **_base_context(event),
+                **_TRACK_FILTER_CONTEXT,
+                "stats": {
+                    "hosts_count": 1,
+                    "pending_proposals": 2,
+                    "rooms_count": 0,
+                    "scheduled_sessions": 0,
+                    "total_proposals": 2,
+                    "total_sessions": 2,
+                },
+                "proposals": [
+                    SessionListItemDTO(
+                        pk=session1.pk,
+                        title="Mroczna sesja",
+                        display_name=active_user.name,
+                        category_name="RPG",
+                        status=SessionStatus.PENDING,
+                        creation_time=session1.creation_time,
+                    )
+                ],
+                "session_fields": [],
+                "filter_fields": {},
+                "filter_search": "przekleństwa",
             },
         )
 
@@ -398,7 +609,6 @@ class TestProposalsPageView:
                 **_base_context(event),
                 "proposals": [],
                 "session_fields": [],
-                "filter_host": "",
                 "filter_fields": {},
                 "filter_search": "",
                 "all_tracks": [TrackDTO.model_validate(track)],
@@ -428,7 +638,6 @@ class TestProposalsPageView:
                 **_base_context(event),
                 "proposals": [],
                 "session_fields": [],
-                "filter_host": "",
                 "filter_fields": {},
                 "filter_search": "",
                 "all_tracks": [TrackDTO.model_validate(track)],
@@ -476,7 +685,6 @@ class TestProposalsPageView:
                         order=0,
                     )
                 ],
-                "filter_host": "",
                 "filter_fields": {select_field.pk: ""},
                 "filter_search": "",
             },
@@ -580,8 +788,9 @@ class TestProposalDetailPageView:
                 },
                 "active_nav": "proposals",
                 "proposal": SessionDTO.model_validate(session),
-                "host": UserDTO.model_validate(active_user),
                 "field_values": [],
+                "facilitators": [],
+                "presenter": UserDTO.model_validate(active_user),
             },
         )
 
@@ -621,7 +830,6 @@ class TestProposalDetailPageView:
                 },
                 "active_nav": "proposals",
                 "proposal": SessionDTO.model_validate(session),
-                "host": UserDTO.model_validate(active_user),
                 "field_values": [
                     SessionFieldValueDTO(
                         field_id=field.pk,
@@ -631,6 +839,8 @@ class TestProposalDetailPageView:
                         value="D&D 5e",
                     )
                 ],
+                "facilitators": [],
+                "presenter": UserDTO.model_validate(active_user),
             },
         )
 

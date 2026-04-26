@@ -13,6 +13,22 @@
         {{ current_event.name }} · {% translate "Proposal Details" %}
     {% endif %}
 {% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'panel:proposal-edit' slug=current_event.slug proposal_id=proposal.pk %}"
+               class="btn btn-secondary">{% translate "Edit" %}</a>
+            {% if proposal.status == "pending" %}
+                <form method="post"
+                      action="{% url 'panel:proposal-reject' slug=current_event.slug proposal_id=proposal.pk %}"
+                      onsubmit="return confirm('{% translate "Are you sure you want to reject this proposal?" %}');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">{% translate "Reject" %}</button>
+                </form>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock header_actions %}
 {% block content %}
     {% if current_event %}
         <nav class="mb-4 text-sm">
@@ -27,12 +43,10 @@
         </nav>
         <div class="card mb-6">
             <div class="card-body">
-                <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Host" %}</h3>
-                {% if host %}
-                    <p class="text-foreground">{{ host.name }}</p>
-                    {% if host.email %}<p class="text-sm text-foreground-muted">{{ host.email }}</p>{% endif %}
-                {% else %}
-                    <p class="text-foreground-muted">{{ proposal.display_name }}</p>
+                <h3 class="text-sm font-medium text-foreground-muted mb-2">{% translate "Facilitator" %}</h3>
+                <p class="text-foreground">{{ proposal.display_name }}</p>
+                {% if presenter %}
+                    <p class="text-foreground-muted text-sm mt-1">{{ presenter.name }} · {{ presenter.email }}</p>
                 {% endif %}
             </div>
         </div>
@@ -70,12 +84,14 @@
                             {{ proposal.participants_limit|default_if_none:"—" }}
                         </dd>
                     </div>
-                    <div>
-                        <dt class="text-xs text-foreground-muted">{% translate "Minimum Age" %}</dt>
-                        <dd class="text-foreground">
-                            {{ proposal.min_age }}
-                        </dd>
-                    </div>
+                    {% if proposal.min_age %}
+                        <div>
+                            <dt class="text-xs text-foreground-muted">{% translate "Minimum Age" %}</dt>
+                            <dd class="text-foreground">
+                                {{ proposal.min_age }}
+                            </dd>
+                        </div>
+                    {% endif %}
                 </dl>
             </div>
         </div>
@@ -96,5 +112,17 @@
                 </div>
             </div>
         {% endif %}
+        <div class="card mb-6">
+            <div class="card-body">
+                <h3 class="text-sm font-medium text-foreground-muted mb-4">{% translate "Facilitators" %}</h3>
+                {% if facilitators %}
+                    <ul class="space-y-1">
+                        {% for f in facilitators %}<li class="text-foreground text-sm">{{ f.display_name }}</li>{% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-foreground-muted text-sm">{% translate "No facilitators assigned." %}</p>
+                {% endif %}
+            </div>
+        </div>
     {% endif %}
 {% endblock content %}

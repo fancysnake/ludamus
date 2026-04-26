@@ -14,6 +14,10 @@ class NotFoundError(Exception):
     pass
 
 
+class FacilitatorMergeError(Exception):
+    """Raised when a facilitator merge violates a domain invariant."""
+
+
 class RedirectError(Exception):
     def __init__(
         self, url: str, *, error: str | None = None, warning: str | None = None
@@ -47,6 +51,20 @@ class FacilitatorData(TypedDict, total=False):
     user_id: int | None
 
 
+class FacilitatorUpdateData(TypedDict, total=False):
+    display_name: str
+
+
+class FacilitatorListItemDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    display_name: str
+    pk: int
+    session_count: int
+    slug: str
+    user_id: int | None
+
+
 class ProposalCategoryDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -76,6 +94,21 @@ class SessionFieldValueDTO(BaseModel):
     value: str | list[str] | bool
 
 
+UNSCHEDULED_LIST_LIMIT = 20
+
+
+class UnscheduledSessionDTO(BaseModel):
+    """Session accepted but not yet placed in the timetable."""
+
+    pk: int
+    title: str
+    display_name: str
+    category_name: str
+    category_pk: int | None
+    duration_minutes: int
+    participants_limit: int
+
+
 class SessionListItemDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -94,6 +127,14 @@ class AgendaItemDTO(BaseModel):
     pk: int
     session_confirmed: bool
     start_time: datetime
+    space_id: int = 0
+    space_name: str = ""
+    session_id: int = 0
+    session_title: str = ""
+    presenter_name: str = ""
+    session_duration_minutes: int = 0
+    session_status: "SessionStatus | None" = None
+    category_name: str | None = None
 
 
 class SessionDTO(BaseModel):
@@ -110,7 +151,6 @@ class SessionDTO(BaseModel):
     participants_limit: int
     pk: int
     presenter_id: int | None
-    proposed_by_id: int | None = None
     display_name: str
     requirements: str
     slug: str
@@ -157,7 +197,6 @@ class LocationData(TypedDict):
 
 class SessionStatus(StrEnum):
     PENDING = auto()
-    ACCEPTED = auto()
     REJECTED = auto()
     SCHEDULED = auto()
 
@@ -259,6 +298,7 @@ class AreaDTO(BaseModel):
     pk: int
     slug: str
     spaces_count: int = 0
+    venue_id: int
 
 
 class TimeSlotDTO(BaseModel):
@@ -296,7 +336,6 @@ class SessionData(TypedDict, total=False):
     needs: str
     participants_limit: int
     presenter_id: int | None
-    proposed_by_id: int | None
     display_name: str
     requirements: str
     slug: str
@@ -306,15 +345,30 @@ class SessionData(TypedDict, total=False):
 
 
 class SessionUpdateData(TypedDict, total=False):
+    category_id: int | None
+    contact_email: str
+    description: str
     display_name: str
+    duration: str
+    min_age: int
+    needs: str
+    participants_limit: int
+    requirements: str
     slug: str
     status: SessionStatus
+    title: str
 
 
 class AgendaItemData(TypedDict):
     end_time: datetime
     session_confirmed: bool
     session_id: int
+    space_id: int
+    start_time: datetime
+
+
+class AgendaItemUpdateData(TypedDict, total=False):
+    end_time: datetime
     space_id: int
     start_time: datetime
 
@@ -731,7 +785,7 @@ class UserRepositoryProtocol(Protocol):
     def email_exists(email: str, exclude_slug: str | None = None) -> bool: ...
 
 
-class SessionRepositoryProtocol(Protocol):
+class SessionRepositoryProtocol(Protocol):  # noqa: PLR0904
     @staticmethod
     def create(
         session_data: SessionData,
@@ -745,8 +799,6 @@ class SessionRepositoryProtocol(Protocol):
     def update(pk: int, data: SessionUpdateData) -> None: ...
     @staticmethod
     def read_event(session_id: int) -> EventDTO: ...
-    @staticmethod
-    def read_presenter(session_id: int) -> UserDTO: ...
     @staticmethod
     def read_spaces(session_id: int) -> list[SpaceDTO]: ...
     @staticmethod
@@ -770,6 +822,12 @@ class SessionRepositoryProtocol(Protocol):
     @staticmethod
     def read_preferred_time_slot_ids(session_id: int) -> list[int]: ...
     @staticmethod
+    def read_preferred_time_slots(session_id: int) -> list[TimeSlotDTO]: ...
+    @staticmethod
+    def read_preferred_time_slots_by_sessions(
+        session_ids: Iterable[int],
+    ) -> dict[int, list[TimeSlotDTO]]: ...
+    @staticmethod
     def slug_exists(sphere_id: int, slug: str) -> bool: ...
     @staticmethod
     def save_field_values(
@@ -781,13 +839,29 @@ class SessionRepositoryProtocol(Protocol):
     def list_sessions_by_event(
         event_id: int,
         *,
-        presenter_name: str | None = None,
         field_filters: dict[int, str] | None = None,
         search: str | None = None,
         track_pk: int | None = None,
     ) -> list[SessionListItemDTO]: ...
     @staticmethod
     def set_session_tracks(session_pk: int, track_pks: list[int]) -> None: ...
+    @staticmethod
+    def read_facilitators(session_id: int) -> list[FacilitatorDTO]: ...
+    @staticmethod
+    def set_facilitators(session_id: int, facilitator_ids: list[int]) -> None: ...
+    @staticmethod
+    def replace_facilitators_in_sessions(
+        source_ids: list[int], target_id: int
+    ) -> None: ...
+    @staticmethod
+    def list_unscheduled_by_event(
+        event_pk: int,
+        *,
+        track_pk: int | None = None,
+        search: str | None = None,
+        max_duration_minutes: int | None = None,
+        category_pk: int | None = None,
+    ) -> tuple[list[UnscheduledSessionDTO], bool]: ...
 
 
 class TrackRepositoryProtocol(Protocol):
@@ -811,11 +885,43 @@ class TrackRepositoryProtocol(Protocol):
     def list_space_pks(pk: int) -> list[int]: ...
     @staticmethod
     def list_manager_pks(pk: int) -> list[int]: ...
+    @staticmethod
+    def list_by_session(session_pk: int) -> list[TrackDTO]: ...
+    @staticmethod
+    def list_manager_names(track_pk: int) -> list[str]: ...
 
 
 class AgendaItemRepositoryProtocol(Protocol):
     @staticmethod
     def create(agenda_item_data: AgendaItemData) -> None: ...
+    @staticmethod
+    def read(pk: int) -> AgendaItemDTO: ...
+    @staticmethod
+    def list_by_event(event_pk: int) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def list_by_space(space_pk: int) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def list_by_track(track_pk: int) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def read_by_session(session_pk: int) -> AgendaItemDTO | None: ...
+    @staticmethod
+    def list_overlapping_in_space(
+        space_pk: int,
+        start_time: datetime,
+        end_time: datetime,
+        exclude_session_pk: int | None = None,
+    ) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def list_overlapping_by_facilitator(
+        facilitator_pk: int,
+        start_time: datetime,
+        end_time: datetime,
+        exclude_session_pk: int | None = None,
+    ) -> list[AgendaItemDTO]: ...
+    @staticmethod
+    def update(pk: int, data: AgendaItemUpdateData) -> None: ...
+    @staticmethod
+    def delete(pk: int) -> None: ...
 
 
 class ConnectedUserRepositoryProtocol(Protocol):
@@ -882,6 +988,8 @@ class SpaceRepositoryProtocol(Protocol):
     def create(
         self, area_id: int, name: str, capacity: int | None = None
     ) -> SpaceDTO: ...
+    @staticmethod
+    def read(pk: int) -> SpaceDTO: ...
     @staticmethod
     def delete(pk: int) -> None: ...
     @staticmethod
@@ -1140,7 +1248,17 @@ class FacilitatorRepositoryProtocol(Protocol):
     @staticmethod
     def create(data: FacilitatorData) -> FacilitatorDTO: ...
     @staticmethod
+    def read(pk: int) -> FacilitatorDTO: ...
+    @staticmethod
+    def read_by_event_and_slug(event_id: int, slug: str) -> FacilitatorDTO: ...
+    @staticmethod
     def read_by_user_and_event(user_id: int, event_id: int) -> FacilitatorDTO: ...
+    @staticmethod
+    def update(pk: int, data: FacilitatorUpdateData) -> FacilitatorDTO: ...
+    @staticmethod
+    def list_by_event(event_id: int) -> list[FacilitatorListItemDTO]: ...
+    @staticmethod
+    def delete(pk: int) -> None: ...
     @staticmethod
     def slug_exists(event_id: int, slug: str) -> bool: ...
 
@@ -1152,6 +1270,61 @@ class HostPersonalDataRepositoryProtocol(Protocol):
     def read_for_facilitator_event(
         facilitator_id: int, event_id: int
     ) -> dict[str, str | list[str] | bool]: ...
+    @staticmethod
+    def delete_by_facilitators(facilitator_ids: list[int]) -> None: ...
+
+
+class ScheduleChangeAction(StrEnum):
+    ASSIGN = auto()
+    UNASSIGN = auto()
+    REVERT = auto()
+
+
+class ScheduleChangeLogData(TypedDict, total=False):
+    event_id: int
+    session_id: int
+    user_id: int | None
+    action: str
+    old_space_id: int | None
+    new_space_id: int | None
+    old_start_time: datetime | None
+    old_end_time: datetime | None
+    new_start_time: datetime | None
+    new_end_time: datetime | None
+
+
+class ScheduleChangeLogDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    event_id: int
+    session_id: int
+    session_title: str
+    user_id: int | None
+    user_name: str
+    action: ScheduleChangeAction
+    old_space_id: int | None
+    old_space_name: str | None
+    new_space_id: int | None
+    new_space_name: str | None
+    old_start_time: datetime | None
+    old_end_time: datetime | None
+    new_start_time: datetime | None
+    new_end_time: datetime | None
+    creation_time: datetime
+
+
+class ScheduleChangeLogRepositoryProtocol(Protocol):
+    @staticmethod
+    def create(data: ScheduleChangeLogData) -> None: ...
+
+    @staticmethod
+    def read(pk: int) -> ScheduleChangeLogDTO: ...
+
+    @staticmethod
+    def list_by_event(
+        event_pk: int, *, space_pk: int | None = None
+    ) -> list[ScheduleChangeLogDTO]: ...
 
 
 class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
@@ -1205,14 +1378,15 @@ class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     def enrollment_configs(self) -> EnrollmentConfigRepositoryProtocol: ...
     @property
     def host_personal_data(self) -> HostPersonalDataRepositoryProtocol: ...
+    @property
+    def schedule_change_logs(self) -> ScheduleChangeLogRepositoryProtocol: ...
 
 
 class TicketAPIProtocol(Protocol):
     def fetch_membership_count(self, user_email: str) -> int: ...
 
 
-class PanelConfigProtocol(Protocol):
-    field_max_length: int
+DEFAULT_FIELD_MAX_LENGTH = 50
 
 
 class CacheProtocol(Protocol):
@@ -1222,14 +1396,7 @@ class CacheProtocol(Protocol):
     def set(key: str, value: object, timeout: int | None = None) -> None: ...
 
 
-class ConfigProtocol(Protocol):
-    @property
-    def panel(self) -> PanelConfigProtocol: ...
-
-
 class DependencyInjectorProtocol(Protocol):
-    @property
-    def config(self) -> ConfigProtocol: ...
     @property
     def uow(self) -> UnitOfWorkProtocol: ...
     @property

@@ -6,6 +6,7 @@ import json
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+from secrets import token_urlsafe
 from typing import (  # pylint: disable=unused-import
     TYPE_CHECKING,
     Any,
@@ -27,6 +28,7 @@ from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.text import slugify
 from django.utils.timezone import get_current_timezone, localtime
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
@@ -35,34 +37,50 @@ from heroicons import IconDoesNotExist
 from ludamus.gates.web.django.forms import (
     AreaForm,
     EventSettingsForm,
+    FacilitatorForm,
     PersonalDataFieldForm,
     ProposalCategoryForm,
     ProposalSettingsForm,
+    SessionEditForm,
     SessionFieldForm,
     SpaceForm,
     TimeSlotForm,
     TrackForm,
     VenueDuplicateForm,
     VenueForm,
+    create_proposal_form,
     create_venue_copy_form,
 )
-from ludamus.mills import PanelService, is_proposal_active
+from ludamus.mills import FacilitatorMergeService, PanelService, is_proposal_active
 from ludamus.pacts import (
+    DEFAULT_FIELD_MAX_LENGTH,
     DependencyInjectorProtocol,
     EventUpdateData,
+    FacilitatorData,
+    FacilitatorMergeError,
+    FacilitatorUpdateData,
     FieldUsageSummary,
+    HostPersonalDataEntry,
     NotFoundError,
     PersonalDataFieldCreateData,
+    SessionData,
+    SessionFieldValueData,
+    SessionStatus,
     TrackCreateData,
     TrackUpdateData,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from django import forms
 
     from ludamus.pacts import (
         AuthenticatedRequestContext,
         EventDTO,
+        FacilitatorListItemDTO,
+        PersonalDataFieldDTO,
+        SessionFieldDTO,
         SpaceDTO,
         TimeSlotDTO,
         UserDTO,
@@ -236,6 +254,35 @@ class EventContextMixin:
         }
 
         return context, current_event
+
+    def get_track_filter_context(
+        self, event_pk: int
+    ) -> tuple[list[Any], set[int], int | None]:
+        """Return track filter context tuple for track switcher.
+
+        Auto-selects a single managed track when track GET param is absent.
+
+        Returns:
+            Tuple of (sorted_tracks, managed_track_pks, filter_track_pk).
+        """
+        all_tracks = self.request.di.uow.tracks.list_by_event(event_pk)
+        managed_tracks = self.request.di.uow.tracks.list_by_manager(
+            self.request.context.current_user_id, event_pk=event_pk
+        )
+        managed_pks = {t.pk for t in managed_tracks}
+
+        track_param = self.request.GET.get("track", "").strip()
+        if "track" not in self.request.GET and len(managed_tracks) == 1:
+            filter_track_pk: int | None = managed_tracks[0].pk
+        elif track_param.isdigit():
+            filter_track_pk = int(track_param)
+        else:
+            filter_track_pk = None
+
+        sorted_tracks = sorted(
+            all_tracks, key=lambda t: (t.pk not in managed_pks, t.name)
+        )
+        return sorted_tracks, managed_pks, filter_track_pk
 
     def _read_field_or_redirect[T: _FieldDTO](
         self,
@@ -526,7 +573,6 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "proposals"
 
-        host_name = self.request.GET.get("host", "").strip() or None
         search = self.request.GET.get("search", "").strip() or None
         session_fields = self.request.di.uow.session_fields.list_by_event(
             current_event.pk
@@ -537,38 +583,22 @@ class ProposalsPageView(PanelAccessMixin, EventContextMixin, View):
             if value := self.request.GET.get(f"field_{field.pk}", "").strip():
                 field_filters[field.pk] = value
 
-        all_tracks = self.request.di.uow.tracks.list_by_event(current_event.pk)
-        managed_tracks = self.request.di.uow.tracks.list_by_manager(
-            self.request.context.current_user_id, event_pk=current_event.pk
+        sorted_tracks, managed_pks, filter_track_pk = self.get_track_filter_context(
+            current_event.pk
         )
-        managed_pks = {t.pk for t in managed_tracks}
-
-        track_param = self.request.GET.get("track", "").strip()
-        if "track" not in self.request.GET and len(managed_tracks) == 1:
-            filter_track_pk: int | None = managed_tracks[0].pk
-        elif track_param.isdigit():
-            filter_track_pk = int(track_param)
-        else:
-            filter_track_pk = None
 
         context["proposals"] = self.request.di.uow.sessions.list_sessions_by_event(
             current_event.pk,
-            presenter_name=host_name,
             field_filters=field_filters or None,
             search=search,
             track_pk=filter_track_pk,
         )
         context["session_fields"] = filterable_fields
-        context["filter_host"] = host_name or ""
         context["filter_search"] = search or ""
         context["filter_fields"] = {
             field.pk: self.request.GET.get(f"field_{field.pk}", "")
             for field in filterable_fields
         }
-        # Managed tracks first, then remaining alphabetically
-        sorted_tracks = sorted(
-            all_tracks, key=lambda t: (t.pk not in managed_pks, t.name)
-        )
         context["all_tracks"] = sorted_tracks
         context["managed_track_pks"] = managed_pks
         context["filter_track_pk"] = filter_track_pk
@@ -596,17 +626,306 @@ class ProposalDetailPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Proposal not found."))
             return redirect("panel:proposals", slug=slug)
 
-        try:
-            presenter = self.request.di.uow.sessions.read_presenter(proposal_id)
-        except NotFoundError:
-            presenter = None
         field_values = self.request.di.uow.sessions.read_field_values(proposal_id)
+        assigned_facilitators = self.request.di.uow.sessions.read_facilitators(
+            proposal_id
+        )
+        presenter = None
+        if session.presenter_id is not None:
+            presenter = self.request.di.uow.active_users.read_by_id(
+                session.presenter_id
+            )
 
         context["active_nav"] = "proposals"
         context["proposal"] = session
-        context["host"] = presenter
         context["field_values"] = field_values
+        context["facilitators"] = assigned_facilitators
+        context["presenter"] = presenter
         return TemplateResponse(self.request, "panel/proposal-detail.html", context)
+
+
+class ProposalEditPageView(PanelAccessMixin, EventContextMixin, View):
+    """Edit session fields for a proposal."""
+
+    request: PanelRequest
+
+    def _get_facilitator_context(
+        self, event_pk: int, proposal_id: int
+    ) -> tuple[list[FacilitatorListItemDTO], set[int]]:
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(event_pk)
+        assigned = self.request.di.uow.sessions.read_facilitators(proposal_id)
+        assigned_pks = {f.pk for f in assigned}
+        return all_facilitators, assigned_pks
+
+    def _update_facilitators(self, session_pk: int, event_pk: int) -> None:
+        raw_ids = self.request.POST.getlist("facilitator_ids")
+        submitted_ids = {int(fid) for fid in raw_ids if fid.isdigit()}
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(event_pk)
+        valid_pks = {f.pk for f in all_facilitators}
+        self.request.di.uow.sessions.set_facilitators(
+            session_pk, list(submitted_ids & valid_pks)
+        )
+
+    def _save_session_fields(self, session_pk: int, event_pk: int) -> None:
+        event_fields = self.request.di.uow.session_fields.list_by_event(event_pk)
+        field_entries: list[SessionFieldValueData] = []
+        for field in event_fields:
+            key = f"session_field_{field.slug}"
+            if field.field_type == "checkbox":
+                value: str | list[str] | bool = self.request.POST.get(key) == "true"
+            elif field.is_multiple:
+                value = self.request.POST.getlist(key)
+            else:
+                value = self.request.POST.get(key, "")
+                if field.allow_custom and not value:
+                    value = self.request.POST.get(f"{key}_custom", "")
+            field_entries.append(
+                SessionFieldValueData(
+                    session_id=session_pk, field_id=field.pk, value=value
+                )
+            )
+        if field_entries:
+            self.request.di.uow.sessions.save_field_values(session_pk, field_entries)
+
+    def _get_session_fields(
+        self, event_pk: int, proposal_id: int
+    ) -> list[tuple[SessionFieldDTO, str | list[str] | bool | None]]:
+        fields = self.request.di.uow.session_fields.list_by_event(event_pk)
+        existing = self.request.di.uow.sessions.read_field_values(proposal_id)
+        values_by_slug = {fv.field_slug: fv.value for fv in existing}
+        return [(field, values_by_slug.get(field.slug)) for field in fields]
+
+    def get(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            session = self.request.di.uow.sessions.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        all_facilitators, assigned_pks = self._get_facilitator_context(
+            current_event.pk, proposal_id
+        )
+        context["active_nav"] = "proposals"
+        context["proposal"] = session
+        context["form"] = SessionEditForm(
+            initial={
+                "title": session.title,
+                "display_name": session.display_name,
+                "description": session.description,
+                "requirements": session.requirements,
+                "needs": session.needs,
+                "contact_email": session.contact_email,
+                "participants_limit": session.participants_limit,
+                "min_age": session.min_age,
+                "duration": session.duration,
+            }
+        )
+        session_fields = self._get_session_fields(current_event.pk, proposal_id)
+        context["all_facilitators"] = all_facilitators
+        context["assigned_facilitator_pks"] = assigned_pks
+        context["session_fields"] = session_fields
+        return TemplateResponse(self.request, "panel/proposal-edit.html", context)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            session = self.request.di.uow.sessions.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        form = SessionEditForm(self.request.POST)
+        if not form.is_valid():
+            all_facilitators, assigned_pks = self._get_facilitator_context(
+                current_event.pk, proposal_id
+            )
+            session_fields = self._get_session_fields(current_event.pk, proposal_id)
+            context["active_nav"] = "proposals"
+            context["proposal"] = session
+            context["form"] = form
+            context["all_facilitators"] = all_facilitators
+            context["assigned_facilitator_pks"] = assigned_pks
+            context["session_fields"] = session_fields
+            return TemplateResponse(self.request, "panel/proposal-edit.html", context)
+
+        self.request.di.uow.sessions.update(
+            proposal_id,
+            {
+                "title": form.cleaned_data["title"],
+                "display_name": form.cleaned_data["display_name"],
+                "description": form.cleaned_data.get("description") or "",
+                "requirements": form.cleaned_data.get("requirements") or "",
+                "needs": form.cleaned_data.get("needs") or "",
+                "contact_email": form.cleaned_data.get("contact_email") or "",
+                "participants_limit": form.cleaned_data.get("participants_limit") or 0,
+                "min_age": form.cleaned_data.get("min_age") or 0,
+                "duration": form.cleaned_data.get("duration") or "",
+            },
+        )
+
+        self._update_facilitators(session.pk, current_event.pk)
+        self._save_session_fields(session.pk, current_event.pk)
+
+        messages.success(self.request, _("Proposal updated successfully."))
+        return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
+
+
+def _make_unique_slug(
+    name: str, default: str, check_exists: Callable[[str], bool]
+) -> str:
+    base_slug = slugify(name) or default
+    slug = base_slug
+    for _attempt in range(4):
+        if not check_exists(slug):
+            break
+        slug = f"{base_slug}-{token_urlsafe(3)}"
+    return slug
+
+
+class ProposalCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    """Create a new session from the organizer panel."""
+
+    request: PanelRequest
+
+    def _get_form(
+        self, current_event: EventDTO, data: QueryDict | None = None
+    ) -> forms.Form:
+        categories = self.request.di.uow.proposal_categories.list_by_event(
+            current_event.pk
+        )
+        choices = [(c.pk, c.name) for c in categories]
+        form_class = create_proposal_form(choices)
+        return form_class(data) if data is not None else form_class()
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "proposals"
+        context["form"] = self._get_form(current_event)
+        return TemplateResponse(self.request, "panel/proposal-create.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        form = self._get_form(current_event, self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "proposals"
+            context["form"] = form
+            return TemplateResponse(self.request, "panel/proposal-create.html", context)
+
+        title = form.cleaned_data["title"]
+        sphere_id = self.request.context.current_sphere_id
+        session_slug = _make_unique_slug(
+            title,
+            "session",
+            lambda s: self.request.di.uow.sessions.slug_exists(sphere_id, s),
+        )
+
+        self.request.di.uow.sessions.create(
+            SessionData(
+                category_id=int(form.cleaned_data["category_id"]),
+                contact_email=form.cleaned_data.get("contact_email") or "",
+                description=form.cleaned_data.get("description") or "",
+                display_name=form.cleaned_data["display_name"],
+                duration=form.cleaned_data.get("duration") or "",
+                min_age=form.cleaned_data.get("min_age") or 0,
+                needs=form.cleaned_data.get("needs") or "",
+                participants_limit=form.cleaned_data.get("participants_limit") or 0,
+                presenter_id=None,
+                requirements=form.cleaned_data.get("requirements") or "",
+                slug=session_slug,
+                sphere_id=sphere_id,
+                status=SessionStatus.PENDING,
+                title=title,
+            ),
+            tag_ids=[],
+        )
+        messages.success(self.request, _("Proposal created successfully."))
+        return redirect("panel:proposals", slug=slug)
+
+
+class ProposalRejectActionView(PanelAccessMixin, EventContextMixin, View):
+    """Reject a proposal (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            session = self.request.di.uow.sessions.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        self.request.di.uow.sessions.update(
+            session.pk, {"status": SessionStatus.REJECTED}
+        )
+        messages.success(self.request, _("Proposal rejected."))
+        return redirect("panel:proposals", slug=slug)
+
+
+class ProposalSetFacilitatorsActionView(PanelAccessMixin, EventContextMixin, View):
+    """Set facilitators on a session (POST only)."""
+
+    request: PanelRequest
+    http_method_names = ("post",)
+
+    def post(self, _request: PanelRequest, slug: str, proposal_id: int) -> HttpResponse:
+        _context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            session = self.request.di.uow.sessions.read(proposal_id)
+        except NotFoundError:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        session_event = self.request.di.uow.sessions.read_event(proposal_id)
+        if session_event.pk != current_event.pk:
+            messages.error(self.request, _("Proposal not found."))
+            return redirect("panel:proposals", slug=slug)
+
+        raw_ids = self.request.POST.getlist("facilitator_ids")
+        submitted_ids = {int(fid) for fid in raw_ids if fid.isdigit()}
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(
+            current_event.pk
+        )
+        valid_pks = {f.pk for f in all_facilitators}
+        facilitator_ids = list(submitted_ids & valid_pks)
+        self.request.di.uow.sessions.set_facilitators(session.pk, facilitator_ids)
+        messages.success(self.request, _("Facilitators updated."))
+        return redirect("panel:proposal-detail", slug=slug, proposal_id=proposal_id)
 
 
 class CFPPageView(PanelAccessMixin, EventContextMixin, View):
@@ -1005,7 +1324,7 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
 
         context["active_nav"] = "cfp"
         context["form"] = PersonalDataFieldForm(
-            initial={"max_length": self.request.di.config.panel.field_max_length}
+            initial={"max_length": DEFAULT_FIELD_MAX_LENGTH}
         )
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
@@ -1278,7 +1597,7 @@ class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
 
         context["active_nav"] = "cfp"
         context["form"] = SessionFieldForm(
-            initial={"max_length": self.request.di.config.panel.field_max_length}
+            initial={"max_length": DEFAULT_FIELD_MAX_LENGTH}
         )
         context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
             current_event.pk
@@ -2963,3 +3282,280 @@ class TrackDeleteActionView(PanelAccessMixin, EventContextMixin, View):
         self.request.di.uow.tracks.delete(track.pk)
         messages.success(self.request, _("Track deleted."))
         return redirect("panel:tracks", slug=slug)
+
+
+class FacilitatorsPageView(PanelAccessMixin, EventContextMixin, View):
+    """List facilitators for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "facilitators"
+        context["facilitators"] = self.request.di.uow.facilitators.list_by_event(
+            current_event.pk
+        )
+        return TemplateResponse(self.request, "panel/facilitators.html", context)
+
+
+class FacilitatorDetailPageView(PanelAccessMixin, EventContextMixin, View):
+    """View facilitator details and personal data."""
+
+    request: PanelRequest
+
+    def get(
+        self, _request: PanelRequest, slug: str, facilitator_slug: str
+    ) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
+                current_event.pk, facilitator_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Facilitator not found."))
+            return redirect("panel:facilitators", slug=slug)
+
+        personal_data_fields = self.request.di.uow.personal_data_fields.list_by_event(
+            current_event.pk
+        )
+        personal_data_values = (
+            self.request.di.uow.host_personal_data.read_for_facilitator_event(
+                facilitator.pk, current_event.pk
+            )
+        )
+        personal_data_items = [
+            (field, personal_data_values.get(field.slug))
+            for field in personal_data_fields
+        ]
+
+        has_personal_data = any(v for _, v in personal_data_items)
+
+        context["active_nav"] = "facilitators"
+        context["facilitator"] = facilitator
+        context["personal_data_items"] = personal_data_items
+        context["has_personal_data"] = has_personal_data
+        return TemplateResponse(self.request, "panel/facilitator-detail.html", context)
+
+
+class FacilitatorCreatePageView(PanelAccessMixin, EventContextMixin, View):
+    """Create a new facilitator for an event."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "facilitators"
+        context["form"] = FacilitatorForm()
+        return TemplateResponse(self.request, "panel/facilitator-create.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        form = FacilitatorForm(self.request.POST)
+        if not form.is_valid():
+            context["active_nav"] = "facilitators"
+            context["form"] = form
+            return TemplateResponse(
+                self.request, "panel/facilitator-create.html", context
+            )
+
+        display_name = form.cleaned_data["display_name"]
+        facilitator_slug = _make_unique_slug(
+            display_name,
+            "facilitator",
+            lambda s: self.request.di.uow.facilitators.slug_exists(current_event.pk, s),
+        )
+        self.request.di.uow.facilitators.create(
+            FacilitatorData(
+                display_name=display_name,
+                event_id=current_event.pk,
+                slug=facilitator_slug,
+                user_id=None,
+            )
+        )
+        messages.success(self.request, _("Facilitator created successfully."))
+        return redirect("panel:facilitators", slug=slug)
+
+
+class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
+    """Edit an existing facilitator."""
+
+    request: PanelRequest
+
+    def _get_personal_fields(
+        self, event_pk: int, facilitator_pk: int
+    ) -> list[tuple[PersonalDataFieldDTO, str | list[str] | bool | None]]:
+        fields = self.request.di.uow.personal_data_fields.list_by_event(event_pk)
+        values = self.request.di.uow.host_personal_data.read_for_facilitator_event(
+            facilitator_pk, event_pk
+        )
+        return [(field, values.get(field.slug)) for field in fields]
+
+    def get(
+        self, _request: PanelRequest, slug: str, facilitator_slug: str
+    ) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
+                current_event.pk, facilitator_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Facilitator not found."))
+            return redirect("panel:facilitators", slug=slug)
+
+        personal_fields = self._get_personal_fields(current_event.pk, facilitator.pk)
+        context["active_nav"] = "facilitators"
+        context["facilitator"] = facilitator
+        context["form"] = FacilitatorForm(
+            initial={"display_name": facilitator.display_name}
+        )
+        context["personal_fields"] = personal_fields
+        return TemplateResponse(self.request, "panel/facilitator-edit.html", context)
+
+    def post(
+        self, _request: PanelRequest, slug: str, facilitator_slug: str
+    ) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        try:
+            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
+                current_event.pk, facilitator_slug
+            )
+        except NotFoundError:
+            messages.error(self.request, _("Facilitator not found."))
+            return redirect("panel:facilitators", slug=slug)
+
+        form = FacilitatorForm(self.request.POST)
+        if not form.is_valid():
+            personal_fields = self._get_personal_fields(
+                current_event.pk, facilitator.pk
+            )
+            context["active_nav"] = "facilitators"
+            context["facilitator"] = facilitator
+            context["form"] = form
+            context["personal_fields"] = personal_fields
+            return TemplateResponse(
+                self.request, "panel/facilitator-edit.html", context
+            )
+
+        self.request.di.uow.facilitators.update(
+            facilitator.pk,
+            FacilitatorUpdateData(display_name=form.cleaned_data["display_name"]),
+        )
+
+        all_personal_fields = self.request.di.uow.personal_data_fields.list_by_event(
+            current_event.pk
+        )
+        entries: list[HostPersonalDataEntry] = []
+        for field in all_personal_fields:
+            key = f"personal_{field.slug}"
+            if field.field_type == "checkbox":
+                value: str | list[str] | bool = self.request.POST.get(key) == "true"
+            elif field.is_multiple:
+                value = self.request.POST.getlist(key)
+            else:
+                value = self.request.POST.get(key, "")
+                if field.allow_custom and not value:
+                    value = self.request.POST.get(f"{key}_custom", "")
+            entries.append(
+                HostPersonalDataEntry(
+                    facilitator_id=facilitator.pk,
+                    event_id=current_event.pk,
+                    field_id=field.pk,
+                    value=value,
+                )
+            )
+        if entries:
+            self.request.di.uow.host_personal_data.save(entries)
+
+        messages.success(self.request, _("Facilitator updated successfully."))
+        return redirect(
+            "panel:facilitator-detail", slug=slug, facilitator_slug=facilitator_slug
+        )
+
+
+class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
+    """Merge multiple facilitators into one."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        raw_ids = self.request.GET.getlist("ids")
+        preselected_ids = {int(fid) for fid in raw_ids if fid.isdigit()}
+
+        context["active_nav"] = "facilitators"
+        context["facilitators"] = self.request.di.uow.facilitators.list_by_event(
+            current_event.pk
+        )
+        context["preselected_ids"] = preselected_ids
+        context["error"] = None
+        return TemplateResponse(self.request, "panel/facilitator-merge.html", context)
+
+    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        all_facilitators = self.request.di.uow.facilitators.list_by_event(
+            current_event.pk
+        )
+        valid_pks = {f.pk for f in all_facilitators}
+        raw_selected = self.request.POST.getlist("facilitator_ids")
+        selected_ids = [
+            n for fid in raw_selected if fid.isdigit() and (n := int(fid)) in valid_pks
+        ]
+        raw_target = self.request.POST.get("target_id", "")
+        target_id = (
+            int(raw_target)
+            if raw_target.isdigit() and int(raw_target) in valid_pks
+            else None
+        )
+
+        min_required = 2
+        if len(selected_ids) < min_required or target_id not in selected_ids:
+            context["active_nav"] = "facilitators"
+            context["facilitators"] = all_facilitators
+            context["preselected_ids"] = set(selected_ids)
+            context["error"] = _(
+                "Select at least two facilitators and choose a merge target."
+            )
+            return TemplateResponse(
+                self.request, "panel/facilitator-merge.html", context
+            )
+
+        source_ids = [fid for fid in selected_ids if fid != target_id]
+        try:
+            FacilitatorMergeService(self.request.di.uow).merge(target_id, source_ids)
+        except FacilitatorMergeError:
+            context["active_nav"] = "facilitators"
+            context["facilitators"] = all_facilitators
+            context["preselected_ids"] = set(selected_ids)
+            context["error"] = _(
+                "Cannot merge facilitators that each have a linked user account."
+            )
+            return TemplateResponse(
+                self.request, "panel/facilitator-merge.html", context
+            )
+
+        messages.success(self.request, _("Facilitators merged successfully."))
+        return redirect("panel:facilitators", slug=slug)

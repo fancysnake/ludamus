@@ -23,13 +23,13 @@
                         <div class="hidden sm:flex items-center gap-1">
                             {% if "events" in current_sphere.enabled_pages %}
                                 <a href="{% url 'web:events' %}"
-                                   class="px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' not in ns %}text-foreground font-medium bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
+                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' not in ns %}text-foreground bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
                                     {% translate "Events" %}
                                 </a>
                             {% endif %}
                             {% if "encounters" in current_sphere.enabled_pages %}
                                 <a href="{% url 'web:notice-board:index' %}"
-                                   class="px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' in ns %}text-foreground font-medium bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
+                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' in ns %}text-foreground bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
                                     {% translate "Encounters" %}
                                 </a>
                             {% endif %}

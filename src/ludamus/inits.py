@@ -8,7 +8,6 @@ from ludamus.links.db.django.uow import UnitOfWork
 from ludamus.links.gravatar import gravatar_url
 from ludamus.links.ticket_api import MembershipApiClient
 from ludamus.pacts import CacheProtocol, DependencyInjectorProtocol, TicketAPIProtocol
-from ludamus.specs import DEFAULT_FIELD_MAX_LENGTH
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -19,20 +18,6 @@ if TYPE_CHECKING:
 Response = TypeVar("Response")
 
 
-class PanelConfig:
-    """Panel-related configuration constants."""
-
-    field_max_length: int = DEFAULT_FIELD_MAX_LENGTH
-
-
-class Config:
-    """Namespace for all configuration constants, grouped by domain."""
-
-    @cached_property
-    def panel(self) -> PanelConfig:
-        return PanelConfig()
-
-
 class DependencyInjector(DependencyInjectorProtocol):
     """Container for all request-scoped dependencies.
 
@@ -40,10 +25,6 @@ class DependencyInjector(DependencyInjectorProtocol):
         request.di.uow.enrollments
         request.di.ticket_api
     """
-
-    @cached_property
-    def config(self) -> Config:
-        return Config()
 
     @cached_property
     def uow(self) -> UnitOfWork:
