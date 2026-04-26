@@ -10,7 +10,7 @@
                 <div class="session-tags-more relative inline-block">
                     <div class="session-tags-popover absolute z-30 min-w-[14rem] max-w-[20rem] rounded-xl border border-[var(--theme-border)] bg-[var(--color-bg-secondary)] p-2 shadow-[var(--theme-shadow-lg)] opacity-0 pointer-events-none transition-opacity duration-150 flex flex-wrap gap-1">
                         {% for val in row.overflow_values %}
-                            {% include "components/_field_pill.html" with value=val icon=row.icon size="md" %}
+                            {% include "components/_field_pill.html" with value=val icon=row.icon title=val size="md" %}
                         {% endfor %}
                     </div>
                     <span class="session-tags-more-trigger text-sm font-medium text-foreground-muted hover:text-foreground-secondary cursor-help border-b border-dotted border-foreground-muted hover:border-foreground-secondary">+{{ row.overflow_count }}</span>
