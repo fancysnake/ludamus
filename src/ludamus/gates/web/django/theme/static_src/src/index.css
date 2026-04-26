@@ -5,6 +5,7 @@
 @import "./modal.css";
 @import "./filters.css";
 @import "./tabs.css";
+@import "./timetable.css";
 
 @plugin "@tailwindcss/typography";
 
@@ -147,6 +148,7 @@ a, button {
   --theme-border: #e4ddd6;
   --theme-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
+  --theme-primary-rgb: 248 90 60;
   --theme-primary-hover: #e53e20;
   --theme-primary-light: #fef5f3;
   --theme-secondary: #14b89b;
@@ -191,6 +193,7 @@ a, button {
     --color-border-focus: #f85a3c;
     --theme-primary: #f85a3c;
     --color-primary: #f85a3c;
+    --theme-primary-rgb: 248 90 60;
     --theme-primary-hover: #e53e20;
     --color-primary-hover: #e53e20;
     --theme-primary-light: #292524;
@@ -254,6 +257,7 @@ a, button {
   --color-border-focus: #f85a3c;
   --theme-primary: #f85a3c;
   --color-primary: #f85a3c;
+  --theme-primary-rgb: 248 90 60;
   --theme-primary-hover: #e53e20;
   --color-primary-hover: #e53e20;
   --theme-primary-light: #292524;
