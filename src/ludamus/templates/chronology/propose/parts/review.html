@@ -168,7 +168,9 @@
             {% csrf_token %}
             <div class="pt-6">
                 <label for="id_cover_image"
-                       class="block text-sm font-medium text-foreground-secondary mb-2">{% translate "Cover image" %}</label>
+                       class="block text-sm font-medium text-foreground-secondary mb-2">
+                    {% translate "Cover image" %}
+                </label>
                 <input type="file"
                        name="cover_image"
                        id="id_cover_image"
