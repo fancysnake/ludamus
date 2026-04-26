@@ -23,7 +23,7 @@
         <div>
             <label class="block text-xs text-neutral-500 mb-1">{% translate "Room" %}</label>
             <select name="space"
-                    class="text-sm border border-neutral-200 rounded px-2 py-1"
+                    class="text-sm border border-border rounded-lg px-3 py-1.5 bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                     onchange="this.form.submit()">
                 <option value="">{% translate "All" %}</option>
                 {% for space in spaces %}
