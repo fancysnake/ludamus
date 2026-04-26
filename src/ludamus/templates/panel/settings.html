@@ -37,6 +37,7 @@
     <div class="-mx-3 sm:-mx-4 lg:-mx-8 -mb-3 sm:-mb-4 lg:-mb-8 px-3 sm:px-4 lg:px-8 py-6 bg-bg-secondary">
         <form id="settings-form"
               method="post"
+              enctype="multipart/form-data"
               action="{% url 'panel:event-settings' slug=current_event.slug %}"
               class="max-w-2xl">
             {% csrf_token %}
@@ -74,6 +75,23 @@
                                           id="id_description"
                                           rows="3"
                                           class="w-full border border-border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">{{ form.description.value|default:'' }}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                       for="id_cover_image">{% translate "Cover image" %}</label>
+                                {% if current_event.cover_image_url %}
+                                    <img src="{{ current_event.cover_image_url }}"
+                                         alt=""
+                                         width="960"
+                                         height="540"
+                                         class="mb-3 aspect-video w-full rounded-xl object-cover border border-border">
+                                {% endif %}
+                                <input type="file"
+                                       name="cover_image"
+                                       id="id_cover_image"
+                                       accept="image/*"
+                                       class="w-full border border-border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <p class="mt-1 text-sm text-foreground-muted">{{ form.cover_image.field.help_text }}</p>
                             </div>
                         </div>
                     </div>

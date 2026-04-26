@@ -300,6 +300,20 @@ def _settings_tab_urls(slug: str) -> dict[str, str]:
     }
 
 
+def _event_settings_update_data(cd: dict[str, Any], slug: str) -> EventUpdateData:
+    data: EventUpdateData = {
+        "name": cd["name"],
+        "slug": slug,
+        "description": cd.get("description") or "",
+        "start_time": cd["start_time"],
+        "end_time": cd["end_time"],
+        "publication_time": cd.get("publication_time"),
+    }
+    if cover_image := cd.get("cover_image"):
+        data["cover_image"] = cover_image
+    return data
+
+
 def _cfp_tab_urls(slug: str) -> dict[str, str]:
     return {
         "types": reverse("panel:cfp", kwargs={"slug": slug}),
@@ -347,7 +361,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
             messages.error(self.request, _("Event not found."))
             return redirect("panel:index")
 
-        form = EventSettingsForm(self.request.POST)
+        form = EventSettingsForm(self.request.POST, self.request.FILES)
         if not form.is_valid():
             for field_errors in form.errors.values():
                 messages.error(self.request, str(field_errors[0]))
@@ -366,14 +380,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
             except NotFoundError:
                 pass  # Slug is available
 
-        data: EventUpdateData = {
-            "name": cd["name"],
-            "slug": new_slug,
-            "description": cd.get("description") or "",
-            "start_time": cd["start_time"],
-            "end_time": cd["end_time"],
-            "publication_time": cd.get("publication_time"),
-        }
+        data = _event_settings_update_data(cd, new_slug)
 
         try:
             self.request.di.uow.events.update(current_event.pk, data)

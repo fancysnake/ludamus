@@ -101,6 +101,7 @@ class SessionDTO(BaseModel):
 
     category_id: int | None
     contact_email: str
+    cover_image_url: str = ""
     creation_time: datetime
     description: str
     duration: str = ""
@@ -290,6 +291,7 @@ class TagDTO(BaseModel):
 class SessionData(TypedDict, total=False):
     category_id: int | None
     contact_email: str
+    cover_image: object
     description: str
     duration: str
     min_age: int
@@ -367,6 +369,7 @@ class SphereDTO(BaseModel):
 class EventDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    cover_image_url: str = ""
     description: str
     end_time: datetime
     name: str
@@ -581,6 +584,7 @@ class EventUpdateData(TypedDict, total=False):
 
     name: str
     slug: str
+    cover_image: object
     description: str
     start_time: datetime
     end_time: datetime

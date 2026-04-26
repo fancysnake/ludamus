@@ -3,9 +3,18 @@
 from typing import ClassVar
 
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext as _gettext
 from django.utils.translation import gettext_lazy as _
 
 _DATETIME_LOCAL_FORMATS = ["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"]
+MAX_IMAGE_SIZE = 2 * 1024 * 1024
+
+
+def validate_uploaded_image_size(image: object) -> None:
+    size = getattr(image, "size", 0)
+    if isinstance(size, int) and size > MAX_IMAGE_SIZE:
+        raise ValidationError(_gettext("Image too large. Maximum size is 2 MB."))
 
 
 def _datetime_local_widget() -> forms.DateTimeInput:
@@ -38,6 +47,11 @@ class EventSettingsForm(forms.Form):
     description = forms.CharField(
         required=False, widget=forms.Textarea(attrs={"rows": 3})
     )
+    cover_image = forms.ImageField(
+        label=_("Cover image"),
+        required=False,
+        help_text=_("Max 2 MB. JPG, PNG, or WebP."),
+    )
     start_time = forms.DateTimeField(
         widget=_datetime_local_widget(),
         input_formats=_DATETIME_LOCAL_FORMATS,
@@ -53,6 +67,11 @@ class EventSettingsForm(forms.Form):
         widget=_datetime_local_widget(),
         input_formats=_DATETIME_LOCAL_FORMATS,
     )
+
+    def clean_cover_image(self) -> object:
+        if image := self.cleaned_data.get("cover_image"):
+            validate_uploaded_image_size(image)
+        return image
 
 
 class ProposalSettingsForm(forms.Form):
