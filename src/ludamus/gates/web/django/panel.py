@@ -300,7 +300,7 @@ def _settings_tab_urls(slug: str) -> dict[str, str]:
     }
 
 
-def _event_settings_update_data(cd: dict[str, object], slug: str) -> EventUpdateData:
+def _event_settings_update_data(cd: dict[str, Any], slug: str) -> EventUpdateData:
     data: EventUpdateData = {
         "name": cd["name"],
         "slug": slug,
