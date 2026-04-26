@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils.timezone import get_current_timezone
 from django.views.generic.base import View
 
-from ludamus.gates.web.django.panel import (
+from ludamus.gates.web.django.chronology.panel.views.base import (
     EventContextMixin,
     PanelAccessMixin,
     PanelRequest,

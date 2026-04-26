@@ -2,7 +2,7 @@
 
 import pytest
 
-from ludamus.gates.web.django.panel import suggest_copy_name
+from ludamus.gates.web.django.chronology.panel.views.venues import suggest_copy_name
 
 
 class TestSuggestCopyName:

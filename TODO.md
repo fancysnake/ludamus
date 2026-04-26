@@ -8,6 +8,7 @@ config:
 ---
 kanban
   Wishlist
+    [Extract common view boilerplate]@{ assigned: 'refactor' }
     [Component Views should be tested only in e2e tests]@{ assigned: 'tests' }
     [Links should be passed only to mills]@{ assigned: 'GLIMPSE' }
     [Split mills/pacts/inits into packages per GLIMPSE layer rules]@{
