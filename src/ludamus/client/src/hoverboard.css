@@ -1,3 +1,5 @@
 .hoverboard {
-  inset: 0 anchor(--anc right) 0 anchor(--anc left);
+  position: absolute;
+  pointer-events: none;
+  inset: anchor(--anc top) anchor(--anc right) anchor(--anc bottom) anchor(--anc left);
 }

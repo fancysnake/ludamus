@@ -17,8 +17,7 @@
         <meta name="keywords" content="ludamus, backoffice, events, management">
         <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
         {% vite_hmr_client %}
-        <link rel="stylesheet"
-              href="{% vite_asset_url 'src/index.css' %}{% if VITE_DEV_MODE %}?direct{% endif %}">
+        {% vite_asset 'src/index.ts' %}
         <script src="{% static 'vendor/htmx.min.js' %}?v={{ STATIC_VERSION }}"></script>
         <style>
             .sidebar-overlay {

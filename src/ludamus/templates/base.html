@@ -53,8 +53,7 @@
             })();
         </script>
         {% vite_hmr_client %}
-        <link rel="stylesheet"
-              href="{% vite_asset_url 'src/index.css' %}{% if VITE_DEV_MODE %}?direct{% endif %}">
+        {% vite_asset 'src/index.ts' %}
         {% block extra_head %}
         {% endblock extra_head %}
     </head>

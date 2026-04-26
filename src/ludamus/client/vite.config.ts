@@ -18,7 +18,7 @@ export default defineConfig({
     manifest: "manifest.json",
     rollupOptions: {
       input: {
-        index: resolve(__dirname, "src/index.css"),
+        index: resolve(__dirname, "src/index.ts"),
         modal: resolve(__dirname, "src/modal.ts"),
         tabs: resolve(__dirname, "src/tabs.ts"),
         timetable: resolve(__dirname, "src/timetable.ts"),

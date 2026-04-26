@@ -21,6 +21,7 @@
                 {% if current_sphere.enabled_pages|length > 1 %}
                     {% with ns=request.resolver_match.namespace %}
                         <div class="hidden sm:flex items-center gap-1">
+                            <div class="hoverboard bg-bg-tertiary rounded-lg"></div>
                             {% if "events" in current_sphere.enabled_pages %}
                                 <a href="{% url 'web:events' %}"
                                    aria-current="{% if 'events' in ns %}page{% endif %}"
@@ -35,7 +36,6 @@
                                     {% translate "Encounters" %}
                                 </a>
                             {% endif %}
-                            <div class="hoverboard bg-bg-tertiary rounded-lg"></div>
                         </div>
                     {% endwith %}
                 {% endif %}
