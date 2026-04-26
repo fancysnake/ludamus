@@ -90,6 +90,9 @@ run = "ast-grep scan --error src"
 description = "Find dead Python code"
 run = "vulture --config=pyproject.toml src"
 
+[tasks.impeccable]
+run = "python scripts/impeccable_lint.py"
+
 [tasks.check]
 description = "Format, lint, and fix — run all code quality tools"
 depends = [
@@ -103,6 +106,7 @@ depends = [
   "pylint",
   "vulture",
   "ast-grep",
+  "impeccable",
 ]
 
 [tasks.prcheck]

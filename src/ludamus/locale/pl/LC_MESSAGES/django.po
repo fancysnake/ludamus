@@ -1727,17 +1727,14 @@ msgid "Go to Home"
 msgstr "Przejdź do strony głównej"
 
 #: src/ludamus/templates/base.html:116
-#: src/ludamus/templates/base_tailwind.html:168
 msgid "Contact"
 msgstr "Kontakt"
 
 #: src/ludamus/templates/base.html:118
-#: src/ludamus/templates/base_tailwind.html:170
 msgid "Privacy Policy"
 msgstr "Polityka prywatności"
 
 #: src/ludamus/templates/base.html:120
-#: src/ludamus/templates/base_tailwind.html:172
 msgid "Terms of Service"
 msgstr "Regulamin"
 

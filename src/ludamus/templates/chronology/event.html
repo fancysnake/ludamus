@@ -403,8 +403,9 @@
                         <span class="text-xs text-foreground-muted">{{ sessions|length }} session{{ sessions|length|pluralize }}</span>
                         {% if event.is_proposal_active %}
                             <a href="{% url 'web:chronology:session-propose' event_slug=event.slug %}"
-                               class="btn btn-teal text-xs py-1.5 px-3 shrink-0">
-                                {% icon "plus" class="w-4 h-4" variant="mini" %} {% translate "Propose" %}
+                               class="text-teal-600 bg-teal-400/20 dark:bg-teal-800/20 dark:text-teal-400 gap-1.5 p-1.5 rounded-lg hover:bg-teal-400/30 dark:hover:bg-teal-800/30 transition-colors hover:duration-0 shrink-0">
+                                {% icon "plus" class="w-4 h-4" variant="mini" %}
+                                <span class="sr-only">{% translate "Propose" %}</span>
                             </a>
                         {% endif %}
                     </div>
@@ -661,10 +662,10 @@
     <!-- Session Detail Modals -->
     {% for data in sessions %}
         <dialog id="session-{{ data.session.pk }}"
-                class="modal max-w-[800px] w-full bg-transparent h-600 max-h-[90vh]"
+                class="modal max-w-[800px] w-full bg-transparent h-600 max-h-[90dvh] overflow-hidden"
                 aria-labelledby="session-{{ data.session.pk }}-title">
             <!-- Header -->
-            <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
                 <h3 id="session-{{ data.session.pk }}-title"
                     class="text-lg font-semibold text-foreground">{{ data.session.title }}</h3>
                 <button data-modal-close="session-{{ data.session.pk }}"
@@ -673,7 +674,7 @@
                 </button>
             </div>
             <!-- Tabs -->
-            <div class="tab-list" role="tablist">
+            <div class="tab-list shrink-0" role="tablist">
                 <button role="tab"
                         aria-selected="true"
                         aria-controls="info-{{ data.session.pk }}"
@@ -693,7 +694,7 @@
                 </button>
             </div>
             <!-- Tab Content -->
-            <div class="tab-content px-6 py-4 flex-1 overflow-y-auto text-foreground">
+            <div class="tab-content px-6 py-4 flex-1 min-h-0 overflow-y-auto text-foreground">
                 <!-- Information Tab -->
                 <div id="info-{{ data.session.pk }}"
                      role="tabpanel"
@@ -908,7 +909,7 @@
                 </div>
             </div>
             <!-- Footer -->
-            <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
+            <div class="px-6 py-4 flex justify-end gap-2 border-t border-border shrink-0">
                 <button data-modal-close="session-{{ data.session.pk }}"
                         class="btn btn-secondary text-sm">{% translate "Close" %}</button>
                 {% if data.is_enrollment_available %}
