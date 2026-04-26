@@ -500,7 +500,11 @@ class TimetableConflictsPartView(PanelAccessMixin, EventContextMixin, View):
             event_pk=current_event.pk, track_pk=filter_track_pk
         )
 
-        context = {"conflicts": conflicts, "slug": slug}
+        context = {
+            "conflicts": conflicts,
+            "slug": slug,
+            "filter_track_pk": filter_track_pk,
+        }
         return TemplateResponse(
             self.request, "panel/parts/timetable-conflict-panel.html", context
         )

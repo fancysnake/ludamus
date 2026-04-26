@@ -72,7 +72,7 @@ class TestTimetableConflictsPartView:
             response,
             HTTPStatus.OK,
             template_name="panel/parts/timetable-conflict-panel.html",
-            context_data={"conflicts": [], "slug": event.slug},
+            context_data={"conflicts": [], "slug": event.slug, "filter_track_pk": None},
         )
 
     def test_empty_conflicts_when_no_sessions(
