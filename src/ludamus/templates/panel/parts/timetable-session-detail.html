@@ -48,7 +48,7 @@
             </div>
             <div class="flex gap-2">
                 <button type="button"
-                        class="flex-1 text-sm py-1.5 rounded border border-primary text-primary hover:bg-primary hover:text-white transition"
+                        class="btn btn-secondary text-sm flex-1"
                         data-assign-session-pk="{{ session.pk }}"
                         data-assign-duration="{{ duration_minutes }}"
                         data-assign-back-url="{{ back_url }}"
@@ -59,16 +59,13 @@
                       hx-on::after-request="if(event.detail.successful){htmx.ajax('GET','{{ back_url }}',{target:'#left-pane',swap:'outerHTML'})}">
                     {% csrf_token %}
                     <input type="hidden" name="session_pk" value="{{ session.pk }}">
-                    <button type="submit"
-                            class="w-full text-sm py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 transition">
-                        {% translate "Unassign" %}
-                    </button>
+                    <button type="submit" class="btn btn-danger text-sm w-full">{% translate "Unassign" %}</button>
                 </form>
             </div>
         {% else %}
             <div class="text-sm text-neutral-400 mb-2">{% translate "Not assigned" %}</div>
             <button type="button"
-                    class="w-full text-sm py-1.5 rounded border border-primary text-primary hover:bg-primary hover:text-white transition"
+                    class="btn btn-secondary text-sm w-full"
                     data-assign-session-pk="{{ session.pk }}"
                     data-assign-duration="{{ duration_minutes }}"
                     data-assign-back-url="{{ back_url }}"

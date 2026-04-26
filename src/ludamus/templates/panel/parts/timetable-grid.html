@@ -23,9 +23,7 @@
                         hx-target="#timetable-grid"
                         hx-swap="innerHTML"
                         hx-push-url="true"
-                        class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">
-                    ← {% translate "Previous" %}
-                </button>
+                        class="btn btn-secondary text-sm">← {% translate "Previous" %}</button>
             {% endif %}
             {% if grid.page < grid.total_pages %}
                 <button type="button"
@@ -33,9 +31,7 @@
                         hx-target="#timetable-grid"
                         hx-swap="innerHTML"
                         hx-push-url="true"
-                        class="px-3 py-1 bg-neutral-100 rounded hover:bg-neutral-200 text-sm">
-                    {% translate "Next" %} →
-                </button>
+                        class="btn btn-secondary text-sm">{% translate "Next" %} →</button>
             {% endif %}
         </div>
     {% endif %}
@@ -107,7 +103,7 @@
                     {% endfor %}
                     <!-- Sessions -->
                     {% for pos in col.sessions %}
-                        <div class="timetable-session absolute rounded overflow-hidden cursor-pointer border text-xs opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {% if pos.agenda_item.session_id in conflict_session_pks %} bg-danger-bg border-danger hover:opacity-100 {% elif pos.agenda_item.session_id in slot_violation_session_pks %} bg-warning-bg border-warning hover:opacity-100 {% else %} bg-info-bg border-info hover:opacity-100 {% endif %}"
+                        <div class="timetable-session absolute rounded-md overflow-hidden cursor-pointer border text-xs opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {% if pos.agenda_item.session_id in conflict_session_pks %} bg-danger-bg border-danger hover:opacity-100 {% elif pos.agenda_item.session_id in slot_violation_session_pks %} bg-warning-bg border-warning hover:opacity-100 {% else %} bg-info-bg border-info hover:opacity-100 {% endif %}"
                              tabindex="0"
                              title="{{ pos.agenda_item.session_title }}"
                              style="top: calc({{ pos.top_px }}px + 20px);
