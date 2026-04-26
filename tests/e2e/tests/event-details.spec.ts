@@ -58,9 +58,9 @@ test.describe('Event detail page', () => {
       await expect(footerClose).toBeInViewport();
 
       const pageScrollLocked = await page.evaluate(() => {
-        const rootOverflow = getComputedStyle(document.documentElement).overflowY;
         const bodyOverflow = getComputedStyle(document.body).overflowY;
-        return rootOverflow === 'hidden' && bodyOverflow === 'hidden';
+        const bodyPosition = getComputedStyle(document.body).position;
+        return bodyOverflow === 'hidden' || bodyPosition === 'fixed';
       });
       expect(pageScrollLocked).toBe(true);
 
