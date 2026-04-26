@@ -3,7 +3,7 @@
 
 # Allow specific files and directories needed for the build
 !docker/mise.toml
-!docker/Procfile.tailwind
+!docker/Procfile.dev
 !poetry.lock
 !pyproject.toml
 !scripts/**

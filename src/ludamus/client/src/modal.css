@@ -18,7 +18,12 @@
 
 .modal[open] {
   opacity: 1;
+  pointer-events: auto;
   transform: scale(1) translateY(0);
+}
+
+.modal:not([open]) * {
+  pointer-events: none !important;
 }
 
 @starting-style {

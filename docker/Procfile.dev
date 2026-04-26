@@ -1,2 +1,2 @@
 django: django-admin runserver --insecure 0.0.0.0:8000
-vite: cd src/ludamus/gates/web/django/theme/static_src && npm run dev
+vite: cd src/ludamus/client && npm run dev

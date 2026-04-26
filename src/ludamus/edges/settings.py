@@ -76,7 +76,6 @@ INSTALLED_APPS = [
     # Third Party
     "django_extensions",
     "django_vite",
-    "ludamus.gates.web.django.theme",
     "heroicons",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
@@ -392,7 +391,7 @@ VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
 # Vite asset pipeline
 DJANGO_VITE = {
     "default": {
-        "dev_mode": DEBUG or ROOT_DOMAIN == "testserver",
+        "dev_mode": ENV == "development" or ROOT_DOMAIN == "testserver",
         "dev_server_host": "localhost",
         "dev_server_port": 5173,
         "static_url_prefix": "vite",

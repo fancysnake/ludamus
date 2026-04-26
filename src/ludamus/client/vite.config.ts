@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: resolve(__dirname, "../../../../../static/vite"),
+    outDir: resolve(__dirname, "../static/vite"),
     emptyOutDir: true,
     manifest: "manifest.json",
     rollupOptions: {

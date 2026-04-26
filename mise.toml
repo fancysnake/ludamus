@@ -135,7 +135,7 @@ run = "honcho start -f Procfile.dev"
 [tasks.build-frontend]
 description = "Build frontend assets (CSS + JS)"
 run = """
-cd src/ludamus/gates/web/django/theme/static_src && npm install && npm run build
+cd src/ludamus/client && npm install && npm run build
 """
 
 # PYTEST
@@ -232,7 +232,7 @@ mise run _e2e -- django-admin downloadvendor
 mise run _e2e -- python tests/e2e/scripts/bootstrap_data.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_facilitators.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_timetable.py
-cd src/ludamus/gates/web/django/theme/static_src && npm install && npm run build && cd -
+cd src/ludamus/client && npm install && npm run build && cd -
 exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload
 """
 
@@ -259,13 +259,13 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; lsof -ti :5173 | xargs kill -
 
 [tasks.ts-check]
 description = "Type-check frontend TypeScript"
-run = "cd src/ludamus/gates/web/django/theme/static_src && npm typecheck"
+run = "cd src/ludamus/client && npm typecheck"
 
 
 [tasks.npm]
-description = "Run npm in the frontend static_src directory"
+description = "Run npm in the frontend client directory"
 run = "npm"
-dir = "src/ludamus/gates/web/django/theme/static_src"
+dir = "src/ludamus/client"
 
 # OTHER
 

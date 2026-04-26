@@ -1,0 +1,3 @@
+.hoverboard {
+  inset: 0 anchor(var(--anc) right) 0 anchor(var(--anc) left);
+}
