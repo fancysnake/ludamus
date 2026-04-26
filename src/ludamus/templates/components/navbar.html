@@ -21,18 +21,19 @@
                 {% if current_sphere.enabled_pages|length > 1 %}
                     {% with ns=request.resolver_match.namespace %}
                         <div class="hidden sm:flex items-center gap-1">
-                            <div class="hoverboard bg-bg-tertiary rounded-lg"></div>
                             {% if "events" in current_sphere.enabled_pages %}
                                 <a href="{% url 'web:events' %}"
-                                   aria-current="{% if 'events' in ns %}page{% endif %}"
-                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors text-foreground-secondary hover:text-foreground aria-current:text-foreground hover:[anchor-name:--anc] aria-current:[anchor-name:--anc]">
+                                   aria-current="{% if 'notice-board' not in ns %}page{% endif %}"
+                                   {% if "notice-board" not in ns %}data-current{% endif %}
+                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors text-foreground-secondary hover:text-foreground data-current:text-foreground data-current:bg-bg-tertiary hover:bg-bg-tertiary">
                                     {% translate "Events" %}
                                 </a>
                             {% endif %}
                             {% if "encounters" in current_sphere.enabled_pages %}
                                 <a aria-current="{% if 'notice-board' in ns %}page{% endif %}"
+                                   {% if "notice-board" in ns %}data-current{% endif %}
                                    href="{% url 'web:notice-board:index' %}"
-                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors hover text-foreground-secondary hover:text-foreground aria-current:text-foreground hover:[anchor-name:--anc] aria-current:[anchor-name:--anc]">
+                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors hover text-foreground-secondary hover:text-foreground data-current:text-foreground data-current:bg-bg-tertiary hover:bg-bg-tertiary">
                                     {% translate "Encounters" %}
                                 </a>
                             {% endif %}
