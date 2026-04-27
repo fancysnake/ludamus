@@ -9,20 +9,19 @@ from ludamus.pacts.legacy import AgendaItemDTO, SpaceDTO
 
 TIMETABLE_ROOM_PAGE_SIZE = 5
 TIMETABLE_SLOT_MINUTES = 60
-TIMETABLE_SLOT_HEIGHT_PX = 60  # pixels per TIMETABLE_SLOT_MINUTES block
 
 
 class SessionPositionDTO(BaseModel):
     agenda_item: AgendaItemDTO
-    top_px: int
-    height_px: int
-    left_pct: float = 0.0
-    width_pct: float = 100.0
+    start_minutes: int
+    duration_minutes: int
+    lane_start_pct: float = 0.0
+    lane_width_pct: float = 100.0
 
 
 class TimeLabelDTO(BaseModel):
     time: datetime
-    top_px: int
+    offset_minutes: int
 
 
 class SpaceColumnDTO(BaseModel):
@@ -48,10 +47,9 @@ class TimetableGridDTO(BaseModel):
     columns: list[SpaceColumnDTO]
     venue_groups: list[VenueGroupDTO]
     time_labels: list[TimeLabelDTO]
-    total_height_px: int
+    total_minutes: int
     event_start_iso: str
     slot_minutes: int
-    slot_height_px: int
     page: int
     total_pages: int
     total_spaces: int

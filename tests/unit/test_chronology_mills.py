@@ -108,10 +108,10 @@ class TestBuildGridOverlappingSessions:
         expected_count = 2
         expected_half_width = 50.0
         assert len(sessions) == expected_count
-        assert sessions[0].width_pct == pytest.approx(expected_half_width)
-        assert sessions[1].width_pct == pytest.approx(expected_half_width)
-        assert sessions[0].left_pct == pytest.approx(0.0)
-        assert sessions[1].left_pct == pytest.approx(expected_half_width)
+        assert sessions[0].lane_width_pct == pytest.approx(expected_half_width)
+        assert sessions[1].lane_width_pct == pytest.approx(expected_half_width)
+        assert sessions[0].lane_start_pct == pytest.approx(0.0)
+        assert sessions[1].lane_start_pct == pytest.approx(expected_half_width)
 
 
 class TestRevertChange:

@@ -40,9 +40,8 @@
          id="timetable-calendar"
          data-event-start="{{ grid.event_start_iso }}"
          data-slot-minutes="{{ grid.slot_minutes }}"
-         data-slot-height="{{ grid.slot_height_px }}"
-         data-total-height="{{ grid.total_height_px }}"
-         style="--total-height: {{ grid.total_height_px }}px">
+         data-total-minutes="{{ grid.total_minutes }}"
+         style="--grid-extent: {{ grid.total_minutes }}">
         <!-- Space headers (sticky, three rows: venue / area / space) -->
         <div class="sticky top-0 z-20 border-b border-neutral-700">
             <!-- Venue row -->
@@ -50,7 +49,7 @@
                 <div class="w-16 flex-none shrink-0 bg-neutral-900"></div>
                 {% for venue in grid.venue_groups %}
                     <div class="timetable-header-cell px-3 py-1 border-l border-neutral-700 text-center bg-neutral-900"
-                         style="--span: {{ venue.span }}">
+                         style="--columns: {{ venue.span }}">
                         <div class="text-xs font-semibold text-white uppercase tracking-wide">{{ venue.venue_name }}</div>
                     </div>
                 {% endfor %}
@@ -61,7 +60,7 @@
                 {% for venue in grid.venue_groups %}
                     {% for area in venue.areas %}
                         <div class="timetable-header-cell px-3 py-1 border-l border-neutral-700 text-center bg-neutral-800"
-                             style="--span: {{ area.span }}">
+                             style="--columns: {{ area.span }}">
                             <div class="text-xs font-medium text-white">{{ area.area_name }}</div>
                         </div>
                     {% endfor %}
@@ -84,7 +83,7 @@
             <div class="timetable-time-axis w-16 flex-none relative shrink-0 border-r border-border">
                 {% for label in grid.time_labels %}
                     <div class="timetable-time-label absolute left-0 right-0 flex items-center justify-end -translate-y-1/2"
-                         style="--top: {{ label.top_px }}px">
+                         style="--offset: {{ label.offset_minutes }}">
                         <span class="text-xs text-neutral-400 font-mono pr-2 leading-none">{{ label.time|time:"H:i" }}</span>
                     </div>
                 {% endfor %}
@@ -96,17 +95,17 @@
                     <!-- Slot grid lines -->
                     {% for label in grid.time_labels %}
                         <div class="timetable-slot-line absolute left-0 right-0 border-t border-border"
-                             style="--top: {{ label.top_px }}px"></div>
+                             style="--offset: {{ label.offset_minutes }}"></div>
                     {% endfor %}
                     <!-- Sessions -->
                     {% for pos in col.sessions %}
                         <div class="timetable-session absolute rounded-md overflow-hidden cursor-pointer border text-xs opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {% if pos.agenda_item.session_id in conflict_session_pks %} bg-danger-bg border-danger hover:opacity-100 {% elif pos.agenda_item.session_id in slot_violation_session_pks %} bg-warning-bg border-warning hover:opacity-100 {% else %} bg-info-bg border-info hover:opacity-100 {% endif %}"
                              tabindex="0"
                              title="{{ pos.agenda_item.session_title }}"
-                             style="--top: {{ pos.top_px }}px;
-                                    --height: {{ pos.height_px }}px;
-                                    --left: {{ pos.left_pct }}%;
-                                    --width: {{ pos.width_pct }}%"
+                             style="--offset: {{ pos.start_minutes }};
+                                    --duration: {{ pos.duration_minutes }};
+                                    --lane-start: {{ pos.lane_start_pct }}%;
+                                    --lane-width: {{ pos.lane_width_pct }}%"
                              hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=pos.agenda_item.session_id %}?track={{ filter_track_pk|default:'' }}"
                              hx-target="#left-pane"
                              hx-swap="outerHTML">
@@ -119,10 +118,10 @@
                                     {% endif %}
                                     {{ pos.agenda_item.session_title|truncatechars:256 }}
                                 </div>
-                                <div class="timetable-session-meta wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% elif pos.agenda_item.session_id in slot_violation_session_pks %}text-warning{% else %}text-info{% endif %} {% if pos.height_px <= 32 %}hidden{% endif %}">
+                                <div class="timetable-session-meta timetable-session-presenter wrap-anywhere {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% elif pos.agenda_item.session_id in slot_violation_session_pks %}text-warning{% else %}text-info{% endif %} {% if pos.duration_minutes <= 32 %}hidden{% endif %}">
                                     {{ pos.agenda_item.presenter_name }}
                                 </div>
-                                <div class="timetable-session-meta {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% elif pos.agenda_item.session_id in slot_violation_session_pks %}text-warning{% else %}text-info{% endif %} {% if pos.height_px <= 52 %}hidden{% endif %}">
+                                <div class="timetable-session-meta timetable-session-duration {% if pos.agenda_item.session_id in conflict_session_pks %}text-danger{% elif pos.agenda_item.session_id in slot_violation_session_pks %}text-warning{% else %}text-info{% endif %} {% if pos.duration_minutes <= 52 %}hidden{% endif %}">
                                     {{ pos.agenda_item.session_duration_minutes }} min
                                 </div>
                             </div>
