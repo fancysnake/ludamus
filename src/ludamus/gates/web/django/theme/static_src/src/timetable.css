@@ -1,24 +1,28 @@
+#timetable-calendar {
+  --minute-px: 1px;
+}
+
 .timetable-header-cell {
-  flex: var(--span) 1 0;
-  min-width: calc(9rem * var(--span));
+  flex: var(--columns) 1 0;
+  min-width: calc(9rem * var(--columns));
 }
 
 .timetable-time-axis,
 .timetable-column {
-  height: calc(var(--total-height) + 20px);
+  height: calc(var(--grid-extent) * var(--minute-px) + 20px);
 }
 
 .timetable-time-label,
 .timetable-slot-line {
-  top: calc(var(--top) + 20px);
+  top: calc(var(--offset) * var(--minute-px) + 20px);
 }
 
 .timetable-session {
-  top: calc(var(--top) + 20px);
-  height: var(--height);
-  min-height: var(--height);
-  left: calc(var(--left) + 2px);
-  width: calc(var(--width) - 4px);
+  top: calc(var(--offset) * var(--minute-px) + 20px);
+  height: calc(var(--duration) * var(--minute-px));
+  min-height: 20px;
+  left: calc(var(--lane-start) + 2px);
+  width: calc(var(--lane-width) - 4px);
 }
 
 .timetable-column.assign-mode-active {

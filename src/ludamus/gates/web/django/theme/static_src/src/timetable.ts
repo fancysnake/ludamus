@@ -32,6 +32,12 @@ const csrfToken = (): string =>
   (document.querySelector("[name=csrfmiddlewaretoken]") as HTMLInputElement)
     .value;
 
+function pxPerMinute(cal: HTMLElement): number {
+  const raw = getComputedStyle(cal).getPropertyValue("--minute-px").trim();
+  const parsed = parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
 function parsePreferredSlots(raw: string | undefined): PreferredSlot[] {
   if (!raw) return [];
   try {
@@ -63,13 +69,13 @@ function renderPreferredSlotOverlays(): void {
   const eventStart = cal.dataset.eventStart;
   if (!eventStart) return;
 
-  const slotMinutes = Number(cal.dataset.slotMinutes);
-  const slotHeight = Number(cal.dataset.slotHeight);
-  const totalHeightPx = Number(cal.dataset.totalHeight);
-  if (!slotMinutes || !slotHeight) return;
+  const totalMinutes = Number(cal.dataset.totalMinutes);
+  if (!totalMinutes) return;
 
   const eventStartMs = new Date(eventStart).getTime();
-  const pxPerMs = slotHeight / (slotMinutes * 60_000);
+  const minutePx = pxPerMinute(cal);
+  const pxPerMs = minutePx / 60_000;
+  const totalHeightPx = totalMinutes * minutePx;
   const cols = columns();
   if (!cols.length) return;
 
@@ -143,11 +149,11 @@ document.addEventListener("click", (e) => {
       const cal = calendar()!;
       const eventStart = cal.dataset.eventStart!;
       const slotMinutes = Number(cal.dataset.slotMinutes);
-      const slotHeight = Number(cal.dataset.slotHeight);
+      const pxPerSlot = slotMinutes * pxPerMinute(cal);
 
       const rect = col.getBoundingClientRect();
       const yOffset = e instanceof MouseEvent ? e.clientY - rect.top : 0;
-      const slotIndex = Math.floor(yOffset / slotHeight);
+      const slotIndex = Math.floor(yOffset / pxPerSlot);
       const offsetMinutes = slotIndex * slotMinutes;
 
       const startDt = new Date(eventStart);
