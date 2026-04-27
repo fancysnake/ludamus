@@ -19,8 +19,8 @@
 
 .timetable-session {
   top: calc(var(--offset) * var(--minute-px) + 20px);
-  height: calc(var(--duration) * var(--minute-px));
-  min-height: 20px;
+  height: max(20px, calc(var(--duration) * var(--minute-px)));
+  min-height: max(20px, calc(var(--duration) * var(--minute-px)));
   left: calc(var(--lane-start) + 2px);
   width: calc(var(--lane-width) - 4px);
 }
