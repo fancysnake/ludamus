@@ -55,6 +55,11 @@ from ludamus.gates.web.django.entities import (
     RootRequest,
     UserInfo,
 )
+from ludamus.gates.web.django.responses import (
+    ErrorWithMessageRedirect,
+    SuccessWithMessageRedirect,
+    WarningWithMessageRedirect,
+)
 from ludamus.mills import (
     AcceptProposalService,
     AnonymousEnrollmentService,
@@ -716,8 +721,11 @@ class ProfileAvatarPageView(LoginRequiredMixin, View):
         request.di.uow.active_users.update(
             request.context.current_user_slug, UserData(use_gravatar=use_gravatar)
         )
-        messages.success(request, _("Avatar preference updated successfully!"))
-        return redirect("web:crowd:profile-avatar")
+        return SuccessWithMessageRedirect(
+            request,
+            _("Avatar preference updated successfully!"),
+            "web:crowd:profile-avatar",
+        )
 
 
 class UserDiscordUsernameComponentView(View):
@@ -1772,8 +1780,7 @@ class EventAnonymousActivateActionView(View):
         try:
             event = Event.objects.get(slug=event_slug)
         except Event.DoesNotExist:
-            messages.error(request, _("Event not found."))
-            return redirect("web:index")
+            return ErrorWithMessageRedirect(request, _("Event not found."), "web:index")
 
         active_configs = event.get_active_enrollment_configs()
 
@@ -1805,8 +1812,9 @@ def _validate_anonymous_enrollment_request(
     request: RootRequest, session_id: int
 ) -> tuple[Session, UserDTO] | HttpResponse:
     if not request.session.get("anonymous_enrollment_active"):
-        messages.error(request, _("Anonymous enrollment is not active."))
-        return redirect("web:index")
+        return ErrorWithMessageRedirect(
+            request, _("Anonymous enrollment is not active."), "web:index"
+        )
 
     if request.session.get("anonymous_site_id") != request.context.current_site_id:
         messages.error(
@@ -1819,19 +1827,20 @@ def _validate_anonymous_enrollment_request(
             id=session_id, sphere__site_id=request.context.current_site_id
         )
     except Session.DoesNotExist:
-        messages.error(request, _("Session not found."))
-        return redirect("web:index")
+        return ErrorWithMessageRedirect(request, _("Session not found."), "web:index")
 
     if not (anonymous_user_code := request.session.get("anonymous_user_code")):
-        messages.error(request, _("Anonymous session expired."))
-        return redirect("web:index")
+        return ErrorWithMessageRedirect(
+            request, _("Anonymous session expired."), "web:index"
+        )
 
     service = AnonymousEnrollmentService(user_repository=request.di.uow.anonymous_users)
     try:
         anonymous_user = service.get_user_by_code(code=anonymous_user_code)
     except NotFoundError:
-        messages.error(request, _("Anonymous user not found."))
-        return redirect("web:index")
+        return ErrorWithMessageRedirect(
+            request, _("Anonymous user not found."), "web:index"
+        )
 
     return session, anonymous_user
 
@@ -1911,8 +1920,9 @@ class SessionEnrollmentAnonymousPageView(View):
 
         # Check if anonymous mode is active
         if not request.session.get("anonymous_enrollment_active"):
-            messages.error(request, _("Anonymous enrollment is not active."))
-            return redirect("web:index")
+            return ErrorWithMessageRedirect(
+                request, _("Anonymous enrollment is not active."), "web:index"
+            )
 
         # Check if anonymous user is for the current site
         current_site_id = request.context.current_site_id
@@ -1929,13 +1939,15 @@ class SessionEnrollmentAnonymousPageView(View):
                 id=session_id, sphere__site_id=request.context.current_site_id
             )
         except Session.DoesNotExist:
-            messages.error(request, _("Session not found."))
-            return redirect("web:index")
+            return ErrorWithMessageRedirect(
+                request, _("Session not found."), "web:index"
+            )
 
         # Get anonymous user from session
         if not (anonymous_user_code := request.session.get("anonymous_user_code")):
-            messages.error(request, _("Anonymous session expired."))
-            return redirect("web:index")
+            return ErrorWithMessageRedirect(
+                request, _("Anonymous session expired."), "web:index"
+            )
 
         user_repository = request.di.uow.anonymous_users
         service = AnonymousEnrollmentService(user_repository=user_repository)
@@ -1943,8 +1955,9 @@ class SessionEnrollmentAnonymousPageView(View):
         try:
             anonymous_user = service.get_user_by_code(code=anonymous_user_code)
         except NotFoundError:
-            messages.error(request, _("Anonymous user not found."))
-            return redirect("web:index")
+            return ErrorWithMessageRedirect(
+                request, _("Anonymous user not found."), "web:index"
+            )
 
         # Check if user is already enrolled in THIS specific session
         existing_enrollment = SessionParticipation.objects.filter(
@@ -2034,8 +2047,9 @@ class AnonymousLoadActionView(View):
         )
 
         if not (first_enrollment := enrollments.first()):
-            messages.warning(request, _("No enrollments found for this code."))
-            return redirect("web:index")
+            return WarningWithMessageRedirect(
+                request, _("No enrollments found for this code."), "web:index"
+            )
 
         # Get the first enrollment to determine the event and site
         event = first_enrollment.session.agenda_item.space.area.venue.event
