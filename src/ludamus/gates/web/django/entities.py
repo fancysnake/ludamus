@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Self
 
-from django.http import HttpRequest
+from ludamus.gates.web.django.htmx import HtmxRequest
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -45,11 +45,11 @@ class UserInfo:
         )
 
 
-class AuthenticatedRootRequest(HttpRequest):
+class AuthenticatedRootRequest(HtmxRequest):
     context: AuthenticatedRequestContext
     di: DependencyInjectorProtocol
 
 
-class RootRequest(HttpRequest):
+class RootRequest(HtmxRequest):
     context: RequestContext
     di: DependencyInjectorProtocol

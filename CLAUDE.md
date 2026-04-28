@@ -27,6 +27,40 @@ GLIMPSE system:
 Access data: `request.di.uow.{repository}.read(id)` — returns Pydantic DTOs,
 never Django models.
 
+## View kit (`gates/web/django/glimpse_kit`)
+
+A small, opinionated library for view code. Read top to bottom; resources
+resolve up the MRO via `super().bind()`; polymorphism is method override
+(never callable-attribute config); input is Pydantic; short-circuiting is
+`ShortCircuitError(response)`.
+
+**Belongs in the kit.** Primitives that need only Django and Pydantic.
+Useful to any GLIMPSE-on-Django app. No knowledge of subdomain, business
+rules, or the ambient app's choices of frontend, flash framework, or auth
+backend. Under ~200 lines per module.
+
+Future additions that fit if the need arises: a generic `?page=`
+pagination helper; a Pydantic-typed query-string parser for list filters;
+ETag / `If-Modified-Since` helpers; a typed cache-key builder.
+
+**Stays outside.** Anything tied to a specific frontend (HTMX), a specific
+flash framework (`django.contrib.messages`), or a specific auth backend.
+Anything subdomain-flavoured (`panel_chrome`, sphere lookup). Anything
+that needs an `if subdomain == ...` to behave correctly.
+
+Solution-dependent helpers ship one floor up, alongside `forms.py`:
+
+- `gates/web/django/responses.py` — `SuccessWithMessageRedirect`,
+  `ErrorWithMessageRedirect` (uses Django `messages`).
+- `gates/web/django/htmx.py` — `HtmxMiddleware`, `HtmxRedirect` (uses HTMX
+  conventions); the middleware is wired in `edges/settings.py`.
+
+Subdomain-specific composition lives in each subdomain's own `views/base.py`
+(e.g. `chronology/panel/views/base.py` defines `PanelEventView`,
+`PanelTrackView`, `panel_chrome`, …).
+
+See `plans/VIEW_TOOLBOX.md` for the full design.
+
 ## Layer
 
 Edges are outside of the import system. They are not going to be imported directly.

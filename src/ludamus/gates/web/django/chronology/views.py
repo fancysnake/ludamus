@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from django.conf import settings as django_settings
 from django.contrib import messages
-from django.http import HttpRequest, HttpResponse, HttpResponseBase
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
+from pydantic import BaseModel, Field
 
+from ludamus.gates.web.django.glimpse_kit import SessionState
 from ludamus.gates.web.django.helpers import get_client_ip
+from ludamus.gates.web.django.htmx import HtmxRedirect
 from ludamus.gates.web.django.templatetags.cfp_tags import has_field_value
 from ludamus.mills import (
     ProposeSessionService,
@@ -26,6 +28,8 @@ from .forms import build_personal_data_form, build_session_details_form
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from django.http import HttpRequest, HttpResponse, HttpResponseBase
+
     from ludamus.gates.web.django.entities import RootRequest
     from ludamus.pacts import (
         EventDTO,
@@ -35,6 +39,7 @@ if TYPE_CHECKING:
         SessionFieldDTO,
         SessionFieldRequirementDTO,
         TimeSlotRequirementDTO,
+        WizardData,
     )
 
     BaseView = View
@@ -42,11 +47,43 @@ else:
     BaseView = object
 
 
-# -- Module-level helpers --
+# -- Wizard state --
+
+
+class ProposeSessionState(BaseModel):
+    """Typed state for the propose-session wizard, persisted in the session."""
+
+    category_id: int | None = None
+    personal_data: dict[str, str | list[str] | bool] = Field(default_factory=dict)
+    contact_email: str = ""
+    time_slot_ids: list[int] = Field(default_factory=list)
+    session_data: dict[str, object] = Field(default_factory=dict)
+    track_pks: list[int] = Field(default_factory=list)
 
 
 def _session_key(event_slug: str) -> str:
     return f"propose_{event_slug}"
+
+
+def _wizard(event_slug: str) -> SessionState[ProposeSessionState]:
+    """Return the typed wizard state handle for the given event slug.
+
+    Returns:
+        A ``SessionState`` keyed by ``propose_<event_slug>``.
+    """
+    return SessionState(_session_key(event_slug), ProposeSessionState)
+
+
+def _read_state(request: HttpRequest, event_slug: str) -> ProposeSessionState:
+    """Read the wizard state for ``event_slug``, falling back to an empty state.
+
+    Returns:
+        The deserialized ``ProposeSessionState`` or a fresh empty one.
+    """
+    return _wizard(event_slug).read(request.session) or ProposeSessionState()
+
+
+# -- Module-level helpers --
 
 
 def _field_descriptors(
@@ -158,8 +195,8 @@ def _render_category(
     event_slug: str,
 ) -> HttpResponse:
     categories = service.get_categories(event.pk)
-    wizard = request.session.get(_session_key(event_slug), {})
-    selected_id = wizard.get("category_id")
+    state = _read_state(request, event_slug)
+    selected_id = state.category_id
 
     context: dict[str, object] = {
         "event": event,
@@ -181,17 +218,15 @@ def _render_personal(
 ) -> HttpResponse:
     requirements = service.get_personal_requirements(category.pk)
 
-    wizard = request.session.get(_session_key(event.slug), {})
+    state = _read_state(request, event.slug)
     initial: dict[str, str | list[str] | bool] = {}
-    if saved_personal := wizard.get("personal_data"):
-        initial = saved_personal
+    if state.personal_data:
+        initial = dict(state.personal_data)
     else:
         saved = service.get_saved_personal_data(event.pk)
         initial = {f"personal_{slug}": value for slug, value in saved.items()}
 
-    initial["contact_email"] = wizard.get(
-        "contact_email", getattr(request.user, "email", "")
-    )
+    initial["contact_email"] = state.contact_email or getattr(request.user, "email", "")
 
     form = build_personal_data_form(requirements)(initial=initial)
 
@@ -218,8 +253,7 @@ def _render_timeslots(
     if not (requirements := service.get_timeslot_requirements(category.pk)):
         return _render_details(request, service, event, category)
 
-    wizard = request.session.get(_session_key(event.slug), {})
-    selected_ids = wizard.get("time_slot_ids", [])
+    selected_ids = _read_state(request, event.slug).time_slot_ids
 
     return TemplateResponse(
         request,
@@ -243,8 +277,8 @@ def _render_details(
     requirements = service.get_session_requirements(category.pk)
     public_tracks = service.get_public_tracks(event.pk)
 
-    wizard = request.session.get(_session_key(event.slug), {})
-    initial = wizard.get("session_data", {})
+    state = _read_state(request, event.slug)
+    initial: dict[str, object] = dict(state.session_data)
     if "display_name" not in initial:
         initial["display_name"] = getattr(request.user, "name", "")
 
@@ -255,7 +289,7 @@ def _render_details(
         durations=category.durations,
     )(initial=initial)
 
-    selected_track_pks = wizard.get("track_pks", [])
+    selected_track_pks = state.track_pks
 
     return TemplateResponse(
         request,
@@ -281,10 +315,10 @@ def _render_review(
     category: ProposalCategoryDTO,
     event_slug: str,
 ) -> HttpResponse:
-    wizard = request.session.get(_session_key(event_slug), {})
-    session_data = wizard.get("session_data", {})
-    personal_data = wizard.get("personal_data", {})
-    time_slot_ids = wizard.get("time_slot_ids", [])
+    state = _read_state(request, event_slug)
+    session_data = state.session_data
+    personal_data = state.personal_data
+    time_slot_ids = state.time_slot_ids
 
     session_fields = []
     for req in service.get_session_requirements(category.pk):
@@ -330,7 +364,7 @@ def _render_review(
         "participants_limit": session_data.get("participants_limit", ""),
         "min_age": session_data.get("min_age", 0),
         "duration": session_data.get("duration", ""),
-        "contact_email": wizard.get("contact_email", ""),
+        "contact_email": state.contact_email,
         "session_fields": session_fields,
         "private_session_fields": [f for f in session_fields if not f["is_public"]],
         "personal_fields": personal_fields,
@@ -416,8 +450,7 @@ class ProposeWizardMixin(BaseView):
         event: EventDTO,
         event_slug: str,
     ) -> ProposalCategoryDTO:
-        wizard = request.session.get(_session_key(event_slug), {})
-        if not (category_id := wizard.get("category_id")):
+        if not (category_id := _read_state(request, event_slug).category_id):
             raise RedirectError(
                 reverse(
                     "web:chronology:session-propose", kwargs={"event_slug": event_slug}
@@ -425,7 +458,7 @@ class ProposeWizardMixin(BaseView):
                 error=_("Please select a category first."),
             )
         try:
-            return service.get_category(int(category_id), event.pk)
+            return service.get_category(category_id, event.pk)
         except NotFoundError:
             raise RedirectError(
                 reverse(
@@ -444,7 +477,7 @@ class ProposeSessionPageView(ProposeWizardMixin, View):
         event = self._get_event(service, event_slug)
         categories = service.get_categories(event.pk)
 
-        request.session.pop(_session_key(event_slug), None)
+        _wizard(event_slug).clear(request.session)
 
         context: dict[str, object] = {
             "event": event,
@@ -456,9 +489,9 @@ class ProposeSessionPageView(ProposeWizardMixin, View):
         }
 
         if len(categories) == 1:
-            request.session[_session_key(event_slug)] = {
-                "category_id": categories[0].pk
-            }
+            _wizard(event_slug).write(
+                request.session, ProposeSessionState(category_id=categories[0].pk)
+            )
             context["selected_category_id"] = str(categories[0].pk)
 
         return TemplateResponse(request, "chronology/propose/base.html", context)
@@ -496,10 +529,10 @@ class ProposeSessionCategoryComponentView(ProposeWizardMixin, View):
                 error=_("Invalid category."),
             ) from None
 
-        wizard = request.session.get(_session_key(event_slug), {})
-        if wizard.get("category_id") != category.pk:
-            wizard = {"category_id": category.pk}
-        request.session[_session_key(event_slug)] = wizard
+        state = _read_state(request, event_slug)
+        if state.category_id != category.pk:
+            state = ProposeSessionState(category_id=category.pk)
+        _wizard(event_slug).write(request.session, state)
 
         return _render_personal(request, service, event, category)
 
@@ -534,15 +567,14 @@ class ProposeSessionPersonalComponentView(ProposeWizardMixin, View):
                 },
             )
 
-        wizard = request.session.get(_session_key(event_slug), {})
-        wizard["personal_data"] = {
+        state = _read_state(request, event_slug)
+        state.personal_data = {
             key: value
             for key, value in form.cleaned_data.items()
             if key != "contact_email" and value
         }
-
-        wizard["contact_email"] = form.cleaned_data["contact_email"]
-        request.session[_session_key(event_slug)] = wizard
+        state.contact_email = form.cleaned_data["contact_email"]
+        _wizard(event_slug).write(request.session, state)
 
         return _render_timeslots(request, service, event, category)
 
@@ -582,9 +614,9 @@ class ProposeSessionTimeslotsComponentView(ProposeWizardMixin, View):
 
         selected_ids = [sid for sid in selected_ids if sid in valid_ids]
 
-        wizard = request.session.get(_session_key(event_slug), {})
-        wizard["time_slot_ids"] = [int(sid) for sid in selected_ids]
-        request.session[_session_key(event_slug)] = wizard
+        state = _read_state(request, event_slug)
+        state.time_slot_ids = [int(sid) for sid in selected_ids]
+        _wizard(event_slug).write(request.session, state)
 
         return _render_details(request, service, event, category)
 
@@ -642,12 +674,12 @@ class ProposeSessionDetailsComponentView(ProposeWizardMixin, View):
             if tid in valid_track_ids
         ]
 
-        wizard = request.session.get(_session_key(event_slug), {})
-        wizard["session_data"] = {
+        state = _read_state(request, event_slug)
+        state.session_data = {
             key: value for key, value in form.cleaned_data.items() if value
         }
-        wizard["track_pks"] = track_pks
-        request.session[_session_key(event_slug)] = wizard
+        state.track_pks = track_pks
+        _wizard(event_slug).write(request.session, state)
 
         return _render_review(request, service, event, category, event_slug)
 
@@ -665,10 +697,9 @@ class ProposeSessionSubmitActionView(ProposeWizardMixin, View):
         service = _service(request)
         event = self._get_event(service, event_slug)
         self._get_wizard_category(request, service, event, event_slug)
-        wizard = request.session.get(_session_key(event_slug), {})
-        session_data = wizard.get("session_data", {})
+        state = _read_state(request, event_slug)
 
-        if not session_data.get("title"):
+        if not state.session_data.get("title"):
             raise RedirectError(
                 reverse(
                     "web:chronology:session-propose", kwargs={"event_slug": event_slug}
@@ -687,17 +718,15 @@ class ProposeSessionSubmitActionView(ProposeWizardMixin, View):
                     error=_("Please wait before submitting another proposal."),
                 )
 
-        result = service.submit(event, wizard)
+        result = service.submit(event, cast("WizardData", state.model_dump()))
 
-        del request.session[_session_key(event_slug)]
+        _wizard(event_slug).clear(request.session)
 
         messages.success(
             request,
             _("Session proposal '{}' submitted successfully!").format(result.title),
         )
         redirect_url = reverse("web:chronology:event", kwargs={"slug": event_slug})
-        if request.headers.get("HX-Request"):
-            response = HttpResponse(status=200)
-            response["HX-Redirect"] = redirect_url
-            return response
+        if request.is_htmx:
+            return HtmxRedirect(redirect_url)
         return redirect(redirect_url)

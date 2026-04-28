@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 import segno
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
@@ -16,6 +15,11 @@ from django.views.generic.base import TemplateView, View
 
 from ludamus.gates.web.django.entities import UserInfo
 from ludamus.gates.web.django.helpers import get_client_ip as _get_client_ip
+from ludamus.gates.web.django.responses import (
+    ErrorWithMessageRedirect,
+    SuccessWithMessageRedirect,
+    WarningWithMessageRedirect,
+)
 from ludamus.mills import (
     EncounterService,
     generate_ics_content,
@@ -259,12 +263,11 @@ class EncounterEditPageView(LoginRequiredMixin, View):
             data["header_image"] = form.cleaned_data["header_image"]
 
         uow.encounters.update(pk, data)
-        messages.success(request, _("Encounter updated."))
-        return redirect(
-            reverse(
-                "web:notice-board:encounter-detail",
-                kwargs={"share_code": encounter.share_code},
-            )
+        return SuccessWithMessageRedirect(
+            request,
+            _("Encounter updated."),
+            "web:notice-board:encounter-detail",
+            share_code=encounter.share_code,
         )
 
 
@@ -280,8 +283,9 @@ class EncounterDeleteActionView(LoginRequiredMixin, View):
         if encounter.creator_id != request.user.pk:
             raise Http404
         uow.encounters.delete(pk)
-        messages.success(request, _("Encounter deleted."))
-        return redirect(reverse("web:notice-board:index"))
+        return SuccessWithMessageRedirect(
+            request, _("Encounter deleted."), "web:notice-board:index"
+        )
 
 
 class EncounterDetailPageView(View):
@@ -344,31 +348,43 @@ class EncounterRSVPActionView(LoginRequiredMixin, View):
         except NotFoundError as exc:
             raise Http404 from exc
 
-        detail_url = reverse(
-            "web:notice-board:encounter-detail", kwargs={"share_code": share_code}
-        )
-
         # Check if full
         rsvp_count = uow.encounter_rsvps.count_by_encounter(encounter.pk)
         if encounter.max_participants > 0 and rsvp_count >= encounter.max_participants:
-            messages.error(request, _("This encounter is full."))
-            return redirect(detail_url)
+            return ErrorWithMessageRedirect(
+                request,
+                _("This encounter is full."),
+                "web:notice-board:encounter-detail",
+                share_code=share_code,
+            )
 
         # Throttle: IP-based, 1 per minute
         ip_address = _get_client_ip(request)
         if uow.encounter_rsvps.recent_rsvp_exists(ip_address):
-            messages.error(request, _("Please wait a moment before signing up again."))
-            return redirect(detail_url)
+            return ErrorWithMessageRedirect(
+                request,
+                _("Please wait a moment before signing up again."),
+                "web:notice-board:encounter-detail",
+                share_code=share_code,
+            )
 
         # Check duplicate
         user_id = request.context.current_user_id
         if uow.encounter_rsvps.user_has_rsvpd(encounter.pk, user_id):
-            messages.warning(request, _("You have already signed up."))
-            return redirect(detail_url)
+            return WarningWithMessageRedirect(
+                request,
+                _("You have already signed up."),
+                "web:notice-board:encounter-detail",
+                share_code=share_code,
+            )
 
         uow.encounter_rsvps.create(encounter.pk, ip_address, user_id=user_id)
-        messages.success(request, _("You have signed up!"))
-        return redirect(detail_url)
+        return SuccessWithMessageRedirect(
+            request,
+            _("You have signed up!"),
+            "web:notice-board:encounter-detail",
+            share_code=share_code,
+        )
 
 
 class EncounterCancelRSVPActionView(LoginRequiredMixin, View):
@@ -382,14 +398,15 @@ class EncounterCancelRSVPActionView(LoginRequiredMixin, View):
         except NotFoundError as exc:
             raise Http404 from exc
 
-        detail_url = reverse(
-            "web:notice-board:encounter-detail", kwargs={"share_code": share_code}
-        )
         uow.encounter_rsvps.delete_by_user(
             encounter.pk, self.request.context.current_user_id
         )
-        messages.success(request, _("You have been removed from this encounter."))
-        return redirect(detail_url)
+        return SuccessWithMessageRedirect(
+            request,
+            _("You have been removed from this encounter."),
+            "web:notice-board:encounter-detail",
+            share_code=share_code,
+        )
 
 
 class EncounterQrView(View):

@@ -11,13 +11,14 @@ from django.utils.translation import gettext as _
 from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
-    EventContextMixin,
     PanelAccessMixin,
+    PanelEventView,
     PanelRequest,
+    panel_chrome,
 )
 
 if TYPE_CHECKING:
-    from django.http import HttpResponse
+    from django.http import HttpResponse, HttpResponseBase
 
 
 class PanelIndexRedirectView(PanelAccessMixin, View):
@@ -25,36 +26,20 @@ class PanelIndexRedirectView(PanelAccessMixin, View):
 
     request: PanelRequest
 
-    # _request: dispatch requires it but we use self.request instead
-    def get(self, _request: PanelRequest) -> HttpResponse:
-        """Redirect to first event's panel page.
-
-        Returns:
-            Redirect to event-index or web:index if no events.
-        """
+    def get(self, _request: PanelRequest) -> HttpResponseBase:
         sphere_id = self.request.context.current_sphere_id
-
         if not (events := self.request.di.uow.events.list_by_sphere(sphere_id)):
             messages.info(self.request, _("No events available for this sphere."))
             return redirect("web:index")
-
         return redirect("panel:event-index", slug=events[0].slug)
 
 
-class EventIndexPageView(PanelAccessMixin, EventContextMixin, View):
+class EventIndexPageView(PanelEventView):
     """Dashboard/index page for a specific event."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display dashboard for a specific event.
-
-        Returns:
-            TemplateResponse with the dashboard or redirect if event not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        context["active_nav"] = "index"
-        return TemplateResponse(self.request, "panel/index.html", context)
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return TemplateResponse(
+            request,
+            "panel/index.html",
+            {**panel_chrome(request, self.event), "active_nav": "index"},
+        )

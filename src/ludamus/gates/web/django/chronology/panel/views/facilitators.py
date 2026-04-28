@@ -4,306 +4,257 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.contrib import messages
-from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
-    EventContextMixin,
-    PanelAccessMixin,
+    PanelEventView,
+    PanelFacilitatorView,
     PanelRequest,
     make_unique_slug,
+    panel_chrome,
 )
+from ludamus.gates.web.django.chronology.panel.views.fields import post_field_value
 from ludamus.gates.web.django.forms import FacilitatorForm
+from ludamus.gates.web.django.responses import SuccessWithMessageRedirect
 from ludamus.mills import FacilitatorMergeService
 from ludamus.pacts import (
     FacilitatorData,
     FacilitatorMergeError,
     FacilitatorUpdateData,
     HostPersonalDataEntry,
-    NotFoundError,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from django.http import HttpResponse
 
-    from ludamus.pacts import PersonalDataFieldDTO
+    from ludamus.pacts import FacilitatorListItemDTO, PersonalDataFieldDTO
 
 
-class FacilitatorsPageView(PanelAccessMixin, EventContextMixin, View):
+class FacilitatorsPageView(PanelEventView):
     """List facilitators for an event."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        context["active_nav"] = "facilitators"
-        context["facilitators"] = self.request.di.uow.facilitators.list_by_event(
-            current_event.pk
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return TemplateResponse(
+            request,
+            "panel/facilitators.html",
+            {
+                **panel_chrome(request, self.event),
+                "active_nav": "facilitators",
+                "facilitators": request.di.uow.facilitators.list_by_event(
+                    self.event.pk
+                ),
+            },
         )
-        return TemplateResponse(self.request, "panel/facilitators.html", context)
 
 
-class FacilitatorDetailPageView(PanelAccessMixin, EventContextMixin, View):
+class FacilitatorDetailPageView(PanelFacilitatorView):
     """View facilitator details and personal data."""
 
-    request: PanelRequest
-
-    def get(
-        self, _request: PanelRequest, slug: str, facilitator_slug: str
-    ) -> HttpResponse:
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
-                current_event.pk, facilitator_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Facilitator not found."))
-            return redirect("panel:facilitators", slug=slug)
-
-        personal_data_fields = self.request.di.uow.personal_data_fields.list_by_event(
-            current_event.pk
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        personal_data_fields = request.di.uow.personal_data_fields.list_by_event(
+            self.event.pk
         )
         personal_data_values = (
-            self.request.di.uow.host_personal_data.read_for_facilitator_event(
-                facilitator.pk, current_event.pk
+            request.di.uow.host_personal_data.read_for_facilitator_event(
+                self.facilitator.pk, self.event.pk
             )
         )
         personal_data_items = [
             (field, personal_data_values.get(field.slug))
             for field in personal_data_fields
         ]
+        return TemplateResponse(
+            request,
+            "panel/facilitator-detail.html",
+            {
+                **panel_chrome(request, self.event),
+                "active_nav": "facilitators",
+                "facilitator": self.facilitator,
+                "personal_data_items": personal_data_items,
+                "has_personal_data": any(v for _, v in personal_data_items),
+            },
+        )
 
-        has_personal_data = any(v for _, v in personal_data_items)
 
-        context["active_nav"] = "facilitators"
-        context["facilitator"] = facilitator
-        context["personal_data_items"] = personal_data_items
-        context["has_personal_data"] = has_personal_data
-        return TemplateResponse(self.request, "panel/facilitator-detail.html", context)
-
-
-class FacilitatorCreatePageView(PanelAccessMixin, EventContextMixin, View):
+class FacilitatorCreatePageView(PanelEventView):
     """Create a new facilitator for an event."""
 
-    request: PanelRequest
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(FacilitatorForm())
 
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        context["active_nav"] = "facilitators"
-        context["form"] = FacilitatorForm()
-        return TemplateResponse(self.request, "panel/facilitator-create.html", context)
-
-    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        form = FacilitatorForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = FacilitatorForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "facilitators"
-            context["form"] = form
-            return TemplateResponse(
-                self.request, "panel/facilitator-create.html", context
-            )
+            return self._render(form)
 
         display_name = form.cleaned_data["display_name"]
         facilitator_slug = make_unique_slug(
             display_name,
             "facilitator",
-            lambda s: self.request.di.uow.facilitators.slug_exists(current_event.pk, s),
+            lambda s: request.di.uow.facilitators.slug_exists(self.event.pk, s),
         )
-        self.request.di.uow.facilitators.create(
+        request.di.uow.facilitators.create(
             FacilitatorData(
                 display_name=display_name,
-                event_id=current_event.pk,
+                event_id=self.event.pk,
                 slug=facilitator_slug,
                 user_id=None,
             )
         )
-        messages.success(self.request, _("Facilitator created successfully."))
-        return redirect("panel:facilitators", slug=slug)
+        return SuccessWithMessageRedirect(
+            request,
+            _("Facilitator created successfully."),
+            "panel:facilitators",
+            slug=self.event.slug,
+        )
+
+    def _render(self, form: FacilitatorForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/facilitator-create.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "facilitators",
+                "form": form,
+            },
+        )
 
 
-class FacilitatorEditPageView(PanelAccessMixin, EventContextMixin, View):
+class FacilitatorEditPageView(PanelFacilitatorView):
     """Edit an existing facilitator."""
 
-    request: PanelRequest
-
-    def _get_personal_fields(
-        self, event_pk: int, facilitator_pk: int
+    def _personal_fields(
+        self,
     ) -> list[tuple[PersonalDataFieldDTO, str | list[str] | bool | None]]:
-        fields = self.request.di.uow.personal_data_fields.list_by_event(event_pk)
+        fields = self.request.di.uow.personal_data_fields.list_by_event(self.event.pk)
         values = self.request.di.uow.host_personal_data.read_for_facilitator_event(
-            facilitator_pk, event_pk
+            self.facilitator.pk, self.event.pk
         )
         return [(field, values.get(field.slug)) for field in fields]
 
-    def get(
-        self, _request: PanelRequest, slug: str, facilitator_slug: str
-    ) -> HttpResponse:
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
-                current_event.pk, facilitator_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Facilitator not found."))
-            return redirect("panel:facilitators", slug=slug)
-
-        personal_fields = self._get_personal_fields(current_event.pk, facilitator.pk)
-        context["active_nav"] = "facilitators"
-        context["facilitator"] = facilitator
-        context["form"] = FacilitatorForm(
-            initial={"display_name": facilitator.display_name}
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(
+            FacilitatorForm(initial={"display_name": self.facilitator.display_name})
         )
-        context["personal_fields"] = personal_fields
-        return TemplateResponse(self.request, "panel/facilitator-edit.html", context)
 
-    def post(
-        self, _request: PanelRequest, slug: str, facilitator_slug: str
-    ) -> HttpResponse:
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            facilitator = self.request.di.uow.facilitators.read_by_event_and_slug(
-                current_event.pk, facilitator_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Facilitator not found."))
-            return redirect("panel:facilitators", slug=slug)
-
-        form = FacilitatorForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = FacilitatorForm(request.POST)
         if not form.is_valid():
-            personal_fields = self._get_personal_fields(
-                current_event.pk, facilitator.pk
-            )
-            context["active_nav"] = "facilitators"
-            context["facilitator"] = facilitator
-            context["form"] = form
-            context["personal_fields"] = personal_fields
-            return TemplateResponse(
-                self.request, "panel/facilitator-edit.html", context
-            )
+            return self._render(form)
 
-        self.request.di.uow.facilitators.update(
-            facilitator.pk,
+        request.di.uow.facilitators.update(
+            self.facilitator.pk,
             FacilitatorUpdateData(display_name=form.cleaned_data["display_name"]),
         )
 
-        all_personal_fields = self.request.di.uow.personal_data_fields.list_by_event(
-            current_event.pk
-        )
-        entries: list[HostPersonalDataEntry] = []
-        for field in all_personal_fields:
-            key = f"personal_{field.slug}"
-            if field.field_type == "checkbox":
-                value: str | list[str] | bool = self.request.POST.get(key) == "true"
-            elif field.is_multiple:
-                value = self.request.POST.getlist(key)
-            else:
-                value = self.request.POST.get(key, "")
-                if field.allow_custom and not value:
-                    value = self.request.POST.get(f"{key}_custom", "")
-            entries.append(
-                HostPersonalDataEntry(
-                    facilitator_id=facilitator.pk,
-                    event_id=current_event.pk,
-                    field_id=field.pk,
-                    value=value,
-                )
+        entries = [
+            HostPersonalDataEntry(
+                facilitator_id=self.facilitator.pk,
+                event_id=self.event.pk,
+                field_id=field.pk,
+                value=post_field_value(request.POST, f"personal_{field.slug}", field),
             )
+            for field in request.di.uow.personal_data_fields.list_by_event(
+                self.event.pk
+            )
+        ]
         if entries:
-            self.request.di.uow.host_personal_data.save(entries)
+            request.di.uow.host_personal_data.save(entries)
 
-        messages.success(self.request, _("Facilitator updated successfully."))
-        return redirect(
-            "panel:facilitator-detail", slug=slug, facilitator_slug=facilitator_slug
+        return SuccessWithMessageRedirect(
+            request,
+            _("Facilitator updated successfully."),
+            "panel:facilitator-detail",
+            slug=self.event.slug,
+            facilitator_slug=self.facilitator.slug,
+        )
+
+    def _render(self, form: FacilitatorForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/facilitator-edit.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "facilitators",
+                "facilitator": self.facilitator,
+                "form": form,
+                "personal_fields": self._personal_fields(),
+            },
         )
 
 
-class FacilitatorMergePageView(PanelAccessMixin, EventContextMixin, View):
+class FacilitatorMergePageView(PanelEventView):
     """Merge multiple facilitators into one."""
 
-    request: PanelRequest
+    MIN_REQUIRED = 2
 
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        raw_ids = self.request.GET.getlist("ids")
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        raw_ids = request.GET.getlist("ids")
         preselected_ids = {int(fid) for fid in raw_ids if fid.isdigit()}
-
-        context["active_nav"] = "facilitators"
-        context["facilitators"] = self.request.di.uow.facilitators.list_by_event(
-            current_event.pk
+        return self._render(
+            facilitators=request.di.uow.facilitators.list_by_event(self.event.pk),
+            preselected_ids=preselected_ids,
+            error=None,
         )
-        context["preselected_ids"] = preselected_ids
-        context["error"] = None
-        return TemplateResponse(self.request, "panel/facilitator-merge.html", context)
 
-    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        all_facilitators = self.request.di.uow.facilitators.list_by_event(
-            current_event.pk
-        )
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        all_facilitators = request.di.uow.facilitators.list_by_event(self.event.pk)
         valid_pks = {f.pk for f in all_facilitators}
-        raw_selected = self.request.POST.getlist("facilitator_ids")
+        raw_selected = request.POST.getlist("facilitator_ids")
         selected_ids = [
             n for fid in raw_selected if fid.isdigit() and (n := int(fid)) in valid_pks
         ]
-        raw_target = self.request.POST.get("target_id", "")
+        raw_target = request.POST.get("target_id", "")
         target_id = (
             int(raw_target)
             if raw_target.isdigit() and int(raw_target) in valid_pks
             else None
         )
 
-        min_required = 2
-        if len(selected_ids) < min_required or target_id not in selected_ids:
-            context["active_nav"] = "facilitators"
-            context["facilitators"] = all_facilitators
-            context["preselected_ids"] = set(selected_ids)
-            context["error"] = _(
-                "Select at least two facilitators and choose a merge target."
-            )
-            return TemplateResponse(
-                self.request, "panel/facilitator-merge.html", context
+        if len(selected_ids) < self.MIN_REQUIRED or target_id not in selected_ids:
+            return self._render(
+                facilitators=all_facilitators,
+                preselected_ids=set(selected_ids),
+                error=_("Select at least two facilitators and choose a merge target."),
             )
 
         source_ids = [fid for fid in selected_ids if fid != target_id]
         try:
-            FacilitatorMergeService(self.request.di.uow).merge(target_id, source_ids)
+            FacilitatorMergeService(request.di.uow).merge(target_id, source_ids)
         except FacilitatorMergeError:
-            context["active_nav"] = "facilitators"
-            context["facilitators"] = all_facilitators
-            context["preselected_ids"] = set(selected_ids)
-            context["error"] = _(
-                "Cannot merge facilitators that each have a linked user account."
-            )
-            return TemplateResponse(
-                self.request, "panel/facilitator-merge.html", context
+            return self._render(
+                facilitators=all_facilitators,
+                preselected_ids=set(selected_ids),
+                error=_(
+                    "Cannot merge facilitators that each have a linked user account."
+                ),
             )
 
-        messages.success(self.request, _("Facilitators merged successfully."))
-        return redirect("panel:facilitators", slug=slug)
+        return SuccessWithMessageRedirect(
+            request,
+            _("Facilitators merged successfully."),
+            "panel:facilitators",
+            slug=self.event.slug,
+        )
+
+    def _render(
+        self,
+        *,
+        facilitators: Sequence[FacilitatorListItemDTO],
+        preselected_ids: set[int],
+        error: str | None,
+    ) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/facilitator-merge.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "facilitators",
+                "facilitators": facilitators,
+                "preselected_ids": preselected_ids,
+                "error": error,
+            },
+        )

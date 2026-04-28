@@ -4,7 +4,6 @@ import json
 from http import HTTPStatus
 
 import pytest
-from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Area, Venue
@@ -93,7 +92,7 @@ class TestAreaReorderActionView:
     def test_post_returns_error_for_missing_area_ids(
         self, authenticated_client, active_user, sphere, event
     ):
-        """Missing area_ids returns 400 error."""
+        """Missing area_ids fails JSON validation."""
         sphere.managers.add(active_user)
         venue = Venue.objects.create(event=event, name="Main Hall", slug="main-hall")
 
@@ -102,7 +101,7 @@ class TestAreaReorderActionView:
         )
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert response.json() == {"error": "Missing area_ids"}
+        assert response.json() == {"error": "Invalid JSON"}
 
     def test_post_ignores_areas_from_other_venues(
         self, authenticated_client, active_user, sphere, event
@@ -156,10 +155,10 @@ class TestAreaReorderActionView:
 
         assert response.status_code == HTTPStatus.METHOD_NOT_ALLOWED
 
-    def test_post_redirects_on_invalid_event_slug(
+    def test_post_returns_404_on_invalid_event_slug(
         self, authenticated_client, active_user, sphere
     ):
-        """Invalid event slug triggers redirect on POST."""
+        """Invalid event slug returns JSON 404 (consistent JSON contract)."""
         sphere.managers.add(active_user)
         url = reverse(
             "panel:area-reorder",
@@ -170,9 +169,5 @@ class TestAreaReorderActionView:
             url, json.dumps({"area_ids": []}), content_type="application/json"
         )
 
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[(messages.ERROR, "Event not found.")],
-            url="/panel/",
-        )
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.json() == {"error": "Event not found"}
