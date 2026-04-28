@@ -5,7 +5,6 @@ from __future__ import annotations
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any
 
-from django.contrib import messages
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.text import slugify
@@ -392,46 +391,6 @@ def track_filter_context(
 
     sorted_tracks = sorted(all_tracks, key=lambda t: (t.pk not in managed_pks, t.name))
     return sorted_tracks, managed_pks, filter_track_pk
-
-
-# --- transitional: kept while modules migrate --------------------------------
-
-
-class EventContextMixin:
-    """Mixin providing common event context for unmigrated panel views.
-
-    Retained while migration to ``PanelEventView`` proceeds. New code should
-    prefer ``PanelEventView`` (and friends) plus ``panel_chrome``.
-    """
-
-    request: PanelRequest
-
-    def get_event_context(self, slug: str) -> tuple[dict[str, Any], EventDTO | None]:
-        sphere_id = self.request.context.current_sphere_id
-        events = self.request.di.uow.events.list_by_sphere(sphere_id)
-
-        try:
-            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
-        except NotFoundError:
-            messages.error(self.request, _("Event not found."))
-            return {}, None
-
-        panel_service = PanelService(self.request.di.uow)
-        stats = panel_service.get_event_stats(current_event.pk)
-
-        context: dict[str, Any] = {
-            "events": events,
-            "current_event": current_event,
-            "is_proposal_active": is_proposal_active(current_event),
-            "stats": stats.model_dump(),
-        }
-
-        return context, current_event
-
-    def get_track_filter_context(
-        self, event_pk: int
-    ) -> tuple[list[Any], set[int], int | None]:
-        return track_filter_context(self.request, event_pk)
 
 
 def settings_tab_urls(slug: str) -> dict[str, str]:
