@@ -1,48 +1,331 @@
-"""URL patterns for the timetable panel feature."""
+"""URL patterns for the chronology panel bounded context."""
 
-from django.urls import path
+from django.urls import include, path
 
-from ludamus.gates.web.django.chronology.panel import views
+from ludamus.gates.web.django.chronology.panel.views import (
+    cfp,
+    event_settings,
+    facilitators,
+    index,
+    personal_data_fields,
+    proposals,
+    session_fields,
+    time_slots,
+    timetable,
+    tracks,
+    venues,
+)
 
-timetable_urlpatterns = [
-    path("", views.TimetablePageView.as_view(), name="timetable"),
+app_name = "panel"  # pylint: disable=invalid-name
+
+_timetable_urlpatterns = [
+    path("", timetable.TimetablePageView.as_view(), name="timetable"),
     path(
         "parts/sessions/",
-        views.TimetableSessionListPartView.as_view(),
+        timetable.TimetableSessionListPartView.as_view(),
         name="timetable-sessions-part",
     ),
     path(
         "parts/browse-pane/",
-        views.TimetableBrowsePanePartView.as_view(),
+        timetable.TimetableBrowsePanePartView.as_view(),
         name="timetable-browse-pane-part",
     ),
     path(
         "parts/session/<int:pk>/",
-        views.TimetableSessionDetailPartView.as_view(),
+        timetable.TimetableSessionDetailPartView.as_view(),
         name="timetable-session-detail-part",
     ),
     path(
-        "parts/grid/", views.TimetableGridPartView.as_view(), name="timetable-grid-part"
+        "parts/grid/",
+        timetable.TimetableGridPartView.as_view(),
+        name="timetable-grid-part",
     ),
     path(
         "parts/conflicts/",
-        views.TimetableConflictsPartView.as_view(),
+        timetable.TimetableConflictsPartView.as_view(),
         name="timetable-conflicts-part",
     ),
-    path("do/assign/", views.TimetableAssignView.as_view(), name="timetable-assign"),
     path(
-        "do/unassign/", views.TimetableUnassignView.as_view(), name="timetable-unassign"
+        "do/assign/", timetable.TimetableAssignView.as_view(), name="timetable-assign"
+    ),
+    path(
+        "do/unassign/",
+        timetable.TimetableUnassignView.as_view(),
+        name="timetable-unassign",
     ),
     path(
         "overview/",
-        views.TimetableOverviewPageView.as_view(),
+        timetable.TimetableOverviewPageView.as_view(),
         name="timetable-overview",
     ),
-    path("log/", views.TimetableLogPageView.as_view(), name="timetable-log"),
+    path("log/", timetable.TimetableLogPageView.as_view(), name="timetable-log"),
     path(
         "problems/",
-        views.TimetableProblemsPageView.as_view(),
+        timetable.TimetableProblemsPageView.as_view(),
         name="timetable-problems",
     ),
-    path("do/revert/", views.TimetableRevertView.as_view(), name="timetable-revert"),
+    path(
+        "do/revert/", timetable.TimetableRevertView.as_view(), name="timetable-revert"
+    ),
+]
+
+urlpatterns = [
+    path("", index.PanelIndexRedirectView.as_view(), name="index"),
+    path("event/<slug:slug>/", index.EventIndexPageView.as_view(), name="event-index"),
+    path(
+        "event/<slug:slug>/settings/",
+        event_settings.EventSettingsPageView.as_view(),
+        name="event-settings",
+    ),
+    path(
+        "event/<slug:slug>/settings/proposals/",
+        event_settings.EventProposalSettingsPageView.as_view(),
+        name="event-proposal-settings",
+    ),
+    path(
+        "event/<slug:slug>/settings/display/",
+        event_settings.EventDisplaySettingsPageView.as_view(),
+        name="event-display-settings",
+    ),
+    path("event/<slug:slug>/venues/", venues.VenuesPageView.as_view(), name="venues"),
+    path(
+        "event/<slug:slug>/venues/structure/",
+        venues.VenuesStructurePageView.as_view(),
+        name="venues-structure",
+    ),
+    path(
+        "event/<slug:slug>/venues/create/",
+        venues.VenueCreatePageView.as_view(),
+        name="venue-create",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/edit/",
+        venues.VenueEditPageView.as_view(),
+        name="venue-edit",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/do/delete",
+        venues.VenueDeleteActionView.as_view(),
+        name="venue-delete",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/do/duplicate",
+        venues.VenueDuplicatePageView.as_view(),
+        name="venue-duplicate",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/do/copy",
+        venues.VenueCopyPageView.as_view(),
+        name="venue-copy",
+    ),
+    path(
+        "event/<slug:slug>/venues/do/reorder",
+        venues.VenueReorderActionView.as_view(),
+        name="venue-reorder",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/",
+        venues.VenueDetailPageView.as_view(),
+        name="venue-detail",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/create/",
+        venues.AreaCreatePageView.as_view(),
+        name="area-create",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/<str:area_slug>/edit/",
+        venues.AreaEditPageView.as_view(),
+        name="area-edit",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/<str:area_slug>/do/delete",
+        venues.AreaDeleteActionView.as_view(),
+        name="area-delete",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/do/reorder",
+        venues.AreaReorderActionView.as_view(),
+        name="area-reorder",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/<str:area_slug>/",
+        venues.AreaDetailPageView.as_view(),
+        name="area-detail",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/<str:area_slug>/spaces/create/",
+        venues.SpaceCreatePageView.as_view(),
+        name="space-create",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/<str:area_slug>/spaces/"
+        "<str:space_slug>/edit/",
+        venues.SpaceEditPageView.as_view(),
+        name="space-edit",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/<str:area_slug>/spaces/"
+        "<str:space_slug>/do/delete",
+        venues.SpaceDeleteActionView.as_view(),
+        name="space-delete",
+    ),
+    path(
+        "event/<slug:slug>/venues/<str:venue_slug>/areas/<str:area_slug>/spaces/do/reorder",
+        venues.SpaceReorderActionView.as_view(),
+        name="space-reorder",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/",
+        time_slots.TimeSlotsPageView.as_view(),
+        name="time-slots",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/create/",
+        time_slots.TimeSlotCreatePageView.as_view(),
+        name="time-slot-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/<int:pk>/edit/",
+        time_slots.TimeSlotEditPageView.as_view(),
+        name="time-slot-edit",
+    ),
+    path(
+        "event/<slug:slug>/cfp/time-slots/<int:pk>/do/delete",
+        time_slots.TimeSlotDeleteActionView.as_view(),
+        name="time-slot-delete",
+    ),
+    path(
+        "event/<slug:slug>/proposals/",
+        proposals.ProposalsPageView.as_view(),
+        name="proposals",
+    ),
+    path(
+        "event/<slug:slug>/proposals/create/",
+        proposals.ProposalCreatePageView.as_view(),
+        name="proposal-create",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/",
+        proposals.ProposalDetailPageView.as_view(),
+        name="proposal-detail",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/edit/",
+        proposals.ProposalEditPageView.as_view(),
+        name="proposal-edit",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/do/reject",
+        proposals.ProposalRejectActionView.as_view(),
+        name="proposal-reject",
+    ),
+    path(
+        "event/<slug:slug>/proposals/<int:proposal_id>/do/set-facilitators",
+        proposals.ProposalSetFacilitatorsActionView.as_view(),
+        name="proposal-set-facilitators",
+    ),
+    path("event/<slug:slug>/cfp/", cfp.CFPPageView.as_view(), name="cfp"),
+    path(
+        "event/<slug:slug>/cfp/create/",
+        cfp.CFPCreatePageView.as_view(),
+        name="cfp-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/personal-data/",
+        personal_data_fields.PersonalDataFieldsPageView.as_view(),
+        name="personal-data-fields",
+    ),
+    path(
+        "event/<slug:slug>/cfp/personal-data/create/",
+        personal_data_fields.PersonalDataFieldCreatePageView.as_view(),
+        name="personal-data-field-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/personal-data/<str:field_slug>/edit/",
+        personal_data_fields.PersonalDataFieldEditPageView.as_view(),
+        name="personal-data-field-edit",
+    ),
+    path(
+        "event/<slug:slug>/cfp/personal-data/<str:field_slug>/do/delete",
+        personal_data_fields.PersonalDataFieldDeleteActionView.as_view(),
+        name="personal-data-field-delete",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/",
+        session_fields.SessionFieldsPageView.as_view(),
+        name="session-fields",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/create/",
+        session_fields.SessionFieldCreatePageView.as_view(),
+        name="session-field-create",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/<str:field_slug>/edit/",
+        session_fields.SessionFieldEditPageView.as_view(),
+        name="session-field-edit",
+    ),
+    path(
+        "event/<slug:slug>/cfp/session-fields/<str:field_slug>/do/delete",
+        session_fields.SessionFieldDeleteActionView.as_view(),
+        name="session-field-delete",
+    ),
+    path(
+        "event/<slug:event_slug>/cfp/<str:category_slug>/",
+        cfp.CFPEditPageView.as_view(),
+        name="cfp-edit",
+    ),
+    path(
+        "event/<slug:event_slug>/cfp/<str:category_slug>/do/delete",
+        cfp.CFPDeleteActionView.as_view(),
+        name="cfp-delete",
+    ),
+    path(
+        "parts/icon-preview/",
+        session_fields.IconPreviewPartView.as_view(),
+        name="icon-preview",
+    ),
+    path("event/<slug:slug>/tracks/", tracks.TracksPageView.as_view(), name="tracks"),
+    path(
+        "event/<slug:slug>/tracks/create/",
+        tracks.TrackCreatePageView.as_view(),
+        name="track-create",
+    ),
+    path(
+        "event/<slug:slug>/tracks/<str:track_slug>/edit/",
+        tracks.TrackEditPageView.as_view(),
+        name="track-edit",
+    ),
+    path(
+        "event/<slug:slug>/tracks/<str:track_slug>/do/delete",
+        tracks.TrackDeleteActionView.as_view(),
+        name="track-delete",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/",
+        facilitators.FacilitatorsPageView.as_view(),
+        name="facilitators",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/create/",
+        facilitators.FacilitatorCreatePageView.as_view(),
+        name="facilitator-create",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/merge/",
+        facilitators.FacilitatorMergePageView.as_view(),
+        name="facilitator-merge",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/<str:facilitator_slug>/",
+        facilitators.FacilitatorDetailPageView.as_view(),
+        name="facilitator-detail",
+    ),
+    path(
+        "event/<slug:slug>/facilitators/<str:facilitator_slug>/edit/",
+        facilitators.FacilitatorEditPageView.as_view(),
+        name="facilitator-edit",
+    ),
+    path("event/<slug:slug>/timetable/", include(_timetable_urlpatterns)),
 ]

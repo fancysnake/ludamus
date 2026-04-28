@@ -13,7 +13,6 @@ from ludamus.pacts import (
 )
 from ludamus.pacts.chronology import (
     TIMETABLE_ROOM_PAGE_SIZE,
-    TIMETABLE_SLOT_HEIGHT_PX,
     TIMETABLE_SLOT_MINUTES,
     AreaGroupDTO,
     ConflictDTO,
@@ -66,9 +65,9 @@ def _slot_windows_by_local_date(
 
 
 def _position_sessions(
-    items: list[AgendaItemDTO], event_start: datetime, px_per_minute: float
+    items: list[AgendaItemDTO], event_start: datetime
 ) -> list[SessionPositionDTO]:
-    # Compute absolute pixel positions for sessions in a single space column.
+    # Compute time-domain positions for sessions in a single space column.
     # Overlapping sessions are placed side by side by splitting the column width.
     if not items:
         return []
@@ -93,17 +92,17 @@ def _position_sessions(
     positions: list[SessionPositionDTO] = []
     for group in groups:
         n = len(group)
-        width_pct = 100.0 / n
+        lane_width_pct = 100.0 / n
         for i, item in enumerate(group):
             offset_min = (item.start_time - event_start).total_seconds() / 60
             duration_min = (item.end_time - item.start_time).total_seconds() / 60
             positions.append(
                 SessionPositionDTO(
                     agenda_item=item,
-                    top_px=round(offset_min * px_per_minute),
-                    height_px=max(20, round(duration_min * px_per_minute)),
-                    left_pct=i * width_pct,
-                    width_pct=width_pct,
+                    start_minutes=round(offset_min),
+                    duration_minutes=round(duration_min),
+                    lane_start_pct=i * lane_width_pct,
+                    lane_width_pct=lane_width_pct,
                 )
             )
 
@@ -148,10 +147,9 @@ class TimetableService:
                 columns=[SpaceColumnDTO(space=s, sessions=[]) for s in spaces],
                 venue_groups=venue_groups,
                 time_labels=[],
-                total_height_px=0,
+                total_minutes=0,
                 event_start_iso="",
                 slot_minutes=TIMETABLE_SLOT_MINUTES,
-                slot_height_px=TIMETABLE_SLOT_HEIGHT_PX,
                 page=space_page,
                 total_pages=total_pages,
                 total_spaces=total_spaces,
@@ -168,15 +166,14 @@ class TimetableService:
         if latest_end != grid_end:
             grid_end += timedelta(hours=1)
 
-        total_minutes = (grid_end - grid_start).total_seconds() / 60
-        num_slots = int(total_minutes / TIMETABLE_SLOT_MINUTES)
-        total_height_px = num_slots * TIMETABLE_SLOT_HEIGHT_PX
-        px_per_minute = TIMETABLE_SLOT_HEIGHT_PX / TIMETABLE_SLOT_MINUTES
+        total_minutes = int((grid_end - grid_start).total_seconds() / 60)
+        num_slots = total_minutes // TIMETABLE_SLOT_MINUTES
 
         slot_delta = timedelta(minutes=TIMETABLE_SLOT_MINUTES)
         time_labels = [
             TimeLabelDTO(
-                time=grid_start + slot_delta * i, top_px=i * TIMETABLE_SLOT_HEIGHT_PX
+                time=grid_start + slot_delta * i,
+                offset_minutes=i * TIMETABLE_SLOT_MINUTES,
             )
             for i in range(num_slots + 1)
         ]
@@ -204,9 +201,7 @@ class TimetableService:
                 SpaceColumnDTO(
                     space=space,
                     sessions=_position_sessions(
-                        items_for_space,
-                        event_start=grid_start,
-                        px_per_minute=px_per_minute,
+                        items_for_space, event_start=grid_start
                     ),
                 )
             )
@@ -216,10 +211,9 @@ class TimetableService:
             columns=columns,
             venue_groups=venue_groups,
             time_labels=time_labels,
-            total_height_px=total_height_px,
+            total_minutes=num_slots * TIMETABLE_SLOT_MINUTES,
             event_start_iso=grid_start.isoformat(),
             slot_minutes=TIMETABLE_SLOT_MINUTES,
-            slot_height_px=TIMETABLE_SLOT_HEIGHT_PX,
             page=space_page,
             total_pages=total_pages,
             total_spaces=total_spaces,

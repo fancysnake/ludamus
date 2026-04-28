@@ -7,11 +7,7 @@ from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Track
 from ludamus.pacts import EventDTO
-from ludamus.pacts.chronology import (
-    TIMETABLE_SLOT_HEIGHT_PX,
-    TIMETABLE_SLOT_MINUTES,
-    TimetableGridDTO,
-)
+from ludamus.pacts.chronology import TIMETABLE_SLOT_MINUTES, TimetableGridDTO
 from tests.integration.conftest import (
     AgendaItemFactory,
     SessionFactory,
@@ -29,10 +25,9 @@ def _empty_grid():
         columns=[],
         venue_groups=[],
         time_labels=[],
-        total_height_px=0,
+        total_minutes=0,
         event_start_iso="",
         slot_minutes=TIMETABLE_SLOT_MINUTES,
-        slot_height_px=TIMETABLE_SLOT_HEIGHT_PX,
         page=1,
         total_pages=1,
         total_spaces=0,
