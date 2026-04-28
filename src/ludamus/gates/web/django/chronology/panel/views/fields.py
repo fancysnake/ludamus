@@ -4,20 +4,25 @@ from __future__ import annotations
 
 from typing import (  # pylint: disable=unused-import
     TYPE_CHECKING,
+    Any,
     Literal,
     Protocol,
     cast,
 )
 
-from django.contrib import messages
-
-from ludamus.pacts import NotFoundError, PersonalDataFieldCreateData
+from ludamus.gates.web.django.chronology.panel.views.base import panel_chrome
+from ludamus.pacts import (
+    PersonalDataFieldCreateData,
+    PersonalDataFieldUpdateData,
+    SessionFieldUpdateData,
+)
 
 if TYPE_CHECKING:
     from django import forms
     from django.http import QueryDict
 
     from ludamus.gates.web.django.chronology.panel.views.base import PanelRequest
+    from ludamus.pacts import EventDTO
 
 
 class _FieldDTO(Protocol):
@@ -31,10 +36,57 @@ class _FieldDTO(Protocol):
     question: str
 
 
-class _FieldRepositoryProtocol[T: _FieldDTO](Protocol):
-    """Protocol for field repositories used by helper functions."""
+def field_initial(field: _FieldDTO) -> dict[str, Any]:
+    """Return the initial form values shared by personal-data and session fields.
 
-    def read_by_slug(self, event_pk: int, slug: str) -> T: ...
+    Returns:
+        Mapping with ``name``, ``question``, ``max_length``, ``help_text``,
+        ``is_public`` keys.
+    """
+    return {
+        "name": field.name,
+        "question": field.question,
+        "max_length": field.max_length,
+        "help_text": field.help_text,
+        "is_public": field.is_public,
+    }
+
+
+def personal_data_field_update_payload(
+    form: forms.Form, options: list[str] | None
+) -> PersonalDataFieldUpdateData:
+    """Build the typed update payload for a personal-data field.
+
+    Returns:
+        A ``PersonalDataFieldUpdateData`` populated from form fields.
+    """
+    return PersonalDataFieldUpdateData(
+        name=form.cleaned_data["name"],
+        question=form.cleaned_data["question"],
+        max_length=form.cleaned_data.get("max_length") or 0,
+        help_text=form.cleaned_data.get("help_text") or "",
+        is_public=form.cleaned_data.get("is_public", False),
+        options=options,
+    )
+
+
+def session_field_update_payload(
+    form: forms.Form, options: list[str] | None
+) -> SessionFieldUpdateData:
+    """Build the typed update payload for a session field.
+
+    Returns:
+        A ``SessionFieldUpdateData`` populated from form fields.
+    """
+    return SessionFieldUpdateData(
+        name=form.cleaned_data["name"],
+        question=form.cleaned_data["question"],
+        max_length=form.cleaned_data.get("max_length") or 0,
+        help_text=form.cleaned_data.get("help_text") or "",
+        icon=form.cleaned_data.get("icon") or "",
+        is_public=form.cleaned_data.get("is_public", False),
+        options=options,
+    )
 
 
 def parse_field_form_data(form: forms.Form) -> PersonalDataFieldCreateData:
@@ -76,6 +128,46 @@ def sort_fields_by_order[T: _FieldDTO](fields: list[T], order: list[int]) -> lis
     return sorted(fields, key=lambda f: order_map[f.pk])
 
 
+def field_edit_context(
+    request: PanelRequest,
+    event: EventDTO,
+    field: _FieldDTO,
+    form: forms.Form,
+    category_pks: dict[str, set[int]],
+) -> dict[str, Any]:
+    """Build the shared template context for field create/edit pages.
+
+    ``category_pks`` is the dict returned by ``category_requirements_context``
+    (or a similarly-shaped fallback for the GET path).
+
+    Returns:
+        Mapping that includes ``panel_chrome``, the field, the form, the
+        proposal categories list, and the selected category-pk sets.
+    """
+    return {
+        **panel_chrome(request, event),
+        "active_nav": "cfp",
+        "field": field,
+        "form": form,
+        "categories": request.di.uow.proposal_categories.list_by_event(event.pk),
+        **category_pks,
+    }
+
+
+def category_requirements_context(post: QueryDict) -> dict[str, set[int]]:
+    """Build the required/optional category-pk sets for field-edit re-renders.
+
+    Returns:
+        Mapping with ``required_category_pks`` and ``optional_category_pks``
+        sets, ready to merge into a template context.
+    """
+    cat_reqs, _order = parse_field_requirements(post, "category_", "category_order")
+    return {
+        "required_category_pks": {pk for pk, is_req in cat_reqs.items() if is_req},
+        "optional_category_pks": {pk for pk, is_req in cat_reqs.items() if not is_req},
+    }
+
+
 def parse_field_requirements(
     post_data: QueryDict, prefix: str, order_key: str
 ) -> tuple[dict[int, bool], list[int]]:
@@ -97,18 +189,3 @@ def parse_field_requirements(
     order_raw = post_data.get(order_key, "")
     order = [int(x) for x in order_raw.split(",") if x.strip()]
     return requirements, order
-
-
-def read_field_or_redirect[T: _FieldDTO](
-    request: PanelRequest,
-    repository: _FieldRepositoryProtocol[T],
-    event_pk: int,
-    field_slug: str,
-    error_message: str,
-) -> T:
-    try:
-        field = repository.read_by_slug(event_pk, field_slug)
-    except NotFoundError:
-        messages.error(request, error_message)
-        raise
-    return field

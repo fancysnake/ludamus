@@ -1,12 +1,10 @@
-# pylint: disable=duplicate-code
-# TODO(fancysnake): Extract common view boilerplate
 """Session field views for the CFP, plus the icon-preview HTMX partial."""
 
 from __future__ import annotations
 
-from django.contrib import messages
+from typing import Any
+
 from django.http import HttpResponse
-from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
@@ -14,295 +12,189 @@ from django.views.generic.base import View
 from heroicons import IconDoesNotExist
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
-    EventContextMixin,
     PanelAccessMixin,
+    PanelEventView,
     PanelRequest,
+    PanelSessionFieldView,
     cfp_tab_urls,
+    panel_chrome,
 )
 from ludamus.gates.web.django.chronology.panel.views.fields import (
+    category_requirements_context,
+    field_edit_context,
+    field_initial,
     parse_field_form_data,
     parse_field_requirements,
-    read_field_or_redirect,
+    session_field_update_payload,
 )
 from ludamus.gates.web.django.forms import SessionFieldForm
+from ludamus.gates.web.django.responses import (
+    ErrorWithMessageRedirect,
+    SuccessWithMessageRedirect,
+)
 from ludamus.mills import PanelService
-from ludamus.pacts import DEFAULT_FIELD_MAX_LENGTH, FieldUsageSummary, NotFoundError
+from ludamus.pacts import DEFAULT_FIELD_MAX_LENGTH, FieldUsageSummary
 
 
-class SessionFieldsPageView(PanelAccessMixin, EventContextMixin, View):
+class SessionFieldsPageView(PanelEventView, View):
     """List session fields for an event."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display session fields list.
-
-        Returns:
-            TemplateResponse with the fields list or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        context["active_nav"] = "cfp"
-        context["active_tab"] = "session"
-        context["tab_urls"] = cfp_tab_urls(slug)
-        fields = self.request.di.uow.session_fields.list_by_event(current_event.pk)
-        usage_counts = self.request.di.uow.session_fields.get_usage_counts(
-            current_event.pk
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        fields = request.di.uow.session_fields.list_by_event(self.event.pk)
+        usage_counts = request.di.uow.session_fields.get_usage_counts(self.event.pk)
+        return TemplateResponse(
+            request,
+            "panel/session-fields.html",
+            {
+                **panel_chrome(request, self.event),
+                "active_nav": "cfp",
+                "active_tab": "session",
+                "tab_urls": cfp_tab_urls(self.event.slug),
+                "fields": [
+                    FieldUsageSummary(
+                        field=f,
+                        required_count=usage_counts.get(f.pk, {}).get("required", 0),
+                        optional_count=usage_counts.get(f.pk, {}).get("optional", 0),
+                    )
+                    for f in fields
+                ],
+            },
         )
-        context["fields"] = [
-            FieldUsageSummary(
-                field=f,
-                required_count=usage_counts.get(f.pk, {}).get("required", 0),
-                optional_count=usage_counts.get(f.pk, {}).get("optional", 0),
-            )
-            for f in fields
-        ]
-        return TemplateResponse(self.request, "panel/session-fields.html", context)
 
 
-class SessionFieldCreatePageView(PanelAccessMixin, EventContextMixin, View):
+class SessionFieldCreatePageView(PanelEventView, View):
     """Create a new session field for an event."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display the session field creation form.
-
-        Returns:
-            TemplateResponse with the form or redirect if event not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        context["active_nav"] = "cfp"
-        context["form"] = SessionFieldForm(
-            initial={"max_length": DEFAULT_FIELD_MAX_LENGTH}
-        )
-        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
-            current_event.pk
-        )
-        context["required_category_pks"] = set()
-        context["optional_category_pks"] = set()
-        return TemplateResponse(
-            self.request, "panel/session-field-create.html", context
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(
+            SessionFieldForm(initial={"max_length": DEFAULT_FIELD_MAX_LENGTH}),
+            {"required_category_pks": set(), "optional_category_pks": set()},
         )
 
-    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Handle session field creation.
-
-        Returns:
-            Redirect response to fields list on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        form = SessionFieldForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = SessionFieldForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "cfp"
-            context["form"] = form
-            context["categories"] = (
-                self.request.di.uow.proposal_categories.list_by_event(current_event.pk)
-            )
-            cat_reqs, _order = parse_field_requirements(
-                self.request.POST, "category_", "category_order"
-            )
-            context["required_category_pks"] = {
-                pk for pk, is_req in cat_reqs.items() if is_req
-            }
-            context["optional_category_pks"] = {
-                pk for pk, is_req in cat_reqs.items() if not is_req
-            }
-            return TemplateResponse(
-                self.request, "panel/session-field-create.html", context
-            )
+            return self._render(form, category_requirements_context(request.POST))
 
         parsed = parse_field_form_data(form)
-
-        field = self.request.di.uow.session_fields.create(
-            current_event.pk, {**parsed, "icon": form.cleaned_data.get("icon") or ""}
+        field = request.di.uow.session_fields.create(
+            self.event.pk, {**parsed, "icon": form.cleaned_data.get("icon") or ""}
         )
 
         category_requirements, _order = parse_field_requirements(
-            self.request.POST, "category_", "category_order"
+            request.POST, "category_", "category_order"
         )
         if category_requirements:
-            self.request.di.uow.proposal_categories.add_session_field_to_categories(
+            request.di.uow.proposal_categories.add_session_field_to_categories(
                 field.pk, category_requirements
             )
 
-        messages.success(self.request, _("Session field created successfully."))
-        return redirect("panel:session-fields", slug=slug)
+        return SuccessWithMessageRedirect(
+            request,
+            _("Session field created successfully."),
+            "panel:session-fields",
+            slug=self.event.slug,
+        )
+
+    def _render(
+        self, form: SessionFieldForm, category_pks: dict[str, set[int]]
+    ) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/session-field-create.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "cfp",
+                "form": form,
+                "categories": self.request.di.uow.proposal_categories.list_by_event(
+                    self.event.pk
+                ),
+                **category_pks,
+            },
+        )
 
 
-class SessionFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
+class SessionFieldEditPageView(PanelSessionFieldView, View):
     """Edit an existing session field."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
-        """Display the session field edit form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            field = read_field_or_redirect(
-                self.request,
-                self.request.di.uow.session_fields,
-                current_event.pk,
-                field_slug,
-                _("Session field not found."),
-            )
-        except NotFoundError:
-            return redirect("panel:session-fields", slug=slug)
-
-        context["active_nav"] = "cfp"
-        context["field"] = field
-        initial = {
-            "name": field.name,
-            "question": field.question,
-            "max_length": field.max_length,
-            "help_text": field.help_text,
-            "icon": field.icon,
-            "is_public": field.is_public,
-        }
-        if field.field_type == "select":
-            initial["options"] = "\n".join(o.label for o in field.options)
-        context["form"] = SessionFieldForm(initial=initial)
-        context["categories"] = self.request.di.uow.proposal_categories.list_by_event(
-            current_event.pk
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        initial: dict[str, Any] = {**field_initial(self.field), "icon": self.field.icon}
+        if self.field.field_type == "select":
+            initial["options"] = "\n".join(o.label for o in self.field.options)
+        field_cats = request.di.uow.proposal_categories.get_session_field_categories(
+            self.field.pk
         )
-        field_cats = (
-            self.request.di.uow.proposal_categories.get_session_field_categories(
-                field.pk
-            )
+        return self._render(
+            SessionFieldForm(initial=initial),
+            {
+                "required_category_pks": {
+                    pk for pk, is_req in field_cats.items() if is_req
+                },
+                "optional_category_pks": {
+                    pk for pk, is_req in field_cats.items() if not is_req
+                },
+            },
         )
-        context["required_category_pks"] = {
-            pk for pk, is_req in field_cats.items() if is_req
-        }
-        context["optional_category_pks"] = {
-            pk for pk, is_req in field_cats.items() if not is_req
-        }
-        return TemplateResponse(self.request, "panel/session-field-edit.html", context)
 
-    def post(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
-        """Handle session field update.
-
-        Returns:
-            Redirect response to fields list on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            field = read_field_or_redirect(
-                self.request,
-                self.request.di.uow.session_fields,
-                current_event.pk,
-                field_slug,
-                _("Session field not found."),
-            )
-        except NotFoundError:
-            return redirect("panel:session-fields", slug=slug)
-
-        form = SessionFieldForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = SessionFieldForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "cfp"
-            context["field"] = field
-            context["form"] = form
-            context["categories"] = (
-                self.request.di.uow.proposal_categories.list_by_event(current_event.pk)
-            )
-            cat_reqs, _order = parse_field_requirements(
-                self.request.POST, "category_", "category_order"
-            )
-            context["required_category_pks"] = {
-                pk for pk, is_req in cat_reqs.items() if is_req
-            }
-            context["optional_category_pks"] = {
-                pk for pk, is_req in cat_reqs.items() if not is_req
-            }
-            return TemplateResponse(
-                self.request, "panel/session-field-edit.html", context
-            )
+            return self._render(form, category_requirements_context(request.POST))
 
-        name = form.cleaned_data["name"]
-        question = form.cleaned_data["question"]
-        max_length = form.cleaned_data.get("max_length") or 0
-        help_text = form.cleaned_data.get("help_text") or ""
         options_text = form.cleaned_data.get("options") or ""
         options: list[str] | None = None
-        if field.field_type == "select":
+        if self.field.field_type == "select":
             options = [o.strip() for o in options_text.split("\n") if o.strip()] or []
         cat_reqs, _order = parse_field_requirements(
-            self.request.POST, "category_", "category_order"
+            request.POST, "category_", "category_order"
         )
-        with self.request.di.uow.atomic():
-            self.request.di.uow.session_fields.update(
-                field.pk,
-                {
-                    "name": name,
-                    "question": question,
-                    "max_length": max_length,
-                    "help_text": help_text,
-                    "icon": form.cleaned_data.get("icon") or "",
-                    "is_public": form.cleaned_data.get("is_public", False),
-                    "options": options,
-                },
+        with request.di.uow.atomic():
+            request.di.uow.session_fields.update(
+                self.field.pk, session_field_update_payload(form, options)
             )
-            self.request.di.uow.proposal_categories.set_session_field_categories(
-                field.pk, cat_reqs
+            request.di.uow.proposal_categories.set_session_field_categories(
+                self.field.pk, cat_reqs
             )
 
-        messages.success(self.request, _("Session field updated successfully."))
-        return redirect("panel:session-fields", slug=slug)
+        return SuccessWithMessageRedirect(
+            request,
+            _("Session field updated successfully."),
+            "panel:session-fields",
+            slug=self.event.slug,
+        )
+
+    def _render(
+        self, form: SessionFieldForm, category_pks: dict[str, set[int]]
+    ) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/session-field-edit.html",
+            field_edit_context(
+                self.request, self.event, self.field, form, category_pks
+            ),
+        )
 
 
-class SessionFieldDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+class SessionFieldDeleteActionView(PanelSessionFieldView, View):
     """Delete a session field (POST only)."""
 
-    request: PanelRequest
     http_method_names = ("post",)
 
-    def post(self, _request: PanelRequest, slug: str, field_slug: str) -> HttpResponse:
-        """Handle session field deletion.
-
-        Returns:
-            Redirect response to session fields list.
-        """
-        _context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            field = read_field_or_redirect(
-                self.request,
-                self.request.di.uow.session_fields,
-                current_event.pk,
-                field_slug,
-                _("Session field not found."),
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        service = PanelService(request.di.uow)
+        if not service.delete_session_field(self.field.pk):
+            return ErrorWithMessageRedirect(
+                request,
+                _("Cannot delete field that is used in session types."),
+                "panel:session-fields",
+                slug=self.event.slug,
             )
-        except NotFoundError:
-            return redirect("panel:session-fields", slug=slug)
-
-        service = PanelService(self.request.di.uow)
-        if not service.delete_session_field(field.pk):
-            messages.error(
-                self.request, _("Cannot delete field that is used in session types.")
-            )
-            return redirect("panel:session-fields", slug=slug)
-
-        messages.success(self.request, _("Session field deleted successfully."))
-        return redirect("panel:session-fields", slug=slug)
+        return SuccessWithMessageRedirect(
+            request,
+            _("Session field deleted successfully."),
+            "panel:session-fields",
+            slug=self.event.slug,
+        )
 
 
 class IconPreviewPartView(PanelAccessMixin, View):
