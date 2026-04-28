@@ -11,14 +11,14 @@ from ludamus.gates.web.django.glimpse_kit.json_action import (
     json_action,
 )
 from ludamus.gates.web.django.glimpse_kit.scoping import ScopedView, ShortCircuitError
-from ludamus.gates.web.django.glimpse_kit.wizard import WizardState
+from ludamus.gates.web.django.glimpse_kit.session_state import SessionState
 
 __all__ = [
     "JsonError",
     "JsonOk",
     "RequireAccess",
     "ScopedView",
+    "SessionState",
     "ShortCircuitError",
-    "WizardState",
     "json_action",
 ]

@@ -12,7 +12,7 @@ from django.utils.translation import gettext as _
 from django.views.generic.base import View
 from pydantic import BaseModel, Field
 
-from ludamus.gates.web.django.glimpse_kit import WizardState
+from ludamus.gates.web.django.glimpse_kit import SessionState
 from ludamus.gates.web.django.helpers import get_client_ip
 from ludamus.gates.web.django.htmx import HtmxRedirect
 from ludamus.gates.web.django.templatetags.cfp_tags import has_field_value
@@ -65,13 +65,13 @@ def _session_key(event_slug: str) -> str:
     return f"propose_{event_slug}"
 
 
-def _wizard(event_slug: str) -> WizardState[ProposeSessionState]:
+def _wizard(event_slug: str) -> SessionState[ProposeSessionState]:
     """Return the typed wizard state handle for the given event slug.
 
     Returns:
-        A ``WizardState`` keyed by ``propose_<event_slug>``.
+        A ``SessionState`` keyed by ``propose_<event_slug>``.
     """
-    return WizardState(_session_key(event_slug), ProposeSessionState)
+    return SessionState(_session_key(event_slug), ProposeSessionState)
 
 
 def _read_state(request: HttpRequest, event_slug: str) -> ProposeSessionState:

@@ -5,7 +5,6 @@ from __future__ import annotations
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any
 
-from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
@@ -16,6 +15,7 @@ from ludamus.gates.web.django.glimpse_kit import (
     ScopedView,
     ShortCircuitError,
 )
+from ludamus.gates.web.django.htmx import HtmxRequest
 from ludamus.gates.web.django.responses import ErrorWithMessageRedirect
 from ludamus.mills import PanelService, is_proposal_active
 from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
@@ -39,8 +39,13 @@ if TYPE_CHECKING:
     )
 
 
-class PanelRequest(HttpRequest):
-    """Request type for panel views with UoW and context."""
+class PanelRequest(HtmxRequest):
+    """Request type for panel views with UoW, context, and HTMX attrs.
+
+    Extends ``HtmxRequest`` so ``request.is_htmx`` and
+    ``request.hx_triggers`` (set by ``HtmxMiddleware``) are typed
+    everywhere a panel view sees the request.
+    """
 
     context: AuthenticatedRequestContext
     di: DependencyInjectorProtocol

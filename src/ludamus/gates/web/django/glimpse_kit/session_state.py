@@ -1,4 +1,4 @@
-"""WizardState: typed session-backed multi-step state."""
+"""SessionState: typed access to Pydantic state held in ``request.session``."""
 
 from __future__ import annotations
 
@@ -10,12 +10,15 @@ if TYPE_CHECKING:
     from django.contrib.sessions.backends.base import SessionBase
 
 
-class WizardState[S: BaseModel]:
-    """Typed access to a wizard's state in ``request.session``.
+class SessionState[S: BaseModel]:
+    """Typed handle to a Pydantic model stored in ``request.session``.
 
-    Construct once at module level; the schema is the source of truth for
-    every read and write. Misspelling a field is a type error, not a silent
-    miss.
+    Construct once at module level (or per-request when keying needs URL
+    data); the schema is the source of truth for every read and write.
+    Misspelling a field is a type error, not a silent miss.
+
+    Useful anywhere a view stashes structured state across requests:
+    multi-step wizards, draft forms, transient UI flags, and so on.
     """
 
     def __init__(self, key: str, schema: type[S]) -> None:

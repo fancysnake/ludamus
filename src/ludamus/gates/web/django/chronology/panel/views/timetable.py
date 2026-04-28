@@ -72,19 +72,6 @@ def _int_param(query: QueryDict, key: str) -> int | None:
     return int(raw) if raw.isdigit() else None
 
 
-def _trigger_response(triggers: dict[str, object]) -> HttpResponse:
-    """Return a 204 No Content with the HX-Trigger payload set.
-
-    Used by assign/unassign endpoints to notify HTMX clients of changes.
-
-    Returns:
-        An empty 204 response carrying ``HX-Trigger: <triggers>``.
-    """
-    response = HttpResponse(status=204)
-    response["HX-Trigger"] = json.dumps(triggers)
-    return response
-
-
 class TimetablePageView(PanelEventView, View):
     """Static timetable grid for a specific event."""
 
@@ -317,12 +304,12 @@ class TimetableAssignView(PanelEventView, View):
         except ValueError, NotFoundError:
             return HttpResponse(status=422)
 
-        triggers: dict[str, object] = {"timetableChanged": {}}
+        request.hx_triggers["timetableChanged"] = {}
         if conflicts:
-            triggers["timetableConflicts"] = {
+            request.hx_triggers["timetableConflicts"] = {
                 "conflicts": [c.model_dump(mode="json") for c in conflicts]
             }
-        return _trigger_response(triggers)
+        return HttpResponse(status=204)
 
 
 class TimetableUnassignView(PanelEventView, View):
@@ -344,7 +331,8 @@ class TimetableUnassignView(PanelEventView, View):
         except NotFoundError:
             return HttpResponse(status=422)
 
-        return _trigger_response({"timetableChanged": {}})
+        request.hx_triggers["timetableChanged"] = {}
+        return HttpResponse(status=204)
 
 
 class TimetableOverviewPageView(PanelEventView, View):
