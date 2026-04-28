@@ -57,6 +57,13 @@ test.describe('Event detail page', () => {
       const footerClose = detailDialog.getByRole('button', { name: 'Close' });
       await expect(footerClose).toBeInViewport();
 
+      const pageScrollLocked = await page.evaluate(() => {
+        const bodyOverflow = getComputedStyle(document.body).overflowY;
+        const bodyPosition = getComputedStyle(document.body).position;
+        return bodyOverflow === 'hidden' || bodyPosition === 'fixed';
+      });
+      expect(pageScrollLocked).toBe(true);
+
       const isFooterInsideDialog = await page.evaluate(() => {
         const dialog = document.querySelector('dialog[open]');
         const close = dialog?.querySelector('.btn[data-modal-close]');

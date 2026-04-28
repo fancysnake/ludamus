@@ -1,4 +1,6 @@
 .modal {
+  display: flex;
+  flex-direction: column;
   margin: auto;
   opacity: 0;
   transform: scale(0.9) translateY(16px);
@@ -15,10 +17,17 @@
 }
 
 .modal[open] {
-  display: flex;
-  flex-direction: column;
   opacity: 1;
+  pointer-events: auto;
   transform: scale(1) translateY(0);
+}
+
+.modal:not([open]) {
+  display: none;
+}
+
+.modal:not([open]), .modal:not([open]) * {
+  pointer-events: none !important;
 }
 
 @starting-style {

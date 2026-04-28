@@ -23,13 +23,17 @@
                         <div class="hidden sm:flex items-center gap-1">
                             {% if "events" in current_sphere.enabled_pages %}
                                 <a href="{% url 'web:events' %}"
-                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' not in ns %}text-foreground bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
+                                   aria-current="{% if 'notice-board' not in ns %}page{% endif %}"
+                                   {% if "notice-board" not in ns %}data-current{% endif %}
+                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors text-foreground-secondary hover:text-foreground data-current:text-foreground data-current:bg-bg-tertiary hover:bg-bg-tertiary">
                                     {% translate "Events" %}
                                 </a>
                             {% endif %}
                             {% if "encounters" in current_sphere.enabled_pages %}
-                                <a href="{% url 'web:notice-board:index' %}"
-                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors {% if 'notice-board' in ns %}text-foreground bg-bg-tertiary{% else %}text-foreground-secondary hover:text-foreground hover:bg-bg-tertiary{% endif %}">
+                                <a aria-current="{% if 'notice-board' in ns %}page{% endif %}"
+                                   {% if "notice-board" in ns %}data-current{% endif %}
+                                   href="{% url 'web:notice-board:index' %}"
+                                   class="font-medium px-3 py-1.5 text-sm rounded-lg transition-colors hover text-foreground-secondary hover:text-foreground data-current:text-foreground data-current:bg-bg-tertiary hover:bg-bg-tertiary">
                                     {% translate "Encounters" %}
                                 </a>
                             {% endif %}

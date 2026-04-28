@@ -8,8 +8,9 @@
 @import "./timetable.css";
 
 @plugin "@tailwindcss/typography";
+@plugin "@hasparus/tailwind/scrollview-fade";
 
-@source "../../../../../../**/*.{html,py,js}";
+@source "../../**/*.{html,py,js}";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

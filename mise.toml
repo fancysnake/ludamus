@@ -130,13 +130,12 @@ run = "django-admin"
 
 [tasks.start]
 description = "Start Django dev server with frontend watch"
-run = "django-admin tailwind dev"
+run = "honcho start -f Procfile.dev"
 
 [tasks.build-frontend]
 description = "Build frontend assets (CSS + JS)"
 run = """
-django-admin tailwind install
-django-admin tailwind build
+cd src/ludamus/client && npm install && npm run build
 """
 
 # PYTEST
@@ -233,8 +232,7 @@ mise run _e2e -- django-admin downloadvendor
 mise run _e2e -- python tests/e2e/scripts/bootstrap_data.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_facilitators.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_timetable.py
-mise run _e2e -- django-admin tailwind install
-mise run _e2e -- django-admin tailwind build
+cd src/ludamus/client && npm install && npm run build && cd -
 exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload
 """
 
@@ -254,20 +252,20 @@ docker compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_arg
 '''
 
 [tasks.kill]
-description = "Kill dev servers (Django on :8000, Tailwind watch)"
-run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; pkill -f 'tailwindcss.*watch' 2>/dev/null; echo 'Dev servers killed'"
+description = "Kill dev servers (Django on :8000, Vite on :5173)"
+run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; lsof -ti :5173 | xargs kill -9 2>/dev/null; echo 'Dev servers killed'"
 
 # FRONTEND
 
 [tasks.ts-check]
 description = "Type-check frontend TypeScript"
-run = "cd src/ludamus/gates/web/django/theme/static_src && npm typecheck"
+run = "cd src/ludamus/client && npm typecheck"
 
 
 [tasks.npm]
-description = "Run npm in the frontend static_src directory"
+description = "Run npm in the frontend client directory"
 run = "npm"
-dir = "src/ludamus/gates/web/django/theme/static_src"
+dir = "src/ludamus/client"
 
 # OTHER
 

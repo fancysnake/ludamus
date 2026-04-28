@@ -1,0 +1,31 @@
+{
+  "name": "theme",
+  "version": "4.4.0",
+  "description": "",
+  "scripts": {
+    "start": "vite",
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write src"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@hasparus/tailwind": "^1.1.7",
+    "@tailwindcss/postcss": "^4.1.16",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/body-scroll-lock": "^3.1.2",
+    "postcss": "^8.5.6",
+    "postcss-nested": "^7.0.2",
+    "postcss-simple-vars": "^7.0.1",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4.1.16",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.10"
+  },
+  "dependencies": {
+    "body-scroll-lock": "^3.1.5"
+  }
+}

@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load static %}
+{% load django_vite %}
 {% load tessera %}
 {% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
@@ -15,8 +16,8 @@
               content="{{ current_sphere.name }} backoffice panel for event management">
         <meta name="keywords" content="ludamus, backoffice, events, management">
         <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
-        <link rel="stylesheet"
-              href="{% static 'css/output.css' %}?v={{ STATIC_VERSION }}">
+        {% vite_hmr_client %}
+        <link rel="stylesheet" href="{% vite_asset_url 'src/index.css' %}">
         <script src="{% static 'vendor/htmx.min.js' %}?v={{ STATIC_VERSION }}"></script>
         <style>
             .sidebar-overlay {

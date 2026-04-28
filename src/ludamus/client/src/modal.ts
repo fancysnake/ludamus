@@ -1,3 +1,9 @@
+import {
+  clearAllBodyScrollLocks,
+  disableBodyScroll,
+  enableBodyScroll,
+} from "body-scroll-lock";
+
 interface NavigateEvent {
   canIntercept: boolean;
   hashChange: boolean;
@@ -14,6 +20,33 @@ interface Navigation {
 
 /** ~16% lack Navigation API (Firefox on Android, IE11, older Safari). Click interception only in old browsers. */
 const navigation = (globalThis as { navigation?: Navigation }).navigation;
+
+const scrollLockTargets = new Map<HTMLDialogElement, HTMLElement>();
+
+const getScrollLockTarget = (dialog: HTMLDialogElement): HTMLElement =>
+  dialog.querySelector<HTMLElement>(".tab-content") ?? dialog;
+
+const syncPageScrollLock = (): void => {
+  const openDialogs = [
+    ...document.querySelectorAll<HTMLDialogElement>("dialog.modal[open]"),
+  ];
+  const openDialogSet = new Set(openDialogs);
+
+  for (const dialog of openDialogs) {
+    if (scrollLockTargets.has(dialog)) continue;
+
+    const target = getScrollLockTarget(dialog);
+    disableBodyScroll(target);
+    scrollLockTargets.set(dialog, target);
+  }
+
+  for (const [dialog, target] of scrollLockTargets) {
+    if (openDialogSet.has(dialog)) continue;
+
+    enableBodyScroll(target);
+    scrollLockTargets.delete(dialog);
+  }
+};
 
 const getDialog = (id: string): HTMLDialogElement => {
   const element = document.getElementById(id);
@@ -72,6 +105,7 @@ const openModal = (
   if (!dialog.open) {
     dialog.showModal();
   }
+  syncPageScrollLock();
 
   if (updateUrl) {
     const linkable = getLinkableByModalId(id);
@@ -91,6 +125,7 @@ const closeModal = (
   if (dialog.open) {
     dialog.close();
   }
+  syncPageScrollLock();
 
   if (updateUrl) {
     const linkable = getLinkableByModalId(id);
@@ -149,6 +184,13 @@ document.addEventListener(
   },
   true,
 );
+
+document.addEventListener("close", syncPageScrollLock, true);
+
+window.addEventListener("pagehide", () => {
+  clearAllBodyScrollLocks();
+  scrollLockTargets.clear();
+});
 
 if (navigation) {
   navigation.addEventListener("navigate", (e) => {

@@ -75,8 +75,7 @@ INSTALLED_APPS = [
     "django.contrib.flatpages",
     # Third Party
     "django_extensions",
-    "tailwind",
-    "ludamus.gates.web.django.theme",
+    "django_vite",
     "heroicons",
     # First Party
     "ludamus.adapters.web.django.apps.WebMainConfig",
@@ -389,5 +388,13 @@ VENDOR_DEPENDENCIES: list[dict[str, str]] = [
 
 VENDOR_STATIC_DIR = BASE_DIR / "static" / "vendor"
 
-# Tailwind CSS Configuration
-TAILWIND_APP_NAME = "ludamus.gates.web.django.theme"
+# Vite asset pipeline
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": ENV == "development" or ROOT_DOMAIN == "testserver",
+        "dev_server_host": "localhost",
+        "dev_server_port": 5173,
+        "static_url_prefix": "vite",
+        "manifest_path": BASE_DIR / "static" / "vite" / "manifest.json",
+    }
+}
