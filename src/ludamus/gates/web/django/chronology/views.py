@@ -727,6 +727,6 @@ class ProposeSessionSubmitActionView(ProposeWizardMixin, View):
             _("Session proposal '{}' submitted successfully!").format(result.title),
         )
         redirect_url = reverse("web:chronology:event", kwargs={"slug": event_slug})
-        if getattr(request, "is_htmx", False):
+        if request.is_htmx:
             return HtmxRedirect(redirect_url)
         return redirect(redirect_url)

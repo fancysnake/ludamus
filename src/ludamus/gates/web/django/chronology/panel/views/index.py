@@ -34,7 +34,7 @@ class PanelIndexRedirectView(PanelAccessMixin, View):
         return redirect("panel:event-index", slug=events[0].slug)
 
 
-class EventIndexPageView(PanelEventView, View):
+class EventIndexPageView(PanelEventView):
     """Dashboard/index page for a specific event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:

@@ -9,7 +9,6 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.utils.timezone import localtime
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelEventView,
@@ -35,7 +34,7 @@ def _flash_form_errors(request: PanelRequest, form: forms.Form) -> None:
         messages.error(request, str(field_errors[0]))
 
 
-class EventSettingsPageView(PanelEventView, View):
+class EventSettingsPageView(PanelEventView):
     """Event settings page view (general tab)."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -111,7 +110,7 @@ class EventSettingsPageView(PanelEventView, View):
         )
 
 
-class EventDisplaySettingsPageView(PanelEventView, View):
+class EventDisplaySettingsPageView(PanelEventView):
     """Display settings page — displayed session fields on cards."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -151,7 +150,7 @@ class EventDisplaySettingsPageView(PanelEventView, View):
         )
 
 
-class EventProposalSettingsPageView(PanelEventView, View):
+class EventProposalSettingsPageView(PanelEventView):
     """Proposal settings page — description, dates, apply-to-categories."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:

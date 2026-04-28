@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelEventView,
@@ -34,7 +33,7 @@ if TYPE_CHECKING:
     from ludamus.pacts import FacilitatorListItemDTO, PersonalDataFieldDTO
 
 
-class FacilitatorsPageView(PanelEventView, View):
+class FacilitatorsPageView(PanelEventView):
     """List facilitators for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -51,7 +50,7 @@ class FacilitatorsPageView(PanelEventView, View):
         )
 
 
-class FacilitatorDetailPageView(PanelFacilitatorView, View):
+class FacilitatorDetailPageView(PanelFacilitatorView):
     """View facilitator details and personal data."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -80,7 +79,7 @@ class FacilitatorDetailPageView(PanelFacilitatorView, View):
         )
 
 
-class FacilitatorCreatePageView(PanelEventView, View):
+class FacilitatorCreatePageView(PanelEventView):
     """Create a new facilitator for an event."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -124,7 +123,7 @@ class FacilitatorCreatePageView(PanelEventView, View):
         )
 
 
-class FacilitatorEditPageView(PanelFacilitatorView, View):
+class FacilitatorEditPageView(PanelFacilitatorView):
     """Edit an existing facilitator."""
 
     def _personal_fields(
@@ -187,7 +186,7 @@ class FacilitatorEditPageView(PanelFacilitatorView, View):
         )
 
 
-class FacilitatorMergePageView(PanelEventView, View):
+class FacilitatorMergePageView(PanelEventView):
     """Merge multiple facilitators into one."""
 
     MIN_REQUIRED = 2

@@ -207,9 +207,8 @@ class TestProposeSessionPageView:
 
         wizard = authenticated_client.session[f"propose_{event.slug}"]
         assert wizard["category_id"] == cat_b.pk
-        # ProposeSessionState always serialises every field; check defaults.
-        assert not wizard.get("session_data")
-        assert not wizard.get("contact_email")
+        assert "session_data" not in wizard
+        assert "contact_email" not in wizard
 
     def test_post_same_category_preserves_wizard_data(
         self, authenticated_client, event, faker, time_zone

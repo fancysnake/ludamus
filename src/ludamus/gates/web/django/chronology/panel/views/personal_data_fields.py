@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelEventView,
@@ -36,7 +35,7 @@ if TYPE_CHECKING:
     from django.http import HttpResponse
 
 
-class PersonalDataFieldsPageView(PanelEventView, View):
+class PersonalDataFieldsPageView(PanelEventView):
     """List personal data fields for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -57,7 +56,7 @@ class PersonalDataFieldsPageView(PanelEventView, View):
         )
 
 
-class PersonalDataFieldCreatePageView(PanelEventView, View):
+class PersonalDataFieldCreatePageView(PanelEventView):
     """Create a new personal data field for an event."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -99,7 +98,7 @@ class PersonalDataFieldCreatePageView(PanelEventView, View):
         )
 
 
-class PersonalDataFieldEditPageView(PanelPersonalDataFieldView, View):
+class PersonalDataFieldEditPageView(PanelPersonalDataFieldView):
     """Edit an existing personal data field."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -154,7 +153,7 @@ class PersonalDataFieldEditPageView(PanelPersonalDataFieldView, View):
         )
 
 
-class PersonalDataFieldDeleteActionView(PanelPersonalDataFieldView, View):
+class PersonalDataFieldDeleteActionView(PanelPersonalDataFieldView):
     """Delete a personal data field (POST only)."""
 
     http_method_names = ("post",)

@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelCFPCategoryView,
@@ -30,7 +29,7 @@ if TYPE_CHECKING:
     from django.http import HttpResponse
 
 
-class CFPPageView(PanelEventView, View):
+class CFPPageView(PanelEventView):
     """List call for proposals categories for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -52,7 +51,7 @@ class CFPPageView(PanelEventView, View):
         )
 
 
-class CFPCreatePageView(PanelEventView, View):
+class CFPCreatePageView(PanelEventView):
     """Create a new CFP category for an event."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -93,7 +92,7 @@ class CFPCreatePageView(PanelEventView, View):
         )
 
 
-class CFPEditPageView(PanelCFPCategoryView, View):
+class CFPEditPageView(PanelCFPCategoryView):
     """Edit an existing CFP category."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -215,7 +214,7 @@ class CFPEditPageView(PanelCFPCategoryView, View):
         }
 
 
-class CFPDeleteActionView(PanelCFPCategoryView, View):
+class CFPDeleteActionView(PanelCFPCategoryView):
     """Delete a CFP category (POST only)."""
 
     http_method_names = ("post",)

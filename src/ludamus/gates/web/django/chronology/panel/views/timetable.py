@@ -13,7 +13,6 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.timezone import get_current_timezone
-from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelEventView,
@@ -72,7 +71,7 @@ def _int_param(query: QueryDict, key: str) -> int | None:
     return int(raw) if raw.isdigit() else None
 
 
-class TimetablePageView(PanelEventView, View):
+class TimetablePageView(PanelEventView):
     """Static timetable grid for a specific event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -126,7 +125,7 @@ class TimetablePageView(PanelEventView, View):
         )
 
 
-class TimetableSessionListPartView(PanelEventView, View):
+class TimetableSessionListPartView(PanelEventView):
     """HTMX partial: unscheduled session list for the left pane."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -162,7 +161,7 @@ class TimetableSessionListPartView(PanelEventView, View):
         )
 
 
-class TimetableBrowsePanePartView(PanelEventView, View):
+class TimetableBrowsePanePartView(PanelEventView):
     """HTMX partial: full browse-mode left pane (search + initial session list)."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -185,7 +184,7 @@ class TimetableBrowsePanePartView(PanelEventView, View):
         )
 
 
-class TimetableSessionDetailPartView(PanelEventView, View):
+class TimetableSessionDetailPartView(PanelEventView):
     """HTMX partial: session detail in the left pane."""
 
     def get(self, request: PanelRequest, **kwargs: object) -> HttpResponse:
@@ -227,7 +226,7 @@ class TimetableSessionDetailPartView(PanelEventView, View):
         )
 
 
-class TimetableGridPartView(PanelEventView, View):
+class TimetableGridPartView(PanelEventView):
     """HTMX partial: timetable grid refresh."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -262,7 +261,7 @@ class TimetableGridPartView(PanelEventView, View):
         )
 
 
-class TimetableAssignView(PanelEventView, View):
+class TimetableAssignView(PanelEventView):
     """POST: assign a session to a space and time."""
 
     http_method_names = ("post",)
@@ -312,7 +311,7 @@ class TimetableAssignView(PanelEventView, View):
         return HttpResponse(status=204)
 
 
-class TimetableUnassignView(PanelEventView, View):
+class TimetableUnassignView(PanelEventView):
     """POST: remove a session from the timetable."""
 
     http_method_names = ("post",)
@@ -335,7 +334,7 @@ class TimetableUnassignView(PanelEventView, View):
         return HttpResponse(status=204)
 
 
-class TimetableOverviewPageView(PanelEventView, View):
+class TimetableOverviewPageView(PanelEventView):
     """Full page: sphere-manager overview — heatmap and track progress."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -357,7 +356,7 @@ class TimetableOverviewPageView(PanelEventView, View):
         )
 
 
-class TimetableProblemsPageView(PanelEventView, View):
+class TimetableProblemsPageView(PanelEventView):
     """Full page: consolidated triage of conflicts and preferred-slot violations."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -384,7 +383,7 @@ class TimetableProblemsPageView(PanelEventView, View):
         )
 
 
-class TimetableLogPageView(PanelEventView, View):
+class TimetableLogPageView(PanelEventView):
     """Full page: timetable assignment activity log with filters."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -407,7 +406,7 @@ class TimetableLogPageView(PanelEventView, View):
         )
 
 
-class TimetableRevertView(PanelEventView, View):
+class TimetableRevertView(PanelEventView):
     """POST: revert a logged timetable change."""
 
     http_method_names = ("post",)
@@ -428,7 +427,7 @@ class TimetableRevertView(PanelEventView, View):
         return redirect("panel:timetable-log", slug=self.event.slug)
 
 
-class TimetableConflictsPartView(PanelEventView, View):
+class TimetableConflictsPartView(PanelEventView):
     """HTMX partial: permanent conflict panel."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:

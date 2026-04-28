@@ -3,29 +3,31 @@
 from __future__ import annotations
 
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
+from ludamus.gates.web.django.entities import AuthenticatedRootRequest
 from ludamus.gates.web.django.glimpse_kit import (
+    JsonError,
     RequireAccess,
     ScopedView,
     ShortCircuitError,
 )
-from ludamus.gates.web.django.htmx import HtmxRequest
 from ludamus.gates.web.django.responses import ErrorWithMessageRedirect
 from ludamus.mills import PanelService, is_proposal_active
-from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
+from ludamus.pacts import NotFoundError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from django.http import HttpResponse
+
     from ludamus.pacts import (
         AreaDTO,
-        AuthenticatedRequestContext,
         EventDTO,
         FacilitatorDTO,
         PersonalDataFieldDTO,
@@ -39,16 +41,8 @@ if TYPE_CHECKING:
     )
 
 
-class PanelRequest(HtmxRequest):
-    """Request type for panel views with UoW, context, and HTMX attrs.
-
-    Extends ``HtmxRequest`` so ``request.is_htmx`` and
-    ``request.hx_triggers`` (set by ``HtmxMiddleware``) are typed
-    everywhere a panel view sees the request.
-    """
-
-    context: AuthenticatedRequestContext
-    di: DependencyInjectorProtocol
+class PanelRequest(AuthenticatedRootRequest):
+    """Request seen by panel views: authenticated context + DI + HTMX attrs."""
 
 
 class PanelAccessMixin(RequireAccess):
@@ -59,6 +53,7 @@ class PanelAccessMixin(RequireAccess):
     denied_message = gettext_lazy(
         "You don't have permission to access the backoffice panel."
     )
+    denied_response_class = ErrorWithMessageRedirect
 
     def has_access(self) -> bool:
         ctx = self.request.context
@@ -115,11 +110,12 @@ class PanelEventView(PanelAccessMixin, ScopedView):
                 self.request.context.current_sphere_id,
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request, _("Event not found."), "panel:index"
-                )
-            ) from exc
+            raise ShortCircuitError(self._event_not_found()) from exc
+
+    def _event_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request, _("Event not found."), "panel:index"
+        )
 
 
 class PanelTrackView(PanelEventView):
@@ -134,14 +130,12 @@ class PanelTrackView(PanelEventView):
                 self.event.pk, _str_kwarg(kwargs, "track_slug")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Track not found."),
-                    "panel:tracks",
-                    slug=self.event.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._track_not_found()) from exc
+
+    def _track_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request, _("Track not found."), "panel:tracks", slug=self.event.slug
+        )
 
 
 class PanelVenueView(PanelEventView):
@@ -156,14 +150,12 @@ class PanelVenueView(PanelEventView):
                 self.event.pk, _str_kwarg(kwargs, "venue_slug")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Venue not found."),
-                    "panel:venues",
-                    slug=self.event.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._venue_not_found()) from exc
+
+    def _venue_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request, _("Venue not found."), "panel:venues", slug=self.event.slug
+        )
 
 
 class PanelAreaView(PanelVenueView):
@@ -178,15 +170,16 @@ class PanelAreaView(PanelVenueView):
                 self.venue.pk, _str_kwarg(kwargs, "area_slug")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Area not found."),
-                    "panel:venue-detail",
-                    slug=self.event.slug,
-                    venue_slug=self.venue.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._area_not_found()) from exc
+
+    def _area_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request,
+            _("Area not found."),
+            "panel:venue-detail",
+            slug=self.event.slug,
+            venue_slug=self.venue.slug,
+        )
 
 
 class PanelSpaceView(PanelAreaView):
@@ -201,16 +194,17 @@ class PanelSpaceView(PanelAreaView):
                 self.area.pk, _str_kwarg(kwargs, "space_slug")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Space not found."),
-                    "panel:area-detail",
-                    slug=self.event.slug,
-                    venue_slug=self.venue.slug,
-                    area_slug=self.area.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._space_not_found()) from exc
+
+    def _space_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request,
+            _("Space not found."),
+            "panel:area-detail",
+            slug=self.event.slug,
+            venue_slug=self.venue.slug,
+            area_slug=self.area.slug,
+        )
 
 
 class PanelTimeSlotView(PanelEventView):
@@ -225,14 +219,15 @@ class PanelTimeSlotView(PanelEventView):
                 self.event.pk, _int_kwarg(kwargs, "pk")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Time slot not found."),
-                    "panel:time-slots",
-                    slug=self.event.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._time_slot_not_found()) from exc
+
+    def _time_slot_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request,
+            _("Time slot not found."),
+            "panel:time-slots",
+            slug=self.event.slug,
+        )
 
 
 class PanelPersonalDataFieldView(PanelEventView):
@@ -247,14 +242,15 @@ class PanelPersonalDataFieldView(PanelEventView):
                 self.event.pk, _str_kwarg(kwargs, "field_slug")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Personal data field not found."),
-                    "panel:personal-data-fields",
-                    slug=self.event.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._field_not_found()) from exc
+
+    def _field_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request,
+            _("Personal data field not found."),
+            "panel:personal-data-fields",
+            slug=self.event.slug,
+        )
 
 
 class PanelSessionFieldView(PanelEventView):
@@ -269,14 +265,15 @@ class PanelSessionFieldView(PanelEventView):
                 self.event.pk, _str_kwarg(kwargs, "field_slug")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Session field not found."),
-                    "panel:session-fields",
-                    slug=self.event.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._field_not_found()) from exc
+
+    def _field_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request,
+            _("Session field not found."),
+            "panel:session-fields",
+            slug=self.event.slug,
+        )
 
 
 class PanelCFPCategoryView(PanelEventView):
@@ -291,14 +288,15 @@ class PanelCFPCategoryView(PanelEventView):
                 self.event.pk, _str_kwarg(kwargs, "category_slug")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Session type not found."),
-                    "panel:cfp",
-                    slug=self.event.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._category_not_found()) from exc
+
+    def _category_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request,
+            _("Session type not found."),
+            "panel:cfp",
+            slug=self.event.slug,
+        )
 
 
 class PanelProposalView(PanelEventView):
@@ -313,13 +311,13 @@ class PanelProposalView(PanelEventView):
         try:
             self.proposal = uow.sessions.read(proposal_id)
         except NotFoundError as exc:
-            raise ShortCircuitError(self._not_found()) from exc
+            raise ShortCircuitError(self._proposal_not_found()) from exc
         # Cross-event access guard
         session_event = uow.sessions.read_event(proposal_id)
         if session_event.pk != self.event.pk:
-            raise ShortCircuitError(self._not_found())
+            raise ShortCircuitError(self._proposal_not_found())
 
-    def _not_found(self) -> ErrorWithMessageRedirect:
+    def _proposal_not_found(self) -> HttpResponse:
         return ErrorWithMessageRedirect(
             self.request,
             _("Proposal not found."),
@@ -340,14 +338,48 @@ class PanelFacilitatorView(PanelEventView):
                 self.event.pk, _str_kwarg(kwargs, "facilitator_slug")
             )
         except NotFoundError as exc:
-            raise ShortCircuitError(
-                ErrorWithMessageRedirect(
-                    self.request,
-                    _("Facilitator not found."),
-                    "panel:facilitators",
-                    slug=self.event.slug,
-                )
-            ) from exc
+            raise ShortCircuitError(self._facilitator_not_found()) from exc
+
+    def _facilitator_not_found(self) -> HttpResponse:
+        return ErrorWithMessageRedirect(
+            self.request,
+            _("Facilitator not found."),
+            "panel:facilitators",
+            slug=self.event.slug,
+        )
+
+
+# --- JSON variants for endpoints that must reply with JSON, not HTML ---------
+
+
+class JsonPanelEventView(PanelEventView):
+    """Panel pearl 1 with a JSON 404 body, for JSON endpoints.
+
+    Override ``not_found_event_message`` to customise the response label.
+    """
+
+    not_found_event_message: ClassVar[str] = "Event not found"
+
+    def _event_not_found(self) -> HttpResponse:
+        return JsonError(self.not_found_event_message, status=404)
+
+
+class JsonPanelVenueView(JsonPanelEventView, PanelVenueView):
+    """Panel pearl 2 (venue) with JSON 404 bodies, for JSON endpoints."""
+
+    not_found_venue_message: ClassVar[str] = "Venue not found"
+
+    def _venue_not_found(self) -> HttpResponse:
+        return JsonError(self.not_found_venue_message, status=404)
+
+
+class JsonPanelAreaView(JsonPanelVenueView, PanelAreaView):
+    """Panel pearl 3 (area) with JSON 404 bodies, for JSON endpoints."""
+
+    not_found_area_message: ClassVar[str] = "Area not found"
+
+    def _area_not_found(self) -> HttpResponse:
+        return JsonError(self.not_found_area_message, status=404)
 
 
 # --- shared chrome and helpers -----------------------------------------------

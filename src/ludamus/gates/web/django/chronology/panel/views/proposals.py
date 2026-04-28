@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelEventView,
@@ -28,7 +27,7 @@ if TYPE_CHECKING:
     from ludamus.pacts import FacilitatorListItemDTO, SessionFieldDTO
 
 
-class ProposalsPageView(PanelEventView, View):
+class ProposalsPageView(PanelEventView):
     """List submitted proposals for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -69,7 +68,7 @@ class ProposalsPageView(PanelEventView, View):
         )
 
 
-class ProposalDetailPageView(PanelProposalView, View):
+class ProposalDetailPageView(PanelProposalView):
     """View proposal details."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -96,7 +95,7 @@ class ProposalDetailPageView(PanelProposalView, View):
         )
 
 
-class ProposalEditPageView(PanelProposalView, View):
+class ProposalEditPageView(PanelProposalView):
     """Edit session fields for a proposal."""
 
     def _facilitator_choices(self) -> tuple[list[FacilitatorListItemDTO], set[int]]:
@@ -203,7 +202,7 @@ class ProposalEditPageView(PanelProposalView, View):
         )
 
 
-class ProposalCreatePageView(PanelEventView, View):
+class ProposalCreatePageView(PanelEventView):
     """Create a new session from the organizer panel."""
 
     def _get_form(self, data: QueryDict | None = None) -> forms.Form:
@@ -268,7 +267,7 @@ class ProposalCreatePageView(PanelEventView, View):
         )
 
 
-class ProposalRejectActionView(PanelProposalView, View):
+class ProposalRejectActionView(PanelProposalView):
     """Reject a proposal (POST only)."""
 
     http_method_names = ("post",)
@@ -282,7 +281,7 @@ class ProposalRejectActionView(PanelProposalView, View):
         )
 
 
-class ProposalSetFacilitatorsActionView(PanelProposalView, View):
+class ProposalSetFacilitatorsActionView(PanelProposalView):
     """Set facilitators on a session (POST only)."""
 
     http_method_names = ("post",)

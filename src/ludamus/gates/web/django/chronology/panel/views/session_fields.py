@@ -37,7 +37,7 @@ from ludamus.mills import PanelService
 from ludamus.pacts import DEFAULT_FIELD_MAX_LENGTH
 
 
-class SessionFieldsPageView(PanelEventView, View):
+class SessionFieldsPageView(PanelEventView):
     """List session fields for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -56,7 +56,7 @@ class SessionFieldsPageView(PanelEventView, View):
         )
 
 
-class SessionFieldCreatePageView(PanelEventView, View):
+class SessionFieldCreatePageView(PanelEventView):
     """Create a new session field for an event."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -100,7 +100,7 @@ class SessionFieldCreatePageView(PanelEventView, View):
         )
 
 
-class SessionFieldEditPageView(PanelSessionFieldView, View):
+class SessionFieldEditPageView(PanelSessionFieldView):
     """Edit an existing session field."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -155,7 +155,7 @@ class SessionFieldEditPageView(PanelSessionFieldView, View):
         )
 
 
-class SessionFieldDeleteActionView(PanelSessionFieldView, View):
+class SessionFieldDeleteActionView(PanelSessionFieldView):
     """Delete a session field (POST only)."""
 
     http_method_names = ("post",)

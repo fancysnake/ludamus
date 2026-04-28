@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 from pydantic import BaseModel, Field
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
@@ -43,7 +42,7 @@ def _track_form_input(request: PanelRequest, form: TrackForm) -> TrackInput:
     )
 
 
-class TracksPageView(PanelEventView, View):
+class TracksPageView(PanelEventView):
     """List tracks for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -58,7 +57,7 @@ class TracksPageView(PanelEventView, View):
         )
 
 
-class TrackCreatePageView(PanelEventView, View):
+class TrackCreatePageView(PanelEventView):
     """Create a new track for an event."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -108,7 +107,7 @@ class TrackCreatePageView(PanelEventView, View):
         )
 
 
-class TrackEditPageView(PanelTrackView, View):
+class TrackEditPageView(PanelTrackView):
     """Edit an existing track."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -165,7 +164,7 @@ class TrackEditPageView(PanelTrackView, View):
         )
 
 
-class TrackDeleteActionView(PanelTrackView, View):
+class TrackDeleteActionView(PanelTrackView):
     """Delete a track (POST only)."""
 
     http_method_names = ("post",)

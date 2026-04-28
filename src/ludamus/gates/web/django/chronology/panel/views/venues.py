@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, Any
 
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 from pydantic import BaseModel
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
-    PanelAccessMixin,
+    JsonPanelAreaView,
+    JsonPanelEventView,
+    JsonPanelVenueView,
     PanelAreaView,
     PanelEventView,
     PanelRequest,
@@ -27,19 +28,13 @@ from ludamus.gates.web.django.forms import (
     VenueForm,
     create_venue_copy_form,
 )
-from ludamus.gates.web.django.glimpse_kit import (
-    JsonError,
-    JsonOk,
-    ScopedView,
-    json_action,
-)
+from ludamus.gates.web.django.glimpse_kit import JsonOk, json_action
 from ludamus.gates.web.django.responses import (
     ErrorWithMessageRedirect,
     SuccessWithMessageRedirect,
     WarningWithMessageRedirect,
 )
 from ludamus.mills import PanelService
-from ludamus.pacts import NotFoundError
 
 if TYPE_CHECKING:
     from django import forms
@@ -61,18 +56,28 @@ def suggest_copy_name(name: str) -> str:
     return f"{name} (Copy)"
 
 
-class _ReorderInput(BaseModel):
-    """JSON body for the reorder endpoints."""
+class _VenueReorderInput(BaseModel):
+    """JSON body: ordered list of venue PKs for the venue reorder endpoint."""
 
-    venue_ids: list[int] | None = None
-    area_ids: list[int] | None = None
-    space_ids: list[int] | None = None
+    venue_ids: list[int]
+
+
+class _AreaReorderInput(BaseModel):
+    """JSON body: ordered list of area PKs for the area reorder endpoint."""
+
+    area_ids: list[int]
+
+
+class _SpaceReorderInput(BaseModel):
+    """JSON body: ordered list of space PKs for the space reorder endpoint."""
+
+    space_ids: list[int]
 
 
 # --- Venue views -------------------------------------------------------------
 
 
-class VenuesPageView(PanelEventView, View):
+class VenuesPageView(PanelEventView):
     """List venues for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -87,7 +92,7 @@ class VenuesPageView(PanelEventView, View):
         )
 
 
-class VenuesStructurePageView(PanelEventView, View):
+class VenuesStructurePageView(PanelEventView):
     """Display hierarchical structure overview of all venues, areas, and spaces."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -138,7 +143,7 @@ class VenuesStructurePageView(PanelEventView, View):
         ]
 
 
-class VenueCreatePageView(PanelEventView, View):
+class VenueCreatePageView(PanelEventView):
     """Create a new venue for an event."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -173,7 +178,7 @@ class VenueCreatePageView(PanelEventView, View):
         )
 
 
-class VenueEditPageView(PanelVenueView, View):
+class VenueEditPageView(PanelVenueView):
     """Edit an existing venue."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -211,7 +216,7 @@ class VenueEditPageView(PanelVenueView, View):
         )
 
 
-class VenueDetailPageView(PanelVenueView, View):
+class VenueDetailPageView(PanelVenueView):
     """View venue details and list of areas."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -228,7 +233,7 @@ class VenueDetailPageView(PanelVenueView, View):
         )
 
 
-class VenueDeleteActionView(PanelVenueView, View):
+class VenueDeleteActionView(PanelVenueView):
     """Delete a venue (POST only)."""
 
     http_method_names = ("post",)
@@ -250,32 +255,18 @@ class VenueDeleteActionView(PanelVenueView, View):
         )
 
 
-class VenueReorderActionView(PanelAccessMixin, ScopedView):
-    """Reorder venues (POST only, JSON).
+class VenueReorderActionView(JsonPanelEventView):
+    """Reorder venues (POST only, JSON)."""
 
-    Bypasses ``PanelEventView`` because the JSON contract requires JSON
-    error responses (not HTML redirects) on missing/invalid input.
-    """
-
-    request: PanelRequest
     http_method_names = ("post",)
 
-    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        uow = self.request.di.uow
-        try:
-            event = uow.events.read_by_slug(
-                slug, self.request.context.current_sphere_id
-            )
-        except NotFoundError:
-            return JsonError("Event not found", status=404)
-        with json_action(self.request, _ReorderInput) as payload:
-            if payload.venue_ids is None:
-                return JsonError("Missing venue_ids")
-            uow.venues.reorder(event.pk, payload.venue_ids)
+    def post(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        with json_action(self.request, _VenueReorderInput) as payload:
+            self.request.di.uow.venues.reorder(self.event.pk, payload.venue_ids)
             return JsonOk()
 
 
-class VenueDuplicatePageView(PanelVenueView, View):
+class VenueDuplicatePageView(PanelVenueView):
     """Duplicate a venue within the same event."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -312,7 +303,7 @@ class VenueDuplicatePageView(PanelVenueView, View):
         )
 
 
-class VenueCopyPageView(PanelVenueView, View):
+class VenueCopyPageView(PanelVenueView):
     """Copy a venue to another event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -361,7 +352,7 @@ class VenueCopyPageView(PanelVenueView, View):
 # --- Area views --------------------------------------------------------------
 
 
-class AreaCreatePageView(PanelVenueView, View):
+class AreaCreatePageView(PanelVenueView):
     """Create a new area within a venue."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -398,7 +389,7 @@ class AreaCreatePageView(PanelVenueView, View):
         )
 
 
-class AreaEditPageView(PanelAreaView, View):
+class AreaEditPageView(PanelAreaView):
     """Edit an existing area."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -440,7 +431,7 @@ class AreaEditPageView(PanelAreaView, View):
         )
 
 
-class AreaDeleteActionView(PanelAreaView, View):
+class AreaDeleteActionView(PanelAreaView):
     """Delete an area (POST only)."""
 
     http_method_names = ("post",)
@@ -464,34 +455,18 @@ class AreaDeleteActionView(PanelAreaView, View):
         )
 
 
-class AreaReorderActionView(PanelAccessMixin, ScopedView):
+class AreaReorderActionView(JsonPanelVenueView):
     """Reorder areas within a venue (POST only, JSON)."""
 
-    request: PanelRequest
     http_method_names = ("post",)
 
-    def post(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        uow = self.request.di.uow
-        try:
-            event = uow.events.read_by_slug(
-                slug, self.request.context.current_sphere_id
-            )
-        except NotFoundError:
-            return ErrorWithMessageRedirect(
-                self.request, _("Event not found."), "panel:index"
-            )
-        try:
-            venue = uow.venues.read_by_slug(event.pk, venue_slug)
-        except NotFoundError:
-            return JsonError("Venue not found", status=404)
-        with json_action(self.request, _ReorderInput) as payload:
-            if payload.area_ids is None:
-                return JsonError("Missing area_ids")
-            uow.areas.reorder(venue.pk, payload.area_ids)
+    def post(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        with json_action(self.request, _AreaReorderInput) as payload:
+            self.request.di.uow.areas.reorder(self.venue.pk, payload.area_ids)
             return JsonOk()
 
 
-class AreaDetailPageView(PanelAreaView, View):
+class AreaDetailPageView(PanelAreaView):
     """View area details and list of spaces."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -512,7 +487,7 @@ class AreaDetailPageView(PanelAreaView, View):
 # --- Space views -------------------------------------------------------------
 
 
-class SpaceCreatePageView(PanelAreaView, View):
+class SpaceCreatePageView(PanelAreaView):
     """Create a new space within an area."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -549,7 +524,7 @@ class SpaceCreatePageView(PanelAreaView, View):
         )
 
 
-class SpaceEditPageView(PanelSpaceView, View):
+class SpaceEditPageView(PanelSpaceView):
     """Edit an existing space."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -591,7 +566,7 @@ class SpaceEditPageView(PanelSpaceView, View):
         )
 
 
-class SpaceDeleteActionView(PanelSpaceView, View):
+class SpaceDeleteActionView(PanelSpaceView):
     """Delete a space (POST only)."""
 
     http_method_names = ("post",)
@@ -617,34 +592,12 @@ class SpaceDeleteActionView(PanelSpaceView, View):
         )
 
 
-class SpaceReorderActionView(PanelAccessMixin, ScopedView):
+class SpaceReorderActionView(JsonPanelAreaView):
     """Reorder spaces within an area (POST only, JSON)."""
 
-    request: PanelRequest
     http_method_names = ("post",)
 
-    def post(
-        self, _request: PanelRequest, slug: str, venue_slug: str, area_slug: str
-    ) -> HttpResponse:
-        uow = self.request.di.uow
-        try:
-            event = uow.events.read_by_slug(
-                slug, self.request.context.current_sphere_id
-            )
-        except NotFoundError:
-            return ErrorWithMessageRedirect(
-                self.request, _("Event not found."), "panel:index"
-            )
-        try:
-            venue = uow.venues.read_by_slug(event.pk, venue_slug)
-        except NotFoundError:
-            return JsonError("Venue not found", status=404)
-        try:
-            area = uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            return JsonError("Area not found", status=404)
-        with json_action(self.request, _ReorderInput) as payload:
-            if payload.space_ids is None:
-                return JsonError("Missing space_ids")
-            uow.spaces.reorder(area.pk, payload.space_ids)
+    def post(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        with json_action(self.request, _SpaceReorderInput) as payload:
+            self.request.di.uow.spaces.reorder(self.area.pk, payload.space_ids)
             return JsonOk()

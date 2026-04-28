@@ -31,7 +31,7 @@ class SessionState[S: BaseModel]:
         return self._schema.model_validate(raw)
 
     def write(self, session: SessionBase, state: S) -> None:
-        session[self._key] = state.model_dump(mode="json")
+        session[self._key] = state.model_dump(mode="json", exclude_unset=True)
         session.modified = True
 
     def clear(self, session: SessionBase) -> None:

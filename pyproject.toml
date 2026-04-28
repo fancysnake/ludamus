@@ -91,7 +91,11 @@ sigterm = true
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "# pragma: no cover",
+    "raise NotImplementedError",
+]
 precision = 2
 
 # DJLINT

@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from django.template.response import TemplateResponse
 from django.utils.timezone import get_current_timezone, localtime
 from django.utils.translation import gettext as _
-from django.views.generic.base import View
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelEventView,
@@ -56,7 +55,7 @@ def _form_to_datetimes(form: TimeSlotForm) -> tuple[datetime, datetime]:
     return start_time, end_time
 
 
-class TimeSlotsPageView(PanelEventView, View):
+class TimeSlotsPageView(PanelEventView):
     """List time slots for an event, grouped by date."""
 
     DAYS_PER_PAGE = 3
@@ -119,7 +118,7 @@ class TimeSlotsPageView(PanelEventView, View):
         )
 
 
-class TimeSlotCreatePageView(PanelEventView, View):
+class TimeSlotCreatePageView(PanelEventView):
     """Create a new time slot for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -164,7 +163,7 @@ class TimeSlotCreatePageView(PanelEventView, View):
         )
 
 
-class TimeSlotEditPageView(PanelTimeSlotView, View):
+class TimeSlotEditPageView(PanelTimeSlotView):
     """Edit an existing time slot."""
 
     def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
@@ -216,7 +215,7 @@ class TimeSlotEditPageView(PanelTimeSlotView, View):
         )
 
 
-class TimeSlotDeleteActionView(PanelTimeSlotView, View):
+class TimeSlotDeleteActionView(PanelTimeSlotView):
     """Delete a time slot (POST only)."""
 
     http_method_names = ("post",)
