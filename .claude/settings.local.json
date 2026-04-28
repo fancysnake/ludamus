@@ -19,7 +19,9 @@
       "mcp__playwright__browser_wait_for",
       "mcp__playwright__browser_network_requests",
       "Bash(mise exec:*)",
-      "Bash(mise tasks:*)"
+      "Bash(mise tasks:*)",
+      "Bash(awk -F',' '{print $19}')",
+      "Bash(grep -v '^$')"
     ],
     "deny": [
       "Edit(./tests/integration/utils.py)"
