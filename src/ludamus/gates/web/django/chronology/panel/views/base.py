@@ -306,20 +306,22 @@ class PanelProposalView(PanelEventView):
         super().bind(**kwargs)
         proposal_id = _int_kwarg(kwargs, "proposal_id")
         uow = self.request.di.uow
-        not_found = ErrorWithMessageRedirect(
+        try:
+            self.proposal = uow.sessions.read(proposal_id)
+        except NotFoundError as exc:
+            raise ShortCircuitError(self._not_found()) from exc
+        # Cross-event access guard
+        session_event = uow.sessions.read_event(proposal_id)
+        if session_event.pk != self.event.pk:
+            raise ShortCircuitError(self._not_found())
+
+    def _not_found(self) -> ErrorWithMessageRedirect:
+        return ErrorWithMessageRedirect(
             self.request,
             _("Proposal not found."),
             "panel:proposals",
             slug=self.event.slug,
         )
-        try:
-            self.proposal = uow.sessions.read(proposal_id)
-        except NotFoundError as exc:
-            raise ShortCircuitError(not_found) from exc
-        # Cross-event access guard
-        session_event = uow.sessions.read_event(proposal_id)
-        if session_event.pk != self.event.pk:
-            raise ShortCircuitError(not_found)
 
 
 class PanelFacilitatorView(PanelEventView):

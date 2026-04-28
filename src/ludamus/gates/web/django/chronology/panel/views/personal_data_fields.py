@@ -12,14 +12,15 @@ from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelEventView,
     PanelPersonalDataFieldView,
     PanelRequest,
-    cfp_tab_urls,
-    panel_chrome,
 )
 from ludamus.gates.web.django.chronology.panel.views.fields import (
     category_requirements_context,
+    field_create_context,
     field_edit_context,
     field_initial,
+    field_list_context,
     parse_field_form_data,
+    parse_field_post_options,
     parse_field_requirements,
     personal_data_field_update_payload,
 )
@@ -29,7 +30,7 @@ from ludamus.gates.web.django.responses import (
     SuccessWithMessageRedirect,
 )
 from ludamus.mills import PanelService
-from ludamus.pacts import DEFAULT_FIELD_MAX_LENGTH, FieldUsageSummary
+from ludamus.pacts import DEFAULT_FIELD_MAX_LENGTH
 
 if TYPE_CHECKING:
     from django.http import HttpResponse
@@ -39,27 +40,20 @@ class PersonalDataFieldsPageView(PanelEventView, View):
     """List personal data fields for an event."""
 
     def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
-        fields = request.di.uow.personal_data_fields.list_by_event(self.event.pk)
-        usage_counts = request.di.uow.personal_data_fields.get_usage_counts(
-            self.event.pk
-        )
         return TemplateResponse(
             request,
             "panel/personal-data-fields.html",
-            {
-                **panel_chrome(request, self.event),
-                "active_nav": "cfp",
-                "active_tab": "host",
-                "tab_urls": cfp_tab_urls(self.event.slug),
-                "fields": [
-                    FieldUsageSummary(
-                        field=f,
-                        required_count=usage_counts.get(f.pk, {}).get("required", 0),
-                        optional_count=usage_counts.get(f.pk, {}).get("optional", 0),
-                    )
-                    for f in fields
-                ],
-            },
+            field_list_context(
+                request,
+                self.event,
+                active_tab="host",
+                fields=list(
+                    request.di.uow.personal_data_fields.list_by_event(self.event.pk)
+                ),
+                usage_counts=request.di.uow.personal_data_fields.get_usage_counts(
+                    self.event.pk
+                ),
+            ),
         )
 
 
@@ -98,19 +92,10 @@ class PersonalDataFieldCreatePageView(PanelEventView, View):
     def _render(
         self, form: PersonalDataFieldForm, category_pks: dict[str, set[int]]
     ) -> HttpResponse:
-        # Create page has no `field` to surface, so don't reuse field_edit_context.
         return TemplateResponse(
             self.request,
             "panel/personal-data-field-create.html",
-            {
-                **panel_chrome(self.request, self.event),
-                "active_nav": "cfp",
-                "form": form,
-                "categories": self.request.di.uow.proposal_categories.list_by_event(
-                    self.event.pk
-                ),
-                **category_pks,
-            },
+            field_create_context(self.request, self.event, form, category_pks),
         )
 
 
@@ -141,13 +126,7 @@ class PersonalDataFieldEditPageView(PanelPersonalDataFieldView, View):
         if not form.is_valid():
             return self._render(form, category_requirements_context(request.POST))
 
-        options_text = form.cleaned_data.get("options") or ""
-        options: list[str] | None = None
-        if self.field.field_type == "select":
-            options = [o.strip() for o in options_text.split("\n") if o.strip()] or []
-        cat_reqs, _order = parse_field_requirements(
-            request.POST, "category_", "category_order"
-        )
+        options, cat_reqs = parse_field_post_options(request.POST, form, self.field)
         with request.di.uow.atomic():
             request.di.uow.personal_data_fields.update(
                 self.field.pk, personal_data_field_update_payload(form, options)
