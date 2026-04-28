@@ -10,6 +10,9 @@ from django.shortcuts import redirect
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponseRedirect
+    from django.utils.functional import _StrPromise
+
+    type _LazyStr = str | _StrPromise
 
 
 class RequireAccess(LoginRequiredMixin, UserPassesTestMixin):
@@ -18,11 +21,14 @@ class RequireAccess(LoginRequiredMixin, UserPassesTestMixin):
     Subclasses override `has_access()` and set `denied_redirect_url`.
     On denial: anonymous → standard login redirect; authenticated → optional
     flash + redirect to `denied_redirect_url`.
+
+    ``denied_message`` accepts either a plain string or a lazy string (from
+    ``gettext_lazy``); class-level translations should always be lazy.
     """
 
     request: HttpRequest
     denied_redirect_url: ClassVar[str]
-    denied_message: ClassVar[str] = ""
+    denied_message: ClassVar[_LazyStr] = ""
 
     def has_access(self) -> bool:
         raise NotImplementedError
