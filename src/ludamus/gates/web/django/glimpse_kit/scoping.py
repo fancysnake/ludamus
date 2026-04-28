@@ -38,9 +38,9 @@ class ScopedView(View):
     ) -> HttpResponseBase:
         try:
             self.bind(**kwargs)
+            return super().dispatch(request, *args, **kwargs)
         except ShortCircuitError as exc:
             return exc.response
-        return super().dispatch(request, *args, **kwargs)
 
     def bind(self, **kwargs: object) -> None:
         """Override to resolve URL-named resources.

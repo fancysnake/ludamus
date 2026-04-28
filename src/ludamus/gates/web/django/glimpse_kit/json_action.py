@@ -24,10 +24,10 @@ class JsonOk(JsonResponse):
 
 
 class JsonError(JsonResponse):
-    """JSON error: ``{"success": False, "error": message}`` with the given status."""
+    """JSON error: ``{"error": message}`` with the given status."""
 
     def __init__(self, message: str, *, status: int = 400) -> None:
-        super().__init__({"success": False, "error": message}, status=status)
+        super().__init__({"error": message}, status=status)
 
 
 @contextmanager
@@ -44,4 +44,4 @@ def json_action[T: BaseModel](request: HttpRequest, schema: type[T]) -> Iterator
     try:
         yield schema.model_validate_json(request.body)
     except ValidationError as exc:
-        raise ShortCircuitError(JsonError(str(exc))) from exc
+        raise ShortCircuitError(JsonError("Invalid JSON")) from exc

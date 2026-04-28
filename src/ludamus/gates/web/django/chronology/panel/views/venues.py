@@ -1,25 +1,24 @@
-# pylint: disable=duplicate-code
-# TODO(fancysnake): Extract common view boilerplate
 """Venue, area, and space views (configuration of physical layout)."""
 
 from __future__ import annotations
 
-import json
 import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
-from django.contrib import messages
-from django.http import JsonResponse
-from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
+from pydantic import BaseModel
 
 from ludamus.gates.web.django.chronology.panel.views.base import (
-    EventContextMixin,
     PanelAccessMixin,
+    PanelAreaView,
+    PanelEventView,
     PanelRequest,
+    PanelSpaceView,
+    PanelVenueView,
+    panel_chrome,
 )
 from ludamus.gates.web.django.forms import (
     AreaForm,
@@ -28,10 +27,22 @@ from ludamus.gates.web.django.forms import (
     VenueForm,
     create_venue_copy_form,
 )
+from ludamus.gates.web.django.glimpse_kit import (
+    JsonError,
+    JsonOk,
+    ScopedView,
+    json_action,
+)
+from ludamus.gates.web.django.responses import (
+    ErrorWithMessageRedirect,
+    SuccessWithMessageRedirect,
+    WarningWithMessageRedirect,
+)
 from ludamus.mills import PanelService
 from ludamus.pacts import NotFoundError
 
 if TYPE_CHECKING:
+    from django import forms
     from django.http import HttpResponse
 
 
@@ -39,9 +50,6 @@ def suggest_copy_name(name: str) -> str:
     """Generate suggested name for venue copy.
 
     Handles existing "(Copy)" or "(Copy N)" suffixes intelligently.
-
-    Args:
-        name: The original venue name.
 
     Returns:
         Suggested name for the copy.
@@ -53,964 +61,563 @@ def suggest_copy_name(name: str) -> str:
     return f"{name} (Copy)"
 
 
-class VenuesPageView(PanelAccessMixin, EventContextMixin, View):
+class _ReorderInput(BaseModel):
+    """JSON body for the reorder endpoints."""
+
+    venue_ids: list[int] | None = None
+    area_ids: list[int] | None = None
+    space_ids: list[int] | None = None
+
+
+# --- Venue views -------------------------------------------------------------
+
+
+class VenuesPageView(PanelEventView, View):
     """List venues for an event."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display venues list.
-
-        Returns:
-            TemplateResponse with the venues list or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        context["active_nav"] = "venues"
-        context["venues"] = self.request.di.uow.venues.list_by_event(current_event.pk)
-        return TemplateResponse(self.request, "panel/venues.html", context)
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return TemplateResponse(
+            request,
+            "panel/venues.html",
+            {
+                **panel_chrome(request, self.event),
+                "active_nav": "venues",
+                "venues": request.di.uow.venues.list_by_event(self.event.pk),
+            },
+        )
 
 
-class VenuesStructurePageView(PanelAccessMixin, EventContextMixin, View):
+class VenuesStructurePageView(PanelEventView, View):
     """Display hierarchical structure overview of all venues, areas, and spaces."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display hierarchical structure of venues, areas, and spaces.
-
-        Returns:
-            TemplateResponse with the structure overview or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        venue_structure = self._build_venue_structure(current_event.pk)
-
-        context["active_nav"] = "venues"
-        context["venue_structure"] = venue_structure
-        context["total_venues"] = len(venue_structure)
-        context["total_areas"] = sum(len(v["areas"]) for v in venue_structure)
-        context["total_spaces"] = sum(
-            sum(len(a["spaces"]) for a in v["areas"]) for v in venue_structure
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        venue_structure = self._build_venue_structure(request, self.event.pk)
+        return TemplateResponse(
+            request,
+            "panel/venues-structure.html",
+            {
+                **panel_chrome(request, self.event),
+                "active_nav": "venues",
+                "venue_structure": venue_structure,
+                "total_venues": len(venue_structure),
+                "total_areas": sum(len(v["areas"]) for v in venue_structure),
+                "total_spaces": sum(
+                    sum(len(a["spaces"]) for a in v["areas"]) for v in venue_structure
+                ),
+            },
         )
-        return TemplateResponse(self.request, "panel/venues-structure.html", context)
 
-    def _build_venue_structure(self, event_pk: int) -> list[dict[str, Any]]:
+    @staticmethod
+    def _build_venue_structure(
+        request: PanelRequest, event_pk: int
+    ) -> list[dict[str, Any]]:
         """Build hierarchical structure of venues, areas, and spaces.
-
-        Args:
-            event_pk: Event primary key.
 
         Returns:
             List of venue dicts with nested areas and spaces.
         """
-        venues = self.request.di.uow.venues.list_by_event(event_pk)
-
-        # Prefetch all areas for all venues
+        venues = request.di.uow.venues.list_by_event(event_pk)
         all_areas: dict[int, list[Any]] = defaultdict(list)
         for venue in venues:
-            for area in self.request.di.uow.areas.list_by_venue(venue.pk):
+            for area in request.di.uow.areas.list_by_venue(venue.pk):
                 all_areas[venue.pk].append(area)
-
-        # Prefetch all spaces for all areas
         all_spaces: dict[int, list[Any]] = defaultdict(list)
         for areas in all_areas.values():
             for area in areas:
-                for space in self.request.di.uow.spaces.list_by_area(area.pk):
+                for space in request.di.uow.spaces.list_by_area(area.pk):
                     all_spaces[area.pk].append(space)
-
-        # Build structure using prefetched data
-        structure = []
-        for venue in venues:
-            venue_data: dict[str, Any] = {"venue": venue, "areas": []}
-            for area in all_areas[venue.pk]:
-                venue_data["areas"].append(
+        return [
+            {
+                "venue": venue,
+                "areas": [
                     {"area": area, "spaces": all_spaces[area.pk]}
-                )
-            structure.append(venue_data)
+                    for area in all_areas[venue.pk]
+                ],
+            }
+            for venue in venues
+        ]
 
-        return structure
 
-
-class VenueCreatePageView(PanelAccessMixin, EventContextMixin, View):
+class VenueCreatePageView(PanelEventView, View):
     """Create a new venue for an event."""
 
-    request: PanelRequest
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(VenueForm())
 
-    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Display the venue creation form.
-
-        Returns:
-            TemplateResponse with the form or redirect if event not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        context["active_nav"] = "venues"
-        context["form"] = VenueForm()
-        return TemplateResponse(self.request, "panel/venue-create.html", context)
-
-    def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Handle venue creation.
-
-        Returns:
-            Redirect response to venues list on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        form = VenueForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = VenueForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "venues"
-            context["form"] = form
-            return TemplateResponse(self.request, "panel/venue-create.html", context)
+            return self._render(form)
 
-        name = form.cleaned_data["name"]
-        address = form.cleaned_data.get("address") or ""
-        self.request.di.uow.venues.create(current_event.pk, name, address)
+        request.di.uow.venues.create(
+            self.event.pk,
+            form.cleaned_data["name"],
+            form.cleaned_data.get("address") or "",
+        )
+        return SuccessWithMessageRedirect(
+            request,
+            _("Venue created successfully."),
+            "panel:venues",
+            slug=self.event.slug,
+        )
 
-        messages.success(self.request, _("Venue created successfully."))
-        return redirect("panel:venues", slug=slug)
+    def _render(self, form: VenueForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/venue-create.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "venues",
+                "form": form,
+            },
+        )
 
 
-class VenueEditPageView(PanelAccessMixin, EventContextMixin, View):
+class VenueEditPageView(PanelVenueView, View):
     """Edit an existing venue."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Display the venue edit form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["form"] = VenueForm(
-            initial={"name": venue.name, "address": venue.address}
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(
+            VenueForm(initial={"name": self.venue.name, "address": self.venue.address})
         )
-        return TemplateResponse(self.request, "panel/venue-edit.html", context)
 
-    def post(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Handle venue update.
-
-        Returns:
-            Redirect response to venues list on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        form = VenueForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = VenueForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "venues"
-            context["venue"] = venue
-            context["form"] = form
-            return TemplateResponse(self.request, "panel/venue-edit.html", context)
+            return self._render(form)
 
-        name = form.cleaned_data["name"]
-        address = form.cleaned_data.get("address") or ""
-        self.request.di.uow.venues.update(venue.pk, name, address)
+        request.di.uow.venues.update(
+            self.venue.pk,
+            form.cleaned_data["name"],
+            form.cleaned_data.get("address") or "",
+        )
+        return SuccessWithMessageRedirect(
+            request,
+            _("Venue updated successfully."),
+            "panel:venues",
+            slug=self.event.slug,
+        )
 
-        messages.success(self.request, _("Venue updated successfully."))
-        return redirect("panel:venues", slug=slug)
+    def _render(self, form: VenueForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/venue-edit.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "venues",
+                "venue": self.venue,
+                "form": form,
+            },
+        )
 
 
-class VenueDetailPageView(PanelAccessMixin, EventContextMixin, View):
+class VenueDetailPageView(PanelVenueView, View):
     """View venue details and list of areas."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Display venue details and areas list.
-
-        Returns:
-            TemplateResponse with venue and areas or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        areas = self.request.di.uow.areas.list_by_venue(venue.pk)
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["areas"] = areas
-        return TemplateResponse(self.request, "panel/venue-detail.html", context)
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        areas = request.di.uow.areas.list_by_venue(self.venue.pk)
+        return TemplateResponse(
+            request,
+            "panel/venue-detail.html",
+            {
+                **panel_chrome(request, self.event),
+                "active_nav": "venues",
+                "venue": self.venue,
+                "areas": areas,
+            },
+        )
 
 
-class VenueDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+class VenueDeleteActionView(PanelVenueView, View):
     """Delete a venue (POST only)."""
 
-    request: PanelRequest
     http_method_names = ("post",)
 
-    def post(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Handle venue deletion.
-
-        Returns:
-            Redirect response to venues list.
-        """
-        _context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        service = PanelService(request.di.uow)
+        if not service.delete_venue(self.venue.pk):
+            return ErrorWithMessageRedirect(
+                request,
+                _("Cannot delete venue with scheduled sessions."),
+                "panel:venues",
+                slug=self.event.slug,
             )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        service = PanelService(self.request.di.uow)
-        if not service.delete_venue(venue.pk):
-            messages.error(
-                self.request, _("Cannot delete venue with scheduled sessions.")
-            )
-            return redirect("panel:venues", slug=slug)
-
-        messages.success(self.request, _("Venue deleted successfully."))
-        return redirect("panel:venues", slug=slug)
+        return SuccessWithMessageRedirect(
+            request,
+            _("Venue deleted successfully."),
+            "panel:venues",
+            slug=self.event.slug,
+        )
 
 
-class VenueReorderActionView(PanelAccessMixin, View):
-    """Reorder venues (POST only, JSON)."""
+class VenueReorderActionView(PanelAccessMixin, ScopedView):
+    """Reorder venues (POST only, JSON).
+
+    Bypasses ``PanelEventView`` because the JSON contract requires JSON
+    error responses (not HTML redirects) on missing/invalid input.
+    """
 
     request: PanelRequest
     http_method_names = ("post",)
 
     def post(self, _request: PanelRequest, slug: str) -> HttpResponse:
-        """Handle venue reordering.
-
-        Expects JSON body: {"venue_ids": [1, 2, 3]}
-
-        Returns:
-            JSON response with success status.
-        """
-        sphere_id = self.request.context.current_sphere_id
+        uow = self.request.di.uow
         try:
-            current_event = self.request.di.uow.events.read_by_slug(slug, sphere_id)
+            event = uow.events.read_by_slug(
+                slug, self.request.context.current_sphere_id
+            )
         except NotFoundError:
-            return JsonResponse({"error": "Event not found"}, status=404)
-
-        try:
-            data = json.loads(self.request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-        if (venue_ids := data.get("venue_ids")) is None:
-            return JsonResponse({"error": "Missing venue_ids"}, status=400)
-
-        self.request.di.uow.venues.reorder(current_event.pk, venue_ids)
-
-        return JsonResponse({"success": True})
+            return JsonError("Event not found", status=404)
+        with json_action(self.request, _ReorderInput) as payload:
+            if payload.venue_ids is None:
+                return JsonError("Missing venue_ids")
+            uow.venues.reorder(event.pk, payload.venue_ids)
+            return JsonOk()
 
 
-class VenueDuplicatePageView(PanelAccessMixin, EventContextMixin, View):
+class VenueDuplicatePageView(PanelVenueView, View):
     """Duplicate a venue within the same event."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Display the duplicate venue form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["form"] = VenueDuplicateForm(
-            initial={"name": suggest_copy_name(venue.name)}
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(
+            VenueDuplicateForm(initial={"name": suggest_copy_name(self.venue.name)})
         )
-        return TemplateResponse(self.request, "panel/venue-duplicate.html", context)
 
-    def post(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Handle venue duplication.
-
-        Returns:
-            Redirect response to the new venue on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        form = VenueDuplicateForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = VenueDuplicateForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "venues"
-            context["venue"] = venue
-            context["form"] = form
-            return TemplateResponse(self.request, "panel/venue-duplicate.html", context)
+            return self._render(form)
 
-        new_venue = self.request.di.uow.venues.duplicate(
-            venue.pk, form.cleaned_data["name"]
+        new_venue = request.di.uow.venues.duplicate(
+            self.venue.pk, form.cleaned_data["name"]
         )
-        messages.success(self.request, _("Venue duplicated successfully."))
-        return redirect("panel:venue-detail", slug=slug, venue_slug=new_venue.slug)
+        return SuccessWithMessageRedirect(
+            request,
+            _("Venue duplicated successfully."),
+            "panel:venue-detail",
+            slug=self.event.slug,
+            venue_slug=new_venue.slug,
+        )
+
+    def _render(self, form: VenueDuplicateForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/venue-duplicate.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "venues",
+                "venue": self.venue,
+                "form": form,
+            },
+        )
 
 
-class VenueCopyPageView(PanelAccessMixin, EventContextMixin, View):
+class VenueCopyPageView(PanelVenueView, View):
     """Copy a venue to another event."""
 
-    request: PanelRequest
-
-    def get(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Display the copy venue form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        chrome = panel_chrome(request, self.event)
+        if not (event_choices := self._event_choices(chrome)):
+            return WarningWithMessageRedirect(
+                request,
+                _("No other events available to copy to."),
+                "panel:venue-detail",
+                slug=self.event.slug,
+                venue_slug=self.venue.slug,
             )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
+        return self._render(create_venue_copy_form(event_choices)(), chrome=chrome)
 
-        # Get other events in the sphere (exclude current event)
-        events = context["events"]
-        event_choices = [(e.pk, e.name) for e in events if e.pk != current_event.pk]
-
-        if not event_choices:
-            messages.warning(self.request, _("No other events available to copy to."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["form"] = create_venue_copy_form(event_choices)()
-        return TemplateResponse(self.request, "panel/venue-copy.html", context)
-
-    def post(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Handle venue copying to another event.
-
-        Returns:
-            Redirect response on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        # Get other events in the sphere (exclude current event)
-        events = context["events"]
-        event_choices = [(e.pk, e.name) for e in events if e.pk != current_event.pk]
-
-        form = create_venue_copy_form(event_choices)(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        chrome = panel_chrome(request, self.event)
+        event_choices = self._event_choices(chrome)
+        form = create_venue_copy_form(event_choices)(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "venues"
-            context["venue"] = venue
-            context["form"] = form
-            return TemplateResponse(self.request, "panel/venue-copy.html", context)
+            return self._render(form, chrome=chrome)
 
         target_event_id = int(form.cleaned_data["target_event"])
-
-        # Find target event name for message
         target_event_name = next(
-            (e.name for e in events if e.pk == target_event_id), "another event"
+            (e.name for e in chrome["events"] if e.pk == target_event_id),
+            "another event",
         )
-
-        self.request.di.uow.venues.copy_to_event(venue.pk, target_event_id)
-        messages.success(
-            self.request,
+        request.di.uow.venues.copy_to_event(self.venue.pk, target_event_id)
+        return SuccessWithMessageRedirect(
+            request,
             _("Venue copied to %(event)s successfully.") % {"event": target_event_name},
+            "panel:venues",
+            slug=self.event.slug,
         )
-        return redirect("panel:venues", slug=slug)
+
+    def _event_choices(self, chrome: dict[str, Any]) -> list[tuple[int, str]]:
+        return [(e.pk, e.name) for e in chrome["events"] if e.pk != self.event.pk]
+
+    def _render(self, form: forms.Form, *, chrome: dict[str, Any]) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/venue-copy.html",
+            {**chrome, "active_nav": "venues", "venue": self.venue, "form": form},
+        )
 
 
-class AreaCreatePageView(PanelAccessMixin, EventContextMixin, View):
+# --- Area views --------------------------------------------------------------
+
+
+class AreaCreatePageView(PanelVenueView, View):
     """Create a new area within a venue."""
 
-    request: PanelRequest
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(AreaForm())
 
-    def get(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Display the area creation form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["form"] = AreaForm()
-        return TemplateResponse(self.request, "panel/area-create.html", context)
-
-    def post(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Handle area creation.
-
-        Returns:
-            Redirect response to venue detail on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        form = AreaForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = AreaForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "venues"
-            context["venue"] = venue
-            context["form"] = form
-            return TemplateResponse(self.request, "panel/area-create.html", context)
+            return self._render(form)
 
-        name = form.cleaned_data["name"]
-        description = form.cleaned_data.get("description") or ""
-        self.request.di.uow.areas.create(venue.pk, name, description)
+        request.di.uow.areas.create(
+            self.venue.pk,
+            form.cleaned_data["name"],
+            form.cleaned_data.get("description") or "",
+        )
+        return SuccessWithMessageRedirect(
+            request,
+            _("Area created successfully."),
+            "panel:venue-detail",
+            slug=self.event.slug,
+            venue_slug=self.venue.slug,
+        )
 
-        messages.success(self.request, _("Area created successfully."))
-        return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
+    def _render(self, form: AreaForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/area-create.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "venues",
+                "venue": self.venue,
+                "form": form,
+            },
+        )
 
 
-class AreaEditPageView(PanelAccessMixin, EventContextMixin, View):
+class AreaEditPageView(PanelAreaView, View):
     """Edit an existing area."""
 
-    request: PanelRequest
-
-    def get(
-        self, _request: PanelRequest, slug: str, venue_slug: str, area_slug: str
-    ) -> HttpResponse:
-        """Display the area edit form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(
+            AreaForm(
+                initial={"name": self.area.name, "description": self.area.description}
             )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["area"] = area
-        context["form"] = AreaForm(
-            initial={"name": area.name, "description": area.description}
         )
-        return TemplateResponse(self.request, "panel/area-edit.html", context)
 
-    def post(
-        self, _request: PanelRequest, slug: str, venue_slug: str, area_slug: str
-    ) -> HttpResponse:
-        """Handle area update.
-
-        Returns:
-            Redirect response to venue detail on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        form = AreaForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = AreaForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "venues"
-            context["venue"] = venue
-            context["area"] = area
-            context["form"] = form
-            return TemplateResponse(self.request, "panel/area-edit.html", context)
+            return self._render(form)
 
-        name = form.cleaned_data["name"]
-        description = form.cleaned_data.get("description") or ""
-        self.request.di.uow.areas.update(area.pk, name, description)
+        request.di.uow.areas.update(
+            self.area.pk,
+            form.cleaned_data["name"],
+            form.cleaned_data.get("description") or "",
+        )
+        return SuccessWithMessageRedirect(
+            request,
+            _("Area updated successfully."),
+            "panel:venue-detail",
+            slug=self.event.slug,
+            venue_slug=self.venue.slug,
+        )
 
-        messages.success(self.request, _("Area updated successfully."))
-        return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
+    def _render(self, form: AreaForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/area-edit.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "venues",
+                "venue": self.venue,
+                "area": self.area,
+                "form": form,
+            },
+        )
 
 
-class AreaDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+class AreaDeleteActionView(PanelAreaView, View):
     """Delete an area (POST only)."""
 
-    request: PanelRequest
     http_method_names = ("post",)
 
-    def post(
-        self, _request: PanelRequest, slug: str, venue_slug: str, area_slug: str
-    ) -> HttpResponse:
-        """Handle area deletion.
-
-        Returns:
-            Redirect response to venue detail.
-        """
-        _context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        service = PanelService(request.di.uow)
+        if not service.delete_area(self.area.pk):
+            return ErrorWithMessageRedirect(
+                request,
+                _("Cannot delete area with scheduled sessions."),
+                "panel:venue-detail",
+                slug=self.event.slug,
+                venue_slug=self.venue.slug,
             )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        service = PanelService(self.request.di.uow)
-        if not service.delete_area(area.pk):
-            messages.error(
-                self.request, _("Cannot delete area with scheduled sessions.")
-            )
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        messages.success(self.request, _("Area deleted successfully."))
-        return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
+        return SuccessWithMessageRedirect(
+            request,
+            _("Area deleted successfully."),
+            "panel:venue-detail",
+            slug=self.event.slug,
+            venue_slug=self.venue.slug,
+        )
 
 
-class AreaReorderActionView(PanelAccessMixin, EventContextMixin, View):
+class AreaReorderActionView(PanelAccessMixin, ScopedView):
     """Reorder areas within a venue (POST only, JSON)."""
 
     request: PanelRequest
     http_method_names = ("post",)
 
     def post(self, _request: PanelRequest, slug: str, venue_slug: str) -> HttpResponse:
-        """Handle area reordering.
-
-        Expects JSON body: {"area_ids": [1, 2, 3]}
-
-        Returns:
-            JSON response with success status.
-        """
-        _context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
+        uow = self.request.di.uow
         try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
+            event = uow.events.read_by_slug(
+                slug, self.request.context.current_sphere_id
             )
         except NotFoundError:
-            return JsonResponse({"error": "Venue not found"}, status=404)
-
+            return ErrorWithMessageRedirect(
+                self.request, _("Event not found."), "panel:index"
+            )
         try:
-            data = json.loads(self.request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-        if (area_ids := data.get("area_ids")) is None:
-            return JsonResponse({"error": "Missing area_ids"}, status=400)
-
-        self.request.di.uow.areas.reorder(venue.pk, area_ids)
-
-        return JsonResponse({"success": True})
+            venue = uow.venues.read_by_slug(event.pk, venue_slug)
+        except NotFoundError:
+            return JsonError("Venue not found", status=404)
+        with json_action(self.request, _ReorderInput) as payload:
+            if payload.area_ids is None:
+                return JsonError("Missing area_ids")
+            uow.areas.reorder(venue.pk, payload.area_ids)
+            return JsonOk()
 
 
-class AreaDetailPageView(PanelAccessMixin, EventContextMixin, View):
+class AreaDetailPageView(PanelAreaView, View):
     """View area details and list of spaces."""
 
-    request: PanelRequest
-
-    def get(
-        self, _request: PanelRequest, slug: str, venue_slug: str, area_slug: str
-    ) -> HttpResponse:
-        """Display area details and spaces list.
-
-        Returns:
-            TemplateResponse with area and spaces or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        spaces = self.request.di.uow.spaces.list_by_area(area.pk)
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["area"] = area
-        context["spaces"] = spaces
-        return TemplateResponse(self.request, "panel/area-detail.html", context)
+    def get(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        spaces = request.di.uow.spaces.list_by_area(self.area.pk)
+        return TemplateResponse(
+            request,
+            "panel/area-detail.html",
+            {
+                **panel_chrome(request, self.event),
+                "active_nav": "venues",
+                "venue": self.venue,
+                "area": self.area,
+                "spaces": spaces,
+            },
+        )
 
 
-class SpaceCreatePageView(PanelAccessMixin, EventContextMixin, View):
+# --- Space views -------------------------------------------------------------
+
+
+class SpaceCreatePageView(PanelAreaView, View):
     """Create a new space within an area."""
 
-    request: PanelRequest
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(SpaceForm())
 
-    def get(
-        self, _request: PanelRequest, slug: str, venue_slug: str, area_slug: str
-    ) -> HttpResponse:
-        """Display the space creation form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["area"] = area
-        context["form"] = SpaceForm()
-        return TemplateResponse(self.request, "panel/space-create.html", context)
-
-    def post(
-        self, _request: PanelRequest, slug: str, venue_slug: str, area_slug: str
-    ) -> HttpResponse:
-        """Handle space creation.
-
-        Returns:
-            Redirect response to area detail on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        form = SpaceForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = SpaceForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "venues"
-            context["venue"] = venue
-            context["area"] = area
-            context["form"] = form
-            return TemplateResponse(self.request, "panel/space-create.html", context)
+            return self._render(form)
 
-        name = form.cleaned_data["name"]
-        capacity = form.cleaned_data.get("capacity")
-        self.request.di.uow.spaces.create(area.pk, name, capacity)
+        request.di.uow.spaces.create(
+            self.area.pk, form.cleaned_data["name"], form.cleaned_data.get("capacity")
+        )
+        return SuccessWithMessageRedirect(
+            request,
+            _("Space created successfully."),
+            "panel:area-detail",
+            slug=self.event.slug,
+            venue_slug=self.venue.slug,
+            area_slug=self.area.slug,
+        )
 
-        messages.success(self.request, _("Space created successfully."))
-        return redirect(
-            "panel:area-detail", slug=slug, venue_slug=venue_slug, area_slug=area_slug
+    def _render(self, form: SpaceForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/space-create.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "venues",
+                "venue": self.venue,
+                "area": self.area,
+                "form": form,
+            },
         )
 
 
-class SpaceEditPageView(PanelAccessMixin, EventContextMixin, View):
+class SpaceEditPageView(PanelSpaceView, View):
     """Edit an existing space."""
 
-    request: PanelRequest
-
-    def get(
-        self,
-        _request: PanelRequest,
-        slug: str,
-        venue_slug: str,
-        area_slug: str,
-        space_slug: str,
-    ) -> HttpResponse:
-        """Display the space edit form.
-
-        Returns:
-            TemplateResponse with the form or redirect if not found.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
+    def get(self, _request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        return self._render(
+            SpaceForm(
+                initial={"name": self.space.name, "capacity": self.space.capacity}
             )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        try:
-            space = self.request.di.uow.spaces.read_by_slug(area.pk, space_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Space not found."))
-            return redirect(
-                "panel:area-detail",
-                slug=slug,
-                venue_slug=venue_slug,
-                area_slug=area_slug,
-            )
-
-        context["active_nav"] = "venues"
-        context["venue"] = venue
-        context["area"] = area
-        context["space"] = space
-        context["form"] = SpaceForm(
-            initial={"name": space.name, "capacity": space.capacity}
         )
-        return TemplateResponse(self.request, "panel/space-edit.html", context)
 
-    def post(
-        self,
-        _request: PanelRequest,
-        slug: str,
-        venue_slug: str,
-        area_slug: str,
-        space_slug: str,
-    ) -> HttpResponse:
-        """Handle space update.
-
-        Returns:
-            Redirect response to area detail on success, or form with errors.
-        """
-        context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        try:
-            space = self.request.di.uow.spaces.read_by_slug(area.pk, space_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Space not found."))
-            return redirect(
-                "panel:area-detail",
-                slug=slug,
-                venue_slug=venue_slug,
-                area_slug=area_slug,
-            )
-
-        form = SpaceForm(self.request.POST)
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        form = SpaceForm(request.POST)
         if not form.is_valid():
-            context["active_nav"] = "venues"
-            context["venue"] = venue
-            context["area"] = area
-            context["space"] = space
-            context["form"] = form
-            return TemplateResponse(self.request, "panel/space-edit.html", context)
+            return self._render(form)
 
-        name = form.cleaned_data["name"]
-        capacity = form.cleaned_data.get("capacity")
-        self.request.di.uow.spaces.update(space.pk, name, capacity)
+        request.di.uow.spaces.update(
+            self.space.pk, form.cleaned_data["name"], form.cleaned_data.get("capacity")
+        )
+        return SuccessWithMessageRedirect(
+            request,
+            _("Space updated successfully."),
+            "panel:area-detail",
+            slug=self.event.slug,
+            venue_slug=self.venue.slug,
+            area_slug=self.area.slug,
+        )
 
-        messages.success(self.request, _("Space updated successfully."))
-        return redirect(
-            "panel:area-detail", slug=slug, venue_slug=venue_slug, area_slug=area_slug
+    def _render(self, form: SpaceForm) -> HttpResponse:
+        return TemplateResponse(
+            self.request,
+            "panel/space-edit.html",
+            {
+                **panel_chrome(self.request, self.event),
+                "active_nav": "venues",
+                "venue": self.venue,
+                "area": self.area,
+                "space": self.space,
+                "form": form,
+            },
         )
 
 
-class SpaceDeleteActionView(PanelAccessMixin, EventContextMixin, View):
+class SpaceDeleteActionView(PanelSpaceView, View):
     """Delete a space (POST only)."""
 
-    request: PanelRequest
     http_method_names = ("post",)
 
-    def post(
-        self,
-        _request: PanelRequest,
-        slug: str,
-        venue_slug: str,
-        area_slug: str,
-        space_slug: str,
-    ) -> HttpResponse:
-        """Handle space deletion.
-
-        Returns:
-            Redirect response to area detail.
-        """
-        _context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
-        try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
-            )
-        except NotFoundError:
-            messages.error(self.request, _("Venue not found."))
-            return redirect("panel:venues", slug=slug)
-
-        try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Area not found."))
-            return redirect("panel:venue-detail", slug=slug, venue_slug=venue_slug)
-
-        try:
-            space = self.request.di.uow.spaces.read_by_slug(area.pk, space_slug)
-        except NotFoundError:
-            messages.error(self.request, _("Space not found."))
-            return redirect(
+    def post(self, request: PanelRequest, **_kwargs: object) -> HttpResponse:
+        service = PanelService(request.di.uow)
+        if not service.delete_space(self.space.pk):
+            return ErrorWithMessageRedirect(
+                request,
+                _("Cannot delete space with scheduled sessions."),
                 "panel:area-detail",
-                slug=slug,
-                venue_slug=venue_slug,
-                area_slug=area_slug,
+                slug=self.event.slug,
+                venue_slug=self.venue.slug,
+                area_slug=self.area.slug,
             )
-
-        service = PanelService(self.request.di.uow)
-        if not service.delete_space(space.pk):
-            messages.error(
-                self.request, _("Cannot delete space with scheduled sessions.")
-            )
-            return redirect(
-                "panel:area-detail",
-                slug=slug,
-                venue_slug=venue_slug,
-                area_slug=area_slug,
-            )
-
-        messages.success(self.request, _("Space deleted successfully."))
-        return redirect(
-            "panel:area-detail", slug=slug, venue_slug=venue_slug, area_slug=area_slug
+        return SuccessWithMessageRedirect(
+            request,
+            _("Space deleted successfully."),
+            "panel:area-detail",
+            slug=self.event.slug,
+            venue_slug=self.venue.slug,
+            area_slug=self.area.slug,
         )
 
 
-class SpaceReorderActionView(PanelAccessMixin, EventContextMixin, View):
+class SpaceReorderActionView(PanelAccessMixin, ScopedView):
     """Reorder spaces within an area (POST only, JSON)."""
 
     request: PanelRequest
@@ -1019,37 +626,25 @@ class SpaceReorderActionView(PanelAccessMixin, EventContextMixin, View):
     def post(
         self, _request: PanelRequest, slug: str, venue_slug: str, area_slug: str
     ) -> HttpResponse:
-        """Handle space reordering.
-
-        Expects JSON body: {"space_ids": [1, 2, 3]}
-
-        Returns:
-            JSON response with success status.
-        """
-        _context, current_event = self.get_event_context(slug)
-        if current_event is None:
-            return redirect("panel:index")
-
+        uow = self.request.di.uow
         try:
-            venue = self.request.di.uow.venues.read_by_slug(
-                current_event.pk, venue_slug
+            event = uow.events.read_by_slug(
+                slug, self.request.context.current_sphere_id
             )
         except NotFoundError:
-            return JsonResponse({"error": "Venue not found"}, status=404)
-
+            return ErrorWithMessageRedirect(
+                self.request, _("Event not found."), "panel:index"
+            )
         try:
-            area = self.request.di.uow.areas.read_by_slug(venue.pk, area_slug)
+            venue = uow.venues.read_by_slug(event.pk, venue_slug)
         except NotFoundError:
-            return JsonResponse({"error": "Area not found"}, status=404)
-
+            return JsonError("Venue not found", status=404)
         try:
-            data = json.loads(self.request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-        if (space_ids := data.get("space_ids")) is None:
-            return JsonResponse({"error": "Missing space_ids"}, status=400)
-
-        self.request.di.uow.spaces.reorder(area.pk, space_ids)
-
-        return JsonResponse({"success": True})
+            area = uow.areas.read_by_slug(venue.pk, area_slug)
+        except NotFoundError:
+            return JsonError("Area not found", status=404)
+        with json_action(self.request, _ReorderInput) as payload:
+            if payload.space_ids is None:
+                return JsonError("Missing space_ids")
+            uow.spaces.reorder(area.pk, payload.space_ids)
+            return JsonOk()

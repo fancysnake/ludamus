@@ -37,3 +37,13 @@ class ErrorWithMessageRedirect(HttpResponseRedirect):
     ) -> None:
         messages.error(request, text)
         super().__init__(resolve_url(url, **kwargs))
+
+
+class WarningWithMessageRedirect(HttpResponseRedirect):
+    """Flash a warning message and redirect in one breath."""
+
+    def __init__(
+        self, request: HttpRequest, text: str, url: str, /, **kwargs: object
+    ) -> None:
+        messages.warning(request, text)
+        super().__init__(resolve_url(url, **kwargs))
