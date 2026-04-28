@@ -56,8 +56,13 @@ class HtmxMiddleware:
 
 
 class HtmxRedirect(HttpResponse):
-    """204 response with ``HX-Redirect: <url>`` for client-side navigation."""
+    """200 response with ``HX-Redirect: <url>`` for client-side navigation.
+
+    HTMX accepts any 2xx response carrying ``HX-Redirect``. We use 200
+    (rather than 204) so any cookies/headers Django attaches via response
+    middleware travel along, and to match existing test contracts.
+    """
 
     def __init__(self, url: str, /, **kwargs: object) -> None:
-        super().__init__(status=204)
+        super().__init__(status=200)
         self.headers["HX-Redirect"] = resolve_url(url, **kwargs)
