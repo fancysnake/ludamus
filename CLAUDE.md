@@ -58,12 +58,20 @@ Strict rules:
   per-case approval.
 - NEVER add noqa/type ignore/pylint comments or directives without explicit
   per-case approval.
-- NEVER write re-export `__init__.py` files for new code (no wildcard
-  imports, no explicit re-export lists). New `__init__.py` files stay
-  empty — import each symbol from the module that defines it
+- Default: do not write re-export `__init__.py` files (no wildcard imports,
+  no explicit re-export lists). Keep `__init__.py` empty and import each
+  symbol from the module that defines it
   (`from ludamus.foo.bar import Bar`, not `from ludamus.foo import Bar`).
-  Re-exports are tolerated only in pre-existing framework or legacy-module
-  facades (e.g., `<layer>/__init__.py` wildcarding `<layer>/legacy.py`).
+  Allowed exceptions:
+  - **Framework / public-API package** — when the package is consumed by
+    external code and the inner module layout is implementation detail, a
+    facade `__init__.py` is appropriate.
+  - **Line-length pressure** — if the canonical import path is too long to
+    fit the line-length limit, expose a shorter facade. Treat this the same
+    as splitting a file or method that has grown too big: a pragmatic
+    response when the symptom appears, not a blanket allowance.
+  - **Pre-existing legacy-module facade** — `<layer>/__init__.py`
+    wildcarding `<layer>/legacy.py` (mills, pacts, inits) stays as is.
 - When making UI changes, use agent-browser to take screenshots of affected
   pages and include before/after images in the PR description
 
