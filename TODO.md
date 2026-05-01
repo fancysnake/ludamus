@@ -8,6 +8,7 @@ config:
 ---
 kanban
   Wishlist
+    [Don't use soubdomain names in URLS]@{ assigned: 'refactor' }
     [Extract common view boilerplate]@{ assigned: 'refactor' }
     [Component Views should be tested only in e2e tests]@{ assigned: 'tests' }
     [Links should be passed only to mills]@{ assigned: 'GLIMPSE' }
@@ -119,6 +120,9 @@ kanban
       assigned: 'user-proposals'
     }
     [Resend old proposal]@{ assigned: 'user-proposals' }
+    [Claim imported proposals - link by email confirmation]@{
+      assigned: 'user-proposals'
+    }
 
   Sprint
     [Proposals management - filterable list and accept/reject workflow]@{
