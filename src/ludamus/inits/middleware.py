@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from django.conf import settings
 
-from ludamus.inits.services.root import Services
+from ludamus.inits.services import Services
 
 if TYPE_CHECKING:
     from collections.abc import Callable
