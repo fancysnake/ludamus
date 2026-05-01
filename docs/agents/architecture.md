@@ -46,6 +46,50 @@ class ProposalRepository(ProposalRepositoryProtocol):
         return ProposalDTO.model_validate(proposal)
 ```
 
+## Links Layout
+
+`links` slices by **kind**, not by entity. The kinds — and the split
+philosophy — are per-adapter; what follows is the shape for `db/django`.
+Other adapters (`payment_api/stripe`, `gravatar`, `ticket_api`) split
+differently or stay single-file.
+
+```text
+# Small (default)
+links/db/django/
+    __init__.py             # facade — public surface
+    models.py               # ORM models — internal to links
+    repositories.py         # repository implementations — public via the facade
+
+# Promoted when a kind crosses ~1000 lines
+links/db/django/
+    __init__.py             # facade — unchanged public import path
+    models/
+        __init__.py         # re-exports model classes (required for Django app-loading)
+        part1.py
+        part2.py
+    repositories/
+        __init__.py         # may be empty; the facade is one level up
+        part1.py
+        part2.py
+```
+
+Models are internal to `links`; the public face is the repository classes,
+exposed through the package facade and consumed via the protocols declared
+in `pacts`. External code imports as:
+
+```python
+from ludamus.links.db.django import SessionRepository
+```
+
+and never reaches `models`.
+
+**Splitting rules.** Baseline across adapters: halve, don't shard, and
+arrange parts so they don't cause circular imports. For `db/django`,
+models tend to halve along FK dependency or aggregate boundaries;
+repositories halve by aggregate group. A per-entity submodule
+(`repositories/agenda_item.py`) is an escape hatch when one entity's repo
+genuinely dwarfs the rest, not the default.
+
 ## Repository Registry
 
 Repositories are wired into a flat registry, internal to `inits/`, never
