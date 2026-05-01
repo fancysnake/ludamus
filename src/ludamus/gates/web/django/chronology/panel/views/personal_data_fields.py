@@ -1,5 +1,3 @@
-# pylint: disable=duplicate-code
-# TODO(fancysnake): Extract common view boilerplate
 """Personal data field views for the CFP."""
 
 from __future__ import annotations
