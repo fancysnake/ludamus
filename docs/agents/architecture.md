@@ -36,7 +36,7 @@ pacts   ✗ gates, links, inits, mills, specs, edges, django
 ## Repository Pattern
 
 ```python
-# links/db/django/proposal.py
+# links/db/django/repositories.py
 class ProposalRepository(ProposalRepositoryProtocol):
     def read(self, pk: int) -> ProposalDTO:
         try:
@@ -46,37 +46,102 @@ class ProposalRepository(ProposalRepositoryProtocol):
         return ProposalDTO.model_validate(proposal)
 ```
 
-## Unit of Work
+## Repository Registry
+
+Repositories are wired into a flat registry, internal to `inits/`, never
+imported from gates:
 
 ```python
-# links/db/django/uow.py
-class UnitOfWork(UnitOfWorkProtocol):
+# inits/repositories.py
+class Repositories:
     @cached_property
-    def proposals(self) -> ProposalRepository:
-        return ProposalRepository()
+    def personal_data_fields(self) -> PersonalDataFieldRepository:
+        return PersonalDataFieldRepository()
+
+    @cached_property
+    def proposal_categories(self) -> ProposalCategoryRepository:
+        return ProposalCategoryRepository()
 ```
 
-Injected by middleware in `inits.py`. Views access data via `request.di.uow.proposals.read(id)`.
-
-## Views
-
-Use `TemplateResponse`, type-hint request as `RootRequestProtocol`:
-
-```python
-def get(self, request: RootRequestProtocol, slug: str) -> TemplateResponse:
-    event = request.di.uow.events.read(slug)
-    return TemplateResponse(request, "panel/event.html", {"event": event})
-```
+Buckets appear when the leaf count grows past ~12. Until then, stay flat.
 
 ## Services (mills)
 
-Services take UoW via constructor — never via method args or imports:
+Services take a `TransactionProtocol` plus the specific repo protocols they
+actually touch — never the full UoW, never imports of concrete repos:
 
 ```python
-class SessionService:
-    def __init__(self, uow: UnitOfWorkProtocol) -> None:
-        self._uow = uow
+# mills/chronology.py
+class CFPPersonalDataFieldService:
+    def __init__(
+        self,
+        transaction: TransactionProtocol,
+        fields: PersonalDataFieldRepositoryProtocol,
+        categories: ProposalCategoryRepositoryProtocol,
+    ) -> None:
+        self._transaction = transaction
+        self._fields = fields
+        self._categories = categories
+
+    def create(self, event_pk: int, data, requirements) -> PersonalDataFieldDTO:
+        with self._transaction.atomic():
+            field = self._fields.create(event_pk, data)
+            if requirements:
+                self._categories.add_field_to_categories(field.pk, requirements)
+        return field
 ```
+
+Services own transactions (`transaction.atomic()`); views never start them.
+Services return DTOs; views render them.
+
+## Services Tree
+
+Services are exposed to gates through a flat namespace at
+`request.services.<service_name>`:
+
+```python
+# inits/services.py
+class Services:
+    @cached_property
+    def personal_data_fields(self) -> CFPPersonalDataFieldService:
+        return CFPPersonalDataFieldService(
+            self._transaction,
+            self._repos.personal_data_fields,
+            self._repos.proposal_categories,
+        )
+```
+
+The `ServicesProtocol` in `pacts/services.py` describes the navigation
+shape. `ServiceInjectionMiddleware` attaches `request.services` per request.
+
+## Views
+
+Views are glue: parse forms, call services, render DTOs. They never reach
+into repos or build services themselves. Type-hint request as
+`RootRequestProtocol` (or a subdomain-specific request like `PanelRequest`):
+
+```python
+def get(self, request: PanelRequest, slug: str) -> TemplateResponse:
+    service = request.services.personal_data_fields
+    fields = service.list_summaries(event_pk)
+    return TemplateResponse(
+        request, "panel/personal-data-fields.html", {"fields": fields}
+    )
+```
+
+## Strangler-fig migration
+
+Two middleware run in parallel: the legacy `RepositoryInjectionMiddleware`
+(attaches `request.di.uow`) and the new `ServiceInjectionMiddleware`
+(attaches `request.services`). New code uses `request.services`. A single
+view file picks one shape; never both in the same view.
+
+Migration is per view file. The recipe lives in
+[services-migration.md](services-migration.md). Once the last view migrates,
+`RepositoryInjectionMiddleware` and `request.di.uow` are removed.
+
+New code must use `request.services`. Do not extend the `request.di.uow`
+surface — write a new mills service instead.
 
 ## Specs
 
@@ -103,9 +168,52 @@ SESSION_LIMITS: SessionLimits = {"max_per_user": 5}
 
 ## Subdomains and Bounded Contexts
 
-The application has three subdomains. Each subdomain
+The application has four subdomains. Each subdomain
 contains one or more bounded contexts with distinct
 responsibilities, URL namespaces, templates, and DTOs.
+
+<!-- markdownlint-disable MD013 -->
+
+| Subdomain | Scope | Bounded contexts |
+| --------- | ----- | ---------------- |
+| Multiverse | Sphere and concepts depending only on Sphere | Panel |
+| Chronology | Events, proposals/sessions, scheduling, venues, enrollment | Public Event Pages, CFP, Enrollment, Panel |
+| Notice Board | Informal social gatherings decoupled from the formal event/session lifecycle | Encounters |
+| Crowd | Authentication, profiles, delegate accounts | Auth, Profile |
+
+<!-- markdownlint-enable MD013 -->
+
+---
+
+### Multiverse
+
+Sphere-scoped configuration shared across the events
+that live under a sphere. Holds `Sphere` itself plus
+anything that depends only on Sphere (no Event coupling).
+
+#### Bounded Context: Panel (Multiverse)
+
+Sphere-scoped backoffice for sphere managers. Parallel
+to `chronology/panel` (which is event-scoped) and uses
+its own access mixin keyed off `current_sphere_id`
+without an `EventContextMixin`.
+
+- **URLs:** `/multiverse/sphere/<slug>/…`
+  (namespace `multiverse:panel`)
+- **Views:** `gates/web/django/multiverse/panel/views/…`
+- **Templates:** `templates/multiverse/panel/`
+- **Pacts/Mills/Specs:** `pacts/multiverse.py`,
+  `mills/multiverse.py`, `specs/multiverse.py`
+  (split into `multiverse/{context}.py` when big)
+- **Access:** `SphereAccessMixin` (sphere-manager check
+  via `request.di.uow.spheres.is_manager`)
+- **First feature:** sphere-scoped import-connections CRUD
+  ("Połączenia importu" subpage)
+
+`Sphere` ORM models and repositories continue to live in
+`links/db/django/models.py` and
+`links/db/django/repositories.py` per the split-when-big
+rule; they are not moved into a multiverse-named file.
 
 ---
 
@@ -182,7 +290,7 @@ organizers.
   `UserEnrollmentConfigDTO`,
   `VirtualEnrollmentConfig`, `AgendaItemDTO`
 
-#### Bounded Context: Panel
+#### Bounded Context: Panel (Chronology)
 
 The backoffice for event organisers. Covers every
 aspect of event configuration and session management.

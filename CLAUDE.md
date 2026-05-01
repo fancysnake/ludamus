@@ -24,8 +24,15 @@ GLIMPSE system:
 - `specs` (business invariants — pure constants, no IO, consumed only by mills)
 - `edges` (infrastructure boundary modules)
 
-Access data: `request.di.uow.{repository}.read(id)` — returns Pydantic DTOs,
-never Django models.
+Access data: views call `request.services.<service_name>.<method>(...)` and
+get back ready-to-render DTOs (Pydantic, never Django models). Services
+live in `mills/`, take specific repo protocols + `TransactionProtocol` via
+the constructor, and own transactional boundaries.
+
+Legacy: some views still use `request.di.uow.<repo>` during the
+strangler-fig migration — see `docs/agents/architecture.md` and
+`docs/agents/services-migration.md`. New code must use `request.services`;
+never extend the `request.di.uow` surface.
 
 ## Layer
 
@@ -85,7 +92,9 @@ Strict rules:
 
 ## Details
 
-- [Architecture](docs/agents/architecture.md) — layers, repos, UoW
+- [Architecture](docs/agents/architecture.md) — layers, repos, services
+- [Services migration](docs/agents/services-migration.md) — per-file
+  recipe for moving views from `request.di.uow` to `request.services`
 - [Testing assertions](docs/agents/testing-assertions.md) — patterns for
   integration tests
 - [URL conventions](docs/CODE_LAYOUT.md)
