@@ -10,6 +10,20 @@ from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the sphere panel."
 
+TAB_URLS = {
+    "general": "/multiverse/panel/",
+    "connections": "/multiverse/panel/connections/",
+}
+CONNECTIONS_PANEL_CONTEXT = {
+    "events": [],
+    "current_event": None,
+    "is_proposal_active": False,
+    "active_nav": "sphere-settings",
+    "is_general_tab": False,
+    "is_connections_tab": True,
+    "tab_urls": TAB_URLS,
+}
+
 
 class TestConnectionsPageView:
     """Tests for /multiverse/panel/connections/ page."""
@@ -42,7 +56,7 @@ class TestConnectionsPageView:
             response,
             HTTPStatus.OK,
             template_name="multiverse/panel/connections/list.html",
-            context_data={"connections": [], "active_nav": "connections"},
+            context_data={**CONNECTIONS_PANEL_CONTEXT, "connections": []},
         )
 
     def test_get_returns_connections_scoped_to_sphere(
@@ -63,8 +77,8 @@ class TestConnectionsPageView:
             HTTPStatus.OK,
             template_name="multiverse/panel/connections/list.html",
             context_data={
+                **CONNECTIONS_PANEL_CONTEXT,
                 "connections": [ConnectionDTO.model_validate(connection)],
-                "active_nav": "connections",
             },
         )
 
@@ -113,7 +127,7 @@ class TestConnectionCreatePageView:
             response,
             HTTPStatus.OK,
             template_name="multiverse/panel/connections/create.html",
-            context_data={"form": ANY, "active_nav": "connections"},
+            context_data={**CONNECTIONS_PANEL_CONTEXT, "form": ANY},
         )
 
     def test_post_redirects_anonymous_user_to_login(self, client):
@@ -170,7 +184,7 @@ class TestConnectionCreatePageView:
             response,
             HTTPStatus.OK,
             template_name="multiverse/panel/connections/create.html",
-            context_data={"form": ANY, "active_nav": "connections"},
+            context_data={**CONNECTIONS_PANEL_CONTEXT, "form": ANY},
         )
         assert not Connection.objects.filter(sphere=sphere).exists()
 
@@ -221,9 +235,9 @@ class TestConnectionEditPageView:
             HTTPStatus.OK,
             template_name="multiverse/panel/connections/edit.html",
             context_data={
+                **CONNECTIONS_PANEL_CONTEXT,
                 "form": ANY,
                 "connection": ConnectionDTO.model_validate(connection),
-                "active_nav": "connections",
             },
         )
 
@@ -282,9 +296,9 @@ class TestConnectionEditPageView:
             HTTPStatus.OK,
             template_name="multiverse/panel/connections/edit.html",
             context_data={
+                **CONNECTIONS_PANEL_CONTEXT,
                 "form": ANY,
                 "connection": ConnectionDTO.model_validate(connection),
-                "active_nav": "connections",
             },
         )
         connection.refresh_from_db()
@@ -341,8 +355,8 @@ class TestConnectionDeletePageView:
             HTTPStatus.OK,
             template_name="multiverse/panel/connections/delete.html",
             context_data={
+                **CONNECTIONS_PANEL_CONTEXT,
                 "connection": ConnectionDTO.model_validate(connection),
-                "active_nav": "connections",
             },
         )
 

@@ -15,6 +15,7 @@ from ludamus.gates.web.django.multiverse.access import (
     SphereAccessMixin,
 )
 from ludamus.gates.web.django.multiverse.panel.forms import ConnectionForm
+from ludamus.gates.web.django.multiverse.panel.views.base import sphere_panel_context
 from ludamus.pacts import NotFoundError
 from ludamus.pacts.multiverse import ConnectionService, ConnectionWriteDict
 
@@ -33,7 +34,10 @@ class ConnectionsPageView(SphereAccessMixin, View):
         return TemplateResponse(
             self.request,
             "multiverse/panel/connections/list.html",
-            {"connections": connections, "active_nav": "connections"},
+            {
+                **sphere_panel_context(self.request, active_tab="connections"),
+                "connections": connections,
+            },
         )
 
 
@@ -46,7 +50,10 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
         return TemplateResponse(
             self.request,
             "multiverse/panel/connections/create.html",
-            {"form": ConnectionForm(), "active_nav": "connections"},
+            {
+                **sphere_panel_context(self.request, active_tab="connections"),
+                "form": ConnectionForm(),
+            },
         )
 
     def post(self, _request: MultiverseRequest) -> HttpResponse:
@@ -55,7 +62,10 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
             return TemplateResponse(
                 self.request,
                 "multiverse/panel/connections/create.html",
-                {"form": form, "active_nav": "connections"},
+                {
+                    **sphere_panel_context(self.request, active_tab="connections"),
+                    "form": form,
+                },
             )
 
         sphere_id = self.request.context.current_sphere_id
@@ -90,7 +100,11 @@ class ConnectionEditPageView(SphereAccessMixin, View):
         return TemplateResponse(
             self.request,
             "multiverse/panel/connections/edit.html",
-            {"form": form, "connection": connection, "active_nav": "connections"},
+            {
+                **sphere_panel_context(self.request, active_tab="connections"),
+                "form": form,
+                "connection": connection,
+            },
         )
 
     def post(self, _request: MultiverseRequest, pk: int) -> HttpResponse:
@@ -106,7 +120,11 @@ class ConnectionEditPageView(SphereAccessMixin, View):
             return TemplateResponse(
                 self.request,
                 "multiverse/panel/connections/edit.html",
-                {"form": form, "connection": connection, "active_nav": "connections"},
+                {
+                    **sphere_panel_context(self.request, active_tab="connections"),
+                    "form": form,
+                    "connection": connection,
+                },
             )
 
         data: ConnectionWriteDict = {
@@ -134,7 +152,10 @@ class ConnectionDeletePageView(SphereAccessMixin, View):
         return TemplateResponse(
             self.request,
             "multiverse/panel/connections/delete.html",
-            {"connection": connection, "active_nav": "connections"},
+            {
+                **sphere_panel_context(self.request, active_tab="connections"),
+                "connection": connection,
+            },
         )
 
     def post(self, _request: MultiverseRequest, pk: int) -> HttpResponse:

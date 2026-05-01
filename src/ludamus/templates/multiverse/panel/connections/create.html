@@ -1,4 +1,4 @@
-{% extends "multiverse/panel/base.html" %}
+{% extends "panel/base.html" %}
 {% load i18n %}
 {% block title_prefix %}
     {% translate "New connection" %} -
@@ -6,6 +6,10 @@
 {% block page_title %}
     {% translate "New connection" %}
 {% endblock page_title %}
+{% block page_subtitle %}
+    {{ current_sphere.name }}
+{% endblock page_subtitle %}
+{% block header_actions %}{% endblock header_actions %}
 {% block content %}
     <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 max-w-xl">
         <form method="post" class="space-y-4">
