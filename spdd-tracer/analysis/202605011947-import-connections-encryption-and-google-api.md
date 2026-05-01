@@ -37,7 +37,19 @@ which consumes both capabilities via protocols defined here.
   Layer depends on chosen mechanism (see Risks).
 - new: inits wiring — encryptor + tester exposed on
   `inits/services.py` as `@cached_property` leaves and injected
-  into `ConnectionService` from the CRUD slice.
+  into `ConnectionsService` from the CRUD slice.
+- new: connection-deletion-block — listing the
+  import-configurations / events that reference a connection so
+  the gate can refuse the delete with a flash error naming the
+  blockers. Lives at the boundary of this slice and the
+  import-configuration slice: protocol
+  `ConnectionUsageInspectorProtocol` in `pacts/multiverse.py`,
+  concrete impl in `links/db/django/repositories.py` keyed off
+  the import-config rows the configuration slice introduces.
+  Consumed by `ConnectionsService.delete()`, which returns the
+  blocking list (empty list = allowed) once the inspector lands.
+  Today the CRUD slice ships `delete()` with no inspector — any
+  connection can be deleted; this AC reintroduces the block.
 
 ## Direction
 
@@ -98,3 +110,12 @@ which consumes both capabilities via protocols defined here.
   — gap: `EncryptorProtocol` + concrete helper + layer choice
   (mills vs. links per mechanism). UI rendering ("credentials
   configured ✓") is owned by the CRUD slice.
+- [ ] AC8 Deleting a connection in use by one or more
+  import-configurations is blocked and surfaces a flash error
+  listing the blocking event names — gap:
+  `ConnectionUsageInspectorProtocol` (pacts) + concrete impl
+  joining the import-config rows added by the
+  import-configuration slice. `ConnectionsService.delete()`
+  returns `list[str]` (empty = allowed) once the inspector
+  lands; the gate already ships the unconditional-success path,
+  so this AC restores the blocking branch and its flash copy.

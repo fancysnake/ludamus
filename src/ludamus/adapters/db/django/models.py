@@ -22,6 +22,7 @@ from ludamus.pacts import (
     UserType,
     VirtualEnrollmentConfig,
 )
+from ludamus.pacts.multiverse import ConnectionProvider
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -1359,15 +1360,14 @@ def get_vc_available_slots(
     )
 
 
-class ConnectionService(models.TextChoices):
-    GOOGLE = "google", _("Google Forms + Sheets")
-
-
 class Connection(models.Model):
     sphere = models.ForeignKey(
         Sphere, on_delete=models.CASCADE, related_name="connections"
     )
-    service = models.CharField(max_length=32, choices=ConnectionService.choices)
+    service = models.CharField(
+        max_length=32,
+        choices=[(ConnectionProvider.GOOGLE.value, _("Google Forms + Sheets"))],
+    )
     display_name = models.CharField(max_length=255)
 
     class Meta:

@@ -17,7 +17,7 @@ from ludamus.gates.web.django.multiverse.access import (
 from ludamus.gates.web.django.multiverse.panel.forms import ConnectionForm
 from ludamus.gates.web.django.multiverse.panel.views.base import sphere_panel_context
 from ludamus.pacts import NotFoundError
-from ludamus.pacts.multiverse import ConnectionService, ConnectionWriteDict
+from ludamus.pacts.multiverse import ConnectionProvider, ConnectionWriteDict
 
 if TYPE_CHECKING:
     from django.http import HttpResponse
@@ -70,7 +70,7 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
 
         sphere_id = self.request.context.current_sphere_id
         data: ConnectionWriteDict = {
-            "service": ConnectionService(form.cleaned_data["service"]),
+            "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
         self.request.services.connections.create(sphere_id, data)
@@ -128,7 +128,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
             )
 
         data: ConnectionWriteDict = {
-            "service": ConnectionService(form.cleaned_data["service"]),
+            "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
         self.request.services.connections.update(sphere_id, pk, data)
@@ -161,17 +161,9 @@ class ConnectionDeletePageView(SphereAccessMixin, View):
     def post(self, _request: MultiverseRequest, pk: int) -> HttpResponse:
         sphere_id = self.request.context.current_sphere_id
         try:
-            blocking = self.request.services.connections.delete(sphere_id, pk)
+            self.request.services.connections.delete(sphere_id, pk)
         except NotFoundError:
             messages.error(self.request, _("Connection not found."))
-            return redirect("multiverse:panel:connections")
-
-        if blocking:
-            messages.error(
-                self.request,
-                _("Cannot delete connection: in use by %(events)s.")
-                % {"events": ", ".join(blocking)},
-            )
             return redirect("multiverse:panel:connections")
 
         messages.success(self.request, _("Connection deleted successfully."))

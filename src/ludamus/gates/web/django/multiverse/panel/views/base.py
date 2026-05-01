@@ -28,7 +28,7 @@ def sphere_panel_context(
         `is_connections_tab`, `tab_urls`) keys.
     """
     sphere_id = request.context.current_sphere_id
-    events = request.di.uow.events.list_by_sphere(sphere_id)
+    events = request.services.sphere_panel.list_events(sphere_id)
     current_event = events[0] if events else None
 
     return {

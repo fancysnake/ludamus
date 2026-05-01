@@ -20,7 +20,7 @@ urlpatterns = [
         name="connection-edit",
     ),
     path(
-        "connections/<int:pk>/do/delete",
+        "connections/<int:pk>/do/delete/",
         connections.ConnectionDeletePageView.as_view(),
         name="connection-delete",
     ),

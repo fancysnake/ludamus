@@ -8,6 +8,11 @@ Sphere-scoped concerns. First feature: import-connections CRUD. Split per
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ludamus.pacts.legacy import (
+        EventDTO,
+        EventRepositoryProtocol,
+        SphereRepositoryProtocol,
+    )
     from ludamus.pacts.multiverse import (
         ConnectionDTO,
         ConnectionsRepositoryProtocol,
@@ -16,7 +21,7 @@ if TYPE_CHECKING:
     from ludamus.pacts.services import TransactionProtocol
 
 
-class ConnectionService:
+class ConnectionsService:
     """CRUD for sphere-scoped import connections (metadata only)."""
 
     def __init__(
@@ -43,23 +48,22 @@ class ConnectionService:
         with self._transaction.atomic():
             return self._connections.update(sphere_id, pk, data)
 
-    def delete(self, sphere_id: int, pk: int) -> list[str]:
-        """Delete a connection.
-
-        Returns:
-            List of blocking event names that prevent deletion. Empty list
-            on successful delete.
-        """
-        # tracer: delete-block depends on import-configuration slice;
-        # stub to allow-always until that slice lands.
-        if blocking := self._list_blocking_events(sphere_id, pk):
-            return blocking
+    def delete(self, sphere_id: int, pk: int) -> None:
         with self._transaction.atomic():
             self._connections.delete(sphere_id, pk)
-        return []
 
-    @staticmethod
-    def _list_blocking_events(sphere_id: int, pk: int) -> list[str]:
-        # tracer: stub. Real check lives in import-configuration slice.
-        del sphere_id, pk
-        return []
+
+class SpherePanelService:
+    """Read-side context loader for the multiverse sphere panel."""
+
+    def __init__(
+        self, spheres: SphereRepositoryProtocol, events: EventRepositoryProtocol
+    ) -> None:
+        self._spheres = spheres
+        self._events = events
+
+    def is_manager(self, sphere_id: int, user_slug: str) -> bool:
+        return self._spheres.is_manager(sphere_id, user_slug)
+
+    def list_events(self, sphere_id: int) -> list[EventDTO]:
+        return self._events.list_by_sphere(sphere_id)
