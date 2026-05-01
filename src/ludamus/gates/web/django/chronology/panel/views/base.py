@@ -14,7 +14,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 from ludamus.mills import PanelService, is_proposal_active
-from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
+from ludamus.pacts import DependencyInjectorProtocol, NotFoundError, ServicesProtocol
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -27,6 +27,7 @@ class PanelRequest(HttpRequest):
 
     context: AuthenticatedRequestContext
     di: DependencyInjectorProtocol
+    services: ServicesProtocol
 
 
 class PanelAccessMixin(LoginRequiredMixin, UserPassesTestMixin):

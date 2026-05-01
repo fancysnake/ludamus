@@ -652,6 +652,23 @@ class FieldUsageSummary:
     optional_count: int
 
 
+@dataclass
+class PersonalDataFieldFormContextDTO:
+    """Read aggregate for the personal-data-field create form."""
+
+    categories: list[ProposalCategoryDTO]
+
+
+@dataclass
+class PersonalDataFieldEditContextDTO:
+    """Read aggregate for the personal-data-field edit form."""
+
+    field: PersonalDataFieldDTO
+    categories: list[ProposalCategoryDTO]
+    required_category_pks: set[int]
+    optional_category_pks: set[int]
+
+
 class PersonalFieldRequirementDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     field: PersonalDataFieldDTO
@@ -1396,6 +1413,11 @@ class CacheProtocol(Protocol):
     def set(key: str, value: object, timeout: int | None = None) -> None: ...
 
 
+class TransactionProtocol(Protocol):
+    @staticmethod
+    def atomic() -> AbstractContextManager[None]: ...
+
+
 class DependencyInjectorProtocol(Protocol):
     @property
     def uow(self) -> UnitOfWorkProtocol: ...
@@ -1407,9 +1429,49 @@ class DependencyInjectorProtocol(Protocol):
     def gravatar_url(email: str) -> str | None: ...
 
 
+class CFPPersonalDataFieldServiceProtocol(Protocol):
+    def list_summaries(self, event_pk: int) -> list[FieldUsageSummary]: ...
+    def get_create_form_context(
+        self, event_pk: int
+    ) -> PersonalDataFieldFormContextDTO: ...
+    def get_edit_form_context(
+        self, event_pk: int, field_slug: str
+    ) -> PersonalDataFieldEditContextDTO: ...
+    def create(
+        self,
+        event_pk: int,
+        data: PersonalDataFieldCreateData,
+        category_requirements: dict[int, bool],
+    ) -> PersonalDataFieldDTO: ...
+    def update(
+        self,
+        event_pk: int,
+        field_slug: str,
+        data: PersonalDataFieldUpdateData,
+        category_requirements: dict[int, bool],
+    ) -> None: ...
+    def delete(self, event_pk: int, field_slug: str) -> bool: ...
+
+
+class ChronologyPanelServicesProtocol(Protocol):
+    @property
+    def personal_data_fields(self) -> CFPPersonalDataFieldServiceProtocol: ...
+
+
+class ChronologyServicesProtocol(Protocol):
+    @property
+    def panel(self) -> ChronologyPanelServicesProtocol: ...
+
+
+class ServicesProtocol(Protocol):
+    @property
+    def chronology(self) -> ChronologyServicesProtocol: ...
+
+
 class RootRequestProtocol(Protocol):
     path: str
     di: DependencyInjectorProtocol
+    services: ServicesProtocol
     context: RequestContext
 
 
