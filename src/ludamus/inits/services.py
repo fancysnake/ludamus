@@ -3,6 +3,7 @@ from functools import cached_property
 from ludamus.inits.repositories import Repositories
 from ludamus.inits.transaction import DjangoTransaction
 from ludamus.mills.chronology import CFPPersonalDataFieldService
+from ludamus.mills.multiverse import ConnectionService
 
 
 class Services:
@@ -22,3 +23,7 @@ class Services:
             self._repos.personal_data_fields,
             self._repos.proposal_categories,
         )
+
+    @cached_property
+    def connections(self) -> ConnectionService:
+        return ConnectionService(self._transaction, self._repos.connections)

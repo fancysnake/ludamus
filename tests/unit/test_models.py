@@ -7,6 +7,7 @@ from ludamus.adapters.db.django.models import (
     DEFAULT_NAME,
     AgendaItem,
     Area,
+    Connection,
     DomainEnrollmentConfig,
     Encounter,
     EncounterRSVP,
@@ -45,6 +46,13 @@ class TestSphere:
         name = faker.word()
 
         assert str(Sphere(name=name)) == name
+
+
+class TestConnection:
+    def test_str(self, faker):
+        display_name = faker.word()
+
+        assert str(Connection(display_name=display_name)) == display_name
 
 
 class TestEnrollmentConfig:

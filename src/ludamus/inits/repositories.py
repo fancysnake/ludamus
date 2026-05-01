@@ -18,3 +18,7 @@ class Repositories:
     @cached_property
     def proposal_categories(self) -> repositories.ProposalCategoryRepository:
         return repositories.ProposalCategoryRepository()
+
+    @cached_property
+    def connections(self) -> repositories.ConnectionsRepository:
+        return repositories.ConnectionsRepository()

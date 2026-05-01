@@ -11,6 +11,7 @@ from django.utils.text import slugify
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
+    Connection,
     DomainEnrollmentConfig,
     Encounter,
     EncounterRSVP,
@@ -117,6 +118,11 @@ from ludamus.pacts import (
     UserType,
     VenueDTO,
     VenueRepositoryProtocol,
+)
+from ludamus.pacts.multiverse import (
+    ConnectionDTO,
+    ConnectionsRepositoryProtocol,
+    ConnectionWriteDict,
 )
 
 if TYPE_CHECKING:
@@ -2609,3 +2615,48 @@ class TrackRepository(TrackRepositoryProtocol):
             .order_by("name")
             .values_list("name", flat=True)
         )
+
+
+class ConnectionsRepository(ConnectionsRepositoryProtocol):
+    @staticmethod
+    def list_for_sphere(sphere_id: int) -> list[ConnectionDTO]:
+        return [
+            ConnectionDTO.model_validate(c)
+            for c in Connection.objects.filter(sphere_id=sphere_id).order_by(
+                "display_name"
+            )
+        ]
+
+    @staticmethod
+    def get(sphere_id: int, pk: int) -> ConnectionDTO:
+        try:
+            connection = Connection.objects.get(pk=pk, sphere_id=sphere_id)
+        except Connection.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return ConnectionDTO.model_validate(connection)
+
+    @staticmethod
+    def create(sphere_id: int, data: ConnectionWriteDict) -> ConnectionDTO:
+        connection = Connection.objects.create(
+            sphere_id=sphere_id,
+            service=data["service"],
+            display_name=data["display_name"],
+        )
+        return ConnectionDTO.model_validate(connection)
+
+    @staticmethod
+    def update(sphere_id: int, pk: int, data: ConnectionWriteDict) -> ConnectionDTO:
+        try:
+            connection = Connection.objects.get(pk=pk, sphere_id=sphere_id)
+        except Connection.DoesNotExist as exc:
+            raise NotFoundError from exc
+        connection.service = data["service"]
+        connection.display_name = data["display_name"]
+        connection.save()
+        return ConnectionDTO.model_validate(connection)
+
+    @staticmethod
+    def delete(sphere_id: int, pk: int) -> None:
+        deleted, _ = Connection.objects.filter(pk=pk, sphere_id=sphere_id).delete()
+        if not deleted:
+            raise NotFoundError

@@ -1357,3 +1357,28 @@ def get_vc_available_slots(
     return max(
         0, virtual_config.allowed_slots - get_used_slots(users=users, event=event)
     )
+
+
+class ConnectionService(models.TextChoices):
+    GOOGLE = "google", _("Google Forms + Sheets")
+
+
+class Connection(models.Model):
+    sphere = models.ForeignKey(
+        Sphere, on_delete=models.CASCADE, related_name="connections"
+    )
+    service = models.CharField(max_length=32, choices=ConnectionService.choices)
+    display_name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = "connection"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("sphere", "display_name"),
+                name="connection_unique_display_name_per_sphere",
+            ),
+        )
+        ordering = ("display_name",)
+
+    def __str__(self) -> str:
+        return self.display_name
