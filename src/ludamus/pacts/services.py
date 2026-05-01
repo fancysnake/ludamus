@@ -11,7 +11,10 @@ if TYPE_CHECKING:
     from contextlib import AbstractContextManager
 
     from ludamus.pacts.chronology import CFPPersonalDataFieldServiceProtocol
-    from ludamus.pacts.multiverse import ConnectionsServiceProtocol
+    from ludamus.pacts.multiverse import (
+        ConnectionsServiceProtocol,
+        SpherePanelServiceProtocol,
+    )
 
 
 class TransactionProtocol(Protocol):
@@ -24,3 +27,5 @@ class ServicesProtocol(Protocol):
     def personal_data_fields(self) -> CFPPersonalDataFieldServiceProtocol: ...
     @property
     def connections(self) -> ConnectionsServiceProtocol: ...
+    @property
+    def sphere_panel(self) -> SpherePanelServiceProtocol: ...

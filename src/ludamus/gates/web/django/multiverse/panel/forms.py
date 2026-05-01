@@ -3,7 +3,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from ludamus.pacts.multiverse import ConnectionService
+from ludamus.pacts.multiverse import ConnectionProvider
 
 
 class ConnectionForm(forms.Form):
@@ -11,7 +11,7 @@ class ConnectionForm(forms.Form):
 
     service = forms.ChoiceField(
         label=_("Source service"),
-        choices=[(ConnectionService.GOOGLE.value, _("Google Forms + Sheets"))],
+        choices=[(ConnectionProvider.GOOGLE.value, _("Google Forms + Sheets"))],
         error_messages={
             "required": _("Please select a service."),
             "invalid_choice": _("Invalid service selection."),

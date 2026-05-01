@@ -15,7 +15,7 @@ from django.shortcuts import redirect
 from django.utils.translation import gettext as _
 
 if TYPE_CHECKING:
-    from ludamus.pacts import AuthenticatedRequestContext, DependencyInjectorProtocol
+    from ludamus.pacts import AuthenticatedRequestContext
     from ludamus.pacts.services import ServicesProtocol
 
 
@@ -23,7 +23,6 @@ class MultiverseRequest(HttpRequest):
     """Request type for multiverse views with services and context."""
 
     context: AuthenticatedRequestContext
-    di: DependencyInjectorProtocol
     services: ServicesProtocol
 
 
@@ -34,7 +33,7 @@ class SphereAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def test_func(self) -> bool:
         ctx = self.request.context
-        return self.request.di.uow.spheres.is_manager(
+        return self.request.services.sphere_panel.is_manager(
             ctx.current_sphere_id, ctx.current_user_slug
         )
 

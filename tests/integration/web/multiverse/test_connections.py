@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Connection
-from ludamus.mills.multiverse import ConnectionService as ConnectionMillService
 from ludamus.pacts.multiverse import ConnectionDTO
 from tests.integration.utils import assert_response
 
@@ -329,7 +328,7 @@ class TestConnectionEditPageView:
 
 
 class TestConnectionDeletePageView:
-    """Tests for /multiverse/panel/connections/<pk>/do/delete page."""
+    """Tests for /multiverse/panel/connections/<pk>/do/delete/ page."""
 
     @staticmethod
     def get_url(connection):
@@ -430,34 +429,6 @@ class TestConnectionDeletePageView:
             response,
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, "Connection not found.")],
-            url="/multiverse/panel/connections/",
-        )
-        assert Connection.objects.filter(pk=connection.pk).exists()
-
-    def test_post_shows_error_and_keeps_connection_when_in_use(
-        self, authenticated_client, active_user, sphere, monkeypatch
-    ):
-        sphere.managers.add(active_user)
-        connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Used"
-        )
-        monkeypatch.setattr(
-            ConnectionMillService,
-            "_list_blocking_events",
-            staticmethod(lambda _sphere_id, _pk: ["Event A", "Event B"]),
-        )
-
-        response = authenticated_client.post(self.get_url(connection))
-
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[
-                (
-                    messages.ERROR,
-                    "Cannot delete connection: in use by Event A, Event B.",
-                )
-            ],
             url="/multiverse/panel/connections/",
         )
         assert Connection.objects.filter(pk=connection.pk).exists()

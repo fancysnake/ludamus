@@ -6,12 +6,15 @@ backoffice). Split per `plans/hex_refactor.md` if the file grows past
 """
 
 from enum import StrEnum
-from typing import Protocol, TypedDict
+from typing import TYPE_CHECKING, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
 
+if TYPE_CHECKING:
+    from ludamus.pacts.legacy import EventDTO
 
-class ConnectionService(StrEnum):
+
+class ConnectionProvider(StrEnum):
     GOOGLE = "google"
 
 
@@ -20,12 +23,12 @@ class ConnectionDTO(BaseModel):
 
     pk: int
     sphere_id: int
-    service: ConnectionService
+    service: ConnectionProvider
     display_name: str
 
 
 class ConnectionWriteDict(TypedDict):
-    service: ConnectionService
+    service: ConnectionProvider
     display_name: str
 
 
@@ -49,4 +52,9 @@ class ConnectionsServiceProtocol(Protocol):
     def update(
         self, sphere_id: int, pk: int, data: ConnectionWriteDict
     ) -> ConnectionDTO: ...
-    def delete(self, sphere_id: int, pk: int) -> list[str]: ...
+    def delete(self, sphere_id: int, pk: int) -> None: ...
+
+
+class SpherePanelServiceProtocol(Protocol):
+    def is_manager(self, sphere_id: int, user_slug: str) -> bool: ...
+    def list_events(self, sphere_id: int) -> list[EventDTO]: ...

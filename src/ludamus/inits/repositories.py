@@ -22,3 +22,11 @@ class Repositories:
     @cached_property
     def connections(self) -> repositories.ConnectionsRepository:
         return repositories.ConnectionsRepository()
+
+    @cached_property
+    def spheres(self) -> repositories.SphereRepository:
+        return repositories.SphereRepository()
+
+    @cached_property
+    def events(self) -> repositories.EventRepository:
+        return repositories.EventRepository()
