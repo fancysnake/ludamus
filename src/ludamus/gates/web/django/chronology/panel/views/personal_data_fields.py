@@ -44,7 +44,7 @@ class PersonalDataFieldsPageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        service = self.request.services.chronology.panel.personal_data_fields
+        service = self.request.services.personal_data_fields
         context["active_nav"] = "cfp"
         context["active_tab"] = "host"
         context["tab_urls"] = cfp_tab_urls(slug)
@@ -69,7 +69,7 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
         if current_event is None:
             return redirect("panel:index")
 
-        service = self.request.services.chronology.panel.personal_data_fields
+        service = self.request.services.personal_data_fields
         form_ctx = service.get_create_form_context(current_event.pk)
         context["active_nav"] = "cfp"
         context["form"] = PersonalDataFieldForm(
@@ -92,7 +92,7 @@ class PersonalDataFieldCreatePageView(PanelAccessMixin, EventContextMixin, View)
         if current_event is None:
             return redirect("panel:index")
 
-        service = self.request.services.chronology.panel.personal_data_fields
+        service = self.request.services.personal_data_fields
         form = PersonalDataFieldForm(self.request.POST)
         cat_reqs, _order = parse_field_requirements(
             self.request.POST, "category_", "category_order"
@@ -134,7 +134,7 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        service = self.request.services.chronology.panel.personal_data_fields
+        service = self.request.services.personal_data_fields
         try:
             edit_ctx = service.get_edit_form_context(current_event.pk, field_slug)
         except NotFoundError:
@@ -172,7 +172,7 @@ class PersonalDataFieldEditPageView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return redirect("panel:index")
 
-        service = self.request.services.chronology.panel.personal_data_fields
+        service = self.request.services.personal_data_fields
         try:
             edit_ctx = service.get_edit_form_context(current_event.pk, field_slug)
         except NotFoundError:
@@ -239,7 +239,7 @@ class PersonalDataFieldDeleteActionView(PanelAccessMixin, EventContextMixin, Vie
         if current_event is None:
             return redirect("panel:index")
 
-        service = self.request.services.chronology.panel.personal_data_fields
+        service = self.request.services.personal_data_fields
         try:
             deleted = service.delete(current_event.pk, field_slug)
         except NotFoundError:

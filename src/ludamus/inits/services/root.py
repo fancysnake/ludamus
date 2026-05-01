@@ -1,16 +1,14 @@
 from functools import cached_property
 
 from ludamus.inits.repositories import Repositories
-from ludamus.inits.services.chronology.root import ChronologyServices
 from ludamus.inits.transaction import DjangoTransaction
+from ludamus.mills.chronology import CFPPersonalDataFieldService
 
 
 class Services:
-    """Lazy nested service namespace exposed on `request.services`.
+    """Lazy flat service namespace exposed on `request.services`.
 
-    Mirrors the gates tree so a view in
-    `gates/web/django/<subdomain>/<area>/` reaches its service via
-    `request.services.<subdomain>.<area>.<name>`.
+    Buckets will appear when the leaf count grows past ~12.
     """
 
     def __init__(self) -> None:
@@ -18,5 +16,9 @@ class Services:
         self._transaction = DjangoTransaction()
 
     @cached_property
-    def chronology(self) -> ChronologyServices:
-        return ChronologyServices(self._repos, self._transaction)
+    def personal_data_fields(self) -> CFPPersonalDataFieldService:
+        return CFPPersonalDataFieldService(
+            self._transaction,
+            self._repos.personal_data_fields,
+            self._repos.proposal_categories,
+        )
