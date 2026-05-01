@@ -5,7 +5,7 @@ from ludamus.inits.services.chronology.panel import ChronologyPanelServices
 
 if TYPE_CHECKING:
     from ludamus.inits.repositories.registry import Repositories
-    from ludamus.pacts import TransactionProtocol
+    from ludamus.pacts.services import TransactionProtocol
 
 
 class ChronologyServices:

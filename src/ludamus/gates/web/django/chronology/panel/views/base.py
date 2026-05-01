@@ -14,12 +14,13 @@ from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 from ludamus.mills import PanelService, is_proposal_active
-from ludamus.pacts import DependencyInjectorProtocol, NotFoundError, ServicesProtocol
+from ludamus.pacts import DependencyInjectorProtocol, NotFoundError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ludamus.pacts import AuthenticatedRequestContext, EventDTO
+    from ludamus.pacts.services import ServicesProtocol
 
 
 class PanelRequest(HttpRequest):

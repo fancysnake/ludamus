@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from ludamus.mills import (
-    CFPPersonalDataFieldService,
     PanelService,
     ProposeSessionService,
     check_proposal_rate_limit,
@@ -14,6 +13,7 @@ from ludamus.mills import (
     is_proposal_active,
     outlook_calendar_url,
 )
+from ludamus.mills.chronology import CFPPersonalDataFieldService
 from ludamus.pacts import (
     EncounterDTO,
     EventDTO,
@@ -22,10 +22,12 @@ from ludamus.pacts import (
     NotFoundError,
     PanelStatsDTO,
     PersonalDataFieldDTO,
-    PersonalDataFieldEditContextDTO,
-    PersonalDataFieldFormContextDTO,
     ProposalCategoryDTO,
     RequestContext,
+)
+from ludamus.pacts.chronology import (
+    PersonalDataFieldEditContextDTO,
+    PersonalDataFieldFormContextDTO,
 )
 
 

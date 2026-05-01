@@ -1,11 +1,11 @@
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from ludamus.mills import CFPPersonalDataFieldService
+from ludamus.mills.chronology import CFPPersonalDataFieldService
 
 if TYPE_CHECKING:
     from ludamus.inits.repositories.registry import Repositories
-    from ludamus.pacts import TransactionProtocol
+    from ludamus.pacts.services import TransactionProtocol
 
 
 class ChronologyPanelServices:
