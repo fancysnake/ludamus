@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from ludamus.mills.chronology import CFPPersonalDataFieldService
 
 if TYPE_CHECKING:
-    from ludamus.inits.repositories.registry import Repositories
+    from ludamus.inits.repositories import Repositories
     from ludamus.pacts.services import TransactionProtocol
 
 
@@ -15,9 +15,8 @@ class ChronologyPanelServices:
 
     @cached_property
     def personal_data_fields(self) -> CFPPersonalDataFieldService:
-        chronology = self._repos.chronology
         return CFPPersonalDataFieldService(
             self._transaction,
-            chronology.personal_data_fields,
-            chronology.proposal_categories,
+            self._repos.personal_data_fields,
+            self._repos.proposal_categories,
         )

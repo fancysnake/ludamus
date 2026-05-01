@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from ludamus.inits.repositories.registry import Repositories
+from ludamus.inits.repositories import Repositories
 from ludamus.inits.services.chronology.root import ChronologyServices
 from ludamus.inits.transaction import DjangoTransaction
 
