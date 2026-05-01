@@ -1,0 +1,26 @@
+{% extends "multiverse/panel/base.html" %}
+{% load i18n %}
+{% block title_prefix %}
+    {% translate "New connection" %} -
+{% endblock title_prefix %}
+{% block page_title %}
+    {% translate "New connection" %}
+{% endblock page_title %}
+{% block content %}
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 max-w-xl">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% include "multiverse/panel/connections/_form.html" %}
+            <div class="flex justify-end gap-2 pt-4 border-t border-neutral-200">
+                <a href="{% url 'multiverse:panel:connections' %}"
+                   class="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition">
+                    {% translate "Cancel" %}
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+                    {% translate "Create" %}
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock content %}
