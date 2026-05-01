@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from ludamus.mills import CFPPersonalDataFieldService
 
 if TYPE_CHECKING:
-    from ludamus.inits.repositories import Repositories
+    from ludamus.inits.repositories.registry import Repositories
     from ludamus.pacts import TransactionProtocol
 
 

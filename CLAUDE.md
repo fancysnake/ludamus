@@ -58,6 +58,12 @@ Strict rules:
   per-case approval.
 - NEVER add noqa/type ignore/pylint comments or directives without explicit
   per-case approval.
+- NEVER write re-export `__init__.py` files for new code (no wildcard
+  imports, no explicit re-export lists). New `__init__.py` files stay
+  empty — import each symbol from the module that defines it
+  (`from ludamus.foo.bar import Bar`, not `from ludamus.foo import Bar`).
+  Re-exports are tolerated only in pre-existing framework or legacy-module
+  facades (e.g., `<layer>/__init__.py` wildcarding `<layer>/legacy.py`).
 - When making UI changes, use agent-browser to take screenshots of affected
   pages and include before/after images in the PR description
 
