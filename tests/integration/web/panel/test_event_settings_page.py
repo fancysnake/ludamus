@@ -17,6 +17,10 @@ PNG_BYTES = (
     b"\x00\x00\x0cIDATx\x9cc```\x00\x00\x00\x04\x00\x01"
     b"\xf6\x178U\x00\x00\x00\x00IEND\xaeB`\x82"
 )
+GIF_BYTES = bytes.fromhex(
+    "47494638376101000100810000ffffff0000000000000000002c000000000100"
+    "010000080400010404003b"
+)
 
 
 class TestEventSettingsPageViewGet:
@@ -230,6 +234,30 @@ class TestEventSettingsPageViewPost:
             response,
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, "Image too large. Maximum size is 2 MB.")],
+            url=f"/panel/event/{event.slug}/settings/",
+        )
+        event.refresh_from_db()
+        assert not event.cover_image
+
+    def test_rejects_unsupported_cover_image_format(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        image = SimpleUploadedFile("cover.gif", GIF_BYTES, content_type="image/gif")
+
+        response = authenticated_client.post(
+            self.get_url(event), data={**self._post_data(event), "cover_image": image}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[
+                (
+                    messages.ERROR,
+                    "Unsupported image format. Use JPG, PNG, WebP, or AVIF.",
+                )
+            ],
             url=f"/panel/event/{event.slug}/settings/",
         )
         event.refresh_from_db()

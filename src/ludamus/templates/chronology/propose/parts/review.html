@@ -171,10 +171,17 @@
                        class="block text-sm font-medium text-foreground-secondary mb-2">
                     {% translate "Cover image" %}
                 </label>
+                <img id="cover-image-preview"
+                     alt=""
+                     width="960"
+                     height="540"
+                     class="mb-3 aspect-video w-full rounded-xl object-cover border border-border"
+                     hidden>
                 <input type="file"
                        name="cover_image"
                        id="id_cover_image"
-                       accept="image/*"
+                       accept="image/jpeg,image/png,image/webp,image/avif"
+                       data-preview-target="cover-image-preview"
                        class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
                 <p class="text-sm text-foreground-muted mt-1">{{ image_form.cover_image.field.help_text }}</p>
                 {% if image_form.cover_image.errors %}
@@ -191,5 +198,6 @@
                 <button type="submit" class="btn btn-primary py-3">{% translate "Submit Proposal" %}</button>
             </div>
         </form>
+        {% include "components/cover_image_preview_script.html" %}
     {% endif %}
 </div>

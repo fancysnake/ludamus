@@ -31,6 +31,10 @@ PNG_BYTES = (
     b"\x00\x00\x0cIDATx\x9cc```\x00\x00\x00\x04\x00\x01"
     b"\xf6\x178U\x00\x00\x00\x00IEND\xaeB`\x82"
 )
+GIF_BYTES = bytes.fromhex(
+    "47494638376101000100810000ffffff0000000000000000002c000000000100"
+    "010000080400010404003b"
+)
 
 
 class TestProposeSessionPageView:
@@ -1315,6 +1319,22 @@ class TestProposeSessionPageView:
             PNG_BYTES + b"0" * (2 * 1024 * 1024 + 1),
             content_type="image/png",
         )
+
+        response = authenticated_client.post(
+            self._get_submit_url(event.slug), {"cover_image": image}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/review.html"
+        assert "cover_image" in response.context["image_form"].errors
+        assert not Session.objects.filter(title="Test Session").exists()
+
+    def test_submit_rejects_unsupported_cover_image_format(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._set_wizard_full(authenticated_client, event, proposal_category)
+        image = SimpleUploadedFile("cover.gif", GIF_BYTES, content_type="image/gif")
 
         response = authenticated_client.post(
             self._get_submit_url(event.slug), {"cover_image": image}
