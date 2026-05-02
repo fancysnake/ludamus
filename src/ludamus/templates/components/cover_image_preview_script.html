@@ -1,0 +1,23 @@
+<script>
+    (function() {
+        var input = document.getElementById("id_cover_image");
+        if (!input || input.dataset.coverPreviewBound === "1") return;
+        input.dataset.coverPreviewBound = "1";
+
+        var previewId = input.dataset.previewTarget;
+        var preview = previewId ? document.getElementById(previewId) : null;
+        if (!preview) return;
+
+        input.addEventListener("change", function() {
+            var file = input.files && input.files[0];
+            if (!file) return;
+            if (preview.dataset.objectUrl) {
+                URL.revokeObjectURL(preview.dataset.objectUrl);
+            }
+            var url = URL.createObjectURL(file);
+            preview.src = url;
+            preview.dataset.objectUrl = url;
+            preview.hidden = false;
+        });
+    })();
+</script>
