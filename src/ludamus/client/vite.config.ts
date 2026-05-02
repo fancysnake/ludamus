@@ -1,11 +1,26 @@
 import { resolve } from "node:path";
 
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+// Vite's default HTML hot-update sends {type:"full-reload", path:"<file>"}.
+// The Vite client (client.mjs case "full-reload") only reloads when that
+// path matches location.pathname. We serve HTML from Django (/events/, …)
+// not Vite, so the paths never match and the browser silently ignores the
+// signal. Send a path-less full-reload so the client reloads unconditionally.
+const djangoTemplateReload = (): Plugin => ({
+  name: "django-template-reload",
+  handleHotUpdate({ file, server }) {
+    if (file.endsWith(".html")) {
+      server.ws.send({ type: "full-reload" });
+      return [];
+    }
+  },
+});
 
 export default defineConfig({
   base: "/static/vite/",
-  plugins: [tailwindcss()],
+  plugins: [tailwindcss(), djangoTemplateReload()],
   server: {
     host: "0.0.0.0",
     port: 5173,
