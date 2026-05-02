@@ -165,14 +165,15 @@ Scopes: **L** = local, **D** = docker local, **P** = prod.
 - `STATIC_ROOT` — collected static path — P(opt)
 - `MEDIA_ROOT` — uploaded media path (used when GCS is not configured) — P(opt)
 
-**Media storage — Google Cloud Storage** (prod only, optional):
+**Media storage — Google Cloud Storage** (optional, any scope):
 
-Set all three to switch user-uploaded media from the local filesystem to GCS.
-When `GS_BUCKET_NAME` is empty, the app falls back to `MEDIA_ROOT` on disk.
+Set all three to switch user-uploaded media to GCS. If any is missing the
+app uses `FileSystemStorage` (`MEDIA_ROOT`). Works in any scope — set them
+locally to test the GCS path without deploying.
 
-- `GS_BUCKET_NAME` — bucket name — P(opt)
-- `GS_CREDENTIALS_JSON` — service-account key JSON (full file contents) — P(opt)
-- `GS_LOCATION` — optional path prefix inside the bucket — P(opt)
+- `GS_BUCKET_NAME` — bucket name — L(opt) D(opt) P(opt)
+- `GS_CREDENTIALS_JSON` — service-account key JSON contents — L(opt) D(opt) P(opt)
+- `GS_LOCATION` — path prefix inside the bucket — L(opt) D(opt) P(opt)
 
 Bucket setup: enable uniform bucket-level access; grant
 `roles/storage.objectViewer` to `allUsers` for public read of header images.

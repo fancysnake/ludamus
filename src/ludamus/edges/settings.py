@@ -36,7 +36,7 @@ env = environ.Env(
     GIT_COMMIT_SHA=(str, "1"),
     MEDIA_ROOT=(str, str(BASE_DIR / "media")),
     STATIC_ROOT=(str, str(BASE_DIR / "staticfiles")),
-    # Google Cloud Storage (media)
+    # Google Cloud Storage (media) — set all three to enable GCS
     GS_BUCKET_NAME=(str, ""),
     GS_CREDENTIALS_JSON=(str, ""),
     GS_LOCATION=(str, ""),
@@ -341,41 +341,46 @@ else:
 MEDIA_ROOT = env("MEDIA_ROOT")
 MEDIA_URL = "/media/"
 
-# Static files configuration for production
-if IS_PRODUCTION:
-    STATIC_ROOT = env("STATIC_ROOT")
+# Default storage — GCS when all three GS_ vars are set, filesystem otherwise.
+# Independent of IS_PRODUCTION so GCS can be exercised locally.
+GS_BUCKET_NAME = env("GS_BUCKET_NAME")
+GS_CREDENTIALS_JSON = env("GS_CREDENTIALS_JSON")
+GS_LOCATION = env("GS_LOCATION")
 
-    if GS_BUCKET_NAME := env("GS_BUCKET_NAME"):
-        gs_credentials = service_account.Credentials.from_service_account_info(  # type: ignore[no-untyped-call]
-            json.loads(env("GS_CREDENTIALS_JSON"))
-        )
-        gs_options: dict[str, object] = {
+if GS_BUCKET_NAME and GS_CREDENTIALS_JSON and GS_LOCATION:
+    gs_credentials = service_account.Credentials.from_service_account_info(  # type: ignore[no-untyped-call]
+        json.loads(GS_CREDENTIALS_JSON)
+    )
+    default_storage_backend: dict[str, object] = {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {
             "bucket_name": GS_BUCKET_NAME,
             "credentials": gs_credentials,
+            "location": GS_LOCATION,
             "default_acl": None,
             "querystring_auth": False,
-        }
-        if gs_location := env("GS_LOCATION"):
-            gs_options["location"] = gs_location
-        STORAGES = {
-            "default": {
-                "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
-                "OPTIONS": gs_options,
-            },
-            "staticfiles": {
-                "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-            },
-        }
-    else:
-        STORAGES = {
-            "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-            "staticfiles": {
-                "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-            },
-        }
+        },
+    }
+else:
+    default_storage_backend = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+
+if IS_PRODUCTION:
+    STATIC_ROOT = env("STATIC_ROOT")
+    STORAGES = {
+        "default": default_storage_backend,
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        },
+    }
 else:
     # Development email backend
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    STORAGES = {
+        "default": default_storage_backend,
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+        },
+    }
 
 # Cache configuration
 CACHES = (
