@@ -14,7 +14,7 @@ dynamic = ['dependencies']
 
 [project.urls]
 homepage = "https://zagrajmy.net/"
-repository = "https://github.com/fancysnake/ludamus"
+repository = "https://github.com/zagrajmy/ludamus"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
