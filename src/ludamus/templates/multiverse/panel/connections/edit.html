@@ -35,11 +35,12 @@
                 <div class="hidden peer-has-[:checked]:block space-y-1">
                     <label class="block text-sm font-medium text-neutral-700"
                            for="{{ form.credentials.id_for_label }}">{{ form.credentials.label }}</label>
+                    {# Never echo plaintext credentials back into the DOM on re-render — user re-pastes on validation error. #}
                     <textarea name="{{ form.credentials.html_name }}"
                               id="{{ form.credentials.id_for_label }}"
                               rows="8"
                               autocomplete="off"
-                              class="w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary">{{ form.credentials.value|default:'' }}</textarea>
+                              class="w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
                     <p class="text-xs text-neutral-500">{{ form.credentials.help_text }}</p>
                     {% for error in form.credentials.errors %}<p class="text-sm text-red-600">{{ error }}</p>{% endfor %}
                 </div>
