@@ -22,27 +22,29 @@
         </p>
     </div>
     <div data-dropzone-selected
-         class="pointer-events-none relative z-10 flex items-center gap-3 w-full max-w-md {% if not initial_url %}hidden{% endif %}">
+         class="pointer-events-none {% if not initial_url %}hidden{% endif %} {% if is_image %}absolute inset-0 z-10 rounded-2xl overflow-hidden{% else %}relative z-10 flex items-center gap-3 w-full max-w-md{% endif %}">
         {% if is_image %}
             <img data-dropzone-preview
                  src="{{ initial_url|default:'' }}"
                  alt=""
-                 width="64"
-                 height="64"
-                 class="w-16 h-16 rounded-lg object-cover bg-bg-secondary border border-border shrink-0">
+                 width="800"
+                 height="400"
+                 class="absolute inset-0 w-full h-full object-cover">
         {% else %}
             <span class="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-bg-secondary border border-border text-foreground-secondary shrink-0">
                 {% icon "document" class="w-6 h-6" %}
             </span>
         {% endif %}
-        <div class="flex-1 min-w-0 text-left">
-            <p data-dropzone-name
-               class="text-sm font-medium text-foreground truncate">{{ initial_name }}</p>
-            <p data-dropzone-size class="text-xs text-foreground-muted"></p>
+        <div class="{% if is_image %}absolute bottom-2 left-2 right-2 px-3 py-2 rounded-xl bg-bg-secondary/85 backdrop-blur-sm border border-border shadow-sm flex items-center gap-3{% endif %}">
+            <div class="flex-1 min-w-0 text-left">
+                <p data-dropzone-name
+                   class="text-sm font-medium text-foreground truncate">{{ initial_name }}</p>
+                <p data-dropzone-size class="text-xs text-foreground-muted"></p>
+            </div>
+            <button type="button"
+                    data-dropzone-clear
+                    class="pointer-events-auto p-1.5 rounded-md text-foreground-muted hover:text-danger hover:bg-bg-secondary transition-colors shrink-0 [&_svg]:pointer-events-none"
+                    aria-label="{% translate "Remove file" %}">{% icon "x-mark" class="w-4 h-4" %}</button>
         </div>
-        <button type="button"
-                data-dropzone-clear
-                class="pointer-events-auto p-1.5 rounded-md text-foreground-muted hover:text-danger hover:bg-bg-secondary transition-colors shrink-0 [&_svg]:pointer-events-none"
-                aria-label="{% translate "Remove file" %}">{% icon "x-mark" class="w-4 h-4" %}</button>
     </div>
 </label>
