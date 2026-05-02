@@ -49,7 +49,8 @@ RUN mise trust && mise install && mise run p install
 COPY --chown=appuser:appuser src ./src
 
 # Run Django commands that need source code
-RUN mise run build-frontend && mise run dj compilemessages
+RUN mise run build-frontend && mise run dj compilemessages \
+    || { echo "=== build step failed; available mise tasks: ===" >&2; mise tasks --no-header >&2 || true; exit 1; }
 
 # Expose port
 EXPOSE 8000
@@ -71,7 +72,8 @@ RUN mise trust && mise install && mise run p install --only main
 COPY --chown=appuser:appuser src ./src
 
 # Run Django commands that need source code
-RUN mise run build-frontend && mise run dj compilemessages
+RUN mise run build-frontend && mise run dj compilemessages \
+    || { echo "=== build step failed; available mise tasks: ===" >&2; mise tasks --no-header >&2 || true; exit 1; }
 
 # Expose port
 EXPOSE 8000
