@@ -46,11 +46,11 @@ services:
       - media_volume:/app/media
     environment:
       MISE_TRUSTED_CONFIG_PATHS: /app/mise.toml
-      TS_OUTDIR: /app/staticfiles/js
     env_file:
       - ../../.env
     ports:
       - '127.0.0.1:8000:8000'
+      - '127.0.0.1:5173:5173'
     command: [ "dj", "migrate", "--noinput", ":::", "dj", "createcachetable", ":::", "dj", "downloadvendor", ":::", "start" ]
     restart: unless-stopped
     healthcheck:
