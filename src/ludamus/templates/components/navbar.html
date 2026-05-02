@@ -20,7 +20,7 @@
                 </a>
                 {% if current_sphere.enabled_pages|length > 1 %}
                     {% with ns=request.resolver_match.namespace %}
-                        <div class="hidden sm:flex items-center gap-1">
+                        <div class="items-center gap-1">
                             {% if "events" in current_sphere.enabled_pages %}
                                 <a href="{% url 'web:events' %}"
                                    aria-current="{% if 'notice-board' not in ns %}page{% endif %}"
