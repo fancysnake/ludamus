@@ -56,6 +56,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
                 "name": current_event.name,
                 "slug": current_event.slug,
                 "description": current_event.description,
+                "cover_image": current_event.cover_image_url or None,
                 "start_time": localtime(current_event.start_time),
                 "end_time": localtime(current_event.end_time),
                 "publication_time": (

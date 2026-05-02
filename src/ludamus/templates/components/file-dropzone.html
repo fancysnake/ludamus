@@ -1,5 +1,5 @@
 {# File input rendered as drag-and-drop zone. Pass `name` and `id`. #}
-{# Optional: required, accept, is_image, has_errors, initial_url, initial_name #}
+{# Optional: required, accept, is_image, has_errors, errors, initial_url, initial_name #}
 {% load i18n tessera %}
 <label for="{{ id }}"
        data-dropzone
@@ -13,13 +13,25 @@
            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
     <div data-dropzone-empty
          class="pointer-events-none flex flex-col items-center text-center {% if initial_url %}hidden{% endif %}">
-        <span class="mb-3 inline-flex items-center justify-center w-11 h-11 rounded-full bg-bg-secondary text-foreground-secondary border border-border transition-colors group-hover:text-primary group-hover:border-primary/30">
-            {% icon "arrow-up-tray" class="w-5 h-5" %}
+        <span class="mb-3 inline-flex items-center justify-center w-11 h-11 rounded-full {% if has_errors %}bg-danger/10 text-danger border-danger/30{% else %}bg-bg-secondary text-foreground-secondary border-border group-hover:text-primary group-hover:border-primary/30{% endif %} border transition-colors">
+            {% if has_errors %}
+                {% icon "exclamation-triangle" class="w-5 h-5" %}
+            {% else %}
+                {% icon "arrow-up-tray" class="w-5 h-5" %}
+            {% endif %}
         </span>
-        <p class="text-sm text-foreground">
-            <span class="font-semibold text-primary">{% translate "Click to upload" %}</span>
-            <span class="text-foreground-secondary">{% translate "or drag and drop" %}</span>
-        </p>
+        {% if has_errors %}
+            <p data-dropzone-error class="text-sm font-medium text-danger">{{ errors.0 }}</p>
+            <p class="mt-1 text-xs text-foreground-muted">
+                <span class="font-semibold text-primary">{% translate "Click to upload" %}</span>
+                <span>{% translate "or drag and drop another file" %}</span>
+            </p>
+        {% else %}
+            <p class="text-sm text-foreground">
+                <span class="font-semibold text-primary">{% translate "Click to upload" %}</span>
+                <span class="text-foreground-secondary">{% translate "or drag and drop" %}</span>
+            </p>
+        {% endif %}
     </div>
     <div data-dropzone-selected
          class="pointer-events-none {% if not initial_url %}hidden{% endif %} {% if is_image %}absolute inset-0 z-10 rounded-2xl overflow-hidden{% else %}relative z-10 flex items-center gap-3 w-full max-w-md{% endif %}">

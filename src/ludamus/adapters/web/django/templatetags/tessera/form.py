@@ -88,7 +88,10 @@ def tessera_field(field: BoundField, *, layout: str = "vertical") -> str:
         else:
             parts.append(render_input(field))
 
-        parts.extend((render_help_text(field), render_errors(field)))
+        parts.append(render_help_text(field))
+        if not is_file:
+            # Dropzone renders errors inline; avoid the double-printed message.
+            parts.append(render_errors(field))
 
         if layout == "horizontal":
             parts.append("</div>")
