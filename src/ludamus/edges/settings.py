@@ -93,6 +93,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "ludamus.inits.RepositoryInjectionMiddleware",
+    "ludamus.inits.middleware.ServiceInjectionMiddleware",
     "ludamus.adapters.web.django.middlewares.RequestContextMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "ludamus.adapters.web.django.middlewares.RedirectErrorMiddleware",
@@ -109,13 +110,16 @@ if DEBUG and env.bool("DEBUG_TOOLBAR", default=False):
 
 ROOT_URLCONF = "ludamus.gates.web.django.urls"
 
-_TEMPLATE_LOADERS = [
+_BASE_TEMPLATE_LOADERS = [
     "django.template.loaders.filesystem.Loader",
     "django.template.loaders.app_directories.Loader",
 ]
 
-if IS_PRODUCTION:
-    _TEMPLATE_LOADERS = [("django.template.loaders.cached.Loader", _TEMPLATE_LOADERS)]
+_TEMPLATE_LOADERS: list[str | tuple[str, list[str]]] = (
+    [("django.template.loaders.cached.Loader", _BASE_TEMPLATE_LOADERS)]
+    if IS_PRODUCTION
+    else list(_BASE_TEMPLATE_LOADERS)
+)
 
 TEMPLATES = [
     {
