@@ -4,7 +4,7 @@
 ---
 config:
   kanban:
-    ticketBaseUrl: 'https://github.com/fancysnake/ludamus/issues/#TICKET#'
+    ticketBaseUrl: 'https://github.com/zagrajmy/ludamus/issues/#TICKET#'
 ---
 kanban
   Wishlist
