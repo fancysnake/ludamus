@@ -18,6 +18,7 @@ ENV PYTHONUNBUFFERED=1
 # Build-only: Django settings need these to load for tailwind/compilemessages.
 # Overridden at runtime by env_file / environment in compose.
 ENV SECRET_KEY=build-only-not-used-at-runtime
+ENV CREDENTIALS_ENCRYPTION_KEY=build-only-not-used-at-runtime
 ENV DB_NAME=:memory:
 
 # Set work directory
