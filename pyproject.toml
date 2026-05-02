@@ -38,6 +38,7 @@ segno = "^1.6.6"
 pillow = "^12.1.1"
 markdown = "^3.10.2"
 whitenoise = "^6.12.0"
+django-storages = {extras = ["google"], version = "^1.14.6"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.1.0"
@@ -118,6 +119,8 @@ DEP002 = [
     "heroicons",
     "psycopg",
     "pillow",
+    "whitenoise",
+    "django-storages"
 ]
 DEP004 = ["debug_toolbar"]
 
