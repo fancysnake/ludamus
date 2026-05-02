@@ -2,6 +2,7 @@ from functools import cached_property
 
 from ludamus.inits.repositories import Repositories
 from ludamus.inits.transaction import DjangoTransaction
+from ludamus.links.encryption import FernetEncryptor
 from ludamus.mills.chronology import CFPPersonalDataFieldService
 from ludamus.mills.multiverse import ConnectionsService, SpherePanelService
 
@@ -25,8 +26,17 @@ class Services:
         )
 
     @cached_property
+    def credentials_encryptor(self) -> FernetEncryptor:
+        return FernetEncryptor()
+
+    @cached_property
     def connections(self) -> ConnectionsService:
-        return ConnectionsService(self._transaction, self._repos.connections)
+        return ConnectionsService(
+            self._transaction,
+            self._repos.connections,
+            self.credentials_encryptor,
+            self._repos.connection_usage_inspector,
+        )
 
     @cached_property
     def sphere_panel(self) -> SpherePanelService:

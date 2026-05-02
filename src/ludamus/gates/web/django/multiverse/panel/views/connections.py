@@ -131,7 +131,13 @@ class ConnectionEditPageView(SphereAccessMixin, View):
             "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
-        self.request.services.connections.update(sphere_id, pk, data)
+        if form.cleaned_data["replace_credentials"]:
+            plaintext = form.cleaned_data["credentials"].encode("utf-8")
+            self.request.services.connections.test_then_update(
+                sphere_id, pk, data, plaintext
+            )
+        else:
+            self.request.services.connections.update(sphere_id, pk, data)
         messages.success(self.request, _("Connection updated successfully."))
         return redirect("multiverse:panel:connections")
 
@@ -161,9 +167,17 @@ class ConnectionDeletePageView(SphereAccessMixin, View):
     def post(self, _request: MultiverseRequest, pk: int) -> HttpResponse:
         sphere_id = self.request.context.current_sphere_id
         try:
-            self.request.services.connections.delete(sphere_id, pk)
+            blockers = self.request.services.connections.delete(sphere_id, pk)
         except NotFoundError:
             messages.error(self.request, _("Connection not found."))
+            return redirect("multiverse:panel:connections")
+
+        if blockers:
+            messages.error(
+                self.request,
+                _("Cannot delete connection — used by: %(events)s.")
+                % {"events": ", ".join(blockers)},
+            )
             return redirect("multiverse:panel:connections")
 
         messages.success(self.request, _("Connection deleted successfully."))

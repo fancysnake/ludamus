@@ -24,6 +24,10 @@ class Repositories:
         return repositories.ConnectionsRepository()
 
     @cached_property
+    def connection_usage_inspector(self) -> repositories.ConnectionUsageInspector:
+        return repositories.ConnectionUsageInspector()
+
+    @cached_property
     def spheres(self) -> repositories.SphereRepository:
         return repositories.SphereRepository()
 

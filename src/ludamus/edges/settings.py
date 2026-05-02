@@ -39,6 +39,7 @@ env = environ.Env(
     MEMBERSHIP_API_TIMEOUT=(int, 30),
     MEMBERSHIP_API_TOKEN=(str, ""),
     # Other
+    CREDENTIALS_ENCRYPTION_KEY=str,
     DEBUG=(bool, False),
     ENV=str,
     SECRET_KEY=str,
@@ -54,6 +55,11 @@ IS_PRODUCTION = ENV == "production"
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 SECRET_KEY = env("SECRET_KEY")
+
+# Fernet key for encrypting import-connection credentials at rest.
+# Distinct from SECRET_KEY so it can rotate independently. Url-safe
+# base64-encoded 32 bytes (output of Fernet.generate_key()).
+CREDENTIALS_ENCRYPTION_KEY = env("CREDENTIALS_ENCRYPTION_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")

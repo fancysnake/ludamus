@@ -1369,6 +1369,9 @@ class Connection(models.Model):
         choices=[(ConnectionProvider.GOOGLE.value, _("Google Forms + Sheets"))],
     )
     display_name = models.CharField(max_length=255)
+    # Encrypted credentials. Write-only at the repo surface — the
+    # decrypt path is owned by the import-execution slice.
+    credentials = models.BinaryField(default=b"")
 
     class Meta:
         db_table = "connection"
@@ -1382,3 +1385,7 @@ class Connection(models.Model):
 
     def __str__(self) -> str:
         return self.display_name
+
+    @property
+    def has_credentials(self) -> bool:
+        return bool(self.credentials)

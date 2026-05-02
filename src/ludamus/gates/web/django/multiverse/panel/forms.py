@@ -18,3 +18,21 @@ class ConnectionForm(forms.Form):
         },
     )
     display_name = forms.CharField(label=_("Display name"), max_length=255, strip=True)
+    replace_credentials = forms.BooleanField(
+        label=_("Replace credentials"), required=False
+    )
+    credentials = forms.CharField(
+        label=_("Credentials"),
+        widget=forms.Textarea(attrs={"rows": 8, "autocomplete": "off"}),
+        required=False,
+        help_text=_("Paste the service-account JSON or OAuth credentials."),
+    )
+
+    def clean(self) -> dict[str, object]:
+        cleaned = super().clean() or {}
+        if (
+            cleaned.get("replace_credentials")
+            and not (cleaned.get("credentials") or "").strip()
+        ):
+            self.add_error("credentials", _("Credentials are required when replacing."))
+        return cleaned

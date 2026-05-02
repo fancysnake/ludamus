@@ -25,6 +25,7 @@ class ConnectionDTO(BaseModel):
     sphere_id: int
     service: ConnectionProvider
     display_name: str
+    has_credentials: bool
 
 
 class ConnectionWriteDict(TypedDict):
@@ -42,7 +43,18 @@ class ConnectionsRepositoryProtocol(Protocol):
     @staticmethod
     def update(sphere_id: int, pk: int, data: ConnectionWriteDict) -> ConnectionDTO: ...
     @staticmethod
+    def update_credentials(sphere_id: int, pk: int, blob: bytes) -> None: ...
+    @staticmethod
     def delete(sphere_id: int, pk: int) -> None: ...
+
+
+class EncryptorProtocol(Protocol):
+    def encrypt(self, plaintext: bytes) -> bytes: ...
+
+
+class ConnectionUsageInspectorProtocol(Protocol):
+    @staticmethod
+    def list_blocking_events(connection_pk: int) -> list[str]: ...
 
 
 class ConnectionsServiceProtocol(Protocol):
@@ -52,7 +64,17 @@ class ConnectionsServiceProtocol(Protocol):
     def update(
         self, sphere_id: int, pk: int, data: ConnectionWriteDict
     ) -> ConnectionDTO: ...
-    def delete(self, sphere_id: int, pk: int) -> None: ...
+    def test_then_create(
+        self, sphere_id: int, data: ConnectionWriteDict, credentials_plaintext: bytes
+    ) -> ConnectionDTO: ...
+    def test_then_update(
+        self,
+        sphere_id: int,
+        pk: int,
+        data: ConnectionWriteDict,
+        credentials_plaintext: bytes,
+    ) -> ConnectionDTO: ...
+    def delete(self, sphere_id: int, pk: int) -> list[str]: ...
 
 
 class SpherePanelServiceProtocol(Protocol):

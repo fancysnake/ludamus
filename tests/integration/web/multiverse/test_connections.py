@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Connection
+from ludamus.links.db.django.repositories import ConnectionUsageInspector
 from ludamus.pacts.multiverse import ConnectionDTO
 from tests.integration.utils import assert_response
 
@@ -326,6 +327,102 @@ class TestConnectionEditPageView:
         connection.refresh_from_db()
         assert connection.display_name == "Other"
 
+    def test_post_replace_credentials_off_skips_credentials(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        connection = Connection.objects.create(
+            sphere=sphere,
+            service="google",
+            display_name="Original",
+            credentials=b"old-blob",
+        )
+
+        response = authenticated_client.post(
+            self.get_url(connection),
+            data={
+                "service": "google",
+                "display_name": "Renamed",
+                "credentials": "ignored",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Connection updated successfully.")],
+            url="/multiverse/panel/connections/",
+        )
+        connection.refresh_from_db()
+        assert connection.display_name == "Renamed"
+        # Stored blob is left untouched when the toggle is off.
+        assert bytes(connection.credentials) == b"old-blob"
+
+    def test_post_replace_credentials_on_encrypts_and_persists(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        connection = Connection.objects.create(
+            sphere=sphere, service="google", display_name="Konto"
+        )
+
+        response = authenticated_client.post(
+            self.get_url(connection),
+            data={
+                "service": "google",
+                "display_name": "Konto",
+                "replace_credentials": "on",
+                "credentials": '{"client": "abc"}',
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Connection updated successfully.")],
+            url="/multiverse/panel/connections/",
+        )
+        connection.refresh_from_db()
+        stored = bytes(connection.credentials)
+        # Persisted blob must be non-empty and not contain the plaintext.
+        assert stored
+        assert b"abc" not in stored
+
+    def test_post_replace_credentials_on_requires_credentials(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        connection = Connection.objects.create(
+            sphere=sphere,
+            service="google",
+            display_name="Konto",
+            credentials=b"unchanged",
+        )
+
+        response = authenticated_client.post(
+            self.get_url(connection),
+            data={
+                "service": "google",
+                "display_name": "Konto",
+                "replace_credentials": "on",
+                "credentials": "",
+            },
+        )
+
+        assert response.context["form"].errors
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="multiverse/panel/connections/edit.html",
+            context_data={
+                **CONNECTIONS_PANEL_CONTEXT,
+                "form": ANY,
+                "connection": ConnectionDTO.model_validate(connection),
+            },
+        )
+        connection.refresh_from_db()
+        assert bytes(connection.credentials) == b"unchanged"
+
 
 class TestConnectionDeletePageView:
     """Tests for /multiverse/panel/connections/<pk>/do/delete/ page."""
@@ -429,6 +526,39 @@ class TestConnectionDeletePageView:
             response,
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, "Connection not found.")],
+            url="/multiverse/panel/connections/",
+        )
+        assert Connection.objects.filter(pk=connection.pk).exists()
+
+    def test_post_blocked_when_connection_in_use_flashes_event_names(
+        self, authenticated_client, active_user, sphere, monkeypatch
+    ):
+        sphere.managers.add(active_user)
+        connection = Connection.objects.create(
+            sphere=sphere, service="google", display_name="In use"
+        )
+
+        def _fake_list_blocking_events(connection_pk: int) -> list[str]:
+            del connection_pk
+            return ["Convent 2026", "Spring Jam"]
+
+        monkeypatch.setattr(
+            ConnectionUsageInspector,
+            "list_blocking_events",
+            staticmethod(_fake_list_blocking_events),
+        )
+
+        response = authenticated_client.post(self.get_url(connection))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[
+                (
+                    messages.ERROR,
+                    "Cannot delete connection — used by: Convent 2026, Spring Jam.",
+                )
+            ],
             url="/multiverse/panel/connections/",
         )
         assert Connection.objects.filter(pk=connection.pk).exists()
