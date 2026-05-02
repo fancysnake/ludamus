@@ -106,7 +106,6 @@ kanban
     [Clean up internal files - gitignore or remove task/plan files, mockups]@{
       assigned: 'pre-launch'
     }
-    [Add project URLs to pyproject.toml]@{ assigned: 'pre-launch' }
     [Session hosts list - discount tiers and confirmation workflow]@{
       assigned: 'panel'
     }
@@ -125,12 +124,6 @@ kanban
     }
 
   Sprint
-    [Proposals management - filterable list and accept/reject workflow]@{
-      assigned: 'panel'
-    }
-    [Timetable builder - drag-and-drop scheduling and conflict detection]@{
-      assigned: 'panel'
-    }
     [Event settings - discount tiers, submission periods]@{ assigned: 'panel' }
 
   Done
@@ -142,4 +135,11 @@ kanban
     [Dead code detection tooling]@{ assigned: 'agent-readiness' }
     [Program categories - configurable submission forms]@{ assigned: 'panel' }
     [Duplicate code detection tooling]@{ assigned: 'agent-readiness' }
+    [Proposals management - filterable list and accept/reject workflow]@{
+      assigned: 'panel'
+    }
+    [Timetable builder - drag-and-drop scheduling and conflict detection]@{
+      assigned: 'panel'
+    }
+    [Add project URLs to pyproject.toml]@{ assigned: 'pre-launch' }
 ```
