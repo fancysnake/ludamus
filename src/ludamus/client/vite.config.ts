@@ -36,6 +36,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, "src/index.css"),
+        "encounter-form": resolve(__dirname, "src/encounter-form.ts"),
         modal: resolve(__dirname, "src/modal.ts"),
         tabs: resolve(__dirname, "src/tabs.ts"),
         timetable: resolve(__dirname, "src/timetable.ts"),

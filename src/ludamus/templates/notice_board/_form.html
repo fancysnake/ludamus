@@ -1,4 +1,4 @@
-{% load i18n tessera %}
+{% load i18n tessera django_vite %}
 {% tessera_field form.title %}
 {% tessera_field form.description %}
 <div class="md:grid md:grid-cols-2 md:gap-x-4">
@@ -9,3 +9,4 @@
     {% tessera_field form.max_participants %}
     {% tessera_field form.header_image %}
 </div>
+{% vite_asset 'src/encounter-form.ts' %}
