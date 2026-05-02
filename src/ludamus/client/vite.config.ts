@@ -7,20 +7,27 @@ import { defineConfig, type Plugin } from "vite";
 // The Vite client (client.mjs case "full-reload") only reloads when that
 // path matches location.pathname. We serve HTML from Django (/events/, …)
 // not Vite, so the paths never match and the browser silently ignores the
-// signal. Send a path-less full-reload so the client reloads unconditionally.
+// signal. Send a custom event handled by src/django-hmr.ts so Django-rendered
+// pages reload even when Vite's built-in HTML path matching does not apply.
 const djangoTemplateReload = (): Plugin => ({
   name: "django-template-reload",
-  handleHotUpdate({ file, server }) {
-    if (file.endsWith(".html")) {
-      server.ws.send({ type: "full-reload" });
-      return [];
-    }
+  handleHotUpdate: {
+    order: "pre",
+    handler({ file, server }) {
+      if (file.endsWith(".html")) {
+        server.environments.client.hot.send({
+          type: "custom",
+          event: "django-template-reload",
+        });
+        return [];
+      }
+    },
   },
 });
 
 export default defineConfig({
   base: "/static/vite/",
-  plugins: [tailwindcss(), djangoTemplateReload()],
+  plugins: [djangoTemplateReload(), tailwindcss()],
   server: {
     host: "0.0.0.0",
     port: 5173,
@@ -35,6 +42,7 @@ export default defineConfig({
     manifest: "manifest.json",
     rollupOptions: {
       input: {
+        djangoHmr: resolve(__dirname, "src/django-hmr.ts"),
         index: resolve(__dirname, "src/index.css"),
         "encounter-form": resolve(__dirname, "src/encounter-form.ts"),
         modal: resolve(__dirname, "src/modal.ts"),

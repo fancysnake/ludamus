@@ -7,6 +7,7 @@ import {
 interface NavigateEvent {
   canIntercept: boolean;
   hashChange: boolean;
+  navigationType: "push" | "replace" | "reload" | "traverse";
   destination: { url: string };
   intercept: () => void;
 }
@@ -194,6 +195,7 @@ window.addEventListener("pagehide", () => {
 
 if (navigation) {
   navigation.addEventListener("navigate", (e) => {
+    if (e.navigationType !== "push") return;
     if (!e.canIntercept || e.hashChange) return;
 
     const url = new URL(e.destination.url);

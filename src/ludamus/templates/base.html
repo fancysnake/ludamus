@@ -53,6 +53,7 @@
             })();
         </script>
         {% vite_hmr_client %}
+        {% vite_asset 'src/django-hmr.ts' %}
         <link rel="stylesheet" href="{% vite_asset_url 'src/index.css' %}">
         {% block extra_head %}
         {% endblock extra_head %}
@@ -105,7 +106,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-foreground-muted">
                     <p class="text-center sm:text-left">
                         © {% now "Y" %} Radosław Ganczarek.
-                        <a href="https://github.com/zagrajmy/ludamus"
+                        <a href="https://github.com/fancysnake/ludamus"
                            class="hover:underline text-primary">Source code</a>
                         available under BSD-3-Clause license.
                     </p>
