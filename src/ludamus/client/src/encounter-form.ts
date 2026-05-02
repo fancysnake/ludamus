@@ -51,7 +51,14 @@ const initDropzone = (label: HTMLLabelElement): void => {
     }
   };
 
-  const showFile = (file: File): void => {
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    if (!file) {
+      revokePreview();
+      selected.classList.add("hidden");
+      empty.classList.remove("hidden");
+      return;
+    }
     nameEl.textContent = file.name;
     sizeEl.textContent = formatBytes(file.size);
     if (preview && file.type.startsWith("image/")) {
@@ -61,47 +68,12 @@ const initDropzone = (label: HTMLLabelElement): void => {
     }
     empty.classList.add("hidden");
     selected.classList.remove("hidden");
-  };
-
-  const showEmpty = (): void => {
-    revokePreview();
-    selected.classList.add("hidden");
-    empty.classList.remove("hidden");
-  };
-
-  input.addEventListener("change", () => {
-    const file = input.files?.[0];
-    if (file) showFile(file);
-    else showEmpty();
   });
 
   clearBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     input.value = "";
-    showEmpty();
-  });
-
-  const setDragover = (on: boolean): void => {
-    label.classList.toggle("border-primary", on);
-    label.classList.toggle("bg-primary-light", on);
-  };
-
-  label.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    setDragover(true);
-  });
-  label.addEventListener("dragleave", (e) => {
-    if (e.target === label) setDragover(false);
-  });
-  label.addEventListener("drop", (e) => {
-    e.preventDefault();
-    setDragover(false);
-    const file = e.dataTransfer?.files?.[0];
-    if (!file) return;
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    input.files = dt.files;
     input.dispatchEvent(new Event("change", { bubbles: true }));
   });
 };
