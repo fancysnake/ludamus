@@ -1,9 +1,11 @@
 import { resolve } from "node:path";
 
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
   base: "/static/vite/",
+  plugins: [tailwindcss()],
   server: {
     host: "0.0.0.0",
     port: 5173,
