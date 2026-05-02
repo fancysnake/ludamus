@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from django.forms.widgets import (
     CheckboxInput,
     CheckboxSelectMultiple,
+    FileInput,
     RadioSelect,
     Select,
     SelectMultiple,
@@ -18,6 +19,7 @@ from ._registry import register
 from .button import render_button
 from .checkbox import render_checkbox_field, render_multi_choice_field
 from .errors import render_errors, render_form_errors, render_help_text
+from .file_input import render_file_input
 from .form_select import render_select
 from .input import render_input
 from .label import render_label
@@ -59,6 +61,7 @@ def tessera_field(field: BoundField, *, layout: str = "vertical") -> str:
     is_radio = isinstance(widget, RadioSelect)
     is_select = isinstance(widget, (Select, SelectMultiple))
     is_textarea = isinstance(widget, Textarea)
+    is_file = isinstance(widget, FileInput)
 
     parts = []
 
@@ -80,6 +83,8 @@ def tessera_field(field: BoundField, *, layout: str = "vertical") -> str:
             parts.append(render_select(field))
         elif is_textarea:
             parts.append(render_textarea(field))
+        elif is_file:
+            parts.append(render_file_input(field))
         else:
             parts.append(render_input(field))
 
