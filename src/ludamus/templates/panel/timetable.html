@@ -1,6 +1,7 @@
 {% extends "panel/base.html" %}
 {% load i18n %}
 {% load static %}
+{% load django_vite %}
 {% load tessera %}
 {% block title_prefix %}
     {% translate "Schedule" %} —
@@ -109,5 +110,5 @@
 </div>
 {% endblock content %}
 {% block extra_scripts %}
-    <script src="{% static 'js/timetable.js' %}?v={{ STATIC_VERSION }}"></script>
+    {% vite_asset 'src/timetable.ts' %}
 {% endblock extra_scripts %}

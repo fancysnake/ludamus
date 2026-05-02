@@ -34,7 +34,7 @@ class EncounterForm(forms.Form):
     MAX_IMAGE_SIZE = 2 * 1024 * 1024  # 2 MB
 
     header_image = forms.ImageField(
-        label=_lazy("Header image"),
+        label=_lazy("Cover image"),
         required=False,
         help_text=_lazy("Max 2 MB. JPG, PNG, or WebP."),
     )

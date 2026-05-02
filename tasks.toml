@@ -8,4 +8,14 @@ run = "django-admin"
 
 [start]
 description = "Start Django dev server with frontend watch"
-run = "django-admin tailwind dev"
+run = "honcho start -f Procfile.dev"
+
+[dev]
+description = "Start Django dev server with frontend watch"
+run = "honcho start -f Procfile.dev"
+
+[build-frontend]
+description = "Build frontend assets (CSS + JS)"
+run = """
+cd src/ludamus/client && npm install && npm run build
+"""

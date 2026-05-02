@@ -1,0 +1,50 @@
+{# File input rendered as drag-and-drop zone. Pass `name` and `id`. #}
+{# Optional: required, accept, is_image, has_errors, initial_url, initial_name #}
+{% load i18n tessera %}
+<label for="{{ id }}"
+       data-dropzone
+       class="group relative flex flex-col items-center justify-center w-full min-h-44 sm:min-h-48 px-4 py-6 bg-bg-tertiary border border-dashed rounded-2xl cursor-pointer transition-colors hover:bg-bg-secondary {% if has_errors %}border-danger{% else %}border-border hover:border-primary/40{% endif %}">
+    <input type="file"
+           id="{{ id }}"
+           name="{{ name }}"
+           data-dropzone-input
+           {% if accept %}accept="{{ accept }}"{% endif %}
+           {% if required and not initial_url %}required{% endif %}
+           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+    <div data-dropzone-empty
+         class="pointer-events-none flex flex-col items-center text-center {% if initial_url %}hidden{% endif %}">
+        <span class="mb-3 inline-flex items-center justify-center w-11 h-11 rounded-full bg-bg-secondary text-foreground-secondary border border-border transition-colors group-hover:text-primary group-hover:border-primary/30">
+            {% icon "arrow-up-tray" class="w-5 h-5" %}
+        </span>
+        <p class="text-sm text-foreground">
+            <span class="font-semibold text-primary">{% translate "Click to upload" %}</span>
+            <span class="text-foreground-secondary">{% translate "or drag and drop" %}</span>
+        </p>
+    </div>
+    <div data-dropzone-selected
+         class="pointer-events-none {% if not initial_url %}hidden{% endif %} {% if is_image %}absolute inset-0 z-10 rounded-2xl overflow-hidden{% else %}relative z-10 flex items-center gap-3 w-full max-w-md{% endif %}">
+        {% if is_image %}
+            <img data-dropzone-preview
+                 src="{{ initial_url|default:'' }}"
+                 alt=""
+                 width="800"
+                 height="400"
+                 class="absolute inset-0 w-full h-full object-cover">
+        {% else %}
+            <span class="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-bg-secondary border border-border text-foreground-secondary shrink-0">
+                {% icon "document" class="w-6 h-6" %}
+            </span>
+        {% endif %}
+        <div class="{% if is_image %}absolute bottom-2 left-2 right-2 px-3 py-2 rounded-xl bg-background border border-border shadow-sm flex items-center gap-3{% endif %}">
+            <div class="flex-1 min-w-0 text-left">
+                <p data-dropzone-name
+                   class="text-sm font-medium text-foreground truncate">{{ initial_name }}</p>
+                <p data-dropzone-size class="text-xs text-foreground-muted"></p>
+            </div>
+            <button type="button"
+                    data-dropzone-clear
+                    class="pointer-events-auto p-1.5 rounded-md text-foreground-muted hover:text-danger hover:bg-bg-secondary transition-colors shrink-0 [&_svg]:pointer-events-none"
+                    aria-label="{% translate "Remove file" %}">{% icon "x-mark" class="w-4 h-4" %}</button>
+        </div>
+    </div>
+</label>
