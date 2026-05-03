@@ -17,9 +17,25 @@
             <h2 class="text-lg font-semibold">{% translate "Buttons" %}</h2>
             <div class="flex flex-wrap gap-2">
                 <button type="button" class="btn btn-primary">{% translate "Primary" %}</button>
-                <button type="button" class="btn btn-outline-primary">{% translate "Outline" %}</button>
                 <button type="button" class="btn btn-secondary">{% translate "Secondary" %}</button>
                 <button type="button" class="btn btn-danger">{% translate "Danger" %}</button>
+            </div>
+            <p class="text-sm text-foreground-muted mt-2">
+                {% translate "Icon buttons" %} — {% translate "subtle inline actions, no lift." %}
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="icon-btn">
+                    {% icon "adjustments-horizontal" class="w-3.5 h-3.5" %}
+                    {% translate "Neutral" %}
+                </button>
+                <button type="button" class="icon-btn icon-btn-primary">
+                    {% icon "pencil" class="w-3.5 h-3.5" %}
+                    {% translate "Edit" %}
+                </button>
+                <button type="button" class="icon-btn icon-btn-danger">
+                    {% icon "trash" class="w-3.5 h-3.5" %}
+                    {% translate "Delete" %}
+                </button>
             </div>
         </section>
         <section class="flex flex-col gap-3">
