@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 @import "./progressive-blur.css";
@@ -131,7 +131,9 @@
   --color-info-text: #1e40af;
 }
 
-* {
+*,
+:before,
+:after {
   corner-shape: superellipse(1.8);
 }
 
@@ -139,7 +141,8 @@ html {
   height: 100%;
 }
 
-a, button {
+a,
+button {
   cursor: pointer;
 }
 
@@ -172,8 +175,10 @@ a, button {
   --theme-info-bg: #eff6ff;
   --theme-info-text: #1e40af;
   --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
-  --theme-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --theme-shadow-md:
+    0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --theme-shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   --theme-accent-gradient: linear-gradient(90deg, #f85a3c, #14b89b);
 }
 
@@ -238,7 +243,8 @@ a, button {
     --theme-info-text: #93c5fd;
     --color-info-text: #93c5fd;
     --theme-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-    --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --theme-shadow-md:
+      0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -303,6 +309,23 @@ a, button {
   --color-info-text: #93c5fd;
 }
 
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px var(--theme-primary);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--theme-border-focus) !important;
+}
+
+button:active {
+  @apply scale-97;
+}
+
 .no-transitions,
 .no-transitions * {
   transition: none !important;
@@ -313,7 +336,7 @@ a, button {
 }
 
 .gradient-border::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -322,7 +345,6 @@ a, button {
   background: var(--theme-accent-gradient);
   border-radius: 9999px 9999px 0 0;
 }
-
 
 .live-dot {
   animation: pulse 1.5s ease-in-out infinite;
@@ -379,19 +401,58 @@ a, button {
 }
 
 .btn {
+  --bg: var(--color-primary);
+  --y: 2px;
+
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   padding: 0.625rem 1rem;
   font-weight: 500;
   transition: all 0.2s;
-}
+  background-color: var(--bg);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.085),
+    0 var(--y) 0 0 rgba(0, 0, 0, 0.25),
+    0 var(--y) 0 0 var(--bg);
 
-.btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--theme-primary), 0 0 0 4px var(--color-background);
+  &:hover {
+    @apply translate-y-px transition duration-150;
+    --y: 1px;
+  }
+
+  &:active {
+    @apply scale-99 translate-y-0.5 pointer-events-none;
+    box-shadow:
+      inset 0 0 1px 0 rgba(0, 0, 0, 0.1),
+      0 0px 0 0 rgba(0, 0, 0, 0.25),
+      0 0px 0 0 var(--bg);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible:after {
+    @apply transition-all duration-150;
+    content: "";
+    position: absolute;
+    inset: -2px;
+    bottom: -4px;
+    border: 1px solid var(--color-primary);
+    border-radius: 18px;
+  }
+
+  &:hover:focus-visible:after {
+    bottom: -3px;
+  }
+
+  &:active:focus-visible:after {
+    bottom: -2px;
+  }
 }
 
 .btn:disabled {
@@ -400,16 +461,12 @@ a, button {
 }
 
 .btn-primary {
-  background-color: var(--theme-primary);
+  --bg: var(--color-primary);
   color: white;
 }
 
-.btn-primary:hover {
-  background-color: var(--theme-primary-hover);
-}
-
 .btn-secondary {
-  background-color: var(--theme-bg-secondary);
+  --bg: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
   color: var(--color-foreground);
 }
@@ -419,7 +476,7 @@ a, button {
 }
 
 .btn-teal {
-  background-color: var(--theme-secondary);
+  --bg: var(--theme-secondary);
   color: white;
 }
 
@@ -427,8 +484,12 @@ a, button {
   background-color: var(--theme-secondary-hover);
 }
 
+.btn-ghost {
+  --bg: transparent;
+}
+
 .btn-danger {
-  background-color: var(--theme-danger);
+  --bg: var(--theme-danger);
   color: white;
 }
 
@@ -460,21 +521,6 @@ select:not([multiple]):not([size]) {
   background-position: right 0.5rem center;
   background-size: 1rem;
   padding-right: 2rem;
-}
-
-:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--theme-primary);
-}
-
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  border-color: var(--theme-border-focus) !important;
-}
-
-button:active {
-  @apply scale-97;
 }
 
 .session-tags-more:hover .session-tags-popover {
