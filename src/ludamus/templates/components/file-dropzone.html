@@ -1,0 +1,57 @@
+{% load i18n tessera %}
+<label for="{{ id }}"
+       data-dropzone
+       data-state="{{ dropzone_state }}"
+       class="group relative flex flex-col items-center justify-center w-full min-h-44 sm:min-h-48 px-4 py-6 bg-bg-tertiary border border-border rounded-lg cursor-pointer transition-colors hover:bg-bg-secondary hover:border-primary/40 has-[input[aria-invalid=true]]:border-danger overflow-hidden">
+    <input type="file"
+           id="{{ id }}"
+           name="{{ name }}"
+           data-dropzone-input
+           aria-invalid="{{ has_errors|yesno:'true,false' }}"
+           {% if accept %}accept="{{ accept }}"{% endif %}
+           {% if required and not initial_url %}required{% endif %}
+           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+    <div data-dropzone-empty
+         class="pointer-events-none flex flex-col items-center text-center hidden group-data-[state=empty]:flex">
+        <span class="mb-3 inline-flex items-center justify-center w-11 h-11 rounded-full bg-bg-secondary text-foreground-secondary border border-border transition-colors hover:duration-0 group-hover:text-primary group-hover:border-primary/30">
+            {% icon "arrow-up-tray" class="w-5 h-5" %}
+        </span>
+        <p class="text-sm text-foreground">
+            <span class="font-semibold text-primary">{% translate "Click to upload" %}</span>
+            <span class="text-foreground-secondary">{% translate "or drag and drop" %}</span>
+        </p>
+    </div>
+    <div data-dropzone-selected
+         class="pointer-events-none hidden group-data-[state=image]:absolute group-data-[state=image]:-inset-px group-data-[state=image]:z-10 group-data-[state=image]:block group-data-[state=image]:rounded-lg group-data-[state=image]:overflow-hidden group-data-[state=file]:relative group-data-[state=file]:z-10 group-data-[state=file]:flex group-data-[state=file]:items-center group-data-[state=file]:gap-3 group-data-[state=file]:w-full group-data-[state=file]:max-w-md">
+        <div class="pointer-events-none absolute inset-0 hidden group-data-[state=image]:block">
+            <img data-dropzone-preview
+                 src="{{ initial_url|default:'' }}"
+                 alt=""
+                 width="800"
+                 height="400"
+                 class="absolute inset-0 w-full h-full object-cover">
+            <div class="absolute inset-x-0 bottom-0 pt-12 pb-2 px-3 bg-linear-to-t from-black via-black/55 to-transparent">
+                <p data-dropzone-name class="text-sm font-medium text-white truncate">{{ initial_name }}</p>
+                <p data-dropzone-size class="text-xs text-white/75"></p>
+            </div>
+            <button type="button"
+                    data-dropzone-clear
+                    class="pointer-events-auto absolute top-2 right-2 p-1.5 rounded-md text-white hover:bg-white/15 transition-colors shrink-0 [&_svg]:pointer-events-none"
+                    aria-label="{% translate "Remove file" %}">{% icon "x-mark" class="w-4 h-4" %}</button>
+        </div>
+        <div class="pointer-events-none hidden group-data-[state=file]:flex group-data-[state=file]:items-center group-data-[state=file]:gap-3 group-data-[state=file]:w-full group-data-[state=file]:max-w-md group-data-[state=file]:relative">
+            <span class="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-bg-secondary border border-border text-foreground-secondary shrink-0">
+                {% icon "document" class="w-6 h-6" %}
+            </span>
+            <div class="relative flex-1 min-w-0">
+                <p data-dropzone-name
+                   class="text-sm font-medium text-foreground truncate pr-10">{{ initial_name }}</p>
+                <p data-dropzone-size class="text-xs text-foreground-muted"></p>
+                <button type="button"
+                        data-dropzone-clear
+                        class="pointer-events-auto absolute top-0 right-0 p-1.5 rounded-md text-foreground-muted hover:text-danger hover:bg-bg-secondary transition-colors shrink-0 [&_svg]:pointer-events-none"
+                        aria-label="{% translate "Remove file" %}">{% icon "x-mark" class="w-4 h-4" %}</button>
+            </div>
+        </div>
+    </div>
+</label>

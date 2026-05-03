@@ -1,12 +1,19 @@
 {% load i18n tessera django_vite %}
-{% tessera_field form.title %}
-{% tessera_field form.description %}
-<div class="md:grid md:grid-cols-2 md:gap-x-4">
-    {% tessera_field form.start_time %}
-    {% tessera_field form.end_time %}
-    {% tessera_field form.game %}
-    {% tessera_field form.place %}
-    {% tessera_field form.max_participants %}
-    {% tessera_field form.header_image %}
+<div class="flex max-md:flex-col gap-4 md:gap-x-6">
+    <div class="flex-1">
+        {% tessera_field form.title %}
+        {% tessera_field form.header_image %}
+        {% tessera_field form.description %}
+    </div>
+    <div class="flex flex-col">
+        {% tessera_field form.game %}
+        {% tessera_field form.place %}
+        <div class="flex max-md:flex-col gap-2 max-md:mb-4">
+            {% tessera_field form.start_time %}
+            {% tessera_field form.end_time %}
+        </div>
+        {% tessera_field form.max_participants %}
+        <div class="mt-2 md:mt-auto md:ml-auto md:pt-4">{% tessera_button submit_label %}</div>
+    </div>
 </div>
 {% vite_asset 'src/encounter-form.ts' %}

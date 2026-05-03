@@ -242,6 +242,8 @@ Established pattern from `index.css`:
 9. **Font consistency** — Outfit is the only font. Don't add other font
    families.
 10. **Use `.gradient-border`** for accent top borders, not custom gradient CSS.
+11. Prefer data- and aria- attributes over Django template conditionals inside
+    `class` when styling depends on state.
 
 ## Review Checklist
 

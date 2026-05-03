@@ -5,13 +5,12 @@ from __future__ import annotations
 from django.utils.html import format_html
 
 
-def render_button(  # noqa: PLR0913
+def render_button(
     text: str,
     *,
     button_type: str = "submit",
     variant: str = "primary",
     size: str = "md",
-    full_width: bool = False,
     disabled: bool = False,
 ) -> str:
     """Render a styled button.
@@ -36,10 +35,8 @@ def render_button(  # noqa: PLR0913
     classes = [
         variant_class.get(variant, variant_class["primary"]),
         size_classes.get(size, size_classes["md"]),
+        "max-md:w-full",
     ]
-
-    if full_width:
-        classes.append("w-full")
 
     if disabled:
         classes.append("opacity-50 cursor-not-allowed")
