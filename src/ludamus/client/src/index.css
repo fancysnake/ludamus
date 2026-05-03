@@ -455,7 +455,7 @@ button:active {
 
 @media (prefers-color-scheme: dark) {
   .btn {
-    --shade: hsla(0deg, 0%, 25.1%, 0.25);
+    --shade: hsla(30deg, 20.6%, 15%, 0.45);
   }
 }
 
@@ -478,6 +478,12 @@ button:active {
 @media (prefers-color-scheme: light) {
   .btn-secondary {
     --shade: hsla(30deg, 20.6%, 35%, 0.25);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .btn-secondary {
+    --shade: hsla(30deg, 0%, 28%, 0.35);
   }
 }
 
@@ -522,7 +528,6 @@ button:active {
 
   position: relative;
   @apply before:bg-foreground before:opacity-3 before:rounded-md before:absolute before:inset-0 dark:hover:before:opacity-10 hover:before:opacity-0 before:border before:border-transparent rounded-md hover:duration-0 before:transition before:duration-150 hover:before:duration-0;
-  
 }
 
 @media (prefers-color-scheme: light) {
