@@ -183,7 +183,7 @@ class EncounterCreatePageView(LoginRequiredMixin, View):
             start_time=form.cleaned_data["start_time"],
             end_time=form.cleaned_data.get("end_time"),
             place=form.cleaned_data.get("place", ""),
-            max_participants=form.cleaned_data.get("max_participants", 0),
+            max_participants=form.cleaned_data.get("max_participants") or 0,
             share_code=generate_share_code(),
             sphere_id=request.context.current_sphere_id,
             creator_id=request.context.current_user_id,
@@ -253,7 +253,7 @@ class EncounterEditPageView(LoginRequiredMixin, View):
             start_time=form.cleaned_data["start_time"],
             end_time=form.cleaned_data.get("end_time"),
             place=form.cleaned_data.get("place", ""),
-            max_participants=form.cleaned_data.get("max_participants", 0),
+            max_participants=form.cleaned_data.get("max_participants") or 0,
         )
         if form.cleaned_data.get("header_image"):
             data["header_image"] = form.cleaned_data["header_image"]
