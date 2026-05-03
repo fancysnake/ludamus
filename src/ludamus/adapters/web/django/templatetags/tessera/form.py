@@ -65,7 +65,12 @@ def tessera_field(field: BoundField, *, layout: str = "vertical") -> str:
 
     parts = []
 
-    container_class = "mb-4" if layout == "vertical" else "mb-4 sm:flex sm:items-start"
+    container_class = "flex not-last:mb-4"
+    if layout == "vertical":
+        container_class += " flex-col"
+    else:
+        container_class += " max-sm:flex-col"
+
     parts.append(f'<div class="{container_class}">')
 
     if is_checkbox and not is_multi_checkbox:
