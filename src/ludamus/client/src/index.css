@@ -496,10 +496,6 @@ button:active {
   background-color: var(--theme-secondary-hover);
 }
 
-.btn-ghost {
-  --bg: transparent;
-}
-
 .btn-danger {
   --bg: var(--theme-danger);
   color: white;

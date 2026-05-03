@@ -29,7 +29,6 @@ def render_button(
         "secondary": "btn btn-secondary",
         "danger": "btn btn-danger",
         "success": "btn btn-teal",
-        "ghost": "btn btn-ghost",
     }
 
     classes = [
