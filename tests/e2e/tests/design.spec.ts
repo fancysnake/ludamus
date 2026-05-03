@@ -5,7 +5,7 @@ test.describe('Design system page', () => {
     await page.goto('/design/');
 
     // Page should load (design.html extends base)
-    await expect(page).toHaveTitle(/design/i);
+    await expect(page).toHaveTitle(/tessera/i);
 
     // Should contain component examples — buttons, cards, alerts, etc.
     await expect(page.getByRole('button').first()).toBeVisible();
