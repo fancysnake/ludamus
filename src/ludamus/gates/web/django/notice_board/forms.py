@@ -26,10 +26,7 @@ class EncounterForm(forms.Form):
     )
     place = forms.CharField(label=_lazy("Place"), max_length=255, required=False)
     max_participants = forms.IntegerField(
-        label=_lazy("Max participants"),
-        min_value=0,
-        initial=0,
-        required=False
+        label=_lazy("Max participants"), min_value=0, initial=0, required=False
     )
     MAX_IMAGE_SIZE = 2 * 1024 * 1024  # 2 MB
 
