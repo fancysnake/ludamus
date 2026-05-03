@@ -22,3 +22,72 @@ if (start && end) {
     end.value = toLocalDatetimeValue(d);
   });
 }
+
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const initDropzone = (label: HTMLLabelElement): void => {
+  const input = label.querySelector<HTMLInputElement>("[data-dropzone-input]");
+  const nameEls = label.querySelectorAll<HTMLElement>("[data-dropzone-name]");
+  const sizeEls = label.querySelectorAll<HTMLElement>("[data-dropzone-size]");
+  const preview = label.querySelector<HTMLImageElement>(
+    "[data-dropzone-preview]",
+  );
+  const clearBtns =
+    label.querySelectorAll<HTMLButtonElement>("[data-dropzone-clear]");
+  if (!input || nameEls.length === 0 || sizeEls.length === 0) return;
+  if (clearBtns.length === 0) return;
+
+  let previewUrl: string | null = null;
+  const revokePreview = (): void => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrl = null;
+    }
+  };
+
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    if (!file) {
+      revokePreview();
+      if (preview) preview.removeAttribute("src");
+      label.dataset.state = "empty";
+      return;
+    }
+    nameEls.forEach((el) => {
+      el.textContent = file.name;
+    });
+    sizeEls.forEach((el) => {
+      el.textContent = formatBytes(file.size);
+    });
+    const useImageLayout =
+      Boolean(preview) &&
+      /^image\/(png|jpe?g|gif|webp|avif)$/.test(file.type);
+    if (useImageLayout) {
+      revokePreview();
+      previewUrl = URL.createObjectURL(file);
+      preview!.src = previewUrl;
+      label.dataset.state = "image";
+    } else {
+      revokePreview();
+      if (preview) preview.removeAttribute("src");
+      label.dataset.state = "file";
+    }
+  });
+
+  clearBtns.forEach((clearBtn) => {
+    clearBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      input.value = "";
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  });
+};
+
+document
+  .querySelectorAll<HTMLLabelElement>("[data-dropzone]")
+  .forEach(initDropzone);

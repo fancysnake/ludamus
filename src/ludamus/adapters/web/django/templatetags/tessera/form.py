@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from django.forms.widgets import (
     CheckboxInput,
     CheckboxSelectMultiple,
+    FileInput,
     RadioSelect,
     Select,
     SelectMultiple,
@@ -18,6 +19,7 @@ from ._registry import register
 from .button import render_button
 from .checkbox import render_checkbox_field, render_multi_choice_field
 from .errors import render_errors, render_form_errors, render_help_text
+from .file_input import render_file_input
 from .form_select import render_select
 from .input import render_input
 from .label import render_label
@@ -59,10 +61,16 @@ def tessera_field(field: BoundField, *, layout: str = "vertical") -> str:
     is_radio = isinstance(widget, RadioSelect)
     is_select = isinstance(widget, (Select, SelectMultiple))
     is_textarea = isinstance(widget, Textarea)
+    is_file = isinstance(widget, FileInput)
 
     parts = []
 
-    container_class = "mb-4" if layout == "vertical" else "mb-4 sm:flex sm:items-start"
+    container_class = "flex not-last:mb-4"
+    if layout == "vertical":
+        container_class += " flex-col"
+    else:
+        container_class += " max-sm:flex-col"
+
     parts.append(f'<div class="{container_class}">')
 
     if is_checkbox and not is_multi_checkbox:
@@ -80,6 +88,8 @@ def tessera_field(field: BoundField, *, layout: str = "vertical") -> str:
             parts.append(render_select(field))
         elif is_textarea:
             parts.append(render_textarea(field))
+        elif is_file:
+            parts.append(render_file_input(field))
         else:
             parts.append(render_input(field))
 
@@ -107,13 +117,12 @@ def tessera_errors(form: BaseForm) -> str:
 
 
 @register.simple_tag
-def tessera_button(  # noqa: PLR0913
+def tessera_button(
     text: str,
     *,
     button_type: str = "submit",
     variant: str = "primary",
     size: str = "md",
-    full_width: bool = False,
     disabled: bool = False,
 ) -> str:
     """Render a styled button.
@@ -126,10 +135,5 @@ def tessera_button(  # noqa: PLR0913
         {% tessera_button "Cancel" button_type="button" variant="secondary" %}
     """
     return render_button(
-        text,
-        button_type=button_type,
-        variant=variant,
-        size=size,
-        full_width=full_width,
-        disabled=disabled,
+        text, button_type=button_type, variant=variant, size=size, disabled=disabled
     )

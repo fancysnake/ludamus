@@ -1,0 +1,21 @@
+{
+  "[html]": {
+    "editor.formatOnSave": false
+  },
+  "[django-html]": {
+    "editor.formatOnSave": false
+  },
+  "[htmldjango]": {
+    "editor.formatOnSave": false
+  },
+  "files.associations": {
+    "**/templates/**/*.html": "django-html"
+  },
+  "tailwindCSS.includeLanguages": {
+    "django-html": "html",
+    "htmldjango": "html"
+  },
+  "tailwindCSS.experimental.configFile": "src/ludamus/client/src/index.css",
+  "html.format.enable": false,
+  "prettier.enable": false
+}

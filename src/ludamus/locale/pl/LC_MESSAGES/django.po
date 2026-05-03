@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-01 22:40+0200\n"
+"POT-Creation-Date: 2026-05-03 10:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -772,27 +772,22 @@ msgid "time conflict"
 msgstr "konflikt czasowy"
 
 #: src/ludamus/adapters/web/django/views.py:1561
-#, python-brace-format
 msgid "Enrolled: {}"
 msgstr "Zapisani: {}"
 
 #: src/ludamus/adapters/web/django/views.py:1565
-#, python-brace-format
 msgid "Added to waiting list: {}"
 msgstr "Dodani do listy oczekujących: {}"
 
 #: src/ludamus/adapters/web/django/views.py:1567
-#, python-brace-format
 msgid "Cancelled: {}"
 msgstr "Anulowani: {}"
 
 #: src/ludamus/adapters/web/django/views.py:1570
-#, python-brace-format
 msgid "Skipped (already enrolled or conflicts): {}"
 msgstr "Pominięci (już zapisani lub konflikty): {}"
 
 #: src/ludamus/adapters/web/django/views.py:1593
-#, python-brace-format
 msgid ""
 "Not enough spots available. {} spots requested, {} available. Please use "
 "waiting list for some users."
@@ -813,7 +808,6 @@ msgid "You don't have permission to accept proposals for this event."
 msgstr "Nie masz uprawnień do akceptowania propozycji dla tego wydarzenia."
 
 #: src/ludamus/adapters/web/django/views.py:1726
-#, python-brace-format
 msgid "Proposal '{}' has been accepted and added to the agenda."
 msgstr "Zgłoszenie '{}' zostało zaakceptowane i dodane do programu."
 
@@ -1299,7 +1293,6 @@ msgid "Please wait before submitting another proposal."
 msgstr "Poczekaj chwilę przed przesłaniem kolejnego zgłoszenia."
 
 #: src/ludamus/gates/web/django/chronology/views.py:696
-#, python-brace-format
 msgid "Session proposal '{}' submitted successfully!"
 msgstr "Zgłoszenie punktu programu '{}' zostało pomyślnie przesłane!"
 
@@ -1772,15 +1765,15 @@ msgstr "Wróć"
 msgid "Go to Home"
 msgstr "Przejdź do strony głównej"
 
-#: src/ludamus/templates/base.html:116
+#: src/ludamus/templates/base.html:115
 msgid "Contact"
 msgstr "Kontakt"
 
-#: src/ludamus/templates/base.html:118
+#: src/ludamus/templates/base.html:117
 msgid "Privacy Policy"
 msgstr "Polityka prywatności"
 
-#: src/ludamus/templates/base.html:120
+#: src/ludamus/templates/base.html:119
 msgid "Terms of Service"
 msgstr "Regulamin"
 
@@ -2082,7 +2075,7 @@ msgid "Waiting"
 msgstr "Oczekuję"
 
 #: src/ludamus/templates/chronology/anonymous_manage.html:86
-#: src/ludamus/templates/panel/base.html:59
+#: src/ludamus/templates/panel/base.html:60
 #: src/ludamus/templates/panel/venue-copy.html:44
 msgid "Event"
 msgstr "Wydarzenie"
@@ -2171,7 +2164,7 @@ msgstr "Dołącz do listy oczekujących"
 #: src/ludamus/templates/panel/space-edit.html:19
 #: src/ludamus/templates/panel/time-slot-create.html:20
 #: src/ludamus/templates/panel/time-slot-edit.html:20
-#: src/ludamus/templates/panel/timetable.html:20
+#: src/ludamus/templates/panel/timetable.html:21
 #: src/ludamus/templates/panel/track-create.html:19
 #: src/ludamus/templates/panel/track-edit.html:19
 #: src/ludamus/templates/panel/venue-copy.html:17
@@ -2237,7 +2230,7 @@ msgid "Completed"
 msgstr "Ukończone"
 
 #: src/ludamus/templates/chronology/event.html:53
-#: src/ludamus/templates/panel/base.html:180
+#: src/ludamus/templates/panel/base.html:181
 #: src/ludamus/templates/panel/proposal-settings.html:63
 msgid "Proposals Open"
 msgstr "Zgłoszenia otwarte"
@@ -2580,7 +2573,7 @@ msgid "Information"
 msgstr "Informacje"
 
 #: src/ludamus/templates/chronology/event.html:726
-#: src/ludamus/templates/notice_board/detail.html:209
+#: src/ludamus/templates/notice_board/detail.html:206
 msgid "Show Discord"
 msgstr "Pokaż Discord"
 
@@ -2728,7 +2721,7 @@ msgstr ""
 "widoczne tylko dla organizatorów."
 
 #: src/ludamus/templates/chronology/propose/parts/details.html:119
-#: src/ludamus/templates/panel/base.html:110
+#: src/ludamus/templates/panel/base.html:111
 #: src/ludamus/templates/panel/track-create.html:12
 #: src/ludamus/templates/panel/track-edit.html:12
 #: src/ludamus/templates/panel/tracks.html:5
@@ -2827,7 +2820,7 @@ msgstr "Organizujesz"
 
 #: src/ludamus/templates/components/encounter_card.html:39
 #: src/ludamus/templates/notice_board/_organizer_summary.html:13
-#: src/ludamus/templates/notice_board/detail.html:131
+#: src/ludamus/templates/notice_board/detail.html:128
 msgid "attending"
 msgstr "uczestników"
 
@@ -2875,6 +2868,18 @@ msgstr[3] ""
 "                        %(counter)s punktów programu\n"
 "                    "
 
+#: src/ludamus/templates/components/file-dropzone.html:20
+msgid "Click to upload"
+msgstr "Kliknij, aby przesłać"
+
+#: src/ludamus/templates/components/file-dropzone.html:21
+msgid "or drag and drop"
+msgstr "lub przeciągnij i upuść"
+
+#: src/ludamus/templates/components/file-dropzone.html:47
+msgid "Remove file"
+msgstr "Usuń plik"
+
 # Login Required Page
 #: src/ludamus/templates/components/label.html:8
 #: src/ludamus/templates/panel/personal-data-fields.html:100
@@ -2882,27 +2887,27 @@ msgstr[3] ""
 msgid "required"
 msgstr "wymagane"
 
-#: src/ludamus/templates/components/navbar.html:27
+#: src/ludamus/templates/components/navbar.html:29
 #: src/ludamus/templates/index.html:5
 msgid "Events"
 msgstr "Wydarzenia"
 
-#: src/ludamus/templates/components/navbar.html:33
+#: src/ludamus/templates/components/navbar.html:37
 #: src/ludamus/templates/notice_board/index.html:5
 #: src/ludamus/templates/notice_board/index.html:8
 msgid "Encounters"
 msgstr "Spotkania"
 
-#: src/ludamus/templates/components/navbar.html:64
+#: src/ludamus/templates/components/navbar.html:68
 msgid "Panel"
 msgstr "Panel"
 
-#: src/ludamus/templates/components/navbar.html:70
+#: src/ludamus/templates/components/navbar.html:74
 #: src/ludamus/templates/crowd/user/edit.html:4
 msgid "Edit profile"
 msgstr "Edycja profilu"
 
-#: src/ludamus/templates/components/navbar.html:75
+#: src/ludamus/templates/components/navbar.html:79
 msgid "Log out"
 msgstr "Wyloguj się"
 
@@ -3364,7 +3369,7 @@ msgstr "Edytuj połączenie"
 #: src/ludamus/templates/multiverse/panel/connections/list.html:8
 #: src/ludamus/templates/multiverse/panel/sphere-settings.html:5
 #: src/ludamus/templates/multiverse/panel/sphere-settings.html:8
-#: src/ludamus/templates/panel/base.html:128
+#: src/ludamus/templates/panel/base.html:129
 msgid "Sphere settings"
 msgstr "Ustawienia sfery"
 
@@ -3452,7 +3457,7 @@ msgid "Copy details"
 msgstr "Kopiuj szczegóły"
 
 #: src/ludamus/templates/notice_board/_rsvp_inline.html:63
-#: src/ludamus/templates/notice_board/detail.html:124
+#: src/ludamus/templates/notice_board/detail.html:121
 msgid "No spots left"
 msgstr "Brak wolnych miejsc"
 
@@ -3478,66 +3483,66 @@ msgstr "Wypisz się"
 msgid "Create Encounter"
 msgstr "Utwórz spotkanie"
 
-#: src/ludamus/templates/notice_board/detail.html:54
-#: src/ludamus/templates/notice_board/detail.html:68
+#: src/ludamus/templates/notice_board/detail.html:55
+#: src/ludamus/templates/notice_board/detail.html:69
 msgid "Your encounter"
 msgstr "Twoje spotkanie"
 
-#: src/ludamus/templates/notice_board/detail.html:56
-#: src/ludamus/templates/notice_board/detail.html:70
+#: src/ludamus/templates/notice_board/detail.html:57
+#: src/ludamus/templates/notice_board/detail.html:71
 msgid "You're attending this encounter"
 msgstr "Bierzesz udział w tym spotkaniu"
 
-#: src/ludamus/templates/notice_board/detail.html:58
-#: src/ludamus/templates/notice_board/detail.html:72
+#: src/ludamus/templates/notice_board/detail.html:59
+#: src/ludamus/templates/notice_board/detail.html:73
 msgid "invites you to an encounter"
 msgstr "zaprasza Cię na spotkanie"
 
-#: src/ludamus/templates/notice_board/detail.html:87
+#: src/ludamus/templates/notice_board/detail.html:84
 msgid "Game"
 msgstr "Gra"
 
-#: src/ludamus/templates/notice_board/detail.html:95
+#: src/ludamus/templates/notice_board/detail.html:92
 msgid "When"
 msgstr "Kiedy"
 
-#: src/ludamus/templates/notice_board/detail.html:109
+#: src/ludamus/templates/notice_board/detail.html:106
 msgid "Where"
 msgstr "Gdzie"
 
-#: src/ludamus/templates/notice_board/detail.html:120
+#: src/ludamus/templates/notice_board/detail.html:117
 msgid "Spots"
 msgstr "Miejsca"
 
-#: src/ludamus/templates/notice_board/detail.html:126
+#: src/ludamus/templates/notice_board/detail.html:123
 msgid "1 spot left"
 msgstr "1 wolne miejsce"
 
-#: src/ludamus/templates/notice_board/detail.html:128
+#: src/ludamus/templates/notice_board/detail.html:125
 msgid "spots left"
 msgstr "wolnych miejsc"
 
-#: src/ludamus/templates/notice_board/detail.html:173
+#: src/ludamus/templates/notice_board/detail.html:170
 msgid "Attending"
 msgstr "Uczestnicy"
 
-#: src/ludamus/templates/notice_board/detail.html:187
+#: src/ludamus/templates/notice_board/detail.html:184
 msgid "No one has signed up yet. Share the encounter with friends!"
 msgstr "Nikt się jeszcze nie zapisał. Udostępnij spotkanie znajomym!"
 
-#: src/ludamus/templates/notice_board/detail.html:189
+#: src/ludamus/templates/notice_board/detail.html:186
 msgid "No one has signed up yet. Be the first!"
 msgstr "Nikt się jeszcze nie zapisał. Bądź pierwszy!"
 
-#: src/ludamus/templates/notice_board/detail.html:198
+#: src/ludamus/templates/notice_board/detail.html:195
 msgid "Organized by"
 msgstr "Organizator"
 
-#: src/ludamus/templates/notice_board/detail.html:220
+#: src/ludamus/templates/notice_board/detail.html:217
 msgid "Time until encounter"
 msgstr "Czas do spotkania"
 
-#: src/ludamus/templates/notice_board/detail.html:225
+#: src/ludamus/templates/notice_board/detail.html:222
 msgid "The encounter has started!"
 msgstr "Spotkanie się rozpoczęło!"
 
@@ -3690,7 +3695,7 @@ msgid "New Space"
 msgstr "Nowa przestrzeń"
 
 #: src/ludamus/templates/panel/area-detail.html:35
-#: src/ludamus/templates/panel/base.html:105
+#: src/ludamus/templates/panel/base.html:106
 #: src/ludamus/templates/panel/venue-create.html:12
 #: src/ludamus/templates/panel/venue-detail.html:5
 #: src/ludamus/templates/panel/venue-detail.html:30
@@ -3765,18 +3770,18 @@ msgstr "Czy na pewno chcesz usunąć tę strefę?"
 msgid "Delete Area"
 msgstr "Usuń strefę"
 
-#: src/ludamus/templates/panel/base.html:54
+#: src/ludamus/templates/panel/base.html:55
 msgid "Backoffice"
 msgstr "Panel organizatora"
 
-#: src/ludamus/templates/panel/base.html:85
-#: src/ludamus/templates/panel/base.html:164
+#: src/ludamus/templates/panel/base.html:86
+#: src/ludamus/templates/panel/base.html:165
 #: src/ludamus/templates/panel/index.html:5
 #: src/ludamus/templates/panel/index.html:8
 msgid "Dashboard"
 msgstr "Pulpit"
 
-#: src/ludamus/templates/panel/base.html:90
+#: src/ludamus/templates/panel/base.html:91
 #: src/ludamus/templates/panel/cfp-create.html:12
 #: src/ludamus/templates/panel/cfp-edit.html:13
 #: src/ludamus/templates/panel/cfp.html:6
@@ -3784,7 +3789,7 @@ msgstr "Pulpit"
 msgid "Call for Proposals"
 msgstr "Nabór zgłoszeń"
 
-#: src/ludamus/templates/panel/base.html:95
+#: src/ludamus/templates/panel/base.html:96
 #: src/ludamus/templates/panel/display-settings.html:28
 #: src/ludamus/templates/panel/index.html:58
 #: src/ludamus/templates/panel/proposal-create.html:12
@@ -3798,7 +3803,7 @@ msgstr "Nabór zgłoszeń"
 msgid "Proposals"
 msgstr "Zgłoszenia"
 
-#: src/ludamus/templates/panel/base.html:100
+#: src/ludamus/templates/panel/base.html:101
 #: src/ludamus/templates/panel/facilitator-create.html:12
 #: src/ludamus/templates/panel/facilitator-detail.html:5
 #: src/ludamus/templates/panel/facilitator-detail.html:12
@@ -3812,11 +3817,11 @@ msgstr "Zgłoszenia"
 msgid "Facilitators"
 msgstr "Twórcy programu"
 
-#: src/ludamus/templates/panel/base.html:115
+#: src/ludamus/templates/panel/base.html:116
 msgid "Harmonogram"
 msgstr "Harmonogram"
 
-#: src/ludamus/templates/panel/base.html:120
+#: src/ludamus/templates/panel/base.html:121
 #: src/ludamus/templates/panel/display-settings.html:8
 #: src/ludamus/templates/panel/proposal-settings.html:8
 #: src/ludamus/templates/panel/settings.html:5
@@ -3824,23 +3829,23 @@ msgstr "Harmonogram"
 msgid "Event Settings"
 msgstr "Ustawienia wydarzenia"
 
-#: src/ludamus/templates/panel/base.html:124
+#: src/ludamus/templates/panel/base.html:125
 msgid "Sphere"
 msgstr "Sfera"
 
-#: src/ludamus/templates/panel/base.html:138
+#: src/ludamus/templates/panel/base.html:139
 msgid "Back to website"
 msgstr "Wróć do strony"
 
-#: src/ludamus/templates/panel/base.html:146
+#: src/ludamus/templates/panel/base.html:147
 msgid "Organizer"
 msgstr "Organizator"
 
-#: src/ludamus/templates/panel/base.html:177
+#: src/ludamus/templates/panel/base.html:178
 msgid "Event:"
 msgstr "Wydarzenie:"
 
-#: src/ludamus/templates/panel/base.html:182
+#: src/ludamus/templates/panel/base.html:183
 msgid "Proposals Closed"
 msgstr "Zgłoszenia zamknięte"
 
@@ -4269,17 +4274,17 @@ msgid "Search…"
 msgstr "Szukaj…"
 
 #: src/ludamus/templates/panel/parts/timetable-browse-pane.html:19
-#: src/ludamus/templates/panel/timetable.html:96
+#: src/ludamus/templates/panel/timetable.html:97
 msgid "Loading…"
 msgstr "Ładowanie…"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:6
-#: src/ludamus/templates/panel/timetable.html:88
+#: src/ludamus/templates/panel/timetable.html:89
 msgid "All clear"
 msgstr "Brak problemów"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:10
-#: src/ludamus/templates/panel/timetable.html:85
+#: src/ludamus/templates/panel/timetable.html:86
 #, python-format
 msgid "%(count)s conflict"
 msgid_plural "%(count)s conflicts"
@@ -4308,7 +4313,7 @@ msgstr "%(name)s prowadzi równocześnie: %(title)s"
 
 #: src/ludamus/templates/panel/parts/timetable-conflict-panel.html:38
 #: src/ludamus/templates/panel/timetable-problems.html:85
-#: src/ludamus/templates/panel/timetable.html:39
+#: src/ludamus/templates/panel/timetable.html:40
 msgid "Track:"
 msgstr "Blok:"
 
@@ -4726,7 +4731,7 @@ msgid "Track"
 msgstr "Blok programowy"
 
 #: src/ludamus/templates/panel/proposals.html:40
-#: src/ludamus/templates/panel/timetable.html:43
+#: src/ludamus/templates/panel/timetable.html:44
 msgid "All tracks"
 msgstr "Wszystkie bloki"
 
@@ -4985,7 +4990,7 @@ msgstr ""
 #: src/ludamus/templates/panel/timetable-log.html:15
 #: src/ludamus/templates/panel/timetable-overview.html:15
 #: src/ludamus/templates/panel/timetable-problems.html:15
-#: src/ludamus/templates/panel/timetable.html:27
+#: src/ludamus/templates/panel/timetable.html:28
 msgid "Activity Log"
 msgstr "Dziennik zmian"
 
@@ -4996,9 +5001,9 @@ msgstr "Dziennik zmian harmonogramu"
 #: src/ludamus/templates/panel/timetable-log.html:14
 #: src/ludamus/templates/panel/timetable-overview.html:14
 #: src/ludamus/templates/panel/timetable-problems.html:14
-#: src/ludamus/templates/panel/timetable.html:6
-#: src/ludamus/templates/panel/timetable.html:9
-#: src/ludamus/templates/panel/timetable.html:26
+#: src/ludamus/templates/panel/timetable.html:7
+#: src/ludamus/templates/panel/timetable.html:10
+#: src/ludamus/templates/panel/timetable.html:27
 msgid "Schedule"
 msgstr "Harmonogram"
 
@@ -5007,7 +5012,7 @@ msgstr "Harmonogram"
 #: src/ludamus/templates/panel/timetable-overview.html:8
 #: src/ludamus/templates/panel/timetable-overview.html:16
 #: src/ludamus/templates/panel/timetable-problems.html:16
-#: src/ludamus/templates/panel/timetable.html:28
+#: src/ludamus/templates/panel/timetable.html:29
 msgid "Organizer Overview"
 msgstr "Przegląd harmonogramu"
 
@@ -5016,7 +5021,7 @@ msgstr "Przegląd harmonogramu"
 #: src/ludamus/templates/panel/timetable-problems.html:5
 #: src/ludamus/templates/panel/timetable-problems.html:8
 #: src/ludamus/templates/panel/timetable-problems.html:17
-#: src/ludamus/templates/panel/timetable.html:29
+#: src/ludamus/templates/panel/timetable.html:30
 msgid "Problems"
 msgstr "Problemy"
 
@@ -5142,11 +5147,11 @@ msgstr "Otwórz w harmonogramie"
 msgid "All scheduled sessions are inside their preferred slots."
 msgstr "Wszystkie zaplanowane punkty programu są w preferowanych przedziałach."
 
-#: src/ludamus/templates/panel/timetable.html:16
+#: src/ludamus/templates/panel/timetable.html:17
 msgid "Click a position on the grid to place the session"
 msgstr "Kliknij pozycję na siatce, aby umieścić punkt programu"
 
-#: src/ludamus/templates/panel/timetable.html:54
+#: src/ludamus/templates/panel/timetable.html:55
 msgid "Day:"
 msgstr "Dzień:"
 
