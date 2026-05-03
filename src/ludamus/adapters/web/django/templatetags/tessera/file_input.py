@@ -23,6 +23,8 @@ def render_file_input(field: BoundField) -> str:
     )
     initial = field.value()
     initial_url = getattr(initial, "url", None) if initial else None
+    is_image_field = isinstance(field.field, ImageField)
+    dropzone_state = ("image" if is_image_field else "file") if initial_url else "empty"
     return render_to_string(
         "components/file-dropzone.html",
         {
@@ -30,9 +32,9 @@ def render_file_input(field: BoundField) -> str:
             "id": field.id_for_label,
             "required": field.field.required,
             "accept": accept,
-            "is_image": isinstance(field.field, ImageField),
             "has_errors": bool(field.errors),
             "initial_url": initial_url,
             "initial_name": str(initial) if initial_url else "",
+            "dropzone_state": dropzone_state,
         },
     )
