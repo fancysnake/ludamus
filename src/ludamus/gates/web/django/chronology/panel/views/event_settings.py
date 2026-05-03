@@ -79,9 +79,7 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         form = EventSettingsForm(self.request.POST, self.request.FILES)
         if not form.is_valid():
-            for field_errors in form.errors.values():
-                messages.error(self.request, str(field_errors[0]))
-            return redirect("panel:event-settings", slug=slug)
+            return self._render_with_form(slug, form)
 
         cd = form.cleaned_data
 
@@ -106,6 +104,14 @@ class EventSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Event settings saved successfully."))
         return redirect("panel:event-settings", slug=new_slug)
+
+    def _render_with_form(self, slug: str, form: EventSettingsForm) -> HttpResponse:
+        context, _current_event = self.get_event_context(slug)
+        context["active_nav"] = "settings"
+        context["active_tab"] = "general"
+        context["tab_urls"] = settings_tab_urls(slug)
+        context["form"] = form
+        return TemplateResponse(self.request, "panel/settings.html", context)
 
 
 class EventDisplaySettingsPageView(PanelAccessMixin, EventContextMixin, View):

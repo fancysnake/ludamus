@@ -230,12 +230,11 @@ class TestEventSettingsPageViewPost:
             self.get_url(event), data={**self._post_data(event), "cover_image": image}
         )
 
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[(messages.ERROR, "Image too large. Maximum size is 2 MB.")],
-            url=f"/panel/event/{event.slug}/settings/",
-        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "panel/settings.html"
+        assert response.context["form"].errors["cover_image"] == [
+            "Image too large. Maximum size is 2 MB."
+        ]
         event.refresh_from_db()
         assert not event.cover_image
 
@@ -249,17 +248,11 @@ class TestEventSettingsPageViewPost:
             self.get_url(event), data={**self._post_data(event), "cover_image": image}
         )
 
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[
-                (
-                    messages.ERROR,
-                    "Unsupported image format. Use JPG, PNG, WebP, or AVIF.",
-                )
-            ],
-            url=f"/panel/event/{event.slug}/settings/",
-        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "panel/settings.html"
+        assert response.context["form"].errors["cover_image"] == [
+            "Unsupported image format. Use JPG, PNG, WebP, or AVIF."
+        ]
         event.refresh_from_db()
         assert not event.cover_image
 
@@ -271,17 +264,13 @@ class TestEventSettingsPageViewPost:
 
         response = authenticated_client.post(self.get_url(event), data={})
 
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[
-                (messages.ERROR, "Event name is required."),
-                (messages.ERROR, "Event slug is required."),
-                (messages.ERROR, "Start time is required."),
-                (messages.ERROR, "End time is required."),
-            ],
-            url=f"/panel/event/{event.slug}/settings/",
-        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "panel/settings.html"
+        form_errors = response.context["form"].errors
+        assert form_errors["name"] == ["Event name is required."]
+        assert form_errors["slug"] == ["Event slug is required."]
+        assert form_errors["start_time"] == ["Start time is required."]
+        assert form_errors["end_time"] == ["End time is required."]
         event.refresh_from_db()
         assert event.name == original_name
 
@@ -296,12 +285,11 @@ class TestEventSettingsPageViewPost:
             self.get_url(event), data=self._post_data(event, name=long_name)
         )
 
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[(messages.ERROR, "Event name is too long (max 255 characters).")],
-            url=f"/panel/event/{event.slug}/settings/",
-        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "panel/settings.html"
+        assert response.context["form"].errors["name"] == [
+            "Event name is too long (max 255 characters)."
+        ]
         event.refresh_from_db()
         assert event.name == original_name
 

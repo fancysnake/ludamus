@@ -23,45 +23,57 @@ test.describe('Event cover image upload', () => {
     await page.getByRole('button', { name: /Log in/i }).click();
   });
 
-  test('manager uploads cover image via event settings', async ({ page }) => {
+  test('manager uploads cover image via the dropzone', async ({ page }) => {
     await page.goto('/panel/event/autumn-open/settings/');
 
-    // Preview is hidden initially when there's no cover yet.
-    const preview = page.locator('#cover-image-preview');
-    await expect(preview).toBeHidden();
+    const dropzone = page.locator('[data-dropzone]');
+    const empty = dropzone.locator('[data-dropzone-empty]');
+    const selected = dropzone.locator('[data-dropzone-selected]');
 
-    await page.locator('#id_cover_image').setInputFiles({
+    // No cover yet — empty state visible, selected state hidden.
+    await expect(empty).toBeVisible();
+    await expect(selected).toBeHidden();
+
+    await dropzone.locator('[data-dropzone-input]').setInputFiles({
       name: 'cover.png',
       mimeType: 'image/png',
       buffer: PNG_BYTES,
     });
 
-    // Client-side preview becomes visible immediately, before submit.
-    await expect(preview).toBeVisible();
-    await expect(preview).toHaveAttribute('src', /^blob:/);
+    // Client-side preview kicks in: empty hides, selected shows with blob URL.
+    await expect(empty).toBeHidden();
+    await expect(selected).toBeVisible();
+    await expect(dropzone.locator('[data-dropzone-preview]')).toHaveAttribute(
+      'src',
+      /^blob:/,
+    );
+    await expect(dropzone.locator('[data-dropzone-name]')).toHaveText(
+      'cover.png',
+    );
 
     await page.getByRole('button', { name: 'Save Settings' }).click();
-
     await expect(
       page.getByText('Event settings saved successfully.'),
     ).toBeVisible();
 
-    // After save, the saved cover persists across navigation.
+    // Saved cover persists — dropzone hydrates with /media/ src on reload.
     await page.goto('/panel/event/autumn-open/settings/');
-    const persisted = page.locator('#cover-image-preview');
-    await expect(persisted).toBeVisible();
-    await expect(persisted).toHaveAttribute('src', /\/media\/events\//);
+    await expect(page.locator('[data-dropzone-preview]')).toHaveAttribute(
+      'src',
+      /\/media\/events\//,
+    );
   });
 
-  test('rejects cover image larger than 2 MB', async ({ page }) => {
+  test('rejects oversize file with error inside the dropzone', async ({
+    page,
+  }) => {
     await page.goto('/panel/event/autumn-open/settings/');
 
-    // Pad valid PNG so the upload reaches size validation, not image parsing.
     const oversize = Buffer.concat([
       PNG_BYTES,
       Buffer.alloc(2 * 1024 * 1024 + 1, 0),
     ]);
-    await page.locator('#id_cover_image').setInputFiles({
+    await page.locator('[data-dropzone-input]').setInputFiles({
       name: 'huge.png',
       mimeType: 'image/png',
       buffer: oversize,
@@ -69,21 +81,25 @@ test.describe('Event cover image upload', () => {
 
     await page.getByRole('button', { name: 'Save Settings' }).click();
 
-    await expect(page.getByText(/Image too large/i)).toBeVisible();
+    const dropzone = page.locator('[data-dropzone]');
+    await expect(dropzone).toHaveClass(/border-danger/);
+    await expect(dropzone.locator('[data-dropzone-error]')).toHaveText(
+      /Image too large/i,
+    );
   });
 
-  test('rejects unsupported (GIF) image format', async ({ page }) => {
+  test('rejects unsupported (GIF) format with error inside the dropzone', async ({
+    page,
+  }) => {
     await page.goto('/panel/event/autumn-open/settings/');
 
-    // The file picker advertises restricted MIME types via `accept` —
-    // verify the contract is in the DOM so we know the browser hint matches
-    // the server-side restriction.
-    await expect(page.locator('#id_cover_image')).toHaveAttribute(
+    // accept attribute restricts the file picker to allowed MIME types.
+    await expect(page.locator('[data-dropzone-input]')).toHaveAttribute(
       'accept',
       'image/jpeg,image/png,image/webp,image/avif',
     );
 
-    await page.locator('#id_cover_image').setInputFiles({
+    await page.locator('[data-dropzone-input]').setInputFiles({
       name: 'cover.gif',
       mimeType: 'image/gif',
       buffer: GIF_BYTES,
@@ -91,8 +107,10 @@ test.describe('Event cover image upload', () => {
 
     await page.getByRole('button', { name: 'Save Settings' }).click();
 
-    await expect(
-      page.getByText(/Unsupported image format/i),
-    ).toBeVisible();
+    const dropzone = page.locator('[data-dropzone]');
+    await expect(dropzone).toHaveClass(/border-danger/);
+    await expect(dropzone.locator('[data-dropzone-error]')).toHaveText(
+      /Unsupported image format/i,
+    );
   });
 });
