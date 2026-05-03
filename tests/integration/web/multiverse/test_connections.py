@@ -188,6 +188,51 @@ class TestConnectionCreatePageView:
         )
         assert not Connection.objects.filter(sphere=sphere).exists()
 
+    def test_post_without_credentials_leaves_blob_empty(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(
+            self.url,
+            data={"service": "google", "display_name": "No Creds", "credentials": ""},
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Connection created successfully.")],
+            url="/multiverse/panel/connections/",
+        )
+        connection = Connection.objects.get(sphere=sphere)
+        assert bytes(connection.credentials) == b""
+
+    def test_post_with_credentials_encrypts_and_persists(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(
+            self.url,
+            data={
+                "service": "google",
+                "display_name": "With Creds",
+                "credentials": '{"client": "abc"}',
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Connection created successfully.")],
+            url="/multiverse/panel/connections/",
+        )
+        connection = Connection.objects.get(sphere=sphere)
+        stored = bytes(connection.credentials)
+        # Persisted blob must be non-empty and not contain the plaintext.
+        assert stored
+        assert b"abc" not in stored
+
 
 class TestConnectionEditPageView:
     """Tests for /multiverse/panel/connections/<pk>/edit/ page."""

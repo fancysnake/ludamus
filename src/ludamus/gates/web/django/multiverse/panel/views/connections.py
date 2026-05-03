@@ -80,7 +80,9 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
             "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
-        self.request.services.connections.create(sphere_id, data)
+        credentials_str = form.cleaned_data["credentials"]
+        plaintext = credentials_str.encode("utf-8") if credentials_str.strip() else None
+        self.request.services.connections.create(sphere_id, data, plaintext)
         messages.success(self.request, _("Connection created successfully."))
         return redirect("multiverse:panel:connections")
 
