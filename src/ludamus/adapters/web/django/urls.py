@@ -69,11 +69,6 @@ chronology_urls = [
         name="session-enrollment",
     ),
     path(
-        "session/<int:session_id>/accept/",
-        views.ProposalAcceptPageView.as_view(),
-        name="session-accept",
-    ),
-    path(
         "event/<str:event_slug>/anonymous/do/activate",
         views.EventAnonymousActivateActionView.as_view(),
         name="event-anonymous-activate",
