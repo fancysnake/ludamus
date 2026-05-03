@@ -33,7 +33,7 @@ def render_help_text(field: BoundField) -> str:
     Returns:
         HTML string of the help text, or empty string if none.
     """
-    if not field.help_text:
+    if not field.help_text or field.errors:
         return ""
 
     return format_html(
