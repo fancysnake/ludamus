@@ -2,7 +2,7 @@
 <label for="{{ id }}"
        data-dropzone
        data-state="{{ dropzone_state }}"
-       class="group relative flex flex-col items-center justify-center w-full min-h-44 sm:min-h-48 px-4 py-6 bg-bg-tertiary border border-border rounded-lg cursor-pointer transition-colors hover:bg-bg-secondary hover:ring hover:-ring-offset-1 hover:ring-border hover:border-primary/40 has-[input[aria-invalid=true]]:border-danger overflow-hidden">
+       class="group relative flex flex-col items-center justify-center w-full min-h-44 sm:min-h-48 px-4 py-6 bg-bg-tertiary border border-border rounded-lg cursor-pointer transition-colors hover:bg-bg-secondary hover:border-primary/40 has-[input[aria-invalid=true]]:border-danger overflow-hidden">
     <input type="file"
            id="{{ id }}"
            name="{{ name }}"
@@ -13,7 +13,7 @@
            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
     <div data-dropzone-empty
          class="pointer-events-none flex flex-col items-center text-center hidden group-data-[state=empty]:flex">
-        <span class="mb-3 inline-flex items-center justify-center w-11 h-11 rounded-full bg-bg-secondary text-foreground-secondary border border-border transition-colors group-hover:text-primary group-hover:border-primary/30">
+        <span class="mb-3 inline-flex items-center justify-center w-11 h-11 rounded-full bg-bg-secondary text-foreground-secondary border border-border transition-colors hover:duration-0 group-hover:text-primary group-hover:border-primary/30">
             {% icon "arrow-up-tray" class="w-5 h-5" %}
         </span>
         <p class="text-sm text-foreground">
