@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Connection
-from ludamus.links.db.django.repositories import ConnectionUsageInspector
 from ludamus.pacts.multiverse import ConnectionDTO
 from tests.integration.utils import assert_response
 
@@ -526,39 +525,6 @@ class TestConnectionDeletePageView:
             response,
             HTTPStatus.FOUND,
             messages=[(messages.ERROR, "Connection not found.")],
-            url="/multiverse/panel/connections/",
-        )
-        assert Connection.objects.filter(pk=connection.pk).exists()
-
-    def test_post_blocked_when_connection_in_use_flashes_event_names(
-        self, authenticated_client, active_user, sphere, monkeypatch
-    ):
-        sphere.managers.add(active_user)
-        connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="In use"
-        )
-
-        def _fake_list_blocking_events(connection_pk: int) -> list[str]:
-            del connection_pk
-            return ["Convent 2026", "Spring Jam"]
-
-        monkeypatch.setattr(
-            ConnectionUsageInspector,
-            "list_blocking_events",
-            staticmethod(_fake_list_blocking_events),
-        )
-
-        response = authenticated_client.post(self.get_url(connection))
-
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[
-                (
-                    messages.ERROR,
-                    "Cannot delete connection — used by: Convent 2026, Spring Jam.",
-                )
-            ],
             url="/multiverse/panel/connections/",
         )
         assert Connection.objects.filter(pk=connection.pk).exists()

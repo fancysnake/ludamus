@@ -31,10 +31,7 @@ class Services:
     def connections(self) -> ConnectionsService:
         key: str = settings.CREDENTIALS_ENCRYPTION_KEY
         return ConnectionsService(
-            self._transaction,
-            self._repos.connections,
-            FernetEncryptor(key),
-            self._repos.connection_usage_inspector,
+            self._transaction, self._repos.connections, FernetEncryptor(key)
         )
 
     @cached_property

@@ -8,10 +8,7 @@ import-execution slice.
 import pytest
 
 from ludamus.adapters.db.django.models import Connection
-from ludamus.links.db.django.repositories import (
-    ConnectionsRepository,
-    ConnectionUsageInspector,
-)
+from ludamus.links.db.django.repositories import ConnectionsRepository
 from ludamus.pacts import NotFoundError
 from ludamus.pacts.multiverse import ConnectionDTO
 
@@ -77,8 +74,3 @@ class TestConnectionsRepositorySurfaceIsWriteOnly:
             assert (
                 "credential" not in name or name == "update_credentials"
             ), f"Unexpected credential accessor on repo surface: {name}"
-
-
-class TestConnectionUsageInspectorStub:
-    def test_returns_empty_until_import_config_rows_land(self):
-        assert not ConnectionUsageInspector.list_blocking_events(connection_pk=42)

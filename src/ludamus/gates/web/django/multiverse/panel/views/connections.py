@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic.base import View
 
@@ -16,11 +17,17 @@ from ludamus.gates.web.django.multiverse.access import (
 )
 from ludamus.gates.web.django.multiverse.panel.forms import ConnectionForm
 from ludamus.gates.web.django.multiverse.panel.views.base import sphere_panel_context
-from ludamus.pacts import NotFoundError
+from ludamus.pacts import NotFoundError, RedirectError
 from ludamus.pacts.multiverse import ConnectionProvider, ConnectionWriteDict
 
 if TYPE_CHECKING:
     from django.http import HttpResponse
+
+
+def _connection_not_found() -> RedirectError:
+    return RedirectError(
+        reverse("multiverse:panel:connections"), error=_("Connection not found.")
+    )
 
 
 class ConnectionsPageView(SphereAccessMixin, View):
@@ -88,8 +95,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
         try:
             connection = self.request.services.connections.get(sphere_id, pk)
         except NotFoundError:
-            messages.error(self.request, _("Connection not found."))
-            return redirect("multiverse:panel:connections")
+            raise _connection_not_found() from None
 
         form = ConnectionForm(
             initial={
@@ -112,8 +118,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
         try:
             connection = self.request.services.connections.get(sphere_id, pk)
         except NotFoundError:
-            messages.error(self.request, _("Connection not found."))
-            return redirect("multiverse:panel:connections")
+            raise _connection_not_found() from None
 
         form = ConnectionForm(self.request.POST)
         if not form.is_valid():
@@ -131,13 +136,12 @@ class ConnectionEditPageView(SphereAccessMixin, View):
             "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
-        if form.cleaned_data["replace_credentials"]:
-            plaintext = form.cleaned_data["credentials"].encode("utf-8")
-            self.request.services.connections.test_then_update(
-                sphere_id, pk, data, plaintext
-            )
-        else:
-            self.request.services.connections.update(sphere_id, pk, data)
+        plaintext = (
+            form.cleaned_data["credentials"].encode("utf-8")
+            if form.cleaned_data["replace_credentials"]
+            else None
+        )
+        self.request.services.connections.update(sphere_id, pk, data, plaintext)
         messages.success(self.request, _("Connection updated successfully."))
         return redirect("multiverse:panel:connections")
 
@@ -152,8 +156,7 @@ class ConnectionDeletePageView(SphereAccessMixin, View):
         try:
             connection = self.request.services.connections.get(sphere_id, pk)
         except NotFoundError:
-            messages.error(self.request, _("Connection not found."))
-            return redirect("multiverse:panel:connections")
+            raise _connection_not_found() from None
 
         return TemplateResponse(
             self.request,
@@ -167,18 +170,9 @@ class ConnectionDeletePageView(SphereAccessMixin, View):
     def post(self, _request: MultiverseRequest, pk: int) -> HttpResponse:
         sphere_id = self.request.context.current_sphere_id
         try:
-            blockers = self.request.services.connections.delete(sphere_id, pk)
+            self.request.services.connections.delete(sphere_id, pk)
         except NotFoundError:
-            messages.error(self.request, _("Connection not found."))
-            return redirect("multiverse:panel:connections")
-
-        if blockers:
-            messages.error(
-                self.request,
-                _("Cannot delete connection — used by: %(events)s.")
-                % {"events": ", ".join(blockers)},
-            )
-            return redirect("multiverse:panel:connections")
+            raise _connection_not_found() from None
 
         messages.success(self.request, _("Connection deleted successfully."))
         return redirect("multiverse:panel:connections")

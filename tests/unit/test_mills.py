@@ -772,16 +772,6 @@ class _NoopEncryptor:
         return b"enc:" + plaintext
 
 
-class _Inspector:
-    def __init__(self, blockers: list[str]) -> None:
-        self.blockers = blockers
-        self.calls: list[int] = []
-
-    def list_blocking_events(self, connection_pk: int) -> list[str]:
-        self.calls.append(connection_pk)
-        return list(self.blockers)
-
-
 class TestConnectionsService:
     @pytest.fixture
     def connections(self):
@@ -796,37 +786,59 @@ class TestConnectionsService:
         return _NoopEncryptor()
 
     @pytest.fixture
-    def inspector(self):
-        return _Inspector(blockers=[])
+    def service(self, transaction, connections, encryptor):
+        return ConnectionsService(transaction, connections, encryptor)
 
-    @pytest.fixture
-    def service(self, transaction, connections, encryptor, inspector):
-        return ConnectionsService(transaction, connections, encryptor, inspector)
-
-    def test_test_then_create_encrypts_then_persists(
+    def test_create_without_credentials_skips_encrypt(
         self, service, connections, transaction
     ):
         created = _connection_dto(pk=42)
         connections.create.return_value = created
         data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
 
-        result = service.test_then_create(
-            sphere_id=7, data=data, credentials_plaintext=b"secret"
-        )
+        result = service.create(sphere_id=7, data=data)
+
+        assert result is created
+        connections.create.assert_called_once_with(7, data)
+        connections.update_credentials.assert_not_called()
+        transaction.atomic.assert_called_once_with()
+
+    def test_create_with_credentials_encrypts_then_persists(
+        self, service, connections, transaction
+    ):
+        created = _connection_dto(pk=42)
+        connections.create.return_value = created
+        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+
+        result = service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
 
         assert result is created
         connections.create.assert_called_once_with(7, data)
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:secret")
         transaction.atomic.assert_called_once_with()
 
-    def test_test_then_update_encrypts_then_persists(
+    def test_update_without_credentials_skips_encrypt(
         self, service, connections, transaction
     ):
         updated = _connection_dto(pk=42)
         connections.update.return_value = updated
         data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
 
-        result = service.test_then_update(
+        result = service.update(sphere_id=7, pk=42, data=data)
+
+        assert result is updated
+        connections.update.assert_called_once_with(7, 42, data)
+        connections.update_credentials.assert_not_called()
+        transaction.atomic.assert_called_once_with()
+
+    def test_update_with_credentials_encrypts_then_persists(
+        self, service, connections, transaction
+    ):
+        updated = _connection_dto(pk=42)
+        connections.update.return_value = updated
+        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+
+        result = service.update(
             sphere_id=7, pk=42, data=data, credentials_plaintext=b"fresh"
         )
 
@@ -835,25 +847,8 @@ class TestConnectionsService:
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:fresh")
         transaction.atomic.assert_called_once_with()
 
-    def test_delete_returns_blockers_when_in_use(
-        self, transaction, connections, encryptor
-    ):
-        inspector = _Inspector(blockers=["Convent 2026", "Spring Jam"])
-        service = ConnectionsService(transaction, connections, encryptor, inspector)
+    def test_delete_calls_repo_in_transaction(self, service, connections, transaction):
+        service.delete(sphere_id=1, pk=42)
 
-        result = service.delete(sphere_id=1, pk=42)
-
-        assert result == ["Convent 2026", "Spring Jam"]
-        assert inspector.calls == [42]
-        connections.delete.assert_not_called()
-        transaction.atomic.assert_not_called()
-
-    def test_delete_proceeds_when_no_blockers(
-        self, service, connections, transaction, inspector
-    ):
-        result = service.delete(sphere_id=1, pk=42)
-
-        assert result == []
-        assert inspector.calls == [42]
         connections.delete.assert_called_once_with(1, 42)
         transaction.atomic.assert_called_once_with()

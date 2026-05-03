@@ -52,29 +52,23 @@ class EncryptorProtocol(Protocol):
     def encrypt(self, plaintext: bytes) -> bytes: ...
 
 
-class ConnectionUsageInspectorProtocol(Protocol):
-    @staticmethod
-    def list_blocking_events(connection_pk: int) -> list[str]: ...
-
-
 class ConnectionsServiceProtocol(Protocol):
     def list_for_sphere(self, sphere_id: int) -> list[ConnectionDTO]: ...
     def get(self, sphere_id: int, pk: int) -> ConnectionDTO: ...
-    def create(self, sphere_id: int, data: ConnectionWriteDict) -> ConnectionDTO: ...
+    def create(
+        self,
+        sphere_id: int,
+        data: ConnectionWriteDict,
+        credentials_plaintext: bytes | None = None,
+    ) -> ConnectionDTO: ...
     def update(
-        self, sphere_id: int, pk: int, data: ConnectionWriteDict
-    ) -> ConnectionDTO: ...
-    def test_then_create(
-        self, sphere_id: int, data: ConnectionWriteDict, credentials_plaintext: bytes
-    ) -> ConnectionDTO: ...
-    def test_then_update(
         self,
         sphere_id: int,
         pk: int,
         data: ConnectionWriteDict,
-        credentials_plaintext: bytes,
+        credentials_plaintext: bytes | None = None,
     ) -> ConnectionDTO: ...
-    def delete(self, sphere_id: int, pk: int) -> list[str]: ...
+    def delete(self, sphere_id: int, pk: int) -> None: ...
 
 
 class SpherePanelServiceProtocol(Protocol):
