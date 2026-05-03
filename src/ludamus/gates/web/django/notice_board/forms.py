@@ -29,7 +29,7 @@ class EncounterForm(forms.Form):
         label=_lazy("Max participants"),
         min_value=0,
         initial=0,
-        help_text=_lazy("Enter 0 for no participant limit."),
+        required=False
     )
     MAX_IMAGE_SIZE = 2 * 1024 * 1024  # 2 MB
 
