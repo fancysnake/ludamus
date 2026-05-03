@@ -29,15 +29,6 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-type DropzoneState = "empty" | "image" | "file";
-
-const setDropzoneState = (
-  label: HTMLLabelElement,
-  state: DropzoneState,
-): void => {
-  label.dataset.state = state;
-};
-
 const initDropzone = (label: HTMLLabelElement): void => {
   const input = label.querySelector<HTMLInputElement>("[data-dropzone-input]");
   const nameEls = label.querySelectorAll<HTMLElement>("[data-dropzone-name]");
@@ -63,7 +54,7 @@ const initDropzone = (label: HTMLLabelElement): void => {
     if (!file) {
       revokePreview();
       if (preview) preview.removeAttribute("src");
-      setDropzoneState(label, "empty");
+      label.dataset.state = "empty";
       return;
     }
     nameEls.forEach((el) => {
@@ -79,11 +70,11 @@ const initDropzone = (label: HTMLLabelElement): void => {
       revokePreview();
       previewUrl = URL.createObjectURL(file);
       preview!.src = previewUrl;
-      setDropzoneState(label, "image");
+      label.dataset.state = "image";
     } else {
       revokePreview();
       if (preview) preview.removeAttribute("src");
-      setDropzoneState(label, "file");
+      label.dataset.state = "file";
     }
   });
 
