@@ -58,6 +58,28 @@ class TestEncounterCreatePageView:
         assert encounter.share_code
         assert encounter.sphere == sphere
 
+    def test_ok_post_with_blank_max_participants(self, authenticated_client, sphere):
+        start = datetime.now(UTC) + timedelta(days=7)
+        data = {
+            "title": "Unlimited Board Game Night",
+            "start_time": start.strftime("%Y-%m-%dT%H:%M"),
+            "max_participants": "",
+        }
+
+        response = authenticated_client.post(self.URL, data)
+
+        encounter = Encounter.objects.get(title="Unlimited Board Game Night")
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url=reverse(
+                "web:notice-board:encounter-detail",
+                kwargs={"share_code": encounter.share_code},
+            ),
+        )
+        assert encounter.max_participants == 0
+        assert encounter.sphere == sphere
+
     def test_ok_post_with_header_image(self, authenticated_client, sphere):
         start = datetime.now(UTC) + timedelta(days=7)
         gif_bytes = (

@@ -65,6 +65,32 @@ class TestEncounterEditPageView:
             ),
         )
 
+    def test_ok_post_with_blank_max_participants(
+        self, authenticated_client, user, sphere
+    ):
+        encounter = EncounterFactory(creator=user, sphere=sphere, max_participants=6)
+
+        response = authenticated_client.post(
+            self._url(encounter.pk),
+            {
+                "title": "Updated Title",
+                "start_time": "2026-06-01T14:00",
+                "max_participants": "",
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=((constants.SUCCESS, "Encounter updated."),),
+            url=reverse(
+                "web:notice-board:encounter-detail",
+                kwargs={"share_code": encounter.share_code},
+            ),
+        )
+        encounter.refresh_from_db()
+        assert encounter.max_participants == 0
+
     def test_invalid_form(self, authenticated_client, user, sphere):
         encounter = EncounterFactory(creator=user, sphere=sphere)
 
