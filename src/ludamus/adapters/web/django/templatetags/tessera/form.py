@@ -117,7 +117,7 @@ def tessera_errors(form: BaseForm) -> str:
 
 
 @register.simple_tag
-def tessera_button(  # noqa: PLR0913
+def tessera_button(
     text: str,
     *,
     button_type: str = "submit",
@@ -135,9 +135,5 @@ def tessera_button(  # noqa: PLR0913
         {% tessera_button "Cancel" button_type="button" variant="secondary" %}
     """
     return render_button(
-        text,
-        button_type=button_type,
-        variant=variant,
-        size=size,
-        disabled=disabled,
+        text, button_type=button_type, variant=variant, size=size, disabled=disabled
     )

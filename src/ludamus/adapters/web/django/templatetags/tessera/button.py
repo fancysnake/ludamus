@@ -5,7 +5,7 @@ from __future__ import annotations
 from django.utils.html import format_html
 
 
-def render_button(  # noqa: PLR0913
+def render_button(
     text: str,
     *,
     button_type: str = "submit",
