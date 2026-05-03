@@ -70,7 +70,6 @@ from ludamus.pacts import (
     HostPersonalDataRepositoryProtocol,
     NotFoundError,
     PendingSessionDTO,
-    PendingSessionTagDTO,
     PendingSessionTimeSlotDTO,
     PersonalDataFieldCreateData,
     PersonalDataFieldDTO,
@@ -100,8 +99,6 @@ from ludamus.pacts import (
     SpaceRepositoryProtocol,
     SphereDTO,
     SphereRepositoryProtocol,
-    TagCategoryDTO,
-    TagDTO,
     TimeSlotDTO,
     TimeSlotRepositoryProtocol,
     TimeSlotRequirementDTO,
@@ -297,55 +294,8 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
         )
 
     @staticmethod
-    def read_tags(session_id: int) -> list[TagDTO]:
-        session = Session.objects.get(id=session_id)
-        return [TagDTO.model_validate(tag) for tag in session.tags.all()]
-
-    @staticmethod
-    def read_tag_categories(session_id: int) -> list[TagCategoryDTO]:
-        try:
-            session = Session.objects.select_related("category").get(id=session_id)
-        except Session.DoesNotExist as exception:
-            raise NotFoundError from exception
-        if session.category is None:
-            return []
-        return [
-            TagCategoryDTO.model_validate(tc)
-            for tc in session.category.tag_categories.all()
-        ]
-
-    @staticmethod
     def count_by_category(category_id: int) -> int:
         return Session.objects.filter(category_id=category_id).count()
-
-    @staticmethod
-    def read_pending_by_event(event_id: int) -> list[PendingSessionDTO]:
-        sessions = (
-            Session.objects.filter(
-                category__event_id=event_id, status=SessionStatus.PENDING
-            )
-            .prefetch_related("tags", "time_slots")
-            .order_by("-creation_time")
-        )
-        return [
-            PendingSessionDTO(
-                contact_email=s.contact_email,
-                creation_time=s.creation_time,
-                description=s.description,
-                needs=s.needs,
-                participants_limit=s.participants_limit,
-                pk=s.pk,
-                display_name=s.display_name,
-                requirements=s.requirements,
-                tags=[PendingSessionTagDTO.model_validate(t) for t in s.tags.all()],
-                time_slots=[
-                    PendingSessionTimeSlotDTO.model_validate(ts)
-                    for ts in s.time_slots.all()
-                ],
-                title=s.title,
-            )
-            for s in sessions
-        ]
 
     @staticmethod
     def read_pending_by_event_for_user(
@@ -356,8 +306,9 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
                 category__event_id=event_id,
                 status=SessionStatus.PENDING,
                 presenter_id=presenter_id,
+                agenda_item__isnull=True,
             )
-            .prefetch_related("tags", "time_slots")
+            .prefetch_related("time_slots")
             .order_by("-creation_time")
         )
         return [
@@ -365,12 +316,9 @@ class SessionRepository(SessionRepositoryProtocol):  # noqa: PLR0904
                 contact_email=s.contact_email,
                 creation_time=s.creation_time,
                 description=s.description,
-                needs=s.needs,
                 participants_limit=s.participants_limit,
                 pk=s.pk,
                 display_name=s.display_name,
-                requirements=s.requirements,
-                tags=[PendingSessionTagDTO.model_validate(t) for t in s.tags.all()],
                 time_slots=[
                     PendingSessionTimeSlotDTO.model_validate(ts)
                     for ts in s.time_slots.all()

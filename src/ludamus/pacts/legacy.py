@@ -160,13 +160,6 @@ class SessionDTO(BaseModel):
     title: str
 
 
-class PendingSessionTagDTO(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    name: str
-    pk: int
-
-
 class PendingSessionTimeSlotDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -181,12 +174,9 @@ class PendingSessionDTO(BaseModel):
     contact_email: str
     creation_time: datetime
     description: str
-    needs: str
     participants_limit: int
     pk: int
     display_name: str
-    requirements: str
-    tags: list[PendingSessionTagDTO]
     time_slots: list[PendingSessionTimeSlotDTO]
     title: str
 
@@ -309,24 +299,6 @@ class TimeSlotDTO(BaseModel):
     end_time: datetime
     pk: int
     start_time: datetime
-
-
-class TagCategoryDTO(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    icon: str
-    input_type: str
-    name: str
-    pk: int
-
-
-class TagDTO(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    category_id: int
-    confirmed: bool
-    name: str
-    pk: int
 
 
 class SessionData(TypedDict, total=False):
@@ -810,13 +782,7 @@ class SessionRepositoryProtocol(Protocol):  # noqa: PLR0904
     @staticmethod
     def read_tag_ids(session_id: int) -> list[int]: ...
     @staticmethod
-    def read_tags(session_id: int) -> list[TagDTO]: ...
-    @staticmethod
-    def read_tag_categories(session_id: int) -> list[TagCategoryDTO]: ...
-    @staticmethod
     def count_by_category(category_id: int) -> int: ...
-    @staticmethod
-    def read_pending_by_event(event_id: int) -> list[PendingSessionDTO]: ...
     @staticmethod
     def read_pending_by_event_for_user(
         event_id: int, presenter_id: int

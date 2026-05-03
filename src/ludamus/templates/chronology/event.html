@@ -327,14 +327,16 @@
                                                    max="99">
                                         </div>
                                     </div>
-                                    <div id="tag-filters" class="contents">
-                                        {% for field in filterable_tag_categories %}
+                                    <div id="session-field-filters" class="contents">
+                                        {% for field in filterable_session_fields %}
                                             <div class="flex flex-col gap-1.5 grow">
                                                 <label class="text-[0.625rem] font-bold uppercase tracking-widest grow text-foreground-muted"
-                                                       for="tag-filter-{{ field.slug }}">{{ field.name }}</label>
-                                                <select class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
-                                                        data-category="{{ field.slug }}"
-                                                        id="tag-filter-{{ field.slug }}">
+                                                       for="session-field-filter-{{ field.slug }}">
+                                                    {{ field.name }}
+                                                </label>
+                                                <select class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 session-field-filter"
+                                                        data-field-slug="{{ field.slug }}"
+                                                        id="session-field-filter-{{ field.slug }}">
                                                     <option value="">{% translate "All" %} {{ field.name }}</option>
                                                 </select>
                                             </div>
@@ -487,8 +489,8 @@
             </div>
         </div>
     {% endif %}
-    <!-- Proposals Section (Superuser Only) -->
-    {% if user.is_superuser and event.is_proposal_active and pending_sessions %}
+    <!-- Proposals Section (current user's pending proposals) -->
+    {% if event.is_proposal_active and pending_sessions %}
         <div class="card mt-8 border-(--theme-warning)">
             <div class="px-6 py-4 flex items-center gap-3 bg-(--theme-warning-bg) border-b border-(--theme-warning-light)">
                 <h3 class="text-base font-semibold flex items-center gap-2 text-(--theme-warning-text)">
@@ -518,19 +520,6 @@
                                         {% if pending.description %}
                                             <br>
                                             <span class="text-xs text-foreground-muted">{{ pending.description|truncatechars:100 }}</span>
-                                        {% endif %}
-                                        {# TODO: Replace pending.tags (old Tag M2M) with session field values #}
-                                        {% if pending.tags %}
-                                            <div class="flex flex-wrap gap-1 mt-1">
-                                                {% for tag in pending.tags %}
-                                                    {% include "components/_field_pill.html" with value=tag.name size="sm" %}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                        {% if pending.needs %}
-                                            <div class="mt-1 text-xs flex items-center gap-1 text-info">
-                                                {% icon "information-circle" class="w-3.5 h-3.5" variant="mini" %} {{ pending.needs|truncatechars:50 }}
-                                            </div>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -564,10 +553,6 @@
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="flex flex-col gap-1.5 grow">
-                                        <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
-                                           class="btn btn-teal text-xs py-1.5 px-3">
-                                            {% icon "check" class="w-3.5 h-3.5" variant="mini" %} {% translate "Accept" %}
-                                        </a>
                                         <a href="?proposal={{ pending.pk }}"
                                            class="btn btn-secondary text-xs py-1.5 px-3"
                                            aria-controls="proposalModal{{ pending.pk }}"
@@ -606,17 +591,6 @@
                                 <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Participants Limit" %}</h4>
                                 <p>{{ pending.participants_limit }}</p>
                             </div>
-                            {# TODO: Replace pending.tags (old Tag M2M) with session field values #}
-                            {% if pending.tags %}
-                                <div>
-                                    <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Tags" %}</h4>
-                                    <div class="flex flex-wrap gap-1.5">
-                                        {% for tag in pending.tags %}
-                                            {% include "components/_field_pill.html" with value=tag.name size="sm" %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            {% endif %}
                         </div>
                         <div class="space-y-3">
                             <div>
@@ -637,24 +611,10 @@
                             <p>{{ pending.description }}</p>
                         </div>
                     {% endif %}
-                    {% if pending.requirements %}
-                        <div class="mt-4 pt-4 border-t border-border">
-                            <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Requirements" %}</h4>
-                            <p>{{ pending.requirements }}</p>
-                        </div>
-                    {% endif %}
-                    {% if pending.needs %}
-                        <div class="mt-4 pt-4 border-t border-border">
-                            <h4 class="text-sm font-semibold mb-1 text-foreground-secondary">{% translate "Special Needs" %}</h4>
-                            <p>{{ pending.needs }}</p>
-                        </div>
-                    {% endif %}
                 </div>
                 <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
                     <button data-modal-close="proposalModal{{ pending.pk }}"
                             class="btn btn-secondary text-sm">{% translate "Close" %}</button>
-                    <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
-                       class="btn btn-teal text-sm">{% icon "check" class="w-4 h-4" variant="mini" %} {% translate "Accept Proposal" %}</a>
                 </div>
             </dialog>
         {% endfor %}
@@ -1008,7 +968,7 @@
             const filterCountBadge = document.getElementById('active-filter-count');
             const filterNoResults = document.getElementById('filter-no-results');
             const clearFiltersFromNoResults = document.getElementById('clear-filters-from-no-results');
-            const tagFilters = {};
+            const fieldFilters = {};
 
             // Populate venue filter dropdown from session data
             const venueMap = new Map(); // slug -> name
@@ -1033,33 +993,33 @@
             }
 
             // Get tag filter elements created by Django template
-            const tagFilterElements = document.querySelectorAll('.tag-filter');
+            const fieldFilterElements = document.querySelectorAll('.session-field-filter');
 
             // Populate options for each filterable category
-            tagFilterElements.forEach(select => {
-                const categorySlug = select.dataset.category;
-                tagFilters[categorySlug] = select;
+            fieldFilterElements.forEach(select => {
+                const fieldSlug = select.dataset.fieldSlug;
+                fieldFilters[fieldSlug] = select;
 
                 // Parse tags from session data for this category only
-                const categoryTags = new Set();
+                const fieldValues = new Set();
                 sessionCards.forEach(card => {
-                    const tagCategoriesData = card.dataset.tagCategories;
-                    if (tagCategoriesData) {
-                        const tagPairs = tagCategoriesData.split(';').filter(pair => pair.trim());
-                        tagPairs.forEach(pair => {
-                            const [cardCategorySlug, tagName] = pair.split(':');
-                            if (cardCategorySlug === categorySlug && tagName) {
-                                categoryTags.add(tagName.trim());
+                    const fieldPairsData = card.dataset.fieldPairs;
+                    if (fieldPairsData) {
+                        const fieldPairs = fieldPairsData.split(';').filter(pair => pair.trim());
+                        fieldPairs.forEach(pair => {
+                            const [cardFieldSlug, fieldValue] = pair.split(':');
+                            if (cardFieldSlug === fieldSlug && fieldValue) {
+                                fieldValues.add(fieldValue.trim());
                             }
                         });
                     }
                 });
 
-                // Add tag options to this category's filter
-                Array.from(categoryTags).sort().forEach(tag => {
+                // Add field-value options to this field's filter
+                Array.from(fieldValues).sort().forEach(value => {
                     const option = document.createElement('option');
-                    option.value = tag;
-                    option.textContent = tag;
+                    option.value = value;
+                    option.textContent = value;
                     select.appendChild(option);
                 });
 
@@ -1076,11 +1036,11 @@
 
 
                 // Get all active tag filters
-                const activeTagFilters = {};
-                Object.keys(tagFilters).forEach(categorySlug => {
-                    const filterValue = tagFilters[categorySlug].value;
+                const activeFieldFilters = {};
+                Object.keys(fieldFilters).forEach(fieldSlug => {
+                    const filterValue = fieldFilters[fieldSlug].value;
                     if (filterValue) {
-                        activeTagFilters[categorySlug] = filterValue;
+                        activeFieldFilters[fieldSlug] = filterValue;
                     }
                 });
 
@@ -1146,21 +1106,21 @@
                         }
                     }
 
-                    // Tag filters - check all active category filters
-                    if (Object.keys(activeTagFilters).length > 0) {
-                        const cardTagCategories = card.dataset.tagCategories;
+                    // Session-field filters - check all active field filters
+                    if (Object.keys(activeFieldFilters).length > 0) {
+                        const cardFieldPairs = card.dataset.fieldPairs;
                         let matchesAllFilters = true;
 
-                        Object.keys(activeTagFilters).forEach(categorySlug => {
-                            const requiredTag = activeTagFilters[categorySlug];
+                        Object.keys(activeFieldFilters).forEach(fieldSlug => {
+                            const requiredValue = activeFieldFilters[fieldSlug];
 
 
                             // Try both category-based and simple tag-based matching
-                            const categoryPattern = new RegExp(`${categorySlug}[^:]*:${requiredTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
-                            const simpleTagPattern = new RegExp(`\\b${requiredTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+                            const fieldPattern = new RegExp(`${fieldSlug}[^:]*:${requiredValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+                            const valuePattern = new RegExp(`\\b${requiredValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
 
-                            const matchesCategory = categoryPattern.test(cardTagCategories);
-                            const matchesSimpleTag = simpleTagPattern.test(card.dataset.tags);
+                            const matchesCategory = fieldPattern.test(cardFieldPairs);
+                            const matchesSimpleTag = valuePattern.test(card.dataset.fieldValues);
 
                             if (!matchesCategory && !matchesSimpleTag) {
                                 matchesAllFilters = false;
@@ -1176,8 +1136,8 @@
                             show,
                             searchText,
                             statusValue,
-                            hasActiveTagFilters: Object.keys(activeTagFilters).length > 0,
-                            activeTagFilters,
+                            hasActiveTagFilters: Object.keys(activeFieldFilters).length > 0,
+                            activeFieldFilters,
                             minAgeValue,
                             maxAgeValue
                         });
@@ -1215,8 +1175,8 @@
                 venueFilter.value = '';
                 minAgeFilter.value = '';
                 maxAgeFilter.value = '';
-                Object.keys(tagFilters).forEach(categorySlug => {
-                    tagFilters[categorySlug].value = '';
+                Object.keys(fieldFilters).forEach(fieldSlug => {
+                    fieldFilters[fieldSlug].value = '';
                 });
 
                 // Reset all visibility
@@ -1301,8 +1261,8 @@
                         }
                     });
                 }
-                Object.keys(tagFilters).forEach(cat => {
-                    const sel = tagFilters[cat];
+                Object.keys(fieldFilters).forEach(slug => {
+                    const sel = fieldFilters[slug];
                     if (sel.value) {
                         chips.push({
                             label: sel.options[sel.selectedIndex].text,
@@ -1363,12 +1323,12 @@
 {% endblock extra_scripts %}
 {% block extra_head %}
     <style>
-        /* Tag filter container styling */
-        .tag-filter-container {
+        /* Session-field filter container styling */
+        .session-field-filter-container {
             width: 18vw;
         }
 
-        .tag-filter-container .tag-filter {
+        .session-field-filter-container .session-field-filter {
             width: 100%;
         }
 
