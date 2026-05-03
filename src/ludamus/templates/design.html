@@ -43,13 +43,13 @@
             <span class="badge badge-success">Ready</span>
         </div>
         <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center">
-            <code class="absolute top-3 left-3 text-xs text-foreground-muted">components/text-field.html</code>
+            <code class="absolute top-3 left-3 text-xs text-foreground-muted">text-field.html</code>
             <div class="w-full max-w-xs">
                 {% include "components/text-field.html" with id="t-text" name="t-text" placeholder="Placeholder" required=False value="" only %}
             </div>
         </div>
         <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center">
-            <code class="absolute top-3 left-3 text-xs text-foreground-muted">components/textarea.html</code>
+            <code class="absolute top-3 left-3 text-xs text-foreground-muted">textarea.html</code>
             <div class="w-full max-w-xs">
                 {% include "components/textarea.html" with id="t-textarea" name="t-textarea" rows="3" placeholder="Placeholder" required=False value="" only %}
             </div>
@@ -65,11 +65,11 @@
             </div>
         </div>
         <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center">
-            <code class="absolute top-3 left-3 text-xs text-foreground-muted">components/checkbox-field.html</code>
+            <code class="absolute top-3 left-3 text-xs text-foreground-muted">checkbox-field.html</code>
             {% include "components/checkbox-field.html" with id="t-checkbox" name="t-checkbox" label="Checkbox" checked=True only %}
         </div>
         <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center">
-            <code class="absolute top-3 left-3 text-xs text-foreground-muted">components/choice-group.html</code>
+            <code class="absolute top-3 left-3 text-xs text-foreground-muted">choice-group.html</code>
             {% include "components/choice-group.html" with input_type="radio" name="t-radio" options=design_radio_options only %}
         </div>
         <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center">
@@ -80,7 +80,7 @@
         {% end_tabs %}
     </div>
     <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center sm:col-span-2 lg:col-span-3">
-        <code class="absolute top-3 left-3 text-xs text-foreground-muted">components/event_card.html</code>
+        <code class="absolute top-3 left-3 text-xs text-foreground-muted">event_card.html</code>
         <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {% if design_event %}
                 {% include "components/event_card.html" with event=design_event %}
