@@ -11,7 +11,6 @@ def render_button(  # noqa: PLR0913
     button_type: str = "submit",
     variant: str = "primary",
     size: str = "md",
-    full_width: bool = False,
     disabled: bool = False,
 ) -> str:
     """Render a styled button.
@@ -37,9 +36,6 @@ def render_button(  # noqa: PLR0913
         variant_class.get(variant, variant_class["primary"]),
         size_classes.get(size, size_classes["md"]),
     ]
-
-    if full_width:
-        classes.append("w-full")
 
     if disabled:
         classes.append("opacity-50 cursor-not-allowed")

@@ -389,6 +389,12 @@ a, button {
   transition: all 0.2s;
 }
 
+@media (max-width: 640px) {
+  .btn {
+    width: 100%;
+  }
+}
+
 .btn:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--theme-primary), 0 0 0 4px var(--color-background);

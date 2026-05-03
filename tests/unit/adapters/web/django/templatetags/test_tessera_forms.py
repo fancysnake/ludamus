@@ -400,15 +400,11 @@ class TestTesseraFormLayout:
 
 
 # ---------------------------------------------------------------------------
-# tessera_button — variant, size, full_width branches
+# tessera_button — variant, size
 # ---------------------------------------------------------------------------
 
 
 class TestTesseraButtonBranches:
-    def test_full_width(self) -> None:
-        html = tessera_button("Go", full_width=True)
-        assert "w-full" in html
-
     def test_secondary_variant(self) -> None:
         html = tessera_button("Cancel", variant="secondary")
         assert "btn-secondary" in html

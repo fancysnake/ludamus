@@ -123,7 +123,6 @@ def tessera_button(  # noqa: PLR0913
     button_type: str = "submit",
     variant: str = "primary",
     size: str = "md",
-    full_width: bool = False,
     disabled: bool = False,
 ) -> str:
     """Render a styled button.
@@ -140,6 +139,5 @@ def tessera_button(  # noqa: PLR0913
         button_type=button_type,
         variant=variant,
         size=size,
-        full_width=full_width,
         disabled=disabled,
     )
