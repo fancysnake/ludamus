@@ -126,7 +126,7 @@ def main() -> None:
     event = _ensure_demo_event(sphere)
     print(f"Site:   {site.domain}")
     print(f"Sphere: {sphere.name}")
-    print(f"Admin:  {admin.username}  (password documented in README)")
+    print(f"Admin:  {admin.username}")
     print(f"Event:  {event.name} ({event.slug})")
 
 
