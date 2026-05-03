@@ -94,6 +94,29 @@ which consumes both capabilities via protocols defined here.
   `oauth2.userinfo` or `drive.about.get` with minimal scope —
   pick in canvas phase.
 
+## Forward deps from the encryption-only branch
+
+The encryption-only slice (`ingest/connection-encryption`) ships
+`ConnectionsService.test_then_create` / `test_then_update` as public
+method names with `# tracer:` placeholders — no tester is wired yet.
+When the Google tester lands, do **both** of these in the same change:
+
+- **Rename or honour the name.** The `test_then_*` names are misleading
+  while the body only encrypts and persists. Either rename them in the
+  CRUD slice today (`set_credentials_then_create` / `_update`) and
+  reintroduce `test_then_*` when the tester lands, or rename in lockstep
+  when wiring the tester. Don't leave a public protocol name claiming a
+  behaviour that isn't there for more than one slice.
+- **Tester runs *before* `transaction.atomic()`, not inside it.** Today
+  the body is `with self._transaction.atomic(): update +
+  update_credentials`. The natural place to drop the tester call is at
+  the top of the method body; resist that — calling
+  `tester.test(plaintext, ...)` inside the atomic block holds row locks
+  during a Google HTTP roundtrip. Correct shape:
+  `result = tester.test(...)` → branch on `result.status` → open
+  `transaction.atomic()` only on `ok` / `degraded_ok` to persist the
+  row + encrypted blob + `last_tested_at` / `last_test_result`.
+
 ## ACs
 
 - [ ] AC5 Test connection runs `forms.get` + `spreadsheets.get`,

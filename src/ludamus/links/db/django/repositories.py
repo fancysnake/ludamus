@@ -2656,6 +2656,17 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
         return ConnectionDTO.model_validate(connection)
 
     @staticmethod
+    def update_credentials(sphere_id: int, pk: int, blob: bytes) -> None:
+        # Write-only: overwrite the encrypted blob. The repo surface
+        # exposes no read for these bytes — decrypt is owned by the
+        # import-execution slice with separate key handling.
+        updated = Connection.objects.filter(pk=pk, sphere_id=sphere_id).update(
+            credentials=blob
+        )
+        if not updated:
+            raise NotFoundError
+
+    @staticmethod
     def delete(sphere_id: int, pk: int) -> None:
         deleted, _ = Connection.objects.filter(pk=pk, sphere_id=sphere_id).delete()
         if not deleted:

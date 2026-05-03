@@ -17,20 +17,23 @@ if TYPE_CHECKING:
         ConnectionDTO,
         ConnectionsRepositoryProtocol,
         ConnectionWriteDict,
+        EncryptorProtocol,
     )
     from ludamus.pacts.services import TransactionProtocol
 
 
 class ConnectionsService:
-    """CRUD for sphere-scoped import connections (metadata only)."""
+    """CRUD + encrypted-credential lifecycle for sphere-scoped connections."""
 
     def __init__(
         self,
         transaction: TransactionProtocol,
         connections: ConnectionsRepositoryProtocol,
+        encryptor: EncryptorProtocol,
     ) -> None:
         self._transaction = transaction
         self._connections = connections
+        self._encryptor = encryptor
 
     def list_for_sphere(self, sphere_id: int) -> list[ConnectionDTO]:
         return self._connections.list_for_sphere(sphere_id)
@@ -38,15 +41,34 @@ class ConnectionsService:
     def get(self, sphere_id: int, pk: int) -> ConnectionDTO:
         return self._connections.get(sphere_id, pk)
 
-    def create(self, sphere_id: int, data: ConnectionWriteDict) -> ConnectionDTO:
-        with self._transaction.atomic():
-            return self._connections.create(sphere_id, data)
-
-    def update(
-        self, sphere_id: int, pk: int, data: ConnectionWriteDict
+    def create(
+        self,
+        sphere_id: int,
+        data: ConnectionWriteDict,
+        credentials_plaintext: bytes | None = None,
     ) -> ConnectionDTO:
         with self._transaction.atomic():
-            return self._connections.update(sphere_id, pk, data)
+            connection = self._connections.create(sphere_id, data)
+            if credentials_plaintext is not None:
+                # tracer: google-api tester runs here and raises on invalid creds
+                blob = self._encryptor.encrypt(credentials_plaintext)
+                self._connections.update_credentials(sphere_id, connection.pk, blob)
+            return connection
+
+    def update(
+        self,
+        sphere_id: int,
+        pk: int,
+        data: ConnectionWriteDict,
+        credentials_plaintext: bytes | None = None,
+    ) -> ConnectionDTO:
+        with self._transaction.atomic():
+            connection = self._connections.update(sphere_id, pk, data)
+            if credentials_plaintext is not None:
+                # tracer: google-api tester runs here and raises on invalid creds
+                blob = self._encryptor.encrypt(credentials_plaintext)
+                self._connections.update_credentials(sphere_id, pk, blob)
+            return connection
 
     def delete(self, sphere_id: int, pk: int) -> None:
         with self._transaction.atomic():

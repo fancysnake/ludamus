@@ -18,6 +18,7 @@ ENV PYTHONUNBUFFERED=1
 # Build-only: Django settings need these to load for compilemessages.
 # Overridden at runtime by env_file / environment in compose.
 ENV SECRET_KEY=build-only-not-used-at-runtime
+ENV CREDENTIALS_ENCRYPTION_KEY=build-only-not-used-at-runtime
 ENV DB_NAME=:memory:
 
 # Set work directory
@@ -49,8 +50,7 @@ RUN mise trust && mise install && mise run p install
 COPY --chown=appuser:appuser src ./src
 
 # Run Django commands that need source code
-RUN mise run build-frontend && mise run dj compilemessages \
-    || { echo "=== build step failed; available mise tasks: ===" >&2; mise tasks --no-header >&2 || true; exit 1; }
+RUN mise run build-frontend && mise run dj compilemessages
 
 # Expose port
 EXPOSE 8000
@@ -72,8 +72,7 @@ RUN mise trust && mise install && mise run p install --only main
 COPY --chown=appuser:appuser src ./src
 
 # Run Django commands that need source code
-RUN mise run build-frontend && mise run dj compilemessages \
-    || { echo "=== build step failed; available mise tasks: ===" >&2; mise tasks --no-header >&2 || true; exit 1; }
+RUN mise run build-frontend && mise run dj compilemessages
 
 # Expose port
 EXPOSE 8000

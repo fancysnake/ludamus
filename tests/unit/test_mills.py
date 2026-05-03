@@ -14,6 +14,7 @@ from ludamus.mills import (
     outlook_calendar_url,
 )
 from ludamus.mills.chronology import CFPPersonalDataFieldService
+from ludamus.mills.multiverse import ConnectionsService
 from ludamus.pacts import (
     EncounterDTO,
     EventDTO,
@@ -29,6 +30,7 @@ from ludamus.pacts.chronology import (
     PersonalDataFieldEditContextDTO,
     PersonalDataFieldFormContextDTO,
 )
+from ludamus.pacts.multiverse import ConnectionDTO, ConnectionProvider
 
 
 def _personal_data_field(pk=1, slug="email", question="Q", name="Email"):
@@ -752,3 +754,101 @@ class TestCheckProposalRateLimit:
         result = check_proposal_rate_limit(FakeCache(), "1.2.3.4", event_id=2)
 
         assert result is True
+
+
+def _connection_dto(pk=1, sphere_id=1, name="Konto", *, has_credentials=False):
+    return ConnectionDTO(
+        pk=pk,
+        sphere_id=sphere_id,
+        service=ConnectionProvider.GOOGLE,
+        display_name=name,
+        has_credentials=has_credentials,
+    )
+
+
+class _NoopEncryptor:
+    @staticmethod
+    def encrypt(plaintext: bytes) -> bytes:
+        return b"enc:" + plaintext
+
+
+class TestConnectionsService:
+    @pytest.fixture
+    def connections(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def transaction(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def encryptor(self):
+        return _NoopEncryptor()
+
+    @pytest.fixture
+    def service(self, transaction, connections, encryptor):
+        return ConnectionsService(transaction, connections, encryptor)
+
+    def test_create_without_credentials_skips_encrypt(
+        self, service, connections, transaction
+    ):
+        created = _connection_dto(pk=42)
+        connections.create.return_value = created
+        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+
+        result = service.create(sphere_id=7, data=data)
+
+        assert result is created
+        connections.create.assert_called_once_with(7, data)
+        connections.update_credentials.assert_not_called()
+        transaction.atomic.assert_called_once_with()
+
+    def test_create_with_credentials_encrypts_then_persists(
+        self, service, connections, transaction
+    ):
+        created = _connection_dto(pk=42)
+        connections.create.return_value = created
+        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+
+        result = service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
+
+        assert result is created
+        connections.create.assert_called_once_with(7, data)
+        connections.update_credentials.assert_called_once_with(7, 42, b"enc:secret")
+        transaction.atomic.assert_called_once_with()
+
+    def test_update_without_credentials_skips_encrypt(
+        self, service, connections, transaction
+    ):
+        updated = _connection_dto(pk=42)
+        connections.update.return_value = updated
+        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+
+        result = service.update(sphere_id=7, pk=42, data=data)
+
+        assert result is updated
+        connections.update.assert_called_once_with(7, 42, data)
+        connections.update_credentials.assert_not_called()
+        transaction.atomic.assert_called_once_with()
+
+    def test_update_with_credentials_encrypts_then_persists(
+        self, service, connections, transaction
+    ):
+        updated = _connection_dto(pk=42)
+        connections.update.return_value = updated
+        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+
+        result = service.update(
+            sphere_id=7, pk=42, data=data, credentials_plaintext=b"fresh"
+        )
+
+        assert result is updated
+        connections.update.assert_called_once_with(7, 42, data)
+        connections.update_credentials.assert_called_once_with(7, 42, b"enc:fresh")
+        transaction.atomic.assert_called_once_with()
+
+    def test_delete_calls_repo_in_transaction(self, service, connections, transaction):
+        service.delete(sphere_id=1, pk=42)
+
+        connections.delete.assert_called_once_with(1, 42)
+        transaction.atomic.assert_called_once_with()
