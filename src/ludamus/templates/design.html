@@ -26,15 +26,15 @@
             <div class="flex flex-wrap items-center justify-center gap-2">
                 <button type="button" class="icon-btn">
                     {% icon "adjustments-horizontal" class="w-3.5 h-3.5" %}
-                    Neutral
+                    <span class="sr-only">Neutral</span>
                 </button>
                 <button type="button" class="icon-btn icon-btn-primary">
                     {% icon "pencil" class="w-3.5 h-3.5" %}
-                    Edit
+                    <span class="sr-only">Edit</span>
                 </button>
                 <button type="button" class="icon-btn icon-btn-danger">
                     {% icon "trash" class="w-3.5 h-3.5" %}
-                    Delete
+                    <span class="sr-only">Delete</span>
                 </button>
             </div>
         </div>
@@ -45,13 +45,13 @@
             </div>
         </div>
         <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
-            <code class="text-xs text-foreground-muted">components/text-field.html</code>
+            <code class="text-xs text-foreground-muted">text-field.html</code>
             <div class="w-full max-w-xs">
                 {% include "components/text-field.html" with id="t-text" name="t-text" placeholder="Placeholder" required=False value="" only %}
             </div>
         </div>
         <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
-            <code class="text-xs text-foreground-muted">components/textarea.html</code>
+            <code class="text-xs text-foreground-muted">textarea.html</code>
             <div class="w-full max-w-xs">
                 {% include "components/textarea.html" with id="t-textarea" name="t-textarea" rows="3" placeholder="Placeholder" required=False value="" only %}
             </div>
@@ -67,11 +67,11 @@
             </div>
         </div>
         <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
-            <code class="text-xs text-foreground-muted">components/checkbox-field.html</code>
+            <code class="text-xs text-foreground-muted">checkbox-field.html</code>
             {% include "components/checkbox-field.html" with id="t-checkbox" name="t-checkbox" label="Checkbox" checked=True only %}
         </div>
         <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
-            <code class="text-xs text-foreground-muted">components/choice-group.html</code>
+            <code class="text-xs text-foreground-muted">choice-group.html</code>
             {% include "components/choice-group.html" with input_type="radio" name="t-radio" options=design_radio_options only %}
         </div>
         <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
