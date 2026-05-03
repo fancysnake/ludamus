@@ -35,6 +35,7 @@ def render_button(
     classes = [
         variant_class.get(variant, variant_class["primary"]),
         size_classes.get(size, size_classes["md"]),
+        "max-md:w-full",
     ]
 
     if disabled:
