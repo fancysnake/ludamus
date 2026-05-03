@@ -3,133 +3,103 @@
 {% load date_tags %}
 {% load tessera %}
 {% block title %}
-    {% translate "Design" %}
+    Tessera
 {% endblock title %}
 {% block header %}
-    <h1 class="text-2xl sm:text-3xl font-bold text-foreground mb-2">{% translate "Design system" %}</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold text-foreground mb-2">Tessera</h1>
 {% endblock header %}
-{% block description %}
-    {% translate "UI components without application logic." %}
-{% endblock description %}
 {% block body %}
-    <div class="max-w-5xl mx-auto flex flex-col gap-8">
-        <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold">{% translate "Buttons" %}</h2>
-            <div class="flex flex-wrap gap-2">
-                <button type="button" class="btn btn-primary">{% translate "Primary" %}</button>
-                <button type="button" class="btn btn-secondary">{% translate "Secondary" %}</button>
-                <button type="button" class="btn btn-danger">{% translate "Danger" %}</button>
+    <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
+                <code class="text-xs text-foreground-muted">.btn</code>
+                <code class="text-xs text-foreground-muted">tessera_button</code>
             </div>
-            <p class="text-sm text-foreground-muted mt-2">
-                {% translate "Icon buttons" %} — {% translate "subtle inline actions, no lift." %}
-            </p>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <button type="button" class="btn btn-primary">Primary</button>
+                <button type="button" class="btn btn-secondary">Secondary</button>
+                <button type="button" class="btn btn-danger">Danger</button>
+            </div>
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <code class="text-xs text-foreground-muted">.icon-btn</code>
+            <div class="flex flex-wrap items-center justify-center gap-2">
                 <button type="button" class="icon-btn">
                     {% icon "adjustments-horizontal" class="w-3.5 h-3.5" %}
-                    {% translate "Neutral" %}
+                    Neutral
                 </button>
                 <button type="button" class="icon-btn icon-btn-primary">
                     {% icon "pencil" class="w-3.5 h-3.5" %}
-                    {% translate "Edit" %}
+                    Edit
                 </button>
                 <button type="button" class="icon-btn icon-btn-danger">
                     {% icon "trash" class="w-3.5 h-3.5" %}
-                    {% translate "Delete" %}
+                    Delete
                 </button>
             </div>
-        </section>
-        <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold">{% translate "Cards" %}</h2>
-            <div class="flex flex-wrap gap-4">
-                <div class="card max-w-sm">
-                    <div class="card-body flex flex-col gap-2">
-                        <span class="uppercase text-foreground-muted text-xs tracking-wide">{% translate "Component" %}</span>
-                        <h3 class="text-base font-semibold">{% translate "Sample card" %}</h3>
-                        <p class="text-sm text-foreground-secondary">
-                            {% translate "Use this layout for reference when styling new UI blocks." %}
-                        </p>
-                        <div class="flex gap-2">
-                            <button class="btn btn-primary" type="button">{% translate "Primary action" %}</button>
-                            <button class="btn btn-secondary" type="button">{% translate "Secondary" %}</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="card max-w-sm">
-                    <div class="card-body flex flex-col gap-2">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-base font-semibold">{% translate "Stateful block" %}</h3>
-                            <span class="badge badge-success">{% translate "Ready" %}</span>
-                        </div>
-                        <p class="text-sm text-foreground-secondary">
-                            {% translate "Pair badges with compact headlines to highlight status." %}
-                        </p>
-                        <div class="flex items-center gap-2">
-                            <span class="font-semibold text-sm">{% translate "Label" %}</span>
-                            <span class="text-sm text-foreground-muted">{% translate "Value" %}</span>
-                        </div>
-                    </div>
-                </div>
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <code class="text-xs text-foreground-muted">.badge</code>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <span class="badge badge-success">Ready</span>
             </div>
-        </section>
-        <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold">{% translate "Event card" %}</h2>
-            <p class="text-sm text-foreground-muted">
-                {% translate "Chronology event card for the index / event list. Debug in isolation." %}
-            </p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% if design_event %}
-                    {% include "components/event_card.html" with event=design_event %}
-                    {% include "components/event_card.html" with event=design_event variant="past" %}
-                {% endif %}
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <code class="text-xs text-foreground-muted">components/text-field.html</code>
+            <div class="w-full max-w-xs">
+                {% include "components/text-field.html" with id="t-text" name="t-text" placeholder="Placeholder" required=False value="" only %}
             </div>
-        </section>
-        <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold">{% translate "Session card" %}</h2>
-            <p class="text-sm text-foreground-muted">
-                {% translate "Session card used on the event page. Upcoming (with spots) and ended variants." %}
-            </p>
-            <div class="session-grid grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {% if design_session_data %}
-                    {% include "chronology/_session_card.html" with data=design_session_data ended=False %}
-                {% endif %}
-                {% if design_session_data_ended %}
-                    {% include "chronology/_session_card.html" with data=design_session_data_ended ended=True %}
-                {% endif %}
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <code class="text-xs text-foreground-muted">components/textarea.html</code>
+            <div class="w-full max-w-xs">
+                {% include "components/textarea.html" with id="t-textarea" name="t-textarea" rows="3" placeholder="Placeholder" required=False value="" only %}
             </div>
-        </section>
-        <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold">{% translate "Form controls" %}</h2>
-            <p class="text-sm text-foreground-muted">
-                {% translate "Partials:" %} <code>components/</code> text-field, textarea, label, tag. Select: <code>{% templatetag openblock %} load tessera {% templatetag closeblock %}</code>.
-            </p>
-            <form class="flex flex-col gap-4 max-w-md" action="#" method="post">
-                <div class="flex flex-col gap-1">
-                    {% include "components/label.html" with for_id="design-input-text" text=_("Text field") required=False only %}
-                    {% include "components/text-field.html" with id="design-input-text" name="design-input-text" placeholder=_("Placeholder") required=False value="" only %}
-                </div>
-                <div class="flex flex-col gap-1">
-                    {% include "components/label.html" with for_id="design-textarea" text=_("Textarea") required=False only %}
-                    {% include "components/textarea.html" with id="design-textarea" name="design-textarea" rows="3" placeholder=_("Placeholder") required=False value="" only %}
-                </div>
-                <div class="flex flex-col gap-1">
-                    {% include "components/label.html" with for_id="design-select" text=_("Select") required=False only %}
-                    {% select id="design-select" name="design-select" %}
-                        <option value="">{% translate "Choose an option..." %}</option>
-                        <option value="a">{% translate "Option A" %}</option>
-                        <option value="b">{% translate "Option B" %}</option>
-                    {% end_select %}
-                </div>
-                <div>
-                    {% include "components/checkbox-field.html" with id="design-checkbox" name="design-checkbox" label=_("Checkbox") checked=True only %}
-                </div>
-                <div>
-                    {% include "components/choice-group.html" with input_type="radio" name="design-radio" options=design_radio_options only %}
-                </div>
-                <div class="flex gap-2">
-                    <button class="btn btn-primary" type="button">{% translate "Submit" %}</button>
-                    <button class="btn btn-secondary" type="button">{% translate "Cancel" %}</button>
-                </div>
-            </form>
-        </section>
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <code class="text-xs text-foreground-muted">{% templatetag openblock %} select {% templatetag closeblock %}</code>
+            <div class="w-full max-w-xs">
+                {% select id="t-select" name="t-select" %}
+                    <option value="">Choose an option…</option>
+                    <option value="a">Option A</option>
+                    <option value="b">Option B</option>
+                {% end_select %}
+            </div>
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <code class="text-xs text-foreground-muted">components/checkbox-field.html</code>
+            {% include "components/checkbox-field.html" with id="t-checkbox" name="t-checkbox" label="Checkbox" checked=True only %}
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <code class="text-xs text-foreground-muted">components/choice-group.html</code>
+            {% include "components/choice-group.html" with input_type="radio" name="t-radio" options=design_radio_options only %}
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40">
+            <code class="text-xs text-foreground-muted">{% templatetag openblock %} tabs {% templatetag closeblock %}</code>
+            {% tabs %}
+            {% tab "a" icon="user" href="#" active=True %}One{% end_tab %}
+            {% tab "b" icon="users" href="#" %}Two{% end_tab %}
+        {% end_tabs %}
     </div>
+    <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40 sm:col-span-2 lg:col-span-3">
+        <code class="text-xs text-foreground-muted">components/event_card.html</code>
+        <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if design_event %}
+                {% include "components/event_card.html" with event=design_event %}
+                {% include "components/event_card.html" with event=design_event variant="past" %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="card p-6 flex flex-col items-center justify-center gap-3 min-h-40 sm:col-span-2 lg:col-span-3">
+        <code class="text-xs text-foreground-muted">chronology/_session_card.html</code>
+        <div class="session-grid w-full grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {% if design_session_data %}
+                {% include "chronology/_session_card.html" with data=design_session_data ended=False %}
+            {% endif %}
+            {% if design_session_data_ended %}
+                {% include "chronology/_session_card.html" with data=design_session_data_ended ended=True %}
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock body %}
