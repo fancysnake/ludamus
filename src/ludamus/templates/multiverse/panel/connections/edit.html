@@ -24,11 +24,11 @@
                         {% translate "No credentials configured yet." %}
                     {% endif %}
                 </p>
-                <label class="flex items-center gap-2">
+                <label class="peer flex items-center gap-2">
                     <input type="checkbox"
                            name="{{ form.replace_credentials.html_name }}"
                            id="{{ form.replace_credentials.id_for_label }}"
-                           class="peer rounded border-neutral-300 text-primary focus:ring-primary"
+                           class="rounded border-neutral-300 text-primary focus:ring-primary"
                            {% if form.replace_credentials.value %}checked{% endif %}>
                     <span class="text-sm text-neutral-700">{{ form.replace_credentials.label }}</span>
                 </label>
