@@ -29,19 +29,26 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+type DropzoneState = "empty" | "image" | "file";
+
+const setDropzoneState = (
+  label: HTMLLabelElement,
+  state: DropzoneState,
+): void => {
+  label.dataset.state = state;
+};
+
 const initDropzone = (label: HTMLLabelElement): void => {
   const input = label.querySelector<HTMLInputElement>("[data-dropzone-input]");
-  const empty = label.querySelector<HTMLElement>("[data-dropzone-empty]");
-  const selected = label.querySelector<HTMLElement>("[data-dropzone-selected]");
-  const nameEl = label.querySelector<HTMLElement>("[data-dropzone-name]");
-  const sizeEl = label.querySelector<HTMLElement>("[data-dropzone-size]");
+  const nameEls = label.querySelectorAll<HTMLElement>("[data-dropzone-name]");
+  const sizeEls = label.querySelectorAll<HTMLElement>("[data-dropzone-size]");
   const preview = label.querySelector<HTMLImageElement>(
     "[data-dropzone-preview]",
   );
-  const clearBtn = label.querySelector<HTMLButtonElement>(
-    "[data-dropzone-clear]",
-  );
-  if (!input || !empty || !selected || !nameEl || !sizeEl || !clearBtn) return;
+  const clearBtns =
+    label.querySelectorAll<HTMLButtonElement>("[data-dropzone-clear]");
+  if (!input || nameEls.length === 0 || sizeEls.length === 0) return;
+  if (clearBtns.length === 0) return;
 
   let previewUrl: string | null = null;
   const revokePreview = (): void => {
@@ -55,26 +62,38 @@ const initDropzone = (label: HTMLLabelElement): void => {
     const file = input.files?.[0];
     if (!file) {
       revokePreview();
-      selected.classList.add("hidden");
-      empty.classList.remove("hidden");
+      if (preview) preview.removeAttribute("src");
+      setDropzoneState(label, "empty");
       return;
     }
-    nameEl.textContent = file.name;
-    sizeEl.textContent = formatBytes(file.size);
-    if (preview && file.type.startsWith("image/")) {
+    nameEls.forEach((el) => {
+      el.textContent = file.name;
+    });
+    sizeEls.forEach((el) => {
+      el.textContent = formatBytes(file.size);
+    });
+    const useImageLayout =
+      Boolean(preview) &&
+      /^image\/(png|jpe?g|gif|webp|avif)$/.test(file.type);
+    if (useImageLayout) {
       revokePreview();
       previewUrl = URL.createObjectURL(file);
-      preview.src = previewUrl;
+      preview!.src = previewUrl;
+      setDropzoneState(label, "image");
+    } else {
+      revokePreview();
+      if (preview) preview.removeAttribute("src");
+      setDropzoneState(label, "file");
     }
-    empty.classList.add("hidden");
-    selected.classList.remove("hidden");
   });
 
-  clearBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    input.value = "";
-    input.dispatchEvent(new Event("change", { bubbles: true }));
+  clearBtns.forEach((clearBtn) => {
+    clearBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      input.value = "";
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
   });
 };
 
