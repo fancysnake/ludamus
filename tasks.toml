@@ -19,3 +19,19 @@ description = "Build frontend assets (CSS + JS)"
 run = """
 cd src/ludamus/client && npm install && npm run build
 """
+
+[bootstrap]
+description = "Set up the dev environment from scratch — idempotent"
+run = """
+if [ ! -f .env ]; then
+  cp .env.local.example .env
+  echo "Created .env from .env.local.example"
+fi
+set -a && . ./.env && set +a
+poetry install
+(cd src/ludamus/client && npm install)
+django-admin migrate --noinput
+django-admin createcachetable
+django-admin downloadvendor
+python scripts/bootstrap_dev.py
+"""
