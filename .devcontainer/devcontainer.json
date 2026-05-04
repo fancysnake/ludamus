@@ -1,0 +1,9 @@
+{
+  "name": "arch-dev",
+  "build": { "dockerfile": "Dockerfile" },
+  "postCreateCommand": "yay -Syu --noconfirm git mise claude-code starship && mise trust && mise install && mise run install",
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/bashrc,target=/home/radek/.bashrc,type=bind,consistency=cached"
+  ],
+  "updateRemoteUserUID": true
+}

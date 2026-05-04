@@ -5,8 +5,8 @@ jobs = 1
 [tools]
 python = "3.14"
 node = "v25.6.1"
-poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 "ast-grep" = "0.42.1"
+hadolint = "latest"
 
 [env]
 # Mise creates and activates this virtualenv automatically
@@ -15,6 +15,13 @@ _.file = ".env"
 
 [task_config]
 includes = ["tasks.toml"]
+
+[tasks.install]
+description = "Update all dependencies: pre-commit hooks, pip, Poetry packages"
+run = """
+pip install poetry
+poetry install
+"""
 
 [tasks.update]
 description = "Update all dependencies: pre-commit hooks, pip, Poetry packages"

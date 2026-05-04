@@ -1,0 +1,9 @@
+# mise
+eval "$(mise activate bash)"
+
+eval "$(starship init bash)"
+
+alias mt='mise run'
+alias me='mise exec --'
+# prompt, aliases, whatever else you want
+export EDITOR=vim
