@@ -50,6 +50,15 @@
             </div>
         </div>
         <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center">
+            <code class="absolute top-3 left-3 text-xs text-foreground-muted">avatar.html</code>
+            <div class="flex items-end justify-center gap-3">
+                {% include "components/avatar.html" with user=design_user size="size-6" %}
+                {% include "components/avatar.html" with user=design_user %}
+                {% include "components/avatar.html" with user=design_user size="size-12" %}
+                {% include "components/avatar.html" with user=design_user size="size-16" %}
+            </div>
+        </div>
+        <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center">
             <code class="absolute top-3 left-3 text-xs text-foreground-muted">.card</code>
             <div class="card w-full max-w-xs">
                 <div class="card-header">
@@ -120,6 +129,10 @@
             <div class="w-full max-w-md">
                 {% include "components/file-dropzone.html" with id="t-file" name="t-file" required=False accept="image/*" has_errors=False initial_url="" initial_name="" dropzone_state="empty" only %}
             </div>
+        </div>
+        <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center sm:col-span-2 lg:col-span-3">
+            <code class="absolute top-3 left-3 text-xs text-foreground-muted">{% templatetag openblock %} tessera_form {% templatetag closeblock %}</code>
+            <div class="w-full max-w-xl">{% tessera_form design_form %}</div>
         </div>
         <div class="relative bg-background pt-12 px-8 pb-8 min-h-48 flex items-center justify-center">
             <code class="absolute top-3 left-3 text-xs text-foreground-muted">{% templatetag openblock %} tabs {% templatetag closeblock %}</code>
