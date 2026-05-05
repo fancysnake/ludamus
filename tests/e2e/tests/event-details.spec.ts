@@ -36,7 +36,8 @@ test.describe('Event detail page', () => {
 
   test(
     'keeps mobile session modal footer inside the clickable dialog bounds',
-    async ({ browser }) => {
+    async ({ browser, browserName }) => {
+      test.skip(browserName === 'firefox', 'Firefox does not support mobile emulation');
       const context = await browser.newContext({
         ...devices['iPhone 14 Pro'],
         baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8000',
@@ -88,4 +89,83 @@ test.describe('Event detail page', () => {
       await context.close();
     },
   );
+
+  test('allows iOS touch scrolling inside long mobile session modal content', async ({ browser, browserName }) => {
+    test.skip(browserName === 'firefox', 'Firefox does not support mobile emulation');
+    const context = await browser.newContext({
+      ...devices['iPhone 14 Pro'],
+      baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8000',
+    });
+    await context.addInitScript(() => {
+      Object.defineProperty(window.navigator, 'platform', { get: () => 'iPhone' });
+      Object.defineProperty(window.navigator, 'maxTouchPoints', { get: () => 1 });
+    });
+    const page = await context.newPage();
+
+    await page.goto('/chronology/event/autumn-open/');
+    const sessionId = await page.locator('.session-card').nth(1).getAttribute('data-session-id');
+    expect(sessionId).not.toBeNull();
+
+    await page.evaluate((id) => {
+      const description = document.querySelector(`#session-${id} [id^="info-"] div.leading-relaxed`);
+      if (!description) throw new Error('Missing session description');
+      description.innerHTML = Array.from(
+        { length: 28 },
+        (_, index) => `<p>Long mobile session description paragraph ${index + 1}.</p>`,
+      ).join('');
+    }, sessionId);
+
+    await page.locator('.session-card').nth(1).getByRole('link').click();
+    const detailDialog = page.getByRole('dialog', {
+      name: 'Cozy Storytellers Circle',
+    });
+    await expect(detailDialog).toBeVisible();
+
+    const mobileModalLayout = await page.evaluate(() => {
+      const dialog = document.querySelector('dialog[open]');
+      const tabContent = dialog?.querySelector('.tab-content');
+      if (!(dialog instanceof HTMLElement) || !(tabContent instanceof HTMLElement)) return null;
+
+      const dialogBox = dialog.getBoundingClientRect();
+      const tabContentBox = tabContent.getBoundingClientRect();
+      return {
+        dialogHeight: dialogBox.height,
+        tabContentHeight: tabContentBox.height,
+        viewportHeight: window.innerHeight,
+      };
+    });
+    expect(mobileModalLayout).not.toBeNull();
+    expect(mobileModalLayout?.dialogHeight).toBeGreaterThan(
+      mobileModalLayout?.viewportHeight * 0.75,
+    );
+    expect(mobileModalLayout?.tabContentHeight).toBeGreaterThan(240);
+
+    const touchMoveAllowed = await page.evaluate(() => {
+      const dialog = document.querySelector('dialog[open]');
+      const activePanel = dialog?.querySelector('.tab-panel[data-active]');
+      const text = activePanel?.querySelector('p');
+      if (!dialog || !(activePanel instanceof HTMLElement) || !text) return false;
+
+      const start = new Event('touchstart', { bubbles: true, cancelable: true });
+      Object.defineProperties(start, {
+        targetTouches: { value: [{ clientY: 300 }] },
+        touches: { value: [{ clientY: 300 }] },
+      });
+      const move = new Event('touchmove', { bubbles: true, cancelable: true });
+      Object.defineProperties(move, {
+        targetTouches: { value: [{ clientY: 200 }] },
+        touches: { value: [{ clientY: 200 }] },
+      });
+
+      text.dispatchEvent(start);
+      text.dispatchEvent(move);
+
+      return activePanel.scrollHeight > activePanel.clientHeight && !move.defaultPrevented;
+    });
+    expect(touchMoveAllowed).toBe(true);
+
+    await detailDialog.getByRole('button', { name: 'Close' }).click();
+    await expect(detailDialog).toBeHidden();
+    await context.close();
+  });
 });

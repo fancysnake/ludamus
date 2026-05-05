@@ -203,9 +203,9 @@ description = "Install Playwright"
 dir = "tests/e2e"
 
 [tasks.e2e]
-description = "Run end-to-end Playwright tests (chromium)"
+description = "Run end-to-end Playwright tests"
 run = """
-npx playwright test --project=chromium --project=chromium-auth
+npx playwright test --workers=1
 mise run _e2e -- coverage report
 """
 dir = "tests/e2e"

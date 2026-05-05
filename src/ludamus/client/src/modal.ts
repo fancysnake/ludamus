@@ -24,8 +24,35 @@ const navigation = (globalThis as { navigation?: Navigation }).navigation;
 
 const scrollLockTargets = new Map<HTMLDialogElement, HTMLElement>();
 
-const getScrollLockTarget = (dialog: HTMLDialogElement): HTMLElement =>
-  dialog.querySelector<HTMLElement>(".tab-content") ?? dialog;
+const getScrollableAncestor = (
+  dialog: HTMLDialogElement,
+  element: Element,
+): HTMLElement | null => {
+  for (
+    let current: Element | null = element;
+    current && current !== dialog;
+    current = current.parentElement
+  ) {
+    if (!(current instanceof HTMLElement)) continue;
+
+    const overflowY = window.getComputedStyle(current).overflowY;
+    if (
+      (overflowY === "auto" || overflowY === "scroll") &&
+      current.scrollHeight > current.clientHeight
+    ) {
+      return current;
+    }
+  }
+
+  return null;
+};
+
+const canAllowModalTouchMove =
+  (dialog: HTMLDialogElement) =>
+  (element: HTMLElement | Element): boolean =>
+    element instanceof Element &&
+    dialog.contains(element) &&
+    getScrollableAncestor(dialog, element) !== null;
 
 const syncPageScrollLock = (): void => {
   const openDialogs = [
@@ -36,8 +63,10 @@ const syncPageScrollLock = (): void => {
   for (const dialog of openDialogs) {
     if (scrollLockTargets.has(dialog)) continue;
 
-    const target = getScrollLockTarget(dialog);
-    disableBodyScroll(target);
+    const target = dialog;
+    disableBodyScroll(target, {
+      allowTouchMove: canAllowModalTouchMove(dialog),
+    });
     scrollLockTargets.set(dialog, target);
   }
 
