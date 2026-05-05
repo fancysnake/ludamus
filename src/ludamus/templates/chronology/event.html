@@ -215,7 +215,9 @@
                 <h3 id="anonymousCodeModal-title" class="font-semibold text-foreground">{% translate "Enter Different Code" %}</h3>
                 <button data-modal-close="anonymousCodeModal"
                         class="p-1 rounded-lg hover:opacity-70 text-foreground-muted"
-                        aria-label="Close">{% icon "x-mark" class="w-5 h-5" variant="mini" %}</button>
+                        aria-label="{% translate "Close" %}">
+                    {% icon "x-mark" class="w-5 h-5" variant="mini" %}
+                </button>
             </div>
             <form method="post" action="{% url 'web:chronology:anonymous-load' %}">
                 <div class="px-6 py-4">
@@ -591,6 +593,7 @@
                     <h3 id="proposalModal{{ pending.pk }}-title"
                         class="text-lg font-semibold text-foreground">{{ pending.title }}</h3>
                     <button data-modal-close="proposalModal{{ pending.pk }}"
+                            aria-label="{% translate "Close" %}"
                             class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                         {% icon "x-mark" class="w-5 h-5" variant="mini" %}
                     </button>
@@ -669,6 +672,7 @@
                 <h3 id="session-{{ data.session.pk }}-title"
                     class="text-lg font-semibold text-foreground">{{ data.session.title }}</h3>
                 <button data-modal-close="session-{{ data.session.pk }}"
+                        aria-label="{% translate "Close" %}"
                         class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                     {% icon "x-mark" class="w-5 h-5" variant="mini" %}
                 </button>

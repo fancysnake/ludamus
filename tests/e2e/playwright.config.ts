@@ -68,7 +68,7 @@ export default defineConfig({
     {
       name: 'webkit',
       testMatch: /event-details\.spec\.ts/,
-      grep: /iOS touch scrolling/,
+      grep: /iOS touch scrolling|mobile session modal footer/,
       use: { ...devices['iPhone 14 Pro'] },
     },
     /* Authenticated browser for profile/user tests */

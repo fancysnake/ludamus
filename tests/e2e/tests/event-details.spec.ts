@@ -55,7 +55,7 @@ test.describe('Event detail page', () => {
       const detailDialog = page.getByRole('dialog', {
         name: 'Cozy Storytellers Circle',
       });
-      const footerClose = detailDialog.getByRole('button', { name: 'Close' });
+      const footerClose = detailDialog.getByRole('button', { name: 'Close' }).last();
       await expect(footerClose).toBeInViewport();
 
       const pageScrollLocked = await page.evaluate(() => {
@@ -65,10 +65,9 @@ test.describe('Event detail page', () => {
       });
       expect(pageScrollLocked).toBe(true);
 
-      const isFooterInsideDialog = await page.evaluate(() => {
-        const dialog = document.querySelector('dialog[open]');
-        const close = dialog?.querySelector('.btn[data-modal-close]');
-        if (!dialog || !close) return false;
+      const isFooterInsideDialog = await footerClose.evaluate((close) => {
+        const dialog = close.closest('dialog');
+        if (!dialog) return false;
 
         const dialogBox = dialog.getBoundingClientRect();
         const closeBox = close.getBoundingClientRect();
@@ -83,6 +82,18 @@ test.describe('Event detail page', () => {
         );
       });
       expect(isFooterInsideDialog).toBe(true);
+
+      const closeTouchMoveAllowed = await footerClose.evaluate((close) => {
+        const move = new Event('touchmove', { bubbles: true, cancelable: true });
+        Object.defineProperties(move, {
+          targetTouches: { value: [{ clientY: 200 }] },
+          touches: { value: [{ clientY: 200 }] },
+        });
+
+        close.dispatchEvent(move);
+        return !move.defaultPrevented;
+      });
+      expect(closeTouchMoveAllowed).toBe(true);
 
       await footerClose.click();
       await expect(detailDialog).toBeHidden();
