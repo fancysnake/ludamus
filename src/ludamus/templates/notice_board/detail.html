@@ -39,7 +39,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {# ── LEFT COLUMN: "what is this" ── #}
         <div class="lg:col-span-2 space-y-6">
-            <div class="card {% if encounter.header_image %}rounded-t-none{% endif %}">
+            <div class="card">
                 <div class="card-body space-y-4">
                     {% if encounter.header_image %}
                         <div class="relative aspect-[2/1] overflow-hidden rounded-t-2xl -mb-6">
@@ -198,7 +198,7 @@
                         <div>
                             <div class="font-medium text-foreground">{{ creator.full_name|default:creator.name }}</div>
                             {% if creator.discord_username %}
-                                <button class="btn btn-secondary text-xs py-0.5 px-2 mt-1"
+                                <button class="btn btn-secondary text-xs mt-1"
                                         hx-get="{% url 'web:crowd:user-discord-username' user_slug=creator.slug %}"
                                         hx-swap="outerHTML"
                                         hx-trigger="click once">

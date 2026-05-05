@@ -32,6 +32,7 @@ from django.utils.timezone import get_current_timezone  # noqa: E402
 from ludamus.adapters.db.django.models import (  # noqa: E402
     AgendaItem,
     Area,
+    Encounter,
     EnrollmentConfig,
     Event,
     Session,
@@ -398,6 +399,22 @@ def main() -> None:
     )
 
     _create_space(arcade_area, name="Puzzle Corner", slug="puzzle-corner", capacity=8)
+
+    # Seed encounter owned by the e2e-tester user. Used by e2e tests covering
+    # the organizer-only QR-share dialog on the notice-board encounter detail.
+    tester = User.objects.get(username="e2e-tester")
+    Encounter.objects.create(
+        sphere=sphere,
+        creator=tester,
+        title="Backyard Tactics Night",
+        description="Casual evening of light wargames and snacks.",
+        game="Memoir '44",
+        start_time=timezone.now() + timedelta(days=2, hours=8),
+        end_time=timezone.now() + timedelta(days=2, hours=11),
+        place="Tester's place",
+        max_participants=4,
+        share_code="ENCQR1",
+    )
 
 
 if __name__ == "__main__":

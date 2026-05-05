@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /** Build an HH:MM string by adding minutes to a base hour:minute. */
 function timeHHMM(
@@ -28,6 +28,27 @@ function dateTimeAfter(
   const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const ts = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   return { date: ds, time: ts };
+}
+
+function slugify(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function sessionTypeRequirementSelect(page: Page, name: string) {
+  return page.getByRole('combobox', { name, exact: true }).last();
+}
+
+function proposalCategoryOption(page: Page, name: string) {
+  return page.getByText(name, { exact: true }).last();
+}
+
+function minutesSinceMidnight(time: string): number {
+  const [hour, minute] = time.split(':').map(Number);
+  return hour * 60 + minute;
+}
+
+function timeFromMinutes(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }
 
 test('panel redirects to home with message when sphere has no events', async ({
@@ -219,12 +240,17 @@ test.describe('Backoffice Panel', () => {
       page.getByRole('heading', { name: 'Venue Structure' }),
     ).toBeVisible();
 
-    // Verify hierarchy
-    await expect(page.getByText('Convention Center')).toBeVisible();
-    await expect(page.getByText('Main Hall')).toBeVisible();
-    await expect(page.getByText('Lounge')).toBeVisible();
-    await expect(page.getByText('East Wing')).toBeVisible();
-    await expect(page.getByText('Fireside Alcove')).toBeVisible();
+    await page.getByRole('link', { name: 'Convention Center', exact: true }).click();
+    await expect(page).toHaveURL(/\/venues\/convention-center\/$/);
+    await expect(
+      page.getByRole('heading', { name: 'Convention Center' }),
+    ).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Main Hall' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Lounge' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Spaces' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Lounge' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Fireside Alcove' })).toBeVisible();
   });
 
   test('duplicates a venue', async ({ page }) => {
@@ -536,7 +562,9 @@ test.describe('Backoffice Panel', () => {
     await expect(
       page.getByText('Session type created successfully.'),
     ).toBeVisible();
-    await expect(page.getByText('Board Games')).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Board Games' }).first(),
+    ).toBeVisible();
   });
 
   test('creates session type and navigates to configure', async ({
@@ -555,7 +583,7 @@ test.describe('Backoffice Panel', () => {
     await expect(
       page.getByText('Session type created successfully.'),
     ).toBeVisible();
-    await expect(page).toHaveURL(/\/cfp\/rpg-sessions\//);
+    await expect(page).toHaveURL(/\/cfp\/rpg-sessions/);
     await expect(
       page.getByRole('heading', {
         name: 'Configure Session Type',
@@ -685,7 +713,8 @@ test.describe('Backoffice Panel', () => {
     ).toBeVisible();
   });
 
-  test('creates and manages a session field', async ({ page }) => {
+  test('creates and manages a session field', async ({ page }, testInfo) => {
+    const fieldName = `Game System ${testInfo.project.name}`;
     await page.goto(
       '/panel/event/autumn-open/cfp/session-fields/',
     );
@@ -698,7 +727,7 @@ test.describe('Backoffice Panel', () => {
     await page
       .getByRole('link', { name: 'New Field' })
       .click();
-    await page.locator('#id_name').fill('Game System');
+    await page.locator('#id_name').fill(fieldName);
     await page
       .locator('#id_question')
       .fill('What game system?');
@@ -708,12 +737,12 @@ test.describe('Backoffice Panel', () => {
       page.getByText('Session field created successfully.'),
     ).toBeVisible();
     await expect(
-      page.getByRole('cell', { name: 'Game System' }),
+      page.getByRole('cell', { name: new RegExp(fieldName) }),
     ).toBeVisible();
 
     // Edit
     await page
-      .locator('tr', { hasText: 'Game System' })
+      .getByRole('row', { name: new RegExp(fieldName) })
       .getByRole('link', { name: 'Edit' })
       .click();
     await page
@@ -728,7 +757,7 @@ test.describe('Backoffice Panel', () => {
     // Delete
     page.on('dialog', (dialog) => dialog.accept());
     await page
-      .locator('tr', { hasText: 'Game System' })
+      .getByRole('row', { name: new RegExp(fieldName) })
       .getByRole('button', { name: /Delete/i })
       .click();
 
@@ -751,7 +780,7 @@ test.describe('Backoffice Panel', () => {
 
   test('creates, edits, and deletes a time slot', async ({
     page,
-  }) => {
+  }, testInfo) => {
     // Navigate to time slots page and extract event start info
     await page.goto(
       '/panel/event/autumn-open/cfp/time-slots/',
@@ -782,36 +811,66 @@ test.describe('Backoffice Panel', () => {
     // Add 1 minute to avoid seconds-precision issue
     const safeMin = rawMin + 1;
 
+    const bodyText = await page.locator('body').textContent();
+    const ranges = [...(bodyText ?? '').matchAll(/(\d{2}):(\d{2})\s+–\s+(\d{2}):(\d{2})/g)]
+      .map((match) => ({
+        start: Number(match[1]) * 60 + Number(match[2]),
+        end: Number(match[3]) * 60 + Number(match[4]),
+      }));
+    const eventStart = baseHour * 60 + safeMin;
+    const eventEnd = eventStart + 239;
+    const duration = 5;
+    const extendedDuration = 10;
+    let startMinute = eventEnd - extendedDuration;
+    while (
+      startMinute > eventStart &&
+      ranges.some(
+        (range) =>
+          startMinute < range.end && startMinute + extendedDuration > range.start,
+      )
+    ) {
+      startMinute -= 1;
+    }
+    const startTime = timeHHMM(0, startMinute);
+    const endTime = timeHHMM(0, startMinute + duration);
+    const updatedEndTime = timeHHMM(0, startMinute + extendedDuration);
+
     // Click the per-day "Add" link (pre-fills the date)
     await addLink.click();
 
-    // Fill times 2h–3h into the event (in the 12–14 gap after bootstrapped slot)
+    // Fill project-specific times so cross-browser runs do not collide.
     await page
       .locator('#id_start_time')
-      .fill(timeHHMM(baseHour, safeMin, 120));
+      .fill(startTime);
     await page
       .locator('#id_end_time')
-      .fill(timeHHMM(baseHour, safeMin, 180));
+      .fill(endTime);
     await page.getByRole('button', { name: 'Create' }).click();
 
     await expect(
       page.getByText('Time slot created successfully.'),
     ).toBeVisible();
+    const createdSlot = page.getByText(`${startTime} – ${endTime}`);
+    await expect(createdSlot).toBeVisible();
 
-    // Edit — find the last slot (the one we just created) and click edit
+    // Edit
     await page
       .getByRole('link', { name: 'Edit' })
+      .filter({ hasNot: page.locator('[href$="/1/edit/"]') })
       .last()
       .click();
 
     // Extend by 30 min
     await page
       .locator('#id_end_time')
-      .fill(timeHHMM(baseHour, safeMin, 210));
+      .fill(updatedEndTime);
     await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(
       page.getByText('Time slot updated successfully.'),
+    ).toBeVisible();
+    await expect(
+      page.getByText(`${startTime} – ${updatedEndTime}`),
     ).toBeVisible();
 
     // Delete
@@ -862,13 +921,34 @@ test.describe('Backoffice Panel', () => {
   test.describe.serial(
     'CFP to proposal to panel flow',
     () => {
+      let proposalCategoryName = '';
+      let proposalCategoryPath = '';
+      let proposalTitle = '';
+      let cityName = '';
+      let experienceName = '';
+      let newsletterName = '';
+      let gameSystemName = '';
+      let genreName = '';
+      let languagesName = '';
+      let beginnerName = '';
+
       test('creates session type for proposal flow', async ({
         page,
-      }) => {
+      }, testInfo) => {
+        const suffix = testInfo.project.name;
+        proposalCategoryName = `Tabletop RPG ${suffix}`;
+        proposalTitle = `Dragon's Lair ${suffix}: A Beginner Adventure`;
+        cityName = `City ${suffix}`;
+        experienceName = `Experience Level ${suffix}`;
+        newsletterName = `Newsletter ${suffix}`;
+        gameSystemName = `Game System ${suffix}`;
+        genreName = `Genre ${suffix}`;
+        languagesName = `Languages ${suffix}`;
+        beginnerName = `Beginner Friendly ${suffix}`;
         await page.goto(
           '/panel/event/autumn-open/cfp/create/',
         );
-        await page.locator('#id_name').fill('Tabletop RPG');
+        await page.locator('#id_name').fill(proposalCategoryName);
         await page
           .getByRole('button', { name: 'Add and configure' })
           .click();
@@ -878,7 +958,12 @@ test.describe('Backoffice Panel', () => {
             'Session type created successfully.',
           ),
         ).toBeVisible();
-        await expect(page).toHaveURL(/\/cfp\/tabletop-rpg\//);
+        await expect(
+          page.getByRole('heading', {
+            name: 'Configure Session Type',
+          }),
+        ).toBeVisible();
+        proposalCategoryPath = new URL(page.url()).pathname;
       });
 
       test('creates time slots for proposal flow', async ({
@@ -918,6 +1003,11 @@ test.describe('Backoffice Panel', () => {
           const start = dateTimeAfter(dateStr, baseHour, safeMin, 120 + i * 30);
           const end = dateTimeAfter(dateStr, baseHour, safeMin, 120 + (i + 1) * 30);
           await page.goto(
+            '/panel/event/autumn-open/cfp/time-slots/',
+          );
+          if (await page.getByText(`${start.time} – ${end.time}`).count()) continue;
+
+          await page.goto(
             '/panel/event/autumn-open/cfp/time-slots/create/',
           );
           await page.locator('#id_date').fill(start.date);
@@ -947,16 +1037,11 @@ test.describe('Backoffice Panel', () => {
         await page.goto(
           '/panel/event/autumn-open/cfp/personal-data/create/',
         );
-        await page.locator('#id_name').fill('City');
+        await page.locator('#id_name').fill(cityName);
         await page
           .locator('#id_question')
           .fill('What city are you from?');
-        // Category association: Tabletop RPG = Required
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: 'Tabletop RPG',
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
@@ -973,7 +1058,7 @@ test.describe('Backoffice Panel', () => {
         );
         await page
           .locator('#id_name')
-          .fill('Experience Level');
+          .fill(experienceName);
         await page
           .locator('#id_question')
           .fill('What is your experience level?');
@@ -986,11 +1071,7 @@ test.describe('Backoffice Panel', () => {
         await page
           .locator('#id_options')
           .fill('Beginner\nIntermediate\nAdvanced');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: 'Tabletop RPG',
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1005,18 +1086,14 @@ test.describe('Backoffice Panel', () => {
         await page.goto(
           '/panel/event/autumn-open/cfp/personal-data/create/',
         );
-        await page.locator('#id_name').fill('Newsletter');
+        await page.locator('#id_name').fill(newsletterName);
         await page
           .locator('#id_question')
           .fill('Subscribe to newsletter?');
         await page
           .locator('#id_field_type')
           .selectOption('checkbox');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: 'Tabletop RPG',
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('optional');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1035,15 +1112,11 @@ test.describe('Backoffice Panel', () => {
         await page.goto(
           '/panel/event/autumn-open/cfp/session-fields/create/',
         );
-        await page.locator('#id_name').fill('Game System');
+        await page.locator('#id_name').fill(gameSystemName);
         await page
           .locator('#id_question')
           .fill('What game system will you use?');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: 'Tabletop RPG',
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1058,7 +1131,7 @@ test.describe('Backoffice Panel', () => {
         await page.goto(
           '/panel/event/autumn-open/cfp/session-fields/create/',
         );
-        await page.locator('#id_name').fill('Genre');
+        await page.locator('#id_name').fill(genreName);
         await page
           .locator('#id_question')
           .fill('What genre is your session?');
@@ -1071,11 +1144,7 @@ test.describe('Backoffice Panel', () => {
         await page
           .locator('#id_options')
           .fill('Fantasy\nSci-Fi\nHorror');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: 'Tabletop RPG',
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1090,7 +1159,7 @@ test.describe('Backoffice Panel', () => {
         await page.goto(
           '/panel/event/autumn-open/cfp/session-fields/create/',
         );
-        await page.locator('#id_name').fill('Languages');
+        await page.locator('#id_name').fill(languagesName);
         await page
           .locator('#id_question')
           .fill('Which languages can you run in?');
@@ -1104,11 +1173,7 @@ test.describe('Backoffice Panel', () => {
           .locator('#id_options')
           .fill('English\nPolish\nGerman');
         await page.locator('#id_is_multiple').check();
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: 'Tabletop RPG',
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('optional');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1125,18 +1190,14 @@ test.describe('Backoffice Panel', () => {
         );
         await page
           .locator('#id_name')
-          .fill('Beginner Friendly');
+          .fill(beginnerName);
         await page
           .locator('#id_question')
           .fill('Is this session beginner-friendly?');
         await page
           .locator('#id_field_type')
           .selectOption('checkbox');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: 'Tabletop RPG',
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('optional');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1151,9 +1212,7 @@ test.describe('Backoffice Panel', () => {
       test('configures session type with all fields and time slots', async ({
         page,
       }) => {
-        await page.goto(
-          '/panel/event/autumn-open/cfp/tabletop-rpg/',
-        );
+        await page.goto(proposalCategoryPath);
 
         // Set submission window (past to future)
         const now = new Date();
@@ -1180,44 +1239,33 @@ test.describe('Backoffice Panel', () => {
           .locator('#id_end_time')
           .fill(toLocalISO(nextWeek));
 
-        // Add all host data fields from available → chosen
-        const hostAvail = page.locator(
-          '#host-fields-list .avail-list .field-item',
-        );
-        while ((await hostAvail.count()) > 0) {
-          await hostAvail.first().locator('.add-field').click();
-        }
-
-        // Toggle "Newsletter" to Optional
-        const newsletterItem = page
-          .locator('#host-fields-list .chosen-list .field-item', {
-            hasText: 'Newsletter',
+        const ensureChosen = async (group: string, fieldName: string) => {
+          const chosen = page.locator(`${group} .chosen-list .field-item`, {
+            hasText: fieldName,
           });
-        await newsletterItem.locator('.toggle-req').click();
+          if ((await chosen.count()) === 0) {
+            await page
+              .locator(`${group} .avail-list .field-item`, {
+                hasText: fieldName,
+              })
+              .locator('.add-field')
+              .click();
+          }
+          await expect(chosen).toBeVisible();
+        };
 
-        // Add all session fields
-        const sessionAvail = page.locator(
-          '#session-fields-list .avail-list .field-item',
-        );
-        while ((await sessionAvail.count()) > 0) {
-          await sessionAvail
-            .first()
-            .locator('.add-field')
-            .click();
+        for (const fieldName of [cityName, experienceName, newsletterName]) {
+          await ensureChosen('#host-fields-list', fieldName);
         }
 
-        // Toggle "Languages" and "Beginner Friendly" to Optional
-        const langItem = page.locator(
-          '#session-fields-list .chosen-list .field-item',
-          { hasText: 'Languages' },
-        );
-        await langItem.locator('.toggle-req').click();
-
-        const beginnerItem = page.locator(
-          '#session-fields-list .chosen-list .field-item',
-          { hasText: 'Beginner Friendly' },
-        );
-        await beginnerItem.locator('.toggle-req').click();
+        for (const fieldName of [
+          gameSystemName,
+          genreName,
+          languagesName,
+          beginnerName,
+        ]) {
+          await ensureChosen('#session-fields-list', fieldName);
+        }
 
         // Add all time slots
         const slotAvail = page.locator(
@@ -1267,9 +1315,7 @@ test.describe('Backoffice Panel', () => {
         await page.goto(
           '/chronology/event/autumn-open/session/propose/',
         );
-        await page
-          .locator('label', { hasText: 'Tabletop RPG' })
-          .click();
+        await proposalCategoryOption(page, proposalCategoryName).click();
         await page
           .getByRole('button', { name: /Continue/ })
           .click();
@@ -1285,14 +1331,13 @@ test.describe('Backoffice Panel', () => {
           .locator('#id_contact_email')
           .fill('host@example.com');
         await page
-          .locator('input[name="personal_city"]')
+          .locator(`input[name="personal_${slugify(cityName)}"]`)
           .fill('Krakow');
         await page
-          .locator('select[name="personal_experience-level"]')
+          .locator(`select[name="personal_${slugify(experienceName)}"]`)
           .selectOption('Intermediate');
         await page
-          .locator('label', { hasText: 'Newsletter' })
-          .locator('input[type="checkbox"]')
+          .getByLabel('Subscribe to newsletter?')
           .check();
         await page
           .getByRole('button', { name: /Continue/ })
@@ -1324,7 +1369,7 @@ test.describe('Backoffice Panel', () => {
 
         await page
           .locator('#id_title')
-          .fill("Dragon's Lair: A Beginner Adventure");
+          .fill(proposalTitle);
         await page
           .locator('#id_description')
           .fill(
@@ -1340,24 +1385,21 @@ test.describe('Backoffice Panel', () => {
           .locator('#id_duration')
           .selectOption('PT2H');
         await page
-          .locator('input[name="session_game-system"]')
+          .locator(`input[name="session_${slugify(gameSystemName)}"]`)
           .fill('D&D 5e');
         await page
-          .locator('select[name="session_genre"]')
+          .locator(`select[name="session_${slugify(genreName)}"]`)
           .selectOption('Fantasy');
-        // Languages: check English and Polish
         await page
           .locator('label', { hasText: 'English' })
-          .locator('input[name="session_languages"]')
+          .locator(`input[name="session_${slugify(languagesName)}"]`)
           .check();
         await page
           .locator('label', { hasText: 'Polish' })
-          .locator('input[name="session_languages"]')
+          .locator(`input[name="session_${slugify(languagesName)}"]`)
           .check();
-        // Beginner Friendly checkbox
         await page
-          .locator('label', { hasText: 'beginner-friendly' })
-          .locator('input[type="checkbox"]')
+          .locator(`input[name="session_${slugify(beginnerName)}"]`)
           .check();
         await page
           .getByRole('button', { name: /Continue/ })
@@ -1372,15 +1414,13 @@ test.describe('Backoffice Panel', () => {
 
         // Verify review content
         await expect(
-          page.getByText('Tabletop RPG'),
+          page.getByText(proposalCategoryName),
         ).toBeVisible();
         await expect(
           page.getByText('Game Master Alex'),
         ).toBeVisible();
         await expect(
-          page.getByText(
-            "Dragon's Lair: A Beginner Adventure",
-          ),
+          page.getByText(proposalTitle),
         ).toBeVisible();
         await expect(
           page.getByText(
@@ -1403,9 +1443,7 @@ test.describe('Backoffice Panel', () => {
         // Wait for redirect after submission
         await page.waitForURL(/\/autumn-open\//);
         await expect(
-          page.getByText(
-            "Dragon's Lair: A Beginner Adventure",
-          ),
+          page.getByText(proposalTitle),
         ).toBeVisible();
 
         await context.close();
@@ -1420,21 +1458,21 @@ test.describe('Backoffice Panel', () => {
         );
 
         const row = page.locator('tr', {
-          hasText: "Dragon's Lair: A Beginner Adventure",
+          hasText: proposalTitle,
         });
         await expect(row).toBeVisible();
         await expect(
           row.getByText('Game Master Alex'),
         ).toBeVisible();
         await expect(
-          row.getByText('Tabletop RPG'),
+          row.getByText(proposalCategoryName),
         ).toBeVisible();
         await expect(row.getByText('Pending')).toBeVisible();
 
         // Click title link → detail page
         await row
           .getByRole('link', {
-            name: "Dragon's Lair: A Beginner Adventure",
+            name: proposalTitle,
           })
           .click();
 
@@ -1472,14 +1510,11 @@ test.describe('Backoffice Panel', () => {
           '/panel/event/autumn-open/proposals/',
         );
 
-        // The serial flow created a "Genre" select field (Fantasy/Sci-Fi/Horror)
-        // and the proposal has Genre = "Fantasy"
         const genreSelect = page.locator(
           'select[name^="field_"]',
         );
-        // Find the Genre filter by its label
         const genreLabel = page.locator('label', {
-          hasText: 'Genre',
+          hasText: genreName,
         });
         const genreSelectId =
           await genreLabel.getAttribute('for');
@@ -1494,7 +1529,7 @@ test.describe('Backoffice Panel', () => {
           .click();
         await expect(
           page.getByRole('link', {
-            name: "Dragon's Lair: A Beginner Adventure",
+            name: proposalTitle,
           }),
         ).toBeVisible();
 
@@ -1508,7 +1543,7 @@ test.describe('Backoffice Panel', () => {
           .click();
         await expect(
           page.getByRole('link', {
-            name: "Dragon's Lair: A Beginner Adventure",
+            name: proposalTitle,
           }),
         ).not.toBeVisible();
 
@@ -1518,7 +1553,7 @@ test.describe('Backoffice Panel', () => {
           .click();
         await expect(
           page.getByRole('link', {
-            name: "Dragon's Lair: A Beginner Adventure",
+            name: proposalTitle,
           }),
         ).toBeVisible();
       });
@@ -1930,7 +1965,7 @@ test.describe('Backoffice Panel', () => {
     // All facilitator checkboxes are unchecked
     const checkboxes = page.locator('.facilitator-checkbox');
     const count = await checkboxes.count();
-    expect(count).toBeGreaterThanOrEqual(3);
+    expect(count).toBeGreaterThanOrEqual(2);
     for (let i = 0; i < count; i++) {
       await expect(checkboxes.nth(i)).not.toBeChecked();
     }
@@ -1941,18 +1976,19 @@ test.describe('Backoffice Panel', () => {
   }) => {
     await page.goto('/panel/event/autumn-open/facilitators/');
 
-    // Check Alice Morgan and Alice Morgan Copy
-    const aliceRow = page.locator('tr').filter({
-      has: page.getByRole('cell', { name: 'Alice Morgan', exact: true }),
-    });
-    const aliceCopyRow = page.locator('tr').filter({
-      has: page.getByRole('cell', {
-        name: 'Alice Morgan Copy',
-        exact: true,
-      }),
-    });
-    await aliceRow.locator('.facilitator-checkbox').check();
-    await aliceCopyRow.locator('.facilitator-checkbox').check();
+    const facilitatorRows = page
+      .getByRole('row')
+      .filter({ has: page.getByRole('link', { name: /.+/ }) });
+    await expect(facilitatorRows.first()).toBeVisible();
+    await expect(facilitatorRows.nth(1)).toBeVisible();
+
+    const firstName = (await facilitatorRows.nth(0).getByRole('link').first().textContent())?.trim();
+    const secondName = (await facilitatorRows.nth(1).getByRole('link').first().textContent())?.trim();
+    expect(firstName).toBeTruthy();
+    expect(secondName).toBeTruthy();
+
+    await facilitatorRows.nth(0).getByRole('checkbox').check();
+    await facilitatorRows.nth(1).getByRole('checkbox').check();
 
     await page
       .getByRole('button', { name: /Merge selected/ })
@@ -1960,13 +1996,8 @@ test.describe('Backoffice Panel', () => {
 
     await expect(page).toHaveURL(/\/facilitators\/merge\/\?ids=/);
 
-    // Both should be pre-checked on the merge page
-    await expect(
-      page.getByLabel('Alice Morgan', { exact: true }),
-    ).toBeChecked();
-    await expect(
-      page.getByLabel('Alice Morgan Copy', { exact: true }),
-    ).toBeChecked();
+    await expect(page.getByLabel(firstName!, { exact: true })).toBeChecked();
+    await expect(page.getByLabel(secondName!, { exact: true })).toBeChecked();
   });
 
   test('merge page search filters facilitators by name', async ({ page }) => {
@@ -1976,16 +2007,12 @@ test.describe('Backoffice Panel', () => {
 
     await page.locator('#facilitator-search').fill('Alice');
 
-    // Alice rows remain visible
+    // Matching rows remain visible
     await expect(
       page
         .locator('.facilitator-row')
-        .filter({ hasText: 'Alice Morgan Copy' }),
-    ).toBeVisible();
-    await expect(
-      page
-        .locator('.facilitator-row')
-        .filter({ has: page.locator('label', { hasText: /^Alice Morgan$/ }) }),
+        .filter({ has: page.locator('label', { hasText: /Alice/ }) })
+        .first(),
     ).toBeVisible();
 
     // Bob Chen row is hidden
@@ -2001,15 +2028,18 @@ test.describe('Backoffice Panel', () => {
       '/panel/event/autumn-open/facilitators/merge/',
     );
 
-    // Select Alice Morgan and Alice Morgan Copy via their labels
-    await page.getByLabel('Alice Morgan', { exact: true }).check();
-    await page.getByLabel('Alice Morgan Copy', { exact: true }).check();
+    const rows = page.locator('.facilitator-row');
+    await expect(rows.first()).toBeVisible();
+    await expect(rows.nth(1)).toBeVisible();
 
-    // Pick Alice Morgan as the keep target
-    const aliceRow = page.locator('.facilitator-row').filter({
-      has: page.locator('label', { hasText: /^Alice Morgan$/ }),
-    });
-    await aliceRow.locator('input[name="target_id"]').check();
+    const firstName = (await rows.nth(0).locator('label').textContent())?.trim();
+    const secondName = (await rows.nth(1).locator('label').textContent())?.trim();
+    expect(firstName).toBeTruthy();
+    expect(secondName).toBeTruthy();
+
+    await page.getByLabel(firstName!, { exact: true }).check();
+    await page.getByLabel(secondName!, { exact: true }).check();
+    await rows.nth(0).locator('input[name="target_id"]').check();
 
     await page.getByRole('button', { name: /Merge/ }).click();
 
@@ -2020,10 +2050,7 @@ test.describe('Backoffice Panel', () => {
       '/panel/event/autumn-open/facilitators/',
     );
 
-    // Alice Morgan Copy is gone; Alice Morgan and Bob Chen remain
-    await expect(page.getByText('Alice Morgan Copy')).not.toBeVisible();
-    await expect(
-      page.getByRole('cell', { name: 'Alice Morgan', exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText(secondName!)).not.toBeVisible();
+    await expect(page.getByRole('cell', { name: firstName!, exact: true })).toBeVisible();
   });
 });

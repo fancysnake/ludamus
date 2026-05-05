@@ -78,7 +78,13 @@ from ludamus.pacts import (
     VenueDTO,
 )
 
-from .design_fixtures import mock_event_info, mock_session_data, mock_session_data_ended
+from .design_fixtures import (
+    mock_event_info,
+    mock_form,
+    mock_session_data,
+    mock_session_data_ended,
+    mock_user,
+)
 from .forms import (
     ConnectedUserForm,
     UserForm,
@@ -440,6 +446,8 @@ class DesignPageView(TemplateView):
         context["design_event"] = mock_event_info()
         context["design_session_data"] = mock_session_data()
         context["design_session_data_ended"] = mock_session_data_ended()
+        context["design_user"] = mock_user()
+        context["design_form"] = mock_form()
         context["design_radio_options"] = [
             ("a", "Radio A", True, "design-radio-a"),
             ("b", "Radio B", False, "design-radio-b"),

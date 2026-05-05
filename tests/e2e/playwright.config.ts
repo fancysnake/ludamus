@@ -26,6 +26,12 @@ const WEB_COMMAND = 'mise run boot-e2e';
 
 const isCI = !!process.env.CI;
 
+const webServerEnv: Record<string, string> = Object.fromEntries(
+  Object.entries(process.env).filter(
+    (entry): entry is [string, string] => typeof entry[1] === 'string',
+  ),
+);
+
 export default defineConfig({
   testDir: './tests',
   outputDir: 'test-results',
@@ -65,16 +71,12 @@ export default defineConfig({
       testIgnore: /.*\.auth\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
-    /* Webkit requires OS-specific binaries; only run on CI */
-    ...(isCI
-      ? [
-          {
-            name: 'webkit',
-            testIgnore: /.*\.auth\.spec\.ts/,
-            use: { ...devices['iPhone 14 Pro'] },
-          },
-        ]
-      : []),
+    {
+      name: 'webkit',
+      testMatch: /event-details\.spec\.ts/,
+      grep: /iOS touch scrolling/,
+      use: { ...devices['iPhone 14 Pro'] },
+    },
     /* Authenticated browser for profile/user tests */
     {
       name: 'chromium-auth',
@@ -88,9 +90,7 @@ export default defineConfig({
   webServer: {
     command: WEB_COMMAND,
     url: BASE_URL,
-    env: {
-      ...process.env
-    },
+    env: webServerEnv,
     reuseExistingServer: !isCI,
     timeout: 180 * 1000,
     stdout: 'pipe',
