@@ -175,7 +175,17 @@ DATABASES = (
         }
     }
     if env("USE_POSTGRES")
-    else {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": env("DB_NAME")}}
+    else {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": env("DB_NAME"),
+            "OPTIONS": {
+                "timeout": 20,
+                "init_command": "PRAGMA journal_mode=WAL;",
+                "transaction_mode": "IMMEDIATE",
+            },
+        }
+    }
 )
 
 

@@ -1008,7 +1008,7 @@ class HostPersonalData(models.Model):
     field = models.ForeignKey(
         PersonalDataField, on_delete=models.CASCADE, related_name="values"
     )
-    value = models.JSONField(default="")
+    value = models.JSONField(default=str)
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
 
@@ -1129,7 +1129,7 @@ class SessionFieldValue(models.Model):
     field = models.ForeignKey(
         SessionField, on_delete=models.CASCADE, related_name="values"
     )
-    value = models.JSONField(default="")
+    value = models.JSONField(default=str)
     creation_time = models.DateTimeField(auto_now_add=True)
     modification_time = models.DateTimeField(auto_now=True)
 
