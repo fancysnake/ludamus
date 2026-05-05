@@ -654,8 +654,6 @@
                     {% endif %}
                 </div>
                 <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
-                    <button data-modal-close="proposalModal{{ pending.pk }}"
-                            class="btn btn-secondary text-sm">{% translate "Close" %}</button>
                     <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
                        class="btn btn-teal text-sm">{% icon "check" class="w-4 h-4" variant="mini" %} {% translate "Accept Proposal" %}</a>
                 </div>
@@ -912,11 +910,9 @@
                     {% endif %}
                 </div>
             </div>
-            <!-- Footer -->
-            <div class="px-6 py-4 flex justify-end gap-2 border-t border-border shrink-0">
-                <button data-modal-close="session-{{ data.session.pk }}"
-                        class="btn btn-secondary text-sm">{% translate "Close" %}</button>
-                {% if data.is_enrollment_available %}
+            {% if data.is_enrollment_available %}
+                <!-- Footer -->
+                <div class="px-6 py-4 flex justify-end gap-2 border-t border-border shrink-0">
                     {% if current_user %}
                         {% if data.user_enrolled or data.user_waiting %}
                             <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
@@ -949,8 +945,8 @@
                             {% icon "arrow-right-on-rectangle" class="w-4 h-4" variant="mini" %} {% translate "Login to Enroll" %}
                         </a>
                     {% endif %}
-                {% endif %}
-            </div>
+                </div>
+            {% endif %}
         </dialog>
     {% endfor %}
     <!-- Back to Events List -->
