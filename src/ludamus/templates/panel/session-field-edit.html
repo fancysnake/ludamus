@@ -147,7 +147,7 @@
                 {% if categories %}
                     <div class="space-y-3">
                         {% for category in categories %}
-                            <div class="flex items-center justify-between">
+                            <label class="flex items-center justify-between">
                                 <span class="text-sm font-medium text-foreground-secondary">{{ category.name }}</span>
                                 <select name="category_{{ category.pk }}"
                                         class="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
@@ -164,7 +164,7 @@
                                         {% translate "Optional" %}
                                     </option>
                                 </select>
-                            </div>
+                            </label>
                         {% endfor %}
                     </div>
                 {% else %}
