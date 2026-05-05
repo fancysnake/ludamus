@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
+from django import forms
 from django.contrib.staticfiles.storage import staticfiles_storage
 
 from ludamus.gates.web.django.entities import UserInfo
@@ -78,6 +79,28 @@ def _mock_field_values() -> list[SessionFieldValueDTO]:
             value=["horror", "violence"],
         ),
     ]
+
+
+def mock_user() -> UserInfo:
+    return _mock_user("Alex Designer", pk=1, slug="alex-designer", username="alex")
+
+
+class _MockTesseraForm(forms.Form):
+    name = forms.CharField(label="Name", max_length=64, required=True)
+    email = forms.EmailField(label="Email", required=False)
+    bio = forms.CharField(
+        label="Bio", widget=forms.Textarea(attrs={"rows": 3}), required=False
+    )
+    color = forms.ChoiceField(
+        label="Color",
+        choices=[("", "Pick one…"), ("r", "Red"), ("g", "Green"), ("b", "Blue")],
+        required=False,
+    )
+    subscribe = forms.BooleanField(label="Subscribe to updates", required=False)
+
+
+def mock_form() -> forms.Form:
+    return _MockTesseraForm()
 
 
 def mock_event_info() -> EventInfo:

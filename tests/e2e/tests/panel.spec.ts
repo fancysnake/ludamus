@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /** Build an HH:MM string by adding minutes to a base hour:minute. */
 function timeHHMM(
@@ -32,6 +32,14 @@ function dateTimeAfter(
 
 function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function sessionTypeRequirementSelect(page: Page, name: string) {
+  return page.getByRole('combobox', { name, exact: true }).last();
+}
+
+function proposalCategoryOption(page: Page, name: string) {
+  return page.getByText(name, { exact: true }).last();
 }
 
 function minutesSinceMidnight(time: string): number {
@@ -1033,11 +1041,7 @@ test.describe('Backoffice Panel', () => {
         await page
           .locator('#id_question')
           .fill('What city are you from?');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: proposalCategoryName,
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1067,11 +1071,7 @@ test.describe('Backoffice Panel', () => {
         await page
           .locator('#id_options')
           .fill('Beginner\nIntermediate\nAdvanced');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: proposalCategoryName,
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1093,11 +1093,7 @@ test.describe('Backoffice Panel', () => {
         await page
           .locator('#id_field_type')
           .selectOption('checkbox');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: proposalCategoryName,
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('optional');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1120,11 +1116,7 @@ test.describe('Backoffice Panel', () => {
         await page
           .locator('#id_question')
           .fill('What game system will you use?');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: proposalCategoryName,
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1152,11 +1144,7 @@ test.describe('Backoffice Panel', () => {
         await page
           .locator('#id_options')
           .fill('Fantasy\nSci-Fi\nHorror');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: proposalCategoryName,
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1185,11 +1173,7 @@ test.describe('Backoffice Panel', () => {
           .locator('#id_options')
           .fill('English\nPolish\nGerman');
         await page.locator('#id_is_multiple').check();
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: proposalCategoryName,
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('optional');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1213,11 +1197,7 @@ test.describe('Backoffice Panel', () => {
         await page
           .locator('#id_field_type')
           .selectOption('checkbox');
-        await page
-          .locator('.flex.items-center.justify-between', {
-            hasText: proposalCategoryName,
-          })
-          .locator('select')
+        await sessionTypeRequirementSelect(page, proposalCategoryName)
           .selectOption('optional');
         await page
           .getByRole('button', { name: 'Create' })
@@ -1335,9 +1315,7 @@ test.describe('Backoffice Panel', () => {
         await page.goto(
           '/chronology/event/autumn-open/session/propose/',
         );
-        await page
-          .locator('label', { hasText: proposalCategoryName })
-          .click();
+        await proposalCategoryOption(page, proposalCategoryName).click();
         await page
           .getByRole('button', { name: /Continue/ })
           .click();

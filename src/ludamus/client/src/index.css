@@ -226,8 +226,6 @@ button {
     --color-warning-bg: #292211;
     --theme-warning-text: #fbbf24;
     --color-warning-text: #fbbf24;
-    --theme-danger: #f87171;
-    --color-danger: #f87171;
     --theme-danger-light: #450a0a;
     --color-danger-light: #450a0a;
     --theme-danger-bg: #2d0808;
@@ -291,8 +289,6 @@ button {
   --color-warning-bg: #292211;
   --theme-warning-text: #fbbf24;
   --color-warning-text: #fbbf24;
-  --theme-danger: #f87171;
-  --color-danger: #f87171;
   --theme-danger-light: #450a0a;
   --color-danger-light: #450a0a;
   --theme-danger-bg: #2d0808;
@@ -307,6 +303,23 @@ button {
   --color-info-bg: #0c1e36;
   --theme-info-text: #93c5fd;
   --color-info-text: #93c5fd;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px var(--theme-primary);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--theme-border-focus) !important;
+}
+
+button:active {
+  @apply scale-97;
 }
 
 .no-transitions,
@@ -385,21 +398,66 @@ button {
 }
 
 .btn {
+  --bg: var(--color-primary);
+  --y: 2px;
+  /* derived from --color-border, but we're supporting legacy browsers so no color-mix */
+  --shade: hsla(30deg, 20.6%, 23%, 0.25);
+
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   padding: 0.625rem 1rem;
   font-weight: 500;
   transition: all 0.2s;
+  background-color: var(--bg);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.085),
+    0 var(--y) 0 0 var(--shade),
+    0 var(--y) 0 0 var(--bg);
+
+  &:hover {
+    @apply translate-y-px transition duration-150;
+    --y: 1px;
+  }
+
+  &:active {
+    @apply scale-[99.4%] translate-y-0.5;
+    box-shadow:
+      inset 0 0 1px 0 rgba(0, 0, 0, 0.1),
+      0 0px 0 0 rgba(0, 0, 0, 0.25),
+      0 0px 0 0 var(--bg);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible:after {
+    @apply transition-all duration-150 pointer-events-none;
+    content: "";
+    position: absolute;
+    inset: -2px;
+    bottom: -4px;
+    border: 1px solid var(--color-primary);
+    border-radius: 18px;
+  }
+
+  &:hover:focus-visible:after {
+    bottom: -3px;
+  }
+
+  &:active:focus-visible:after {
+    bottom: -2px;
+  }
 }
 
-.btn:focus {
-  outline: none;
-  box-shadow:
-    0 0 0 2px var(--theme-primary),
-    0 0 0 4px var(--color-background);
+@media (prefers-color-scheme: dark) {
+  .btn {
+    --shade: hsla(30deg, 20.6%, 15%, 0.45);
+  }
 }
 
 .btn:disabled {
@@ -408,26 +466,30 @@ button {
 }
 
 .btn-primary {
-  background-color: var(--theme-primary);
+  --bg: var(--color-primary);
   color: white;
 }
 
-.btn-primary:hover {
-  background-color: var(--theme-primary-hover);
-}
-
 .btn-secondary {
-  background-color: var(--theme-bg-secondary);
+  --bg: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
   color: var(--color-foreground);
 }
 
-.btn-secondary:hover {
-  background-color: var(--theme-bg-tertiary);
+@media (prefers-color-scheme: light) {
+  .btn-secondary {
+    --shade: hsla(30deg, 20.6%, 35%, 0.25);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .btn-secondary {
+    --shade: hsla(30deg, 0%, 28%, 0.35);
+  }
 }
 
 .btn-teal {
-  background-color: var(--theme-secondary);
+  --bg: var(--theme-secondary);
   color: white;
 }
 
@@ -436,12 +498,41 @@ button {
 }
 
 .btn-danger {
-  background-color: var(--theme-danger);
+  --bg: var(--theme-danger);
   color: white;
 }
 
-.btn-danger:hover {
-  background-color: color-mix(in srgb, var(--theme-danger) 85%, black);
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  box-shadow: inset 0 -2px 1px -1px var(--color-border);
+
+  position: relative;
+  @apply before:bg-foreground before:opacity-3 before:rounded-md before:absolute before:inset-0 dark:hover:before:opacity-10 hover:before:opacity-0 before:border before:border-transparent rounded-md hover:duration-0 before:transition before:duration-150 hover:before:duration-0;
+}
+
+@media (prefers-color-scheme: light) {
+  .icon-btn {
+    &:hover {
+      box-shadow: inset 0 0 0 1.25px var(--color-border);
+    }
+  }
 }
 
 .card {
@@ -469,23 +560,6 @@ select:not([multiple]):not([size]) {
   background-position: right 0.5rem center;
   background-size: 1rem;
   padding-right: 2rem;
-}
-
-:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px var(--color-background),
-    0 0 0 4px var(--theme-primary);
-}
-
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  border-color: var(--theme-border-focus) !important;
-}
-
-button:active {
-  @apply scale-97;
 }
 
 .session-tags-more:hover .session-tags-popover {
