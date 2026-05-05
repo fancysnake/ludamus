@@ -203,9 +203,10 @@ description = "Install Playwright"
 dir = "tests/e2e"
 
 [tasks.e2e]
-description = "Run end-to-end Playwright tests (chromium)"
+description = "Run end-to-end Playwright tests"
 run = """
 npx playwright test --project=chromium --project=chromium-auth
+CI=1 npx playwright test tests/event-details.spec.ts --project=webkit -g "iOS touch scrolling"
 mise run _e2e -- coverage report
 """
 dir = "tests/e2e"
