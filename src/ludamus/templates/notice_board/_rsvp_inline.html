@@ -1,6 +1,6 @@
 {% load i18n tessera %}
 {% if not is_creator and not is_full and not user_has_rsvpd %}
-    <div class="card border-primary/30">
+    <div class="card">
         <div class="card-body p-5">
             {% if user.is_authenticated %}
                 <form method="post"
@@ -26,7 +26,7 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div class="relative calendar-menu-wrapper">
                             <button type="button"
-                                    class="btn btn-teal text-sm w-full py-2 calendar-toggle-btn">
+                                    class="btn btn-teal text-sm w-full calendar-toggle-btn">
                                 {% icon "calendar" class="h-5 w-5" variant="mini" %}
                                 {% translate "Add to calendar" %}
                             </button>
@@ -44,7 +44,7 @@
                             </div>
                         </div>
                         <button type="button"
-                                class="btn btn-secondary text-sm w-full py-2 rsvp-copy-details"
+                                class="btn btn-secondary text-sm w-full rsvp-copy-details"
                                 data-title="{{ encounter.title }}{% if encounter.game %} — {{ encounter.game }}{% endif %}"
                                 data-time="{{ encounter.start_time|date:'DATE_FORMAT' }}, {{ encounter.start_time|time:'TIME_FORMAT' }}"
                                 data-place="{{ encounter.place }}"
@@ -64,7 +64,7 @@
         </div>
     </div>
 {% elif not is_creator and user_has_rsvpd %}
-    <div class="card border-[var(--theme-success-light)]">
+    <div class="card">
         <div class="card-body py-4">
             <div class="flex items-center justify-center gap-2 text-[var(--theme-success-base)]">
                 {% icon "check-circle" class="h-5 w-5" %}
@@ -76,7 +76,7 @@
                 <div class="grid grid-cols-2 gap-2">
                     <div class="relative calendar-menu-wrapper">
                         <button type="button"
-                                class="btn btn-teal text-sm w-full py-2 calendar-toggle-btn">
+                                class="btn btn-teal text-sm w-full calendar-toggle-btn">
                             {% icon "calendar" class="h-5 w-5" variant="mini" %}
                             {% translate "Add to calendar" %}
                         </button>
@@ -94,7 +94,7 @@
                         </div>
                     </div>
                     <button type="button"
-                            class="btn btn-secondary text-sm w-full py-2 rsvp-copy-details"
+                            class="btn btn-secondary text-sm w-full rsvp-copy-details"
                             data-title="{{ encounter.title }}{% if encounter.game %} — {{ encounter.game }}{% endif %}"
                             data-time="{{ encounter.start_time|date:'DATE_FORMAT' }}, {{ encounter.start_time|time:'TIME_FORMAT' }}"
                             data-place="{{ encounter.place }}"

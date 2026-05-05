@@ -345,6 +345,7 @@ button {
   border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%;
 }
 
+@layer components {
 .alert {
   border-radius: 0.5rem;
   padding: 1rem;
@@ -457,6 +458,7 @@ button {
 
 .card-body {
   padding: 1.5rem;
+}
 }
 
 /* Select dropdown chevron fix */
