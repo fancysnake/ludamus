@@ -3,7 +3,7 @@
     "editor.formatOnSave": false
   },
   "[django-html]": {
-    "editor.formatOnSave": false
+    "editor.formatOnSave": false,
   },
   "[htmldjango]": {
     "editor.formatOnSave": false
@@ -17,5 +17,14 @@
   },
   "tailwindCSS.experimental.configFile": "src/ludamus/client/src/index.css",
   "html.format.enable": false,
-  "prettier.enable": false
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "prettier.ignorePath": ".prettierignore"
 }
