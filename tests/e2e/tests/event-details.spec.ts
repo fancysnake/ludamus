@@ -88,4 +88,67 @@ test.describe('Event detail page', () => {
       await context.close();
     },
   );
+
+  test('allows iOS touch scrolling inside long mobile session modal content', async ({ browser }) => {
+    const context = await browser.newContext({
+      ...devices['iPhone 14 Pro'],
+      baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8000',
+    });
+    await context.addInitScript(() => {
+      Object.defineProperty(window.navigator, 'platform', { get: () => 'iPhone' });
+      Object.defineProperty(window.navigator, 'maxTouchPoints', { get: () => 1 });
+    });
+    const page = await context.newPage();
+
+    await page.goto('/chronology/event/autumn-open/');
+    const sessionId = await page.locator('.session-card').nth(1).getAttribute('data-session-id');
+    expect(sessionId).not.toBeNull();
+
+    await page.evaluate((id) => {
+      const description = document.querySelector(`#session-${id} [id^="info-"] div.leading-relaxed`);
+      if (!description) throw new Error('Missing session description');
+      description.innerHTML = Array.from(
+        { length: 28 },
+        (_, index) => `<p>Long mobile session description paragraph ${index + 1}.</p>`,
+      ).join('');
+    }, sessionId);
+
+    await page.locator('.session-card').nth(1).getByRole('link').click();
+    const detailDialog = page.getByRole('dialog', {
+      name: 'Cozy Storytellers Circle',
+    });
+    await expect(detailDialog).toBeVisible();
+
+    const touchMoveAllowed = await page.evaluate(() => {
+      const dialog = document.querySelector('dialog[open]');
+      const activePanel = dialog?.querySelector('.tab-panel[data-active]');
+      const text = activePanel?.querySelector('p');
+      if (!dialog || !(activePanel instanceof HTMLElement) || !text) return false;
+
+      const start = new TouchEvent('touchstart', {
+        bubbles: true,
+        cancelable: true,
+        targetTouches: [
+          new Touch({ identifier: 1, target: text, clientX: 50, clientY: 300 }),
+        ],
+      });
+      const move = new TouchEvent('touchmove', {
+        bubbles: true,
+        cancelable: true,
+        targetTouches: [
+          new Touch({ identifier: 1, target: text, clientX: 50, clientY: 200 }),
+        ],
+      });
+
+      text.dispatchEvent(start);
+      text.dispatchEvent(move);
+
+      return activePanel.scrollHeight > activePanel.clientHeight && !move.defaultPrevented;
+    });
+    expect(touchMoveAllowed).toBe(true);
+
+    await detailDialog.getByRole('button', { name: 'Close' }).click();
+    await expect(detailDialog).toBeHidden();
+    await context.close();
+  });
 });
