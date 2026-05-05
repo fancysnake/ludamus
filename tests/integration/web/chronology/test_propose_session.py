@@ -161,6 +161,8 @@ class TestProposeSessionPageView:
                     {"key": "review"},
                 ],
                 "show_back_button": False,
+                "show_login_nudge": False,
+                "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
                 "wizard_part_template": "chronology/propose/parts/personal.html",
             },
             template_name="chronology/propose/base.html",
@@ -445,6 +447,48 @@ class TestProposeSessionPageView:
         ]
         wizard = authenticated_client.session[f"propose_{event.slug}"]
         assert wizard["time_slot_ids"] == [slot.pk]
+
+    def test_single_category_single_timeslot_defaults_are_submitted(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        slot = TimeSlotFactory(event=event)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
+
+        response = authenticated_client.get(self._get_url(event.slug))
+        assert response.status_code == HTTPStatus.OK
+        wizard = authenticated_client.session[f"propose_{event.slug}"]
+        assert wizard["category_id"] == proposal_category.pk
+
+        response = authenticated_client.post(
+            self._get_personal_url(event.slug), {"contact_email": "test@example.com"}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/details.html"
+        wizard = authenticated_client.session[f"propose_{event.slug}"]
+        assert wizard["category_id"] == proposal_category.pk
+        assert wizard["time_slot_ids"] == [slot.pk]
+
+        response = authenticated_client.post(
+            self._get_details_url(event.slug),
+            {
+                "display_name": "Presenter",
+                "title": "Skipped Defaults",
+                "description": "Single category and slot",
+                "participants_limit": proposal_category.min_participants_limit,
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/review.html"
+        assert response.context["review"]["category_name"] == proposal_category.name
+        assert response.context["review"]["time_slots"][0]["slots"][0]["id"] == slot.pk
+
+        response = authenticated_client.post(self._get_submit_url(event.slug))
+
+        assert response.status_code == HTTPStatus.FOUND
+        session = Session.objects.get(title="Skipped Defaults")
+        assert session.category_id == proposal_category.pk
+        assert list(session.time_slots.values_list("pk", flat=True)) == [slot.pk]
 
     def test_post_timeslots_stores_in_session(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -1540,7 +1584,11 @@ class TestProposeSessionPageView:
         response = authenticated_client.get(self._get_url(event.slug))
 
         assert response.status_code == HTTPStatus.OK
-        assert "<h2>Welcome</h2>" in response.content.decode()
+        content = response.content.decode()
+        assert "<h2>Welcome</h2>" in content
+        assert content.index("<h2>Welcome</h2>") < content.index(
+            'aria-label="Proposal progress"'
+        )
 
     # -- Coverage: proposal_description in category back (views.py) --
 
@@ -2135,6 +2183,38 @@ class TestAnonymousProposalSubmission:
         )
         assert hpd.value == "+48 555"
         assert hpd.user_id is None
+
+    def test_anonymous_single_category_shows_login_nudge(
+        self, client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._enable_anonymous(event)
+
+        response = client.get(self._url(event.slug))
+        form = response.context["form"]
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "event": EventDTO.model_validate(event),
+                "category": ProposalCategoryDTO.model_validate(proposal_category),
+                "form": form,
+                "field_descriptors": [],
+                "current_step": "personal",
+                "wizard_steps": [
+                    {"key": "personal"},
+                    {"key": "details"},
+                    {"key": "review"},
+                ],
+                "show_back_button": False,
+                "show_login_nudge": True,
+                "login_url": f"/crowd/login-required/?next={self._url(event.slug)}",
+                "wizard_part_template": "chronology/propose/parts/personal.html",
+            },
+            template_name="chronology/propose/base.html",
+        )
+        assert b"Have an account?" in response.content
 
     def test_anonymous_submit_blocked_by_rate_limit(
         self, client, event, faker, time_zone, proposal_category

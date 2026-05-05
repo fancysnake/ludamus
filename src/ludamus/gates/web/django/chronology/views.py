@@ -188,7 +188,6 @@ def _render_category(
         wizard["category_id"] = categories[0].pk
         request.session[_session_key(event_slug)] = wizard
         personal_context = _personal_context(request, service, event, categories[0])
-        personal_context.update(_login_nudge_context(request))
         return TemplateResponse(
             request, "chronology/propose/parts/personal.html", personal_context
         )
@@ -233,7 +232,7 @@ def _personal_context(
     form = build_personal_data_form(requirements)(initial=initial)
     has_category = _event_has_category_step(service, event)
 
-    return {
+    context: dict[str, object] = {
         "event": event,
         "category": category,
         "form": form,
@@ -242,6 +241,9 @@ def _personal_context(
         "wizard_steps": _wizard_steps(service, category, has_category=has_category),
         "show_back_button": has_category,
     }
+    if not has_category:
+        context.update(_login_nudge_context(request))
+    return context
 
 
 def _render_personal(
@@ -582,24 +584,22 @@ class ProposeSessionPersonalComponentView(ProposeWizardMixin, View):
         form = form_class(data=request.POST)
 
         if not form.is_valid():
+            has_category = _event_has_category_step(service, event)
+            context: dict[str, object] = {
+                "event": event,
+                "category": category,
+                "form": form,
+                "field_descriptors": _field_descriptors("personal", requirements, form),
+                "current_step": "personal",
+                "wizard_steps": _wizard_steps(
+                    service, category, has_category=has_category
+                ),
+                "show_back_button": has_category,
+            }
+            if not has_category:
+                context.update(_login_nudge_context(request))
             return TemplateResponse(
-                request,
-                "chronology/propose/parts/personal.html",
-                {
-                    "event": event,
-                    "category": category,
-                    "form": form,
-                    "field_descriptors": _field_descriptors(
-                        "personal", requirements, form
-                    ),
-                    "current_step": "personal",
-                    "wizard_steps": _wizard_steps(
-                        service,
-                        category,
-                        has_category=_event_has_category_step(service, event),
-                    ),
-                    "show_back_button": _event_has_category_step(service, event),
-                },
+                request, "chronology/propose/parts/personal.html", context
             )
 
         wizard = request.session.get(_session_key(event_slug), {})
