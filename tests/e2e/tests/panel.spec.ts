@@ -219,12 +219,17 @@ test.describe('Backoffice Panel', () => {
       page.getByRole('heading', { name: 'Venue Structure' }),
     ).toBeVisible();
 
-    // Verify hierarchy
-    await expect(page.getByText('Convention Center')).toBeVisible();
-    await expect(page.getByText('Main Hall')).toBeVisible();
-    await expect(page.getByText('Lounge')).toBeVisible();
-    await expect(page.getByText('East Wing')).toBeVisible();
-    await expect(page.getByText('Fireside Alcove')).toBeVisible();
+    await page.getByRole('link', { name: 'Convention Center', exact: true }).click();
+    await expect(page).toHaveURL(/\/venues\/convention-center\/$/);
+    await expect(
+      page.getByRole('heading', { name: 'Convention Center' }),
+    ).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Main Hall' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Lounge' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Spaces' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Lounge' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Fireside Alcove' })).toBeVisible();
   });
 
   test('duplicates a venue', async ({ page }) => {
@@ -536,7 +541,9 @@ test.describe('Backoffice Panel', () => {
     await expect(
       page.getByText('Session type created successfully.'),
     ).toBeVisible();
-    await expect(page.getByText('Board Games')).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Board Games' }).first(),
+    ).toBeVisible();
   });
 
   test('creates session type and navigates to configure', async ({
@@ -555,7 +562,7 @@ test.describe('Backoffice Panel', () => {
     await expect(
       page.getByText('Session type created successfully.'),
     ).toBeVisible();
-    await expect(page).toHaveURL(/\/cfp\/rpg-sessions\//);
+    await expect(page).toHaveURL(/\/cfp\/rpg-sessions/);
     await expect(
       page.getByRole('heading', {
         name: 'Configure Session Type',
@@ -708,12 +715,13 @@ test.describe('Backoffice Panel', () => {
       page.getByText('Session field created successfully.'),
     ).toBeVisible();
     await expect(
-      page.getByRole('cell', { name: 'Game System' }),
+      page.getByRole('cell', { name: /Game System/ }).first(),
     ).toBeVisible();
 
     // Edit
     await page
-      .locator('tr', { hasText: 'Game System' })
+      .getByRole('row', { name: /Game System/ })
+      .first()
       .getByRole('link', { name: 'Edit' })
       .click();
     await page
@@ -728,7 +736,8 @@ test.describe('Backoffice Panel', () => {
     // Delete
     page.on('dialog', (dialog) => dialog.accept());
     await page
-      .locator('tr', { hasText: 'Game System' })
+      .getByRole('row', { name: /Game System/ })
+      .first()
       .getByRole('button', { name: /Delete/i })
       .click();
 

@@ -205,8 +205,7 @@ dir = "tests/e2e"
 [tasks.e2e]
 description = "Run end-to-end Playwright tests"
 run = """
-npx playwright test --project=chromium --project=chromium-auth
-CI=1 npx playwright test tests/event-details.spec.ts --project=webkit -g "iOS touch scrolling"
+npx playwright test --workers=1
 mise run _e2e -- coverage report
 """
 dir = "tests/e2e"

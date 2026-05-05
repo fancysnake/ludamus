@@ -36,7 +36,8 @@ test.describe('Event detail page', () => {
 
   test(
     'keeps mobile session modal footer inside the clickable dialog bounds',
-    async ({ browser }) => {
+    async ({ browser, browserName }) => {
+      test.skip(browserName === 'firefox', 'Firefox does not support mobile emulation');
       const context = await browser.newContext({
         ...devices['iPhone 14 Pro'],
         baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8000',
@@ -89,7 +90,8 @@ test.describe('Event detail page', () => {
     },
   );
 
-  test('allows iOS touch scrolling inside long mobile session modal content', async ({ browser }) => {
+  test('allows iOS touch scrolling inside long mobile session modal content', async ({ browser, browserName }) => {
+    test.skip(browserName === 'firefox', 'Firefox does not support mobile emulation');
     const context = await browser.newContext({
       ...devices['iPhone 14 Pro'],
       baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8000',

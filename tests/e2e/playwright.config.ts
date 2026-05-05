@@ -65,16 +65,12 @@ export default defineConfig({
       testIgnore: /.*\.auth\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
-    /* Webkit requires OS-specific binaries; only run on CI */
-    ...(isCI
-      ? [
-          {
-            name: 'webkit',
-            testIgnore: /.*\.auth\.spec\.ts/,
-            use: { ...devices['iPhone 14 Pro'] },
-          },
-        ]
-      : []),
+    {
+      name: 'webkit',
+      testMatch: /event-details\.spec\.ts/,
+      grep: /iOS touch scrolling/,
+      use: { ...devices['iPhone 14 Pro'] },
+    },
     /* Authenticated browser for profile/user tests */
     {
       name: 'chromium-auth',
