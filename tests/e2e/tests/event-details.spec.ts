@@ -191,17 +191,13 @@ test.describe('Anonymous code modal', () => {
     await expect(dialog).toBeHidden();
   });
 
-  test('reloads the event page when an active code is re-submitted', async ({ page }) => {
-    const banner = page.getByRole('alert').filter({ hasText: 'Your Anonymous Code' });
-    const activeCode = (await banner.locator('strong').first().innerText()).trim();
-    expect(activeCode).toMatch(/^[a-z0-9_-]+$/i);
-
+  test('rejects an unknown code with a flash message and stays on the event', async ({ page }) => {
     await page.getByRole('link', { name: /Enter Different Code/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Enter Different Code' });
-    await dialog.getByLabel('Anonymous Code').fill(activeCode);
+    await dialog.getByLabel('Anonymous Code').fill('zzzz99');
     await dialog.getByRole('button', { name: 'Switch to This Code' }).click();
 
-    await expect(page).toHaveURL(/\/chronology\/event\/autumn-open\/?$/);
-    await expect(banner.locator('strong').first()).toHaveText(activeCode);
+    await expect(page).toHaveURL(/\/chronology\/event\/autumn-open/);
+    await expect(page.getByText(/Invalid code/i)).toBeVisible();
   });
 });
