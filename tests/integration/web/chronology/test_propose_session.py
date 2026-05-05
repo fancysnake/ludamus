@@ -1,6 +1,6 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import ANY, patch
+from unittest.mock import patch
 
 from django.contrib import messages
 from django.urls import reverse
@@ -144,6 +144,7 @@ class TestProposeSessionPageView:
         self._activate_proposals(event, faker, time_zone)
 
         response = authenticated_client.get(self._get_url(event.slug))
+        form = response.context["form"]
 
         assert_response(
             response,
@@ -151,7 +152,7 @@ class TestProposeSessionPageView:
             context_data={
                 "event": EventDTO.model_validate(event),
                 "category": ProposalCategoryDTO.model_validate(proposal_category),
-                "form": ANY,
+                "form": form,
                 "field_descriptors": [],
                 "current_step": "personal",
                 "wizard_steps": [
@@ -164,6 +165,7 @@ class TestProposeSessionPageView:
             },
             template_name="chronology/propose/base.html",
         )
+        assert form["contact_email"] is not None
 
     def test_get_stores_category_in_session_on_auto_advance(
         self, authenticated_client, event, faker, time_zone, proposal_category
