@@ -102,9 +102,7 @@ def _has_category_step(categories: Sequence[ProposalCategoryDTO]) -> bool:
     return len(categories) != 1
 
 
-def _event_has_category_step(
-    service: ProposeSessionService, event: EventDTO
-) -> bool:
+def _event_has_category_step(service: ProposeSessionService, event: EventDTO) -> bool:
     return _has_category_step(service.get_categories(event.pk))
 
 
@@ -162,8 +160,7 @@ def _wizard_steps(
     return [
         {"key": key}
         for key in _ALL_WIZARD_STEP_KEYS
-        if (key != "category" or has_category)
-        and (key != "timeslots" or has_timeslots)
+        if (key != "category" or has_category) and (key != "timeslots" or has_timeslots)
     ]
 
 
@@ -190,7 +187,11 @@ def _render_category(
         wizard = request.session.get(_session_key(event_slug), {})
         wizard["category_id"] = categories[0].pk
         request.session[_session_key(event_slug)] = wizard
-        return _render_personal(request, service, event, categories[0])
+        personal_context = _personal_context(request, service, event, categories[0])
+        personal_context.update(_login_nudge_context(request))
+        return TemplateResponse(
+            request, "chronology/propose/parts/personal.html", personal_context
+        )
 
     wizard = request.session.get(_session_key(event_slug), {})
     selected_id = wizard.get("category_id")
@@ -324,9 +325,7 @@ def _render_details(
             "selected_track_pks": selected_track_pks,
             "current_step": "details",
             "wizard_steps": _wizard_steps(
-                service,
-                category,
-                has_category=_event_has_category_step(service, event),
+                service, category, has_category=_event_has_category_step(service, event)
             ),
         },
     )
@@ -406,9 +405,7 @@ def _render_review(
             "review": review,
             "current_step": "review",
             "wizard_steps": _wizard_steps(
-                service,
-                category,
-                has_category=_event_has_category_step(service, event),
+                service, category, has_category=_event_has_category_step(service, event)
             ),
         },
     )

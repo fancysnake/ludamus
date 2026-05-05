@@ -1,6 +1,6 @@
 from datetime import timedelta
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 from django.contrib import messages
 from django.urls import reverse
@@ -411,7 +411,9 @@ class TestProposeSessionPageView:
         )
 
         assert response.status_code == HTTPStatus.OK
-        assert len(response.context["slot_descriptors"][0]["slots"]) == 2
+        assert [
+            slot["id"] for slot in response.context["slot_descriptors"][0]["slots"]
+        ] == [slot1.pk, slot2.pk]
 
     def test_post_personal_skips_single_timeslot(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -1639,7 +1641,6 @@ class TestProposeSessionPageView:
 
         assert response.context["current_step"] == "timeslots"
         assert [s["key"] for s in response.context["wizard_steps"]] == [
-            "category",
             "personal",
             "timeslots",
             "details",
