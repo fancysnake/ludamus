@@ -169,3 +169,35 @@ test.describe('Event detail page', () => {
     await context.close();
   });
 });
+
+test.describe('Anonymous code modal', () => {
+  test.beforeEach(async ({ page }) => {
+    // Drop into anonymous-enrollment mode for an event that allows it; the
+    // banner with "Enter Different Code" only renders for active anonymous
+    // sessions on /chronology/event/<slug>/.
+    await page.goto('/chronology/event/autumn-open/anonymous/do/activate');
+    await expect(page.getByRole('heading', { name: 'Anonymous Mode Active' })).toBeVisible();
+  });
+
+  test('opens the code-entry dialog from the banner and cancels back out', async ({ page }) => {
+    await page.getByRole('link', { name: /Enter Different Code/ }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Enter Different Code' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByLabel('Anonymous Code')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Switch to This Code' })).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('rejects an unknown code with a flash message and stays on the event', async ({ page }) => {
+    await page.getByRole('link', { name: /Enter Different Code/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Enter Different Code' });
+    await dialog.getByLabel('Anonymous Code').fill('zzzz99');
+    await dialog.getByRole('button', { name: 'Switch to This Code' }).click();
+
+    await expect(page).toHaveURL(/\/chronology\/event\/autumn-open/);
+    await expect(page.getByText(/Invalid code/i)).toBeVisible();
+  });
+});
