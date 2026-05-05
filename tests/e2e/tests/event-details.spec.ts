@@ -135,10 +135,13 @@ test.describe('Event detail page', () => {
       };
     });
     expect(mobileModalLayout).not.toBeNull();
-    expect(mobileModalLayout?.dialogHeight).toBeGreaterThan(
-      mobileModalLayout?.viewportHeight * 0.75,
+    if (mobileModalLayout === null) {
+      throw new Error('Mobile modal layout metrics were unavailable');
+    }
+    expect(mobileModalLayout.dialogHeight).toBeGreaterThan(
+      mobileModalLayout.viewportHeight * 0.75,
     );
-    expect(mobileModalLayout?.tabContentHeight).toBeGreaterThan(240);
+    expect(mobileModalLayout.tabContentHeight).toBeGreaterThan(240);
 
     const touchMoveAllowed = await page.evaluate(() => {
       const dialog = document.querySelector('dialog[open]');
