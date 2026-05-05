@@ -24,7 +24,7 @@ jobs:
       - uses: jdx/mise-action@v2
       - run: mise install
       - run: mise run p install
-      - run: mise run prcheck
+      - run: mise run prcheck --jobs 4
 
   impeccable:
     runs-on: ubuntu-latest

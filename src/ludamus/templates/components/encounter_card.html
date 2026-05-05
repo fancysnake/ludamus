@@ -42,7 +42,7 @@
     </a>
     {% if is_mine %}
         <button type="button"
-                class="encounter-copy-link btn btn-secondary w-full rounded-none rounded-b-2xl border-0 border-t border-border text-foreground-muted text-sm py-2.5"
+                class="encounter-copy-link btn btn-secondary w-full text-sm"
                 data-url="/e/{{ encounter.share_code }}/"
                 data-copied-text="{% translate "Copied!" %}">
             {% icon "link" class="h-4 w-4 flex-shrink-0" %}

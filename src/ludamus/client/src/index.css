@@ -132,8 +132,8 @@
 }
 
 *,
-:before,
-:after {
+*::before,
+*::after {
   corner-shape: superellipse(1.8);
 }
 
@@ -358,6 +358,7 @@ button:active {
   border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%;
 }
 
+@layer components {
 .alert {
   border-radius: 0.5rem;
   padding: 1rem;
@@ -549,6 +550,7 @@ button:active {
 .card-body {
   padding: 1.5rem;
 }
+}
 
 /* Select dropdown chevron fix */
 select:not([multiple]):not([size]) {
@@ -604,4 +606,48 @@ hr {
 
 .dark hr {
   border-top-color: var(--color-neutral-700);
+}
+
+.hoverboard {
+  position: relative;
+
+  &::before {
+    --transition: 0.18s;
+    position-anchor: --a;
+    pointer-events: none;
+    content: "";
+    position: absolute;
+    inset: anchor(inside);
+    background-color: var(--color-bg-tertiary);
+    border-radius: 0.5em;
+    z-index: -1;
+    transition:
+      inset var(--transition),
+      top var(--transition),
+      left var(--transition),
+      height var(--transition),
+      opacity var(--transition),
+      color var(--transition),
+      width var(--transition);
+    transition-timing-function: linear(
+      0 0%,
+      0.2342 12.49%,
+      0.4374 24.99%,
+      0.6093 37.49%,
+      0.6835 43.74%,
+      0.7499 49.99%,
+      0.8086 56.25%,
+      0.8593 62.5%,
+      0.9023 68.75%,
+      0.9375 75%,
+      0.9648 81.25%,
+      0.9844 87.5%,
+      0.9961 93.75%,
+      1 100%
+    );
+  }
+
+  & > a:is(:hover, :focus-visible) {
+    anchor-name: --a;
+  }
 }

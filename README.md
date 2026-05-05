@@ -11,22 +11,33 @@ Event management website
 
 ## Development
 
-```bash
-mise install      # Install Python, create venv
-poetry install    # Install dependencies
-mise run start    # Run Django dev server
-```
-
-### Tailwind CSS
-
-Uses [django-tailwind][dt] with npm-based build.
-
-[dt]: https://github.com/timonweb/django-tailwind
-
-`mise run start` runs Django + Tailwind watch together via `tailwind dev`.
-
-**Deployment:**
+Requires [mise](https://mise.jdx.dev) — it manages Python, Node, Poetry, and the
+project tasks.
 
 ```bash
-mise run build-frontend  # Build frontend (CSS + JS)
+mise install            # Python, Node, Poetry, ast-grep
+mise run bootstrap      # .env, deps, migrations, demo data — idempotent
+mise run start          # Django :8000 + Vite :5173
 ```
+
+After bootstrap, log in at <http://localhost:8000/admin/> as `admin` / `admin`.
+
+`mise run bootstrap` is safe to re-run any time — it tops up missing deps and
+seed data without destroying anything.
+
+### Day-to-day
+
+```bash
+mise run test           # all tests
+mise run check          # format + lint + autofix
+mise run prcheck        # CI-style lint, no autofix
+mise tasks              # list every task with descriptions
+```
+
+Frontend lives in `src/ludamus/client/` (Vite + Tailwind). Architecture and
+contributor conventions are documented in [CLAUDE.md](CLAUDE.md) (also
+available as `AGENTS.md` for Cursor/OpenAI agents).
+
+### Deployment
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
