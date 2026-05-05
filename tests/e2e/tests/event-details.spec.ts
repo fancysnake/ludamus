@@ -144,26 +144,16 @@ test.describe('Event detail page', () => {
       const text = activePanel?.querySelector('p');
       if (!dialog || !(activePanel instanceof HTMLElement) || !text) return false;
 
-      let start: TouchEvent;
-      let move: TouchEvent;
-      try {
-        start = new TouchEvent('touchstart', {
-          bubbles: true,
-          cancelable: true,
-          targetTouches: [
-            new Touch({ identifier: 1, target: text, clientX: 50, clientY: 300 }),
-          ],
-        });
-        move = new TouchEvent('touchmove', {
-          bubbles: true,
-          cancelable: true,
-          targetTouches: [
-            new Touch({ identifier: 1, target: text, clientX: 50, clientY: 200 }),
-          ],
-        });
-      } catch {
-        return true;
-      }
+      const start = new Event('touchstart', { bubbles: true, cancelable: true });
+      Object.defineProperties(start, {
+        targetTouches: { value: [{ clientY: 300 }] },
+        touches: { value: [{ clientY: 300 }] },
+      });
+      const move = new Event('touchmove', { bubbles: true, cancelable: true });
+      Object.defineProperties(move, {
+        targetTouches: { value: [{ clientY: 200 }] },
+        touches: { value: [{ clientY: 200 }] },
+      });
 
       text.dispatchEvent(start);
       text.dispatchEvent(move);
