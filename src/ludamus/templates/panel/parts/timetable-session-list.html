@@ -11,7 +11,7 @@
 {% if sessions %}
     <div class="space-y-2">
         {% for session in sessions %}
-            <div class="card p-3 cursor-pointer hover:border-primary hover:shadow-sm transition"
+            <div class="card p-3 cursor-pointer transition"
                  data-session-pk="{{ session.pk }}"
                  hx-get="{% url 'panel:timetable-session-detail-part' slug=slug pk=session.pk %}?track={{ filter_track_pk|default:'' }}&category={{ category_pk|default:'' }}&max_duration={{ max_duration_minutes|default:'' }}&search={{ search|urlencode }}"
                  hx-target="#left-pane"

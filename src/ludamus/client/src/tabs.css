@@ -1,4 +1,4 @@
-@layer base {
+@layer components {
   .tab-list {
     display: flex;
     border-bottom: 1px solid var(--theme-border);
