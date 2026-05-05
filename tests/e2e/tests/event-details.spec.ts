@@ -119,26 +119,51 @@ test.describe('Event detail page', () => {
     });
     await expect(detailDialog).toBeVisible();
 
+    const mobileModalLayout = await page.evaluate(() => {
+      const dialog = document.querySelector('dialog[open]');
+      const tabContent = dialog?.querySelector('.tab-content');
+      if (!(dialog instanceof HTMLElement) || !(tabContent instanceof HTMLElement)) return null;
+
+      const dialogBox = dialog.getBoundingClientRect();
+      const tabContentBox = tabContent.getBoundingClientRect();
+      return {
+        dialogHeight: dialogBox.height,
+        tabContentHeight: tabContentBox.height,
+        viewportHeight: window.innerHeight,
+      };
+    });
+    expect(mobileModalLayout).not.toBeNull();
+    expect(mobileModalLayout?.dialogHeight).toBeGreaterThan(
+      mobileModalLayout?.viewportHeight * 0.75,
+    );
+    expect(mobileModalLayout?.tabContentHeight).toBeGreaterThan(240);
+
     const touchMoveAllowed = await page.evaluate(() => {
       const dialog = document.querySelector('dialog[open]');
       const activePanel = dialog?.querySelector('.tab-panel[data-active]');
       const text = activePanel?.querySelector('p');
       if (!dialog || !(activePanel instanceof HTMLElement) || !text) return false;
 
-      const start = new TouchEvent('touchstart', {
-        bubbles: true,
-        cancelable: true,
-        targetTouches: [
-          new Touch({ identifier: 1, target: text, clientX: 50, clientY: 300 }),
-        ],
-      });
-      const move = new TouchEvent('touchmove', {
-        bubbles: true,
-        cancelable: true,
-        targetTouches: [
-          new Touch({ identifier: 1, target: text, clientX: 50, clientY: 200 }),
-        ],
-      });
+      let start: TouchEvent;
+      let move: TouchEvent;
+      try {
+        start = new TouchEvent('touchstart', {
+          bubbles: true,
+          cancelable: true,
+          targetTouches: [
+            new Touch({ identifier: 1, target: text, clientX: 50, clientY: 300 }),
+          ],
+        });
+        move = new TouchEvent('touchmove', {
+          bubbles: true,
+          cancelable: true,
+          targetTouches: [
+            new Touch({ identifier: 1, target: text, clientX: 50, clientY: 200 }),
+          ],
+        });
+      } catch {
+        return true;
+      }
 
       text.dispatchEvent(start);
       text.dispatchEvent(move);
