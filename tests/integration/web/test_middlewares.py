@@ -50,6 +50,36 @@ class TestRequestContextMiddleware:
 
     @pytest.mark.django_db
     @staticmethod
+    @pytest.mark.parametrize(
+        "host",
+        (
+            "127.0.0.1:1355",
+            "filters-bar.skip-steps.localhost:1355",
+            "filters-bar.skip-steps.local:1355",
+        ),
+    )
+    def test_unknown_local_host_uses_root_sphere_in_development(
+        host, get_response_mock, middleware, rf, settings
+    ):
+        settings.ENV = "development"
+        settings.ALLOWED_HOSTS.extend([".localhost", ".local", "localhost", "127.0.0.1"])
+        request = rf.get("/")
+        request.META["HTTP_HOST"] = host
+        request.di = DependencyInjector()
+        root_sphere = Sphere.objects.get(site__domain=settings.ROOT_DOMAIN)
+
+        middleware(request)
+
+        assert request.context == RequestContext(
+            current_site_id=root_sphere.site.id,
+            current_sphere_id=root_sphere.id,
+            root_site_id=root_sphere.site.id,
+            root_sphere_id=root_sphere.id,
+        )
+        get_response_mock.assert_called_once_with(request)
+
+    @pytest.mark.django_db
+    @staticmethod
     def test_site_does_not_exist_redirects(
         middleware, get_response_mock, rf, settings, sphere
     ):
