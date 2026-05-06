@@ -350,7 +350,11 @@
                 <div id="active-filter-chips"
                      class="filter-chips-bar"
                      data-remove-filter-label="{% translate "Remove filter" %}"
-                     data-clear-all-label="{% translate "Clear all" %}"></div>
+                     data-clear-all-label="{% translate "Clear all" %}">
+                    <div class="overflow-hidden">
+                        <div class="filter-chips-bar-inner" data-filter-chips-inner></div>
+                    </div>
+                </div>
             </div>
             <div id="filter-no-results"
                  class="text-center py-12 px-4 text-foreground-muted"
@@ -1005,10 +1009,14 @@
             const filterToggle = document.getElementById('filter-toggle');
             const filterPanel = document.getElementById('filter-panel');
             const filterChipsBar = document.getElementById('active-filter-chips');
+            const filterChipsInner = filterChipsBar?.querySelector('[data-filter-chips-inner]');
             const filterCountBadge = document.getElementById('active-filter-count');
             const filterNoResults = document.getElementById('filter-no-results');
             const clearFiltersFromNoResults = document.getElementById('clear-filters-from-no-results');
             const tagFilters = {};
+            if (!filterChipsBar || !filterChipsInner) {
+                throw new Error('Missing filter chips bar');
+            }
 
             // Populate venue filter dropdown from session data
             const venueMap = new Map(); // slug -> name
@@ -1321,7 +1329,7 @@
                     filterCountBadge.classList.remove('is-visible');
                 }
 
-                filterChipsBar.innerHTML = '';
+                filterChipsInner.innerHTML = '';
                 if (chips.length > 0) {
                     filterChipsBar.classList.add('has-chips');
                     chips.forEach(chip => {
@@ -1333,13 +1341,13 @@
                         btn.textContent = '×';
                         btn.addEventListener('click', chip.clear);
                         el.appendChild(btn);
-                        filterChipsBar.appendChild(el);
+                        filterChipsInner.appendChild(el);
                     });
                     const clearBtn = document.createElement('button');
                     clearBtn.className = 'filter-chips-clear';
                     clearBtn.textContent = filterChipsBar.dataset.clearAllLabel;
                     clearBtn.addEventListener('click', clearAllFilters);
-                    filterChipsBar.appendChild(clearBtn);
+                    filterChipsInner.appendChild(clearBtn);
                 } else {
                     filterChipsBar.classList.remove('has-chips');
                 }
