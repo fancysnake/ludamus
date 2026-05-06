@@ -139,8 +139,11 @@
   scrollbar-width: thin;
 }
 
-html {
+html,
+body {
   height: 100%;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
 }
 
 a,
