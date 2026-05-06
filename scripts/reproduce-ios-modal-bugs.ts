@@ -97,6 +97,36 @@ const findNodeByLabel = async (label: string): Promise<SnapshotNode | null> => {
   return snapshot.nodes.find((node) => node.label === label) ?? null;
 };
 
+const openUrl = async (url: string, udid: string): Promise<void> => {
+  if (providedUdid) {
+    try {
+      execFileSync("xcrun", ["simctl", "openurl", udid, url], {
+        stdio: "inherit",
+        timeout: 30000,
+      });
+    } catch (error) {
+      console.warn(
+        "simctl reported a URL open failure; continuing because iOS Simulator can time out after Safari has already loaded the page.",
+        error,
+      );
+    }
+    return;
+  }
+
+  try {
+    await client.apps.open({
+      ...deviceOptions,
+      app: "Safari",
+      url,
+    });
+  } catch (error) {
+    console.warn(
+      "Safari reported a URL open failure; continuing because iOS Simulator can time out after Safari has already loaded the page.",
+      error,
+    );
+  }
+};
+
 const clickNodeCenter = async (node: SnapshotNode): Promise<void> => {
   if (node.rect) {
     await client.interactions.click({
@@ -184,20 +214,9 @@ const eventUrl = `${baseUrl}${eventPath}`;
 const modalUrl = `${eventUrl}?${targetQueryParam}`;
 const openViaScrolledPage = env.OPEN_VIA_SCROLLED_PAGE !== "0";
 console.log(`Opening Safari at ${openViaScrolledPage ? eventUrl : modalUrl}...`);
-try {
-  await client.apps.open({
-    ...deviceOptions,
-    app: "Safari",
-    url: openViaScrolledPage ? eventUrl : modalUrl,
-  });
-} catch (error) {
-  console.warn(
-    "Safari reported a URL open failure; continuing because iOS Simulator can time out after Safari has already loaded the page.",
-    error,
-  );
-}
+await openUrl(openViaScrolledPage ? eventUrl : modalUrl, udid);
 
-await client.command.wait({ ...deviceOptions, text: eventTitle, timeoutMs: 15000 });
+await client.command.wait({ ...deviceOptions, text: eventTitle, timeoutMs: 20000 });
 
 if (openViaScrolledPage) {
   console.log(`Opening ${targetTitle} from a scrolled page...`);
