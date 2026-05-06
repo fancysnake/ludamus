@@ -96,6 +96,13 @@ const findNodeByLabel = async (label: string): Promise<SnapshotNode | null> => {
   return snapshot.nodes.find((node) => node.label === label) ?? null;
 };
 
+const findNodeByPartialLabel = async (
+  label: string,
+): Promise<SnapshotNode | null> => {
+  const snapshot = await takeSnapshot();
+  return snapshot.nodes.find((node) => node.label?.includes(label)) ?? null;
+};
+
 const openUrl = async (url: string, udid: string): Promise<void> => {
   if (providedUdid) {
     try {
@@ -139,12 +146,14 @@ const clickNodeCenter = async (node: SnapshotNode): Promise<void> => {
   await client.interactions.click({ ...deviceOptions, ref: `@${node.ref}` });
 };
 
-const findNodeInViewport = async (label: string): Promise<SnapshotNode | null> => {
+const findPartialNodeInViewport = async (
+  label: string,
+): Promise<SnapshotNode | null> => {
   const snapshot = await takeSnapshot();
   const viewportHeight = snapshot.nodes[0]?.rect?.height ?? 852;
   return (
     snapshot.nodes.find((node) => {
-      if (node.label !== label || !node.rect) return false;
+      if (!node.label?.includes(label) || !node.rect) return false;
       const centerY = node.rect.y + node.rect.height / 2;
       return centerY >= 80 && centerY <= viewportHeight - 120;
     }) ?? null
@@ -153,10 +162,10 @@ const findNodeInViewport = async (label: string): Promise<SnapshotNode | null> =
 
 const scrollUntilNodeInViewport = async (label: string): Promise<SnapshotNode> => {
   for (let attempt = 0; attempt < 12; attempt += 1) {
-    const visibleNode = await findNodeInViewport(label);
+    const visibleNode = await findPartialNodeInViewport(label);
     if (visibleNode) return visibleNode;
 
-    const node = await findNodeByLabel(label);
+    const node = await findNodeByPartialLabel(label);
     const viewportHeight = (await takeSnapshot()).nodes[0]?.rect?.height ?? 852;
     const centerY = node?.rect ? node.rect.y + node.rect.height / 2 : viewportHeight;
     await client.interactions.scroll({
@@ -219,8 +228,7 @@ await client.command.wait({ ...deviceOptions, durationMs: 5000 });
 
 if (openViaScrolledPage) {
   console.log(`Opening ${targetTitle} from a scrolled page...`);
-  const triggerLabel = `Open details for ${targetTitle}`;
-  const trigger = await scrollUntilNodeInViewport(triggerLabel);
+  const trigger = await scrollUntilNodeInViewport(targetTitle);
   await clickNodeCenter(trigger);
 } else {
   console.log(`Waiting for ${targetTitle} details...`);
