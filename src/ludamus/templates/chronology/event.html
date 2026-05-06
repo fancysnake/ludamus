@@ -215,7 +215,9 @@
                 <h3 id="anonymousCodeModal-title" class="font-semibold text-foreground">{% translate "Enter Different Code" %}</h3>
                 <button data-modal-close="anonymousCodeModal"
                         class="p-1 rounded-lg hover:opacity-70 text-foreground-muted"
-                        aria-label="Close">{% icon "x-mark" class="w-5 h-5" variant="mini" %}</button>
+                        aria-label="{% translate "Close" %}">
+                    {% icon "x-mark" class="w-5 h-5" variant="mini" %}
+                </button>
             </div>
             <form method="post" action="{% url 'web:chronology:anonymous-load' %}">
                 <div class="px-6 py-4">
@@ -591,6 +593,7 @@
                     <h3 id="proposalModal{{ pending.pk }}-title"
                         class="text-lg font-semibold text-foreground">{{ pending.title }}</h3>
                     <button data-modal-close="proposalModal{{ pending.pk }}"
+                            aria-label="{% translate "Close" %}"
                             class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                         {% icon "x-mark" class="w-5 h-5" variant="mini" %}
                     </button>
@@ -651,8 +654,6 @@
                     {% endif %}
                 </div>
                 <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
-                    <button data-modal-close="proposalModal{{ pending.pk }}"
-                            class="btn btn-secondary text-sm">{% translate "Close" %}</button>
                     <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
                        class="btn btn-teal text-sm">{% icon "check" class="w-4 h-4" variant="mini" %} {% translate "Accept Proposal" %}</a>
                 </div>
@@ -669,6 +670,7 @@
                 <h3 id="session-{{ data.session.pk }}-title"
                     class="text-lg font-semibold text-foreground">{{ data.session.title }}</h3>
                 <button data-modal-close="session-{{ data.session.pk }}"
+                        aria-label="{% translate "Close" %}"
                         class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                     {% icon "x-mark" class="w-5 h-5" variant="mini" %}
                 </button>
@@ -908,11 +910,9 @@
                     {% endif %}
                 </div>
             </div>
-            <!-- Footer -->
-            <div class="px-6 py-4 flex justify-end gap-2 border-t border-border shrink-0">
-                <button data-modal-close="session-{{ data.session.pk }}"
-                        class="btn btn-secondary text-sm">{% translate "Close" %}</button>
-                {% if data.is_enrollment_available %}
+            {% if data.is_enrollment_available %}
+                <!-- Footer -->
+                <div class="px-6 py-4 flex justify-end gap-2 border-t border-border shrink-0">
                     {% if current_user %}
                         {% if data.user_enrolled or data.user_waiting %}
                             <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
@@ -945,8 +945,8 @@
                             {% icon "arrow-right-on-rectangle" class="w-4 h-4" variant="mini" %} {% translate "Login to Enroll" %}
                         </a>
                     {% endif %}
-                {% endif %}
-            </div>
+                </div>
+            {% endif %}
         </dialog>
     {% endfor %}
     <!-- Back to Events List -->

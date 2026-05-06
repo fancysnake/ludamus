@@ -47,12 +47,24 @@ const getScrollableAncestor = (
   return null;
 };
 
+const isModalControl = (
+  dialog: HTMLDialogElement,
+  element: Element,
+): boolean => {
+  const control = element.closest(
+    "button, a, input, select, textarea, [role='button'], [tabindex]",
+  );
+
+  return control !== null && dialog.contains(control);
+};
+
 const canAllowModalTouchMove =
   (dialog: HTMLDialogElement) =>
   (element: HTMLElement | Element): boolean =>
     element instanceof Element &&
     dialog.contains(element) &&
-    getScrollableAncestor(dialog, element) !== null;
+    (isModalControl(dialog, element) ||
+      getScrollableAncestor(dialog, element) !== null);
 
 const syncPageScrollLock = (): void => {
   const openDialogs = [
