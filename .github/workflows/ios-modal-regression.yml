@@ -31,6 +31,9 @@ jobs:
       - name: Install agent-device
         run: bun install -g agent-device@0.14.7
 
+      - name: Warm up CoreSimulator
+        run: xcrun simctl list devices -j > /dev/null
+
       - name: Start local e2e server
         run: |
           mise run boot-e2e > ios-modal-server.log 2>&1 &
