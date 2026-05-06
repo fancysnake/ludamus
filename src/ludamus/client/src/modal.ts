@@ -281,18 +281,38 @@ if (navigation) {
   });
 }
 
-document.addEventListener("click", (event) => {
+const stopModalCloseEvent = (event: Event): void => {
+  event.preventDefault();
+  event.stopPropagation();
+  if ("stopImmediatePropagation" in event) {
+    event.stopImmediatePropagation();
+  }
+};
+
+const closeFromTrigger = (event: Event): void => {
   const eventTarget = event.target;
   if (!(eventTarget instanceof Element)) return;
 
   const closeTrigger = eventTarget.closest("[data-modal-close]");
-  if (closeTrigger) {
-    const id = closeTrigger.getAttribute("data-modal-close");
-    if (id) {
-      closeModal(id);
-      return;
-    }
-  }
+  if (!closeTrigger) return;
+
+  const id = closeTrigger.getAttribute("data-modal-close");
+  if (!id) return;
+
+  stopModalCloseEvent(event);
+  closeModal(id);
+};
+
+const setupModalCloseTriggers = (): void => {
+  document.querySelectorAll("[data-modal-close]").forEach((trigger) => {
+    trigger.addEventListener("touchend", closeFromTrigger, { capture: true });
+    trigger.addEventListener("click", closeFromTrigger, { capture: true });
+  });
+};
+
+document.addEventListener("click", (event) => {
+  const eventTarget = event.target;
+  if (!(eventTarget instanceof Element)) return;
 
   // Fallback link interception handled by setupFallbackLinkHandlers below.
 
@@ -315,6 +335,7 @@ document.addEventListener("click", (event) => {
 window.addEventListener("popstate", syncModalsFromUrl);
 
 syncModalsFromUrl();
+setupModalCloseTriggers();
 
 // In browsers without Navigation API (WebKit, older Firefox), attach click
 // handlers directly to modal-trigger links so preventDefault fires before

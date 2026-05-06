@@ -170,12 +170,20 @@ if (!contentInitiallyVisible) {
   );
 }
 
-console.log("Pressing Close...");
+console.log("Tapping Close...");
 const closeButton = await findVisibleNode("Close");
 if (!closeButton) {
   throw new Error('Could not find visible target: Close');
 }
-await client.interactions.press({ ...deviceOptions, ref: `@${closeButton.ref}` });
+if (closeButton.rect) {
+  await client.interactions.click({
+    ...deviceOptions,
+    x: closeButton.rect.x + closeButton.rect.width / 2,
+    y: closeButton.rect.y + closeButton.rect.height / 2,
+  });
+} else {
+  await client.interactions.click({ ...deviceOptions, ref: `@${closeButton.ref}` });
+}
 await client.command.wait({ ...deviceOptions, durationMs: 1000 });
 
 if (await hasVisibleText("Close")) {
