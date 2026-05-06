@@ -9,7 +9,7 @@ on:
       - "src/ludamus/templates/**"
       - "tests/e2e/**"
       - "scripts/reproduce-ios-modal-bugs.*"
-      - ".github/workflows/ios-modal-regression.yml"
+      - ".github/workflows/mobile.yml"
 
 permissions:
   contents: read

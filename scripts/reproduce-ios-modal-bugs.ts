@@ -92,9 +92,53 @@ const hasVisibleText = async (text: string): Promise<boolean> => {
   return labels.some((label) => label.includes(text));
 };
 
-const findVisibleNode = async (label: string): Promise<SnapshotNode | null> => {
+const findNodeByLabel = async (label: string): Promise<SnapshotNode | null> => {
   const snapshot = await takeSnapshot();
   return snapshot.nodes.find((node) => node.label === label) ?? null;
+};
+
+const clickNodeCenter = async (node: SnapshotNode): Promise<void> => {
+  if (node.rect) {
+    await client.interactions.click({
+      ...deviceOptions,
+      x: node.rect.x + node.rect.width / 2,
+      y: node.rect.y + node.rect.height / 2,
+    });
+    return;
+  }
+
+  await client.interactions.click({ ...deviceOptions, ref: `@${node.ref}` });
+};
+
+const findNodeInViewport = async (label: string): Promise<SnapshotNode | null> => {
+  const snapshot = await takeSnapshot();
+  const viewportHeight = snapshot.nodes[0]?.rect?.height ?? 852;
+  return (
+    snapshot.nodes.find((node) => {
+      if (node.label !== label || !node.rect) return false;
+      const centerY = node.rect.y + node.rect.height / 2;
+      return centerY >= 80 && centerY <= viewportHeight - 120;
+    }) ?? null
+  );
+};
+
+const scrollUntilNodeInViewport = async (label: string): Promise<SnapshotNode> => {
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const visibleNode = await findNodeInViewport(label);
+    if (visibleNode) return visibleNode;
+
+    const node = await findNodeByLabel(label);
+    const viewportHeight = (await takeSnapshot()).nodes[0]?.rect?.height ?? 852;
+    const centerY = node?.rect ? node.rect.y + node.rect.height / 2 : viewportHeight;
+    await client.interactions.scroll({
+      ...deviceOptions,
+      direction: centerY > viewportHeight - 120 ? "down" : "up",
+      pixels: 450,
+    });
+    await client.command.wait({ ...deviceOptions, durationMs: 300 });
+  }
+
+  throw new Error(`Could not bring ${label} into the viewport`);
 };
 
 const closeSessionIfPresent = async (name: string): Promise<void> => {
@@ -136,13 +180,15 @@ console.log(`Preparing iOS simulator ${providedUdid ?? deviceName}...`);
 const udid = await ensureSimulator();
 console.log(`Using simulator UDID: ${udid}`);
 
-const modalUrl = `${baseUrl}${eventPath}?${targetQueryParam}`;
-console.log(`Opening Safari at ${modalUrl}...`);
+const eventUrl = `${baseUrl}${eventPath}`;
+const modalUrl = `${eventUrl}?${targetQueryParam}`;
+const openViaScrolledPage = env.OPEN_VIA_SCROLLED_PAGE !== "0";
+console.log(`Opening Safari at ${openViaScrolledPage ? eventUrl : modalUrl}...`);
 try {
   await client.apps.open({
     ...deviceOptions,
     app: "Safari",
-    url: modalUrl,
+    url: openViaScrolledPage ? eventUrl : modalUrl,
   });
 } catch (error) {
   console.warn(
@@ -153,7 +199,15 @@ try {
 
 await client.command.wait({ ...deviceOptions, text: eventTitle, timeoutMs: 15000 });
 
-console.log(`Waiting for ${targetTitle} details...`);
+if (openViaScrolledPage) {
+  console.log(`Opening ${targetTitle} from a scrolled page...`);
+  const triggerLabel = `Open details for ${targetTitle}`;
+  const trigger = await scrollUntilNodeInViewport(triggerLabel);
+  await clickNodeCenter(trigger);
+} else {
+  console.log(`Waiting for ${targetTitle} details...`);
+}
+
 await client.command.wait({
   ...deviceOptions,
   selector: 'label="Close"',
@@ -171,19 +225,11 @@ if (!contentInitiallyVisible) {
 }
 
 console.log("Tapping Close...");
-const closeButton = await findVisibleNode("Close");
+const closeButton = await findNodeByLabel("Close");
 if (!closeButton) {
   throw new Error('Could not find visible target: Close');
 }
-if (closeButton.rect) {
-  await client.interactions.click({
-    ...deviceOptions,
-    x: closeButton.rect.x + closeButton.rect.width / 2,
-    y: closeButton.rect.y + closeButton.rect.height / 2,
-  });
-} else {
-  await client.interactions.click({ ...deviceOptions, ref: `@${closeButton.ref}` });
-}
+await clickNodeCenter(closeButton);
 await client.command.wait({ ...deviceOptions, durationMs: 1000 });
 
 if (await hasVisibleText("Close")) {
