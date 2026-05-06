@@ -7,6 +7,7 @@ import type {
   AgentDeviceClient,
   AgentDeviceSelectionOptions,
   CaptureSnapshotResult,
+  SnapshotNode,
 } from "agent-device";
 
 type AgentDeviceModule = typeof import("agent-device");
@@ -137,11 +138,18 @@ console.log(`Using simulator UDID: ${udid}`);
 
 const modalUrl = `${baseUrl}${eventPath}?${targetQueryParam}`;
 console.log(`Opening Safari at ${modalUrl}...`);
-await client.apps.open({
-  ...deviceOptions,
-  app: "Safari",
-  url: modalUrl,
-});
+try {
+  await client.apps.open({
+    ...deviceOptions,
+    app: "Safari",
+    url: modalUrl,
+  });
+} catch (error) {
+  console.warn(
+    "Safari reported a URL open failure; continuing because iOS Simulator can time out after Safari has already loaded the page.",
+    error,
+  );
+}
 
 await client.command.wait({ ...deviceOptions, text: eventTitle, timeoutMs: 15000 });
 
