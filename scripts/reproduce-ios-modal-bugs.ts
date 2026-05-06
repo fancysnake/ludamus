@@ -20,7 +20,6 @@ const env = process.env;
 const baseUrl = env.BASE_URL ?? "http://localhost:8000";
 const session = env.SESSION ?? "zagrajmy-ios-modal-local";
 const targetTitle = env.TARGET_SESSION_TITLE ?? "Przygoda w Mieście Neonów";
-const eventTitle = env.EVENT_TITLE ?? "Autumn Open Playtest";
 const eventPath = env.EVENT_PATH ?? "/chronology/event/autumn-open/";
 const targetQueryParam = env.TARGET_QUERY_PARAM ?? "session=3";
 const deviceName = env.IOS_DEVICE_NAME ?? "iPhone 16";
@@ -216,7 +215,7 @@ const openViaScrolledPage = env.OPEN_VIA_SCROLLED_PAGE !== "0";
 console.log(`Opening Safari at ${openViaScrolledPage ? eventUrl : modalUrl}...`);
 await openUrl(openViaScrolledPage ? eventUrl : modalUrl, udid);
 
-await client.command.wait({ ...deviceOptions, text: eventTitle, timeoutMs: 20000 });
+await client.command.wait({ ...deviceOptions, durationMs: 5000 });
 
 if (openViaScrolledPage) {
   console.log(`Opening ${targetTitle} from a scrolled page...`);
