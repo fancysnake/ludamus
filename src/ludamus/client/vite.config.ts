@@ -34,7 +34,7 @@ export default defineConfig({
     strictPort: true,
     cors: {
       origin:
-        /^https?:\/\/(localhost|127\.0\.0\.1|[a-z0-9-]+\.(localhost|local))(:\d+)?$/,
+        /^https?:\/\/(localhost|127\.0\.0\.1|([a-z0-9-]+\.)+(localhost|local))(:\d+)?$/,
     },
   },
   build: {
