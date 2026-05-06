@@ -62,7 +62,9 @@ class TestRequestContextMiddleware:
         host, get_response_mock, middleware, rf, settings
     ):
         settings.ENV = "development"
-        settings.ALLOWED_HOSTS.extend([".localhost", ".local", "localhost", "127.0.0.1"])
+        settings.ALLOWED_HOSTS.extend(
+            [".localhost", ".local", "localhost", "127.0.0.1"]
+        )
         request = rf.get("/")
         request.META["HTTP_HOST"] = host
         request.di = DependencyInjector()
