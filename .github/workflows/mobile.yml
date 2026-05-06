@@ -31,8 +31,34 @@ jobs:
       - name: Install agent-device
         run: bun install -g agent-device@0.14.7
 
-      - name: Warm up CoreSimulator
-        run: xcrun simctl list devices -j > /dev/null
+      - name: Prepare iOS simulator
+        run: |
+          UDID=$(python - <<'PY'
+          import json
+          import subprocess
+
+          output = subprocess.check_output([
+              "xcrun",
+              "simctl",
+              "list",
+              "devices",
+              "available",
+              "-j",
+          ])
+          devices = [
+              device
+              for runtime_devices in json.loads(output)["devices"].values()
+              for device in runtime_devices
+              if device.get("isAvailable") and "iPhone" in device.get("name", "")
+          ]
+          preferred = next((device for device in devices if device["name"] == "iPhone 16"), None)
+          selected = preferred or devices[0]
+          print(selected["udid"])
+          PY
+          )
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
 
       - name: Start local e2e server
         run: |
