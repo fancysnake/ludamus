@@ -1,0 +1,72 @@
+---
+name: iOS Modal Regression
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/ludamus/client/**"
+      - "src/ludamus/templates/**"
+      - "tests/e2e/**"
+      - "scripts/reproduce-ios-modal-bugs.*"
+      - ".github/workflows/ios-modal-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ios-modal-regression:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: mise install
+      - run: mise run p install
+
+      - name: Install agent-device
+        run: bun install -g agent-device@0.14.7
+
+      - name: Start local e2e server
+        run: |
+          mise run boot-e2e > ios-modal-server.log 2>&1 &
+          echo $! > ios-modal-server.pid
+
+      - name: Wait for local e2e server
+        run: |
+          for attempt in {1..90}; do
+            if curl --fail --silent --show-error http://localhost:8000/chronology/event/autumn-open/ > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Local e2e server did not become ready" >&2
+          tail -200 ios-modal-server.log >&2
+          exit 1
+
+      - name: Run iOS Safari modal regression
+        env:
+          BASE_URL: http://localhost:8000
+          IOS_DEVICE_NAME: iPhone 16
+          SESSION: ios-modal-regression
+        run: scripts/reproduce-ios-modal-bugs.ts
+
+      - name: Stop local e2e server
+        if: always()
+        run: |
+          if [ -f ios-modal-server.pid ]; then
+            kill "$(cat ios-modal-server.pid)" || true
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: ios-modal-regression-logs
+          path: |
+            ios-modal-server.log
+            ~/.agent-device/logs/
+          retention-days: 14

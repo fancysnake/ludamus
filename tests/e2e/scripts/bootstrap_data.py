@@ -35,12 +35,15 @@ from ludamus.adapters.db.django.models import (  # noqa: E402
     Encounter,
     EnrollmentConfig,
     Event,
+    ProposalCategory,
     Session,
     Space,
     Sphere,
+    TimeSlot,
     User,
     Venue,
 )
+from ludamus.pacts import SessionStatus  # noqa: E402
 
 
 def _create_site(domain: str, *, name: str) -> tuple[Site, Sphere]:
@@ -168,33 +171,12 @@ def _create_session(
     return session
 
 
-def _create_test_user() -> User:
-    """Create a test user and persist a session cookie file for Playwright.
-
-    Returns:
-        The created User instance.
-    """
-    user = User.objects.create_user(
-        username="e2e-tester",
-        email="e2e@test.local",
-        password="e2e-password-123",
-        name="E2E Tester",
-        slug="e2e-tester",
-        avatar_url="https://i.pravatar.cc/96?u=e2e",
-    )
-
-    # Create a Django session for this user
+def _write_storage_state(user: User, *, domain: str, path: Path) -> None:
     session = SessionStore()
     session["_auth_user_id"] = str(user.pk)
     session["_auth_user_backend"] = "django.contrib.auth.backends.ModelBackend"
     session["_auth_user_hash"] = user.get_session_auth_hash()
     session.create()
-
-    # Write Playwright storageState JSON
-    base_url = os.environ.get("E2E_BASE_URL", "http://localhost:8000")
-
-    parsed = urlparse(base_url)
-    domain = parsed.hostname or "localhost"
 
     storage_state = {
         "cookies": [
@@ -210,9 +192,29 @@ def _create_test_user() -> User:
         ],
         "origins": [],
     }
+    path.write_text(json.dumps(storage_state, indent=2), encoding="utf-8")
 
+
+def _create_test_user() -> User:
+    """Create a test user and persist a session cookie file for Playwright.
+
+    Returns:
+        The created User instance.
+    """
+    user = User.objects.create_user(
+        username="e2e-tester",
+        email="e2e@test.local",
+        password="e2e-password-123",
+        name="E2E Tester",
+        slug="e2e-tester",
+        avatar_url="https://i.pravatar.cc/96?u=e2e",
+    )
+
+    base_url = os.environ.get("E2E_BASE_URL", "http://localhost:8000")
+    parsed = urlparse(base_url)
+    domain = parsed.hostname or "localhost"
     state_path = REPO_ROOT / "tests" / "e2e" / ".auth-state.json"
-    state_path.write_text(json.dumps(storage_state, indent=2))
+    _write_storage_state(user, domain=domain, path=state_path)
 
     return user
 
@@ -233,6 +235,20 @@ def main() -> None:
 
     # Test user for authenticated e2e tests
     _create_test_user()
+
+    superuser = User.objects.create_superuser(
+        username="e2e-superuser",
+        email="e2e-superuser@test.local",
+        password="e2e-superuser-123",
+        name="E2E Superuser",
+        slug="e2e-superuser",
+    )
+    base_url = os.environ.get("E2E_BASE_URL", "http://localhost:8000")
+    parsed = urlparse(base_url)
+    superuser_state_path = REPO_ROOT / "tests" / "e2e" / ".auth-state-superuser.json"
+    _write_storage_state(
+        superuser, domain=parsed.hostname or "localhost", path=superuser_state_path
+    )
 
     # Staff manager user for panel e2e tests (logs in via /admin/)
     manager = User.objects.create_user(
@@ -349,6 +365,8 @@ def main() -> None:
         lounge_area, name="Fireside Alcove", slug="fireside-alcove", capacity=12
     )
 
+    tester = User.objects.get(username="e2e-tester")
+
     _create_session(
         sphere,
         upcoming_event,
@@ -372,6 +390,55 @@ def main() -> None:
         start_offset=timedelta(hours=2),
         duration_hours=1,
     )
+
+    _create_session(
+        sphere,
+        upcoming_event,
+        fireside_space,
+        title="Przygoda w Mieście Neonów",
+        slug="neon-city-adventure",
+        presenter="Radek MG",
+        description=(
+            'Przygoda w stylu filmu "Jumanji". Na strychu znajdujecie grę '
+            "komputerową z lat 90 o wojnach gangów w cyberpunkowym Mieście "
+            "Neonów. Gdy próbujecie w nią zagrać, gra wciąga was w swój "
+            "wirtualny świat, gdzie jako wybrane postaci zmierzycie się z "
+            "okrutnym Bossem Akimurą i jego armią cyberninja."
+        ),
+        start_offset=timedelta(hours=3),
+        duration_hours=1,
+    )
+
+    proposal_category = ProposalCategory.objects.create(
+        event=upcoming_event,
+        name="RPG Proposals",
+        slug="rpg-proposals",
+        min_participants_limit=1,
+        max_participants_limit=6,
+        durations=["PT1H"],
+    )
+    proposal_slot = TimeSlot.objects.create(
+        event=upcoming_event,
+        start_time=upcoming_event.start_time + timedelta(hours=1),
+        end_time=upcoming_event.start_time + timedelta(hours=2),
+    )
+    pending_session = Session.objects.create(
+        sphere=sphere,
+        presenter=tester,
+        display_name="E2E Tester",
+        contact_email="e2e@test.local",
+        category=proposal_category,
+        title="Pending Neon Proposal",
+        slug="pending-neon-proposal",
+        description="Proposal review modal content used by e2e tests.",
+        requirements="Bring a charged phone.",
+        needs="Quiet corner preferred.",
+        duration="PT1H",
+        participants_limit=4,
+        min_age=12,
+        status=SessionStatus.PENDING,
+    )
+    pending_session.time_slots.add(proposal_slot)
 
     past_event = _create_event(
         sphere,
@@ -402,7 +469,6 @@ def main() -> None:
 
     # Seed encounter owned by the e2e-tester user. Used by e2e tests covering
     # the organizer-only QR-share dialog on the notice-board encounter detail.
-    tester = User.objects.get(username="e2e-tester")
     Encounter.objects.create(
         sphere=sphere,
         creator=tester,

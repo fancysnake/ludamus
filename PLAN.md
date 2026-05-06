@@ -1,29 +1,29 @@
-# iOS staging reproduction plan
+# iOS modal reproduction plan
 
-Target: iOS Simulator, Safari, `https://test.zagrajmy.net`.
+Target: iOS Simulator, Safari, `http://localhost:8000` by default.
 
 ## Reproduction steps
 
-Run:
+Start the local e2e server:
 
 ```bash
-scripts/reproduce-ios-modal-bugs.sh
+mise run boot-e2e
 ```
 
-The script uses the remaining iOS 26.4 `iPhone 17 Pro` simulator by default:
+In another shell, run:
 
-`DB367B59-DFC1-4DE9-B1AF-C5FDD2F5985F`
+```bash
+scripts/reproduce-ios-modal-bugs.ts
+```
 
-Override with `UDID=...`, `SESSION=...`, or `BASE_URL=...` if needed.
+The script uses local e2e seed data:
 
-It:
+1. Opens Safari at `http://localhost:8000/chronology/event/autumn-open/?session=3`.
+2. Waits for **Przygoda w Mieście Neonów** details.
+3. Checks whether **About this session** / **Przygoda w stylu filmu** content is visible immediately.
+4. Tries to click the top-right **X / Close** button.
 
-1. Opens Safari at `https://test.zagrajmy.net`.
-2. Opens the first past event: **Sesje RPG w Mistrzu i Małgorzacie**.
-3. Scrolls down until **Przygoda w Mieście Neonów** is visible.
-4. Clicks **Open details for Przygoda w Mieście Neonów**.
-5. Swipes down to bring the modal content into view.
-6. Tries to click the top-right **X / Close** button.
+Override with `BASE_URL=...`, `UDID=...`, `SESSION=...`, `IOS_DEVICE_NAME=...`, `IOS_RUNTIME=...`, `EVENT_PATH=...`, `EVENT_TITLE=...`, or `TARGET_SESSION_TITLE=...` if needed.
 
 ## Bugs observed
 

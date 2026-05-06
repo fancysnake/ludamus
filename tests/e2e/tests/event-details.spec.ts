@@ -17,7 +17,7 @@ test.describe('Event detail page', () => {
 
   test('renders session cards with locations and opens detail modal', async ({ page }) => {
     const sessionCards = page.locator('.session-card');
-    await expect(sessionCards).toHaveCount(2);
+    await expect(sessionCards).toHaveCount(3);
 
     const megaStrategyCard = sessionCards.filter({ hasText: 'Mega Strategy Lab' });
     await expect(megaStrategyCard).toContainText('Convention Center');
@@ -65,9 +65,9 @@ test.describe('Event detail page', () => {
       });
       expect(pageScrollLocked).toBe(true);
 
-      // iOS turns the start of a tap into a touchmove. body-scroll-lock
-      // used to cancel touchmoves outside scrollable ancestors, which made
-      // the Close button untappable on iOS. Verify it's allowed now.
+      // iOS turns the start of a tap into a touchmove. The page-scroll lock
+      // must not cancel touchmoves on modal controls, because that makes the
+      // Close button untappable on iOS. Verify it's allowed now.
       const closeTouchMoveAllowed = await closeButton.evaluate((close) => {
         const move = new Event('touchmove', { bubbles: true, cancelable: true });
         Object.defineProperties(move, {
@@ -186,7 +186,24 @@ test.describe('Anonymous code modal', () => {
     await expect(dialog.getByLabel('Anonymous Code')).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Switch to This Code' })).toBeVisible();
 
+    const pageScrollLocked = await page.evaluate(() => {
+      const bodyOverflow = getComputedStyle(document.body).overflowY;
+      const bodyPosition = getComputedStyle(document.body).position;
+      return bodyOverflow === 'hidden' || bodyPosition === 'fixed';
+    });
+    expect(pageScrollLocked).toBe(true);
+
     await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('closes the code-entry dialog from the X button', async ({ page }) => {
+    await page.getByRole('link', { name: /Enter Different Code/ }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Enter Different Code' });
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Close' }).click();
     await expect(dialog).toBeHidden();
   });
 
