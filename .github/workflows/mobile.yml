@@ -84,7 +84,16 @@ jobs:
           BASE_URL: http://127.0.0.1:8000
           IOS_DEVICE_NAME: iPhone 16
           SESSION: ios-modal-regression
-        run: scripts/reproduce-ios-modal-bugs.ts
+        run: |
+          for attempt in 1 2; do
+            if scripts/reproduce-ios-modal-bugs.ts; then
+              exit 0
+            fi
+            echo "iOS modal regression attempt ${attempt} failed; retrying after simulator cleanup" >&2
+            xcrun simctl terminate "$UDID" com.apple.mobilesafari || true
+            sleep 15
+          done
+          exit 1
 
       - name: Stop local e2e server
         if: always()
