@@ -30,10 +30,11 @@ export default defineConfig({
   plugins: [djangoTemplateReload(), tailwindcss()],
   server: {
     host: "0.0.0.0",
-    port: 5173,
+    port: Number(process.env.VITE_PORT ?? 5173),
     strictPort: true,
     cors: {
-      origin: /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
+      origin:
+        /^https?:\/\/(localhost|127\.0\.0\.1|([a-z0-9-]+\.)+(localhost|local))(:\d+)?$/,
     },
   },
   build: {

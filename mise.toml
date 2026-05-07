@@ -246,7 +246,7 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; lsof -ti :5173 | xargs kill -
 
 [tasks.ts-check]
 description = "Type-check frontend TypeScript"
-run = "cd src/ludamus/client && npm typecheck"
+run = "cd src/ludamus/client && npm run typecheck"
 
 
 [tasks.npm]

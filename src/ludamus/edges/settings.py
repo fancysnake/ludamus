@@ -22,6 +22,7 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, ["localhost"]),
     ROOT_DOMAIN=(str, ""),
     SESSION_COOKIE_DOMAIN=(str, None),
+    VITE_PORT=(int, 5173),
     # Auth0
     AUTH0_CLIENT_ID=(str, ""),
     AUTH0_CLIENT_SECRET=(str, ""),
@@ -66,6 +67,11 @@ DEBUG = env("DEBUG")
 
 # Parse comma-separated allowed hosts for production
 ALLOWED_HOSTS: list[str] = env("ALLOWED_HOSTS")
+
+# Append localhost and its subdomains for development
+if ENV == "development":
+    ALLOWED_HOSTS.extend([".localhost", ".local", "localhost", "127.0.0.1"])
+
 SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN") or None
 
 # Application definition
@@ -422,7 +428,7 @@ DJANGO_VITE = {
     "default": {
         "dev_mode": ENV == "development" or ROOT_DOMAIN == "testserver",
         "dev_server_host": "localhost",
-        "dev_server_port": 5173,
+        "dev_server_port": env("VITE_PORT"),
         "static_url_prefix": "vite",
         "manifest_path": BASE_DIR / "static" / "vite" / "manifest.json",
     }
