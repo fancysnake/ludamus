@@ -170,19 +170,27 @@ const isNodeInViewport = (
   return centerY >= 80 && centerY <= viewportHeight - 120;
 };
 
+const isHiddenDialogLabel = (node: SnapshotNode): boolean =>
+  (node.label ?? "").includes("web dialog");
+
+const isTargetTitleNode = (node: SnapshotNode): boolean =>
+  Boolean(node.label?.includes(targetTitle)) && !isHiddenDialogLabel(node);
+
 const findTriggerInViewport = (
   snapshot: CaptureSnapshotResult,
 ): SnapshotNode | null =>
   snapshot.nodes.find(
-    (node) => node.label === targetTriggerLabel && isNodeInViewport(snapshot, node),
+    (node) =>
+      node.label === targetTriggerLabel &&
+      !isHiddenDialogLabel(node) &&
+      isNodeInViewport(snapshot, node),
   ) ?? null;
 
-const findPartialNodeInViewport = (
+const findTargetTitleInViewport = (
   snapshot: CaptureSnapshotResult,
-  label: string,
 ): SnapshotNode | null =>
   snapshot.nodes.find(
-    (node) => node.label?.includes(label) && isNodeInViewport(snapshot, node),
+    (node) => isTargetTitleNode(node) && isNodeInViewport(snapshot, node),
   ) ?? null;
 
 const scrollUntilTriggerInViewport = async (): Promise<SnapshotNode> => {
@@ -191,7 +199,7 @@ const scrollUntilTriggerInViewport = async (): Promise<SnapshotNode> => {
     const trigger = findTriggerInViewport(snapshot);
     if (trigger) return trigger;
 
-    const visibleTitle = findPartialNodeInViewport(snapshot, targetTitle);
+    const visibleTitle = findTargetTitleInViewport(snapshot);
     if (visibleTitle) {
       console.warn(
         `The target session title is visible but the link ${JSON.stringify(
@@ -202,8 +210,10 @@ const scrollUntilTriggerInViewport = async (): Promise<SnapshotNode> => {
     }
 
     const node =
-      snapshot.nodes.find((candidate) => candidate.label === targetTriggerLabel) ??
-      snapshot.nodes.find((candidate) => candidate.label?.includes(targetTitle));
+      snapshot.nodes.find(
+        (candidate) =>
+          candidate.label === targetTriggerLabel && !isHiddenDialogLabel(candidate),
+      ) ?? snapshot.nodes.find(isTargetTitleNode);
     const viewportHeight = snapshot.nodes[0]?.rect?.height ?? 852;
     const centerY = node?.rect ? node.rect.y + node.rect.height / 2 : viewportHeight;
     await client.interactions.scroll({
