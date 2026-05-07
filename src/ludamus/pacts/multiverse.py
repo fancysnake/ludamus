@@ -7,9 +7,10 @@ backoffice). Split per `plans/hex_refactor.md` if the file grows past
 
 from datetime import datetime
 from enum import StrEnum
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, Protocol, TypedDict
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
     from ludamus.pacts.legacy import EventDTO
@@ -27,13 +28,22 @@ class CheckResult(BaseModel):
     detail: str
 
 
+_CREDENTIAL_AUTH_ERROR_MESSAGES: MappingProxyType[CheckStatus, str] = MappingProxyType(
+    {
+        "auth_failed": "Credential authentication failed: {detail}",
+        "network_error": "Could not reach the provider to verify credentials: {detail}",
+        "ok": "Credential check returned ok unexpectedly: {detail}",
+    }
+)
+
+
 class CredentialAuthError(Exception):
     """Raised when a credential auth check returns a non-`ok` status."""
 
     def __init__(self, status: CheckStatus, detail: str) -> None:
-        super().__init__(f"{status}: {detail}")
         self.status = status
         self.detail = detail
+        super().__init__(_CREDENTIAL_AUTH_ERROR_MESSAGES[status].format(detail=detail))
 
 
 class ConnectionDTO(BaseModel):
@@ -44,16 +54,9 @@ class ConnectionDTO(BaseModel):
     service: ConnectionProvider
     display_name: str
     has_credentials: bool
-    last_tested_status: CheckStatus | None = None
-    last_tested_detail: str | None = None
-    last_tested_at: datetime | None = None
-
-    @field_validator("last_tested_status", "last_tested_detail", mode="before")
-    @classmethod
-    def _empty_string_is_none(cls, value: object) -> object:
-        # Model columns default to "" for "never tested" — surface that
-        # absence as None on the DTO.
-        return value or None
+    last_check_status: str = ""
+    last_check_detail: str = ""
+    last_check_at: datetime | None = None
 
 
 class ConnectionWriteDict(TypedDict):
@@ -73,7 +76,7 @@ class ConnectionsRepositoryProtocol(Protocol):
     @staticmethod
     def update_credentials(sphere_id: int, pk: int, blob: bytes) -> None: ...
     @staticmethod
-    def record_test(sphere_id: int, pk: int, result: CheckResult) -> None: ...
+    def update_last_check(sphere_id: int, pk: int, result: CheckResult) -> None: ...
     @staticmethod
     def delete(sphere_id: int, pk: int) -> None: ...
 

@@ -1372,9 +1372,18 @@ class Connection(models.Model):
     # Encrypted credentials. Write-only at the repo surface — the
     # decrypt path is owned by the import-execution slice.
     credentials = models.BinaryField(default=b"")
-    last_tested_status = models.CharField(max_length=32, default="", blank=True)
-    last_tested_detail = models.TextField(default="", blank=True)
-    last_tested_at = models.DateTimeField(null=True, blank=True)
+    last_check_status = models.CharField(
+        max_length=32,
+        choices=[
+            ("ok", _("OK")),
+            ("auth_failed", _("Authentication failed")),
+            ("network_error", _("Network error")),
+        ],
+        default="",
+        blank=True,
+    )
+    last_check_detail = models.TextField(default="", blank=True)
+    last_check_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "connection"

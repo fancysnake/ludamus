@@ -56,7 +56,7 @@ class ConnectionsService:
             connection = self._connections.create(sphere_id, data)
             if credentials_plaintext is not None:
                 result = self._docs_api.check_credentials(credentials_plaintext)
-                self._connections.record_test(sphere_id, connection.pk, result)
+                self._connections.update_last_check(sphere_id, connection.pk, result)
                 if result.status != "ok":
                     raise CredentialAuthError(result.status, result.detail)
                 blob = self._encryptor.encrypt(credentials_plaintext)
@@ -74,7 +74,7 @@ class ConnectionsService:
             connection = self._connections.update(sphere_id, pk, data)
             if credentials_plaintext is not None:
                 result = self._docs_api.check_credentials(credentials_plaintext)
-                self._connections.record_test(sphere_id, pk, result)
+                self._connections.update_last_check(sphere_id, pk, result)
                 if result.status != "ok":
                     raise CredentialAuthError(result.status, result.detail)
                 blob = self._encryptor.encrypt(credentials_plaintext)

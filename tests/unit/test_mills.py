@@ -820,7 +820,7 @@ class TestConnectionsService:
         assert result is created
         connections.create.assert_called_once_with(7, data)
         connections.update_credentials.assert_not_called()
-        connections.record_test.assert_not_called()
+        connections.update_last_check.assert_not_called()
         assert docs_api.calls == []
         transaction.atomic.assert_called_once_with()
 
@@ -835,7 +835,7 @@ class TestConnectionsService:
 
         assert result is created
         assert docs_api.calls == [b"secret"]
-        connections.record_test.assert_called_once_with(7, 42, docs_api.result)
+        connections.update_last_check.assert_called_once_with(7, 42, docs_api.result)
         connections.create.assert_called_once_with(7, data)
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:secret")
         transaction.atomic.assert_called_once_with()
@@ -852,7 +852,7 @@ class TestConnectionsService:
             service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
 
         assert caught.value.status == "auth_failed"
-        connections.record_test.assert_called_once_with(7, 42, docs_api.result)
+        connections.update_last_check.assert_called_once_with(7, 42, docs_api.result)
         connections.update_credentials.assert_not_called()
 
     def test_update_without_credentials_skips_encrypt(
@@ -867,7 +867,7 @@ class TestConnectionsService:
         assert result is updated
         connections.update.assert_called_once_with(7, 42, data)
         connections.update_credentials.assert_not_called()
-        connections.record_test.assert_not_called()
+        connections.update_last_check.assert_not_called()
         assert docs_api.calls == []
         transaction.atomic.assert_called_once_with()
 
@@ -884,7 +884,7 @@ class TestConnectionsService:
 
         assert result is updated
         assert docs_api.calls == [b"fresh"]
-        connections.record_test.assert_called_once_with(7, 42, docs_api.result)
+        connections.update_last_check.assert_called_once_with(7, 42, docs_api.result)
         connections.update.assert_called_once_with(7, 42, data)
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:fresh")
         transaction.atomic.assert_called_once_with()
@@ -901,7 +901,7 @@ class TestConnectionsService:
             service.update(sphere_id=7, pk=42, data=data, credentials_plaintext=b"x")
 
         assert caught.value.status == "network_error"
-        connections.record_test.assert_called_once_with(7, 42, docs_api.result)
+        connections.update_last_check.assert_called_once_with(7, 42, docs_api.result)
         connections.update_credentials.assert_not_called()
 
     def test_delete_calls_repo_in_transaction(self, service, connections, transaction):

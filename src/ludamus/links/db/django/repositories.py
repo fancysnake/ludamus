@@ -2669,11 +2669,11 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
             raise NotFoundError
 
     @staticmethod
-    def record_test(sphere_id: int, pk: int, result: CheckResult) -> None:
+    def update_last_check(sphere_id: int, pk: int, result: CheckResult) -> None:
         updated = Connection.objects.filter(pk=pk, sphere_id=sphere_id).update(
-            last_tested_status=result.status,
-            last_tested_detail=result.detail,
-            last_tested_at=timezone.now(),
+            last_check_status=result.status,
+            last_check_detail=result.detail,
+            last_check_at=timezone.now(),
         )
         if not updated:
             raise NotFoundError

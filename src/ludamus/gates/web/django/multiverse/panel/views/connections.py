@@ -34,18 +34,6 @@ def _connection_not_found() -> RedirectError:
     )
 
 
-def _credential_auth_error_message(exc: CredentialAuthError) -> str:
-    if exc.status == "auth_failed":
-        return _("Credential authentication failed: %(detail)s") % {
-            "detail": exc.detail
-        }
-    if exc.status == "network_error":
-        return _("Could not reach Google to verify credentials: %(detail)s") % {
-            "detail": exc.detail
-        }
-    return _("Credential check failed: %(detail)s") % {"detail": exc.detail}
-
-
 class ConnectionsPageView(SphereAccessMixin, View):
     """List import connections for the current sphere."""
 
@@ -99,7 +87,7 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
         try:
             self.request.services.connections.create(sphere_id, data)
         except CredentialAuthError as exc:
-            form.add_error(None, _credential_auth_error_message(exc))
+            form.add_error(None, str(exc))
             return TemplateResponse(
                 self.request,
                 "multiverse/panel/connections/create.html",
@@ -171,7 +159,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
         try:
             self.request.services.connections.update(sphere_id, pk, data, plaintext)
         except CredentialAuthError as exc:
-            form.add_error(None, _credential_auth_error_message(exc))
+            form.add_error(None, str(exc))
             return TemplateResponse(
                 self.request,
                 "multiverse/panel/connections/edit.html",
