@@ -30,12 +30,12 @@ test.describe('Event detail page', () => {
     await expect(detailDialog).toBeVisible();
     await expect(detailDialog).toContainText('Alex Morgan');
 
-    await detailDialog.getByRole('button', { name: 'Close' }).first().click();
+    await detailDialog.getByRole('button', { name: 'Close' }).click();
     await expect(detailDialog).toBeHidden();
   });
 
   test(
-    'keeps mobile session modal footer inside the clickable dialog bounds',
+    'mobile session modal closes on iOS tap (touchmove not cancelled)',
     async ({ browser, browserName }) => {
       test.skip(browserName === 'firefox', 'Firefox does not support mobile emulation');
       const context = await browser.newContext({
@@ -55,8 +55,8 @@ test.describe('Event detail page', () => {
       const detailDialog = page.getByRole('dialog', {
         name: 'Cozy Storytellers Circle',
       });
-      const footerClose = detailDialog.getByRole('button', { name: 'Close' });
-      await expect(footerClose).toBeInViewport();
+      const closeButton = detailDialog.getByRole('button', { name: 'Close' });
+      await expect(closeButton).toBeInViewport();
 
       const pageScrollLocked = await page.evaluate(() => {
         const bodyOverflow = getComputedStyle(document.body).overflowY;
@@ -65,26 +65,22 @@ test.describe('Event detail page', () => {
       });
       expect(pageScrollLocked).toBe(true);
 
-      const isFooterInsideDialog = await page.evaluate(() => {
-        const dialog = document.querySelector('dialog[open]');
-        const close = dialog?.querySelector('.btn[data-modal-close]');
-        if (!dialog || !close) return false;
+      // iOS turns the start of a tap into a touchmove. body-scroll-lock
+      // used to cancel touchmoves outside scrollable ancestors, which made
+      // the Close button untappable on iOS. Verify it's allowed now.
+      const closeTouchMoveAllowed = await closeButton.evaluate((close) => {
+        const move = new Event('touchmove', { bubbles: true, cancelable: true });
+        Object.defineProperties(move, {
+          targetTouches: { value: [{ clientY: 200 }] },
+          touches: { value: [{ clientY: 200 }] },
+        });
 
-        const dialogBox = dialog.getBoundingClientRect();
-        const closeBox = close.getBoundingClientRect();
-        const hit = document.elementFromPoint(
-          closeBox.left + closeBox.width / 2,
-          closeBox.top + closeBox.height / 2,
-        );
-
-        return (
-          closeBox.bottom <= dialogBox.bottom &&
-          (hit === close || close.contains(hit))
-        );
+        close.dispatchEvent(move);
+        return !move.defaultPrevented;
       });
-      expect(isFooterInsideDialog).toBe(true);
+      expect(closeTouchMoveAllowed).toBe(true);
 
-      await footerClose.click();
+      await closeButton.click();
       await expect(detailDialog).toBeHidden();
       await context.close();
     },
