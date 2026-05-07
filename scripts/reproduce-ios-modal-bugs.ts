@@ -96,22 +96,7 @@ const findNodeByLabel = async (label: string): Promise<SnapshotNode | null> => {
   return snapshot.nodes.find((node) => node.label === label) ?? null;
 };
 
-const openUrl = async (url: string, udid: string): Promise<void> => {
-  if (providedUdid) {
-    try {
-      execFileSync("xcrun", ["simctl", "openurl", udid, url], {
-        stdio: "inherit",
-        timeout: 30000,
-      });
-    } catch (error) {
-      console.warn(
-        "simctl reported a URL open failure; continuing because iOS Simulator can time out after Safari has already loaded the page.",
-        error,
-      );
-    }
-    return;
-  }
-
+const openUrlWithSafari = async (url: string): Promise<void> => {
   try {
     await client.apps.open({
       ...deviceOptions,
@@ -124,6 +109,27 @@ const openUrl = async (url: string, udid: string): Promise<void> => {
       error,
     );
   }
+};
+
+const openUrl = async (url: string, udid: string): Promise<void> => {
+  if (!providedUdid) {
+    await openUrlWithSafari(url);
+    return;
+  }
+
+  try {
+    execFileSync("xcrun", ["simctl", "openurl", udid, url], {
+      stdio: "inherit",
+      timeout: 10000,
+    });
+  } catch (error) {
+    console.warn(
+      "simctl reported a URL open failure; continuing because iOS Simulator can time out before Safari finishes loading.",
+      error,
+    );
+  }
+
+  await openUrlWithSafari(url);
 };
 
 const clickNodeCenter = async (node: SnapshotNode): Promise<void> => {
@@ -154,7 +160,7 @@ const findPartialNodeInViewport = (
 };
 
 const scrollUntilNodeInViewport = async (label: string): Promise<SnapshotNode> => {
-  for (let attempt = 0; attempt < 12; attempt += 1) {
+  for (let attempt = 0; attempt < 16; attempt += 1) {
     const snapshot = await takeSnapshot();
     const visibleNode = findPartialNodeInViewport(snapshot, label);
     if (visibleNode) return visibleNode;
@@ -205,8 +211,43 @@ const closeDeviceSessionIfPresent = async (): Promise<void> => {
   }
 };
 
+const assertEventPageReady = async (url: URL): Promise<void> => {
+  console.log(`Checking local event page at ${url.toString()}...`);
+  const deadline = Date.now() + 60000;
+  let lastError = "no response";
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url);
+      const text = await response.text();
+      if (response.ok && text.includes(targetTitle)) return;
+
+      lastError = `HTTP ${response.status}; body starts with ${JSON.stringify(
+        text.slice(0, 160),
+      )}`;
+      if (response.status >= 400 && response.status < 500) break;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  throw new Error(
+    `Local event page is not usable at ${url.toString()} (${lastError}). ` +
+      `Make sure the e2e server is running and serving seeded data for ${targetTitle}.`,
+  );
+};
+
+const eventUrl = new URL(eventPath, baseUrl);
+const modalUrl = new URL(eventUrl);
+for (const [key, value] of new URLSearchParams(targetQueryParam)) {
+  modalUrl.searchParams.set(key, value);
+}
+
 const failures: string[] = [];
 
+await assertEventPageReady(eventUrl);
 await closeSessionIfPresent(session);
 await closeDeviceSessionIfPresent();
 
@@ -214,11 +255,10 @@ console.log(`Preparing iOS simulator ${providedUdid ?? deviceName}...`);
 const udid = await ensureSimulator();
 console.log(`Using simulator UDID: ${udid}`);
 
-const eventUrl = `${baseUrl}${eventPath}`;
-const modalUrl = `${eventUrl}?${targetQueryParam}`;
 const openViaScrolledPage = env.OPEN_VIA_SCROLLED_PAGE !== "0";
-console.log(`Opening Safari at ${openViaScrolledPage ? eventUrl : modalUrl}...`);
-await openUrl(openViaScrolledPage ? eventUrl : modalUrl, udid);
+const initialUrl = openViaScrolledPage ? eventUrl : modalUrl;
+console.log(`Opening Safari at ${initialUrl.toString()}...`);
+await openUrl(initialUrl.toString(), udid);
 
 await client.command.wait({ ...deviceOptions, durationMs: 3000 });
 

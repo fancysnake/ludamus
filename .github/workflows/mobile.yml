@@ -81,7 +81,7 @@ jobs:
         env:
           AGENT_DEVICE_DAEMON_TIMEOUT_MS: 240000
           AGENT_DEVICE_DAEMON_STARTUP_TIMEOUT_MS: 30000
-          BASE_URL: http://127.0.0.1:8000
+          BASE_URL: http://localhost:8000
           IOS_DEVICE_NAME: iPhone 16
           SESSION: ios-modal-regression
         run: |

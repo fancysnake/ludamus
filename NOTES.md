@@ -100,6 +100,10 @@ Validation performed locally:
 
 The iOS regression script is run by `.github/workflows/mobile.yml` on macOS against the local e2e server.
 
+CI uses `http://localhost:8000`. `http://127.0.0.1:8000` returned Django `Bad Request (400)` under the e2e settings, so the script now preflights the event page before starting the simulator and fails fast if the page is not usable or the seed title is missing.
+
+The script still opens the modal from the scrolled event page, not from the direct `?session=...` shortcut.
+
 ## Notes for future debugging
 
 Useful search terms:
