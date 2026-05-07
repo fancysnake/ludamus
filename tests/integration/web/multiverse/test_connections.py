@@ -5,7 +5,8 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Connection
-from ludamus.pacts.multiverse import ConnectionDTO
+from ludamus.links.docs_api import google as google_docs_api
+from ludamus.pacts.multiverse import CheckResult, ConnectionDTO
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the sphere panel."
@@ -358,11 +359,16 @@ class TestConnectionEditPageView:
         assert bytes(connection.credentials) == b"old-blob"
 
     def test_post_replace_credentials_on_encrypts_and_persists(
-        self, authenticated_client, active_user, sphere
+        self, authenticated_client, active_user, sphere, monkeypatch
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
             sphere=sphere, service="google", display_name="Konto"
+        )
+        monkeypatch.setattr(
+            google_docs_api.GoogleDocsApi,
+            "check_credentials",
+            staticmethod(lambda _plaintext: CheckResult(status="ok", detail="stub-ok")),
         )
 
         response = authenticated_client.post(

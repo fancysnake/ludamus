@@ -30,7 +30,12 @@ from ludamus.pacts.chronology import (
     PersonalDataFieldEditContextDTO,
     PersonalDataFieldFormContextDTO,
 )
-from ludamus.pacts.multiverse import ConnectionDTO, ConnectionProvider
+from ludamus.pacts.multiverse import (
+    CheckResult,
+    ConnectionDTO,
+    ConnectionProvider,
+    CredentialAuthError,
+)
 
 
 def _personal_data_field(pk=1, slug="email", question="Q", name="Email"):
@@ -772,6 +777,16 @@ class _NoopEncryptor:
         return b"enc:" + plaintext
 
 
+class _StubDocsApi:
+    def __init__(self, result: CheckResult) -> None:
+        self.result = result
+        self.calls: list[bytes] = []
+
+    def check_credentials(self, plaintext: bytes) -> CheckResult:
+        self.calls.append(plaintext)
+        return self.result
+
+
 class TestConnectionsService:
     @pytest.fixture
     def connections(self):
@@ -786,11 +801,15 @@ class TestConnectionsService:
         return _NoopEncryptor()
 
     @pytest.fixture
-    def service(self, transaction, connections, encryptor):
-        return ConnectionsService(transaction, connections, encryptor)
+    def docs_api(self):
+        return _StubDocsApi(CheckResult(status="ok", detail="ok"))
+
+    @pytest.fixture
+    def service(self, transaction, connections, encryptor, docs_api):
+        return ConnectionsService(transaction, connections, encryptor, docs_api)
 
     def test_create_without_credentials_skips_encrypt(
-        self, service, connections, transaction
+        self, service, connections, transaction, docs_api
     ):
         created = _connection_dto(pk=42)
         connections.create.return_value = created
@@ -801,10 +820,12 @@ class TestConnectionsService:
         assert result is created
         connections.create.assert_called_once_with(7, data)
         connections.update_credentials.assert_not_called()
+        connections.record_test.assert_not_called()
+        assert docs_api.calls == []
         transaction.atomic.assert_called_once_with()
 
-    def test_create_with_credentials_encrypts_then_persists(
-        self, service, connections, transaction
+    def test_create_with_credentials_checks_records_then_persists(
+        self, service, connections, transaction, docs_api
     ):
         created = _connection_dto(pk=42)
         connections.create.return_value = created
@@ -813,12 +834,29 @@ class TestConnectionsService:
         result = service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
 
         assert result is created
+        assert docs_api.calls == [b"secret"]
+        connections.record_test.assert_called_once_with(7, 42, docs_api.result)
         connections.create.assert_called_once_with(7, data)
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:secret")
         transaction.atomic.assert_called_once_with()
 
+    def test_create_auth_failed_records_and_raises(
+        self, transaction, connections, encryptor
+    ):
+        docs_api = _StubDocsApi(CheckResult(status="auth_failed", detail="bad key"))
+        service = ConnectionsService(transaction, connections, encryptor, docs_api)
+        connections.create.return_value = _connection_dto(pk=42)
+        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+
+        with pytest.raises(CredentialAuthError) as caught:
+            service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
+
+        assert caught.value.status == "auth_failed"
+        connections.record_test.assert_called_once_with(7, 42, docs_api.result)
+        connections.update_credentials.assert_not_called()
+
     def test_update_without_credentials_skips_encrypt(
-        self, service, connections, transaction
+        self, service, connections, transaction, docs_api
     ):
         updated = _connection_dto(pk=42)
         connections.update.return_value = updated
@@ -829,10 +867,12 @@ class TestConnectionsService:
         assert result is updated
         connections.update.assert_called_once_with(7, 42, data)
         connections.update_credentials.assert_not_called()
+        connections.record_test.assert_not_called()
+        assert docs_api.calls == []
         transaction.atomic.assert_called_once_with()
 
-    def test_update_with_credentials_encrypts_then_persists(
-        self, service, connections, transaction
+    def test_update_with_credentials_checks_records_then_persists(
+        self, service, connections, transaction, docs_api
     ):
         updated = _connection_dto(pk=42)
         connections.update.return_value = updated
@@ -843,9 +883,26 @@ class TestConnectionsService:
         )
 
         assert result is updated
+        assert docs_api.calls == [b"fresh"]
+        connections.record_test.assert_called_once_with(7, 42, docs_api.result)
         connections.update.assert_called_once_with(7, 42, data)
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:fresh")
         transaction.atomic.assert_called_once_with()
+
+    def test_update_network_error_records_and_raises(
+        self, transaction, connections, encryptor
+    ):
+        docs_api = _StubDocsApi(CheckResult(status="network_error", detail="timeout"))
+        service = ConnectionsService(transaction, connections, encryptor, docs_api)
+        connections.update.return_value = _connection_dto(pk=42)
+        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+
+        with pytest.raises(CredentialAuthError) as caught:
+            service.update(sphere_id=7, pk=42, data=data, credentials_plaintext=b"x")
+
+        assert caught.value.status == "network_error"
+        connections.record_test.assert_called_once_with(7, 42, docs_api.result)
+        connections.update_credentials.assert_not_called()
 
     def test_delete_calls_repo_in_transaction(self, service, connections, transaction):
         service.delete(sphere_id=1, pk=42)

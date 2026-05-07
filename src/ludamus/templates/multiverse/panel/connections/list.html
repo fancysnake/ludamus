@@ -34,6 +34,10 @@
                                 {% translate "Source service" %}
                             </th>
                             <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                {% translate "Health" %}
+                            </th>
+                            <th scope="col"
                                 class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                                 {% translate "Actions" %}
                             </th>
@@ -44,6 +48,19 @@
                             <tr class="hover:bg-neutral-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ connection.display_name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ connection.service }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if connection.last_tested_status == "ok" %}
+                                        <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
+                                              title="{{ connection.last_tested_detail }}">{% translate "ok" %}</span>
+                                    {% elif connection.last_tested_status %}
+                                        <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800"
+                                              title="{{ connection.last_tested_detail }}">
+                                            {% translate "failed" %}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-neutral-400">—</span>
+                                    {% endif %}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <a href="{% url 'multiverse:panel:connection-edit' pk=connection.pk %}"
                                        class="text-primary hover:text-primary/80 mr-4 inline-flex items-center">

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Literal, cast  # pylint: disable=unused-import
 
 from django.db import transaction
 from django.db.models import Count, Max, Q
+from django.utils import timezone
 from django.utils.text import slugify
 
 from ludamus.adapters.db.django.models import (
@@ -120,6 +121,7 @@ from ludamus.pacts import (
     VenueRepositoryProtocol,
 )
 from ludamus.pacts.multiverse import (
+    CheckResult,
     ConnectionDTO,
     ConnectionsRepositoryProtocol,
     ConnectionWriteDict,
@@ -2662,6 +2664,16 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
         # import-execution slice with separate key handling.
         updated = Connection.objects.filter(pk=pk, sphere_id=sphere_id).update(
             credentials=blob
+        )
+        if not updated:
+            raise NotFoundError
+
+    @staticmethod
+    def record_test(sphere_id: int, pk: int, result: CheckResult) -> None:
+        updated = Connection.objects.filter(pk=pk, sphere_id=sphere_id).update(
+            last_tested_status=result.status,
+            last_tested_detail=result.detail,
+            last_tested_at=timezone.now(),
         )
         if not updated:
             raise NotFoundError

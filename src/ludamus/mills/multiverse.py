@@ -7,6 +7,8 @@ Sphere-scoped concerns. First feature: import-connections CRUD. Split per
 
 from typing import TYPE_CHECKING
 
+from ludamus.pacts.multiverse import CredentialAuthError
+
 if TYPE_CHECKING:
     from ludamus.pacts.legacy import (
         EventDTO,
@@ -17,6 +19,7 @@ if TYPE_CHECKING:
         ConnectionDTO,
         ConnectionsRepositoryProtocol,
         ConnectionWriteDict,
+        DocsApiProtocol,
         EncryptorProtocol,
     )
     from ludamus.pacts.services import TransactionProtocol
@@ -30,10 +33,12 @@ class ConnectionsService:
         transaction: TransactionProtocol,
         connections: ConnectionsRepositoryProtocol,
         encryptor: EncryptorProtocol,
+        docs_api: DocsApiProtocol,
     ) -> None:
         self._transaction = transaction
         self._connections = connections
         self._encryptor = encryptor
+        self._docs_api = docs_api
 
     def list_for_sphere(self, sphere_id: int) -> list[ConnectionDTO]:
         return self._connections.list_for_sphere(sphere_id)
@@ -50,7 +55,10 @@ class ConnectionsService:
         with self._transaction.atomic():
             connection = self._connections.create(sphere_id, data)
             if credentials_plaintext is not None:
-                # tracer: google-api tester runs here and raises on invalid creds
+                result = self._docs_api.check_credentials(credentials_plaintext)
+                self._connections.record_test(sphere_id, connection.pk, result)
+                if result.status != "ok":
+                    raise CredentialAuthError(result.status, result.detail)
                 blob = self._encryptor.encrypt(credentials_plaintext)
                 self._connections.update_credentials(sphere_id, connection.pk, blob)
             return connection
@@ -65,7 +73,10 @@ class ConnectionsService:
         with self._transaction.atomic():
             connection = self._connections.update(sphere_id, pk, data)
             if credentials_plaintext is not None:
-                # tracer: google-api tester runs here and raises on invalid creds
+                result = self._docs_api.check_credentials(credentials_plaintext)
+                self._connections.record_test(sphere_id, pk, result)
+                if result.status != "ok":
+                    raise CredentialAuthError(result.status, result.detail)
                 blob = self._encryptor.encrypt(credentials_plaintext)
                 self._connections.update_credentials(sphere_id, pk, blob)
             return connection
