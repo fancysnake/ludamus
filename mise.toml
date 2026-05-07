@@ -271,7 +271,7 @@ dir = "src/ludamus/client"
 
 [tasks.shitcheck]
 description = "Flag suspicious additions vs main: noqa, type: ignore, Any, cast"
-run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\bobject\b|cast\\()'"
+run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\\bobject\\b|cast\\()'"
 
 [tasks.coverage]
 description = "Run all tests, collect coverage, enforce 95% threshold"
