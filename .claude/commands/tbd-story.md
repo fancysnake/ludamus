@@ -39,12 +39,16 @@ updated: YYYY-MM-DD
 
 <One-paragraph context. Skip if obvious from title.>
 
-## As a <role>, I want <thing>, so that <reason>
+## <User story short name>
+
+As a <role>, I want <thing>, so that <reason>
 
 - <acceptance criterion>
 - <acceptance criterion>
 
-## As a <role>, I want <thing>, so that <reason>
+## <User story short name>
+
+As a <role>, I want <thing>, so that <reason>
 
 - <acceptance criterion>
 - <acceptance criterion>
