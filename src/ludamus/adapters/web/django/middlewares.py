@@ -39,9 +39,15 @@ class RequestContextMiddleware:
         try:
             current_sphere = sphere_repository.read_by_domain(request.get_host())
         except NotFoundError:
-            url = f"{request.scheme}://{settings.ROOT_DOMAIN}{reverse('web:index')}"
-            messages.error(request, _("Sphere not found"))
-            return HttpResponseRedirect(url)
+            host = request.get_host().split(":", 1)[0]
+            if settings.ENV == "development" and (
+                host == "127.0.0.1" or host.endswith((".localhost", ".local"))
+            ):
+                current_sphere = root_sphere
+            else:
+                url = f"{request.scheme}://{settings.ROOT_DOMAIN}{reverse('web:index')}"
+                messages.error(request, _("Sphere not found"))
+                return HttpResponseRedirect(url)
 
         if hasattr(request, "user") and request.user.is_authenticated:
             request.context = AuthenticatedRequestContext(

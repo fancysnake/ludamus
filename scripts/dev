@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+port=""
+use_portless="1"
+use_lan="0"
+do_trust="0"
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -p|--port)
+      shift
+      port="${1:-}"
+      if [ -z "$port" ]; then
+        echo "missing port after -p/--port" >&2
+        exit 2
+      fi
+      ;;
+    --lan)
+      use_lan="1"
+      ;;
+    --trust)
+      do_trust="1"
+      ;;
+    --portless)
+      use_portless="1"
+      ;;
+    --no-portless)
+      use_portless="0"
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "unknown arg: $1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+if [ -n "$port" ]; then
+  export PORTLESS_APP_PORT="$port"
+fi
+
+if [ "${PORT:-}" != "" ]; then
+  export PORTLESS_APP_PORT="${PORT}"
+fi
+
+if [ "${VITE_PORT:-}" = "" ]; then
+  export VITE_PORT="$(mise x -- python -c "import socket; s=socket.socket(); s.bind(('127.0.0.1',0)); print(s.getsockname()[1]); s.close()")"
+fi
+
+if [ "$use_portless" = "1" ]; then
+  if [ "$use_lan" = "1" ]; then
+    export PORTLESS_LAN=1
+    if [ "$do_trust" = "1" ]; then
+      sudo -E npx --prefix src/ludamus/client portless trust
+    fi
+
+    exec sudo -E npx --prefix src/ludamus/client portless run --force --name "$(basename "$PWD")" -- bash -lc '
+    if [ "${PORTLESS_URL:-}" = "" ]; then
+      echo "PORTLESS_URL missing" >&2
+      exit 1
+    fi
+
+    root_domain="${PORTLESS_URL#http://}"
+    root_domain="${root_domain#https://}"
+    root_domain="${root_domain%/}"
+
+    export ROOT_DOMAIN="$root_domain"
+    export ALLOWED_HOSTS=".localhost,127.0.0.1,localhost,.local"
+
+    mise x -- python -c "import os; os.environ.setdefault(\"DJANGO_SETTINGS_MODULE\",\"ludamus.edges.settings\"); import django; django.setup(); from django.contrib.sites.models import Site; root_domain=os.environ[\"ROOT_DOMAIN\"]; Site.objects.update_or_create(id=1, defaults={\"domain\": root_domain, \"name\": root_domain})" >/dev/null
+
+    exec honcho start -f Procfile.dev
+  '
+  fi
+
+  export PORTLESS_PORT=1355
+  export PORTLESS_TLD=localhost
+  export PORTLESS_LAN=0
+  export PORTLESS_HTTPS=0
+  exec npx --prefix src/ludamus/client portless run --force --name "$(basename "$PWD")" -- bash -lc '
+    if [ "${PORTLESS_URL:-}" = "" ]; then
+      echo "PORTLESS_URL missing" >&2
+      exit 1
+    fi
+
+    root_domain="${PORTLESS_URL#http://}"
+    root_domain="${root_domain#https://}"
+    root_domain="${root_domain%/}"
+
+    export ROOT_DOMAIN="$root_domain"
+    export ALLOWED_HOSTS=".localhost,127.0.0.1,localhost,.local"
+
+    exec honcho start -f Procfile.dev
+  '
+fi
+
+exec honcho start -f Procfile.dev
