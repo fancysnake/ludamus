@@ -228,8 +228,16 @@ await client.command.wait({ ...deviceOptions, durationMs: 5000 });
 
 if (openViaScrolledPage) {
   console.log(`Opening ${targetTitle} from a scrolled page...`);
-  const trigger = await scrollUntilNodeInViewport(targetTitle);
-  await clickNodeCenter(trigger);
+  try {
+    const trigger = await scrollUntilNodeInViewport(targetTitle);
+    await clickNodeCenter(trigger);
+  } catch (error) {
+    console.warn(
+      "Could not activate the target session from the accessibility tree; opening the modal URL after the scroll attempts to keep the document in a scrolled state.",
+      error,
+    );
+    await openUrl(modalUrl, udid);
+  }
 } else {
   console.log(`Waiting for ${targetTitle} details...`);
 }
