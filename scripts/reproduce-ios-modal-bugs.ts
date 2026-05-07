@@ -20,6 +20,8 @@ const env = process.env;
 const baseUrl = env.BASE_URL ?? "http://localhost:8000";
 const session = env.SESSION ?? "zagrajmy-ios-modal-local";
 const targetTitle = env.TARGET_SESSION_TITLE ?? "Przygoda w Mieście Neonów";
+const targetTriggerLabel =
+  env.TARGET_TRIGGER_LABEL ?? `Open details for ${targetTitle}`;
 const eventPath = env.EVENT_PATH ?? "/chronology/event/autumn-open/";
 const targetQueryParam = env.TARGET_QUERY_PARAM ?? "session=3";
 const deviceName = env.IOS_DEVICE_NAME ?? "iPhone 16";
@@ -145,29 +147,63 @@ const clickNodeCenter = async (node: SnapshotNode): Promise<void> => {
   await client.interactions.click({ ...deviceOptions, ref: `@${node.ref}` });
 };
 
+const clickNodeReference = async (node: SnapshotNode): Promise<void> => {
+  await client.interactions.click({ ...deviceOptions, ref: `@${node.ref}` });
+};
+
+const describeNode = (node: SnapshotNode): string => {
+  const rect = node.rect
+    ? ` x=${Math.round(node.rect.x)} y=${Math.round(node.rect.y)} w=${Math.round(node.rect.width)} h=${Math.round(node.rect.height)}`
+    : "";
+  return `${node.type ?? "node"} ref=@${node.ref}${rect} label=${JSON.stringify(
+    node.label ?? node.value ?? "",
+  )}`;
+};
+
+const isNodeInViewport = (
+  snapshot: CaptureSnapshotResult,
+  node: SnapshotNode,
+): boolean => {
+  if (!node.rect) return false;
+  const viewportHeight = snapshot.nodes[0]?.rect?.height ?? 852;
+  const centerY = node.rect.y + node.rect.height / 2;
+  return centerY >= 80 && centerY <= viewportHeight - 120;
+};
+
+const findTriggerInViewport = (
+  snapshot: CaptureSnapshotResult,
+): SnapshotNode | null =>
+  snapshot.nodes.find(
+    (node) => node.label === targetTriggerLabel && isNodeInViewport(snapshot, node),
+  ) ?? null;
+
 const findPartialNodeInViewport = (
   snapshot: CaptureSnapshotResult,
   label: string,
-): SnapshotNode | null => {
-  const viewportHeight = snapshot.nodes[0]?.rect?.height ?? 852;
-  return (
-    snapshot.nodes.find((node) => {
-      if (!node.label?.includes(label) || !node.rect) return false;
-      const centerY = node.rect.y + node.rect.height / 2;
-      return centerY >= 80 && centerY <= viewportHeight - 120;
-    }) ?? null
-  );
-};
+): SnapshotNode | null =>
+  snapshot.nodes.find(
+    (node) => node.label?.includes(label) && isNodeInViewport(snapshot, node),
+  ) ?? null;
 
-const scrollUntilNodeInViewport = async (label: string): Promise<SnapshotNode> => {
+const scrollUntilTriggerInViewport = async (): Promise<SnapshotNode> => {
   for (let attempt = 0; attempt < 16; attempt += 1) {
     const snapshot = await takeSnapshot();
-    const visibleNode = findPartialNodeInViewport(snapshot, label);
-    if (visibleNode) return visibleNode;
+    const trigger = findTriggerInViewport(snapshot);
+    if (trigger) return trigger;
 
-    const node = snapshot.nodes.find((candidate) =>
-      candidate.label?.includes(label),
-    );
+    const visibleTitle = findPartialNodeInViewport(snapshot, targetTitle);
+    if (visibleTitle) {
+      console.warn(
+        `The target session title is visible but the link ${JSON.stringify(
+          targetTriggerLabel,
+        )} is not in the accessibility snapshot; falling back to the visible title node.`,
+      );
+      return visibleTitle;
+    }
+
+    const node =
+      snapshot.nodes.find((candidate) => candidate.label === targetTriggerLabel) ??
+      snapshot.nodes.find((candidate) => candidate.label?.includes(targetTitle));
     const viewportHeight = snapshot.nodes[0]?.rect?.height ?? 852;
     const centerY = node?.rect ? node.rect.y + node.rect.height / 2 : viewportHeight;
     await client.interactions.scroll({
@@ -178,7 +214,20 @@ const scrollUntilNodeInViewport = async (label: string): Promise<SnapshotNode> =
     await client.command.wait({ ...deviceOptions, durationMs: 200 });
   }
 
-  throw new Error(`Could not bring ${label} into the viewport`);
+  throw new Error(`Could not bring ${targetTriggerLabel} into the viewport`);
+};
+
+const waitForLabel = async (
+  label: string,
+  timeoutMs: number,
+): Promise<SnapshotNode | null> => {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const node = await findNodeByLabel(label);
+    if (node) return node;
+    await client.command.wait({ ...deviceOptions, durationMs: 500 });
+  }
+  return null;
 };
 
 const closeSessionIfPresent = async (name: string): Promise<void> => {
@@ -264,17 +313,24 @@ await client.command.wait({ ...deviceOptions, durationMs: 3000 });
 
 if (openViaScrolledPage) {
   console.log(`Opening ${targetTitle} from a scrolled page...`);
-  const trigger = await scrollUntilNodeInViewport(targetTitle);
-  await clickNodeCenter(trigger);
+  const trigger = await scrollUntilTriggerInViewport();
+  console.log(`Activating modal trigger: ${describeNode(trigger)}`);
+  await clickNodeReference(trigger);
+  if (!(await waitForLabel("Close", 5000))) {
+    console.warn("The trigger reference did not open the modal; tapping its center.");
+    await clickNodeCenter(trigger);
+  }
 } else {
   console.log(`Waiting for ${targetTitle} details...`);
 }
 
-await client.command.wait({
-  ...deviceOptions,
-  selector: 'label="Close"',
-  timeoutMs: 10000,
-});
+const visibleCloseButton = await waitForLabel("Close", 15000);
+if (!visibleCloseButton) {
+  const labels = (await snapshotLabels()).slice(0, 40).join(" | ");
+  throw new Error(
+    `The modal did not open: Close button was not visible. Snapshot labels: ${labels}`,
+  );
+}
 
 console.log("Checking whether modal content is initially visible...");
 const contentInitiallyVisible =
