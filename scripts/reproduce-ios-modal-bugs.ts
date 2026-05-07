@@ -96,13 +96,6 @@ const findNodeByLabel = async (label: string): Promise<SnapshotNode | null> => {
   return snapshot.nodes.find((node) => node.label === label) ?? null;
 };
 
-const findNodeByPartialLabel = async (
-  label: string,
-): Promise<SnapshotNode | null> => {
-  const snapshot = await takeSnapshot();
-  return snapshot.nodes.find((node) => node.label?.includes(label)) ?? null;
-};
-
 const openUrl = async (url: string, udid: string): Promise<void> => {
   if (providedUdid) {
     try {
@@ -146,10 +139,10 @@ const clickNodeCenter = async (node: SnapshotNode): Promise<void> => {
   await client.interactions.click({ ...deviceOptions, ref: `@${node.ref}` });
 };
 
-const findPartialNodeInViewport = async (
+const findPartialNodeInViewport = (
+  snapshot: CaptureSnapshotResult,
   label: string,
-): Promise<SnapshotNode | null> => {
-  const snapshot = await takeSnapshot();
+): SnapshotNode | null => {
   const viewportHeight = snapshot.nodes[0]?.rect?.height ?? 852;
   return (
     snapshot.nodes.find((node) => {
@@ -162,18 +155,21 @@ const findPartialNodeInViewport = async (
 
 const scrollUntilNodeInViewport = async (label: string): Promise<SnapshotNode> => {
   for (let attempt = 0; attempt < 12; attempt += 1) {
-    const visibleNode = await findPartialNodeInViewport(label);
+    const snapshot = await takeSnapshot();
+    const visibleNode = findPartialNodeInViewport(snapshot, label);
     if (visibleNode) return visibleNode;
 
-    const node = await findNodeByPartialLabel(label);
-    const viewportHeight = (await takeSnapshot()).nodes[0]?.rect?.height ?? 852;
+    const node = snapshot.nodes.find((candidate) =>
+      candidate.label?.includes(label),
+    );
+    const viewportHeight = snapshot.nodes[0]?.rect?.height ?? 852;
     const centerY = node?.rect ? node.rect.y + node.rect.height / 2 : viewportHeight;
     await client.interactions.scroll({
       ...deviceOptions,
       direction: centerY > viewportHeight - 120 ? "down" : "up",
       pixels: 450,
     });
-    await client.command.wait({ ...deviceOptions, durationMs: 300 });
+    await client.command.wait({ ...deviceOptions, durationMs: 200 });
   }
 
   throw new Error(`Could not bring ${label} into the viewport`);
@@ -224,7 +220,7 @@ const openViaScrolledPage = env.OPEN_VIA_SCROLLED_PAGE !== "0";
 console.log(`Opening Safari at ${openViaScrolledPage ? eventUrl : modalUrl}...`);
 await openUrl(openViaScrolledPage ? eventUrl : modalUrl, udid);
 
-await client.command.wait({ ...deviceOptions, durationMs: 5000 });
+await client.command.wait({ ...deviceOptions, durationMs: 3000 });
 
 if (openViaScrolledPage) {
   console.log(`Opening ${targetTitle} from a scrolled page...`);
