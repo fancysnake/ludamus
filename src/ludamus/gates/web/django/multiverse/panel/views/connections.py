@@ -100,8 +100,13 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
             "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
+        plaintext = (
+            form.cleaned_data["credentials"].encode("utf-8")
+            if form.cleaned_data["replace_credentials"]
+            else None
+        )
         try:
-            self.request.services.connections.create(sphere_id, data)
+            self.request.services.connections.create(sphere_id, data, plaintext)
         except CredentialAuthError as exc:
             form.add_error(None, _credential_error_message(exc))
             return TemplateResponse(

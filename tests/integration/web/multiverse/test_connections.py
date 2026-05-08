@@ -1,13 +1,37 @@
 from http import HTTPStatus
-from unittest.mock import ANY
+from unittest.mock import ANY, MagicMock
 
+import google.auth.exceptions
 from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Connection
 from ludamus.links.docs_api import google as google_docs_api
-from ludamus.pacts.multiverse import CheckResult, ConnectionDTO
+from ludamus.pacts.multiverse import ConnectionDTO
 from tests.integration.utils import assert_response
+
+
+def _patch_google_refresh(monkeypatch, side_effect=None):
+    """Patch the Google adapter at the SDK boundary.
+
+    Lets the real `GoogleDocsApi.check_credentials` body run (so the
+    adapter stays covered) without hitting the network. Pass a
+    `RefreshError` to simulate auth failure or a `TransportError` to
+    simulate network failure; default is a successful refresh.
+    """
+    creds = MagicMock()
+    creds.refresh.side_effect = side_effect
+    monkeypatch.setattr(google_docs_api, "_make_credentials", lambda *_a, **_kw: creds)
+
+
+def _patch_google_factory_raises(monkeypatch, error):
+    """Patch the Google adapter so the credential factory raises."""
+
+    def _raise(*_args, **_kwargs):
+        raise error
+
+    monkeypatch.setattr(google_docs_api, "_make_credentials", _raise)
+
 
 PERMISSION_ERROR = "You don't have permission to access the sphere panel."
 
@@ -181,6 +205,63 @@ class TestConnectionCreatePageView:
         )
 
         assert response.context["form"].errors
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="multiverse/panel/connections/create.html",
+            context_data={**CONNECTIONS_PANEL_CONTEXT, "form": ANY},
+        )
+        assert not Connection.objects.filter(sphere=sphere).exists()
+
+    def test_post_create_with_credentials_persists_blob_and_records_ok(
+        self, authenticated_client, active_user, sphere, monkeypatch
+    ):
+        sphere.managers.add(active_user)
+        _patch_google_refresh(monkeypatch)
+
+        response = authenticated_client.post(
+            self.url,
+            data={
+                "service": "google",
+                "display_name": "Konto z kluczem",
+                "replace_credentials": "on",
+                "credentials": '{"client": "abc"}',
+            },
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            messages=[(messages.SUCCESS, "Connection created successfully.")],
+            url="/multiverse/panel/connections/",
+        )
+        connection = Connection.objects.get(sphere=sphere)
+        stored = bytes(connection.credentials)
+        assert stored
+        assert b"abc" not in stored
+        assert connection.last_check_status == "ok"
+
+    def test_post_create_with_bad_credentials_leaves_no_row(
+        self, authenticated_client, active_user, sphere, monkeypatch
+    ):
+        sphere.managers.add(active_user)
+        _patch_google_refresh(
+            monkeypatch, side_effect=google.auth.exceptions.RefreshError("bad key")
+        )
+
+        response = authenticated_client.post(
+            self.url,
+            data={
+                "service": "google",
+                "display_name": "Failing",
+                "replace_credentials": "on",
+                "credentials": '{"client": "abc"}',
+            },
+        )
+
+        # Form is re-rendered with the credential error (covers the
+        # `except CredentialAuthError` arm in the create view).
+        assert response.context["form"].non_field_errors()
         assert_response(
             response,
             HTTPStatus.OK,
@@ -365,11 +446,7 @@ class TestConnectionEditPageView:
         connection = Connection.objects.create(
             sphere=sphere, service="google", display_name="Konto"
         )
-        monkeypatch.setattr(
-            google_docs_api.GoogleDocsApi,
-            "check_credentials",
-            staticmethod(lambda _plaintext: CheckResult(status="ok", detail="stub-ok")),
-        )
+        _patch_google_refresh(monkeypatch)
 
         response = authenticated_client.post(
             self.get_url(connection),
@@ -392,6 +469,7 @@ class TestConnectionEditPageView:
         # Persisted blob must be non-empty and not contain the plaintext.
         assert stored
         assert b"abc" not in stored
+        assert connection.last_check_status == "ok"
 
     def test_post_replace_credentials_records_failure_when_check_fails(
         self, authenticated_client, active_user, sphere, monkeypatch
@@ -406,12 +484,8 @@ class TestConnectionEditPageView:
         # The view fetches the connection before attempting the update,
         # so the rendered DTO reflects the pre-update row.
         rendered_dto = ConnectionDTO.model_validate(connection)
-        monkeypatch.setattr(
-            google_docs_api.GoogleDocsApi,
-            "check_credentials",
-            staticmethod(
-                lambda _plaintext: CheckResult(status="auth_failed", detail="bad key")
-            ),
+        _patch_google_refresh(
+            monkeypatch, side_effect=google.auth.exceptions.RefreshError("bad key")
         )
 
         response = authenticated_client.post(
@@ -439,11 +513,91 @@ class TestConnectionEditPageView:
         connection.refresh_from_db()
         # Failure is persisted so the Health column reflects reality.
         assert connection.last_check_status == "auth_failed"
-        assert connection.last_check_detail == "bad key"
+        assert "bad key" in connection.last_check_detail
         assert connection.last_check_at is not None
         # Metadata change is rolled back; existing credentials untouched.
         assert connection.display_name == "Original"
         assert bytes(connection.credentials) == b"old-blob"
+
+    def test_post_replace_credentials_records_auth_failed_on_invalid_json(
+        self, authenticated_client, active_user, sphere, monkeypatch
+    ):
+        sphere.managers.add(active_user)
+        connection = Connection.objects.create(
+            sphere=sphere, service="google", display_name="Konto"
+        )
+        # No SDK patching — JSON decoding inside the adapter fails first.
+        # Patch _make_credentials anyway so a stray call would surface as
+        # an obvious test error rather than a network attempt.
+        _patch_google_factory_raises(monkeypatch, RuntimeError("should not run"))
+
+        response = authenticated_client.post(
+            self.get_url(connection),
+            data={
+                "service": "google",
+                "display_name": "Konto",
+                "replace_credentials": "on",
+                "credentials": "not json",
+            },
+        )
+
+        assert response.context["form"].non_field_errors()
+        assert response.status_code == HTTPStatus.OK
+        connection.refresh_from_db()
+        assert connection.last_check_status == "auth_failed"
+        assert "JSON" in connection.last_check_detail
+
+    def test_post_replace_credentials_records_auth_failed_on_factory_rejection(
+        self, authenticated_client, active_user, sphere, monkeypatch
+    ):
+        sphere.managers.add(active_user)
+        connection = Connection.objects.create(
+            sphere=sphere, service="google", display_name="Konto"
+        )
+        _patch_google_factory_raises(monkeypatch, ValueError("missing key"))
+
+        response = authenticated_client.post(
+            self.get_url(connection),
+            data={
+                "service": "google",
+                "display_name": "Konto",
+                "replace_credentials": "on",
+                "credentials": '{"client": "abc"}',
+            },
+        )
+
+        assert response.context["form"].non_field_errors()
+        assert response.status_code == HTTPStatus.OK
+        connection.refresh_from_db()
+        assert connection.last_check_status == "auth_failed"
+        assert "service-account" in connection.last_check_detail
+
+    def test_post_replace_credentials_records_network_error_on_transport_error(
+        self, authenticated_client, active_user, sphere, monkeypatch
+    ):
+        sphere.managers.add(active_user)
+        connection = Connection.objects.create(
+            sphere=sphere, service="google", display_name="Konto"
+        )
+        _patch_google_refresh(
+            monkeypatch, side_effect=google.auth.exceptions.TransportError("timeout")
+        )
+
+        response = authenticated_client.post(
+            self.get_url(connection),
+            data={
+                "service": "google",
+                "display_name": "Konto",
+                "replace_credentials": "on",
+                "credentials": '{"client": "abc"}',
+            },
+        )
+
+        assert response.context["form"].non_field_errors()
+        assert response.status_code == HTTPStatus.OK
+        connection.refresh_from_db()
+        assert connection.last_check_status == "network_error"
+        assert "timeout" in connection.last_check_detail
 
     def test_post_replace_credentials_on_requires_credentials(
         self, authenticated_client, active_user, sphere
