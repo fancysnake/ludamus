@@ -48,7 +48,7 @@
                         </div>
                     {% endif %}
                     {% if event.is_proposal_active %}
-                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4 ml-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium mb-4 ml-2">
                             {% icon "light-bulb" class="w-4 h-4" variant="mini" %}
                             {% translate "Proposals Open" %}
                         </div>
@@ -213,7 +213,8 @@
                 aria-labelledby="anonymousCodeModal-title">
             <div class="px-6 py-4 border-b border-border flex items-center justify-between">
                 <h3 id="anonymousCodeModal-title" class="font-semibold text-foreground">{% translate "Enter Different Code" %}</h3>
-                <button data-modal-close="anonymousCodeModal"
+                <button type="button"
+                        data-modal-close="anonymousCodeModal"
                         class="p-1 rounded-lg hover:opacity-70 text-foreground-muted"
                         aria-label="{% translate "Close" %}">
                     {% icon "x-mark" class="w-5 h-5" variant="mini" %}
@@ -594,7 +595,8 @@
                 <div class="px-6 py-4 border-b border-border flex items-center justify-between">
                     <h3 id="proposalModal{{ pending.pk }}-title"
                         class="text-lg font-semibold text-foreground">{{ pending.title }}</h3>
-                    <button data-modal-close="proposalModal{{ pending.pk }}"
+                    <button type="button"
+                            data-modal-close="proposalModal{{ pending.pk }}"
                             aria-label="{% translate "Close" %}"
                             class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                         {% icon "x-mark" class="w-5 h-5" variant="mini" %}
@@ -671,7 +673,8 @@
             <div class="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
                 <h3 id="session-{{ data.session.pk }}-title"
                     class="text-lg font-semibold text-foreground">{{ data.session.title }}</h3>
-                <button data-modal-close="session-{{ data.session.pk }}"
+                <button type="button"
+                        data-modal-close="session-{{ data.session.pk }}"
                         aria-label="{% translate "Close" %}"
                         class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                     {% icon "x-mark" class="w-5 h-5" variant="mini" %}

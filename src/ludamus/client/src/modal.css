@@ -1,5 +1,7 @@
 @layer components {
   .modal {
+    position: fixed;
+    inset: 0;
     display: flex;
     flex-direction: column;
     margin: auto;
