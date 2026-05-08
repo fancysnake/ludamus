@@ -22,13 +22,13 @@ class Migration(migrations.Migration):
             model_name="connection",
             name="last_check_status",
             field=models.CharField(
-                blank=True,
                 choices=[
+                    ("unknown", "Not checked yet"),
                     ("ok", "OK"),
                     ("auth_failed", "Authentication failed"),
                     ("network_error", "Network error"),
                 ],
-                default="",
+                default="unknown",
                 max_length=32,
             ),
         ),

@@ -7,7 +7,7 @@ Sphere-scoped concerns. First feature: import-connections CRUD. Split per
 
 from typing import TYPE_CHECKING
 
-from ludamus.pacts.multiverse import CredentialAuthError
+from ludamus.pacts.multiverse import ConnectionCheckStatus, CredentialAuthError
 
 if TYPE_CHECKING:
     from ludamus.pacts.legacy import (
@@ -58,7 +58,7 @@ class ConnectionsService:
 
         # Probe before any write so an invalid credential leaves no row.
         result = self._docs_api.check_credentials(credentials_plaintext)
-        if result.status != "ok":
+        if result.status is not ConnectionCheckStatus.OK:
             raise CredentialAuthError(result.status, result.detail)
 
         with self._transaction.atomic():
@@ -80,7 +80,7 @@ class ConnectionsService:
                 return self._connections.update(sphere_id, pk, data)
 
         result = self._docs_api.check_credentials(credentials_plaintext)
-        if result.status != "ok":
+        if result.status is not ConnectionCheckStatus.OK:
             # Persist the failure so the Health column reflects it,
             # then surface the error to the caller.
             with self._transaction.atomic():

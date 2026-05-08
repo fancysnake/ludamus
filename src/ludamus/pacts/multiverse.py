@@ -8,7 +8,7 @@ backoffice). Split per `plans/hex_refactor.md` if the file grows past
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal, Protocol, TypedDict
+from typing import TYPE_CHECKING, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
 
@@ -20,22 +20,26 @@ class ConnectionProvider(StrEnum):
     GOOGLE = "google"
 
 
-CheckStatus = Literal["ok", "auth_failed", "network_error"]
+class ConnectionCheckStatus(StrEnum):
+    UNKNOWN = "unknown"
+    OK = "ok"
+    AUTH_FAILED = "auth_failed"
+    NETWORK_ERROR = "network_error"
 
 
 @dataclass(frozen=True)
 class CheckResult:
-    status: CheckStatus
+    status: ConnectionCheckStatus
     detail: str
 
 
 class CredentialAuthError(Exception):
     """Raised when a credential auth check returns a non-`ok` status."""
 
-    def __init__(self, status: CheckStatus, detail: str) -> None:
+    def __init__(self, status: ConnectionCheckStatus, detail: str) -> None:
         self.status = status
         self.detail = detail
-        super().__init__(f"{status}: {detail}")
+        super().__init__(f"{status.value}: {detail}")
 
 
 class ConnectionDTO(BaseModel):
@@ -46,7 +50,7 @@ class ConnectionDTO(BaseModel):
     service: ConnectionProvider
     display_name: str
     has_credentials: bool
-    last_check_status: str = ""
+    last_check_status: ConnectionCheckStatus = ConnectionCheckStatus.UNKNOWN
     last_check_label: str = ""
     last_check_detail: str = ""
     last_check_at: datetime | None = None

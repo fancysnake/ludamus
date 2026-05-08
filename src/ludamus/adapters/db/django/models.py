@@ -22,7 +22,7 @@ from ludamus.pacts import (
     UserType,
     VirtualEnrollmentConfig,
 )
-from ludamus.pacts.multiverse import ConnectionProvider
+from ludamus.pacts.multiverse import ConnectionCheckStatus, ConnectionProvider
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -1375,12 +1375,12 @@ class Connection(models.Model):
     last_check_status = models.CharField(
         max_length=32,
         choices=[
-            ("ok", _("OK")),
-            ("auth_failed", _("Authentication failed")),
-            ("network_error", _("Network error")),
+            (ConnectionCheckStatus.UNKNOWN.value, _("Not checked yet")),
+            (ConnectionCheckStatus.OK.value, _("OK")),
+            (ConnectionCheckStatus.AUTH_FAILED.value, _("Authentication failed")),
+            (ConnectionCheckStatus.NETWORK_ERROR.value, _("Network error")),
         ],
-        default="",
-        blank=True,
+        default=ConnectionCheckStatus.UNKNOWN.value,
     )
     last_check_detail = models.TextField(default="", blank=True)
     last_check_at = models.DateTimeField(null=True, blank=True)
@@ -1404,6 +1404,4 @@ class Connection(models.Model):
 
     @property
     def last_check_label(self) -> str:
-        if not self.last_check_status:
-            return ""
         return str(self.get_last_check_status_display())

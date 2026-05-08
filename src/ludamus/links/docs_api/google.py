@@ -15,7 +15,7 @@ import google.auth.exceptions
 import google.auth.transport.requests
 from google.oauth2 import service_account
 
-from ludamus.pacts.multiverse import CheckResult
+from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus
 
 # Minimal scope sufficient to mint an access token from a service-account
 # credential. Per-API scopes are the binding-slice's concern.
@@ -46,22 +46,29 @@ class GoogleDocsApi:
             info = json.loads(plaintext.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             return CheckResult(
-                status="auth_failed", detail=f"Credential is not valid JSON: {exc}"
+                status=ConnectionCheckStatus.AUTH_FAILED,
+                detail=f"Credential is not valid JSON: {exc}",
             )
 
         try:
             credentials = _make_credentials(info, scopes=list(_PROBE_SCOPES))
         except (ValueError, KeyError) as exc:
             return CheckResult(
-                status="auth_failed",
+                status=ConnectionCheckStatus.AUTH_FAILED,
                 detail=f"Credential is not a valid service-account key: {exc}",
             )
 
         try:
             credentials.refresh(google.auth.transport.requests.Request())
         except google.auth.exceptions.RefreshError as exc:
-            return CheckResult(status="auth_failed", detail=str(exc))
+            return CheckResult(
+                status=ConnectionCheckStatus.AUTH_FAILED, detail=str(exc)
+            )
         except google.auth.exceptions.TransportError as exc:
-            return CheckResult(status="network_error", detail=str(exc))
+            return CheckResult(
+                status=ConnectionCheckStatus.NETWORK_ERROR, detail=str(exc)
+            )
 
-        return CheckResult(status="ok", detail="Credential refresh succeeded.")
+        return CheckResult(
+            status=ConnectionCheckStatus.OK, detail="Credential refresh succeeded."
+        )

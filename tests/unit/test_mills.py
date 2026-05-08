@@ -32,6 +32,7 @@ from ludamus.pacts.chronology import (
 )
 from ludamus.pacts.multiverse import (
     CheckResult,
+    ConnectionCheckStatus,
     ConnectionDTO,
     ConnectionProvider,
     CredentialAuthError,
@@ -794,7 +795,9 @@ class TestConnectionsService:
     @pytest.fixture
     def docs_api(self):
         docs_api = Mock(spec=DocsApiProtocol)
-        docs_api.check_credentials.return_value = CheckResult(status="ok", detail="ok")
+        docs_api.check_credentials.return_value = CheckResult(
+            status=ConnectionCheckStatus.OK, detail="ok"
+        )
         return docs_api
 
     @pytest.fixture
@@ -838,7 +841,7 @@ class TestConnectionsService:
         self, service, connections, transaction, docs_api
     ):
         docs_api.check_credentials.return_value = CheckResult(
-            status="auth_failed", detail="bad key"
+            status=ConnectionCheckStatus.AUTH_FAILED, detail="bad key"
         )
         data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
 
@@ -890,7 +893,7 @@ class TestConnectionsService:
         self, service, connections, transaction, docs_api
     ):
         docs_api.check_credentials.return_value = CheckResult(
-            status="network_error", detail="timeout"
+            status=ConnectionCheckStatus.NETWORK_ERROR, detail="timeout"
         )
         data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
 

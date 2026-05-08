@@ -20,7 +20,7 @@ from ludamus.gates.web.django.multiverse.panel.forms import ConnectionForm
 from ludamus.gates.web.django.multiverse.panel.views.base import sphere_panel_context
 from ludamus.pacts import NotFoundError, RedirectError
 from ludamus.pacts.multiverse import (
-    CheckStatus,
+    ConnectionCheckStatus,
     ConnectionProvider,
     ConnectionWriteDict,
     CredentialAuthError,
@@ -31,9 +31,11 @@ if TYPE_CHECKING:
     from django.utils.functional import _StrPromise
 
 
-_CREDENTIAL_ERROR_TEMPLATES: dict[CheckStatus, _StrPromise] = {
-    "auth_failed": gettext_lazy("Credential authentication failed: %(detail)s"),
-    "network_error": gettext_lazy(
+_CREDENTIAL_ERROR_TEMPLATES: dict[ConnectionCheckStatus, _StrPromise] = {
+    ConnectionCheckStatus.AUTH_FAILED: gettext_lazy(
+        "Credential authentication failed: %(detail)s"
+    ),
+    ConnectionCheckStatus.NETWORK_ERROR: gettext_lazy(
         "Could not reach the provider to verify credentials: %(detail)s"
     ),
 }
@@ -100,23 +102,22 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
             "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
-        plaintext = (
-            form.cleaned_data["credentials"].encode("utf-8")
-            if form.cleaned_data["replace_credentials"]
-            else None
-        )
-        try:
-            self.request.services.connections.create(sphere_id, data, plaintext)
-        except CredentialAuthError as exc:
-            form.add_error(None, _credential_error_message(exc))
-            return TemplateResponse(
-                self.request,
-                "multiverse/panel/connections/create.html",
-                {
-                    **sphere_panel_context(self.request, active_tab="connections"),
-                    "form": form,
-                },
-            )
+        if form.cleaned_data["replace_credentials"]:
+            plaintext = form.cleaned_data["credentials"].encode("utf-8")
+            try:
+                self.request.services.connections.create(sphere_id, data, plaintext)
+            except CredentialAuthError as exc:
+                form.add_error(None, _credential_error_message(exc))
+                return TemplateResponse(
+                    self.request,
+                    "multiverse/panel/connections/create.html",
+                    {
+                        **sphere_panel_context(self.request, active_tab="connections"),
+                        "form": form,
+                    },
+                )
+        else:
+            self.request.services.connections.create(sphere_id, data)
         messages.success(self.request, _("Connection created successfully."))
         return redirect("multiverse:panel:connections")
 
@@ -172,24 +173,23 @@ class ConnectionEditPageView(SphereAccessMixin, View):
             "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
-        plaintext = (
-            form.cleaned_data["credentials"].encode("utf-8")
-            if form.cleaned_data["replace_credentials"]
-            else None
-        )
-        try:
-            self.request.services.connections.update(sphere_id, pk, data, plaintext)
-        except CredentialAuthError as exc:
-            form.add_error(None, _credential_error_message(exc))
-            return TemplateResponse(
-                self.request,
-                "multiverse/panel/connections/edit.html",
-                {
-                    **sphere_panel_context(self.request, active_tab="connections"),
-                    "form": form,
-                    "connection": connection,
-                },
-            )
+        if form.cleaned_data["replace_credentials"]:
+            plaintext = form.cleaned_data["credentials"].encode("utf-8")
+            try:
+                self.request.services.connections.update(sphere_id, pk, data, plaintext)
+            except CredentialAuthError as exc:
+                form.add_error(None, _credential_error_message(exc))
+                return TemplateResponse(
+                    self.request,
+                    "multiverse/panel/connections/edit.html",
+                    {
+                        **sphere_panel_context(self.request, active_tab="connections"),
+                        "form": form,
+                        "connection": connection,
+                    },
+                )
+        else:
+            self.request.services.connections.update(sphere_id, pk, data)
         messages.success(self.request, _("Connection updated successfully."))
         return redirect("multiverse:panel:connections")
 
