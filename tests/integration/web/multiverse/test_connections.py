@@ -176,25 +176,6 @@ class TestConnectionCreatePageView:
             url="/",
         )
 
-    def test_post_creates_connection_for_sphere_manager(
-        self, authenticated_client, active_user, sphere
-    ):
-        sphere.managers.add(active_user)
-
-        response = authenticated_client.post(
-            self.url, data={"service": "google", "display_name": "Konto Google"}
-        )
-
-        assert_response(
-            response,
-            HTTPStatus.FOUND,
-            messages=[(messages.SUCCESS, "Connection created successfully.")],
-            url="/multiverse/panel/connections/",
-        )
-        connection = Connection.objects.get(sphere=sphere)
-        assert connection.display_name == "Konto Google"
-        assert connection.service == "google"
-
     def test_post_rerenders_form_on_invalid_data(
         self, authenticated_client, active_user, sphere
     ):
@@ -205,6 +186,24 @@ class TestConnectionCreatePageView:
         )
 
         assert response.context["form"].errors
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="multiverse/panel/connections/create.html",
+            context_data={**CONNECTIONS_PANEL_CONTEXT, "form": ANY},
+        )
+        assert not Connection.objects.filter(sphere=sphere).exists()
+
+    def test_post_rejects_when_credentials_missing(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+
+        response = authenticated_client.post(
+            self.url, data={"service": "google", "display_name": "Konto"}
+        )
+
+        assert response.context["form"].errors.get("credentials")
         assert_response(
             response,
             HTTPStatus.OK,
@@ -224,7 +223,6 @@ class TestConnectionCreatePageView:
             data={
                 "service": "google",
                 "display_name": "Konto z kluczem",
-                "replace_credentials": "on",
                 "credentials": '{"client": "abc"}',
             },
         )
@@ -254,7 +252,6 @@ class TestConnectionCreatePageView:
             data={
                 "service": "google",
                 "display_name": "Failing",
-                "replace_credentials": "on",
                 "credentials": '{"client": "abc"}',
             },
         )

@@ -81,12 +81,12 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
             "multiverse/panel/connections/create.html",
             {
                 **sphere_panel_context(self.request, active_tab="connections"),
-                "form": ConnectionForm(),
+                "form": ConnectionForm(is_create=True),
             },
         )
 
     def post(self, _request: MultiverseRequest) -> HttpResponse:
-        form = ConnectionForm(self.request.POST)
+        form = ConnectionForm(self.request.POST, is_create=True)
         if not form.is_valid():
             return TemplateResponse(
                 self.request,
@@ -102,22 +102,19 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
             "service": ConnectionProvider(form.cleaned_data["service"]),
             "display_name": form.cleaned_data["display_name"],
         }
-        if form.cleaned_data["replace_credentials"]:
-            plaintext = form.cleaned_data["credentials"].encode("utf-8")
-            try:
-                self.request.services.connections.create(sphere_id, data, plaintext)
-            except CredentialAuthError as exc:
-                form.add_error(None, _credential_error_message(exc))
-                return TemplateResponse(
-                    self.request,
-                    "multiverse/panel/connections/create.html",
-                    {
-                        **sphere_panel_context(self.request, active_tab="connections"),
-                        "form": form,
-                    },
-                )
-        else:
-            self.request.services.connections.create(sphere_id, data)
+        plaintext = form.cleaned_data["credentials"].encode("utf-8")
+        try:
+            self.request.services.connections.create(sphere_id, data, plaintext)
+        except CredentialAuthError as exc:
+            form.add_error(None, _credential_error_message(exc))
+            return TemplateResponse(
+                self.request,
+                "multiverse/panel/connections/create.html",
+                {
+                    **sphere_panel_context(self.request, active_tab="connections"),
+                    "form": form,
+                },
+            )
         messages.success(self.request, _("Connection created successfully."))
         return redirect("multiverse:panel:connections")
 
