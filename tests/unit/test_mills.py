@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -35,6 +35,7 @@ from ludamus.pacts.multiverse import (
     ConnectionDTO,
     ConnectionProvider,
     CredentialAuthError,
+    DocsApiProtocol,
 )
 
 
@@ -777,16 +778,6 @@ class _NoopEncryptor:
         return b"enc:" + plaintext
 
 
-class _StubDocsApi:
-    def __init__(self, result: CheckResult) -> None:
-        self.result = result
-        self.calls: list[bytes] = []
-
-    def check_credentials(self, plaintext: bytes) -> CheckResult:
-        self.calls.append(plaintext)
-        return self.result
-
-
 class TestConnectionsService:
     @pytest.fixture
     def connections(self):
@@ -802,7 +793,9 @@ class TestConnectionsService:
 
     @pytest.fixture
     def docs_api(self):
-        return _StubDocsApi(CheckResult(status="ok", detail="ok"))
+        docs_api = Mock(spec=DocsApiProtocol)
+        docs_api.check_credentials.return_value = CheckResult(status="ok", detail="ok")
+        return docs_api
 
     @pytest.fixture
     def service(self, transaction, connections, encryptor, docs_api):
@@ -821,7 +814,7 @@ class TestConnectionsService:
         connections.create.assert_called_once_with(7, data)
         connections.update_credentials.assert_not_called()
         connections.update_last_check.assert_not_called()
-        assert docs_api.calls == []
+        docs_api.check_credentials.assert_not_called()
         transaction.atomic.assert_called_once_with()
 
     def test_create_with_credentials_checks_records_then_persists(
@@ -834,26 +827,29 @@ class TestConnectionsService:
         result = service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
 
         assert result is created
-        assert docs_api.calls == [b"secret"]
-        connections.update_last_check.assert_called_once_with(7, 42, docs_api.result)
+        docs_api.check_credentials.assert_called_once_with(b"secret")
+        check_result = docs_api.check_credentials.return_value
+        connections.update_last_check.assert_called_once_with(7, 42, check_result)
         connections.create.assert_called_once_with(7, data)
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:secret")
         transaction.atomic.assert_called_once_with()
 
-    def test_create_auth_failed_records_and_raises(
-        self, transaction, connections, encryptor
+    def test_create_auth_failed_raises_without_writing(
+        self, service, connections, transaction, docs_api
     ):
-        docs_api = _StubDocsApi(CheckResult(status="auth_failed", detail="bad key"))
-        service = ConnectionsService(transaction, connections, encryptor, docs_api)
-        connections.create.return_value = _connection_dto(pk=42)
+        docs_api.check_credentials.return_value = CheckResult(
+            status="auth_failed", detail="bad key"
+        )
         data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
 
         with pytest.raises(CredentialAuthError) as caught:
             service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
 
         assert caught.value.status == "auth_failed"
-        connections.update_last_check.assert_called_once_with(7, 42, docs_api.result)
+        connections.create.assert_not_called()
+        connections.update_last_check.assert_not_called()
         connections.update_credentials.assert_not_called()
+        transaction.atomic.assert_not_called()
 
     def test_update_without_credentials_skips_encrypt(
         self, service, connections, transaction, docs_api
@@ -868,7 +864,7 @@ class TestConnectionsService:
         connections.update.assert_called_once_with(7, 42, data)
         connections.update_credentials.assert_not_called()
         connections.update_last_check.assert_not_called()
-        assert docs_api.calls == []
+        docs_api.check_credentials.assert_not_called()
         transaction.atomic.assert_called_once_with()
 
     def test_update_with_credentials_checks_records_then_persists(
@@ -883,26 +879,31 @@ class TestConnectionsService:
         )
 
         assert result is updated
-        assert docs_api.calls == [b"fresh"]
-        connections.update_last_check.assert_called_once_with(7, 42, docs_api.result)
+        docs_api.check_credentials.assert_called_once_with(b"fresh")
+        check_result = docs_api.check_credentials.return_value
+        connections.update_last_check.assert_called_once_with(7, 42, check_result)
         connections.update.assert_called_once_with(7, 42, data)
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:fresh")
         transaction.atomic.assert_called_once_with()
 
-    def test_update_network_error_records_and_raises(
-        self, transaction, connections, encryptor
+    def test_update_network_error_records_failure_and_raises(
+        self, service, connections, transaction, docs_api
     ):
-        docs_api = _StubDocsApi(CheckResult(status="network_error", detail="timeout"))
-        service = ConnectionsService(transaction, connections, encryptor, docs_api)
-        connections.update.return_value = _connection_dto(pk=42)
+        docs_api.check_credentials.return_value = CheckResult(
+            status="network_error", detail="timeout"
+        )
         data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
 
         with pytest.raises(CredentialAuthError) as caught:
             service.update(sphere_id=7, pk=42, data=data, credentials_plaintext=b"x")
 
         assert caught.value.status == "network_error"
-        connections.update_last_check.assert_called_once_with(7, 42, docs_api.result)
+        # Failure must be persisted (in its own transaction) before the raise.
+        check_result = docs_api.check_credentials.return_value
+        connections.update_last_check.assert_called_once_with(7, 42, check_result)
+        connections.update.assert_not_called()
         connections.update_credentials.assert_not_called()
+        transaction.atomic.assert_called_once_with()
 
     def test_delete_calls_repo_in_transaction(self, service, connections, transaction):
         service.delete(sphere_id=1, pk=42)

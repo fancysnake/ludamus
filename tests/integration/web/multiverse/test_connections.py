@@ -393,6 +393,51 @@ class TestConnectionEditPageView:
         assert stored
         assert b"abc" not in stored
 
+    def test_post_replace_credentials_records_failure_when_check_fails(
+        self, authenticated_client, active_user, sphere, monkeypatch
+    ):
+        sphere.managers.add(active_user)
+        connection = Connection.objects.create(
+            sphere=sphere,
+            service="google",
+            display_name="Original",
+            credentials=b"old-blob",
+        )
+        monkeypatch.setattr(
+            google_docs_api.GoogleDocsApi,
+            "check_credentials",
+            staticmethod(
+                lambda _plaintext: CheckResult(status="auth_failed", detail="bad key")
+            ),
+        )
+
+        response = authenticated_client.post(
+            self.get_url(connection),
+            data={
+                "service": "google",
+                "display_name": "Renamed",
+                "replace_credentials": "on",
+                "credentials": '{"client": "abc"}',
+            },
+        )
+
+        # Form is re-rendered with the credential error.
+        assert response.context["form"].non_field_errors()
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            template_name="multiverse/panel/connections/edit.html",
+            context_data={**CONNECTIONS_PANEL_CONTEXT, "form": ANY, "connection": ANY},
+        )
+        connection.refresh_from_db()
+        # Failure is persisted so the Health column reflects reality.
+        assert connection.last_check_status == "auth_failed"
+        assert connection.last_check_detail == "bad key"
+        assert connection.last_check_at is not None
+        # Metadata change is rolled back; existing credentials untouched.
+        assert connection.display_name == "Original"
+        assert bytes(connection.credentials) == b"old-blob"
+
     def test_post_replace_credentials_on_requires_credentials(
         self, authenticated_client, active_user, sphere
     ):

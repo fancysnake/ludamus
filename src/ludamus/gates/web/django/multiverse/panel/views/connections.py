@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from django.views.generic.base import View
 
 from ludamus.gates.web.django.multiverse.access import (
@@ -19,6 +20,7 @@ from ludamus.gates.web.django.multiverse.panel.forms import ConnectionForm
 from ludamus.gates.web.django.multiverse.panel.views.base import sphere_panel_context
 from ludamus.pacts import NotFoundError, RedirectError
 from ludamus.pacts.multiverse import (
+    CheckStatus,
     ConnectionProvider,
     ConnectionWriteDict,
     CredentialAuthError,
@@ -26,6 +28,20 @@ from ludamus.pacts.multiverse import (
 
 if TYPE_CHECKING:
     from django.http import HttpResponse
+    from django.utils.functional import _StrPromise
+
+
+_CREDENTIAL_ERROR_TEMPLATES: dict[CheckStatus, _StrPromise] = {
+    "auth_failed": gettext_lazy("Credential authentication failed: %(detail)s"),
+    "network_error": gettext_lazy(
+        "Could not reach the provider to verify credentials: %(detail)s"
+    ),
+}
+
+
+def _credential_error_message(exc: CredentialAuthError) -> str:
+    template = _CREDENTIAL_ERROR_TEMPLATES[exc.status]
+    return str(template % {"detail": exc.detail})
 
 
 def _connection_not_found() -> RedirectError:
@@ -87,7 +103,7 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
         try:
             self.request.services.connections.create(sphere_id, data)
         except CredentialAuthError as exc:
-            form.add_error(None, str(exc))
+            form.add_error(None, _credential_error_message(exc))
             return TemplateResponse(
                 self.request,
                 "multiverse/panel/connections/create.html",
@@ -159,7 +175,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
         try:
             self.request.services.connections.update(sphere_id, pk, data, plaintext)
         except CredentialAuthError as exc:
-            form.add_error(None, str(exc))
+            form.add_error(None, _credential_error_message(exc))
             return TemplateResponse(
                 self.request,
                 "multiverse/panel/connections/edit.html",

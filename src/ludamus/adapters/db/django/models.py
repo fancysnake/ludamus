@@ -1401,3 +1401,9 @@ class Connection(models.Model):
     @property
     def has_credentials(self) -> bool:
         return bool(self.credentials)
+
+    @property
+    def last_check_label(self) -> str:
+        if not self.last_check_status:
+            return ""
+        return str(self.get_last_check_status_display())

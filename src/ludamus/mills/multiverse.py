@@ -52,15 +52,20 @@ class ConnectionsService:
         data: ConnectionWriteDict,
         credentials_plaintext: bytes | None = None,
     ) -> ConnectionDTO:
+        if credentials_plaintext is None:
+            with self._transaction.atomic():
+                return self._connections.create(sphere_id, data)
+
+        # Probe before any write so an invalid credential leaves no row.
+        result = self._docs_api.check_credentials(credentials_plaintext)
+        if result.status != "ok":
+            raise CredentialAuthError(result.status, result.detail)
+
         with self._transaction.atomic():
             connection = self._connections.create(sphere_id, data)
-            if credentials_plaintext is not None:
-                result = self._docs_api.check_credentials(credentials_plaintext)
-                self._connections.update_last_check(sphere_id, connection.pk, result)
-                if result.status != "ok":
-                    raise CredentialAuthError(result.status, result.detail)
-                blob = self._encryptor.encrypt(credentials_plaintext)
-                self._connections.update_credentials(sphere_id, connection.pk, blob)
+            self._connections.update_last_check(sphere_id, connection.pk, result)
+            blob = self._encryptor.encrypt(credentials_plaintext)
+            self._connections.update_credentials(sphere_id, connection.pk, blob)
             return connection
 
     def update(
@@ -70,15 +75,23 @@ class ConnectionsService:
         data: ConnectionWriteDict,
         credentials_plaintext: bytes | None = None,
     ) -> ConnectionDTO:
+        if credentials_plaintext is None:
+            with self._transaction.atomic():
+                return self._connections.update(sphere_id, pk, data)
+
+        result = self._docs_api.check_credentials(credentials_plaintext)
+        if result.status != "ok":
+            # Persist the failure so the Health column reflects it,
+            # then surface the error to the caller.
+            with self._transaction.atomic():
+                self._connections.update_last_check(sphere_id, pk, result)
+            raise CredentialAuthError(result.status, result.detail)
+
         with self._transaction.atomic():
             connection = self._connections.update(sphere_id, pk, data)
-            if credentials_plaintext is not None:
-                result = self._docs_api.check_credentials(credentials_plaintext)
-                self._connections.update_last_check(sphere_id, pk, result)
-                if result.status != "ok":
-                    raise CredentialAuthError(result.status, result.detail)
-                blob = self._encryptor.encrypt(credentials_plaintext)
-                self._connections.update_credentials(sphere_id, pk, blob)
+            self._connections.update_last_check(sphere_id, pk, result)
+            blob = self._encryptor.encrypt(credentials_plaintext)
+            self._connections.update_credentials(sphere_id, pk, blob)
             return connection
 
     def delete(self, sphere_id: int, pk: int) -> None:

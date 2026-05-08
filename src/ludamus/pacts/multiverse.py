@@ -5,9 +5,9 @@ backoffice). Split per `plans/hex_refactor.md` if the file grows past
 ~12 top-level members or 1000 lines.
 """
 
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
@@ -23,18 +23,10 @@ class ConnectionProvider(StrEnum):
 CheckStatus = Literal["ok", "auth_failed", "network_error"]
 
 
-class CheckResult(BaseModel):
+@dataclass(frozen=True)
+class CheckResult:
     status: CheckStatus
     detail: str
-
-
-_CREDENTIAL_AUTH_ERROR_MESSAGES: MappingProxyType[CheckStatus, str] = MappingProxyType(
-    {
-        "auth_failed": "Credential authentication failed: {detail}",
-        "network_error": "Could not reach the provider to verify credentials: {detail}",
-        "ok": "Credential check returned ok unexpectedly: {detail}",
-    }
-)
 
 
 class CredentialAuthError(Exception):
@@ -43,7 +35,7 @@ class CredentialAuthError(Exception):
     def __init__(self, status: CheckStatus, detail: str) -> None:
         self.status = status
         self.detail = detail
-        super().__init__(_CREDENTIAL_AUTH_ERROR_MESSAGES[status].format(detail=detail))
+        super().__init__(f"{status}: {detail}")
 
 
 class ConnectionDTO(BaseModel):
@@ -55,6 +47,7 @@ class ConnectionDTO(BaseModel):
     display_name: str
     has_credentials: bool
     last_check_status: str = ""
+    last_check_label: str = ""
     last_check_detail: str = ""
     last_check_at: datetime | None = None
 
