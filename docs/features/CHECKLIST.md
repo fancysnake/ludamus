@@ -15,6 +15,6 @@ project teaches you what you keep forgetting.
 
 ## Project-specific items
 
-<Add as the project teaches you. Examples: "uploaded files
-antivirus-scanned", "any new admin route gates on `Admin::Authorize`",
-"feature flags default off in prod".>
+- **"test" reserved for pytest** — no production symbol, column, or
+  field uses `test` / `tested`; use `check` / `validation` /
+  `verification` instead.
