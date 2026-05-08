@@ -403,6 +403,9 @@ class TestConnectionEditPageView:
             display_name="Original",
             credentials=b"old-blob",
         )
+        # The view fetches the connection before attempting the update,
+        # so the rendered DTO reflects the pre-update row.
+        rendered_dto = ConnectionDTO.model_validate(connection)
         monkeypatch.setattr(
             google_docs_api.GoogleDocsApi,
             "check_credentials",
@@ -427,7 +430,11 @@ class TestConnectionEditPageView:
             response,
             HTTPStatus.OK,
             template_name="multiverse/panel/connections/edit.html",
-            context_data={**CONNECTIONS_PANEL_CONTEXT, "form": ANY, "connection": ANY},
+            context_data={
+                **CONNECTIONS_PANEL_CONTEXT,
+                "form": ANY,
+                "connection": rendered_dto,
+            },
         )
         connection.refresh_from_db()
         # Failure is persisted so the Health column reflects reality.
