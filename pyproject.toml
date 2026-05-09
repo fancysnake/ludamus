@@ -29,7 +29,7 @@ django = "~6.0.0"
 gunicorn = "^25.0.1"
 django-environ = "^0.13.0"
 psycopg = "^3.2.9"
-pydantic = "^2.11.7"
+pydantic = "^2.13.4"
 django-extensions = "^4.1"
 requests = "^2.32.5"
 heroicons = { version = "^2.9", extras = ["django"] }
