@@ -71,12 +71,17 @@ export default defineConfig({
       testIgnore: /.*\.auth\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
-    {
-      name: 'webkit',
-      testMatch: /event-details\.spec\.ts/,
-      grep: /iOS touch scrolling|mobile session modal closes on iOS tap/,
-      use: { ...devices['iPhone 14 Pro'] },
-    },
+    /* WebKit runs only on CI — local Arch hosts can't install the required system libs. */
+    ...(isCI
+      ? [
+          {
+            name: 'webkit',
+            testMatch: /event-details\.spec\.ts/,
+            grep: /iOS touch scrolling|mobile session modal closes on iOS tap/,
+            use: { ...devices['iPhone 14 Pro'] },
+          },
+        ]
+      : []),
     /* Authenticated browser for profile/user tests */
     {
       name: 'chromium-auth',
