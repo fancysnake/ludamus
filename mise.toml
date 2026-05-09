@@ -114,15 +114,15 @@ run = [
 
 [tasks.prcheck]
 description = "CI-style lint pass: report violations without fixing"
-depends = [
-    "black-check",
-    "ruff",
-    "codespell",
-    "mypy",
-    "djlint",
-    "pylint",
-    "vulture",
-    "ast-grep",
+run = [
+    { task="black-check" },
+    { task="ruff" },
+    { task="codespell" },
+    { task="mypy" },
+    { task="djlint" },
+    { task="pylint" },
+    { task="vulture" },
+    { task="ast-grep" },
 ]
 
 # PYTEST
@@ -160,7 +160,7 @@ env.COVERAGE_FILE = "{{ config_root }}/.coverage.unit"
 
 [tasks.diff-cover]
 description = "Show test coverage for lines changed since main"
-depends = ["coverage"]
+wait_for = ["coverage"]
 run = [
     "coverage xml --data-file=.coverage",
     "diff-cover coverage.xml --compare-branch=main",
