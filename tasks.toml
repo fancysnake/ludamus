@@ -13,10 +13,7 @@ run = "django-admin"
 [start]
 description = "Start Django dev server with frontend watch"
 run = "./scripts/dev"
-
-[dev]
-description = "Start Django dev server with frontend watch"
-run = "./scripts/dev"
+alias = "dev"
 
 [fnpm]
 description = "Run npm in the frontend client directory"
@@ -40,6 +37,7 @@ echo "Created .env from .env.local.example"
 fi""",
     "set -a && . ./.env && set +a",
     { task = "install" },
+    "pre-commit install",
     { task = "fnpm", args = ["install"] },
     { task = "dj", args = ["migrate", "--noinput"] },
     { task = "dj", args = ["createcachetable"] },
