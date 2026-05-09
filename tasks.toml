@@ -4,7 +4,7 @@ run = "poetry"
 
 [dj]
 description = "Run any django-admin subcommand"
-run = "django-admin"
+run = "./scripts/varlock run -- django-admin"
 
 [start]
 description = "Start Django dev server with frontend watch"
