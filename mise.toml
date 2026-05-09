@@ -20,11 +20,11 @@ description = "Update all dependencies: pre-commit hooks, pip, Poetry packages"
 run = [
     "pip install -U pip",
     "pip install -U poetry",
-    { task = "p", args = ["update"] },
+    "poetry update",
     "pre-commit autoupdate",
     { task = "deptry" },
     "pip-audit .",
-    { task = "p", args = ["show", "-o"] },
+    "poetry show -o",
 ]
 
 # LINT
