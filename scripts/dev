@@ -99,52 +99,23 @@ if [ "${VITE_PORT:-}" = "" ]; then
 fi
 
 if [ "$use_portless" = "1" ]; then
+  PORTLESS=(npx --prefix src/ludamus/client portless)
+
   if [ "$use_lan" = "1" ]; then
     export PORTLESS_LAN=1
     if [ "$do_trust" = "1" ]; then
-      sudo -E npx --prefix src/ludamus/client portless trust
+      sudo -E "${PORTLESS[@]}" trust
     fi
-
-    exec sudo -E npx --prefix src/ludamus/client portless run --force --name "$(basename "$PWD")" -- bash -lc '
-    if [ "${PORTLESS_URL:-}" = "" ]; then
-      echo "PORTLESS_URL missing" >&2
-      exit 1
-    fi
-
-    root_domain="${PORTLESS_URL#http://}"
-    root_domain="${root_domain#https://}"
-    root_domain="${root_domain%/}"
-
-    export ROOT_DOMAIN="$root_domain"
-    export ALLOWED_HOSTS=".localhost,127.0.0.1,localhost,.local"
-
-    python -c "import os, sys; os.environ.setdefault(\"DJANGO_SETTINGS_MODULE\",\"ludamus.edges.settings\"); import django; django.setup(); from django.contrib.sites.models import Site; root_domain=os.environ[\"ROOT_DOMAIN\"]; existing=Site.objects.filter(id=1).values_list(\"domain\", flat=True).first(); print(f\"[dev] Site(id=1).domain: {existing!r} -> {root_domain!r}\", file=sys.stderr) if existing != root_domain else None; Site.objects.update_or_create(id=1, defaults={\"domain\": root_domain, \"name\": root_domain})"
-
-    exec honcho start -e /dev/null -f Procfile.dev
-  '
+    PORTLESS=(sudo -E "${PORTLESS[@]}")
+  else
+    export PORTLESS_PORT=1355
+    export PORTLESS_TLD=localhost
+    export PORTLESS_LAN=0
+    export PORTLESS_HTTPS=0
   fi
 
-  export PORTLESS_PORT=1355
-  export PORTLESS_TLD=localhost
-  export PORTLESS_LAN=0
-  export PORTLESS_HTTPS=0
-  exec npx --prefix src/ludamus/client portless run --force --name "$(basename "$PWD")" -- bash -lc '
-    if [ "${PORTLESS_URL:-}" = "" ]; then
-      echo "PORTLESS_URL missing" >&2
-      exit 1
-    fi
-
-    root_domain="${PORTLESS_URL#http://}"
-    root_domain="${root_domain#https://}"
-    root_domain="${root_domain%/}"
-
-    export ROOT_DOMAIN="$root_domain"
-    export ALLOWED_HOSTS=".localhost,127.0.0.1,localhost,.local"
-
-    python -c "import os, sys; os.environ.setdefault(\"DJANGO_SETTINGS_MODULE\",\"ludamus.edges.settings\"); import django; django.setup(); from django.contrib.sites.models import Site; root_domain=os.environ[\"ROOT_DOMAIN\"]; existing=Site.objects.filter(id=1).values_list(\"domain\", flat=True).first(); print(f\"[dev] Site(id=1).domain: {existing!r} -> {root_domain!r}\", file=sys.stderr) if existing != root_domain else None; Site.objects.update_or_create(id=1, defaults={\"domain\": root_domain, \"name\": root_domain})"
-
-    exec honcho start -e /dev/null -f Procfile.dev
-  '
+  exec "${PORTLESS[@]}" run --force --name "$(basename "$PWD")" \
+    -- ./scripts/dev-portless-child
 fi
 
 export PORT="${PORT:-8000}"
