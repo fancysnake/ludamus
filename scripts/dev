@@ -28,17 +28,25 @@ ensure_combined_ca_bundle() {
   local dest="$HOME/.simulacrum/certs/ca-bundle.pem"
   local portless_ca="$HOME/.portless/ca.pem"
   [ -f "$portless_ca" ] || return 1
+  if ! openssl x509 -in "$portless_ca" -noout 2>/dev/null; then
+    echo "[dev] $portless_ca is not a valid X.509 cert; skipping bundle" >&2
+    return 1
+  fi
   if [ ! -f "$dest" ] || [ "$portless_ca" -nt "$dest" ]; then
     local certifi_path
     certifi_path="$(mise x -- python -c 'import certifi; print(certifi.where())' 2>/dev/null)" || return 1
-    cat "$certifi_path" "$portless_ca" > "$dest"
+    { cat "$certifi_path"; printf '\n'; cat "$portless_ca"; } > "$dest"
   fi
   export REQUESTS_CA_BUNDLE="$dest"
   export SSL_CERT_FILE="$dest"
 }
 
+# Local Auth0 simulator gating: explicit allowlist of host shapes that the
+# simulator can plausibly serve. Avoid substring matching "local" to keep
+# real tenants like acme-local.eu.auth0.com from triggering dev-only side
+# effects (cert symlinking, port killing, Site.domain rewrites).
 case "${AUTH0_DOMAIN:-}" in
-  *local*)
+  localhost|localhost:*|*.localhost|*.localhost:*|*.local|*.local:*|auth0.local|auth0.localhost*)
     ensure_simulacrum_certs || true
     ensure_combined_ca_bundle || true
     ;;
@@ -110,7 +118,7 @@ if [ "$use_portless" = "1" ]; then
     export ROOT_DOMAIN="$root_domain"
     export ALLOWED_HOSTS=".localhost,127.0.0.1,localhost,.local"
 
-    python -c "import os; os.environ.setdefault(\"DJANGO_SETTINGS_MODULE\",\"ludamus.edges.settings\"); import django; django.setup(); from django.contrib.sites.models import Site; root_domain=os.environ[\"ROOT_DOMAIN\"]; Site.objects.update_or_create(id=1, defaults={\"domain\": root_domain, \"name\": root_domain})" >/dev/null
+    python -c "import os, sys; os.environ.setdefault(\"DJANGO_SETTINGS_MODULE\",\"ludamus.edges.settings\"); import django; django.setup(); from django.contrib.sites.models import Site; root_domain=os.environ[\"ROOT_DOMAIN\"]; existing=Site.objects.filter(id=1).values_list(\"domain\", flat=True).first(); print(f\"[dev] Site(id=1).domain: {existing!r} -> {root_domain!r}\", file=sys.stderr) if existing != root_domain else None; Site.objects.update_or_create(id=1, defaults={\"domain\": root_domain, \"name\": root_domain})"
 
     exec honcho start -e /dev/null -f Procfile.dev
   '
@@ -133,7 +141,7 @@ if [ "$use_portless" = "1" ]; then
     export ROOT_DOMAIN="$root_domain"
     export ALLOWED_HOSTS=".localhost,127.0.0.1,localhost,.local"
 
-    python -c "import os; os.environ.setdefault(\"DJANGO_SETTINGS_MODULE\",\"ludamus.edges.settings\"); import django; django.setup(); from django.contrib.sites.models import Site; root_domain=os.environ[\"ROOT_DOMAIN\"]; Site.objects.update_or_create(id=1, defaults={\"domain\": root_domain, \"name\": root_domain})" >/dev/null
+    python -c "import os, sys; os.environ.setdefault(\"DJANGO_SETTINGS_MODULE\",\"ludamus.edges.settings\"); import django; django.setup(); from django.contrib.sites.models import Site; root_domain=os.environ[\"ROOT_DOMAIN\"]; existing=Site.objects.filter(id=1).values_list(\"domain\", flat=True).first(); print(f\"[dev] Site(id=1).domain: {existing!r} -> {root_domain!r}\", file=sys.stderr) if existing != root_domain else None; Site.objects.update_or_create(id=1, defaults={\"domain\": root_domain, \"name\": root_domain})"
 
     exec honcho start -e /dev/null -f Procfile.dev
   '

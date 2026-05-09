@@ -8,11 +8,11 @@ run = "django-admin"
 
 [start]
 description = "Start Django dev server with frontend watch"
-run = "src/ludamus/client/node_modules/.bin/varlock run -- ./scripts/dev"
+run = "./scripts/varlock run -- ./scripts/dev"
 
 [dev]
 description = "Start Django dev server with frontend watch"
-run = "src/ludamus/client/node_modules/.bin/varlock run -- ./scripts/dev"
+run = "./scripts/varlock run -- ./scripts/dev"
 
 [build-frontend]
 description = "Build frontend assets (CSS + JS)"
@@ -24,8 +24,8 @@ cd src/ludamus/client && npm install && npm run build
 description = "Set up the dev environment from scratch — idempotent"
 run = """
 if [ ! -f .env ]; then
-  cp .env.local.example .env
-  echo "Created .env from .env.local.example"
+  cp .env.docker .env
+  echo "Created .env from .env.docker (edit to taste; .env.schema is the source of truth)"
 fi
 set -a && . ./.env && set +a
 poetry install

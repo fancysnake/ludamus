@@ -33,7 +33,7 @@ jobs:
       - uses: jdx/mise-action@v2
       - run: mise install
       - run: npm ci --prefix src/ludamus/client
-      - run: src/ludamus/client/node_modules/.bin/varlock scan
+      - run: ./scripts/varlock scan
 
   impeccable:
     runs-on: ubuntu-latest

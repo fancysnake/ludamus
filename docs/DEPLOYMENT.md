@@ -6,7 +6,7 @@
 
 ```bash
 # 1. Copy the example env file and fill in values (first time only)
-cp .env.local.example .env
+cp .env.docker .env
 
 # 2. Install toolchain (Python 3.14, Node v25.6.1, Poetry)
 #    Re-run after Python/Node version bumps in mise.toml
