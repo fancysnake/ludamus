@@ -31,9 +31,9 @@ Uses SQLite by default (`USE_POSTGRES=false`). Set `DB_NAME` to a file path
 **Prerequisites:** Docker, mise (for the `dc` task wrapper).
 
 ```bash
-# 1. Copy the Docker-specific env file and fill in values
+# 1. Copy the Docker baseline into .env and fill in values
 #    Important: set DB_HOST=db (the compose service name)
-cp .env.docker.example .env
+cp .env.docker .env
 
 # 2. Build and start all services
 mise run dc local up --build
@@ -65,10 +65,10 @@ sudo su - ludamus
 git clone <repo-url> && cd ludamus
 
 # 3. Create .env with production values
-#    Use .env.docker.example as a starting point, then set:
+#    Use .env.docker as a starting point, then set:
 #    ENV=production, DEBUG=false, a real SECRET_KEY,
 #    ALLOWED_HOSTS, Auth0 credentials, DB credentials, etc.
-cp .env.docker.example .env
+cp .env.docker .env
 # Edit .env with production values
 
 # 4. Create host directories for bind mounts
