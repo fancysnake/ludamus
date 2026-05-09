@@ -3417,14 +3417,14 @@ test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,
 
 [[package]]
 name = "types-authlib"
-version = "1.6.11.20260418"
+version = "1.6.11.20260508"
 description = "Typing stubs for Authlib"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "types_authlib-1.6.11.20260418-py3-none-any.whl", hash = "sha256:44534bf7d85b9a27579c26e044b7ef96a13b8d179f8492f0531a4649ab250814"},
-    {file = "types_authlib-1.6.11.20260418.tar.gz", hash = "sha256:591f11924f63ae85665ebd7f0524e8a2a4d141adeaf5204828e62bf08f4a956f"},
+    {file = "types_authlib-1.6.11.20260508-py3-none-any.whl", hash = "sha256:09bda18061f8e0213c3e20cacdb032778c1cc887be9bb0acfb2cbdb2f6e64fdd"},
+    {file = "types_authlib-1.6.11.20260508.tar.gz", hash = "sha256:0787b2c9f0c2fbcb27a689f4ef80c189588fc66c0a9ad1d5e2688c018bf4f639"},
 ]
 
 [package.dependencies]
@@ -3572,4 +3572,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14.0,<3.15"
-content-hash = "480bf0eb62088d4a5c0e56a3ca174c0036e7360ba5f50a8eab4c51d1413c64c3"
+content-hash = "a73bd0893905f45988f1c73c7486b7026d306042c1a2caf1c0f0a98c405643b8"
