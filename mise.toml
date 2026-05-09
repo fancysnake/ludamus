@@ -18,13 +18,13 @@ includes = ["tasks.toml"]
 [tasks.update]
 description = "Update all dependencies: pre-commit hooks, pip, Poetry packages"
 run = [
-  "pip install -U pip",
-  "pip install -U poetry",
-  { task = "p", args = ["update"] },
-  "pre-commit autoupdate",
-  { task = "deptry" },
-  "pip-audit .",
-  { task = "p", args = ["show", "-o"] },
+    "pip install -U pip",
+    "pip install -U poetry",
+    { task = "p", args = ["update"] },
+    "pre-commit autoupdate",
+    { task = "deptry" },
+    "pip-audit .",
+    { task = "p", args = ["show", "-o"] },
 ]
 
 # LINT
@@ -53,7 +53,7 @@ run = "taplo format --config=.taplo.toml"
 [tasks.codespell]
 description = "Find typos in source and test files"
 run = [
-  { task = "_lint", args = ["codespell", "src", "tests/unit", "tests/integration"] },
+    { task = "_lint", args = ["codespell", "src", "tests/unit", "tests/integration"] },
 ]
 
 [tasks.deptry]
@@ -79,8 +79,8 @@ run = { task = "_lint", args = ["mypy", "src"] }
 [tasks.pylint]
 description = "Run Pylint on source and tests (duplicate-code disabled for tests)"
 run = [
-  { task = "_lint", args = ["pylint", "src"] },
-  { task = "_lint", args = ["pylint", "--disable=duplicate-code", "tests"] },
+    { task = "_lint", args = ["pylint", "src"] },
+    { task = "_lint", args = ["pylint", "--disable=duplicate-code", "tests"] },
 ]
 
 [tasks.ruff]
@@ -105,24 +105,24 @@ run = "python scripts/impeccable_lint.py"
 [tasks.check]
 description = "Format, lint, and fix — run all code quality tools"
 run = [
-  { task = "black" },
-  { task = "ruff-fix" },
-  { task = "taplo" },
-  { task = "djlint-format" },
-  { tasks = ["codespell", "mypy", "il", "djlint", "pylint", "vulture", "ast-grep", "impeccable"] },
+    { task = "black" },
+    { task = "ruff-fix" },
+    { task = "taplo" },
+    { task = "djlint-format" },
+    { tasks = ["codespell", "mypy", "il", "djlint", "pylint", "vulture", "ast-grep", "impeccable"] },
 ]
 
 [tasks.prcheck]
 description = "CI-style lint pass: report violations without fixing"
 depends = [
-  "black-check",
-  "ruff",
-  "codespell",
-  "mypy",
-  "djlint",
-  "pylint",
-  "vulture",
-  "ast-grep",
+    "black-check",
+    "ruff",
+    "codespell",
+    "mypy",
+    "djlint",
+    "pylint",
+    "vulture",
+    "ast-grep",
 ]
 
 # PYTEST
@@ -162,16 +162,16 @@ env.COVERAGE_FILE = "{{ config_root }}/.coverage.unit"
 description = "Show test coverage for lines changed since main"
 depends = ["coverage"]
 run = [
-  "coverage xml --data-file=.coverage",
-  "diff-cover coverage.xml --compare-branch=main",
+    "coverage xml --data-file=.coverage",
+    "diff-cover coverage.xml --compare-branch=main",
 ]
 
 [tasks."coverage:combine"]
 description = "Combine integration + e2e coverage and export XML"
 run = [
-  "coverage combine .coverage.unit .coverage.e2e",
-  "coverage xml -o coverage.xml",
-  "coverage report --fail-under=97",
+    "coverage combine .coverage.unit .coverage.e2e",
+    "coverage xml -o coverage.xml",
+    "coverage report --fail-under=97",
 ]
 env.PYTHONPATH = "src"
 
@@ -204,22 +204,22 @@ dir = "tests/e2e"
 [tasks.e2e]
 description = "Run end-to-end Playwright tests"
 run = [
-  "npx playwright test --workers=1",
-  { "task" = "_e2e", args = ["coverage", "report"] },
+    "npx playwright test --workers=1",
+    { "task" = "_e2e", args = ["coverage", "report"] },
 ]
 dir = "tests/e2e"
 
 [tasks."boot-e2e"]
 description = "Bootstrap and start dev server for e2e tests"
 run = [
-  { task = "_e2e", args = ["django-admin", "migrate", "--noinput"] },
-  { task = "_e2e", args = ["django-admin", "createcachetable"] },
-  { task = "_e2e", args = ["django-admin", "downloadvendor"] },
-  { task = "_e2e", args = ["python", "tests/e2e/scripts/bootstrap_data.py"] },
-  { task = "_e2e", args = ["python", "tests/e2e/scripts/bootstrap_facilitators.py"] },
-  { task = "_e2e", args = ["python", "tests/e2e/scripts/bootstrap_timetable.py"] },
-  { task = "build-frontend" },
-  { task = "_e2e", args = ["coverage", "run", "--source=src", "-m", "django", "runserver", "--insecure", "--noreload"] },
+    { task = "_e2e", args = ["django-admin", "migrate", "--noinput"] },
+    { task = "_e2e", args = ["django-admin", "createcachetable"] },
+    { task = "_e2e", args = ["django-admin", "downloadvendor"] },
+    { task = "_e2e", args = ["python", "tests/e2e/scripts/bootstrap_data.py"] },
+    { task = "_e2e", args = ["python", "tests/e2e/scripts/bootstrap_facilitators.py"] },
+    { task = "_e2e", args = ["python", "tests/e2e/scripts/bootstrap_timetable.py"] },
+    { task = "build-frontend" },
+    { task = "_e2e", args = ["coverage", "run", "--source=src", "-m", "django", "runserver", "--insecure", "--noreload"] },
 ]
 
 # DEPLOYMENT
@@ -233,8 +233,8 @@ arg "<environment>" help="Target environment" {
 arg "[dc_args]" var=#true double_dash="optional"
 '''
 run = [
-  "GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}",
-  "docker compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name'dc_args')}}",
+    "GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}",
+    "docker compose -f docker/compose/{{ usage.environment }}.yaml {{arg(name'dc_args')}}",
 ]
 
 [tasks.kill]
@@ -257,7 +257,7 @@ run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pra
 [tasks.coverage]
 description = "Run all tests, collect coverage, enforce 97% threshold"
 run = [
-  { task = "test", args = ["--cov"] },
-  { task = "e2e" },
-  { task = "coverage:combine" },
+    { task = "test", args = ["--cov"] },
+    { task = "e2e" },
+    { task = "coverage:combine" },
 ]

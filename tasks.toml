@@ -26,23 +26,23 @@ dir = "src/ludamus/client"
 [build-frontend]
 description = "Build frontend assets (CSS + JS)"
 run = [
-  { task = "fnpm", args = ["install"] },
-  { task = "fnpm", args = ["run", "build"] },
+    { task = "fnpm", args = ["install"] },
+    { task = "fnpm", args = ["run", "build"] },
 ]
 
 [bootstrap]
 description = "Set up the dev environment from scratch — idempotent"
 run = [
-  """
+    """
 if [ ! -f .env ]; then
 cp .env.local.example .env
 echo "Created .env from .env.local.example"
 fi""",
-  "set -a && . ./.env && set +a",
-  { task = "install" },
-  { task = "fnpm", args = ["install"] },
-  { task = "dj", args = ["migrate", "--noinput"] },
-  { task = "dj", args = ["createcachetable"] },
-  { task = "dj", args = ["downloadvendor"] },
-  "python scripts/bootstrap_dev.py",
+    "set -a && . ./.env && set +a",
+    { task = "install" },
+    { task = "fnpm", args = ["install"] },
+    { task = "dj", args = ["migrate", "--noinput"] },
+    { task = "dj", args = ["createcachetable"] },
+    { task = "dj", args = ["downloadvendor"] },
+    "python scripts/bootstrap_dev.py",
 ]

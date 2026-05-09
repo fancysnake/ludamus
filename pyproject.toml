@@ -3,9 +3,9 @@ name = "ludamus"
 version = "0.1.0"
 description = "Event management website"
 authors = [
-  { name = "Radosław Ganczarek", email = "radoslaw@ganczarek.in" },
-  { name = "hasparus", email = "hasparus@gmail.com" },
-  { name = "lprasol", email = "lprasol@gmail.com" },
+    { name = "Radosław Ganczarek", email = "radoslaw@ganczarek.in" },
+    { name = "hasparus", email = "hasparus@gmail.com" },
+    { name = "lprasol", email = "lprasol@gmail.com" },
 ]
 license = { text = "BSD-3-Clause license" }
 readme = "README.md"
@@ -91,9 +91,9 @@ skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor,src/ludamus/
 branch = true
 source = ["src"]
 omit = [
-  "src/ludamus/edges/*",
-  "src/ludamus/adapters/db/django/migrations/*",
-  "tests/template_checks.py",
+    "src/ludamus/edges/*",
+    "src/ludamus/adapters/db/django/migrations/*",
+    "tests/template_checks.py",
 ]
 sigterm = true
 
@@ -116,13 +116,13 @@ known_first_party = ["ludamus"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = [
-  "django-extensions",
-  "django-vite",
-  "gunicorn",
-  "heroicons",
-  "honcho",
-  "psycopg",
-  "pillow",
+    "django-extensions",
+    "django-vite",
+    "gunicorn",
+    "heroicons",
+    "honcho",
+    "psycopg",
+    "pillow",
 ]
 DEP004 = ["debug_toolbar"]
 
@@ -175,12 +175,12 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
-  "ludamus.adapters.db.django.*",
-  "ludamus.adapters.web.django.*",
-  "ludamus.edges.settings",
-  "ludamus.gates.web.django.*",
-  "ludamus.links.db.django.*",
-  "ludamus.links.ticket_api",
+    "ludamus.adapters.db.django.*",
+    "ludamus.adapters.web.django.*",
+    "ludamus.edges.settings",
+    "ludamus.gates.web.django.*",
+    "ludamus.links.db.django.*",
+    "ludamus.links.ticket_api",
 ]
 disallow_any_expr = false
 
@@ -203,37 +203,37 @@ preview = true
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  # Unused
-  "COM",
-  "CPY",
-  "D1",
-  "FIX",
-  "TD003",
-  # Left to fix
-  "PLR0911", # Too many return statements
-  "PLR0912", # Too many branches
-  "PLR0915", # Too many statements
-  "PLR0914", # Too many local variables
-  "PLR1702", # Too many nested blocks
-  "EM101",   # Exception must not use a string literal, assign to variable first
-  "TRY003",  # Avoid specifying long messages outside the exception class
+    # Unused
+    "COM",
+    "CPY",
+    "D1",
+    "FIX",
+    "TD003",
+    # Left to fix
+    "PLR0911", # Too many return statements
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "PLR0914", # Too many local variables
+    "PLR1702", # Too many nested blocks
+    "EM101",   # Exception must not use a string literal, assign to variable first
+    "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "*/migrations/**.py" = [
-  "ANN",    # flake8-annotations
-  "ARG001", # Unused arguments
-  "E501",   # Line too long
-  "RUF012", # ClassVar
+    "ANN",    # flake8-annotations
+    "ARG001", # Unused arguments
+    "E501",   # Line too long
+    "RUF012", # ClassVar
 ]
 "tests/**.py" = [
-  "ANN",     # flake8-annotations
-  "INP001",  # implicit namespace package
-  "PLR0913", # too-many-arguments
-  "PLR0917", # too-many-positional-arguments
-  "S",       # bandit
-  "PLR0904", # Too many public methods
-  "PLR6301", # Method could be a function
+    "ANN",     # flake8-annotations
+    "INP001",  # implicit namespace package
+    "PLR0913", # too-many-arguments
+    "PLR0917", # too-many-positional-arguments
+    "S",       # bandit
+    "PLR0904", # Too many public methods
+    "PLR6301", # Method could be a function
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
@@ -294,11 +294,11 @@ name = "mills"
 type = "forbidden"
 source_modules = ["ludamus.mills"]
 forbidden_modules = [
-  "ludamus.gates",
-  "ludamus.links",
-  "ludamus.inits",
-  "ludamus.edges",
-  "django",
+    "ludamus.gates",
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.edges",
+    "django",
 ]
 
 
@@ -307,13 +307,13 @@ name = "pacts"
 type = "forbidden"
 source_modules = ["ludamus.pacts"]
 forbidden_modules = [
-  "ludamus.gates",
-  "ludamus.links",
-  "ludamus.inits",
-  "ludamus.mills",
-  "ludamus.specs",
-  "ludamus.edges",
-  "django",
+    "ludamus.gates",
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.mills",
+    "ludamus.specs",
+    "ludamus.edges",
+    "django",
 ]
 
 
@@ -322,12 +322,12 @@ name = "specs"
 type = "forbidden"
 source_modules = ["ludamus.specs"]
 forbidden_modules = [
-  "ludamus.gates",
-  "ludamus.links",
-  "ludamus.inits",
-  "ludamus.mills",
-  "ludamus.edges",
-  "django",
+    "ludamus.gates",
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.mills",
+    "ludamus.edges",
+    "django",
 ]
 
 
@@ -336,12 +336,12 @@ name = "edges"
 type = "forbidden"
 source_modules = ["ludamus.edges"]
 forbidden_modules = [
-  "ludamus.gates",
-  "ludamus.links",
-  "ludamus.inits",
-  "ludamus.mills",
-  "ludamus.pacts",
-  "ludamus.specs",
+    "ludamus.gates",
+    "ludamus.links",
+    "ludamus.inits",
+    "ludamus.mills",
+    "ludamus.pacts",
+    "ludamus.specs",
 ]
 
 
