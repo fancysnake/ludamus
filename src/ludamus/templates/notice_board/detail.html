@@ -40,7 +40,7 @@
         {# ── LEFT COLUMN: "what is this" ── #}
         <div class="lg:col-span-2 card card-body flex flex-col gap-4">
             {% if encounter.header_image %}
-                <div class="relative aspect-[2/1] overflow-hidden rounded-t-2xl -mb-6">
+                <div class="relative aspect-[2/1] overflow-hidden rounded-t-2xl">
                     <img src="{{ MEDIA_URL }}{{ encounter.header_image }}"
                          alt="{{ encounter.title }}"
                          width="800"
