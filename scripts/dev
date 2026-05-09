@@ -7,6 +7,27 @@ use_portless="1"
 use_lan="0"
 do_trust="0"
 
+ensure_simulacrum_certs() {
+  local dest="$HOME/.simulacrum/certs"
+  if [ -f "$dest/localhost.pem" ] && [ -f "$dest/localhost-key.pem" ]; then
+    return 0
+  fi
+  local src_pem="$HOME/.portless/server.pem"
+  local src_key="$HOME/.portless/server-key.pem"
+  if [ ! -f "$src_pem" ] || [ ! -f "$src_key" ]; then
+    echo "[dev] no portless certs at ~/.portless; auth0-simulator disabled" >&2
+    return 1
+  fi
+  mkdir -p "$dest"
+  ln -sf "$src_pem" "$dest/localhost.pem"
+  ln -sf "$src_key" "$dest/localhost-key.pem"
+  echo "[dev] linked portless certs -> ~/.simulacrum/certs" >&2
+}
+
+case "${AUTH0_DOMAIN:-}" in
+  *.local*) ensure_simulacrum_certs || true ;;
+esac
+
 while [ $# -gt 0 ]; do
   case "$1" in
     -p|--port)

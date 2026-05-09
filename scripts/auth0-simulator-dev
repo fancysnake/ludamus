@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+case "${AUTH0_DOMAIN:-}" in
+  *.local*) ;;
+  *) exec sleep infinity ;;
+esac
+
+cert_dir="$HOME/.simulacrum/certs"
+if [ ! -f "$cert_dir/localhost.pem" ] || [ ! -f "$cert_dir/localhost-key.pem" ]; then
+  echo "[auth0] missing $cert_dir/localhost{.pem,-key.pem}; not starting simulator" >&2
+  exec sleep infinity
+fi
+
+npx --prefix src/ludamus/client portless alias auth0 4400 >/dev/null
+exec npx --prefix src/ludamus/client @simulacrum/auth0-simulator
