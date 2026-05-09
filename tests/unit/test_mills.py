@@ -889,7 +889,7 @@ class TestConnectionsService:
         connections.update_credentials.assert_called_once_with(7, 42, b"enc:fresh")
         transaction.atomic.assert_called_once_with()
 
-    def test_update_network_error_records_failure_and_raises(
+    def test_update_network_error_raises_without_writing(
         self, service, connections, transaction, docs_api
     ):
         docs_api.check_credentials.return_value = CheckResult(
@@ -901,12 +901,11 @@ class TestConnectionsService:
             service.update(sphere_id=7, pk=42, data=data, credentials_plaintext=b"x")
 
         assert caught.value.status == "network_error"
-        # Failure must be persisted (in its own transaction) before the raise.
-        check_result = docs_api.check_credentials.return_value
-        connections.update_last_check.assert_called_once_with(7, 42, check_result)
+        # Rejected credential must not touch the stored row or its last-check.
+        connections.update_last_check.assert_not_called()
         connections.update.assert_not_called()
         connections.update_credentials.assert_not_called()
-        transaction.atomic.assert_called_once_with()
+        transaction.atomic.assert_not_called()
 
     def test_delete_calls_repo_in_transaction(self, service, connections, transaction):
         service.delete(sphere_id=1, pk=42)

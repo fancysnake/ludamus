@@ -79,12 +79,10 @@ class ConnectionsService:
             with self._transaction.atomic():
                 return self._connections.update(sphere_id, pk, data)
 
+        # Probe before any write so a rejected credential leaves the
+        # stored credential and its last-check status untouched.
         result = self._docs_api.check_credentials(credentials_plaintext)
         if result.status is not ConnectionCheckStatus.OK:
-            # Persist the failure so the Health column reflects it,
-            # then surface the error to the caller.
-            with self._transaction.atomic():
-                self._connections.update_last_check(sphere_id, pk, result)
             raise CredentialAuthError(result.status, result.detail)
 
         with self._transaction.atomic():

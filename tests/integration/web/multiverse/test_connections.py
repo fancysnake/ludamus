@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from http import HTTPStatus
 from unittest.mock import ANY, MagicMock
 
@@ -9,6 +10,8 @@ from ludamus.adapters.db.django.models import Connection
 from ludamus.links.docs_api import google as google_docs_api
 from ludamus.pacts.multiverse import ConnectionDTO
 from tests.integration.utils import assert_response
+
+PRIOR_CHECK_AT = datetime(2026, 5, 1, 12, 0, tzinfo=UTC)
 
 
 def _patch_google_refresh(monkeypatch, side_effect=None):
@@ -468,7 +471,7 @@ class TestConnectionEditPageView:
         assert b"abc" not in stored
         assert connection.last_check_status == "ok"
 
-    def test_post_replace_credentials_records_failure_when_check_fails(
+    def test_post_replace_credentials_keeps_prior_check_on_auth_failure(
         self, authenticated_client, active_user, sphere, monkeypatch
     ):
         sphere.managers.add(active_user)
@@ -477,6 +480,9 @@ class TestConnectionEditPageView:
             service="google",
             display_name="Original",
             credentials=b"old-blob",
+            last_check_status="ok",
+            last_check_detail="prior pass",
+            last_check_at=PRIOR_CHECK_AT,
         )
         # The view fetches the connection before attempting the update,
         # so the rendered DTO reflects the pre-update row.
@@ -508,20 +514,25 @@ class TestConnectionEditPageView:
             },
         )
         connection.refresh_from_db()
-        # Failure is persisted so the Health column reflects reality.
-        assert connection.last_check_status == "auth_failed"
-        assert "bad key" in connection.last_check_detail
-        assert connection.last_check_at is not None
-        # Metadata change is rolled back; existing credentials untouched.
+        # Rejected credential never persisted, so the prior good check
+        # (and the existing credential / display name) survive intact.
+        assert connection.last_check_status == "ok"
+        assert connection.last_check_detail == "prior pass"
+        assert connection.last_check_at == PRIOR_CHECK_AT
         assert connection.display_name == "Original"
         assert bytes(connection.credentials) == b"old-blob"
 
-    def test_post_replace_credentials_records_auth_failed_on_invalid_json(
+    def test_post_replace_credentials_keeps_prior_check_on_invalid_json(
         self, authenticated_client, active_user, sphere, monkeypatch
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Konto"
+            sphere=sphere,
+            service="google",
+            display_name="Konto",
+            last_check_status="ok",
+            last_check_detail="prior pass",
+            last_check_at=PRIOR_CHECK_AT,
         )
         # No SDK patching — JSON decoding inside the adapter fails first.
         # Patch _make_credentials anyway so a stray call would surface as
@@ -541,15 +552,21 @@ class TestConnectionEditPageView:
         assert response.context["form"].non_field_errors()
         assert response.status_code == HTTPStatus.OK
         connection.refresh_from_db()
-        assert connection.last_check_status == "auth_failed"
-        assert "JSON" in connection.last_check_detail
+        assert connection.last_check_status == "ok"
+        assert connection.last_check_detail == "prior pass"
+        assert connection.last_check_at == PRIOR_CHECK_AT
 
-    def test_post_replace_credentials_records_auth_failed_on_factory_rejection(
+    def test_post_replace_credentials_keeps_prior_check_on_factory_rejection(
         self, authenticated_client, active_user, sphere, monkeypatch
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Konto"
+            sphere=sphere,
+            service="google",
+            display_name="Konto",
+            last_check_status="ok",
+            last_check_detail="prior pass",
+            last_check_at=PRIOR_CHECK_AT,
         )
         _patch_google_factory_raises(monkeypatch, ValueError("missing key"))
 
@@ -566,15 +583,21 @@ class TestConnectionEditPageView:
         assert response.context["form"].non_field_errors()
         assert response.status_code == HTTPStatus.OK
         connection.refresh_from_db()
-        assert connection.last_check_status == "auth_failed"
-        assert "service-account" in connection.last_check_detail
+        assert connection.last_check_status == "ok"
+        assert connection.last_check_detail == "prior pass"
+        assert connection.last_check_at == PRIOR_CHECK_AT
 
-    def test_post_replace_credentials_records_network_error_on_transport_error(
+    def test_post_replace_credentials_keeps_prior_check_on_transport_error(
         self, authenticated_client, active_user, sphere, monkeypatch
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Konto"
+            sphere=sphere,
+            service="google",
+            display_name="Konto",
+            last_check_status="ok",
+            last_check_detail="prior pass",
+            last_check_at=PRIOR_CHECK_AT,
         )
         _patch_google_refresh(
             monkeypatch, side_effect=google.auth.exceptions.TransportError("timeout")
@@ -593,8 +616,9 @@ class TestConnectionEditPageView:
         assert response.context["form"].non_field_errors()
         assert response.status_code == HTTPStatus.OK
         connection.refresh_from_db()
-        assert connection.last_check_status == "network_error"
-        assert "timeout" in connection.last_check_detail
+        assert connection.last_check_status == "ok"
+        assert connection.last_check_detail == "prior pass"
+        assert connection.last_check_at == PRIOR_CHECK_AT
 
     def test_post_replace_credentials_on_requires_credentials(
         self, authenticated_client, active_user, sphere
