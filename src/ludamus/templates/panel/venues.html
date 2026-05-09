@@ -40,9 +40,9 @@
             </div>
         </div>
         {% if venues %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100">
+            <div class="card">
                 <table class="min-w-full divide-y divide-neutral-200">
-                    <thead class="bg-neutral-50">
+                    <thead class="bg-bg-tertiary">
                         <tr>
                             <th scope="col" class="w-10 px-3 py-3"></th>
                             <th scope="col"
@@ -63,9 +63,9 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody id="venues-list" class="bg-white divide-y divide-neutral-200">
+                    <tbody id="venues-list" class="bg-bg-secondary divide-y divide-border">
                         {% for venue in venues %}
-                            <tr class="venue-row hover:bg-neutral-50 cursor-move"
+                            <tr class="venue-row hover:bg-bg-tertiary cursor-move"
                                 draggable="true"
                                 data-venue-id="{{ venue.pk }}">
                                 <td class="px-3 py-4 text-neutral-400">{% icon "bars-3" class="w-4 h-4" %}</td>
@@ -89,14 +89,14 @@
                                                 aria-haspopup="true">
                                             {% icon "ellipsis-horizontal" class="w-4 h-4" %}
                                         </button>
-                                        <div class="action-dropdown-menu hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-neutral-200 z-10">
+                                        <div class="action-dropdown-menu hidden absolute right-0 mt-2 w-40 bg-bg-secondary rounded-lg shadow-lg border border-border z-10">
                                             <a href="{% url 'panel:venue-duplicate' slug=current_event.slug venue_slug=venue.slug %}"
-                                               class="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 rounded-t-lg">
+                                               class="flex items-center px-4 py-2 text-sm text-foreground-secondary hover:bg-bg-tertiary rounded-t-lg">
                                                 {% icon "document-duplicate" class="w-4 h-4 mr-2" %}
                                                 {% translate "Duplicate" %}
                                             </a>
                                             <a href="{% url 'panel:venue-copy' slug=current_event.slug venue_slug=venue.slug %}"
-                                               class="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50">
+                                               class="flex items-center px-4 py-2 text-sm text-foreground-secondary hover:bg-bg-tertiary">
                                                 {% icon "clipboard-document" class="w-4 h-4 mr-2" %}
                                                 {% translate "Copy" %}
                                             </a>
@@ -192,12 +192,12 @@
                 })();
             </script>
         {% else %}
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+            <div class="card p-8 text-center">
                 <p class="text-neutral-500">{% translate "No venues yet. Venues will be managed here once available." %}</p>
             </div>
         {% endif %}
     {% else %}
-        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+        <div class="card p-8 text-center">
             <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}
