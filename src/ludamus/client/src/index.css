@@ -493,15 +493,6 @@ button:active {
     }
   }
 
-  .btn-teal {
-    --bg: var(--theme-secondary);
-    color: white;
-  }
-
-  .btn-teal:hover {
-    background-color: var(--theme-secondary-hover);
-  }
-
   .btn-danger {
     --bg: var(--theme-danger);
     color: white;

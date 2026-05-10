@@ -570,7 +570,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex flex-col gap-1.5 grow">
                                         <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
-                                           class="btn btn-teal text-xs">
+                                           class="btn btn-primary text-xs">
                                             {% icon "check" class="w-3.5 h-3.5" variant="mini" %} {% translate "Accept" %}
                                         </a>
                                         <a href="?proposal={{ pending.pk }}"
@@ -659,7 +659,7 @@
                 </div>
                 <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
                     <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
-                       class="btn btn-teal text-sm">{% icon "check" class="w-4 h-4" variant="mini" %} {% translate "Accept Proposal" %}</a>
+                       class="btn btn-primary text-sm">{% icon "check" class="w-4 h-4" variant="mini" %} {% translate "Accept Proposal" %}</a>
                 </div>
             </dialog>
         {% endfor %}
@@ -927,7 +927,7 @@
                         {% else %}
                             {% if current_user.user_type == 'connected' or current_user.user_type == 'active' %}
                                 <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
-                                   class="btn btn-teal text-sm">
+                                   class="btn btn-primary text-sm">
                                     {% icon "user-plus" class="w-4 h-4" variant="mini" %} {% translate "Enroll Now" %}
                                 </a>
                             {% endif %}
@@ -940,7 +940,7 @@
                             </a>
                         {% else %}
                             <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
-                               class="btn btn-teal text-sm">
+                               class="btn btn-primary text-sm">
                                 {% icon "user-plus" class="w-4 h-4" variant="mini" %} {% translate "Enroll Anonymously" %}
                             </a>
                         {% endif %}
