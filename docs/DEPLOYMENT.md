@@ -81,7 +81,7 @@ mkdir -p ~/ludamus/{postgres_data,static,media}
 #    MEDIA_DATA_PATH=/home/ludamus/ludamus/media
 
 # 6. Build and start production services
-docker compose -f docker/compose/prod.yaml up -d --build
+docker compose --env-file .env.local -f docker/compose/prod.yaml up -d --build
 ```
 
 **Startup order** (enforced by `depends_on` with health checks):
@@ -112,7 +112,7 @@ should be set to the dedicated user's home directory as shown above.
 git pull
 
 # Rebuild and restart — migrations and collectstatic run automatically
-docker compose -f docker/compose/prod.yaml up -d --build
+docker compose --env-file .env.local -f docker/compose/prod.yaml up -d --build
 ```
 
 Migrations run automatically via the `migrations` service. Static files are
@@ -121,7 +121,7 @@ re-collected via the `collectstatic` service.
 If only env vars changed (no code changes):
 
 ```bash
-docker compose -f docker/compose/prod.yaml up -d
+docker compose --env-file .env.local -f docker/compose/prod.yaml up -d
 ```
 
 ## 5. Environment Variables Reference
