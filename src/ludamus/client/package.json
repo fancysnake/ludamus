@@ -26,10 +26,5 @@
   },
   "dependencies": {
     "@fluejs/noscroll": "^1.0.0"
-  },
-  "prettier": {
-    "plugins": [
-      "prettier-plugin-tailwindcss"
-    ]
   }
 }
