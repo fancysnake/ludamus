@@ -5,6 +5,8 @@ backoffice). Split per `plans/hex_refactor.md` if the file grows past
 ~12 top-level members or 1000 lines.
 """
 
+from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol, TypedDict
 
@@ -18,6 +20,28 @@ class ConnectionProvider(StrEnum):
     GOOGLE = "google"
 
 
+class ConnectionCheckStatus(StrEnum):
+    UNKNOWN = "unknown"
+    OK = "ok"
+    AUTH_FAILED = "auth_failed"
+    NETWORK_ERROR = "network_error"
+
+
+@dataclass(frozen=True)
+class CheckResult:
+    status: ConnectionCheckStatus
+    detail: str
+
+
+class CredentialAuthError(Exception):
+    """Raised when a credential auth check returns a non-`ok` status."""
+
+    def __init__(self, status: ConnectionCheckStatus, detail: str) -> None:
+        self.status = status
+        self.detail = detail
+        super().__init__(f"{status.value}: {detail}")
+
+
 class ConnectionDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -26,6 +50,10 @@ class ConnectionDTO(BaseModel):
     service: ConnectionProvider
     display_name: str
     has_credentials: bool
+    last_check_status: ConnectionCheckStatus = ConnectionCheckStatus.UNKNOWN
+    last_check_label: str = ""
+    last_check_detail: str = ""
+    last_check_at: datetime | None = None
 
 
 class ConnectionWriteDict(TypedDict):
@@ -45,11 +73,18 @@ class ConnectionsRepositoryProtocol(Protocol):
     @staticmethod
     def update_credentials(sphere_id: int, pk: int, blob: bytes) -> None: ...
     @staticmethod
+    def update_last_check(sphere_id: int, pk: int, result: CheckResult) -> None: ...
+    @staticmethod
     def delete(sphere_id: int, pk: int) -> None: ...
 
 
 class EncryptorProtocol(Protocol):
     def encrypt(self, plaintext: bytes) -> bytes: ...
+
+
+class DocsApiProtocol(Protocol):
+    @staticmethod
+    def check_credentials(plaintext: bytes) -> CheckResult: ...
 
 
 class ConnectionsServiceProtocol(Protocol):
