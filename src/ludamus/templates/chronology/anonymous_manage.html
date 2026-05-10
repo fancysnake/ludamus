@@ -41,8 +41,8 @@
             </div>
         {% else %}
             {# User Found - Show Enrollments #}
-            <div class="alert alert-success flex items-start gap-3 mb-4">
-                {% icon "check-circle" class="w-5 h-5 shrink-0 mt-0.5" %}
+            <div class="alert alert-success flex items-center gap-3 mb-4">
+                {% icon "check-circle" class="w-5 h-5 shrink-0" %}
                 <div>
                     <h6 class="font-semibold mb-1">{% translate "Code found!" %}</h6>
                     <p class="mb-0">
@@ -92,8 +92,8 @@
                     </div>
                 </div>
             {% else %}
-                <div class="alert alert-info flex items-start gap-3 mb-4">
-                    {% icon "information-circle" class="w-5 h-5 shrink-0 mt-0.5" %}
+                <div class="alert alert-info flex items-center gap-3 mb-4">
+                    {% icon "information-circle" class="w-5 h-5 shrink-0" %}
                     <div>{% translate "You don't have any enrollments yet." %}</div>
                 </div>
             {% endif %}
