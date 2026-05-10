@@ -978,7 +978,7 @@
                 const originalClasses = button.className;
 
                 button.innerHTML = '✓';
-                button.className = 'btn btn-sm btn-success p-1 copy-discord';
+                button.className = 'btn bg-success text-white p-1 copy-discord';
 
                 setTimeout(() => {
                     button.innerHTML = originalHTML;
@@ -987,7 +987,7 @@
             }).catch(err => {
                 console.error('Copy failed:', err);
                 const originalClasses = button.className;
-                button.className = 'btn btn-sm btn-danger p-1 copy-discord';
+                button.className = 'btn btn-danger p-1 copy-discord';
                 setTimeout(() => {
                     button.className = originalClasses;
                 }, 2000);
