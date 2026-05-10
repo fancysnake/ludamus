@@ -12,6 +12,15 @@ mise run dj <cmd>   # django-admin
 mise tasks          # list all tasks with descriptions
 ```
 
+## Workflow
+
+- Consider UX: Are we torturing the user? Can something be done in a more respectful or straightforward way? e.g:
+  - is the info we're showing redundant?
+  - are we asking for needless clicks? like showing a form with one selectable option?
+- Use agent-browser to take screenshots of affected pages and include before/after images in the PR description
+
+<python>
+
 ## Architecture
 
 GLIMPSE system:
@@ -57,10 +66,9 @@ Strict rules:
 ## Rules
 
 - Views return DTOs to templates, never models
-- Never touch `.env*` files
 - Use `assert_response` utility for view tests, never manual assertions
 - In tests, NEVER use ANY for simple values ([], {}, booleans, strings, ints).
-  Only use ANY for forms/views. See docs/agents/testing-assertions.md.
+  Use ANY only for forms/views. See docs/agents/testing-assertions.md.
 - NEVER modify, create, or delete configuration files without explicit
   per-case approval.
 - NEVER add noqa/type ignore/pylint comments or directives without explicit
@@ -79,8 +87,8 @@ Strict rules:
     response when the symptom appears, not a blanket allowance.
   - **Pre-existing legacy-module facade** — `<layer>/__init__.py`
     wildcarding `<layer>/legacy.py` (mills, pacts, inits) stays as is.
-- When making UI changes, use agent-browser to take screenshots of affected
-  pages and include before/after images in the PR description
+
+</python>
 
 ## Translation conventions (Polish)
 
