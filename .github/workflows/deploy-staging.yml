@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Materialize .env.local from environment secrets
         env:
-          ENV: staging
+          ENV: production
           DEBUG: 'false'
           USE_POSTGRES: 'true'
           DJANGO_SETTINGS_MODULE: ludamus.edges.settings
