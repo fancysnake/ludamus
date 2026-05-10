@@ -56,9 +56,9 @@ jobs:
             [ -n "$v" ] && printf '%s=%s\n' "$k" "$v" >> .env.local
           done
           for r in SECRET_KEY CREDENTIALS_ENCRYPTION_KEY DB_PASSWORD \
-                   AUTH0_CLIENT_SECRET \
+                   AUTH0_CLIENT_SECRET MEMBERSHIP_API_TOKEN \
                    ALLOWED_HOSTS ROOT_DOMAIN DB_NAME DB_USER \
-                   AUTH0_CLIENT_ID AUTH0_DOMAIN \
+                   AUTH0_CLIENT_ID AUTH0_DOMAIN MEMBERSHIP_API_BASE_URL \
                    POSTGRES_DATA_PATH STATIC_DATA_PATH MEDIA_DATA_PATH; do
             grep -q "^${r}=" .env.local || { echo "Missing environment secret: $r" >&2; exit 1; }
           done
