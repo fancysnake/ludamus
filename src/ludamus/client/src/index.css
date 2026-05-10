@@ -111,8 +111,8 @@
   --color-secondary-light: #f0fdfa;
 
   --color-success: #14b89b;
-  --color-success-light: #f0fdfa;
-  --color-success-bg: #ccfbef;
+  --color-success-light: #ccfbef;
+  --color-success-bg: #f0fdfa;
   --color-success-text: #0f7666;
 
   --color-warning: #f59e0b;
@@ -164,8 +164,8 @@ button {
   --theme-secondary-hover: #0d947e;
   --theme-secondary-light: #f0fdfa;
   --theme-success: #14b89b;
-  --theme-success-light: #f0fdfa;
-  --theme-success-bg: #ccfbef;
+  --theme-success-light: #ccfbef;
+  --theme-success-bg: #f0fdfa;
   --theme-success-text: #0f7666;
   --theme-warning: #f59e0b;
   --theme-warning-light: #fef3c7;

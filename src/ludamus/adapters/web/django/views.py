@@ -237,8 +237,6 @@ class Auth0LoginCallbackActionView(RedirectView):
             self.request.session.pop("anonymous_user_code", None)
             self.request.session.pop("anonymous_enrollment_active", None)
             self.request.session.pop("anonymous_event_id", None)
-        messages.success(self.request, _("Welcome!"))
-
         user = self._apply_user_updates(userinfo, user)
 
         if not (user.name or "").strip():
