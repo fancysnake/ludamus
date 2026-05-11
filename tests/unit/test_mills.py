@@ -34,7 +34,7 @@ from ludamus.pacts.multiverse import (
     CheckResult,
     ConnectionCheckStatus,
     ConnectionDTO,
-    ConnectionProvider,
+    ConnectionKind,
     CredentialAuthError,
     DocsApiProtocol,
 )
@@ -767,7 +767,7 @@ def _connection_dto(pk=1, sphere_id=1, name="Konto", *, has_credentials=False):
     return ConnectionDTO(
         pk=pk,
         sphere_id=sphere_id,
-        service=ConnectionProvider.GOOGLE,
+        kind=ConnectionKind.GOOGLE,
         display_name=name,
         has_credentials=has_credentials,
     )
@@ -809,7 +809,7 @@ class TestConnectionsService:
     ):
         created = _connection_dto(pk=42)
         connections.create.return_value = created
-        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
 
         result = service.create(sphere_id=7, data=data)
 
@@ -825,7 +825,7 @@ class TestConnectionsService:
     ):
         created = _connection_dto(pk=42)
         connections.create.return_value = created
-        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
 
         result = service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
 
@@ -843,7 +843,7 @@ class TestConnectionsService:
         docs_api.check_credentials.return_value = CheckResult(
             status=ConnectionCheckStatus.AUTH_FAILED, detail="bad key"
         )
-        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
 
         with pytest.raises(CredentialAuthError) as caught:
             service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
@@ -859,7 +859,7 @@ class TestConnectionsService:
     ):
         updated = _connection_dto(pk=42)
         connections.update.return_value = updated
-        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
 
         result = service.update(sphere_id=7, pk=42, data=data)
 
@@ -875,7 +875,7 @@ class TestConnectionsService:
     ):
         updated = _connection_dto(pk=42)
         connections.update.return_value = updated
-        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
 
         result = service.update(
             sphere_id=7, pk=42, data=data, credentials_plaintext=b"fresh"
@@ -895,7 +895,7 @@ class TestConnectionsService:
         docs_api.check_credentials.return_value = CheckResult(
             status=ConnectionCheckStatus.NETWORK_ERROR, detail="timeout"
         )
-        data = {"service": ConnectionProvider.GOOGLE, "display_name": "Konto"}
+        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
 
         with pytest.raises(CredentialAuthError) as caught:
             service.update(sphere_id=7, pk=42, data=data, credentials_plaintext=b"x")

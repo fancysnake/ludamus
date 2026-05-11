@@ -31,7 +31,7 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
-                                {% translate "Source service" %}
+                                {% translate "Kind" %}
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
@@ -47,7 +47,7 @@
                         {% for connection in connections %}
                             <tr class="hover:bg-bg-tertiary">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{{ connection.display_name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">{{ connection.service }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">{{ connection.kind }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     {% if connection.last_check_status == "ok" %}
                                         <span class="inline-flex items-center rounded-full bg-success-bg px-2.5 py-0.5 text-xs font-medium text-success-text">{{ connection.last_check_label }}</span>

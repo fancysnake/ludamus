@@ -16,8 +16,9 @@ if TYPE_CHECKING:
     from ludamus.pacts.legacy import EventDTO
 
 
-class ConnectionProvider(StrEnum):
+class ConnectionKind(StrEnum):
     GOOGLE = "google"
+    TICKET_API = "ticket_api"
 
 
 class ConnectionCheckStatus(StrEnum):
@@ -47,7 +48,7 @@ class ConnectionDTO(BaseModel):
 
     pk: int
     sphere_id: int
-    service: ConnectionProvider
+    kind: ConnectionKind
     display_name: str
     has_credentials: bool
     last_check_status: ConnectionCheckStatus = ConnectionCheckStatus.UNKNOWN
@@ -57,7 +58,7 @@ class ConnectionDTO(BaseModel):
 
 
 class ConnectionWriteDict(TypedDict):
-    service: ConnectionProvider
+    kind: ConnectionKind
     display_name: str
 
 

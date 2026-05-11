@@ -8,9 +8,9 @@ the file grows past ~12 top-level members or 1000 lines.
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum, auto
-from typing import Protocol
+from typing import ClassVar, Protocol, TypedDict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ludamus.pacts.legacy import (
     AgendaItemDTO,
@@ -21,6 +21,7 @@ from ludamus.pacts.legacy import (
     ProposalCategoryDTO,
     SpaceDTO,
 )
+from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
 
 TIMETABLE_ROOM_PAGE_SIZE = 5
 TIMETABLE_SLOT_MINUTES = 60
@@ -188,3 +189,117 @@ class CFPPersonalDataFieldServiceProtocol(Protocol):
         category_requirements: dict[int, bool],
     ) -> None: ...
     def delete(self, event_pk: int, field_slug: str) -> bool: ...
+
+
+# --- External APIs (per-event polymorphic integrations) ---
+
+
+class EventAPIConnectionDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    event_id: int
+    connection_id: int
+    class_name: str
+    config: dict[str, object]
+    last_check_status: ConnectionCheckStatus = ConnectionCheckStatus.UNKNOWN
+    last_check_label: str = ""
+    last_check_detail: str = ""
+    last_check_at: datetime | None = None
+
+
+class EventAPIConnectionWriteDict(TypedDict):
+    connection_id: int
+    class_name: str
+    config: dict[str, object]
+
+
+class EventAPIConnectionRepositoryProtocol(Protocol):
+    @staticmethod
+    def list_for_event(event_pk: int) -> list[EventAPIConnectionDTO]: ...
+    @staticmethod
+    def list_for_event_and_kind(
+        event_pk: int, kind: ConnectionKind
+    ) -> list[EventAPIConnectionDTO]: ...
+    @staticmethod
+    def get(event_pk: int, pk: int) -> EventAPIConnectionDTO: ...
+    @staticmethod
+    def create(
+        event_pk: int, data: EventAPIConnectionWriteDict
+    ) -> EventAPIConnectionDTO: ...
+    @staticmethod
+    def update(
+        event_pk: int, pk: int, data: EventAPIConnectionWriteDict
+    ) -> EventAPIConnectionDTO: ...
+    @staticmethod
+    def update_last_check(event_pk: int, pk: int, result: CheckResult) -> None: ...
+    @staticmethod
+    def delete(event_pk: int, pk: int) -> None: ...
+
+
+class TicketAPIImplementationProtocol(Protocol):
+    """Structural interface for ticket-API implementation classes.
+
+    Instantiated as `cls(config, credentials_plaintext)` by the consumer
+    mill. `check_credentials` runs the same probe used by the panel
+    pre-check, and is keyed by the implementation's `required_kind`.
+    """
+
+    name: ClassVar[str]
+    required_kind: ClassVar[ConnectionKind]
+    config_schema: ClassVar[type[BaseModel]]
+
+    @classmethod
+    def check_credentials(
+        cls, config: BaseModel, credentials_plaintext: bytes
+    ) -> CheckResult: ...
+    def fetch_membership_count(self, email: str) -> int: ...
+
+
+class ExternalAPIRegistryProtocol(Protocol):
+    def get(self, name: str) -> type[TicketAPIImplementationProtocol]: ...
+    def for_kind(
+        self, kind: ConnectionKind
+    ) -> list[type[TicketAPIImplementationProtocol]]: ...
+
+
+class ExternalAPINamespaceProtocol(Protocol):
+    @property
+    def registry(self) -> ExternalAPIRegistryProtocol: ...
+
+
+@dataclass
+class EventAPIConnectionListItem:
+    """Panel-list aggregate: event-side row + joined connection facts."""
+
+    connection: EventAPIConnectionDTO
+    connection_display_name: str
+    connection_kind: ConnectionKind
+
+
+@dataclass
+class EventAPIConnectionFormContextDTO:
+    """Read aggregate for the create/edit form."""
+
+    connections: list[tuple[int, str, ConnectionKind]]
+    classes_by_kind: dict[ConnectionKind, list[tuple[str, str]]]
+
+
+class EventAPIConnectionsServiceProtocol(Protocol):
+    def list_for_event(self, event_pk: int) -> list[EventAPIConnectionListItem]: ...
+    def get(self, event_pk: int, pk: int) -> EventAPIConnectionDTO: ...
+    def form_context(self, event_pk: int) -> EventAPIConnectionFormContextDTO: ...
+    def create(
+        self,
+        event_pk: int,
+        data: EventAPIConnectionWriteDict,
+        credentials_plaintext: bytes | None = None,
+    ) -> EventAPIConnectionDTO: ...
+    def update(
+        self,
+        event_pk: int,
+        pk: int,
+        data: EventAPIConnectionWriteDict,
+        credentials_plaintext: bytes | None = None,
+    ) -> EventAPIConnectionDTO: ...
+    def delete(self, event_pk: int, pk: int) -> None: ...

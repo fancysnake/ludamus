@@ -16,7 +16,7 @@ from ludamus.pacts.multiverse import ConnectionDTO
 class TestConnectionsRepositoryUpdateCredentials:
     def test_persists_blob(self, sphere):
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Konto"
+            sphere=sphere, kind="google", display_name="Konto"
         )
 
         ConnectionsRepository.update_credentials(
@@ -28,7 +28,7 @@ class TestConnectionsRepositoryUpdateCredentials:
 
     def test_overwrites_existing_blob(self, sphere):
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Konto", credentials=b"old"
+            sphere=sphere, kind="google", display_name="Konto", credentials=b"old"
         )
 
         ConnectionsRepository.update_credentials(
@@ -46,7 +46,7 @@ class TestConnectionsRepositoryUpdateCredentials:
 
     def test_raises_not_found_when_other_sphere(self, sphere, non_root_sphere):
         connection = Connection.objects.create(
-            sphere=non_root_sphere, service="google", display_name="Other"
+            sphere=non_root_sphere, kind="google", display_name="Other"
         )
 
         with pytest.raises(NotFoundError):

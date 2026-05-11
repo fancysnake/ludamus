@@ -2640,9 +2640,7 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
     @staticmethod
     def create(sphere_id: int, data: ConnectionWriteDict) -> ConnectionDTO:
         connection = Connection.objects.create(
-            sphere_id=sphere_id,
-            service=data["service"],
-            display_name=data["display_name"],
+            sphere_id=sphere_id, kind=data["kind"], display_name=data["display_name"]
         )
         return ConnectionDTO.model_validate(connection)
 
@@ -2652,7 +2650,7 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
             connection = Connection.objects.get(pk=pk, sphere_id=sphere_id)
         except Connection.DoesNotExist as exc:
             raise NotFoundError from exc
-        connection.service = data["service"]
+        connection.kind = data["kind"]
         connection.display_name = data["display_name"]
         connection.save()
         return ConnectionDTO.model_validate(connection)

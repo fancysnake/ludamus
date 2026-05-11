@@ -22,7 +22,7 @@ from ludamus.pacts import (
     UserType,
     VirtualEnrollmentConfig,
 )
-from ludamus.pacts.multiverse import ConnectionCheckStatus, ConnectionProvider
+from ludamus.pacts.multiverse import ConnectionCheckStatus, ConnectionKind
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -1364,9 +1364,12 @@ class Connection(models.Model):
     sphere = models.ForeignKey(
         Sphere, on_delete=models.CASCADE, related_name="connections"
     )
-    service = models.CharField(
+    kind = models.CharField(
         max_length=32,
-        choices=[(ConnectionProvider.GOOGLE.value, _("Google Forms + Sheets"))],
+        choices=[
+            (ConnectionKind.GOOGLE.value, _("Google Forms + Sheets")),
+            (ConnectionKind.TICKET_API.value, _("Ticket API")),
+        ],
     )
     display_name = models.CharField(max_length=255)
     # Encrypted credentials. Write-only at the repo surface — the

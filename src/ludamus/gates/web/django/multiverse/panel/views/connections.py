@@ -21,7 +21,7 @@ from ludamus.gates.web.django.multiverse.panel.views.base import sphere_panel_co
 from ludamus.pacts import NotFoundError, RedirectError
 from ludamus.pacts.multiverse import (
     ConnectionCheckStatus,
-    ConnectionProvider,
+    ConnectionKind,
     ConnectionWriteDict,
     CredentialAuthError,
 )
@@ -99,7 +99,7 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
 
         sphere_id = self.request.context.current_sphere_id
         data: ConnectionWriteDict = {
-            "service": ConnectionProvider(form.cleaned_data["service"]),
+            "kind": ConnectionKind(form.cleaned_data["kind"]),
             "display_name": form.cleaned_data["display_name"],
         }
         plaintext = form.cleaned_data["credentials"].encode("utf-8")
@@ -133,7 +133,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
 
         form = ConnectionForm(
             initial={
-                "service": connection.service.value,
+                "kind": connection.kind.value,
                 "display_name": connection.display_name,
             }
         )
@@ -167,7 +167,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
             )
 
         data: ConnectionWriteDict = {
-            "service": ConnectionProvider(form.cleaned_data["service"]),
+            "kind": ConnectionKind(form.cleaned_data["kind"]),
             "display_name": form.cleaned_data["display_name"],
         }
         if form.cleaned_data["replace_credentials"]:

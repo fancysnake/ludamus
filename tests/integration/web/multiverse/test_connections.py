@@ -92,10 +92,10 @@ class TestConnectionsPageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Konto Główne"
+            sphere=sphere, kind="google", display_name="Konto Główne"
         )
         Connection.objects.create(
-            sphere=non_root_sphere, service="google", display_name="Other Sphere"
+            sphere=non_root_sphere, kind="google", display_name="Other Sphere"
         )
 
         response = authenticated_client.get(self.url)
@@ -114,9 +114,9 @@ class TestConnectionsPageView:
         self, authenticated_client, active_user, sphere
     ):
         sphere.managers.add(active_user)
-        Connection.objects.create(sphere=sphere, service="google", display_name="Zeta")
-        Connection.objects.create(sphere=sphere, service="google", display_name="Alpha")
-        Connection.objects.create(sphere=sphere, service="google", display_name="Mu")
+        Connection.objects.create(sphere=sphere, kind="google", display_name="Zeta")
+        Connection.objects.create(sphere=sphere, kind="google", display_name="Alpha")
+        Connection.objects.create(sphere=sphere, kind="google", display_name="Mu")
 
         response = authenticated_client.get(self.url)
 
@@ -159,9 +159,7 @@ class TestConnectionCreatePageView:
         )
 
     def test_post_redirects_anonymous_user_to_login(self, client):
-        response = client.post(
-            self.url, data={"service": "google", "display_name": "X"}
-        )
+        response = client.post(self.url, data={"kind": "google", "display_name": "X"})
 
         assert_response(
             response, HTTPStatus.FOUND, url=f"/crowd/login-required/?next={self.url}"
@@ -169,7 +167,7 @@ class TestConnectionCreatePageView:
 
     def test_post_redirects_non_manager_user(self, authenticated_client):
         response = authenticated_client.post(
-            self.url, data={"service": "google", "display_name": "X"}
+            self.url, data={"kind": "google", "display_name": "X"}
         )
 
         assert_response(
@@ -185,7 +183,7 @@ class TestConnectionCreatePageView:
         sphere.managers.add(active_user)
 
         response = authenticated_client.post(
-            self.url, data={"service": "google", "display_name": ""}
+            self.url, data={"kind": "google", "display_name": ""}
         )
 
         assert response.context["form"].errors
@@ -203,7 +201,7 @@ class TestConnectionCreatePageView:
         sphere.managers.add(active_user)
 
         response = authenticated_client.post(
-            self.url, data={"service": "google", "display_name": "Konto"}
+            self.url, data={"kind": "google", "display_name": "Konto"}
         )
 
         assert response.context["form"].errors.get("credentials")
@@ -224,7 +222,7 @@ class TestConnectionCreatePageView:
         response = authenticated_client.post(
             self.url,
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Konto z kluczem",
                 "credentials": '{"client": "abc"}',
             },
@@ -253,7 +251,7 @@ class TestConnectionCreatePageView:
         response = authenticated_client.post(
             self.url,
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Failing",
                 "credentials": '{"client": "abc"}',
             },
@@ -280,7 +278,7 @@ class TestConnectionEditPageView:
 
     def test_get_redirects_anonymous_user_to_login(self, client, sphere):
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="X"
+            sphere=sphere, kind="google", display_name="X"
         )
         url = self.get_url(connection)
 
@@ -292,7 +290,7 @@ class TestConnectionEditPageView:
 
     def test_get_redirects_non_manager_user(self, authenticated_client, sphere):
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="X"
+            sphere=sphere, kind="google", display_name="X"
         )
 
         response = authenticated_client.get(self.get_url(connection))
@@ -307,7 +305,7 @@ class TestConnectionEditPageView:
     def test_get_ok_for_sphere_manager(self, authenticated_client, active_user, sphere):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Konto"
+            sphere=sphere, kind="google", display_name="Konto"
         )
 
         response = authenticated_client.get(self.get_url(connection))
@@ -328,7 +326,7 @@ class TestConnectionEditPageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=non_root_sphere, service="google", display_name="Other"
+            sphere=non_root_sphere, kind="google", display_name="Other"
         )
 
         response = authenticated_client.get(self.get_url(connection))
@@ -343,12 +341,12 @@ class TestConnectionEditPageView:
     def test_post_updates_connection(self, authenticated_client, active_user, sphere):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Old Name"
+            sphere=sphere, kind="google", display_name="Old Name"
         )
 
         response = authenticated_client.post(
             self.get_url(connection),
-            data={"service": "google", "display_name": "New Name"},
+            data={"kind": "google", "display_name": "New Name"},
         )
 
         assert_response(
@@ -365,11 +363,11 @@ class TestConnectionEditPageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Original"
+            sphere=sphere, kind="google", display_name="Original"
         )
 
         response = authenticated_client.post(
-            self.get_url(connection), data={"service": "google", "display_name": ""}
+            self.get_url(connection), data={"kind": "google", "display_name": ""}
         )
 
         assert response.context["form"].errors
@@ -391,12 +389,11 @@ class TestConnectionEditPageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=non_root_sphere, service="google", display_name="Other"
+            sphere=non_root_sphere, kind="google", display_name="Other"
         )
 
         response = authenticated_client.post(
-            self.get_url(connection),
-            data={"service": "google", "display_name": "Hacked"},
+            self.get_url(connection), data={"kind": "google", "display_name": "Hacked"}
         )
 
         assert_response(
@@ -414,7 +411,7 @@ class TestConnectionEditPageView:
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
             sphere=sphere,
-            service="google",
+            kind="google",
             display_name="Original",
             credentials=b"old-blob",
         )
@@ -422,7 +419,7 @@ class TestConnectionEditPageView:
         response = authenticated_client.post(
             self.get_url(connection),
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Renamed",
                 "credentials": "ignored",
             },
@@ -444,14 +441,14 @@ class TestConnectionEditPageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Konto"
+            sphere=sphere, kind="google", display_name="Konto"
         )
         _patch_google_refresh(monkeypatch)
 
         response = authenticated_client.post(
             self.get_url(connection),
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Konto",
                 "replace_credentials": "on",
                 "credentials": '{"client": "abc"}',
@@ -477,7 +474,7 @@ class TestConnectionEditPageView:
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
             sphere=sphere,
-            service="google",
+            kind="google",
             display_name="Original",
             credentials=b"old-blob",
             last_check_status="ok",
@@ -494,7 +491,7 @@ class TestConnectionEditPageView:
         response = authenticated_client.post(
             self.get_url(connection),
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Renamed",
                 "replace_credentials": "on",
                 "credentials": '{"client": "abc"}',
@@ -528,7 +525,7 @@ class TestConnectionEditPageView:
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
             sphere=sphere,
-            service="google",
+            kind="google",
             display_name="Konto",
             last_check_status="ok",
             last_check_detail="prior pass",
@@ -542,7 +539,7 @@ class TestConnectionEditPageView:
         response = authenticated_client.post(
             self.get_url(connection),
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Konto",
                 "replace_credentials": "on",
                 "credentials": "not json",
@@ -562,7 +559,7 @@ class TestConnectionEditPageView:
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
             sphere=sphere,
-            service="google",
+            kind="google",
             display_name="Konto",
             last_check_status="ok",
             last_check_detail="prior pass",
@@ -573,7 +570,7 @@ class TestConnectionEditPageView:
         response = authenticated_client.post(
             self.get_url(connection),
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Konto",
                 "replace_credentials": "on",
                 "credentials": '{"client": "abc"}',
@@ -593,7 +590,7 @@ class TestConnectionEditPageView:
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
             sphere=sphere,
-            service="google",
+            kind="google",
             display_name="Konto",
             last_check_status="ok",
             last_check_detail="prior pass",
@@ -606,7 +603,7 @@ class TestConnectionEditPageView:
         response = authenticated_client.post(
             self.get_url(connection),
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Konto",
                 "replace_credentials": "on",
                 "credentials": '{"client": "abc"}',
@@ -625,16 +622,13 @@ class TestConnectionEditPageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere,
-            service="google",
-            display_name="Konto",
-            credentials=b"unchanged",
+            sphere=sphere, kind="google", display_name="Konto", credentials=b"unchanged"
         )
 
         response = authenticated_client.post(
             self.get_url(connection),
             data={
-                "service": "google",
+                "kind": "google",
                 "display_name": "Konto",
                 "replace_credentials": "on",
                 "credentials": "",
@@ -667,7 +661,7 @@ class TestConnectionDeletePageView:
 
     def test_get_redirects_anonymous_user_to_login(self, client, sphere):
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="X"
+            sphere=sphere, kind="google", display_name="X"
         )
         url = self.get_url(connection)
 
@@ -679,7 +673,7 @@ class TestConnectionDeletePageView:
 
     def test_get_redirects_non_manager_user(self, authenticated_client, sphere):
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="X"
+            sphere=sphere, kind="google", display_name="X"
         )
 
         response = authenticated_client.get(self.get_url(connection))
@@ -696,7 +690,7 @@ class TestConnectionDeletePageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="To delete"
+            sphere=sphere, kind="google", display_name="To delete"
         )
 
         response = authenticated_client.get(self.get_url(connection))
@@ -716,7 +710,7 @@ class TestConnectionDeletePageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=non_root_sphere, service="google", display_name="Other"
+            sphere=non_root_sphere, kind="google", display_name="Other"
         )
 
         response = authenticated_client.get(self.get_url(connection))
@@ -731,7 +725,7 @@ class TestConnectionDeletePageView:
     def test_post_deletes_connection(self, authenticated_client, active_user, sphere):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=sphere, service="google", display_name="Goner"
+            sphere=sphere, kind="google", display_name="Goner"
         )
 
         response = authenticated_client.post(self.get_url(connection))
@@ -749,7 +743,7 @@ class TestConnectionDeletePageView:
     ):
         sphere.managers.add(active_user)
         connection = Connection.objects.create(
-            sphere=non_root_sphere, service="google", display_name="Other"
+            sphere=non_root_sphere, kind="google", display_name="Other"
         )
 
         response = authenticated_client.post(self.get_url(connection))
