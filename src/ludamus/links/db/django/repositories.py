@@ -18,6 +18,7 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
+    EventAPIConnection,
     EventProposalSettings,
     EventSettings,
     Facilitator,
@@ -120,9 +121,15 @@ from ludamus.pacts import (
     VenueDTO,
     VenueRepositoryProtocol,
 )
+from ludamus.pacts.chronology import (
+    EventAPIConnectionDTO,
+    EventAPIConnectionRepositoryProtocol,
+    EventAPIConnectionWriteDict,
+)
 from ludamus.pacts.multiverse import (
     CheckResult,
     ConnectionDTO,
+    ConnectionKind,
     ConnectionsRepositoryProtocol,
     ConnectionWriteDict,
 )
@@ -2679,5 +2686,79 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
     @staticmethod
     def delete(sphere_id: int, pk: int) -> None:
         deleted, _ = Connection.objects.filter(pk=pk, sphere_id=sphere_id).delete()
+        if not deleted:
+            raise NotFoundError
+
+
+class EventAPIConnectionRepository(EventAPIConnectionRepositoryProtocol):
+    @staticmethod
+    def list_for_event(event_pk: int) -> list[EventAPIConnectionDTO]:
+        return [
+            EventAPIConnectionDTO.model_validate(row)
+            for row in EventAPIConnection.objects.filter(event_id=event_pk).order_by(
+                "pk"
+            )
+        ]
+
+    @staticmethod
+    def list_for_event_and_kind(
+        event_pk: int, kind: ConnectionKind
+    ) -> list[EventAPIConnectionDTO]:
+        return [
+            EventAPIConnectionDTO.model_validate(row)
+            for row in EventAPIConnection.objects.filter(
+                event_id=event_pk, connection__kind=kind
+            ).order_by("pk")
+        ]
+
+    @staticmethod
+    def get(event_pk: int, pk: int) -> EventAPIConnectionDTO:
+        try:
+            row = EventAPIConnection.objects.get(pk=pk, event_id=event_pk)
+        except EventAPIConnection.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return EventAPIConnectionDTO.model_validate(row)
+
+    @staticmethod
+    def create(
+        event_pk: int, data: EventAPIConnectionWriteDict
+    ) -> EventAPIConnectionDTO:
+        row = EventAPIConnection.objects.create(
+            event_id=event_pk,
+            connection_id=data["connection_id"],
+            class_name=data["class_name"],
+            config=data["config"],
+        )
+        return EventAPIConnectionDTO.model_validate(row)
+
+    @staticmethod
+    def update(
+        event_pk: int, pk: int, data: EventAPIConnectionWriteDict
+    ) -> EventAPIConnectionDTO:
+        try:
+            row = EventAPIConnection.objects.get(pk=pk, event_id=event_pk)
+        except EventAPIConnection.DoesNotExist as exc:
+            raise NotFoundError from exc
+        row.connection_id = data["connection_id"]
+        row.class_name = data["class_name"]
+        row.config = data["config"]
+        row.save()
+        return EventAPIConnectionDTO.model_validate(row)
+
+    @staticmethod
+    def update_last_check(event_pk: int, pk: int, result: CheckResult) -> None:
+        updated = EventAPIConnection.objects.filter(pk=pk, event_id=event_pk).update(
+            last_check_status=result.status,
+            last_check_detail=result.detail,
+            last_check_at=timezone.now(),
+        )
+        if not updated:
+            raise NotFoundError
+
+    @staticmethod
+    def delete(event_pk: int, pk: int) -> None:
+        deleted, _ = EventAPIConnection.objects.filter(
+            pk=pk, event_id=event_pk
+        ).delete()
         if not deleted:
             raise NotFoundError
