@@ -1408,3 +1408,44 @@ class Connection(models.Model):
     @property
     def last_check_label(self) -> str:
         return str(self.get_last_check_status_display())
+
+
+class EventAPIConnection(models.Model):
+    """Per-event polymorphic external-API integration.
+
+    Picks a sphere `Connection` (for credentials) and a registered
+    implementation class. `config` holds class-specific parameters,
+    validated by a pydantic schema keyed by the connection's `kind`.
+    """
+
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="api_connections"
+    )
+    connection = models.ForeignKey(
+        Connection, on_delete=models.PROTECT, related_name="event_api_connections"
+    )
+    class_name = models.CharField(max_length=64)
+    config = models.JSONField(default=dict)
+    last_check_status = models.CharField(
+        max_length=32,
+        choices=[
+            (ConnectionCheckStatus.UNKNOWN.value, _("Not checked yet")),
+            (ConnectionCheckStatus.OK.value, _("OK")),
+            (ConnectionCheckStatus.AUTH_FAILED.value, _("Authentication failed")),
+            (ConnectionCheckStatus.NETWORK_ERROR.value, _("Network error")),
+        ],
+        default=ConnectionCheckStatus.UNKNOWN.value,
+    )
+    last_check_detail = models.TextField(default="", blank=True)
+    last_check_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "event_api_connection"
+        ordering = ("pk",)
+
+    def __str__(self) -> str:
+        return f"{self.class_name} @ event {self.event_id}"
+
+    @property
+    def last_check_label(self) -> str:
+        return str(self.get_last_check_status_display())
