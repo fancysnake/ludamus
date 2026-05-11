@@ -1,27 +1,18 @@
-"""Pydantic config schemas for external-API implementations.
+"""Kind -> config-schema mapping for the CRUD mill's validation step.
 
-Keyed by `ConnectionKind` via `KIND_CONFIG_SCHEMAS`. The CRUD mill
-validates the `EventAPIConnection.config` JSON against the schema
-matching the chosen connection's kind, surfacing pydantic errors as
-form field errors.
+Kept in specs because only `mills` consume it; links carry their own
+per-class `config_schema` ClassVar.
 """
 
-from pydantic import BaseModel, HttpUrl
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+from ludamus.pacts.external_apis import TicketAPIConfig
 from ludamus.pacts.multiverse import ConnectionKind
 
-
-class TicketAPIConfig(BaseModel):
-    """Config for a generic JSON-path ticket API.
-
-    `url` is hit with the user email as a query parameter; the response
-    JSON is traversed by `count_json_path` (dotted form) to extract the
-    integer slot count.
-    """
-
-    url: HttpUrl
-    count_json_path: str
-
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 KIND_CONFIG_SCHEMAS: dict[ConnectionKind, type[BaseModel]] = {
     ConnectionKind.TICKET_API: TicketAPIConfig
