@@ -28,12 +28,12 @@
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div class="flex">
-                {% icon "information-circle" class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" %}
-                <div class="text-sm text-blue-700">
-                    <p class="font-medium">{% translate "What are venues?" %}</p>
-                    <p class="mt-1">
+        <div class="alert alert-info mb-6">
+            <div class="flex items-start gap-3">
+                <span class="flex-shrink-0 mt-0.5">{% icon "information-circle" class="w-5 h-5" %}</span>
+                <div>
+                    <p class="text-sm font-medium">{% translate "What are venues?" %}</p>
+                    <p class="text-sm mt-1">
                         {% translate "Venues are physical locations like buildings, convention centers, or complexes. Each venue is typically identified by its address. Within venues, you can organize areas (floors, wings) and spaces (individual rooms)." %}
                     </p>
                 </div>
