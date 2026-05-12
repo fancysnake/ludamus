@@ -8,7 +8,6 @@ def clsx(*tokens: object) -> str:
             continue
         if token is True:
             continue
-        piece = str(token).strip()
-        if piece:
+        if piece := str(token).strip():
             chunks.append(piece)
     return " ".join(chunks)
