@@ -277,29 +277,15 @@ class EventAPIConnectionListItem:
     connection_kind: ConnectionKind
 
 
-@dataclass
-class EventAPIConnectionFormContextDTO:
-    """Read aggregate for the create/edit form."""
-
-    connections: list[tuple[int, str, ConnectionKind]]
-    classes_by_kind: dict[ConnectionKind, list[tuple[str, str]]]
-
-
 class EventAPIConnectionsServiceProtocol(Protocol):
-    def list_for_event(self, event_pk: int) -> list[EventAPIConnectionListItem]: ...
+    def list_for_event(
+        self, sphere_id: int, event_pk: int
+    ) -> list[EventAPIConnectionListItem]: ...
     def get(self, event_pk: int, pk: int) -> EventAPIConnectionDTO: ...
-    def form_context(self, event_pk: int) -> EventAPIConnectionFormContextDTO: ...
     def create(
-        self,
-        event_pk: int,
-        data: EventAPIConnectionWriteDict,
-        credentials_plaintext: bytes | None = None,
+        self, sphere_id: int, event_pk: int, data: EventAPIConnectionWriteDict
     ) -> EventAPIConnectionDTO: ...
     def update(
-        self,
-        event_pk: int,
-        pk: int,
-        data: EventAPIConnectionWriteDict,
-        credentials_plaintext: bytes | None = None,
+        self, sphere_id: int, event_pk: int, pk: int, data: EventAPIConnectionWriteDict
     ) -> EventAPIConnectionDTO: ...
     def delete(self, event_pk: int, pk: int) -> None: ...

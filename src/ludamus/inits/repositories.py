@@ -24,6 +24,10 @@ class Repositories:
         return repositories.ConnectionsRepository()
 
     @cached_property
+    def event_api_connections(self) -> repositories.EventAPIConnectionRepository:
+        return repositories.EventAPIConnectionRepository()
+
+    @cached_property
     def spheres(self) -> repositories.SphereRepository:
         return repositories.SphereRepository()
 
