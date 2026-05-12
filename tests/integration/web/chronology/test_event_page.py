@@ -914,8 +914,10 @@ class TestEventPageView:
         event,
         faker,
         settings,
+        setup_ticket_api,
     ):
         slots = 7
+        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
         responses.get(
             url=settings.MEMBERSHIP_API_BASE_URL,
             status=HTTPStatus.OK,
@@ -988,7 +990,9 @@ class TestEventPageView:
         event,
         faker,
         settings,
+        setup_ticket_api,
     ):
+        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
         responses.get(
             url=settings.MEMBERSHIP_API_BASE_URL,
             status=HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -1143,9 +1147,11 @@ class TestEventPageView:
         event,
         faker,
         settings,
+        setup_ticket_api,
     ):
         settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
         settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
+        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
         responses.get(
             url=settings.MEMBERSHIP_API_BASE_URL,
             status=HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -1216,9 +1222,11 @@ class TestEventPageView:
         event,
         faker,
         settings,
+        setup_ticket_api,
     ):
         settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
         settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
+        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
         responses.get(
             url=settings.MEMBERSHIP_API_BASE_URL,
             status=HTTPStatus.OK,
@@ -1289,9 +1297,11 @@ class TestEventPageView:
         event,
         faker,
         settings,
+        setup_ticket_api,
     ):
         settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
         settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
+        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
@@ -1539,9 +1549,11 @@ class TestEventPageView:
         event,
         faker,
         settings,
+        setup_ticket_api,
     ):
         settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
         settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
+        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
         responses.get(
             url=settings.MEMBERSHIP_API_BASE_URL,
             status=HTTPStatus.OK,

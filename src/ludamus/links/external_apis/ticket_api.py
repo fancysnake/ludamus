@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import requests
 
+from ludamus.pacts import MembershipAPIError
 from ludamus.pacts.external_apis import TicketAPIConfig
 from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
 
@@ -101,16 +102,24 @@ class GenericTicketAPIClient:
         )
 
     def fetch_membership_count(self, email: str) -> int:
-        response = requests.get(
-            self._url,
-            params={"email": email},
-            headers={"Authorization": f"Token {self._token}"},
-            timeout=_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-        payload: object = response.json()
-        raw = _traverse(payload, self._count_json_path)
+        try:
+            response = requests.get(
+                self._url,
+                params={"email": email},
+                headers={"Authorization": f"Token {self._token}"},
+                timeout=_TIMEOUT_SECONDS,
+            )
+            response.raise_for_status()
+            payload: object = response.json()
+            raw = _traverse(payload, self._count_json_path)
+        except (requests.RequestException, KeyError, ValueError, IndexError) as exc:
+            logger.exception("Ticket API call failed for %s", email)
+            raise MembershipAPIError from exc
         if isinstance(raw, bool) or not isinstance(raw, int):
-            message = f"Ticket-API path {self._count_json_path!r} did not yield int"
-            raise TypeError(message)
+            logger.error(
+                "Ticket-API path %r at %s did not yield int",
+                self._count_json_path,
+                self._url,
+            )
+            raise MembershipAPIError
         return raw

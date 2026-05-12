@@ -24,7 +24,6 @@ from ludamus.mills import get_user_enrollment_config
 from ludamus.pacts import (
     EnrollmentConfigRepositoryProtocol,
     EventDTO,
-    TicketAPIProtocol,
     UserData,
     UserDTO,
     UserType,
@@ -33,6 +32,8 @@ from ludamus.pacts import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
+
+    from ludamus.pacts.chronology import TicketAPIImplementationProtocol
 
 
 TODAY = datetime.now(tz=UTC).date()
@@ -289,7 +290,7 @@ def create_enrollment_form(
     current_user: UserDTO,
     connected_users: Iterable[UserDTO],
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
-    ticket_api: TicketAPIProtocol,
+    ticket_apis: list[TicketAPIImplementationProtocol],
 ) -> type[forms.Form]:
     enrollment_config = (
         session.agenda_item.space.area.venue.event.get_most_liberal_config(session)
@@ -298,7 +299,7 @@ def create_enrollment_form(
         event=EventDTO.model_validate(session.agenda_item.space.area.venue.event),
         user_email=current_user.email,
         enrollment_config_repo=enrollment_config_repo,
-        ticket_api=ticket_api,
+        ticket_apis=ticket_apis,
         check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
     )
     user_can_enroll = bool(

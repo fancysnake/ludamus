@@ -95,6 +95,8 @@ from .forms import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from ludamus.pacts.chronology import TicketAPIImplementationProtocol
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -885,13 +887,16 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 self.request.context.current_user_slug
             ).email
         ):
+            event_dto = EventDTO.model_validate(self.object)
             user_enrollment_config = get_user_enrollment_config(
-                event=EventDTO.model_validate(self.object),
+                event=event_dto,
                 user_email=self.request.di.uow.active_users.read(
                     self.request.context.current_user_slug
                 ).email,
                 enrollment_config_repo=self.request.di.uow.enrollment_configs,
-                ticket_api=self.request.di.ticket_api,
+                ticket_apis=self.request.services.event_api_connections.build_ticket_apis_for_event(
+                    event_dto.sphere_id, event_dto.pk
+                ),
                 check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
             )
         context["user_enrollment_config"] = user_enrollment_config
@@ -1235,6 +1240,19 @@ _status_by_choice = {
 class SessionEnrollPageView(LoginRequiredMixin, View):
     request: AuthenticatedRootRequest
 
+    def _build_ticket_apis_for_event_dto(
+        self, event_dto: EventDTO
+    ) -> list[TicketAPIImplementationProtocol]:
+        return self.request.services.event_api_connections.build_ticket_apis_for_event(
+            event_dto.sphere_id, event_dto.pk
+        )
+
+    def _build_ticket_apis(
+        self, session: Session
+    ) -> list[TicketAPIImplementationProtocol]:
+        event = session.agenda_item.space.area.venue.event
+        return self._build_ticket_apis_for_event_dto(EventDTO.model_validate(event))
+
     def get(self, request: AuthenticatedRootRequest, session_id: int) -> HttpResponse:
         session = _get_session_or_redirect(request, session_id)
 
@@ -1254,7 +1272,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                     self.request.context.current_user_slug
                 ),
                 enrollment_config_repo=request.di.uow.enrollment_configs,
-                ticket_api=request.di.ticket_api,
+                ticket_apis=self._build_ticket_apis(session),
             )(),
         }
 
@@ -1347,7 +1365,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                 self.request.context.current_user_slug
             ),
             enrollment_config_repo=request.di.uow.enrollment_configs,
-            ticket_api=request.di.ticket_api,
+            ticket_apis=self._build_ticket_apis(session),
         )
         form = form_class(data=request.POST)
         if not form.is_valid():
@@ -1375,11 +1393,12 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                         request.context.current_user_slug
                     ).email
                     event = session.agenda_item.space.area.venue.event
+                    event_dto = EventDTO.model_validate(event)
                     if not get_user_enrollment_config(
-                        event=EventDTO.model_validate(event),
+                        event=event_dto,
                         user_email=user_email,
                         enrollment_config_repo=request.di.uow.enrollment_configs,
-                        ticket_api=request.di.ticket_api,
+                        ticket_apis=self._build_ticket_apis_for_event_dto(event_dto),
                         check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
                     ):
                         messages.error(
@@ -1501,11 +1520,14 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                             manager_user = participation.user.manager
 
                         event = session.agenda_item.space.area.venue.event
+                        event_dto = EventDTO.model_validate(event)
                         user_config = get_user_enrollment_config(
-                            event=EventDTO.model_validate(event),
+                            event=event_dto,
                             user_email=manager_user.email,
                             enrollment_config_repo=self.request.di.uow.enrollment_configs,
-                            ticket_api=self.request.di.ticket_api,
+                            ticket_apis=self._build_ticket_apis_for_event_dto(
+                                event_dto
+                            ),
                             check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
                         )
                         if user_config and not can_enroll_users(

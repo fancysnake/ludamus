@@ -22,6 +22,7 @@ from ludamus.pacts.chronology import EventAPIConnectionListItem
 from ludamus.pacts.multiverse import (
     CheckResult,
     ConnectionCheckStatus,
+    ConnectionKind,
     CredentialAuthError,
 )
 
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
         EventAPIConnectionRepositoryProtocol,
         EventAPIConnectionWriteDict,
         ExternalAPIRegistryProtocol,
+        TicketAPIImplementationProtocol,
     )
     from ludamus.pacts.multiverse import (
         ConnectionsRepositoryProtocol,
@@ -99,6 +101,25 @@ class EventAPIConnectionsService:
     def delete(self, event_pk: int, pk: int) -> None:
         with self._transaction.atomic():
             self._event_api_connections.delete(event_pk, pk)
+
+    def build_ticket_apis_for_event(
+        self, sphere_id: int, event_pk: int
+    ) -> list[TicketAPIImplementationProtocol]:
+        # Assembly is the consumer's concern (enrollment now, ingest
+        # later), but the deps it needs (repo, encryptor, registry) all
+        # live here already — exposing one method beats every view
+        # re-plumbing the four ingredients.
+        rows = self._event_api_connections.list_for_event_and_kind(
+            event_pk, ConnectionKind.TICKET_API
+        )
+        apis: list[TicketAPIImplementationProtocol] = []
+        for row in rows:
+            impl_class = self._registry.get(row.class_name)
+            config = impl_class.config_schema(**row.config)
+            blob = self._connections.read_credentials_blob(sphere_id, row.connection_id)
+            plaintext = self._encryptor.decrypt(blob)
+            apis.append(impl_class(config, plaintext))
+        return apis
 
     def _validate_and_probe(
         self, sphere_id: int, data: EventAPIConnectionWriteDict

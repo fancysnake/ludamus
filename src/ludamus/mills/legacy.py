@@ -39,7 +39,6 @@ from ludamus.pacts import (
     SessionFieldValueData,
     SessionStatus,
     SessionUpdateData,
-    TicketAPIProtocol,
     TimeSlotRequirementDTO,
     TrackDTO,
     UnitOfWorkProtocol,
@@ -220,6 +219,8 @@ class EncounterService:
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from ludamus.pacts.chronology import TicketAPIImplementationProtocol
 
 
 def is_proposal_active(event: EventDTO) -> bool:
@@ -661,14 +662,20 @@ class PanelService:
         return errors
 
 
+def _sum_membership_counts(
+    ticket_apis: list[TicketAPIImplementationProtocol], email: str
+) -> int:
+    return sum(api.fetch_membership_count(email) for api in ticket_apis)
+
+
 def _refresh_user_config_from_api(
     *,
     user_config: UserEnrollmentConfigDTO,
-    ticket_api: TicketAPIProtocol,
+    ticket_apis: list[TicketAPIImplementationProtocol],
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
 ) -> UserEnrollmentConfigDTO | None:
     try:
-        membership_count = ticket_api.fetch_membership_count(user_config.user_email)
+        membership_count = _sum_membership_counts(ticket_apis, user_config.user_email)
     except MembershipAPIError:
         return user_config
 
@@ -691,12 +698,12 @@ def _create_user_config_from_api(
     *,
     enrollment_config: EnrollmentConfigDTO,
     user_email: str,
-    ticket_api: TicketAPIProtocol,
+    ticket_apis: list[TicketAPIImplementationProtocol],
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
 ) -> UserEnrollmentConfigDTO | None:
 
     try:
-        membership_count = ticket_api.fetch_membership_count(user_email)
+        membership_count = _sum_membership_counts(ticket_apis, user_email)
     except MembershipAPIError:
         return None
 
@@ -718,11 +725,16 @@ def get_or_create_user_enrollment_config(  # noqa: PLR0913
     *,
     enrollment_config: EnrollmentConfigDTO,
     user_email: str,
-    ticket_api: TicketAPIProtocol,
+    ticket_apis: list[TicketAPIImplementationProtocol],
     check_interval_minutes: int,
     existing_user_config: UserEnrollmentConfigDTO | None,
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
 ) -> UserEnrollmentConfigDTO | None:
+    # No ticket API configured for this event: honor whatever local
+    # config exists but never synthesize one from a missing remote.
+    if not ticket_apis:
+        return existing_user_config
+
     if existing_user_config:
         # If config has slots > 0, it's final - no need to refresh
         if existing_user_config.allowed_slots > 0:
@@ -740,7 +752,7 @@ def get_or_create_user_enrollment_config(  # noqa: PLR0913
             # Update the existing config with fresh API data
             return _refresh_user_config_from_api(
                 user_config=existing_user_config,
-                ticket_api=ticket_api,
+                ticket_apis=ticket_apis,
                 enrollment_config_repo=enrollment_config_repo,
             )
 
@@ -750,7 +762,7 @@ def get_or_create_user_enrollment_config(  # noqa: PLR0913
     return _create_user_config_from_api(
         enrollment_config=enrollment_config,
         user_email=user_email,
-        ticket_api=ticket_api,
+        ticket_apis=ticket_apis,
         enrollment_config_repo=enrollment_config_repo,
     )
 
@@ -760,7 +772,7 @@ def get_user_enrollment_config(
     event: EventDTO,
     user_email: str,
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
-    ticket_api: TicketAPIProtocol,
+    ticket_apis: list[TicketAPIImplementationProtocol],
     check_interval_minutes: int,
 ) -> VirtualEnrollmentConfig | None:
     virtual_config = VirtualEnrollmentConfig()
@@ -776,7 +788,7 @@ def get_user_enrollment_config(
         if api_user_config := get_or_create_user_enrollment_config(
             enrollment_config=config,
             user_email=user_email,
-            ticket_api=ticket_api,
+            ticket_apis=ticket_apis,
             check_interval_minutes=check_interval_minutes,
             existing_user_config=existing_user_config,
             enrollment_config_repo=enrollment_config_repo,

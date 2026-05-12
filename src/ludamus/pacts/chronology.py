@@ -249,6 +249,7 @@ class TicketAPIImplementationProtocol(Protocol):
     required_kind: ClassVar[ConnectionKind]
     config_schema: ClassVar[type[BaseModel]]
 
+    def __init__(self, config: BaseModel, credentials_plaintext: bytes) -> None: ...
     @classmethod
     def check_credentials(
         cls, config: BaseModel, credentials_plaintext: bytes
@@ -289,3 +290,6 @@ class EventAPIConnectionsServiceProtocol(Protocol):
         self, sphere_id: int, event_pk: int, pk: int, data: EventAPIConnectionWriteDict
     ) -> EventAPIConnectionDTO: ...
     def delete(self, event_pk: int, pk: int) -> None: ...
+    def build_ticket_apis_for_event(
+        self, sphere_id: int, event_pk: int
+    ) -> list[TicketAPIImplementationProtocol]: ...

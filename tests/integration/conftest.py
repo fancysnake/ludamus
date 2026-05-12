@@ -12,10 +12,12 @@ from pytest_factoryboy import register
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
+    Connection,
     Encounter,
     EncounterRSVP,
     EnrollmentConfig,
     Event,
+    EventAPIConnection,
     ProposalCategory,
     Session,
     SessionParticipation,
@@ -27,6 +29,8 @@ from ludamus.adapters.db.django.models import (
     TimeSlot,
     Venue,
 )
+from ludamus.links.encryption import FernetEncryptor
+from ludamus.pacts.multiverse import ConnectionKind
 from tests.integration.factories import AnonymousUserFactory, CompleteUserFactory
 
 User = get_user_model()
@@ -301,6 +305,34 @@ def enrollment_config_fixture(event):
         end_time=now + timedelta(days=5),
         percentage_slots=100,
     )
+
+
+@pytest.fixture
+def setup_ticket_api(event, settings):
+    # Wire a TICKET_API connection + per-event row. The new enrollment
+    # flow reads URL/path from EventAPIConnection.config, not from
+    # settings.MEMBERSHIP_API_BASE_URL. Returns the URL it used so tests
+    # can pass it to responses.get(url=...).
+
+    def _setup(url=None, *, count_json_path="membership_count", token="testtoken"):
+        actual_url = url or "https://api.example.test/check"
+        settings.MEMBERSHIP_API_BASE_URL = actual_url
+        encryptor = FernetEncryptor(settings.CREDENTIALS_ENCRYPTION_KEY)
+        connection = Connection.objects.create(
+            sphere=event.sphere,
+            kind=ConnectionKind.TICKET_API.value,
+            display_name="Ticket API",
+            credentials=encryptor.encrypt(token.encode()),
+        )
+        EventAPIConnection.objects.create(
+            event=event,
+            connection=connection,
+            class_name="GenericTicketAPIClient",
+            config={"url": actual_url, "count_json_path": count_json_path},
+        )
+        return actual_url
+
+    return _setup
 
 
 @pytest.fixture(name="venue")
