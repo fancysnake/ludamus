@@ -1,0 +1,33 @@
+{% extends "panel/base.html" %}
+{% load i18n %}
+{% load tessera %}
+{% block title_prefix %}
+    {% translate "Edit API connection" %} -
+{% endblock title_prefix %}
+{% block page_title %}
+    {% translate "Edit API connection" %}
+{% endblock page_title %}
+{% block page_subtitle %}
+    {% if current_event %}{{ current_event.name }}{% endif %}
+{% endblock page_subtitle %}
+{% block header_actions %}
+    {% if current_event %}
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'panel:import-export' slug=current_event.slug %}"
+               class="btn btn-secondary">{% translate "Cancel" %}</a>
+            <button type="submit"
+                    form="event-api-connection-form"
+                    class="btn btn-primary">{% translate "Save" %}</button>
+        </div>
+    {% endif %}
+{% endblock header_actions %}
+{% block content %}
+    {% if current_event %}
+        <form id="event-api-connection-form" method="post" class="max-w-2xl">
+            {% csrf_token %}
+            <div class="card">
+                <div class="card-body">{% include "panel/import-export/_form.html" %}</div>
+            </div>
+        </form>
+    {% endif %}
+{% endblock content %}

@@ -1,0 +1,62 @@
+{% load i18n %}
+{% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+{% endif %}
+<div class="space-y-4">
+    <div class="space-y-1">
+        <label class="block text-sm font-medium text-foreground-secondary"
+               for="{{ form.connection.id_for_label }}">{{ form.connection.label }}</label>
+        <select name="{{ form.connection.html_name }}"
+                id="{{ form.connection.id_for_label }}"
+                class="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+            {% for value, label in form.connection.field.choices %}
+                <option value="{{ value }}"
+                        {% if form.connection.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+        {% for error in form.connection.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="space-y-1">
+        <label class="block text-sm font-medium text-foreground-secondary"
+               for="{{ form.class_name.id_for_label }}">{{ form.class_name.label }}</label>
+        <select name="{{ form.class_name.html_name }}"
+                id="{{ form.class_name.id_for_label }}"
+                class="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+            {% for value, label in form.class_name.field.choices %}
+                <option value="{{ value }}"
+                        {% if form.class_name.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        {% for error in form.class_name.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="space-y-1">
+        <label class="block text-sm font-medium text-foreground-secondary"
+               for="{{ form.url.id_for_label }}">{{ form.url.label }}</label>
+        <input type="url"
+               name="{{ form.url.html_name }}"
+               id="{{ form.url.id_for_label }}"
+               value="{{ form.url.value|default:'' }}"
+               required
+               class="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+        {% for error in form.url.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="space-y-1">
+        <label class="block text-sm font-medium text-foreground-secondary"
+               for="{{ form.count_json_path.id_for_label }}">{{ form.count_json_path.label }}</label>
+        <input type="text"
+               name="{{ form.count_json_path.html_name }}"
+               id="{{ form.count_json_path.id_for_label }}"
+               value="{{ form.count_json_path.value|default:'' }}"
+               maxlength="255"
+               required
+               class="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+        {% if form.count_json_path.help_text %}
+            <p class="text-xs text-foreground-muted">{{ form.count_json_path.help_text }}</p>
+        {% endif %}
+        {% for error in form.count_json_path.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+    </div>
+</div>
