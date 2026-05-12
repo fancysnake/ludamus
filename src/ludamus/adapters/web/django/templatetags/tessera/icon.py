@@ -43,11 +43,11 @@ def icon(name: str, *, variant: str = "outline", **kwargs: object) -> str:
         IconDoesNotExist: If the icon name is invalid and ``DEBUG`` is ``True``.
     """
     renderer = _VARIANT_RENDERERS[variant]
-    
+
     kwargs["class"] = clsx("shrink-0", kwargs.pop("class", None))
-    if (s := kwargs.pop("style", None)):
+    if s := kwargs.pop("style", None):
         kwargs |= {"style": escape(s)}
-    
+
     try:
         result = renderer(name, **kwargs)
     except IconDoesNotExist:
