@@ -34,11 +34,8 @@ env = environ.Env(
     GIT_COMMIT_SHA=(str, "1"),
     MEDIA_ROOT=(str, str(BASE_DIR / "media")),
     STATIC_ROOT=(str, str(BASE_DIR / "staticfiles")),
-    # Membership API
-    MEMBERSHIP_API_BASE_URL=(str, ""),
-    MEMBERSHIP_API_CHECK_INTERVAL=(int, 15),
-    MEMBERSHIP_API_TIMEOUT=(int, 30),
-    MEMBERSHIP_API_TOKEN=(str, ""),
+    # Ticket API
+    TICKET_API_CHECK_INTERVAL_MINUTES=(int, 15),
     # Other
     CREDENTIALS_ENCRYPTION_KEY=str,
     DEBUG=(bool, False),
@@ -387,11 +384,8 @@ LOGGING = {
     },
 }
 
-# Membership API Configuration
-MEMBERSHIP_API_BASE_URL = env("MEMBERSHIP_API_BASE_URL")
-MEMBERSHIP_API_TOKEN = env("MEMBERSHIP_API_TOKEN")
-MEMBERSHIP_API_TIMEOUT = env("MEMBERSHIP_API_TIMEOUT")
-MEMBERSHIP_API_CHECK_INTERVAL = env("MEMBERSHIP_API_CHECK_INTERVAL")
+# Ticket API behaviour knobs
+TICKET_API_CHECK_INTERVAL_MINUTES = env("TICKET_API_CHECK_INTERVAL_MINUTES")
 
 # Vendor Dependencies Configuration
 # Download with: mise run dj downloadvendor

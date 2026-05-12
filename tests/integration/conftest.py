@@ -309,14 +309,11 @@ def enrollment_config_fixture(event):
 
 @pytest.fixture
 def setup_ticket_api(event, settings):
-    # Wire a TICKET_API connection + per-event row. The new enrollment
-    # flow reads URL/path from EventAPIConnection.config, not from
-    # settings.MEMBERSHIP_API_BASE_URL. Returns the URL it used so tests
-    # can pass it to responses.get(url=...).
+    # Wire a TICKET_API connection + per-event row. Returns the URL it
+    # used so tests can pass it to responses.get(url=...).
 
     def _setup(url=None, *, count_json_path="membership_count", token="testtoken"):
         actual_url = url or "https://api.example.test/check"
-        settings.MEMBERSHIP_API_BASE_URL = actual_url
         encryptor = FernetEncryptor(settings.CREDENTIALS_ENCRYPTION_KEY)
         connection = Connection.objects.create(
             sphere=event.sphere,

@@ -300,7 +300,7 @@ def create_enrollment_form(
         user_email=current_user.email,
         enrollment_config_repo=enrollment_config_repo,
         ticket_apis=ticket_apis,
-        check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
+        check_interval_minutes=settings.TICKET_API_CHECK_INTERVAL_MINUTES,
     )
     user_can_enroll = bool(
         enrollment_config

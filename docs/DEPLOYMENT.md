@@ -164,13 +164,6 @@ Scopes: **L** = local, **D** = docker local, **P** = prod.
 - `STATIC_ROOT` — collected static path — P(opt)
 - `MEDIA_ROOT` — uploaded media path — P(opt)
 
-**Membership API:**
-
-- `MEMBERSHIP_API_BASE_URL` — external API URL — L(opt) D(opt) P
-- `MEMBERSHIP_API_TOKEN` — API auth token — L(opt) D(opt) P
-- `MEMBERSHIP_API_TIMEOUT` — timeout in seconds, default `30` — P(opt)
-- `MEMBERSHIP_API_CHECK_INTERVAL` — minutes, default `15` — P(opt)
-
 **Docker Compose** (prod only, from `prod.yaml`):
 
 - `WEB_PORT` — host port for web service, default `8000` — P(opt)

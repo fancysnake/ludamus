@@ -38,6 +38,8 @@ from ludamus.pacts import (
 from tests.integration.conftest import AgendaItemFactory, EventFactory, SessionFactory
 from tests.integration.utils import assert_response, assert_response_404
 
+MEMBERSHIP_API_URL = "https://api.example.com/check/member"
+
 
 class TestEventPageView:
     URL_NAME = "web:chronology:event"
@@ -913,13 +915,12 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
         setup_ticket_api,
     ):
         slots = 7
-        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
+        setup_ticket_api(MEMBERSHIP_API_URL)
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=MEMBERSHIP_API_URL,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -989,12 +990,11 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
         setup_ticket_api,
     ):
-        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
+        setup_ticket_api(MEMBERSHIP_API_URL)
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=MEMBERSHIP_API_URL,
             status=HTTPStatus.INTERNAL_SERVER_ERROR,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -1146,14 +1146,11 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
         setup_ticket_api,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
-        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
+        setup_ticket_api(MEMBERSHIP_API_URL)
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=MEMBERSHIP_API_URL,
             status=HTTPStatus.INTERNAL_SERVER_ERROR,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -1221,14 +1218,11 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
         setup_ticket_api,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
-        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
+        setup_ticket_api(MEMBERSHIP_API_URL)
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=MEMBERSHIP_API_URL,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -1296,12 +1290,9 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
         setup_ticket_api,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
-        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
+        setup_ticket_api(MEMBERSHIP_API_URL)
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
@@ -1310,7 +1301,7 @@ class TestEventPageView:
         )
         slots = 7
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=MEMBERSHIP_API_URL,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -1384,10 +1375,7 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
@@ -1462,10 +1450,7 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
         UserEnrollmentConfig.objects.create(
             enrollment_config=enrollment_config,
             user_email=active_user.email,
@@ -1473,7 +1458,7 @@ class TestEventPageView:
             last_check=faker.date_time_between("-10d", "-5d"),
         )
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=MEMBERSHIP_API_URL,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})
@@ -1548,14 +1533,11 @@ class TestEventPageView:
         enrollment_config,
         event,
         faker,
-        settings,
         setup_ticket_api,
     ):
-        settings.MEMBERSHIP_API_BASE_URL = "https://api.example.com/check/member"
-        settings.MEMBERSHIP_API_TOKEN = faker.uuid4()
-        setup_ticket_api(settings.MEMBERSHIP_API_BASE_URL)
+        setup_ticket_api(MEMBERSHIP_API_URL)
         responses.get(
-            url=settings.MEMBERSHIP_API_BASE_URL,
+            url=MEMBERSHIP_API_URL,
             status=HTTPStatus.OK,
             match=[
                 responses.matchers.query_param_matcher({"email": active_user.email})

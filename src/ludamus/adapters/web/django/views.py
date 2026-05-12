@@ -897,7 +897,7 @@ class EventPageView(DetailView):  # type: ignore [type-arg]
                 ticket_apis=self.request.services.event_api_connections.build_ticket_apis_for_event(
                     event_dto.sphere_id, event_dto.pk
                 ),
-                check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
+                check_interval_minutes=settings.TICKET_API_CHECK_INTERVAL_MINUTES,
             )
         context["user_enrollment_config"] = user_enrollment_config
 
@@ -1399,7 +1399,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                         user_email=user_email,
                         enrollment_config_repo=request.di.uow.enrollment_configs,
                         ticket_apis=self._build_ticket_apis_for_event_dto(event_dto),
-                        check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
+                        check_interval_minutes=settings.TICKET_API_CHECK_INTERVAL_MINUTES,
                     ):
                         messages.error(
                             self.request,
@@ -1528,7 +1528,7 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
                             ticket_apis=self._build_ticket_apis_for_event_dto(
                                 event_dto
                             ),
-                            check_interval_minutes=settings.MEMBERSHIP_API_CHECK_INTERVAL,
+                            check_interval_minutes=settings.TICKET_API_CHECK_INTERVAL_MINUTES,
                         )
                         if user_config and not can_enroll_users(
                             users=[

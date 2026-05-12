@@ -1384,10 +1384,6 @@ class UnitOfWorkProtocol(Protocol):  # noqa: PLR0904
     def schedule_change_logs(self) -> ScheduleChangeLogRepositoryProtocol: ...
 
 
-class TicketAPIProtocol(Protocol):
-    def fetch_membership_count(self, user_email: str) -> int: ...
-
-
 DEFAULT_FIELD_MAX_LENGTH = 50
 
 
@@ -1401,8 +1397,6 @@ class CacheProtocol(Protocol):
 class DependencyInjectorProtocol(Protocol):
     @property
     def uow(self) -> UnitOfWorkProtocol: ...
-    @property
-    def ticket_api(self) -> TicketAPIProtocol: ...
     @property
     def cache(self) -> CacheProtocol: ...
     @staticmethod
