@@ -20,7 +20,7 @@ from ludamus.pacts.external_apis import TicketAPIConfig
 from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
 
 if TYPE_CHECKING:
-    from pydantic import BaseModel
+    from pydantic import BaseModel, JsonValue
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +29,8 @@ _CHECK_SENTINEL_EMAIL = "check@ludamus.invalid"
 _AUTH_FAILED_STATUSES = frozenset({HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN})
 
 
-def _traverse(data: object, dotted_path: str) -> object:
-    current: object = data
+def _traverse(data: JsonValue, dotted_path: str) -> JsonValue:
+    current: JsonValue = data
     for segment in dotted_path.split("."):
         if not segment:
             continue
@@ -110,7 +110,7 @@ class GenericTicketAPIClient:
                 timeout=_TIMEOUT_SECONDS,
             )
             response.raise_for_status()
-            payload: object = response.json()
+            payload: JsonValue = response.json()
             raw = _traverse(payload, self._count_json_path)
         except (requests.RequestException, KeyError, ValueError, IndexError) as exc:
             logger.exception("Ticket API call failed for %s", email)

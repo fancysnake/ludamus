@@ -10,7 +10,7 @@ from datetime import date, datetime
 from enum import StrEnum, auto
 from typing import ClassVar, Protocol, TypedDict
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, JsonValue
 
 from ludamus.pacts.legacy import (
     AgendaItemDTO,
@@ -201,7 +201,7 @@ class EventAPIConnectionDTO(BaseModel):
     event_id: int
     connection_id: int
     class_name: str
-    config: dict[str, object]
+    config: dict[str, JsonValue]
     last_check_status: ConnectionCheckStatus = ConnectionCheckStatus.UNKNOWN
     last_check_label: str = ""
     last_check_detail: str = ""
@@ -211,7 +211,7 @@ class EventAPIConnectionDTO(BaseModel):
 class EventAPIConnectionWriteDict(TypedDict):
     connection_id: int
     class_name: str
-    config: dict[str, object]
+    config: dict[str, JsonValue]
 
 
 class EventAPIConnectionRepositoryProtocol(Protocol):
