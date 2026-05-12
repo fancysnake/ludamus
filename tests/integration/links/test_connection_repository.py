@@ -64,13 +64,17 @@ class TestConnectionsRepositorySurfaceIsWriteOnly:
         field_names = list(ConnectionDTO.model_fields)
         assert "credentials" not in field_names
 
-    def test_repo_exposes_no_credentials_read_method(self):
-        # No method that returns or yields the blob may exist on the
-        # repo surface. This is greppable: any future "get_credentials"
-        # / "read_credentials" / "credentials" accessor will trip here.
+    def test_repo_exposes_only_explicit_credential_methods(self):
+        # The blob is opaque: only the deliberately-named write method
+        # (`update_credentials`) and the read method that returns the
+        # still-encrypted bytes (`read_credentials_blob`, decrypted by
+        # the consumer mill via the encryptor) are allowed. Any new
+        # accessor with "credential" in its name trips here so the
+        # surface stays explicit.
+        allowed = {"update_credentials", "read_credentials_blob"}
         for name in dir(ConnectionsRepository):
             if name.startswith("_"):
                 continue
             assert (
-                "credential" not in name or name == "update_credentials"
+                "credential" not in name or name in allowed
             ), f"Unexpected credential accessor on repo surface: {name}"

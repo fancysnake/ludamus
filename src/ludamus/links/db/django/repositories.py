@@ -2664,14 +2664,21 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
 
     @staticmethod
     def update_credentials(sphere_id: int, pk: int, blob: bytes) -> None:
-        # Write-only: overwrite the encrypted blob. The repo surface
-        # exposes no read for these bytes — decrypt is owned by the
-        # import-execution slice with separate key handling.
         updated = Connection.objects.filter(pk=pk, sphere_id=sphere_id).update(
             credentials=blob
         )
         if not updated:
             raise NotFoundError
+
+    @staticmethod
+    def read_credentials_blob(sphere_id: int, pk: int) -> bytes:
+        try:
+            connection = Connection.objects.only("credentials").get(
+                pk=pk, sphere_id=sphere_id
+            )
+        except Connection.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return bytes(connection.credentials)
 
     @staticmethod
     def update_last_check(sphere_id: int, pk: int, result: CheckResult) -> None:
