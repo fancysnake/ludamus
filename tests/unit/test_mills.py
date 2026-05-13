@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, Mock
 
 import pytest
+from pydantic import BaseModel
 
 from ludamus.mills import (
     PanelService,
@@ -14,6 +15,7 @@ from ludamus.mills import (
     outlook_calendar_url,
 )
 from ludamus.mills.chronology import CFPPersonalDataFieldService
+from ludamus.mills.event_api_connections import EventAPIConnectionsService
 from ludamus.mills.multiverse import ConnectionsService
 from ludamus.pacts import (
     EncounterDTO,
@@ -27,6 +29,7 @@ from ludamus.pacts import (
     RequestContext,
 )
 from ludamus.pacts.chronology import (
+    EventAPIConnectionDTO,
     PersonalDataFieldEditContextDTO,
     PersonalDataFieldFormContextDTO,
 )
@@ -763,11 +766,18 @@ class TestCheckProposalRateLimit:
         assert result is True
 
 
-def _connection_dto(pk=1, sphere_id=1, name="Konto", *, has_credentials=False):
+def _connection_dto(
+    pk=1,
+    sphere_id=1,
+    name="Konto",
+    *,
+    kind=ConnectionKind.GOOGLE,
+    has_credentials=False,
+):
     return ConnectionDTO(
         pk=pk,
         sphere_id=sphere_id,
-        kind=ConnectionKind.GOOGLE,
+        kind=kind,
         display_name=name,
         has_credentials=has_credentials,
     )
@@ -912,3 +922,138 @@ class TestConnectionsService:
 
         connections.delete.assert_called_once_with(1, 42)
         transaction.atomic.assert_called_once_with()
+
+
+def _event_api_connection_dto(
+    pk=1, event_id=10, connection_id=20, class_name="ticket_v1", config=None
+):
+    return EventAPIConnectionDTO(
+        pk=pk,
+        event_id=event_id,
+        connection_id=connection_id,
+        class_name=class_name,
+        config=config if config is not None else {},
+    )
+
+
+class _StubConfig(BaseModel):
+    api_key: str
+
+
+class _TicketAPIStub:
+    name = "ticket_v1"
+    required_kind = ConnectionKind.TICKET_API
+    config_schema = _StubConfig
+
+
+class TestEventAPIConnectionsService:
+    @pytest.fixture
+    def event_api_connections(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def connections(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def encryptor(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def registry(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def transaction(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def service(
+        self, transaction, event_api_connections, connections, encryptor, registry
+    ):
+        return EventAPIConnectionsService(
+            transaction, event_api_connections, connections, encryptor, registry
+        )
+
+    def test_list_for_event_skips_rows_with_missing_connection(
+        self, service, event_api_connections, connections
+    ):
+        gone = _event_api_connection_dto(pk=1, connection_id=20)
+        kept = _event_api_connection_dto(pk=2, connection_id=21)
+        event_api_connections.list_for_event.return_value = [gone, kept]
+        connections.get.side_effect = [NotFoundError("missing"), _connection_dto(pk=21)]
+
+        items = service.list_for_event(sphere_id=7, event_pk=10)
+
+        assert [item.connection.pk for item in items] == [kept.pk]
+
+    def test_create_raises_when_connection_missing(
+        self, service, event_api_connections, connections, registry, transaction
+    ):
+        connections.get.side_effect = NotFoundError("missing")
+        data = {"connection_id": 20, "class_name": "ticket_v1", "config": {}}
+
+        with pytest.raises(CredentialAuthError) as caught:
+            service.create(sphere_id=7, event_pk=10, data=data)
+
+        assert caught.value.status is ConnectionCheckStatus.AUTH_FAILED
+        assert "Connection not found" in caught.value.detail
+        registry.get.assert_not_called()
+        event_api_connections.create.assert_not_called()
+        event_api_connections.update_last_check.assert_not_called()
+        transaction.atomic.assert_not_called()
+
+    def test_create_raises_when_implementation_unknown(
+        self, service, event_api_connections, connections, registry, transaction
+    ):
+        connections.get.return_value = _connection_dto(pk=20)
+        registry.get.side_effect = NotFoundError("nope")
+        data = {"connection_id": 20, "class_name": "ticket_unknown", "config": {}}
+
+        with pytest.raises(CredentialAuthError) as caught:
+            service.create(sphere_id=7, event_pk=10, data=data)
+
+        assert caught.value.status is ConnectionCheckStatus.AUTH_FAILED
+        assert "Unknown implementation: ticket_unknown" in caught.value.detail
+        event_api_connections.create.assert_not_called()
+        event_api_connections.update_last_check.assert_not_called()
+        transaction.atomic.assert_not_called()
+
+    def test_create_raises_when_kind_mismatched(
+        self, service, event_api_connections, connections, registry, transaction
+    ):
+        connections.get.return_value = _connection_dto(pk=20)
+        registry.get.return_value = _TicketAPIStub
+        data = {
+            "connection_id": 20,
+            "class_name": "ticket_v1",
+            "config": {"api_key": "x"},
+        }
+
+        with pytest.raises(CredentialAuthError) as caught:
+            service.create(sphere_id=7, event_pk=10, data=data)
+
+        assert caught.value.status is ConnectionCheckStatus.AUTH_FAILED
+        assert "ticket_api" in caught.value.detail
+        assert "google" in caught.value.detail
+        event_api_connections.create.assert_not_called()
+        event_api_connections.update_last_check.assert_not_called()
+        transaction.atomic.assert_not_called()
+
+    def test_create_raises_when_config_invalid(
+        self, service, event_api_connections, connections, registry, transaction
+    ):
+        connections.get.return_value = _connection_dto(
+            pk=20, kind=ConnectionKind.TICKET_API
+        )
+        registry.get.return_value = _TicketAPIStub
+        data = {"connection_id": 20, "class_name": "ticket_v1", "config": {}}
+
+        with pytest.raises(CredentialAuthError) as caught:
+            service.create(sphere_id=7, event_pk=10, data=data)
+
+        assert caught.value.status is ConnectionCheckStatus.AUTH_FAILED
+        assert caught.value.detail.startswith("Invalid config")
+        event_api_connections.create.assert_not_called()
+        event_api_connections.update_last_check.assert_not_called()
+        transaction.atomic.assert_not_called()
