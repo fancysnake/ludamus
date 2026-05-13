@@ -982,6 +982,81 @@ class TestEventPageView:
         )
 
     @responses.activate
+    def test_ok_current_session_get_user_config_from_api_empty_path_segment(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        enrollment_config,
+        event,
+        faker,
+        setup_ticket_api,
+    ):
+        slots = 7
+        setup_ticket_api(MEMBERSHIP_API_URL, count_json_path="data..membership_count")
+        responses.get(
+            url=MEMBERSHIP_API_URL,
+            status=HTTPStatus.OK,
+            match=[
+                responses.matchers.query_param_matcher({"email": active_user.email})
+            ],
+            json={"data": {"membership_count": slots}},
+        )
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        agenda_item.start_time = faker.date_time_between("-10d", "-1d", tzinfo=UTC)
+        agenda_item.end_time = faker.date_time_between("+1d", "+10d", tzinfo=UTC)
+        agenda_item.save()
+        response = authenticated_client.get(self._get_url(event.slug))
+
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            presenter=UserInfo.from_user_dto(
+                UserDTO.model_validate(active_user), gravatar_url=gravatar_url
+            ),
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {agenda_item.start_time: [session_data]},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": True,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {},
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "pending_sessions": [],
+                "sessions": [session_data],
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
+                "user_enrollment_config": VirtualEnrollmentConfig(
+                    allowed_slots=slots, has_domain_config=False, has_user_config=True
+                ),
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
+    @responses.activate
     def test_ok_current_session_domain_config(
         self,
         active_user,
@@ -1228,6 +1303,78 @@ class TestEventPageView:
                 responses.matchers.query_param_matcher({"email": active_user.email})
             ],
             json=["a"],
+        )
+        enrollment_config.restrict_to_configured_users = True
+        enrollment_config.save()
+        agenda_item.start_time = faker.date_time_between("-10d", "-1d", tzinfo=UTC)
+        agenda_item.end_time = faker.date_time_between("+1d", "+10d", tzinfo=UTC)
+        agenda_item.save()
+        response = authenticated_client.get(self._get_url(event.slug))
+
+        session_data = SessionData(
+            agenda_item=AgendaItemDTO.model_validate(agenda_item),
+            effective_participants_limit=10,
+            enrolled_count=0,
+            full_participant_info="0/10",
+            has_any_enrollments=False,
+            is_enrollment_available=True,
+            is_full=False,
+            is_ongoing=True,
+            presenter=UserInfo.from_user_dto(
+                UserDTO.model_validate(active_user), gravatar_url=gravatar_url
+            ),
+            session_participations=[],
+            session=SessionDTO.model_validate(agenda_item.session),
+            should_show_as_inactive=False,
+            loc=LocationData(
+                space=SpaceDTO.model_validate(agenda_item.space),
+                area=AreaDTO.model_validate(agenda_item.space.area),
+                venue=VenueDTO.model_validate(agenda_item.space.area.venue),
+            ),
+            user_enrolled=False,
+            user_waiting=False,
+        )
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "current_hour_data": {agenda_item.start_time: [session_data]},
+                "ended_hour_data": {},
+                "enrollment_requires_slots": True,
+                "event": event,
+                "filterable_tag_categories": [],
+                "future_unavailable_hour_data": {},
+                "hour_data": {agenda_item.start_time: [session_data]},
+                "object": event,
+                "pending_sessions": [],
+                "sessions": [session_data],
+                "user_enrollment_config": None,
+                "total_enrolled": 0,
+                "user_enrolled_sessions": [],
+                "view": ANY,
+            },
+            template_name=["chronology/event.html"],
+        )
+
+    @responses.activate
+    def test_ok_current_session_get_user_config_from_api_scalar_path(
+        self,
+        active_user,
+        agenda_item,
+        authenticated_client,
+        enrollment_config,
+        event,
+        faker,
+        setup_ticket_api,
+    ):
+        setup_ticket_api(MEMBERSHIP_API_URL, count_json_path="membership_count.nested")
+        responses.get(
+            url=MEMBERSHIP_API_URL,
+            status=HTTPStatus.OK,
+            match=[
+                responses.matchers.query_param_matcher({"email": active_user.email})
+            ],
+            json={"membership_count": 7},
         )
         enrollment_config.restrict_to_configured_users = True
         enrollment_config.save()

@@ -13,6 +13,9 @@ from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
 _PROBE_URL = "https://api.example.test/probe"
+_PANEL_INDEX_URL = "/panel/"
+_EVENT_NOT_FOUND = "Event not found."
+_ROW_NOT_FOUND = "API connection not found."
 
 
 def _list_url(event):
@@ -94,6 +97,21 @@ class TestImportExportPageView:
         assert items[0].connection_display_name == "Ticket API"
         assert items[0].connection_kind == ConnectionKind.TICKET_API
 
+    def test_get_redirects_to_panel_index_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:import-export", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url=_PANEL_INDEX_URL,
+            messages=[(messages.ERROR, _EVENT_NOT_FOUND)],
+        )
+
 
 class TestImportExportCreatePageView:
     def test_get_redirects_anonymous(self, client, event):
@@ -151,6 +169,22 @@ class TestImportExportCreatePageView:
         assert response.context["form"].errors
         assert EventAPIConnection.objects.filter(event=event).count() == 0
 
+    @responses.activate
+    def test_post_rejects_when_probe_returns_4xx_other_than_auth(
+        self, authenticated_client, active_user, sphere, event, settings
+    ):
+        sphere.managers.add(active_user)
+        connection = _make_ticket_connection(sphere, settings)
+        responses.get(_PROBE_URL, status=HTTPStatus.NOT_FOUND)
+
+        response = authenticated_client.post(
+            _create_url(event), data=_create_post_data(connection)
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["form"].errors
+        assert EventAPIConnection.objects.filter(event=event).count() == 0
+
     def test_post_rejects_invalid_url(
         self, authenticated_client, active_user, sphere, event, settings
     ):
@@ -164,6 +198,36 @@ class TestImportExportCreatePageView:
         assert response.status_code == HTTPStatus.OK
         assert response.context["form"].errors.get("url")
         assert EventAPIConnection.objects.filter(event=event).count() == 0
+
+    def test_get_redirects_to_panel_index_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:import-export-create", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url=_PANEL_INDEX_URL,
+            messages=[(messages.ERROR, _EVENT_NOT_FOUND)],
+        )
+
+    def test_post_redirects_to_panel_index_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse("panel:import-export-create", kwargs={"slug": "nonexistent"})
+
+        response = authenticated_client.post(url, data={})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url=_PANEL_INDEX_URL,
+            messages=[(messages.ERROR, _EVENT_NOT_FOUND)],
+        )
 
 
 class TestImportExportEditPageView:
@@ -221,6 +285,95 @@ class TestImportExportEditPageView:
         assert row.config["url"] == "https://api.example.test/different"
         assert row.config["count_json_path"] == "slot"
 
+    def test_get_redirects_to_panel_index_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:import-export-edit", kwargs={"slug": "nonexistent", "pk": 1}
+        )
+
+        response = authenticated_client.get(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url=_PANEL_INDEX_URL,
+            messages=[(messages.ERROR, _EVENT_NOT_FOUND)],
+        )
+
+    def test_post_redirects_to_panel_index_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:import-export-edit", kwargs={"slug": "nonexistent", "pk": 1}
+        )
+
+        response = authenticated_client.post(url, data={})
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url=_PANEL_INDEX_URL,
+            messages=[(messages.ERROR, _EVENT_NOT_FOUND)],
+        )
+
+    def test_post_redirects_when_row_not_found(
+        self, authenticated_client, active_user, sphere, event, settings
+    ):
+        sphere.managers.add(active_user)
+        connection = _make_ticket_connection(sphere, settings)
+
+        response = authenticated_client.post(
+            _edit_url(event, 999_999), data=_create_post_data(connection)
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url=_list_url(event),
+            messages=[(messages.ERROR, _ROW_NOT_FOUND)],
+        )
+
+    def test_post_rejects_invalid_form(
+        self, authenticated_client, active_user, sphere, event, settings
+    ):
+        sphere.managers.add(active_user)
+        connection = _make_ticket_connection(sphere, settings)
+        row = _make_event_api_row(event, connection)
+
+        response = authenticated_client.post(
+            _edit_url(event, row.pk),
+            data=_create_post_data(connection, url="not-a-url"),
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["form"].errors.get("url")
+        assert response.context["row"].pk == row.pk
+        row.refresh_from_db()
+        assert row.config["url"] == _PROBE_URL
+
+    @responses.activate
+    def test_post_rejects_when_probe_fails(
+        self, authenticated_client, active_user, sphere, event, settings
+    ):
+        sphere.managers.add(active_user)
+        connection = _make_ticket_connection(sphere, settings)
+        row = _make_event_api_row(event, connection)
+        new_url = "https://api.example.test/different"
+        responses.get(new_url, status=HTTPStatus.UNAUTHORIZED)
+
+        response = authenticated_client.post(
+            _edit_url(event, row.pk), data=_create_post_data(connection, url=new_url)
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.context["form"].errors
+        assert response.context["row"].pk == row.pk
+        row.refresh_from_db()
+        assert row.config["url"] == _PROBE_URL
+
 
 class TestImportExportDeleteActionView:
     def test_post_deletes_row(
@@ -251,5 +404,22 @@ class TestImportExportDeleteActionView:
             response,
             HTTPStatus.FOUND,
             url=_list_url(event),
-            messages=[(messages.ERROR, "API connection not found.")],
+            messages=[(messages.ERROR, _ROW_NOT_FOUND)],
+        )
+
+    def test_post_redirects_to_panel_index_when_event_not_found(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        url = reverse(
+            "panel:import-export-delete", kwargs={"slug": "nonexistent", "pk": 1}
+        )
+
+        response = authenticated_client.post(url)
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url=_PANEL_INDEX_URL,
+            messages=[(messages.ERROR, _EVENT_NOT_FOUND)],
         )
