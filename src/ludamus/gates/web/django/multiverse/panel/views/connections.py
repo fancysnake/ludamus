@@ -74,7 +74,7 @@ def _create_response(request: MultiverseRequest, form: ConnectionForm) -> Templa
 
 
 def _edit_response(
-    request: MultiverseRequest, form: ConnectionForm, connection: "ConnectionDTO"
+    request: MultiverseRequest, form: ConnectionForm, connection: ConnectionDTO
 ) -> TemplateResponse:
     return TemplateResponse(
         request,
