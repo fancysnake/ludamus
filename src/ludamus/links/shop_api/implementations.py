@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ludamus.links.external_apis.ticket_api import GenericTicketAPIClient
+from ludamus.links.shop_api.generic import GenericTicketAPIClient
 
 if TYPE_CHECKING:
     from ludamus.pacts.chronology import TicketAPIImplementationProtocol

@@ -7,7 +7,7 @@ from http import HTTPStatus
 import pytest
 import responses
 
-from ludamus.links.external_apis.ticket_api import GenericTicketAPIClient
+from ludamus.links.shop_api.generic import GenericTicketAPIClient
 from ludamus.pacts import MembershipAPIError
 from ludamus.pacts.external_apis import TicketAPIConfig
 from ludamus.pacts.multiverse import ConnectionCheckStatus

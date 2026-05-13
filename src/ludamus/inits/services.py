@@ -7,7 +7,8 @@ from ludamus.inits.clients import Clients
 from ludamus.inits.repositories import Repositories
 from ludamus.inits.transaction import DjangoTransaction
 from ludamus.links.encryption import FernetEncryptor
-from ludamus.links.external_apis import IMPLEMENTATIONS, ExternalAPIRegistry
+from ludamus.links.shop_api.implementations import IMPLEMENTATIONS
+from ludamus.links.shop_api.registry import ExternalAPIRegistry
 from ludamus.mills.chronology import CFPPersonalDataFieldService
 from ludamus.mills.event_api_connections import EventAPIConnectionsService
 from ludamus.mills.multiverse import ConnectionsService, SpherePanelService

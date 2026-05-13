@@ -7,7 +7,7 @@ from typing import ClassVar
 import pytest
 from pydantic import BaseModel
 
-from ludamus.links.external_apis.registry import ExternalAPIRegistry
+from ludamus.links.shop_api.registry import ExternalAPIRegistry
 from ludamus.pacts import NotFoundError
 from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
 
