@@ -24,6 +24,7 @@ from ludamus.pacts.multiverse import (
     ConnectionProvider,
     ConnectionWriteDict,
     CredentialAuthError,
+    DuplicateConnectionDisplayNameError,
 )
 
 if TYPE_CHECKING:
@@ -115,6 +116,19 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
                     "form": form,
                 },
             )
+        except DuplicateConnectionDisplayNameError:
+            form.add_error(
+                "display_name",
+                _("A connection with this display name already exists."),
+            )
+            return TemplateResponse(
+                self.request,
+                "multiverse/panel/connections/create.html",
+                {
+                    **sphere_panel_context(self.request, active_tab="connections"),
+                    "form": form,
+                },
+            )
         messages.success(self.request, _("Connection created successfully."))
         return redirect("multiverse:panel:connections")
 
@@ -185,8 +199,37 @@ class ConnectionEditPageView(SphereAccessMixin, View):
                         "connection": connection,
                     },
                 )
+            except DuplicateConnectionDisplayNameError:
+                form.add_error(
+                    "display_name",
+                    _("A connection with this display name already exists."),
+                )
+                return TemplateResponse(
+                    self.request,
+                    "multiverse/panel/connections/edit.html",
+                    {
+                        **sphere_panel_context(self.request, active_tab="connections"),
+                        "form": form,
+                        "connection": connection,
+                    },
+                )
         else:
-            self.request.services.connections.update(sphere_id, pk, data)
+            try:
+                self.request.services.connections.update(sphere_id, pk, data)
+            except DuplicateConnectionDisplayNameError:
+                form.add_error(
+                    "display_name",
+                    _("A connection with this display name already exists."),
+                )
+                return TemplateResponse(
+                    self.request,
+                    "multiverse/panel/connections/edit.html",
+                    {
+                        **sphere_panel_context(self.request, active_tab="connections"),
+                        "form": form,
+                        "connection": connection,
+                    },
+                )
         messages.success(self.request, _("Connection updated successfully."))
         return redirect("multiverse:panel:connections")
 
