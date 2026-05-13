@@ -194,6 +194,7 @@ env.ROOT_DOMAIN = "localhost:8000"
 env.SECRET_KEY = "e2e-secret-key"
 env.SESSION_COOKIE_DOMAIN = ".localhost"
 env.CREDENTIALS_ENCRYPTION_KEY = "gWc408f8j3ZQUm5Ly4EXQC2EwFRf50AhePkmZKL5N9E="
+env.IN_TESTS = 'True'
 
 [tasks."install:playwright"]
 run = """
