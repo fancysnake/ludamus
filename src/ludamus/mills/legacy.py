@@ -220,7 +220,7 @@ class EncounterService:
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from ludamus.pacts.chronology import TicketAPIImplementationProtocol
+    from ludamus.pacts.chronology import UserTicketCountSource
 
 
 def is_proposal_active(event: EventDTO) -> bool:
@@ -662,16 +662,14 @@ class PanelService:
         return errors
 
 
-def _sum_membership_counts(
-    ticket_apis: list[TicketAPIImplementationProtocol], email: str
-) -> int:
+def _sum_membership_counts(ticket_apis: list[UserTicketCountSource], email: str) -> int:
     return sum(api.fetch_membership_count(email) for api in ticket_apis)
 
 
 def _refresh_user_config_from_api(
     *,
     user_config: UserEnrollmentConfigDTO,
-    ticket_apis: list[TicketAPIImplementationProtocol],
+    ticket_apis: list[UserTicketCountSource],
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
 ) -> UserEnrollmentConfigDTO | None:
     try:
@@ -698,7 +696,7 @@ def _create_user_config_from_api(
     *,
     enrollment_config: EnrollmentConfigDTO,
     user_email: str,
-    ticket_apis: list[TicketAPIImplementationProtocol],
+    ticket_apis: list[UserTicketCountSource],
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
 ) -> UserEnrollmentConfigDTO | None:
 
@@ -725,7 +723,7 @@ def get_or_create_user_enrollment_config(  # noqa: PLR0913
     *,
     enrollment_config: EnrollmentConfigDTO,
     user_email: str,
-    ticket_apis: list[TicketAPIImplementationProtocol],
+    ticket_apis: list[UserTicketCountSource],
     check_interval_minutes: int,
     existing_user_config: UserEnrollmentConfigDTO | None,
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
@@ -772,7 +770,7 @@ def get_user_enrollment_config(
     event: EventDTO,
     user_email: str,
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
-    ticket_apis: list[TicketAPIImplementationProtocol],
+    ticket_apis: list[UserTicketCountSource],
     check_interval_minutes: int,
 ) -> VirtualEnrollmentConfig | None:
     virtual_config = VirtualEnrollmentConfig()

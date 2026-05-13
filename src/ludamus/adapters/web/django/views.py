@@ -95,7 +95,7 @@ from .forms import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from ludamus.pacts.chronology import TicketAPIImplementationProtocol
+    from ludamus.pacts.chronology import UserTicketCountSource
 
 logger = logging.getLogger(__name__)
 
@@ -1242,14 +1242,12 @@ class SessionEnrollPageView(LoginRequiredMixin, View):
 
     def _build_ticket_apis_for_event_dto(
         self, event_dto: EventDTO
-    ) -> list[TicketAPIImplementationProtocol]:
+    ) -> list[UserTicketCountSource]:
         return self.request.services.event_api_connections.build_ticket_apis_for_event(
             event_dto.sphere_id, event_dto.pk
         )
 
-    def _build_ticket_apis(
-        self, session: Session
-    ) -> list[TicketAPIImplementationProtocol]:
+    def _build_ticket_apis(self, session: Session) -> list[UserTicketCountSource]:
         event = session.agenda_item.space.area.venue.event
         return self._build_ticket_apis_for_event_dto(EventDTO.model_validate(event))
 

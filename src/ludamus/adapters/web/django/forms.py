@@ -33,7 +33,7 @@ from ludamus.pacts import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-    from ludamus.pacts.chronology import TicketAPIImplementationProtocol
+    from ludamus.pacts.chronology import UserTicketCountSource
 
 
 TODAY = datetime.now(tz=UTC).date()
@@ -290,7 +290,7 @@ def create_enrollment_form(
     current_user: UserDTO,
     connected_users: Iterable[UserDTO],
     enrollment_config_repo: EnrollmentConfigRepositoryProtocol,
-    ticket_apis: list[TicketAPIImplementationProtocol],
+    ticket_apis: list[UserTicketCountSource],
 ) -> type[forms.Form]:
     enrollment_config = (
         session.agenda_item.space.area.venue.event.get_most_liberal_config(session)

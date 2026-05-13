@@ -237,8 +237,8 @@ class EventAPIConnectionRepositoryProtocol(Protocol):
     def delete(event_pk: int, pk: int) -> None: ...
 
 
-class TicketAPIImplementationProtocol(Protocol):
-    """Structural interface for ticket-API implementation classes.
+class UserTicketCountSource(Protocol):
+    """Port: given a user (email), return their purchased-ticket count.
 
     Instantiated as `cls(config, credentials_plaintext)` by the consumer
     mill. `check_credentials` runs the same probe used by the panel
@@ -257,16 +257,14 @@ class TicketAPIImplementationProtocol(Protocol):
     def fetch_membership_count(self, email: str) -> int: ...
 
 
-class ExternalAPIRegistryProtocol(Protocol):
-    def get(self, name: str) -> type[TicketAPIImplementationProtocol]: ...
-    def for_kind(
-        self, kind: ConnectionKind
-    ) -> list[type[TicketAPIImplementationProtocol]]: ...
+class UserTicketCountResolver(Protocol):
+    def get(self, name: str) -> type[UserTicketCountSource]: ...
+    def for_kind(self, kind: ConnectionKind) -> list[type[UserTicketCountSource]]: ...
 
 
 class ExternalAPINamespaceProtocol(Protocol):
     @property
-    def registry(self) -> ExternalAPIRegistryProtocol: ...
+    def registry(self) -> UserTicketCountResolver: ...
 
 
 @dataclass
@@ -292,4 +290,4 @@ class EventAPIConnectionsServiceProtocol(Protocol):
     def delete(self, event_pk: int, pk: int) -> None: ...
     def build_ticket_apis_for_event(
         self, sphere_id: int, event_pk: int
-    ) -> list[TicketAPIImplementationProtocol]: ...
+    ) -> list[UserTicketCountSource]: ...

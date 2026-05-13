@@ -31,8 +31,8 @@ if TYPE_CHECKING:
         EventAPIConnectionDTO,
         EventAPIConnectionRepositoryProtocol,
         EventAPIConnectionWriteDict,
-        ExternalAPIRegistryProtocol,
-        TicketAPIImplementationProtocol,
+        UserTicketCountResolver,
+        UserTicketCountSource,
     )
     from ludamus.pacts.multiverse import (
         ConnectionsRepositoryProtocol,
@@ -48,7 +48,7 @@ class EventAPIConnectionsService:
         event_api_connections: EventAPIConnectionRepositoryProtocol,
         connections: ConnectionsRepositoryProtocol,
         encryptor: EncryptorProtocol,
-        registry: ExternalAPIRegistryProtocol,
+        registry: UserTicketCountResolver,
     ) -> None:
         self._transaction = transaction
         self._event_api_connections = event_api_connections
@@ -104,7 +104,7 @@ class EventAPIConnectionsService:
 
     def build_ticket_apis_for_event(
         self, sphere_id: int, event_pk: int
-    ) -> list[TicketAPIImplementationProtocol]:
+    ) -> list[UserTicketCountSource]:
         # Assembly is the consumer's concern (enrollment now, ingest
         # later), but the deps it needs (repo, encryptor, registry) all
         # live here already — exposing one method beats every view
@@ -112,7 +112,7 @@ class EventAPIConnectionsService:
         rows = self._event_api_connections.list_for_event_and_kind(
             event_pk, ConnectionKind.TICKET_API
         )
-        apis: list[TicketAPIImplementationProtocol] = []
+        apis: list[UserTicketCountSource] = []
         for row in rows:
             impl_class = self._registry.get(row.class_name)
             config = impl_class.config_schema(**row.config)
