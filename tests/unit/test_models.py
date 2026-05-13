@@ -13,6 +13,7 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
+    EventAPIConnection,
     EventProposalSettings,
     EventSettings,
     Facilitator,
@@ -60,6 +61,17 @@ class TestConnection:
     def test_last_check_label_uses_choice_display(self):
         # Mirrors the model's choices definition; "ok" → "OK".
         assert Connection(last_check_status="ok").last_check_label == "OK"
+
+
+class TestEventAPIConnection:
+    def test_str(self, faker):
+        class_name = faker.word()
+        event_id = faker.random_int(min=1)
+
+        assert (
+            str(EventAPIConnection(class_name=class_name, event_id=event_id))
+            == f"{class_name} @ event {event_id}"
+        )
 
 
 class TestEnrollmentConfig:
