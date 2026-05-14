@@ -31,7 +31,7 @@ class _StubGoogle:
     ) -> CheckResult:
         return CheckResult(status=ConnectionCheckStatus.OK, detail="stub")
 
-    def fetch_membership_count(self, _email: str) -> int:
+    def fetch_ticket_count(self, _email: str) -> int:
         return 0
 
 
@@ -50,7 +50,7 @@ class _StubTicket:
     ) -> CheckResult:
         return CheckResult(status=ConnectionCheckStatus.OK, detail="stub")
 
-    def fetch_membership_count(self, _email: str) -> int:
+    def fetch_ticket_count(self, _email: str) -> int:
         return 0
 
 

@@ -26,7 +26,6 @@ from ludamus.pacts import (
     FacilitatorDTO,
     FacilitatorMergeError,
     HostPersonalDataEntry,
-    MembershipAPIError,
     NotFoundError,
     PanelStatsDTO,
     PersonalFieldRequirementDTO,
@@ -39,6 +38,7 @@ from ludamus.pacts import (
     SessionFieldValueData,
     SessionStatus,
     SessionUpdateData,
+    TicketAPIError,
     TimeSlotRequirementDTO,
     TrackDTO,
     UnitOfWorkProtocol,
@@ -663,7 +663,7 @@ class PanelService:
 
 
 def _sum_membership_counts(ticket_apis: list[UserTicketCountSource], email: str) -> int:
-    return sum(api.fetch_membership_count(email) for api in ticket_apis)
+    return sum(api.fetch_ticket_count(email) for api in ticket_apis)
 
 
 def _refresh_user_config_from_api(
@@ -674,7 +674,7 @@ def _refresh_user_config_from_api(
 ) -> UserEnrollmentConfigDTO | None:
     try:
         membership_count = _sum_membership_counts(ticket_apis, user_config.user_email)
-    except MembershipAPIError:
+    except TicketAPIError:
         return user_config
 
     current_time = datetime.now(tz=UTC)
@@ -702,7 +702,7 @@ def _create_user_config_from_api(
 
     try:
         membership_count = _sum_membership_counts(ticket_apis, user_email)
-    except MembershipAPIError:
+    except TicketAPIError:
         return None
 
     current_time = datetime.now(tz=UTC)

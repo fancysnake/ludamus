@@ -1417,7 +1417,7 @@ class VirtualEnrollmentConfig:
     has_user_config: bool = False
 
 
-class MembershipAPIError(Exception):
+class TicketAPIError(Exception):
     pass
 
 

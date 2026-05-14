@@ -8,7 +8,7 @@ import pytest
 import responses
 
 from ludamus.links.shop_api.generic import GenericTicketAPIClient
-from ludamus.pacts import MembershipAPIError
+from ludamus.pacts import TicketAPIError
 from ludamus.pacts.external_apis import TicketAPIConfig
 from ludamus.pacts.multiverse import ConnectionCheckStatus
 
@@ -56,14 +56,14 @@ class TestCheckCredentials:
         assert result.status is ConnectionCheckStatus.NETWORK_ERROR
 
 
-class TestFetchMembershipCount:
+class TestFetchTicketCount:
     @responses.activate
     def test_returns_count_from_top_level(self):
         responses.get(_URL, json={"membership_count": _TOP_LEVEL_COUNT})
         config = TicketAPIConfig(url=_URL, count_json_path="membership_count")
         client = GenericTicketAPIClient(config, b"token")
 
-        assert client.fetch_membership_count("user@example.com") == _TOP_LEVEL_COUNT
+        assert client.fetch_ticket_count("user@example.com") == _TOP_LEVEL_COUNT
 
     @responses.activate
     def test_returns_count_from_dotted_path(self):
@@ -71,7 +71,7 @@ class TestFetchMembershipCount:
         config = TicketAPIConfig(url=_URL, count_json_path="data.member.slots")
         client = GenericTicketAPIClient(config, b"token")
 
-        assert client.fetch_membership_count("user@example.com") == _NESTED_COUNT
+        assert client.fetch_ticket_count("user@example.com") == _NESTED_COUNT
 
     @responses.activate
     def test_raises_on_http_error(self):
@@ -79,8 +79,8 @@ class TestFetchMembershipCount:
         config = TicketAPIConfig(url=_URL, count_json_path="membership_count")
         client = GenericTicketAPIClient(config, b"token")
 
-        with pytest.raises(MembershipAPIError):
-            client.fetch_membership_count("user@example.com")
+        with pytest.raises(TicketAPIError):
+            client.fetch_ticket_count("user@example.com")
 
     @responses.activate
     def test_raises_on_missing_path(self):
@@ -88,8 +88,8 @@ class TestFetchMembershipCount:
         config = TicketAPIConfig(url=_URL, count_json_path="membership_count")
         client = GenericTicketAPIClient(config, b"token")
 
-        with pytest.raises(MembershipAPIError):
-            client.fetch_membership_count("user@example.com")
+        with pytest.raises(TicketAPIError):
+            client.fetch_ticket_count("user@example.com")
 
     @responses.activate
     def test_raises_when_value_is_not_int(self):
@@ -97,5 +97,5 @@ class TestFetchMembershipCount:
         config = TicketAPIConfig(url=_URL, count_json_path="membership_count")
         client = GenericTicketAPIClient(config, b"token")
 
-        with pytest.raises(MembershipAPIError):
-            client.fetch_membership_count("user@example.com")
+        with pytest.raises(TicketAPIError):
+            client.fetch_ticket_count("user@example.com")
