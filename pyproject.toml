@@ -72,6 +72,7 @@ diff-cover = "^10.2.0"
 import-linter = "^2.11"
 vulture = "^2.16"
 pytest-gremlins = "^1.8.1"
+django-coverage-plugin = "^3.2.2"
 
 [tool.black]
 line-length = 88
@@ -95,12 +96,16 @@ omit = [
     "tests/template_checks.py",
 ]
 sigterm = true
+plugins = ["django_coverage_plugin"]
+core = "ctrace"
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
 precision = 2
+
+[tool.coverage.django_coverage_plugin]
+template_extensions = 'html'
 
 # DJLINT
 
