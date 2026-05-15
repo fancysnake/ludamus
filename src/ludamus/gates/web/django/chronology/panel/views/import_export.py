@@ -49,10 +49,7 @@ def _connection_choices(
 def _class_choices(
     request: PanelRequest, kind: ConnectionKind
 ) -> list[tuple[str, str]]:
-    return [
-        (cls.name, cls.name)
-        for cls in request.services.external_api.registry.for_kind(kind)
-    ]
+    return [(cls.name, cls.name) for cls in request.services.shop_api.for_kind(kind)]
 
 
 def _form_choices(

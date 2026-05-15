@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from functools import cached_property
 
 from django.conf import settings
@@ -12,17 +11,6 @@ from ludamus.links.shop_api.registry import ShopApiResolver
 from ludamus.mills.chronology import CFPPersonalDataFieldService
 from ludamus.mills.event_api_connections import EventAPIConnectionsService
 from ludamus.mills.multiverse import ConnectionsService, SpherePanelService
-
-
-@dataclass(frozen=True)
-class ExternalAPINamespace:
-    """Tiny namespace exposing the implementations registry.
-
-    Frozen dataclass so the surface can grow (e.g. shared HTTP client)
-    without breaking callers that already access `.registry`.
-    """
-
-    registry: ShopApiResolver
 
 
 class Services:
@@ -55,6 +43,10 @@ class Services:
         )
 
     @cached_property
+    def shop_api(self) -> ShopApiResolver:
+        return ShopApiResolver(SHOP_API_SOURCES)
+
+    @cached_property
     def event_api_connections(self) -> EventAPIConnectionsService:
         key: str = settings.CREDENTIALS_ENCRYPTION_KEY
         return EventAPIConnectionsService(
@@ -62,12 +54,8 @@ class Services:
             self._repos.event_api_connections,
             self._repos.connections,
             FernetEncryptor(key),
-            ShopApiResolver(SHOP_API_SOURCES),
+            self.shop_api,
         )
-
-    @cached_property
-    def external_api(self) -> ExternalAPINamespace:
-        return ExternalAPINamespace(registry=ShopApiResolver(SHOP_API_SOURCES))
 
     @cached_property
     def sphere_panel(self) -> SpherePanelService:

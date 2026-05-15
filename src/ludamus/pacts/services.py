@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ludamus.pacts.chronology import (
         CFPPersonalDataFieldServiceProtocol,
         EventAPIConnectionsServiceProtocol,
-        ExternalAPINamespaceProtocol,
+        UserTicketCountResolver,
     )
     from ludamus.pacts.multiverse import (
         ConnectionsServiceProtocol,
@@ -34,6 +34,6 @@ class ServicesProtocol(Protocol):
     @property
     def event_api_connections(self) -> EventAPIConnectionsServiceProtocol: ...
     @property
-    def external_api(self) -> ExternalAPINamespaceProtocol: ...
+    def shop_api(self) -> UserTicketCountResolver: ...
     @property
     def sphere_panel(self) -> SpherePanelServiceProtocol: ...

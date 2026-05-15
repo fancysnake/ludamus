@@ -262,11 +262,6 @@ class UserTicketCountResolver(Protocol):
     def for_kind(self, kind: ConnectionKind) -> list[type[UserTicketCountSource]]: ...
 
 
-class ExternalAPINamespaceProtocol(Protocol):
-    @property
-    def registry(self) -> UserTicketCountResolver: ...
-
-
 @dataclass
 class EventAPIConnectionListItem:
     """Panel-list aggregate: event-side row + joined connection facts."""
