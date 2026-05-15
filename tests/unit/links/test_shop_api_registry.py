@@ -1,4 +1,4 @@
-"""Tests for the ExternalAPIRegistry (class-name lookup, no IO)."""
+"""Tests for the ShopApiResolver (class-name lookup, no IO)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import ClassVar
 import pytest
 from pydantic import BaseModel
 
-from ludamus.links.shop_api.registry import ExternalAPIRegistry
+from ludamus.links.shop_api.registry import ShopApiResolver
 from ludamus.pacts import NotFoundError
 from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
 
@@ -54,22 +54,22 @@ class _StubTicket:
         return 0
 
 
-class TestExternalAPIRegistryGet:
+class TestShopApiResolverGet:
     def test_get_returns_registered_class(self):
-        registry = ExternalAPIRegistry({"StubTicket": _StubTicket})
+        registry = ShopApiResolver({"StubTicket": _StubTicket})
 
         assert registry.get("StubTicket") is _StubTicket
 
     def test_get_raises_not_found_on_unknown(self):
-        registry = ExternalAPIRegistry({"StubTicket": _StubTicket})
+        registry = ShopApiResolver({"StubTicket": _StubTicket})
 
         with pytest.raises(NotFoundError):
             registry.get("Missing")
 
 
-class TestExternalAPIRegistryForKind:
+class TestShopApiResolverForKind:
     def test_returns_classes_matching_required_kind(self):
-        registry = ExternalAPIRegistry(
+        registry = ShopApiResolver(
             {"StubTicket": _StubTicket, "StubGoogle": _StubGoogle}
         )
 
@@ -78,7 +78,7 @@ class TestExternalAPIRegistryForKind:
         assert ticket_only == [_StubTicket]
 
     def test_returns_empty_when_no_class_matches(self):
-        registry = ExternalAPIRegistry({"StubTicket": _StubTicket})
+        registry = ShopApiResolver({"StubTicket": _StubTicket})
 
         assert registry.for_kind(ConnectionKind.GOOGLE) == []
 
@@ -86,7 +86,7 @@ class TestExternalAPIRegistryForKind:
         # Outside mutations to the source dict must not leak into the
         # registry's view of registered classes.
         source = {"StubTicket": _StubTicket}
-        registry = ExternalAPIRegistry(source)
+        registry = ShopApiResolver(source)
         source["StubGoogle"] = _StubGoogle
 
         assert registry.for_kind(ConnectionKind.GOOGLE) == []

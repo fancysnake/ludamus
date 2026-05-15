@@ -7,8 +7,8 @@ from ludamus.inits.clients import Clients
 from ludamus.inits.repositories import Repositories
 from ludamus.inits.transaction import DjangoTransaction
 from ludamus.links.encryption import FernetEncryptor
-from ludamus.links.shop_api.implementations import IMPLEMENTATIONS
-from ludamus.links.shop_api.registry import ExternalAPIRegistry
+from ludamus.links.shop_api.implementations import SHOP_API_SOURCES
+from ludamus.links.shop_api.registry import ShopApiResolver
 from ludamus.mills.chronology import CFPPersonalDataFieldService
 from ludamus.mills.event_api_connections import EventAPIConnectionsService
 from ludamus.mills.multiverse import ConnectionsService, SpherePanelService
@@ -22,7 +22,7 @@ class ExternalAPINamespace:
     without breaking callers that already access `.registry`.
     """
 
-    registry: ExternalAPIRegistry
+    registry: ShopApiResolver
 
 
 class Services:
@@ -62,12 +62,12 @@ class Services:
             self._repos.event_api_connections,
             self._repos.connections,
             FernetEncryptor(key),
-            ExternalAPIRegistry(IMPLEMENTATIONS),
+            ShopApiResolver(SHOP_API_SOURCES),
         )
 
     @cached_property
     def external_api(self) -> ExternalAPINamespace:
-        return ExternalAPINamespace(registry=ExternalAPIRegistry(IMPLEMENTATIONS))
+        return ExternalAPINamespace(registry=ShopApiResolver(SHOP_API_SOURCES))
 
     @cached_property
     def sphere_panel(self) -> SpherePanelService:

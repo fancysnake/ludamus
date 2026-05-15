@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from ludamus.pacts.multiverse import ConnectionKind
 
 
-class ExternalAPIRegistry:
+class ShopApiResolver:
     def __init__(self, implementations: dict[str, type[UserTicketCountSource]]) -> None:
         self._implementations = dict(implementations)
 

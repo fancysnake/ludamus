@@ -10,6 +10,6 @@ if TYPE_CHECKING:
     from ludamus.pacts.chronology import UserTicketCountSource
 
 
-IMPLEMENTATIONS: dict[str, type[UserTicketCountSource]] = {
+SHOP_API_SOURCES: dict[str, type[UserTicketCountSource]] = {
     GenericTicketAPIClient.name: GenericTicketAPIClient
 }
