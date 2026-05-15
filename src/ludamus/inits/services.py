@@ -8,8 +8,10 @@ from ludamus.inits.transaction import DjangoTransaction
 from ludamus.links.encryption import FernetEncryptor
 from ludamus.links.shop_api.implementations import SHOP_API_SOURCES
 from ludamus.links.shop_api.registry import ShopApiResolver
-from ludamus.mills.chronology import CFPPersonalDataFieldService
-from ludamus.mills.event_api_connections import EventAPIConnectionsService
+from ludamus.mills.chronology import (
+    CFPPersonalDataFieldService,
+    EventAPIConnectionsService,
+)
 from ludamus.mills.multiverse import ConnectionsService, SpherePanelService
 
 

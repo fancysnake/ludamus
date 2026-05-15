@@ -14,8 +14,10 @@ from ludamus.mills import (
     is_proposal_active,
     outlook_calendar_url,
 )
-from ludamus.mills.chronology import CFPPersonalDataFieldService
-from ludamus.mills.event_api_connections import EventAPIConnectionsService
+from ludamus.mills.chronology import (
+    CFPPersonalDataFieldService,
+    EventAPIConnectionsService,
+)
 from ludamus.mills.multiverse import ConnectionsService
 from ludamus.pacts import (
     EncounterDTO,
