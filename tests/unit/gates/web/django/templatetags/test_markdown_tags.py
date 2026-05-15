@@ -40,7 +40,7 @@ class TestRenderMarkdownFilter:
     def test_link_without_href_value_drops_href(self):
         result = render_markdown('<a href title="safe">click</a>')
 
-        assert "<a title=\"safe\">click</a>" in result
+        assert '<a title="safe">click</a>' in result
 
     def test_escaped_control_character_does_not_hide_unsafe_link_url(self):
         result = render_markdown(
