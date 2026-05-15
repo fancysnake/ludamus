@@ -93,9 +93,7 @@ def _is_safe_markdown_url(url: str) -> bool:
     return urlsplit(trimmed_url).scheme.lower() in _ALLOWED_LINK_SCHEMES
 
 
-def _sanitize_markdown_attrs(
-    tag: str, attrs: list[tuple[str, str | None]]
-) -> str:
+def _sanitize_markdown_attrs(tag: str, attrs: list[tuple[str, str | None]]) -> str:
     if tag != "a":
         return ""
 
@@ -118,9 +116,7 @@ class _MarkdownSanitizer(HTMLParser):
         super().__init__(convert_charrefs=True)
         self._parts: list[str] = []
 
-    def handle_starttag(
-        self, tag: str, attrs: list[tuple[str, str | None]]
-    ) -> None:
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         normalized_tag = tag.lower()
         if normalized_tag not in _ALLOWED_MARKDOWN_TAGS:
             return
@@ -136,9 +132,7 @@ class _MarkdownSanitizer(HTMLParser):
         if normalized_tag in _ALLOWED_MARKDOWN_TAGS - _VOID_MARKDOWN_TAGS:
             self._parts.append(f"</{normalized_tag}>")
 
-    def handle_startendtag(
-        self, tag: str, attrs: list[tuple[str, str | None]]
-    ) -> None:
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         normalized_tag = tag.lower()
         if normalized_tag not in _ALLOWED_MARKDOWN_TAGS:
             return
