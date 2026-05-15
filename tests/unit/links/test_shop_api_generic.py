@@ -9,7 +9,7 @@ import responses
 
 from ludamus.links.shop_api.generic import GenericTicketAPIClient
 from ludamus.pacts import TicketAPIError
-from ludamus.pacts.external_apis import TicketAPIConfig
+from ludamus.pacts.chronology import TicketAPIConfig
 from ludamus.pacts.multiverse import ConnectionCheckStatus
 
 _URL = "https://api.example.test/members"

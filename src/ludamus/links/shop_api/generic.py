@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, ClassVar
 import requests
 
 from ludamus.pacts import TicketAPIError
-from ludamus.pacts.external_apis import TicketAPIConfig
+from ludamus.pacts.chronology import TicketAPIConfig
 from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
 
 if TYPE_CHECKING:

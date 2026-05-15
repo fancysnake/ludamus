@@ -10,7 +10,7 @@ from datetime import date, datetime
 from enum import StrEnum, auto
 from typing import ClassVar, Protocol, TypedDict
 
-from pydantic import BaseModel, ConfigDict, JsonValue
+from pydantic import BaseModel, ConfigDict, HttpUrl, JsonValue
 
 from ludamus.pacts.legacy import (
     AgendaItemDTO,
@@ -192,6 +192,18 @@ class CFPPersonalDataFieldServiceProtocol(Protocol):
 
 
 # --- External APIs (per-event polymorphic integrations) ---
+
+
+class TicketAPIConfig(BaseModel):
+    """Config for a generic JSON-path ticket API.
+
+    `url` is hit with the user email as a query parameter; the response
+    JSON is traversed by `count_json_path` (dotted form) to extract the
+    integer ticket count.
+    """
+
+    url: HttpUrl
+    count_json_path: str
 
 
 class EventAPIConnectionDTO(BaseModel):
