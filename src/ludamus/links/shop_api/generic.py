@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 from http import HTTPStatus
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 import requests
 
@@ -53,26 +53,23 @@ class GenericTicketAPIClient:
     config_schema: ClassVar[type[BaseModel]] = TicketAPIConfig
 
     def __init__(self, config: BaseModel, credentials_plaintext: bytes) -> None:
-        if not isinstance(config, TicketAPIConfig):
-            message = f"Expected TicketAPIConfig, got {type(config).__name__}"
-            raise TypeError(message)
-        self._url = str(config.url)
-        self._count_json_path = config.count_json_path
+        # The mill always constructs `config` via `cls.config_schema(**row.config)`
+        # so it is a TicketAPIConfig at runtime; the Protocol surface declares
+        # BaseModel for polymorphism across implementations.
+        narrowed = cast("TicketAPIConfig", config)
+        self._url = str(narrowed.url)
+        self._count_json_path = narrowed.count_json_path
         self._token = _decode_token(credentials_plaintext)
 
     @classmethod
     def check_credentials(
         cls, config: BaseModel, credentials_plaintext: bytes
     ) -> CheckResult:
-        if not isinstance(config, TicketAPIConfig):
-            return CheckResult(
-                status=ConnectionCheckStatus.AUTH_FAILED,
-                detail="Invalid config shape for TICKET_API",
-            )
+        narrowed = cast("TicketAPIConfig", config)
         token = _decode_token(credentials_plaintext)
         try:
             response = requests.get(
-                str(config.url),
+                str(narrowed.url),
                 params={"email": _CHECK_SENTINEL_EMAIL},
                 headers={"Authorization": f"Token {token}"},
                 timeout=_TIMEOUT_SECONDS,
