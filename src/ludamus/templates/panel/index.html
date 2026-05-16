@@ -16,7 +16,7 @@
     {% if current_event %}
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-4 lg:mb-8">
-            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-neutral-100">
+            <div class="card p-4 lg:p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs lg:text-sm text-neutral-500">{% translate "All Sessions" %}</p>
@@ -30,7 +30,7 @@
                     {{ stats.scheduled_sessions }} {% translate "scheduled" %}, {{ stats.pending_proposals }} {% translate "pending" %}
                 </p>
             </div>
-            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-neutral-100">
+            <div class="card p-4 lg:p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs lg:text-sm text-neutral-500">{% translate "Program Hosts" %}</p>
@@ -41,7 +41,7 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-neutral-100">
+            <div class="card p-4 lg:p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs lg:text-sm text-neutral-500">{% translate "Rooms" %}</p>
@@ -52,7 +52,7 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-neutral-100">
+            <div class="card p-4 lg:p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs lg:text-sm text-neutral-500">{% translate "Proposals" %}</p>
@@ -65,7 +65,7 @@
             </div>
         </div>
     {% else %}
-        <div class="bg-white rounded-xl shadow-sm border border-neutral-100 p-8 text-center">
+        <div class="card p-8 text-center">
             <p class="text-neutral-500">{% translate "No events available. Create an event to get started." %}</p>
         </div>
     {% endif %}
