@@ -8,90 +8,82 @@
     {% translate "Import / Export" %}
 {% endblock page_title %}
 {% block page_subtitle %}
-    {% if current_event %}{{ current_event.name }}{% endif %}
+    {{ current_event.name }}
 {% endblock page_subtitle %}
 {% block header_actions %}
-    {% if current_event %}
-        <a href="{% url 'panel:import-export-create' slug=current_event.slug %}"
-           class="btn btn-primary flex items-center">
-            {% icon "plus" class="w-4 h-4 mr-2" %}
-            {% translate "New API connection" %}
-        </a>
-    {% endif %}
+    <a href="{% url 'panel:import-export-create' slug=current_event.slug %}"
+       class="btn btn-primary flex items-center">
+        {% icon "plus" class="w-4 h-4 mr-2" %}
+        {% translate "New API connection" %}
+    </a>
 {% endblock header_actions %}
 {% block content %}
-    {% if current_event %}
-        <div class="-mx-3 sm:-mx-4 lg:-mx-8 -mb-3 sm:-mb-4 lg:-mb-8 px-3 sm:px-4 lg:px-8 py-6 bg-bg-secondary">
-            {% if items %}
-                <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border overflow-x-auto">
-                    <table class="min-w-full divide-y divide-border">
-                        <thead class="bg-bg-tertiary">
+    <div class="-mx-3 sm:-mx-4 lg:-mx-8 -mb-3 sm:-mb-4 lg:-mb-8 px-3 sm:px-4 lg:px-8 py-6 bg-bg-secondary">
+        {% if items %}
+            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border overflow-x-auto">
+                <table class="min-w-full divide-y divide-border">
+                    <thead class="bg-bg-tertiary">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
+                                {% translate "Connection" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
+                                {% translate "Implementation" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
+                                {% translate "Health" %}
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-right text-xs font-medium text-foreground-muted uppercase tracking-wider">
+                                {% translate "Actions" %}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-bg-secondary divide-y divide-border">
+                        {% for item in items %}
                             <tr>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
-                                    {% translate "Connection" %}
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
-                                    {% translate "Implementation" %}
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-foreground-muted uppercase tracking-wider">
-                                    {% translate "Health" %}
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-right text-xs font-medium text-foreground-muted uppercase tracking-wider">
-                                    {% translate "Actions" %}
-                                </th>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
+                                    {{ item.connection_display_name }}
+                                    <span class="text-xs text-foreground-muted">({{ item.connection_kind }})</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">{{ item.connection.class_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if item.connection.last_check_status == "ok" %}
+                                        <span class="inline-flex items-center rounded-full bg-success-bg px-2.5 py-0.5 text-xs font-medium text-success-text">{{ item.connection.last_check_label }}</span>
+                                    {% elif item.connection.last_check_status == "unknown" %}
+                                        <span class="text-foreground-muted">—</span>
+                                    {% else %}
+                                        <div class="flex flex-col gap-0.5">
+                                            <span class="inline-flex w-fit items-center rounded-full bg-danger-bg px-2.5 py-0.5 text-xs font-medium text-danger-text">{{ item.connection.last_check_label }}</span>
+                                            {% if item.connection.last_check_detail %}
+                                                <span class="text-xs text-foreground-muted">{{ item.connection.last_check_detail }}</span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'panel:import-export-edit' slug=current_event.slug pk=item.connection.pk %}"
+                                       class="text-primary hover:text-primary/80 mr-4">{% translate "Edit" %}</a>
+                                    <form method="post"
+                                          action="{% url 'panel:import-export-delete' slug=current_event.slug pk=item.connection.pk %}"
+                                          class="inline"
+                                          onsubmit="return confirm('{% translate "Are you sure you want to delete this API connection?" %}');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-danger hover:text-danger/80">{% translate "Delete" %}</button>
+                                    </form>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="bg-bg-secondary divide-y divide-border">
-                            {% for item in items %}
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                                        {{ item.connection_display_name }}
-                                        <span class="text-xs text-foreground-muted">({{ item.connection_kind }})</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">{{ item.connection.class_name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        {% if item.connection.last_check_status == "ok" %}
-                                            <span class="inline-flex items-center rounded-full bg-success-bg px-2.5 py-0.5 text-xs font-medium text-success-text">{{ item.connection.last_check_label }}</span>
-                                        {% elif item.connection.last_check_status == "unknown" %}
-                                            <span class="text-foreground-muted">—</span>
-                                        {% else %}
-                                            <div class="flex flex-col gap-0.5">
-                                                <span class="inline-flex w-fit items-center rounded-full bg-danger-bg px-2.5 py-0.5 text-xs font-medium text-danger-text">{{ item.connection.last_check_label }}</span>
-                                                {% if item.connection.last_check_detail %}
-                                                    <span class="text-xs text-foreground-muted">{{ item.connection.last_check_detail }}</span>
-                                                {% endif %}
-                                            </div>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{% url 'panel:import-export-edit' slug=current_event.slug pk=item.connection.pk %}"
-                                           class="text-primary hover:text-primary/80 mr-4">{% translate "Edit" %}</a>
-                                        <form method="post"
-                                              action="{% url 'panel:import-export-delete' slug=current_event.slug pk=item.connection.pk %}"
-                                              class="inline"
-                                              onsubmit="return confirm('{% translate "Are you sure you want to delete this API connection?" %}');">
-                                            {% csrf_token %}
-                                            <button type="submit" class="text-danger hover:text-danger/80">{% translate "Delete" %}</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
-                    <p class="text-foreground-muted">{% translate "No API connections yet. Add one to import data into this event." %}</p>
-                </div>
-            {% endif %}
-        </div>
-    {% else %}
-        <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
-            <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
-        </div>
-    {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border p-8 text-center">
+                <p class="text-foreground-muted">{% translate "No API connections yet. Add one to import data into this event." %}</p>
+            </div>
+        {% endif %}
+    </div>
 {% endblock content %}
