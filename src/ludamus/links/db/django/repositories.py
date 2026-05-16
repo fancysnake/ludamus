@@ -12,7 +12,7 @@ from django.utils.text import slugify
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
-    Connection,
+    Credential,
     DomainEnrollmentConfig,
     Encounter,
     EncounterRSVP,
@@ -2630,7 +2630,7 @@ class CredentialsRepository(CredentialsRepositoryProtocol):
     def list_for_sphere(sphere_id: int) -> list[CredentialDTO]:
         return [
             CredentialDTO.model_validate(c)
-            for c in Connection.objects.filter(sphere_id=sphere_id).order_by(
+            for c in Credential.objects.filter(sphere_id=sphere_id).order_by(
                 "display_name"
             )
         ]
@@ -2638,14 +2638,14 @@ class CredentialsRepository(CredentialsRepositoryProtocol):
     @staticmethod
     def get(sphere_id: int, pk: int) -> CredentialDTO:
         try:
-            credential = Connection.objects.get(pk=pk, sphere_id=sphere_id)
-        except Connection.DoesNotExist as exc:
+            credential = Credential.objects.get(pk=pk, sphere_id=sphere_id)
+        except Credential.DoesNotExist as exc:
             raise NotFoundError from exc
         return CredentialDTO.model_validate(credential)
 
     @staticmethod
     def create(sphere_id: int, data: CredentialWriteDict) -> CredentialDTO:
-        credential = Connection.objects.create(
+        credential = Credential.objects.create(
             sphere_id=sphere_id, display_name=data["display_name"]
         )
         return CredentialDTO.model_validate(credential)
@@ -2653,8 +2653,8 @@ class CredentialsRepository(CredentialsRepositoryProtocol):
     @staticmethod
     def update(sphere_id: int, pk: int, data: CredentialWriteDict) -> CredentialDTO:
         try:
-            credential = Connection.objects.get(pk=pk, sphere_id=sphere_id)
-        except Connection.DoesNotExist as exc:
+            credential = Credential.objects.get(pk=pk, sphere_id=sphere_id)
+        except Credential.DoesNotExist as exc:
             raise NotFoundError from exc
         credential.display_name = data["display_name"]
         credential.save()
@@ -2662,7 +2662,7 @@ class CredentialsRepository(CredentialsRepositoryProtocol):
 
     @staticmethod
     def update_credentials(sphere_id: int, pk: int, blob: bytes) -> None:
-        updated = Connection.objects.filter(pk=pk, sphere_id=sphere_id).update(
+        updated = Credential.objects.filter(pk=pk, sphere_id=sphere_id).update(
             credentials=blob
         )
         if not updated:
@@ -2671,16 +2671,16 @@ class CredentialsRepository(CredentialsRepositoryProtocol):
     @staticmethod
     def read_credentials_blob(sphere_id: int, pk: int) -> bytes:
         try:
-            credential = Connection.objects.only("credentials").get(
+            credential = Credential.objects.only("credentials").get(
                 pk=pk, sphere_id=sphere_id
             )
-        except Connection.DoesNotExist as exc:
+        except Credential.DoesNotExist as exc:
             raise NotFoundError from exc
         return bytes(credential.credentials)
 
     @staticmethod
     def delete(sphere_id: int, pk: int) -> None:
-        deleted, _ = Connection.objects.filter(pk=pk, sphere_id=sphere_id).delete()
+        deleted, _ = Credential.objects.filter(pk=pk, sphere_id=sphere_id).delete()
         if not deleted:
             raise NotFoundError
 
@@ -2709,7 +2709,7 @@ class EventAPIConnectionRepository(EventAPIConnectionRepositoryProtocol):
     ) -> EventAPIConnectionDTO:
         row = EventAPIConnection.objects.create(
             event_id=event_pk,
-            connection_id=data["credential_id"],
+            credential_id=data["credential_id"],
             class_name=data["class_name"],
             config=data["config"],
         )
@@ -2723,7 +2723,7 @@ class EventAPIConnectionRepository(EventAPIConnectionRepositoryProtocol):
             row = EventAPIConnection.objects.get(pk=pk, event_id=event_pk)
         except EventAPIConnection.DoesNotExist as exc:
             raise NotFoundError from exc
-        row.connection_id = data["credential_id"]
+        row.credential_id = data["credential_id"]
         row.class_name = data["class_name"]
         row.config = data["config"]
         row.save()

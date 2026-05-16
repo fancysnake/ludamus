@@ -22,7 +22,7 @@ from ludamus.pacts import (
     UserType,
     VirtualEnrollmentConfig,
 )
-from ludamus.pacts.multiverse import ConnectionCheckStatus, ConnectionKind
+from ludamus.pacts.multiverse import ConnectionCheckStatus
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -1360,40 +1360,21 @@ def get_vc_available_slots(
     )
 
 
-class Connection(models.Model):
+class Credential(models.Model):
     sphere = models.ForeignKey(
-        Sphere, on_delete=models.CASCADE, related_name="connections"
-    )
-    kind = models.CharField(
-        max_length=32,
-        choices=[
-            (ConnectionKind.GOOGLE.value, _("Google Forms + Sheets")),
-            (ConnectionKind.TICKET_API.value, _("Ticket API")),
-        ],
+        Sphere, on_delete=models.CASCADE, related_name="credentials"
     )
     display_name = models.CharField(max_length=255)
-    # Encrypted credentials. Write-only at the repo surface — the
+    # Encrypted credential blob. Write-only at the repo surface — the
     # decrypt path is owned by the import-execution slice.
     credentials = models.BinaryField(default=b"")
-    last_check_status = models.CharField(
-        max_length=32,
-        choices=[
-            (ConnectionCheckStatus.UNKNOWN.value, _("Not checked yet")),
-            (ConnectionCheckStatus.OK.value, _("OK")),
-            (ConnectionCheckStatus.AUTH_FAILED.value, _("Authentication failed")),
-            (ConnectionCheckStatus.NETWORK_ERROR.value, _("Network error")),
-        ],
-        default=ConnectionCheckStatus.UNKNOWN.value,
-    )
-    last_check_detail = models.TextField(default="", blank=True)
-    last_check_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = "connection"
+        db_table = "credential"
         constraints = (
             models.UniqueConstraint(
                 fields=("sphere", "display_name"),
-                name="connection_unique_display_name_per_sphere",
+                name="credential_unique_display_name_per_sphere",
             ),
         )
         ordering = ("display_name",)
@@ -1405,24 +1386,20 @@ class Connection(models.Model):
     def has_credentials(self) -> bool:
         return bool(self.credentials)
 
-    @property
-    def last_check_label(self) -> str:
-        return str(self.get_last_check_status_display())
-
 
 class EventAPIConnection(models.Model):
     """Per-event polymorphic external-API integration.
 
-    Picks a sphere `Connection` (for credentials) and a registered
+    Picks a sphere `Credential` for authentication and a registered
     implementation class. `config` holds class-specific parameters,
-    validated by a pydantic schema keyed by the connection's `kind`.
+    validated by a pydantic schema declared by the implementation.
     """
 
     event = models.ForeignKey(
         Event, on_delete=models.CASCADE, related_name="api_connections"
     )
-    connection = models.ForeignKey(
-        Connection, on_delete=models.PROTECT, related_name="event_api_connections"
+    credential = models.ForeignKey(
+        Credential, on_delete=models.PROTECT, related_name="event_api_connections"
     )
     class_name = models.CharField(max_length=64)
     config = models.JSONField(default=dict)
