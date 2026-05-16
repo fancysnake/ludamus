@@ -288,7 +288,7 @@
                 {% if messages %}
                     <div class="p-3 sm:p-4 lg:px-8 lg:pt-4 lg:pb-0 space-y-2">
                         {% for message in messages %}
-                            <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} flex items-start">
+                            <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} flex items-center">
                                 {% if message.tags == 'error' %}
                                     {% icon "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
                                 {% elif message.tags == 'warning' %}
