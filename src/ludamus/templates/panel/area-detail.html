@@ -89,7 +89,8 @@
                         {% for space in spaces %}
                             <tr class="space-row hover:bg-bg-tertiary cursor-move"
                                 draggable="true"
-                                data-space-id="{{ space.pk }}">
+                                data-space-id="{{ space.pk }}"
+                                aria-label="{{ space.name }}">
                                 <td class="px-3 py-4 text-neutral-400">{% icon "bars-3" class="w-4 h-4" %}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ space.name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ space.capacity|default:"—" }}</td>
