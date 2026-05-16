@@ -1,6 +1,6 @@
 """Multiverse subdomain business logic.
 
-Sphere-scoped concerns. First feature: import-connections CRUD. Split per
+Sphere-scoped concerns. First feature: API connections CRUD. Split per
 `plans/hex_refactor.md` if the file grows past ~12 top-level members or
 1000 lines.
 """

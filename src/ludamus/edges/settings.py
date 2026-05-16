@@ -54,7 +54,7 @@ IS_PRODUCTION = ENV == "production"
 
 SECRET_KEY = env("SECRET_KEY")
 
-# Fernet key for encrypting import-connection credentials at rest.
+# Fernet key for encrypting API-connection credentials at rest.
 # Distinct from SECRET_KEY so it can rotate independently. Url-safe
 # base64-encoded 32 bytes (output of Fernet.generate_key()).
 CREDENTIALS_ENCRYPTION_KEY = env("CREDENTIALS_ENCRYPTION_KEY")

@@ -15,7 +15,7 @@
                     {% if form.kind.value == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
     </select>
-{% for error in form.kind.errors %}<p class="text-sm text-red-700">{{ error }}</p>{% endfor %}
+    {% for error in form.kind.errors %}<p class="text-sm text-red-700">{{ error }}</p>{% endfor %}
 </div>
 <div class="space-y-1">
     <label class="block text-sm font-medium text-neutral-700"

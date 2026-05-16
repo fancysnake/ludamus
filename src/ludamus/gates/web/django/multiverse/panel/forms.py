@@ -9,7 +9,7 @@ from ludamus.pacts.multiverse import ConnectionKind
 
 
 class ConnectionForm(forms.Form):
-    """Form for creating/editing import connections."""
+    """Form for creating/editing API connections."""
 
     kind = forms.ChoiceField(
         label=_("Kind"),

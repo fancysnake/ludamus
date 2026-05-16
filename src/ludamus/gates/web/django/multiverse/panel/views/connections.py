@@ -53,7 +53,7 @@ def _connection_not_found() -> RedirectError:
 
 
 class ConnectionsPageView(SphereAccessMixin, View):
-    """List import connections for the current sphere."""
+    """List API connections for the current sphere."""
 
     request: MultiverseRequest
 
@@ -71,7 +71,7 @@ class ConnectionsPageView(SphereAccessMixin, View):
 
 
 class ConnectionCreatePageView(SphereAccessMixin, View):
-    """Create a new import connection."""
+    """Create a new API connection."""
 
     request: MultiverseRequest
 
@@ -120,7 +120,7 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
 
 
 class ConnectionEditPageView(SphereAccessMixin, View):
-    """Edit an existing import connection."""
+    """Edit an existing API connection."""
 
     request: MultiverseRequest
 

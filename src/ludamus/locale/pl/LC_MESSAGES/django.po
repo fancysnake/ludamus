@@ -3327,8 +3327,8 @@ msgstr "Ogólne"
 
 #: src/ludamus/templates/multiverse/panel/_tabs.html:6
 #: src/ludamus/templates/multiverse/panel/connections/list.html:5
-msgid "Import connections"
-msgstr "Połączenia importu"
+msgid "API connections"
+msgstr "Integracje API"
 
 #: src/ludamus/templates/multiverse/panel/connections/create.html:4
 #: src/ludamus/templates/multiverse/panel/connections/create.html:7
