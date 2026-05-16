@@ -12,7 +12,7 @@ from pytest_factoryboy import register
 from ludamus.adapters.db.django.models import (
     AgendaItem,
     Area,
-    Connection,
+    Credential,
     Encounter,
     EncounterRSVP,
     EnrollmentConfig,
@@ -30,7 +30,6 @@ from ludamus.adapters.db.django.models import (
     Venue,
 )
 from ludamus.links.encryption import FernetEncryptor
-from ludamus.pacts.multiverse import ConnectionKind
 from tests.integration.factories import AnonymousUserFactory, CompleteUserFactory
 
 User = get_user_model()
@@ -309,21 +308,20 @@ def enrollment_config_fixture(event):
 
 @pytest.fixture
 def setup_ticket_api(event, settings):
-    # Wire a TICKET_API connection + per-event row. Returns the URL it
-    # used so tests can pass it to responses.get(url=...).
+    # Wire a sphere credential + per-event ticket-API binding. Returns
+    # the URL it used so tests can pass it to responses.get(url=...).
 
     def _setup(url=None, *, count_json_path="membership_count", token="testtoken"):
         actual_url = url or "https://api.example.test/check"
         encryptor = FernetEncryptor(settings.CREDENTIALS_ENCRYPTION_KEY)
-        connection = Connection.objects.create(
+        credential = Credential.objects.create(
             sphere=event.sphere,
-            kind=ConnectionKind.TICKET_API.value,
             display_name="Ticket API",
             credentials=encryptor.encrypt(token.encode()),
         )
         EventAPIConnection.objects.create(
             event=event,
-            connection=connection,
+            credential=credential,
             class_name="GenericTicketAPIClient",
             config={"url": actual_url, "count_json_path": count_json_path},
         )

@@ -4,27 +4,15 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from ludamus.adapters.db.django.models import Connection, Event, EventAPIConnection
+from ludamus.adapters.db.django.models import Credential, Event, EventAPIConnection
 from ludamus.links.db.django.repositories import EventAPIConnectionRepository
 from ludamus.pacts import NotFoundError
-from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
+from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus
 
 
-def _ticket_connection(sphere):
-    return Connection.objects.create(
-        sphere=sphere,
-        kind=ConnectionKind.TICKET_API.value,
-        display_name="Ticket API",
-        credentials=b"opaque",
-    )
-
-
-def _google_connection(sphere):
-    return Connection.objects.create(
-        sphere=sphere,
-        kind=ConnectionKind.GOOGLE.value,
-        display_name="Google",
-        credentials=b"opaque",
+def _credential(sphere):
+    return Credential.objects.create(
+        sphere=sphere, display_name="Ticket API", credentials=b"opaque"
     )
 
 
@@ -39,18 +27,18 @@ def _other_event(other_sphere):
     )
 
 
-def _write_dict(connection):
+def _write_dict(credential):
     return {
-        "connection_id": connection.pk,
+        "credential_id": credential.pk,
         "class_name": "GenericTicketAPIClient",
         "config": {"url": "https://x.test/check", "count_json_path": "count"},
     }
 
 
-def _make_row(event, connection, url="https://a.test/", path="n"):
+def _make_row(event, credential, url="https://a.test/", path="n"):
     return EventAPIConnection.objects.create(
         event=event,
-        connection=connection,
+        credential=credential,
         class_name="GenericTicketAPIClient",
         config={"url": url, "count_json_path": path},
     )
@@ -58,35 +46,19 @@ def _make_row(event, connection, url="https://a.test/", path="n"):
 
 class TestList:
     def test_lists_event_scoped_rows(self, event, sphere, non_root_sphere):
-        connection = _ticket_connection(sphere)
+        credential = _credential(sphere)
         other_event = _other_event(non_root_sphere)
-        _make_row(event, connection)
-        _make_row(other_event, connection, url="https://b.test/")
+        _make_row(event, credential)
+        _make_row(other_event, credential, url="https://b.test/")
 
         rows = EventAPIConnectionRepository.list_for_event(event.pk)
 
         assert [r.event_id for r in rows] == [event.pk]
 
 
-class TestListForEventAndKind:
-    def test_filters_by_joined_connection_kind(self, event, sphere):
-        ticket = _ticket_connection(sphere)
-        google = _google_connection(sphere)
-        _make_row(event, ticket)
-        EventAPIConnection.objects.create(
-            event=event, connection=google, class_name="GoogleSomething", config={}
-        )
-
-        ticket_rows = EventAPIConnectionRepository.list_for_event_and_kind(
-            event.pk, ConnectionKind.TICKET_API
-        )
-
-        assert [r.connection_id for r in ticket_rows] == [ticket.pk]
-
-
 class TestGet:
     def test_returns_dto(self, event, sphere):
-        row = _make_row(event, _ticket_connection(sphere))
+        row = _make_row(event, _credential(sphere))
 
         dto = EventAPIConnectionRepository.get(event.pk, row.pk)
 
@@ -98,7 +70,7 @@ class TestGet:
         self, event, sphere, non_root_sphere
     ):
         other_event = _other_event(non_root_sphere)
-        row = _make_row(other_event, _ticket_connection(sphere))
+        row = _make_row(other_event, _credential(sphere))
 
         with pytest.raises(NotFoundError):
             EventAPIConnectionRepository.get(event.pk, row.pk)
@@ -106,26 +78,26 @@ class TestGet:
 
 class TestCreateUpdateDelete:
     def test_create_persists(self, event, sphere):
-        connection = _ticket_connection(sphere)
+        credential = _credential(sphere)
 
-        dto = EventAPIConnectionRepository.create(event.pk, _write_dict(connection))
+        dto = EventAPIConnectionRepository.create(event.pk, _write_dict(credential))
 
         stored = EventAPIConnection.objects.get(pk=dto.pk)
-        assert stored.connection_id == connection.pk
+        assert stored.credential_id == credential.pk
         assert stored.config == {
             "url": "https://x.test/check",
             "count_json_path": "count",
         }
 
     def test_update_overwrites(self, event, sphere):
-        connection = _ticket_connection(sphere)
-        dto = EventAPIConnectionRepository.create(event.pk, _write_dict(connection))
+        credential = _credential(sphere)
+        dto = EventAPIConnectionRepository.create(event.pk, _write_dict(credential))
 
         updated = EventAPIConnectionRepository.update(
             event.pk,
             dto.pk,
             {
-                "connection_id": connection.pk,
+                "credential_id": credential.pk,
                 "class_name": "GenericTicketAPIClient",
                 "config": {"url": "https://y.test/", "count_json_path": "total"},
             },
@@ -136,12 +108,12 @@ class TestCreateUpdateDelete:
     def test_update_raises_not_found(self, event):
         with pytest.raises(NotFoundError):
             EventAPIConnectionRepository.update(
-                event.pk, 999_999, {"connection_id": 1, "class_name": "x", "config": {}}
+                event.pk, 999_999, {"credential_id": 1, "class_name": "x", "config": {}}
             )
 
     def test_delete_removes_row(self, event, sphere):
         dto = EventAPIConnectionRepository.create(
-            event.pk, _write_dict(_ticket_connection(sphere))
+            event.pk, _write_dict(_credential(sphere))
         )
 
         EventAPIConnectionRepository.delete(event.pk, dto.pk)
@@ -152,7 +124,7 @@ class TestCreateUpdateDelete:
 class TestUpdateLastCheck:
     def test_records_status_and_timestamp(self, event, sphere):
         dto = EventAPIConnectionRepository.create(
-            event.pk, _write_dict(_ticket_connection(sphere))
+            event.pk, _write_dict(_credential(sphere))
         )
 
         EventAPIConnectionRepository.update_last_check(

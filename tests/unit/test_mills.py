@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 import pytest
 from pydantic import BaseModel
@@ -18,7 +18,7 @@ from ludamus.mills.chronology import (
     CFPPersonalDataFieldService,
     EventAPIConnectionsService,
 )
-from ludamus.mills.multiverse import ConnectionsService
+from ludamus.mills.multiverse import CredentialsService
 from ludamus.pacts import (
     EncounterDTO,
     EventDTO,
@@ -36,12 +36,9 @@ from ludamus.pacts.chronology import (
     PersonalDataFieldFormContextDTO,
 )
 from ludamus.pacts.multiverse import (
-    CheckResult,
     ConnectionCheckStatus,
-    ConnectionDTO,
-    ConnectionKind,
     CredentialAuthError,
-    DocsApiProtocol,
+    CredentialDTO,
 )
 
 
@@ -768,20 +765,9 @@ class TestCheckProposalRateLimit:
         assert result is True
 
 
-def _connection_dto(
-    pk=1,
-    sphere_id=1,
-    name="Konto",
-    *,
-    kind=ConnectionKind.GOOGLE,
-    has_credentials=False,
-):
-    return ConnectionDTO(
-        pk=pk,
-        sphere_id=sphere_id,
-        kind=kind,
-        display_name=name,
-        has_credentials=has_credentials,
+def _credential_dto(pk=1, sphere_id=1, name="Konto", *, has_credentials=False):
+    return CredentialDTO(
+        pk=pk, sphere_id=sphere_id, display_name=name, has_credentials=has_credentials
     )
 
 
@@ -791,9 +777,9 @@ class _NoopEncryptor:
         return b"enc:" + plaintext
 
 
-class TestConnectionsService:
+class TestCredentialsService:
     @pytest.fixture
-    def connections(self):
+    def credentials(self):
         return MagicMock()
 
     @pytest.fixture
@@ -805,134 +791,81 @@ class TestConnectionsService:
         return _NoopEncryptor()
 
     @pytest.fixture
-    def docs_api(self):
-        docs_api = Mock(spec=DocsApiProtocol)
-        docs_api.check_credentials.return_value = CheckResult(
-            status=ConnectionCheckStatus.OK, detail="ok"
-        )
-        return docs_api
+    def service(self, transaction, credentials, encryptor):
+        return CredentialsService(transaction, credentials, encryptor)
 
-    @pytest.fixture
-    def service(self, transaction, connections, encryptor, docs_api):
-        return ConnectionsService(transaction, connections, encryptor, docs_api)
-
-    def test_create_without_credentials_skips_encrypt(
-        self, service, connections, transaction, docs_api
+    def test_create_without_plaintext_persists_only_metadata(
+        self, service, credentials, transaction
     ):
-        created = _connection_dto(pk=42)
-        connections.create.return_value = created
-        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
+        created = _credential_dto(pk=42)
+        credentials.create.return_value = created
+        data = {"display_name": "Konto"}
 
         result = service.create(sphere_id=7, data=data)
 
         assert result is created
-        connections.create.assert_called_once_with(7, data)
-        connections.update_credentials.assert_not_called()
-        connections.update_last_check.assert_not_called()
-        docs_api.check_credentials.assert_not_called()
+        credentials.create.assert_called_once_with(7, data)
+        credentials.update_credentials.assert_not_called()
         transaction.atomic.assert_called_once_with()
 
-    def test_create_with_credentials_checks_records_then_persists(
-        self, service, connections, transaction, docs_api
+    def test_create_with_plaintext_persists_and_encrypts(
+        self, service, credentials, transaction
     ):
-        created = _connection_dto(pk=42)
-        connections.create.return_value = created
-        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
+        created = _credential_dto(pk=42)
+        credentials.create.return_value = created
+        data = {"display_name": "Konto"}
 
         result = service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
 
         assert result is created
-        docs_api.check_credentials.assert_called_once_with(b"secret")
-        check_result = docs_api.check_credentials.return_value
-        connections.update_last_check.assert_called_once_with(7, 42, check_result)
-        connections.create.assert_called_once_with(7, data)
-        connections.update_credentials.assert_called_once_with(7, 42, b"enc:secret")
+        credentials.create.assert_called_once_with(7, data)
+        credentials.update_credentials.assert_called_once_with(7, 42, b"enc:secret")
         transaction.atomic.assert_called_once_with()
 
-    def test_create_auth_failed_raises_without_writing(
-        self, service, connections, transaction, docs_api
+    def test_update_without_plaintext_persists_only_metadata(
+        self, service, credentials, transaction
     ):
-        docs_api.check_credentials.return_value = CheckResult(
-            status=ConnectionCheckStatus.AUTH_FAILED, detail="bad key"
-        )
-        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
-
-        with pytest.raises(CredentialAuthError) as caught:
-            service.create(sphere_id=7, data=data, credentials_plaintext=b"secret")
-
-        assert caught.value.status == "auth_failed"
-        connections.create.assert_not_called()
-        connections.update_last_check.assert_not_called()
-        connections.update_credentials.assert_not_called()
-        transaction.atomic.assert_not_called()
-
-    def test_update_without_credentials_skips_encrypt(
-        self, service, connections, transaction, docs_api
-    ):
-        updated = _connection_dto(pk=42)
-        connections.update.return_value = updated
-        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
+        updated = _credential_dto(pk=42)
+        credentials.update.return_value = updated
+        data = {"display_name": "Konto"}
 
         result = service.update(sphere_id=7, pk=42, data=data)
 
         assert result is updated
-        connections.update.assert_called_once_with(7, 42, data)
-        connections.update_credentials.assert_not_called()
-        connections.update_last_check.assert_not_called()
-        docs_api.check_credentials.assert_not_called()
+        credentials.update.assert_called_once_with(7, 42, data)
+        credentials.update_credentials.assert_not_called()
         transaction.atomic.assert_called_once_with()
 
-    def test_update_with_credentials_checks_records_then_persists(
-        self, service, connections, transaction, docs_api
+    def test_update_with_plaintext_persists_and_encrypts(
+        self, service, credentials, transaction
     ):
-        updated = _connection_dto(pk=42)
-        connections.update.return_value = updated
-        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
+        updated = _credential_dto(pk=42)
+        credentials.update.return_value = updated
+        data = {"display_name": "Konto"}
 
         result = service.update(
             sphere_id=7, pk=42, data=data, credentials_plaintext=b"fresh"
         )
 
         assert result is updated
-        docs_api.check_credentials.assert_called_once_with(b"fresh")
-        check_result = docs_api.check_credentials.return_value
-        connections.update_last_check.assert_called_once_with(7, 42, check_result)
-        connections.update.assert_called_once_with(7, 42, data)
-        connections.update_credentials.assert_called_once_with(7, 42, b"enc:fresh")
+        credentials.update.assert_called_once_with(7, 42, data)
+        credentials.update_credentials.assert_called_once_with(7, 42, b"enc:fresh")
         transaction.atomic.assert_called_once_with()
 
-    def test_update_network_error_raises_without_writing(
-        self, service, connections, transaction, docs_api
-    ):
-        docs_api.check_credentials.return_value = CheckResult(
-            status=ConnectionCheckStatus.NETWORK_ERROR, detail="timeout"
-        )
-        data = {"kind": ConnectionKind.GOOGLE, "display_name": "Konto"}
-
-        with pytest.raises(CredentialAuthError) as caught:
-            service.update(sphere_id=7, pk=42, data=data, credentials_plaintext=b"x")
-
-        assert caught.value.status == "network_error"
-        # Rejected credential must not touch the stored row or its last-check.
-        connections.update_last_check.assert_not_called()
-        connections.update.assert_not_called()
-        connections.update_credentials.assert_not_called()
-        transaction.atomic.assert_not_called()
-
-    def test_delete_calls_repo_in_transaction(self, service, connections, transaction):
+    def test_delete_calls_repo_in_transaction(self, service, credentials, transaction):
         service.delete(sphere_id=1, pk=42)
 
-        connections.delete.assert_called_once_with(1, 42)
+        credentials.delete.assert_called_once_with(1, 42)
         transaction.atomic.assert_called_once_with()
 
 
 def _event_api_connection_dto(
-    pk=1, event_id=10, connection_id=20, class_name="ticket_v1", config=None
+    pk=1, event_id=10, credential_id=20, class_name="ticket_v1", config=None
 ):
     return EventAPIConnectionDTO(
         pk=pk,
         event_id=event_id,
-        connection_id=connection_id,
+        credential_id=credential_id,
         class_name=class_name,
         config=config if config is not None else {},
     )
@@ -944,7 +877,6 @@ class _StubConfig(BaseModel):
 
 class _TicketAPIStub:
     name = "ticket_v1"
-    required_kind = ConnectionKind.TICKET_API
     config_schema = _StubConfig
 
 
@@ -954,7 +886,7 @@ class TestEventAPIConnectionsService:
         return MagicMock()
 
     @pytest.fixture
-    def connections(self):
+    def credentials(self):
         return MagicMock()
 
     @pytest.fixture
@@ -971,46 +903,46 @@ class TestEventAPIConnectionsService:
 
     @pytest.fixture
     def service(
-        self, transaction, event_api_connections, connections, encryptor, registry
+        self, transaction, event_api_connections, credentials, encryptor, registry
     ):
         return EventAPIConnectionsService(
-            transaction, event_api_connections, connections, encryptor, registry
+            transaction, event_api_connections, credentials, encryptor, registry
         )
 
-    def test_list_for_event_skips_rows_with_missing_connection(
-        self, service, event_api_connections, connections
+    def test_list_for_event_skips_rows_with_missing_credential(
+        self, service, event_api_connections, credentials
     ):
-        gone = _event_api_connection_dto(pk=1, connection_id=20)
-        kept = _event_api_connection_dto(pk=2, connection_id=21)
+        gone = _event_api_connection_dto(pk=1, credential_id=20)
+        kept = _event_api_connection_dto(pk=2, credential_id=21)
         event_api_connections.list_for_event.return_value = [gone, kept]
-        connections.get.side_effect = [NotFoundError("missing"), _connection_dto(pk=21)]
+        credentials.get.side_effect = [NotFoundError("missing"), _credential_dto(pk=21)]
 
         items = service.list_for_event(sphere_id=7, event_pk=10)
 
         assert [item.connection.pk for item in items] == [kept.pk]
 
-    def test_create_raises_when_connection_missing(
-        self, service, event_api_connections, connections, registry, transaction
+    def test_create_raises_when_credential_missing(
+        self, service, event_api_connections, credentials, registry, transaction
     ):
-        connections.get.side_effect = NotFoundError("missing")
-        data = {"connection_id": 20, "class_name": "ticket_v1", "config": {}}
+        credentials.get.side_effect = NotFoundError("missing")
+        data = {"credential_id": 20, "class_name": "ticket_v1", "config": {}}
 
         with pytest.raises(CredentialAuthError) as caught:
             service.create(sphere_id=7, event_pk=10, data=data)
 
         assert caught.value.status is ConnectionCheckStatus.AUTH_FAILED
-        assert "Connection not found" in caught.value.detail
+        assert "Credential not found" in caught.value.detail
         registry.get.assert_not_called()
         event_api_connections.create.assert_not_called()
         event_api_connections.update_last_check.assert_not_called()
         transaction.atomic.assert_not_called()
 
     def test_create_raises_when_implementation_unknown(
-        self, service, event_api_connections, connections, registry, transaction
+        self, service, event_api_connections, credentials, registry, transaction
     ):
-        connections.get.return_value = _connection_dto(pk=20)
+        credentials.get.return_value = _credential_dto(pk=20)
         registry.get.side_effect = NotFoundError("nope")
-        data = {"connection_id": 20, "class_name": "ticket_unknown", "config": {}}
+        data = {"credential_id": 20, "class_name": "ticket_unknown", "config": {}}
 
         with pytest.raises(CredentialAuthError) as caught:
             service.create(sphere_id=7, event_pk=10, data=data)
@@ -1021,35 +953,12 @@ class TestEventAPIConnectionsService:
         event_api_connections.update_last_check.assert_not_called()
         transaction.atomic.assert_not_called()
 
-    def test_create_raises_when_kind_mismatched(
-        self, service, event_api_connections, connections, registry, transaction
-    ):
-        connections.get.return_value = _connection_dto(pk=20)
-        registry.get.return_value = _TicketAPIStub
-        data = {
-            "connection_id": 20,
-            "class_name": "ticket_v1",
-            "config": {"api_key": "x"},
-        }
-
-        with pytest.raises(CredentialAuthError) as caught:
-            service.create(sphere_id=7, event_pk=10, data=data)
-
-        assert caught.value.status is ConnectionCheckStatus.AUTH_FAILED
-        assert "ticket_api" in caught.value.detail
-        assert "google" in caught.value.detail
-        event_api_connections.create.assert_not_called()
-        event_api_connections.update_last_check.assert_not_called()
-        transaction.atomic.assert_not_called()
-
     def test_create_raises_when_config_invalid(
-        self, service, event_api_connections, connections, registry, transaction
+        self, service, event_api_connections, credentials, registry, transaction
     ):
-        connections.get.return_value = _connection_dto(
-            pk=20, kind=ConnectionKind.TICKET_API
-        )
+        credentials.get.return_value = _credential_dto(pk=20)
         registry.get.return_value = _TicketAPIStub
-        data = {"connection_id": 20, "class_name": "ticket_v1", "config": {}}
+        data = {"credential_id": 20, "class_name": "ticket_v1", "config": {}}
 
         with pytest.raises(CredentialAuthError) as caught:
             service.create(sphere_id=7, event_pk=10, data=data)

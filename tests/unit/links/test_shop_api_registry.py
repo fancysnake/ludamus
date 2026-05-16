@@ -9,16 +9,15 @@ from pydantic import BaseModel
 
 from ludamus.links.shop_api.registry import ShopApiResolver
 from ludamus.pacts import NotFoundError
-from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
+from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus
 
 
 class _StubConfig(BaseModel):
     pass
 
 
-class _StubGoogle:
-    name: ClassVar[str] = "StubGoogle"
-    required_kind: ClassVar[ConnectionKind] = ConnectionKind.GOOGLE
+class _StubTicket:
+    name: ClassVar[str] = "StubTicket"
     config_schema: ClassVar[type[BaseModel]] = _StubConfig
 
     def __init__(self, config: BaseModel, credentials_plaintext: bytes) -> None:
@@ -35,9 +34,8 @@ class _StubGoogle:
         return 0
 
 
-class _StubTicket:
-    name: ClassVar[str] = "StubTicket"
-    required_kind: ClassVar[ConnectionKind] = ConnectionKind.TICKET_API
+class _StubOther:
+    name: ClassVar[str] = "StubOther"
     config_schema: ClassVar[type[BaseModel]] = _StubConfig
 
     def __init__(self, config: BaseModel, credentials_plaintext: bytes) -> None:
@@ -67,26 +65,17 @@ class TestShopApiResolverGet:
             registry.get("Missing")
 
 
-class TestShopApiResolverForKind:
-    def test_returns_classes_matching_required_kind(self):
-        registry = ShopApiResolver(
-            {"StubTicket": _StubTicket, "StubGoogle": _StubGoogle}
-        )
+class TestShopApiResolverListAll:
+    def test_returns_all_registered_classes(self):
+        registry = ShopApiResolver({"StubTicket": _StubTicket, "StubOther": _StubOther})
 
-        ticket_only = registry.for_kind(ConnectionKind.TICKET_API)
-
-        assert ticket_only == [_StubTicket]
-
-    def test_returns_empty_when_no_class_matches(self):
-        registry = ShopApiResolver({"StubTicket": _StubTicket})
-
-        assert registry.for_kind(ConnectionKind.GOOGLE) == []
+        assert set(registry.list_all()) == {_StubTicket, _StubOther}
 
     def test_isolates_input_dict(self):
         # Outside mutations to the source dict must not leak into the
         # registry's view of registered classes.
         source = {"StubTicket": _StubTicket}
         registry = ShopApiResolver(source)
-        source["StubGoogle"] = _StubGoogle
+        source["StubOther"] = _StubOther
 
-        assert registry.for_kind(ConnectionKind.GOOGLE) == []
+        assert registry.list_all() == [_StubTicket]

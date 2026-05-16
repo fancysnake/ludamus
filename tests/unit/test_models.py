@@ -7,7 +7,7 @@ from ludamus.adapters.db.django.models import (
     DEFAULT_NAME,
     AgendaItem,
     Area,
-    Connection,
+    Credential,
     DomainEnrollmentConfig,
     Encounter,
     EncounterRSVP,
@@ -49,18 +49,11 @@ class TestSphere:
         assert str(Sphere(name=name)) == name
 
 
-class TestConnection:
+class TestCredential:
     def test_str(self, faker):
         display_name = faker.word()
 
-        assert str(Connection(display_name=display_name)) == display_name
-
-    def test_last_check_label_defaults_to_unknown_display(self):
-        assert Connection().last_check_label == "Not checked yet"
-
-    def test_last_check_label_uses_choice_display(self):
-        # Mirrors the model's choices definition; "ok" → "OK".
-        assert Connection(last_check_status="ok").last_check_label == "OK"
+        assert str(Credential(display_name=display_name)) == display_name
 
 
 class TestEventAPIConnection:

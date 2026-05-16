@@ -6,9 +6,8 @@ import responses
 from django.contrib import messages
 from django.urls import reverse
 
-from ludamus.adapters.db.django.models import Connection, EventAPIConnection
+from ludamus.adapters.db.django.models import Credential, EventAPIConnection
 from ludamus.links.encryption import FernetEncryptor
-from ludamus.pacts.multiverse import ConnectionKind
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -34,28 +33,27 @@ def _delete_url(event, pk):
     return reverse("panel:import-export-delete", kwargs={"slug": event.slug, "pk": pk})
 
 
-def _make_ticket_connection(sphere, settings, token: str = "testtoken"):
+def _make_ticket_credential(sphere, settings, token: str = "testtoken"):
     encryptor = FernetEncryptor(settings.CREDENTIALS_ENCRYPTION_KEY)
-    return Connection.objects.create(
+    return Credential.objects.create(
         sphere=sphere,
-        kind=ConnectionKind.TICKET_API.value,
         display_name="Ticket API",
         credentials=encryptor.encrypt(token.encode()),
     )
 
 
-def _make_event_api_row(event, connection, url=_PROBE_URL, path="membership_count"):
+def _make_event_api_row(event, credential, url=_PROBE_URL, path="membership_count"):
     return EventAPIConnection.objects.create(
         event=event,
-        connection=connection,
+        credential=credential,
         class_name="GenericTicketAPIClient",
         config={"url": url, "count_json_path": path},
     )
 
 
-def _create_post_data(connection, url=_PROBE_URL, path="membership_count"):
+def _create_post_data(credential, url=_PROBE_URL, path="membership_count"):
     return {
-        "connection": str(connection.pk),
+        "connection": str(credential.pk),
         "class_name": "GenericTicketAPIClient",
         "url": url,
         "count_json_path": path,
@@ -86,16 +84,15 @@ class TestImportExportPageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
-        _make_event_api_row(event, connection)
+        credential = _make_ticket_credential(sphere, settings)
+        _make_event_api_row(event, credential)
 
         response = authenticated_client.get(_list_url(event))
 
         assert response.status_code == HTTPStatus.OK
         items = response.context["items"]
         assert len(items) == 1
-        assert items[0].connection_display_name == "Ticket API"
-        assert items[0].connection_kind == ConnectionKind.TICKET_API
+        assert items[0].credential_display_name == "Ticket API"
 
     def test_get_redirects_to_panel_index_when_event_not_found(
         self, authenticated_client, active_user, sphere
@@ -127,7 +124,7 @@ class TestImportExportCreatePageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        _make_ticket_connection(sphere, settings)
+        _make_ticket_credential(sphere, settings)
 
         response = authenticated_client.get(_create_url(event))
 
@@ -138,7 +135,7 @@ class TestImportExportCreatePageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
         responses.get(_PROBE_URL, status=HTTPStatus.OK, json={"membership_count": 0})
 
         response = authenticated_client.post(
@@ -158,7 +155,7 @@ class TestImportExportCreatePageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
         responses.get(_PROBE_URL, status=HTTPStatus.UNAUTHORIZED)
 
         response = authenticated_client.post(
@@ -174,7 +171,7 @@ class TestImportExportCreatePageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
         responses.get(_PROBE_URL, status=HTTPStatus.NOT_FOUND)
 
         response = authenticated_client.post(
@@ -189,7 +186,7 @@ class TestImportExportCreatePageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
 
         response = authenticated_client.post(
             _create_url(event), data=_create_post_data(connection, url="not-a-url")
@@ -235,7 +232,7 @@ class TestImportExportEditPageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
         row = _make_event_api_row(event, connection)
 
         response = authenticated_client.get(_edit_url(event, row.pk))
@@ -262,7 +259,7 @@ class TestImportExportEditPageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
         row = _make_event_api_row(event, connection)
         responses.get(
             "https://api.example.test/different", status=HTTPStatus.OK, json={"slot": 1}
@@ -323,7 +320,7 @@ class TestImportExportEditPageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
 
         response = authenticated_client.post(
             _edit_url(event, 999_999), data=_create_post_data(connection)
@@ -340,7 +337,7 @@ class TestImportExportEditPageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
         row = _make_event_api_row(event, connection)
 
         response = authenticated_client.post(
@@ -359,7 +356,7 @@ class TestImportExportEditPageView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
         row = _make_event_api_row(event, connection)
         new_url = "https://api.example.test/different"
         responses.get(new_url, status=HTTPStatus.UNAUTHORIZED)
@@ -380,7 +377,7 @@ class TestImportExportDeleteActionView:
         self, authenticated_client, active_user, sphere, event, settings
     ):
         sphere.managers.add(active_user)
-        connection = _make_ticket_connection(sphere, settings)
+        connection = _make_ticket_credential(sphere, settings)
         row = _make_event_api_row(event, connection)
 
         response = authenticated_client.post(_delete_url(event, row.pk))
