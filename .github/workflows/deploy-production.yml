@@ -58,7 +58,8 @@ jobs:
                    POSTGRES_DATA_PATH STATIC_DATA_PATH MEDIA_DATA_PATH \
                    WEB_PORT; do
             v="$(printenv "$k" || true)"
-            [ -n "$v" ] && printf '%s=%s\n' "$k" "$v" >> .env.local
+            [ -n "$v" ] && printf "%s='%s'\n" "$k" "$v" >> .env.local
+
           done
           for r in SECRET_KEY CREDENTIALS_ENCRYPTION_KEY DB_PASSWORD \
                    AUTH0_CLIENT_SECRET MEMBERSHIP_API_TOKEN \
