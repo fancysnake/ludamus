@@ -17,7 +17,7 @@ from ludamus.gates.web.django.chronology.panel.views.base import (
     PanelRequest,
 )
 from ludamus.pacts import NotFoundError
-from ludamus.pacts.multiverse import ConnectionKind, CredentialAuthError
+from ludamus.pacts.multiverse import CredentialAuthError
 
 if TYPE_CHECKING:
     from django.http import HttpResponse
@@ -35,30 +35,22 @@ _CREATE_TEMPLATE = "panel/import-export/create.html"
 _EDIT_TEMPLATE = "panel/import-export/edit.html"
 
 
-def _connection_choices(
-    request: PanelRequest, kind: ConnectionKind
-) -> list[tuple[int, str]]:
+def _connection_choices(request: PanelRequest) -> list[tuple[int, str]]:
     sphere_id = request.context.current_sphere_id
     return [
         (c.pk, c.display_name)
         for c in request.services.credentials.list_for_sphere(sphere_id)
-        if c.kind == kind
     ]
 
 
-def _class_choices(
-    request: PanelRequest, kind: ConnectionKind
-) -> list[tuple[str, str]]:
-    return [(cls.name, cls.name) for cls in request.services.shop_api.for_kind(kind)]
+def _class_choices(request: PanelRequest) -> list[tuple[str, str]]:
+    return [(cls.name, cls.name) for cls in request.services.shop_api.list_all()]
 
 
 def _form_choices(
     request: PanelRequest,
 ) -> tuple[list[tuple[int, str]], list[tuple[str, str]]]:
-    # Today only TICKET_API has a registered implementation; widen here
-    # when ingest/export classes land.
-    kind = ConnectionKind.TICKET_API
-    return _connection_choices(request, kind), _class_choices(request, kind)
+    return _connection_choices(request), _class_choices(request)
 
 
 def _form_data_to_write_dict(

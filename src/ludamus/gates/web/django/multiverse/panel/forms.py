@@ -5,23 +5,10 @@ from typing import Any
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from ludamus.pacts.multiverse import ConnectionKind
 
+class CredentialForm(forms.Form):
+    """Form for creating/editing API credentials."""
 
-class ConnectionForm(forms.Form):
-    """Form for creating/editing API connections."""
-
-    kind = forms.ChoiceField(
-        label=_("Kind"),
-        choices=[
-            (ConnectionKind.GOOGLE.value, _("Google Forms + Sheets")),
-            (ConnectionKind.TICKET_API.value, _("Ticket API")),
-        ],
-        error_messages={
-            "required": _("Please select a kind."),
-            "invalid_choice": _("Invalid kind selection."),
-        },
-    )
     display_name = forms.CharField(label=_("Display name"), max_length=255, strip=True)
     replace_credentials = forms.BooleanField(
         label=_("Replace credentials"), required=False
@@ -30,7 +17,7 @@ class ConnectionForm(forms.Form):
         label=_("Credentials"),
         widget=forms.Textarea(attrs={"rows": 8, "autocomplete": "off"}),
         required=False,
-        help_text=_("Paste credentials for the selected kind."),
+        help_text=_("Paste the API credentials."),
     )
 
     def __init__(self, *args: Any, is_create: bool = False, **kwargs: Any) -> None:

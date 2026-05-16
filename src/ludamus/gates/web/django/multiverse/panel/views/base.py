@@ -25,7 +25,7 @@ def sphere_panel_context(
     Returns:
         Context dict with sidebar (`events`, `current_event`,
         `is_proposal_active`, `active_nav`) and tabs (`is_general_tab`,
-        `is_connections_tab`, `tab_urls`) keys.
+        `is_credentials_tab`, `tab_urls`) keys.
     """
     sphere_id = request.context.current_sphere_id
     events = request.services.sphere_panel.list_events(sphere_id)
@@ -39,9 +39,9 @@ def sphere_panel_context(
         ),
         "active_nav": "sphere-settings",
         "is_general_tab": active_tab == "general",
-        "is_connections_tab": active_tab == "connections",
+        "is_credentials_tab": active_tab == "credentials",
         "tab_urls": {
             "general": reverse("multiverse:panel:sphere-settings"),
-            "connections": reverse("multiverse:panel:connections"),
+            "credentials": reverse("multiverse:panel:credentials"),
         },
     }
