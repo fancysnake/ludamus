@@ -71,7 +71,7 @@ if TYPE_CHECKING:
         UserTicketCountSource,
     )
     from ludamus.pacts.multiverse import (
-        ConnectionsRepositoryProtocol,
+        CredentialsRepositoryProtocol,
         EncryptorProtocol,
     )
     from ludamus.pacts.services import TransactionProtocol
@@ -780,7 +780,7 @@ class EventAPIConnectionsService:
         self,
         transaction: TransactionProtocol,
         event_api_connections: EventAPIConnectionRepositoryProtocol,
-        connections: ConnectionsRepositoryProtocol,
+        connections: CredentialsRepositoryProtocol,
         encryptor: EncryptorProtocol,
         registry: UserTicketCountResolver,
     ) -> None:
@@ -797,14 +797,12 @@ class EventAPIConnectionsService:
         items: list[EventAPIConnectionListItem] = []
         for row in rows:
             try:
-                connection = self._connections.get(sphere_id, row.connection_id)
+                connection = self._connections.get(sphere_id, row.credential_id)
             except NotFoundError:
                 continue
             items.append(
                 EventAPIConnectionListItem(
-                    connection=row,
-                    connection_display_name=connection.display_name,
-                    connection_kind=connection.kind,
+                    connection=row, credential_display_name=connection.display_name
                 )
             )
         return items
@@ -850,7 +848,7 @@ class EventAPIConnectionsService:
         for row in rows:
             impl_class = self._registry.get(row.class_name)
             config = impl_class.config_schema(**row.config)
-            blob = self._connections.read_credentials_blob(sphere_id, row.connection_id)
+            blob = self._connections.read_credentials_blob(sphere_id, row.credential_id)
             plaintext = self._encryptor.decrypt(blob)
             apis.append(impl_class(config, plaintext))
         return apis
@@ -859,7 +857,7 @@ class EventAPIConnectionsService:
         self, sphere_id: int, data: EventAPIConnectionWriteDict
     ) -> CheckResult:
         try:
-            connection = self._connections.get(sphere_id, data["connection_id"])
+            connection = self._connections.get(sphere_id, data["credential_id"])
         except NotFoundError as exc:
             raise CredentialAuthError(
                 ConnectionCheckStatus.AUTH_FAILED,
@@ -888,7 +886,7 @@ class EventAPIConnectionsService:
                 ConnectionCheckStatus.AUTH_FAILED, f"Invalid config: {exc}"
             ) from exc
 
-        blob = self._connections.read_credentials_blob(sphere_id, data["connection_id"])
+        blob = self._connections.read_credentials_blob(sphere_id, data["credential_id"])
         plaintext = self._encryptor.decrypt(blob)
         result = impl_class.check_credentials(parsed_config, plaintext)
         if result.status is not ConnectionCheckStatus.OK:

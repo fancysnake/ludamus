@@ -21,7 +21,7 @@ from ludamus.pacts.legacy import (
     ProposalCategoryDTO,
     SpaceDTO,
 )
-from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
+from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus
 
 TIMETABLE_ROOM_PAGE_SIZE = 5
 TIMETABLE_SLOT_MINUTES = 60
@@ -211,7 +211,7 @@ class EventAPIConnectionDTO(BaseModel):
 
     pk: int
     event_id: int
-    connection_id: int
+    credential_id: int
     class_name: str
     config: dict[str, JsonValue]
     last_check_status: ConnectionCheckStatus = ConnectionCheckStatus.UNKNOWN
@@ -221,7 +221,7 @@ class EventAPIConnectionDTO(BaseModel):
 
 
 class EventAPIConnectionWriteDict(TypedDict):
-    connection_id: int
+    credential_id: int
     class_name: str
     config: dict[str, JsonValue]
 
@@ -229,10 +229,6 @@ class EventAPIConnectionWriteDict(TypedDict):
 class EventAPIConnectionRepositoryProtocol(Protocol):
     @staticmethod
     def list_for_event(event_pk: int) -> list[EventAPIConnectionDTO]: ...
-    @staticmethod
-    def list_for_event_and_kind(
-        event_pk: int, kind: ConnectionKind
-    ) -> list[EventAPIConnectionDTO]: ...
     @staticmethod
     def get(event_pk: int, pk: int) -> EventAPIConnectionDTO: ...
     @staticmethod
@@ -254,11 +250,10 @@ class UserTicketCountSource(Protocol):
 
     Instantiated as `cls(config, credentials_plaintext)` by the consumer
     mill. `check_credentials` runs the same probe used by the panel
-    pre-check, and is keyed by the implementation's `required_kind`.
+    pre-check.
     """
 
     name: ClassVar[str]
-    required_kind: ClassVar[ConnectionKind]
     config_schema: ClassVar[type[BaseModel]]
 
     def __init__(self, config: BaseModel, credentials_plaintext: bytes) -> None: ...
@@ -271,16 +266,15 @@ class UserTicketCountSource(Protocol):
 
 class UserTicketCountResolver(Protocol):
     def get(self, name: str) -> type[UserTicketCountSource]: ...
-    def for_kind(self, kind: ConnectionKind) -> list[type[UserTicketCountSource]]: ...
+    def list_all(self) -> list[type[UserTicketCountSource]]: ...
 
 
 @dataclass
 class EventAPIConnectionListItem:
-    """Panel-list aggregate: event-side row + joined connection facts."""
+    """Panel-list aggregate: event-side row + joined credential facts."""
 
     connection: EventAPIConnectionDTO
-    connection_display_name: str
-    connection_kind: ConnectionKind
+    credential_display_name: str
 
 
 class EventAPIConnectionsServiceProtocol(Protocol):

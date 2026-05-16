@@ -22,8 +22,8 @@ from ludamus.pacts import NotFoundError, RedirectError
 from ludamus.pacts.multiverse import (
     ConnectionCheckStatus,
     ConnectionKind,
-    ConnectionWriteDict,
     CredentialAuthError,
+    CredentialWriteDict,
 )
 
 if TYPE_CHECKING:
@@ -98,7 +98,7 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
             )
 
         sphere_id = self.request.context.current_sphere_id
-        data: ConnectionWriteDict = {
+        data: CredentialWriteDict = {
             "kind": ConnectionKind(form.cleaned_data["kind"]),
             "display_name": form.cleaned_data["display_name"],
         }
@@ -166,7 +166,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
                 },
             )
 
-        data: ConnectionWriteDict = {
+        data: CredentialWriteDict = {
             "kind": ConnectionKind(form.cleaned_data["kind"]),
             "display_name": form.cleaned_data["display_name"],
         }

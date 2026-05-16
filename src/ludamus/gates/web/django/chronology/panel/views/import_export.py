@@ -65,7 +65,7 @@ def _form_data_to_write_dict(
     form: EventAPIConnectionForm,
 ) -> EventAPIConnectionWriteDict:
     return {
-        "connection_id": int(form.cleaned_data["connection"]),
+        "credential_id": int(form.cleaned_data["connection"]),
         "class_name": form.cleaned_data["class_name"],
         "config": {
             "url": form.cleaned_data["url"],
@@ -180,7 +180,7 @@ class ImportExportEditPageView(PanelAccessMixin, EventContextMixin, View):
         context["row"] = row
         context["form"] = EventAPIConnectionForm(
             initial={
-                "connection": str(row.connection_id),
+                "connection": str(row.credential_id),
                 "class_name": row.class_name,
                 "url": config.get("url", ""),
                 "count_json_path": config.get("count_json_path", ""),

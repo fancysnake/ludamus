@@ -16,9 +16,9 @@ if TYPE_CHECKING:
         SphereRepositoryProtocol,
     )
     from ludamus.pacts.multiverse import (
-        ConnectionDTO,
-        ConnectionsRepositoryProtocol,
-        ConnectionWriteDict,
+        CredentialDTO,
+        CredentialsRepositoryProtocol,
+        CredentialWriteDict,
         DocsApiProtocol,
         EncryptorProtocol,
     )
@@ -31,7 +31,7 @@ class ConnectionsService:
     def __init__(
         self,
         transaction: TransactionProtocol,
-        connections: ConnectionsRepositoryProtocol,
+        connections: CredentialsRepositoryProtocol,
         encryptor: EncryptorProtocol,
         docs_api: DocsApiProtocol,
     ) -> None:
@@ -40,18 +40,18 @@ class ConnectionsService:
         self._encryptor = encryptor
         self._docs_api = docs_api
 
-    def list_for_sphere(self, sphere_id: int) -> list[ConnectionDTO]:
+    def list_for_sphere(self, sphere_id: int) -> list[CredentialDTO]:
         return self._connections.list_for_sphere(sphere_id)
 
-    def get(self, sphere_id: int, pk: int) -> ConnectionDTO:
+    def get(self, sphere_id: int, pk: int) -> CredentialDTO:
         return self._connections.get(sphere_id, pk)
 
     def create(
         self,
         sphere_id: int,
-        data: ConnectionWriteDict,
+        data: CredentialWriteDict,
         credentials_plaintext: bytes | None = None,
-    ) -> ConnectionDTO:
+    ) -> CredentialDTO:
         if credentials_plaintext is None:
             with self._transaction.atomic():
                 return self._connections.create(sphere_id, data)
@@ -72,9 +72,9 @@ class ConnectionsService:
         self,
         sphere_id: int,
         pk: int,
-        data: ConnectionWriteDict,
+        data: CredentialWriteDict,
         credentials_plaintext: bytes | None = None,
-    ) -> ConnectionDTO:
+    ) -> CredentialDTO:
         if credentials_plaintext is None:
             with self._transaction.atomic():
                 return self._connections.update(sphere_id, pk, data)

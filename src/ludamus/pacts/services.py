@@ -16,7 +16,7 @@ if TYPE_CHECKING:
         UserTicketCountResolver,
     )
     from ludamus.pacts.multiverse import (
-        ConnectionsServiceProtocol,
+        CredentialsServiceProtocol,
         SpherePanelServiceProtocol,
     )
 
@@ -30,7 +30,7 @@ class ServicesProtocol(Protocol):
     @property
     def personal_data_fields(self) -> CFPPersonalDataFieldServiceProtocol: ...
     @property
-    def connections(self) -> ConnectionsServiceProtocol: ...
+    def connections(self) -> CredentialsServiceProtocol: ...
     @property
     def event_api_connections(self) -> EventAPIConnectionsServiceProtocol: ...
     @property

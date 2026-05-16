@@ -6,7 +6,6 @@ backoffice). Split per `plans/hex_refactor.md` if the file grows past
 """
 
 from dataclasses import dataclass
-from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol, TypedDict
 
@@ -14,11 +13,6 @@ from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
     from ludamus.pacts.legacy import EventDTO
-
-
-class ConnectionKind(StrEnum):
-    GOOGLE = "google"
-    TICKET_API = "ticket_api"
 
 
 class ConnectionCheckStatus(StrEnum):
@@ -43,40 +37,32 @@ class CredentialAuthError(Exception):
         super().__init__(f"{status.value}: {detail}")
 
 
-class ConnectionDTO(BaseModel):
+class CredentialDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     pk: int
     sphere_id: int
-    kind: ConnectionKind
     display_name: str
     has_credentials: bool
-    last_check_status: ConnectionCheckStatus = ConnectionCheckStatus.UNKNOWN
-    last_check_label: str = ""
-    last_check_detail: str = ""
-    last_check_at: datetime | None = None
 
 
-class ConnectionWriteDict(TypedDict):
-    kind: ConnectionKind
+class CredentialWriteDict(TypedDict):
     display_name: str
 
 
-class ConnectionsRepositoryProtocol(Protocol):
+class CredentialsRepositoryProtocol(Protocol):
     @staticmethod
-    def list_for_sphere(sphere_id: int) -> list[ConnectionDTO]: ...
+    def list_for_sphere(sphere_id: int) -> list[CredentialDTO]: ...
     @staticmethod
-    def get(sphere_id: int, pk: int) -> ConnectionDTO: ...
+    def get(sphere_id: int, pk: int) -> CredentialDTO: ...
     @staticmethod
-    def create(sphere_id: int, data: ConnectionWriteDict) -> ConnectionDTO: ...
+    def create(sphere_id: int, data: CredentialWriteDict) -> CredentialDTO: ...
     @staticmethod
-    def update(sphere_id: int, pk: int, data: ConnectionWriteDict) -> ConnectionDTO: ...
+    def update(sphere_id: int, pk: int, data: CredentialWriteDict) -> CredentialDTO: ...
     @staticmethod
     def update_credentials(sphere_id: int, pk: int, blob: bytes) -> None: ...
     @staticmethod
     def read_credentials_blob(sphere_id: int, pk: int) -> bytes: ...
-    @staticmethod
-    def update_last_check(sphere_id: int, pk: int, result: CheckResult) -> None: ...
     @staticmethod
     def delete(sphere_id: int, pk: int) -> None: ...
 
@@ -86,27 +72,22 @@ class EncryptorProtocol(Protocol):
     def decrypt(self, blob: bytes) -> bytes: ...
 
 
-class DocsApiProtocol(Protocol):
-    @staticmethod
-    def check_credentials(plaintext: bytes) -> CheckResult: ...
-
-
-class ConnectionsServiceProtocol(Protocol):
-    def list_for_sphere(self, sphere_id: int) -> list[ConnectionDTO]: ...
-    def get(self, sphere_id: int, pk: int) -> ConnectionDTO: ...
+class CredentialsServiceProtocol(Protocol):
+    def list_for_sphere(self, sphere_id: int) -> list[CredentialDTO]: ...
+    def get(self, sphere_id: int, pk: int) -> CredentialDTO: ...
     def create(
         self,
         sphere_id: int,
-        data: ConnectionWriteDict,
+        data: CredentialWriteDict,
         credentials_plaintext: bytes | None = None,
-    ) -> ConnectionDTO: ...
+    ) -> CredentialDTO: ...
     def update(
         self,
         sphere_id: int,
         pk: int,
-        data: ConnectionWriteDict,
+        data: CredentialWriteDict,
         credentials_plaintext: bytes | None = None,
-    ) -> ConnectionDTO: ...
+    ) -> CredentialDTO: ...
     def delete(self, sphere_id: int, pk: int) -> None: ...
 
 
