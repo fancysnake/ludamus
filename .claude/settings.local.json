@@ -9,7 +9,6 @@
       "mcp__playwright__browser_handle_dialog",
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_snapshot",
-      "Skill(gloria)",
       "Skill(hector)",
       "Skill(manuel)",
       "mcp__playwright__browser_take_screenshot",
@@ -20,7 +19,8 @@
       "Bash(mise exec:*)",
       "Bash(mise tasks:*)",
       "Bash(awk -F',' '{print $19}')",
-      "Bash(grep -v '^$')"
+      "Bash(grep -v '^$')",
+      "Bash(git mv *)"
     ],
     "deny": [
       "Edit(./tests/integration/utils.py)"
