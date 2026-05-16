@@ -45,11 +45,11 @@ class TestConnectionsRepositoryUpdate:
         ConnectionsRepository.update(
             sphere_id=sphere.pk,
             pk=connection.pk,
-            data={"service": "google", "display_name": "Nowe Konto"},
+            data={"service": "google", "display_name": "New Account"},
         )
 
         connection.refresh_from_db()
-        assert connection.display_name == "Nowe Konto"
+        assert connection.display_name == "New Account"
         assert bytes(connection.credentials) == b"fresh"
         assert connection.last_check_status == "ok"
         assert connection.last_check_detail == "fresh"
