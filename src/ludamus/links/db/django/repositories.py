@@ -128,7 +128,6 @@ from ludamus.pacts.chronology import (
 )
 from ludamus.pacts.multiverse import (
     CheckResult,
-    ConnectionKind,
     CredentialDTO,
     CredentialsRepositoryProtocol,
     CredentialWriteDict,
@@ -2626,7 +2625,7 @@ class TrackRepository(TrackRepositoryProtocol):
         )
 
 
-class ConnectionsRepository(CredentialsRepositoryProtocol):
+class CredentialsRepository(CredentialsRepositoryProtocol):
     @staticmethod
     def list_for_sphere(sphere_id: int) -> list[CredentialDTO]:
         return [
@@ -2639,28 +2638,27 @@ class ConnectionsRepository(CredentialsRepositoryProtocol):
     @staticmethod
     def get(sphere_id: int, pk: int) -> CredentialDTO:
         try:
-            connection = Connection.objects.get(pk=pk, sphere_id=sphere_id)
+            credential = Connection.objects.get(pk=pk, sphere_id=sphere_id)
         except Connection.DoesNotExist as exc:
             raise NotFoundError from exc
-        return CredentialDTO.model_validate(connection)
+        return CredentialDTO.model_validate(credential)
 
     @staticmethod
     def create(sphere_id: int, data: CredentialWriteDict) -> CredentialDTO:
-        connection = Connection.objects.create(
-            sphere_id=sphere_id, kind=data["kind"], display_name=data["display_name"]
+        credential = Connection.objects.create(
+            sphere_id=sphere_id, display_name=data["display_name"]
         )
-        return CredentialDTO.model_validate(connection)
+        return CredentialDTO.model_validate(credential)
 
     @staticmethod
     def update(sphere_id: int, pk: int, data: CredentialWriteDict) -> CredentialDTO:
         try:
-            connection = Connection.objects.get(pk=pk, sphere_id=sphere_id)
+            credential = Connection.objects.get(pk=pk, sphere_id=sphere_id)
         except Connection.DoesNotExist as exc:
             raise NotFoundError from exc
-        connection.kind = data["kind"]
-        connection.display_name = data["display_name"]
-        connection.save()
-        return CredentialDTO.model_validate(connection)
+        credential.display_name = data["display_name"]
+        credential.save()
+        return CredentialDTO.model_validate(credential)
 
     @staticmethod
     def update_credentials(sphere_id: int, pk: int, blob: bytes) -> None:
@@ -2673,22 +2671,12 @@ class ConnectionsRepository(CredentialsRepositoryProtocol):
     @staticmethod
     def read_credentials_blob(sphere_id: int, pk: int) -> bytes:
         try:
-            connection = Connection.objects.only("credentials").get(
+            credential = Connection.objects.only("credentials").get(
                 pk=pk, sphere_id=sphere_id
             )
         except Connection.DoesNotExist as exc:
             raise NotFoundError from exc
-        return bytes(connection.credentials)
-
-    @staticmethod
-    def update_last_check(sphere_id: int, pk: int, result: CheckResult) -> None:
-        updated = Connection.objects.filter(pk=pk, sphere_id=sphere_id).update(
-            last_check_status=result.status,
-            last_check_detail=result.detail,
-            last_check_at=timezone.now(),
-        )
-        if not updated:
-            raise NotFoundError
+        return bytes(credential.credentials)
 
     @staticmethod
     def delete(sphere_id: int, pk: int) -> None:
@@ -2705,17 +2693,6 @@ class EventAPIConnectionRepository(EventAPIConnectionRepositoryProtocol):
             for row in EventAPIConnection.objects.filter(event_id=event_pk).order_by(
                 "pk"
             )
-        ]
-
-    @staticmethod
-    def list_for_event_and_kind(
-        event_pk: int, kind: ConnectionKind
-    ) -> list[EventAPIConnectionDTO]:
-        return [
-            EventAPIConnectionDTO.model_validate(row)
-            for row in EventAPIConnection.objects.filter(
-                event_id=event_pk, connection__kind=kind
-            ).order_by("pk")
         ]
 
     @staticmethod

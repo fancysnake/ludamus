@@ -36,7 +36,7 @@ class Services:
     def credentials(self) -> CredentialsService:
         key: str = settings.CREDENTIALS_ENCRYPTION_KEY
         return CredentialsService(
-            self._transaction, self._repos.connections, FernetEncryptor(key)
+            self._transaction, self._repos.credentials, FernetEncryptor(key)
         )
 
     @cached_property
@@ -49,7 +49,7 @@ class Services:
         return EventAPIConnectionsService(
             self._transaction,
             self._repos.event_api_connections,
-            self._repos.connections,
+            self._repos.credentials,
             FernetEncryptor(key),
             self.shop_api,
         )

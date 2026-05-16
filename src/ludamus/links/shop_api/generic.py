@@ -1,6 +1,5 @@
 """Generic JSON-path ticket-API implementation.
 
-One concrete implementation registered against `ConnectionKind.TICKET_API`.
 The pre-check probes the configured URL with a sentinel email and the
 decoded bearer token, classifying the response as OK / AUTH_FAILED /
 NETWORK_ERROR. The runtime call traverses the JSON response by a
@@ -17,7 +16,7 @@ import requests
 
 from ludamus.pacts import TicketAPIError
 from ludamus.pacts.chronology import TicketAPIConfig
-from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus, ConnectionKind
+from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus
 
 if TYPE_CHECKING:
     from pydantic import BaseModel, JsonValue
@@ -49,7 +48,6 @@ def _decode_token(plaintext: bytes) -> str:
 
 class GenericTicketAPIClient:
     name: ClassVar[str] = "GenericTicketAPIClient"
-    required_kind: ClassVar[ConnectionKind] = ConnectionKind.TICKET_API
     config_schema: ClassVar[type[BaseModel]] = TicketAPIConfig
 
     def __init__(self, config: BaseModel, credentials_plaintext: bytes) -> None:

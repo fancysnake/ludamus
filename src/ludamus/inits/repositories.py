@@ -20,8 +20,8 @@ class Repositories:
         return repositories.ProposalCategoryRepository()
 
     @cached_property
-    def connections(self) -> repositories.ConnectionsRepository:
-        return repositories.ConnectionsRepository()
+    def credentials(self) -> repositories.CredentialsRepository:
+        return repositories.CredentialsRepository()
 
     @cached_property
     def event_api_connections(self) -> repositories.EventAPIConnectionRepository:
