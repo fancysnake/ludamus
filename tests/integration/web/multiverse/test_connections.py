@@ -118,7 +118,7 @@ class TestCredentialCreatePageView:
         response = authenticated_client.get(self.url)
 
         assert response.status_code == HTTPStatus.OK
-        assert response.template_name == ["multiverse/panel/credentials/create.html"]
+        assert response.template_name == "multiverse/panel/credentials/create.html"
 
     def test_post_rerenders_form_on_invalid_data(
         self, authenticated_client, active_user, sphere
@@ -168,7 +168,7 @@ class TestCredentialEditPageView:
         response = authenticated_client.get(self._url(credential))
 
         assert response.status_code == HTTPStatus.OK
-        assert response.template_name == ["multiverse/panel/credentials/edit.html"]
+        assert response.template_name == "multiverse/panel/credentials/edit.html"
         assert response.context_data["credential"] == CredentialDTO.model_validate(
             credential
         )
@@ -262,7 +262,7 @@ class TestCredentialDeletePageView:
         response = authenticated_client.get(self._url(credential))
 
         assert response.status_code == HTTPStatus.OK
-        assert response.template_name == ["multiverse/panel/credentials/delete.html"]
+        assert response.template_name == "multiverse/panel/credentials/delete.html"
 
     def test_post_deletes_credential(self, authenticated_client, active_user, sphere):
         sphere.managers.add(active_user)

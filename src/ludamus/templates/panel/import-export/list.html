@@ -45,9 +45,7 @@
                     <tbody class="bg-bg-secondary divide-y divide-border">
                         {% for item in items %}
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                                    {{ item.credential_display_name }}
-                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{{ item.credential_display_name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground-muted">{{ item.connection.class_name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     {% if item.connection.last_check_status == "ok" %}

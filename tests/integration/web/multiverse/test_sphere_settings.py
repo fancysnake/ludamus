@@ -9,7 +9,7 @@ PERMISSION_ERROR = "You don't have permission to access the sphere panel."
 
 TAB_URLS = {
     "general": "/multiverse/panel/",
-    "connections": "/multiverse/panel/connections/",
+    "credentials": "/multiverse/panel/credentials/",
 }
 GENERAL_PANEL_CONTEXT = {
     "events": [],
@@ -17,7 +17,7 @@ GENERAL_PANEL_CONTEXT = {
     "is_proposal_active": False,
     "active_nav": "sphere-settings",
     "is_general_tab": True,
-    "is_connections_tab": False,
+    "is_credentials_tab": False,
     "tab_urls": TAB_URLS,
 }
 
