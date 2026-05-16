@@ -14,9 +14,9 @@
     <div class="flex items-center space-x-3">
         <a href="{% url 'panel:import-export' slug=current_event.slug %}"
            class="btn btn-secondary">{% translate "Cancel" %}</a>
-        <button type="submit"
-                form="event-api-connection-form"
-                class="btn btn-primary">{% translate "Create" %}</button>
+<button type="submit"
+        form="event-api-connection-form"
+        class="btn btn-primary">{% translate "Create" %}</button>
     </div>
 {% endblock header_actions %}
 {% block content %}
