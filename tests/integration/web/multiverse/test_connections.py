@@ -207,6 +207,42 @@ class TestCredentialEditPageView:
             messages=[(messages.SUCCESS, "Credential updated successfully.")],
         )
 
+    def test_post_rerenders_form_on_invalid_data(
+        self, authenticated_client, active_user, sphere
+    ):
+        sphere.managers.add(active_user)
+        credential = Credential.objects.create(sphere=sphere, display_name="Konto")
+
+        response = authenticated_client.post(
+            self._url(credential), data={"display_name": ""}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "multiverse/panel/credentials/edit.html"
+        credential.refresh_from_db()
+        assert credential.display_name == "Konto"
+
+    def test_post_redirects_when_credential_belongs_to_other_sphere(
+        self, authenticated_client, active_user, sphere, non_root_sphere
+    ):
+        sphere.managers.add(active_user)
+        other = Credential.objects.create(
+            sphere=non_root_sphere, display_name="Other-sphere"
+        )
+
+        response = authenticated_client.post(
+            self._url(other), data={"display_name": "Hijacked"}
+        )
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url="/multiverse/panel/credentials/",
+            messages=[(messages.ERROR, "Credential not found.")],
+        )
+        other.refresh_from_db()
+        assert other.display_name == "Other-sphere"
+
     def test_post_replace_credentials_off_keeps_blob(
         self, authenticated_client, active_user, sphere
     ):
@@ -263,6 +299,23 @@ class TestCredentialDeletePageView:
 
         assert response.status_code == HTTPStatus.OK
         assert response.template_name == "multiverse/panel/credentials/delete.html"
+
+    def test_get_redirects_when_credential_belongs_to_other_sphere(
+        self, authenticated_client, active_user, sphere, non_root_sphere
+    ):
+        sphere.managers.add(active_user)
+        other = Credential.objects.create(
+            sphere=non_root_sphere, display_name="Other-sphere"
+        )
+
+        response = authenticated_client.get(self._url(other))
+
+        assert_response(
+            response,
+            HTTPStatus.FOUND,
+            url="/multiverse/panel/credentials/",
+            messages=[(messages.ERROR, "Credential not found.")],
+        )
 
     def test_post_deletes_credential(self, authenticated_client, active_user, sphere):
         sphere.managers.add(active_user)
