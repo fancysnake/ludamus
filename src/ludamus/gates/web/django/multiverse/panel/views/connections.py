@@ -59,7 +59,7 @@ class ConnectionsPageView(SphereAccessMixin, View):
 
     def get(self, _request: MultiverseRequest) -> HttpResponse:
         sphere_id = self.request.context.current_sphere_id
-        connections = self.request.services.connections.list_for_sphere(sphere_id)
+        connections = self.request.services.credentials.list_for_sphere(sphere_id)
         return TemplateResponse(
             self.request,
             "multiverse/panel/connections/list.html",
@@ -104,7 +104,7 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
         }
         plaintext = form.cleaned_data["credentials"].encode("utf-8")
         try:
-            self.request.services.connections.create(sphere_id, data, plaintext)
+            self.request.services.credentials.create(sphere_id, data, plaintext)
         except CredentialAuthError as exc:
             form.add_error(None, _credential_error_message(exc))
             return TemplateResponse(
@@ -127,7 +127,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
     def get(self, _request: MultiverseRequest, pk: int) -> HttpResponse:
         sphere_id = self.request.context.current_sphere_id
         try:
-            connection = self.request.services.connections.get(sphere_id, pk)
+            connection = self.request.services.credentials.get(sphere_id, pk)
         except NotFoundError:
             raise _connection_not_found() from None
 
@@ -150,7 +150,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
     def post(self, _request: MultiverseRequest, pk: int) -> HttpResponse:
         sphere_id = self.request.context.current_sphere_id
         try:
-            connection = self.request.services.connections.get(sphere_id, pk)
+            connection = self.request.services.credentials.get(sphere_id, pk)
         except NotFoundError:
             raise _connection_not_found() from None
 
@@ -173,7 +173,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
         if form.cleaned_data["replace_credentials"]:
             plaintext = form.cleaned_data["credentials"].encode("utf-8")
             try:
-                self.request.services.connections.update(sphere_id, pk, data, plaintext)
+                self.request.services.credentials.update(sphere_id, pk, data, plaintext)
             except CredentialAuthError as exc:
                 form.add_error(None, _credential_error_message(exc))
                 return TemplateResponse(
@@ -186,7 +186,7 @@ class ConnectionEditPageView(SphereAccessMixin, View):
                     },
                 )
         else:
-            self.request.services.connections.update(sphere_id, pk, data)
+            self.request.services.credentials.update(sphere_id, pk, data)
         messages.success(self.request, _("Connection updated successfully."))
         return redirect("multiverse:panel:connections")
 
@@ -199,7 +199,7 @@ class ConnectionDeletePageView(SphereAccessMixin, View):
     def get(self, _request: MultiverseRequest, pk: int) -> HttpResponse:
         sphere_id = self.request.context.current_sphere_id
         try:
-            connection = self.request.services.connections.get(sphere_id, pk)
+            connection = self.request.services.credentials.get(sphere_id, pk)
         except NotFoundError:
             raise _connection_not_found() from None
 
@@ -215,7 +215,7 @@ class ConnectionDeletePageView(SphereAccessMixin, View):
     def post(self, _request: MultiverseRequest, pk: int) -> HttpResponse:
         sphere_id = self.request.context.current_sphere_id
         try:
-            self.request.services.connections.delete(sphere_id, pk)
+            self.request.services.credentials.delete(sphere_id, pk)
         except NotFoundError:
             raise _connection_not_found() from None
 

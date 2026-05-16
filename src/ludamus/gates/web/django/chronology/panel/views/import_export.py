@@ -41,7 +41,7 @@ def _connection_choices(
     sphere_id = request.context.current_sphere_id
     return [
         (c.pk, c.display_name)
-        for c in request.services.connections.list_for_sphere(sphere_id)
+        for c in request.services.credentials.list_for_sphere(sphere_id)
         if c.kind == kind
     ]
 

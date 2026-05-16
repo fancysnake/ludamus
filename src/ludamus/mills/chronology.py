@@ -46,7 +46,6 @@ from ludamus.pacts.chronology import (
 from ludamus.pacts.multiverse import (
     CheckResult,
     ConnectionCheckStatus,
-    ConnectionKind,
     CredentialAuthError,
 )
 
@@ -841,9 +840,7 @@ class EventAPIConnectionsService:
         # later), but the deps it needs (repo, encryptor, resolver) all
         # live here already — exposing one method beats every view
         # re-plumbing the four ingredients.
-        rows = self._event_api_connections.list_for_event_and_kind(
-            event_pk, ConnectionKind.TICKET_API
-        )
+        rows = self._event_api_connections.list_for_event(event_pk)
         apis: list[UserTicketCountSource] = []
         for row in rows:
             impl_class = self._registry.get(row.class_name)
@@ -857,11 +854,11 @@ class EventAPIConnectionsService:
         self, sphere_id: int, data: EventAPIConnectionWriteDict
     ) -> CheckResult:
         try:
-            connection = self._connections.get(sphere_id, data["credential_id"])
+            self._connections.get(sphere_id, data["credential_id"])
         except NotFoundError as exc:
             raise CredentialAuthError(
                 ConnectionCheckStatus.AUTH_FAILED,
-                "Connection not found in this sphere.",
+                "Credential not found in this sphere.",
             ) from exc
 
         try:
@@ -871,13 +868,6 @@ class EventAPIConnectionsService:
                 ConnectionCheckStatus.AUTH_FAILED,
                 f"Unknown implementation: {data['class_name']}",
             ) from exc
-
-        if impl_class.required_kind != connection.kind:
-            raise CredentialAuthError(
-                ConnectionCheckStatus.AUTH_FAILED,
-                f"Implementation requires {impl_class.required_kind.value!r} "
-                f"connection; got {connection.kind.value!r}.",
-            )
 
         try:
             parsed_config = impl_class.config_schema(**data["config"])
