@@ -1,13 +1,13 @@
 {% load i18n %}
 {% load tessera %}
-{# Shared confirmation modal for [data-confirm] forms and links. Wired up by src/modal.ts. #}
+{# Shared confirmation modal for [data-confirm] forms and links. Wired up by src/confirm.ts. #}
 <dialog id="confirm-dialog"
         class="modal p-0 w-[calc(100%-2rem)] max-w-md"
         role="alertdialog"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message">
     <div class="flex items-start gap-3 px-6 py-4">
-        <span class="mt-0.5 flex-shrink-0 text-red-600">{% icon "exclamation-triangle" class="w-6 h-6" %}</span>
+        <span class="mt-0.5 flex-shrink-0 text-danger">{% icon "exclamation-triangle" class="w-6 h-6" %}</span>
         <div>
             <h3 id="confirm-dialog-title" class="font-semibold text-foreground">{% translate "Please confirm" %}</h3>
             <p id="confirm-dialog-message"
