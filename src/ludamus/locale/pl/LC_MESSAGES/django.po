@@ -119,11 +119,6 @@ msgstr "Twórca programu"
 msgid "Twórcy programu"
 msgstr "Twórcy programu"
 
-#: src/ludamus/adapters/db/django/models.py:1369
-#: src/ludamus/gates/web/django/multiverse/panel/forms.py:14
-msgid "Google Forms + Sheets"
-msgstr "Google Forms + Sheets"
-
 #: src/ludamus/adapters/web/django/error_views.py:15
 msgid "Critical Failure!"
 msgstr "Krytyczna porażka!"
@@ -3326,9 +3321,9 @@ msgid "General"
 msgstr "Ogólne"
 
 #: src/ludamus/templates/multiverse/panel/_tabs.html:6
-#: src/ludamus/templates/multiverse/panel/connections/list.html:5
-msgid "API connections"
-msgstr "Integracje API"
+#: src/ludamus/templates/multiverse/panel/credentials/list.html:5
+msgid "Credentials"
+msgstr "Poświadczenia API"
 
 #: src/ludamus/templates/multiverse/panel/connections/create.html:4
 #: src/ludamus/templates/multiverse/panel/connections/create.html:7
