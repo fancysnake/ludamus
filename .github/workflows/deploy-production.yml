@@ -14,33 +14,37 @@ jobs:
       name: production
       url: https://zagrajmy.net
     steps:
-      - name: Materialize .env.local from environment secrets
+      - name: Materialize .env.local from environment variables and secrets
         env:
+          # Not configured in the GitHub Environment — hardcoded here.
           ENV: production
-          DEBUG: 'false'
-          USE_POSTGRES: 'true'
           DJANGO_SETTINGS_MODULE: ludamus.edges.settings
-          DB_HOST: db
-          DB_PORT: '5432'
-          ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
-          ROOT_DOMAIN: ${{ secrets.ROOT_DOMAIN }}
-          SESSION_COOKIE_DOMAIN: ${{ secrets.SESSION_COOKIE_DOMAIN }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
+          DEBUG: 'false'
+          # Non-sensitive config — GitHub Environment variables.
+          USE_POSTGRES: ${{ vars.USE_POSTGRES }}
+          ALLOWED_HOSTS: ${{ vars.ALLOWED_HOSTS }}
+          ROOT_DOMAIN: ${{ vars.ROOT_DOMAIN }}
+          SESSION_COOKIE_DOMAIN: ${{ vars.SESSION_COOKIE_DOMAIN }}
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_PORT: ${{ vars.DB_PORT }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_USER: ${{ vars.DB_USER }}
+          AUTH0_CLIENT_ID: ${{ vars.AUTH0_CLIENT_ID }}
+          AUTH0_DOMAIN: ${{ vars.AUTH0_DOMAIN }}
+          MEMBERSHIP_API_BASE_URL: ${{ vars.MEMBERSHIP_API_BASE_URL }}
+          SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+          STATIC_ROOT: ${{ vars.STATIC_ROOT }}
+          MEDIA_ROOT: ${{ vars.MEDIA_ROOT }}
+          POSTGRES_DATA_PATH: ${{ vars.POSTGRES_DATA_PATH }}
+          STATIC_DATA_PATH: ${{ vars.STATIC_DATA_PATH }}
+          MEDIA_DATA_PATH: ${{ vars.MEDIA_DATA_PATH }}
+          WEB_PORT: ${{ vars.WEB_PORT }}
+          # Sensitive config — GitHub Environment secrets.
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           CREDENTIALS_ENCRYPTION_KEY: ${{ secrets.CREDENTIALS_ENCRYPTION_KEY }}
-          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
           AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
-          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
-          MEMBERSHIP_API_BASE_URL: ${{ secrets.MEMBERSHIP_API_BASE_URL }}
           MEMBERSHIP_API_TOKEN: ${{ secrets.MEMBERSHIP_API_TOKEN }}
-          SUPPORT_EMAIL: ${{ secrets.SUPPORT_EMAIL }}
-          STATIC_ROOT: ${{ secrets.STATIC_ROOT }}
-          MEDIA_ROOT: ${{ secrets.MEDIA_ROOT }}
-          POSTGRES_DATA_PATH: ${{ secrets.POSTGRES_DATA_PATH }}
-          STATIC_DATA_PATH: ${{ secrets.STATIC_DATA_PATH }}
-          MEDIA_DATA_PATH: ${{ secrets.MEDIA_DATA_PATH }}
         run: |
           set -eu
           : > .env.local
@@ -51,7 +55,8 @@ jobs:
                    AUTH0_CLIENT_ID AUTH0_CLIENT_SECRET AUTH0_DOMAIN \
                    MEMBERSHIP_API_BASE_URL MEMBERSHIP_API_TOKEN \
                    SUPPORT_EMAIL STATIC_ROOT MEDIA_ROOT \
-                   POSTGRES_DATA_PATH STATIC_DATA_PATH MEDIA_DATA_PATH; do
+                   POSTGRES_DATA_PATH STATIC_DATA_PATH MEDIA_DATA_PATH \
+                   WEB_PORT; do
             v="$(printenv "$k" || true)"
             [ -n "$v" ] && printf '%s=%s\n' "$k" "$v" >> .env.local
           done
@@ -59,8 +64,9 @@ jobs:
                    AUTH0_CLIENT_SECRET MEMBERSHIP_API_TOKEN \
                    ALLOWED_HOSTS ROOT_DOMAIN DB_NAME DB_USER \
                    AUTH0_CLIENT_ID AUTH0_DOMAIN MEMBERSHIP_API_BASE_URL \
-                   POSTGRES_DATA_PATH STATIC_DATA_PATH MEDIA_DATA_PATH; do
-            grep -q "^${r}=" .env.local || { echo "Missing environment secret: $r" >&2; exit 1; }
+                   POSTGRES_DATA_PATH STATIC_DATA_PATH MEDIA_DATA_PATH \
+                   USE_POSTGRES DB_HOST DB_PORT; do
+            grep -q "^${r}=" .env.local || { echo "Missing environment variable or secret: $r" >&2; exit 1; }
           done
 
       - name: Stash legacy untracked .env on host (one-time)
