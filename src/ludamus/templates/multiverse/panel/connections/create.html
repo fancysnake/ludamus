@@ -27,7 +27,7 @@
                           required
                           class="w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
                 <p class="text-xs text-neutral-500">{{ form.secret.help_text }}</p>
-                {% for error in form.secret.errors %}<p class="text-sm text-red-600">{{ error }}</p>{% endfor %}
+{% for error in form.secret.errors %}<p class="text-sm text-red-600 flex items-center gap-1" role="alert"><span aria-hidden="true">&#x26A0;</span> {{ error }}</p>{% endfor %}
             </div>
             <div class="flex justify-end gap-2 pt-4 border-t border-neutral-200">
                 <a href="{% url 'multiverse:panel:connections' %}"
