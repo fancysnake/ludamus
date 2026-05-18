@@ -22,8 +22,6 @@ from ludamus.pacts import NotFoundError, RedirectError
 if TYPE_CHECKING:
     from django.http import HttpResponse
 
-    from ludamus.pacts.multiverse import ConnectionWriteDict
-
 
 def _connection_not_found() -> RedirectError:
     return RedirectError(
@@ -77,9 +75,10 @@ class ConnectionCreatePageView(SphereAccessMixin, View):
             )
 
         sphere_id = self.request.context.current_sphere_id
-        data: ConnectionWriteDict = {"display_name": form.cleaned_data["display_name"]}
         plaintext = form.cleaned_data["secret"].encode("utf-8")
-        self.request.services.connections.create(sphere_id, data, plaintext)
+        self.request.services.connections.create(
+            sphere_id, form.cleaned_data["display_name"], plaintext
+        )
         messages.success(self.request, _("Connection created successfully."))
         return redirect("multiverse:panel:connections")
 
@@ -126,12 +125,14 @@ class ConnectionEditPageView(SphereAccessMixin, View):
                 },
             )
 
-        data: ConnectionWriteDict = {"display_name": form.cleaned_data["display_name"]}
+        display_name = form.cleaned_data["display_name"]
         if form.cleaned_data["replace_secret"]:
             plaintext = form.cleaned_data["secret"].encode("utf-8")
-            self.request.services.connections.update(sphere_id, pk, data, plaintext)
+            self.request.services.connections.update(
+                sphere_id, pk, display_name, plaintext
+            )
         else:
-            self.request.services.connections.update(sphere_id, pk, data)
+            self.request.services.connections.update(sphere_id, pk, display_name)
         messages.success(self.request, _("Connection updated successfully."))
         return redirect("multiverse:panel:connections")
 

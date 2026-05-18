@@ -790,12 +790,11 @@ class TestConnectionsService:
     ):
         created = _connection_dto(pk=42)
         connections.create.return_value = created
-        data = {"display_name": "Konto"}
 
-        result = service.create(sphere_id=7, data=data)
+        result = service.create(sphere_id=7, display_name="Konto")
 
         assert result is created
-        connections.create.assert_called_once_with(7, data)
+        connections.create.assert_called_once_with(7, "Konto")
         connections.update_secret.assert_not_called()
         transaction.atomic.assert_called_once_with()
 
@@ -804,12 +803,13 @@ class TestConnectionsService:
     ):
         created = _connection_dto(pk=42)
         connections.create.return_value = created
-        data = {"display_name": "Konto"}
 
-        result = service.create(sphere_id=7, data=data, secret_plaintext=b"secret")
+        result = service.create(
+            sphere_id=7, display_name="Konto", secret_plaintext=b"secret"
+        )
 
         assert result is created
-        connections.create.assert_called_once_with(7, data)
+        connections.create.assert_called_once_with(7, "Konto")
         connections.update_secret.assert_called_once_with(7, 42, b"enc:secret")
         transaction.atomic.assert_called_once_with()
 
@@ -818,12 +818,11 @@ class TestConnectionsService:
     ):
         updated = _connection_dto(pk=42)
         connections.update.return_value = updated
-        data = {"display_name": "Konto"}
 
-        result = service.update(sphere_id=7, pk=42, data=data)
+        result = service.update(sphere_id=7, pk=42, display_name="Konto")
 
         assert result is updated
-        connections.update.assert_called_once_with(7, 42, data)
+        connections.update.assert_called_once_with(7, 42, "Konto")
         connections.update_secret.assert_not_called()
         transaction.atomic.assert_called_once_with()
 
@@ -832,14 +831,13 @@ class TestConnectionsService:
     ):
         updated = _connection_dto(pk=42)
         connections.update.return_value = updated
-        data = {"display_name": "Konto"}
 
         result = service.update(
-            sphere_id=7, pk=42, data=data, secret_plaintext=b"fresh"
+            sphere_id=7, pk=42, display_name="Konto", secret_plaintext=b"fresh"
         )
 
         assert result is updated
-        connections.update.assert_called_once_with(7, 42, data)
+        connections.update.assert_called_once_with(7, 42, "Konto")
         connections.update_secret.assert_called_once_with(7, 42, b"enc:fresh")
         transaction.atomic.assert_called_once_with()
 

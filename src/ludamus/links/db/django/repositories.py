@@ -119,11 +119,7 @@ from ludamus.pacts import (
     VenueDTO,
     VenueRepositoryProtocol,
 )
-from ludamus.pacts.multiverse import (
-    ConnectionDTO,
-    ConnectionsRepositoryProtocol,
-    ConnectionWriteDict,
-)
+from ludamus.pacts.multiverse import ConnectionDTO, ConnectionsRepositoryProtocol
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -2636,19 +2632,19 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
         return ConnectionDTO.model_validate(connection)
 
     @staticmethod
-    def create(sphere_id: int, data: ConnectionWriteDict) -> ConnectionDTO:
+    def create(sphere_id: int, display_name: str) -> ConnectionDTO:
         connection = Connection.objects.create(
-            sphere_id=sphere_id, display_name=data["display_name"]
+            sphere_id=sphere_id, display_name=display_name
         )
         return ConnectionDTO.model_validate(connection)
 
     @staticmethod
-    def update(sphere_id: int, pk: int, data: ConnectionWriteDict) -> ConnectionDTO:
+    def update(sphere_id: int, pk: int, display_name: str) -> ConnectionDTO:
         try:
             connection = Connection.objects.get(pk=pk, sphere_id=sphere_id)
         except Connection.DoesNotExist as exc:
             raise NotFoundError from exc
-        connection.display_name = data["display_name"]
+        connection.display_name = display_name
         connection.save()
         return ConnectionDTO.model_validate(connection)
 

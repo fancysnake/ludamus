@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from ludamus.pacts.multiverse import (
         ConnectionDTO,
         ConnectionsRepositoryProtocol,
-        ConnectionWriteDict,
         EncryptorProtocol,
     )
     from ludamus.pacts.services import TransactionProtocol
@@ -42,13 +41,10 @@ class ConnectionsService:
         return self._connections.get(sphere_id, pk)
 
     def create(
-        self,
-        sphere_id: int,
-        data: ConnectionWriteDict,
-        secret_plaintext: bytes | None = None,
+        self, sphere_id: int, display_name: str, secret_plaintext: bytes | None = None
     ) -> ConnectionDTO:
         with self._transaction.atomic():
-            connection = self._connections.create(sphere_id, data)
+            connection = self._connections.create(sphere_id, display_name)
             if secret_plaintext is not None:
                 blob = self._encryptor.encrypt(secret_plaintext)
                 self._connections.update_secret(sphere_id, connection.pk, blob)
@@ -58,11 +54,11 @@ class ConnectionsService:
         self,
         sphere_id: int,
         pk: int,
-        data: ConnectionWriteDict,
+        display_name: str,
         secret_plaintext: bytes | None = None,
     ) -> ConnectionDTO:
         with self._transaction.atomic():
-            connection = self._connections.update(sphere_id, pk, data)
+            connection = self._connections.update(sphere_id, pk, display_name)
             if secret_plaintext is not None:
                 blob = self._encryptor.encrypt(secret_plaintext)
                 self._connections.update_secret(sphere_id, pk, blob)
