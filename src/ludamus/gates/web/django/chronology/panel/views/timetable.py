@@ -481,9 +481,7 @@ class TimetableRevertView(PanelAccessMixin, EventContextMixin, View):
 
         try:
             TimetableService(self.request.di.uow).revert_change(
-                event_pk=current_event.pk,
-                log_pk=log_pk,
-                user_pk=self.request.user.pk,
+                event_pk=current_event.pk, log_pk=log_pk, user_pk=self.request.user.pk
             )
         except ValueError, NotFoundError:
             return HttpResponse(status=422)

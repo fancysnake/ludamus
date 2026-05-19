@@ -174,10 +174,7 @@ class TestTimetableRevertView:
         start = other_event.start_time
         end = start + timedelta(hours=1)
         agenda_item = AgendaItemFactory(
-            session=other_session,
-            space=other_space,
-            start_time=start,
-            end_time=end,
+            session=other_session, space=other_space, start_time=start, end_time=end
         )
         log = ScheduleChangeLog.objects.create(
             event=other_event,
