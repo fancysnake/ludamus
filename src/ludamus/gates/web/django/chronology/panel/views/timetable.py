@@ -335,8 +335,7 @@ class TimetableAssignView(PanelAccessMixin, EventContextMixin, View):
                 event_pk=current_event.pk,
                 session_pk=session_pk,
                 space_pk=space_pk,
-                start_time=start_time,
-                end_time=end_time,
+                time_range=(start_time, end_time),
                 user_pk=self.request.user.pk,
             )
         except ValueError, NotFoundError:

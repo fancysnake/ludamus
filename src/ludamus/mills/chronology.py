@@ -272,13 +272,14 @@ class TimetableService:
 
     def assign_session(
         self,
+        *,
         event_pk: int,
         session_pk: int,
         space_pk: int,
-        start_time: datetime,
-        end_time: datetime,
+        time_range: tuple[datetime, datetime],
         user_pk: int | None = None,
     ) -> None:
+        start_time, end_time = time_range
         event = self._uow.sessions.read_event(session_pk)
         if event.pk != event_pk:
             raise NotFoundError
