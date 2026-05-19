@@ -126,6 +126,40 @@ class TestTimetableRevertView:
         assert other_session.status == "pending"
         assert not AgendaItem.objects.filter(session=other_session).exists()
 
+    def test_assign_rejects_space_from_another_sphere(
+        self, authenticated_client, active_user, sphere, event, proposal_category
+    ):
+        sphere.managers.add(active_user)
+        other_sphere = SphereFactory()
+        other_event = EventFactory(sphere=other_sphere)
+        other_venue = VenueFactory(event=other_event)
+        other_area = AreaFactory(venue=other_venue)
+        other_space = SpaceFactory(area=other_area)
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="pending",
+            participants_limit=5,
+            min_age=0,
+        )
+        start = event.start_time
+        end = start + timedelta(hours=1)
+
+        response = authenticated_client.post(
+            self.get_assign_url(event),
+            data={
+                "session_pk": session.pk,
+                "space_pk": other_space.pk,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+            },
+        )
+
+        assert_response(response, HTTPStatus.UNPROCESSABLE_ENTITY)
+        session.refresh_from_db()
+        assert session.status == "pending"
+        assert not AgendaItem.objects.filter(session=session).exists()
+
     def test_unassign_rejects_session_from_another_sphere(
         self, authenticated_client, active_user, sphere, event
     ):
