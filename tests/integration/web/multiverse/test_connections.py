@@ -82,7 +82,7 @@ class TestGoogleDocsApi:
     def test_rejects_non_google_token_uri_before_factory(self, monkeypatch):
         result = _check_credentials_without_factory(
             monkeypatch,
-            b'{"token_uri": "http://169.254.169.254/latest/meta-data/"}'
+            b'{"token_uri": "http://169.254.169.254/latest/meta-data/"}',
         )
 
         assert result.status == ConnectionCheckStatus.AUTH_FAILED
