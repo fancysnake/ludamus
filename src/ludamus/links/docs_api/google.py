@@ -56,12 +56,14 @@ def _check_token_uri(info: dict[object, object]) -> CheckResult | None:
         )
     parsed_token_uri = urlparse(token_uri)
     token_endpoint = (parsed_token_uri.hostname, parsed_token_uri.path)
+    has_extra_uri_parts = any(
+        (parsed_token_uri.params, parsed_token_uri.query, parsed_token_uri.fragment)
+    )
+    is_google_endpoint = token_endpoint in _GOOGLE_TOKEN_ENDPOINTS
     if (
         parsed_token_uri.scheme != "https"
-        or parsed_token_uri.params
-        or parsed_token_uri.query
-        or parsed_token_uri.fragment
-        or token_endpoint not in _GOOGLE_TOKEN_ENDPOINTS
+        or has_extra_uri_parts
+        or not is_google_endpoint
     ):
         return CheckResult(
             status=ConnectionCheckStatus.AUTH_FAILED,

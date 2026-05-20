@@ -56,12 +56,32 @@ CONNECTIONS_PANEL_CONTEXT = {
 }
 
 
-class TestGoogleDocsApi:
-    def test_rejects_non_google_token_uri_before_refresh(self, monkeypatch):
-        factory = MagicMock(side_effect=RuntimeError("should not run"))
-        monkeypatch.setattr(google_docs_api, "_make_credentials", factory)
+def _check_credentials_without_factory(monkeypatch, credential: bytes):
+    factory = MagicMock(side_effect=RuntimeError("should not run"))
+    monkeypatch.setattr(google_docs_api, "_make_credentials", factory)
 
-        result = google_docs_api.GoogleDocsApi.check_credentials(
+    result = google_docs_api.GoogleDocsApi.check_credentials(credential)
+
+    factory.assert_not_called()
+    return result
+
+
+class TestGoogleDocsApi:
+    def test_rejects_non_object_json_before_factory(self, monkeypatch):
+        result = _check_credentials_without_factory(monkeypatch, b"[]")
+
+        assert result.status == ConnectionCheckStatus.AUTH_FAILED
+        assert result.detail == "Credential JSON must be an object."
+
+    def test_rejects_missing_token_uri_before_factory(self, monkeypatch):
+        result = _check_credentials_without_factory(monkeypatch, b'{"client": "abc"}')
+
+        assert result.status == ConnectionCheckStatus.AUTH_FAILED
+        assert result.detail == "Credential token_uri is missing or invalid."
+
+    def test_rejects_non_google_token_uri_before_factory(self, monkeypatch):
+        result = _check_credentials_without_factory(
+            monkeypatch,
             b'{"token_uri": "http://169.254.169.254/latest/meta-data/"}'
         )
 
@@ -70,7 +90,6 @@ class TestGoogleDocsApi:
             result.detail
             == "Credential token_uri must be a Google OAuth token endpoint."
         )
-        factory.assert_not_called()
 
 
 class TestConnectionsPageView:
