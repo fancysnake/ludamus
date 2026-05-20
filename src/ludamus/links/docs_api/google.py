@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from typing import Protocol, cast
+from urllib.parse import urlparse
 
 import google.auth.exceptions
 import google.auth.transport.requests
@@ -20,6 +21,13 @@ from ludamus.pacts.multiverse import CheckResult, ConnectionCheckStatus
 # Minimal scope sufficient to mint an access token from a service-account
 # credential. Per-API scopes are the binding-slice's concern.
 _PROBE_SCOPES = ("https://www.googleapis.com/auth/userinfo.email",)
+_GOOGLE_TOKEN_ENDPOINTS = frozenset(
+    (
+        ("oauth2.googleapis.com", "/token"),
+        ("accounts.google.com", "/o/oauth2/token"),
+        ("www.googleapis.com", "/oauth2/v4/token"),
+    )
+)
 
 
 class _Credentials(Protocol):
@@ -43,15 +51,42 @@ class GoogleDocsApi:
     @staticmethod
     def check_credentials(plaintext: bytes) -> CheckResult:
         try:
-            info = json.loads(plaintext.decode("utf-8"))
+            info: object = json.loads(plaintext.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             return CheckResult(
                 status=ConnectionCheckStatus.AUTH_FAILED,
                 detail=f"Credential is not valid JSON: {exc}",
             )
 
+        if not isinstance(info, dict):
+            return CheckResult(
+                status=ConnectionCheckStatus.AUTH_FAILED,
+                detail="Credential JSON must be an object.",
+            )
+        token_uri = info.get("token_uri")
+        if not isinstance(token_uri, str):
+            return CheckResult(
+                status=ConnectionCheckStatus.AUTH_FAILED,
+                detail="Credential token_uri is missing or invalid.",
+            )
+        parsed_token_uri = urlparse(token_uri)
+        token_endpoint = (parsed_token_uri.hostname, parsed_token_uri.path)
+        if (
+            parsed_token_uri.scheme != "https"
+            or parsed_token_uri.params
+            or parsed_token_uri.query
+            or parsed_token_uri.fragment
+            or token_endpoint not in _GOOGLE_TOKEN_ENDPOINTS
+        ):
+            return CheckResult(
+                status=ConnectionCheckStatus.AUTH_FAILED,
+                detail="Credential token_uri must be a Google OAuth token endpoint.",
+            )
+
         try:
-            credentials = _make_credentials(info, scopes=list(_PROBE_SCOPES))
+            credentials = _make_credentials(
+                cast("dict[str, object]", info), scopes=list(_PROBE_SCOPES)
+            )
         except (ValueError, KeyError) as exc:
             return CheckResult(
                 status=ConnectionCheckStatus.AUTH_FAILED,

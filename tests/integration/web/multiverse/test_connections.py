@@ -8,10 +8,11 @@ from django.urls import reverse
 
 from ludamus.adapters.db.django.models import Connection
 from ludamus.links.docs_api import google as google_docs_api
-from ludamus.pacts.multiverse import ConnectionDTO
+from ludamus.pacts.multiverse import ConnectionCheckStatus, ConnectionDTO
 from tests.integration.utils import assert_response
 
 PRIOR_CHECK_AT = datetime(2026, 5, 1, 12, 0, tzinfo=UTC)
+CREDENTIAL_JSON = '{"client": "abc", "token_uri": "https://oauth2.googleapis.com/token"}'
 
 
 def _patch_google_refresh(monkeypatch, side_effect=None):
@@ -51,6 +52,20 @@ CONNECTIONS_PANEL_CONTEXT = {
     "is_connections_tab": True,
     "tab_urls": TAB_URLS,
 }
+
+
+class TestGoogleDocsApi:
+    def test_rejects_non_google_token_uri_before_refresh(self, monkeypatch):
+        factory = MagicMock(side_effect=RuntimeError("should not run"))
+        monkeypatch.setattr(google_docs_api, "_make_credentials", factory)
+
+        result = google_docs_api.GoogleDocsApi.check_credentials(
+            b'{"token_uri": "http://169.254.169.254/latest/meta-data/"}'
+        )
+
+        assert result.status == ConnectionCheckStatus.AUTH_FAILED
+        assert result.detail == "Credential token_uri must be a Google OAuth token endpoint."
+        factory.assert_not_called()
 
 
 class TestConnectionsPageView:
@@ -226,7 +241,7 @@ class TestConnectionCreatePageView:
             data={
                 "service": "google",
                 "display_name": "Konto z kluczem",
-                "credentials": '{"client": "abc"}',
+                "credentials": CREDENTIAL_JSON,
             },
         )
 
@@ -255,7 +270,7 @@ class TestConnectionCreatePageView:
             data={
                 "service": "google",
                 "display_name": "Failing",
-                "credentials": '{"client": "abc"}',
+                "credentials": CREDENTIAL_JSON,
             },
         )
 
@@ -454,7 +469,7 @@ class TestConnectionEditPageView:
                 "service": "google",
                 "display_name": "Konto",
                 "replace_credentials": "on",
-                "credentials": '{"client": "abc"}',
+                "credentials": CREDENTIAL_JSON,
             },
         )
 
@@ -497,7 +512,7 @@ class TestConnectionEditPageView:
                 "service": "google",
                 "display_name": "Renamed",
                 "replace_credentials": "on",
-                "credentials": '{"client": "abc"}',
+                "credentials": CREDENTIAL_JSON,
             },
         )
 
@@ -576,7 +591,7 @@ class TestConnectionEditPageView:
                 "service": "google",
                 "display_name": "Konto",
                 "replace_credentials": "on",
-                "credentials": '{"client": "abc"}',
+                "credentials": CREDENTIAL_JSON,
             },
         )
 
@@ -609,7 +624,7 @@ class TestConnectionEditPageView:
                 "service": "google",
                 "display_name": "Konto",
                 "replace_credentials": "on",
-                "credentials": '{"client": "abc"}',
+                "credentials": CREDENTIAL_JSON,
             },
         )
 
