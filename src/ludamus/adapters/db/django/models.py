@@ -22,7 +22,7 @@ from ludamus.pacts import (
     UserType,
     VirtualEnrollmentConfig,
 )
-from ludamus.pacts.multiverse import ConnectionProvider
+from ludamus.pacts.multiverse import ConnectionCheckStatus, ConnectionProvider
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -1372,6 +1372,18 @@ class Connection(models.Model):
     # Encrypted credentials. Write-only at the repo surface — the
     # decrypt path is owned by the import-execution slice.
     credentials = models.BinaryField(default=b"")
+    last_check_status = models.CharField(
+        max_length=32,
+        choices=[
+            (ConnectionCheckStatus.UNKNOWN.value, _("Not checked yet")),
+            (ConnectionCheckStatus.OK.value, _("OK")),
+            (ConnectionCheckStatus.AUTH_FAILED.value, _("Authentication failed")),
+            (ConnectionCheckStatus.NETWORK_ERROR.value, _("Network error")),
+        ],
+        default=ConnectionCheckStatus.UNKNOWN.value,
+    )
+    last_check_detail = models.TextField(default="", blank=True)
+    last_check_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "connection"
@@ -1389,3 +1401,7 @@ class Connection(models.Model):
     @property
     def has_credentials(self) -> bool:
         return bool(self.credentials)
+
+    @property
+    def last_check_label(self) -> str:
+        return str(self.get_last_check_status_display())

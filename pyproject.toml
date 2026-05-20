@@ -26,7 +26,7 @@ package-mode = false
 [tool.poetry.dependencies]
 authlib = "~1.7.0"
 django = "~6.0.0"
-gunicorn = "^25.0.1"
+gunicorn = "^26.0.0"
 django-environ = "^0.13.0"
 psycopg = "^3.2.9"
 pydantic = "^2.11.7"
@@ -36,8 +36,9 @@ heroicons = { version = "^2.9", extras = ["django"] }
 segno = "^1.6.6"
 pillow = "^12.1.1"
 markdown = "^3.10.2"
-cryptography = "^47.0.0"
+cryptography = "^48.0.0"
 django-vite = "==3.1.0"
+google-auth = "^2.52.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.1.0"
@@ -52,7 +53,7 @@ faker = "^40.1.0"
 freezegun = "^1.5.2"
 honcho = "^2.0.0"
 ipython = "^9.9.0"
-mypy = "^1.16.0"
+mypy = "^2.0.0"
 pip-audit = "^2.10.0"
 pre-commit = "^4.5.1"
 pylint = "^4.0.3"
@@ -71,6 +72,7 @@ diff-cover = "^10.2.0"
 import-linter = "^2.11"
 vulture = "^2.16"
 pytest-gremlins = "^1.8.1"
+django-coverage-plugin = "^3.2.2"
 
 [tool.black]
 line-length = 88
@@ -94,12 +96,16 @@ omit = [
     "tests/template_checks.py",
 ]
 sigterm = true
+plugins = ["django_coverage_plugin"]
+core = "ctrace"
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-exclude_also = ["if TYPE_CHECKING:", "# pragma: no cover"]
 precision = 2
+
+[tool.coverage.django_coverage_plugin]
+template_extensions = 'html'
 
 # DJLINT
 
@@ -178,6 +184,7 @@ module = [
     "ludamus.edges.settings",
     "ludamus.gates.web.django.*",
     "ludamus.links.db.django.*",
+    "ludamus.links.docs_api.*",
     "ludamus.links.ticket_api",
 ]
 disallow_any_expr = false

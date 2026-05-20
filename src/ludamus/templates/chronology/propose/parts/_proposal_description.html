@@ -1,0 +1,4 @@
+{% load markdown_tags %}
+{% if proposal_settings.description %}
+    <div class="prose prose-sm dark:prose-invert mb-6">{{ proposal_settings.description|render_markdown }}</div>
+{% endif %}

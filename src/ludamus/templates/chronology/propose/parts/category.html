@@ -1,5 +1,6 @@
 {% load i18n markdown_tags tessera %}
 <div id="wizard-content">
+    {% include "chronology/propose/parts/_proposal_description.html" %}
     {% include "chronology/propose/parts/_stepper.html" %}
     {% if show_login_nudge %}
         <div class="alert alert-info flex items-start gap-3 mb-4">
@@ -16,6 +17,7 @@
     {% if proposal_settings.description %}
         <div class="prose prose-sm dark:prose-invert mb-6">{{ proposal_settings.description|render_markdown }}</div>
     {% endif %}
+    {% include "chronology/propose/parts/_login_nudge.html" %}
     <h2 class="text-lg font-semibold mb-1">{% translate "What would you like to propose?" %}</h2>
     <p class="text-sm text-foreground-muted mb-5">{% translate "Choose the type of session you want to run." %}</p>
     {% if error|default:"" %}<div class="alert alert-danger mb-4">{{ error }}</div>{% endif %}

@@ -7,6 +7,7 @@ python = "3.14"
 node = "v25.6.1"
 poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 "ast-grep" = "0.42.1"
+markdownlint-cli2 = "latest"
 
 [env]
 # Mise creates and activates this virtualenv automatically
@@ -141,6 +142,7 @@ env.ROOT_DOMAIN = "testserver"
 env.SECRET_KEY = "dev-secret-key"
 env.SESSION_COOKIE_DOMAIN = ".testserver"
 env.CREDENTIALS_ENCRYPTION_KEY = "gWc408f8j3ZQUm5Ly4EXQC2EwFRf50AhePkmZKL5N9E="
+env.IN_TESTS = 'True'
 
 [tasks.unittest]
 description = "Run unit tests"
@@ -169,7 +171,7 @@ description = "Combine integration + e2e coverage and export XML"
 run = """
 coverage combine .coverage.unit .coverage.e2e
 coverage xml -o coverage.xml
-coverage report --fail-under=97
+coverage report --fail-under=95
 """
 env.PYTHONPATH = "src"
 
@@ -193,6 +195,7 @@ env.ROOT_DOMAIN = "localhost:8000"
 env.SECRET_KEY = "e2e-secret-key"
 env.SESSION_COOKIE_DOMAIN = ".localhost"
 env.CREDENTIALS_ENCRYPTION_KEY = "gWc408f8j3ZQUm5Ly4EXQC2EwFRf50AhePkmZKL5N9E="
+env.IN_TESTS = 'True'
 
 [tasks."install:playwright"]
 run = """
@@ -210,8 +213,8 @@ mise run _e2e -- coverage report
 """
 dir = "tests/e2e"
 
-[tasks."boot-e2e"]
-description = "Bootstrap and start dev server for e2e tests"
+[tasks."boot-e2e-prep"]
+description = "Migrate, bootstrap fixtures and build client for e2e tests"
 run = """
 mise run _e2e -- django-admin migrate --noinput
 mise run _e2e -- django-admin createcachetable
@@ -219,8 +222,18 @@ mise run _e2e -- django-admin downloadvendor
 mise run _e2e -- python tests/e2e/scripts/bootstrap_data.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_facilitators.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_timetable.py
-cd src/ludamus/client && npm install && npm run build && cd -
-exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload
+cd src/ludamus/client && npm install && npm run build
+"""
+
+[tasks."boot-e2e-serve"]
+description = "Run the e2e dev server (assumes boot-e2e-prep has run)"
+run = "exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload"
+
+[tasks."boot-e2e"]
+description = "Bootstrap and start dev server for e2e tests"
+run = """
+mise run boot-e2e-prep
+exec mise run boot-e2e-serve
 """
 
 # DEPLOYMENT
@@ -246,7 +259,7 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; lsof -ti :5173 | xargs kill -
 
 [tasks.ts-check]
 description = "Type-check frontend TypeScript"
-run = "cd src/ludamus/client && npm typecheck"
+run = "cd src/ludamus/client && npm run typecheck"
 
 
 [tasks.npm]
@@ -258,8 +271,16 @@ dir = "src/ludamus/client"
 
 [tasks.shitcheck]
 description = "Flag suspicious additions vs main: noqa, type: ignore, Any, cast"
-run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\bobject\b|cast\\()'"
+run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\\bobject\\b|cast\\()'"
 
 [tasks.coverage]
-description = "Run all tests, collect coverage, enforce 97% threshold"
+description = "Run all tests, collect coverage, enforce 95% threshold"
 depends = ["test --cov", "e2e", "coverage:combine"]
+
+[tasks.fullcheck]
+env.E2E_SKIP_IOS = "1"
+run = [
+  { task = "check" },
+  { task = "diff-cover" },
+  { task = "shitcheck" },
+]

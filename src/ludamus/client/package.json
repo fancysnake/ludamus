@@ -13,21 +13,18 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@hasparus/tailwind": "^1.1.8",
-    "@tailwindcss/typography": "^0.5.19",
-    "@tailwindcss/vite": "^4.2.4",
-    "@types/body-scroll-lock": "^3.1.2",
-    "postcss-nested": "^7.0.2",
-    "prettier": "^3.8.1",
-    "tailwindcss": "^4.1.16",
-    "typescript": "^5.9.3",
-    "vite": "^8.0.10",
-    "prettier-plugin-tailwindcss": "^0.8.0"
+    "@hasparus/tailwind": "1.1.8",
+    "@tailwindcss/typography": "0.5.19",
+    "@tailwindcss/vite": "4.2.4",
+    "portless": "0.13.0",
+    "postcss-nested": "7.0.2",
+    "prettier": "3.8.1",
+    "prettier-plugin-tailwindcss": "0.8.0",
+    "tailwindcss": "4.1.16",
+    "typescript": "5.9.3",
+    "vite": "8.0.10"
   },
   "dependencies": {
-    "body-scroll-lock": "^3.1.5"
-  },
-  "prettier": {
-    "plugins": ["prettier-plugin-tailwindcss"]
+    "@fluejs/noscroll": "1.0.0"
   }
 }

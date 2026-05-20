@@ -48,7 +48,7 @@
                         </div>
                     {% endif %}
                     {% if event.is_proposal_active %}
-                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4 ml-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium mb-4 ml-2">
                             {% icon "light-bulb" class="w-4 h-4" variant="mini" %}
                             {% translate "Proposals Open" %}
                         </div>
@@ -213,7 +213,8 @@
                 aria-labelledby="anonymousCodeModal-title">
             <div class="px-6 py-4 border-b border-border flex items-center justify-between">
                 <h3 id="anonymousCodeModal-title" class="font-semibold text-foreground">{% translate "Enter Different Code" %}</h3>
-                <button data-modal-close="anonymousCodeModal"
+                <button type="button"
+                        data-modal-close="anonymousCodeModal"
                         class="p-1 rounded-lg hover:opacity-70 text-foreground-muted"
                         aria-label="{% translate "Close" %}">
                     {% icon "x-mark" class="w-5 h-5" variant="mini" %}
@@ -284,64 +285,62 @@
                                   class="filter-badge hidden min-w-5 h-5 px-1.5 rounded-full text-[0.6875rem] font-bold leading-5 text-center bg-primary text-white"></span>
                         </button>
                         <div id="filter-panel" class="filter-panel shadow-xl">
-                            <div class="overflow-hidden">
-                                <div class="flex flex-wrap gap-3 grow pt-3.5">
-                                    <div class="flex flex-col gap-1.5">
-                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
-                                               for="status-filter">{% translate "Status" %}</label>
-                                        <select id="status-filter"
-                                                class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150">
-                                            <option value="">{% translate "All statuses" %}</option>
-                                            <option value="available">{% translate "Available spots" %}</option>
-                                            <option value="full">{% translate "Full" %}</option>
-                                            <option value="in-progress">{% translate "In progress" %}</option>
-                                            <option value="unavailable">{% translate "Enrollment unavailable" %}</option>
-                                            <option value="ended">{% translate "Ended" %}</option>
-                                            <option value="my-enrolled">{% translate "I am enrolled" %}</option>
-                                            <option value="my-waiting">{% translate "I am waiting" %}</option>
-                                        </select>
+                            <div class="flex flex-wrap gap-3 grow pt-3.5">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
+                                           for="status-filter">{% translate "Status" %}</label>
+                                    <select id="status-filter"
+                                            class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150">
+                                        <option value="">{% translate "All statuses" %}</option>
+                                        <option value="available">{% translate "Available spots" %}</option>
+                                        <option value="full">{% translate "Full" %}</option>
+                                        <option value="in-progress">{% translate "In progress" %}</option>
+                                        <option value="unavailable">{% translate "Enrollment unavailable" %}</option>
+                                        <option value="ended">{% translate "Ended" %}</option>
+                                        <option value="my-enrolled">{% translate "I am enrolled" %}</option>
+                                        <option value="my-waiting">{% translate "I am waiting" %}</option>
+                                    </select>
+                                </div>
+                                <div id="venue-filter-group" class="flex flex-col gap-1.5 hidden">
+                                    <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
+                                           for="venue-filter">{% translate "Venue" %}</label>
+                                    <select id="venue-filter"
+                                            class="filter-input grow w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150">
+                                        <option value="">{% translate "All venues" %}</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-1.5 grow">
+                                    <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted">
+                                        {% translate "Age range" %}
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number"
+                                               class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] grow font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                               id="min-age-filter"
+                                               placeholder="{% translate "Min" %}"
+                                               min="0"
+                                               max="99">
+                                        <span class="text-xs font-bold text-foreground-muted">–</span>
+                                        <input type="number"
+                                               class="filter-input w-full py-2 px-3 rounded-xl grow border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
+                                               id="max-age-filter"
+                                               placeholder="{% translate "Max" %}"
+                                               min="0"
+                                               max="99">
                                     </div>
-                                    <div id="venue-filter-group" class="flex flex-col gap-1.5 hidden">
-                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted"
-                                               for="venue-filter">{% translate "Venue" %}</label>
-                                        <select id="venue-filter"
-                                                class="filter-input grow w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150">
-                                            <option value="">{% translate "All venues" %}</option>
-                                        </select>
-                                    </div>
-                                    <div class="flex flex-col gap-1.5 grow">
-                                        <label class="text-[0.625rem] font-bold uppercase tracking-widest text-foreground-muted">
-                                            {% translate "Age range" %}
-                                        </label>
-                                        <div class="flex items-center gap-2">
-                                            <input type="number"
-                                                   class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] grow font-medium bg-bg-secondary text-foreground transition-all duration-150"
-                                                   id="min-age-filter"
-                                                   placeholder="{% translate "Min" %}"
-                                                   min="0"
-                                                   max="99">
-                                            <span class="text-xs font-bold text-foreground-muted">–</span>
-                                            <input type="number"
-                                                   class="filter-input w-full py-2 px-3 rounded-xl grow border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150"
-                                                   id="max-age-filter"
-                                                   placeholder="{% translate "Max" %}"
-                                                   min="0"
-                                                   max="99">
+                                </div>
+                                <div id="tag-filters" class="contents">
+                                    {% for field in filterable_tag_categories %}
+                                        <div class="flex flex-col gap-1.5 grow">
+                                            <label class="text-[0.625rem] font-bold uppercase tracking-widest grow text-foreground-muted"
+                                                   for="tag-filter-{{ field.slug }}">{{ field.name }}</label>
+                                            <select class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
+                                                    data-category="{{ field.slug }}"
+                                                    id="tag-filter-{{ field.slug }}">
+                                                <option value="">{% translate "All" %} {{ field.name }}</option>
+                                            </select>
                                         </div>
-                                    </div>
-                                    <div id="tag-filters" class="contents">
-                                        {% for field in filterable_tag_categories %}
-                                            <div class="flex flex-col gap-1.5 grow">
-                                                <label class="text-[0.625rem] font-bold uppercase tracking-widest grow text-foreground-muted"
-                                                       for="tag-filter-{{ field.slug }}">{{ field.name }}</label>
-                                                <select class="filter-input w-full py-2 px-3 rounded-xl border border-border text-[0.8125rem] font-medium bg-bg-secondary text-foreground transition-all duration-150 tag-filter"
-                                                        data-category="{{ field.slug }}"
-                                                        id="tag-filter-{{ field.slug }}">
-                                                    <option value="">{% translate "All" %} {{ field.name }}</option>
-                                                </select>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
@@ -350,7 +349,11 @@
                 <div id="active-filter-chips"
                      class="filter-chips-bar"
                      data-remove-filter-label="{% translate "Remove filter" %}"
-                     data-clear-all-label="{% translate "Clear all" %}"></div>
+                     data-clear-all-label="{% translate "Clear all" %}">
+                    <div class="overflow-hidden">
+                        <div class="filter-chips-bar-inner" data-filter-chips-inner></div>
+                    </div>
+                </div>
             </div>
             <div id="filter-no-results"
                  class="text-center py-12 px-4 text-foreground-muted"
@@ -567,7 +570,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex flex-col gap-1.5 grow">
                                         <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
-                                           class="btn btn-teal text-xs">
+                                           class="btn btn-primary text-xs">
                                             {% icon "check" class="w-3.5 h-3.5" variant="mini" %} {% translate "Accept" %}
                                         </a>
                                         <a href="?proposal={{ pending.pk }}"
@@ -592,7 +595,8 @@
                 <div class="px-6 py-4 border-b border-border flex items-center justify-between">
                     <h3 id="proposalModal{{ pending.pk }}-title"
                         class="text-lg font-semibold text-foreground">{{ pending.title }}</h3>
-                    <button data-modal-close="proposalModal{{ pending.pk }}"
+                    <button type="button"
+                            data-modal-close="proposalModal{{ pending.pk }}"
                             aria-label="{% translate "Close" %}"
                             class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                         {% icon "x-mark" class="w-5 h-5" variant="mini" %}
@@ -655,7 +659,7 @@
                 </div>
                 <div class="px-6 py-4 flex justify-end gap-2 border-t border-border">
                     <a href="{% url 'web:chronology:session-accept' session_id=pending.pk %}"
-                       class="btn btn-teal text-sm">{% icon "check" class="w-4 h-4" variant="mini" %} {% translate "Accept Proposal" %}</a>
+                       class="btn btn-primary text-sm">{% icon "check" class="w-4 h-4" variant="mini" %} {% translate "Accept Proposal" %}</a>
                 </div>
             </dialog>
         {% endfor %}
@@ -663,13 +667,14 @@
     <!-- Session Detail Modals -->
     {% for data in sessions %}
         <dialog id="session-{{ data.session.pk }}"
-                class="modal max-w-200 w-[calc(100%-0.5rem)] h-600 max-h-[90dvh] overflow-hidden"
+                class="modal max-w-200 w-[calc(100%-0.5rem)] max-h-[90dvh] overflow-hidden"
                 aria-labelledby="session-{{ data.session.pk }}-title">
             <!-- Header -->
             <div class="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
                 <h3 id="session-{{ data.session.pk }}-title"
                     class="text-lg font-semibold text-foreground">{{ data.session.title }}</h3>
-                <button data-modal-close="session-{{ data.session.pk }}"
+                <button type="button"
+                        data-modal-close="session-{{ data.session.pk }}"
                         aria-label="{% translate "Close" %}"
                         class="p-1 rounded-lg hover:bg-warm-200 dark:hover:bg-neutral-700 text-foreground-muted">
                     {% icon "x-mark" class="w-5 h-5" variant="mini" %}
@@ -696,7 +701,7 @@
                 </button>
             </div>
             <!-- Tab Content -->
-            <div class="tab-content flex-1 min-h-0 overflow-y-auto [-webkit-overflow-scrolling:touch] text-foreground">
+            <div class="tab-content flex-auto min-h-0 overflow-y-auto [-webkit-overflow-scrolling:touch] text-foreground">
                 <!-- Information Tab -->
                 <div id="info-{{ data.session.pk }}"
                      role="tabpanel"
@@ -922,7 +927,7 @@
                         {% else %}
                             {% if current_user.user_type == 'connected' or current_user.user_type == 'active' %}
                                 <a href="{% url 'web:chronology:session-enrollment' session_id=data.session.pk %}"
-                                   class="btn btn-teal text-sm">
+                                   class="btn btn-primary text-sm">
                                     {% icon "user-plus" class="w-4 h-4" variant="mini" %} {% translate "Enroll Now" %}
                                 </a>
                             {% endif %}
@@ -935,7 +940,7 @@
                             </a>
                         {% else %}
                             <a href="{% url 'web:chronology:session-enrollment-anonymous' session_id=data.session.pk %}"
-                               class="btn btn-teal text-sm">
+                               class="btn btn-primary text-sm">
                                 {% icon "user-plus" class="w-4 h-4" variant="mini" %} {% translate "Enroll Anonymously" %}
                             </a>
                         {% endif %}
@@ -973,7 +978,7 @@
                 const originalClasses = button.className;
 
                 button.innerHTML = '✓';
-                button.className = 'btn btn-sm btn-success p-1 copy-discord';
+                button.className = 'btn bg-success text-white p-1 copy-discord';
 
                 setTimeout(() => {
                     button.innerHTML = originalHTML;
@@ -982,7 +987,7 @@
             }).catch(err => {
                 console.error('Copy failed:', err);
                 const originalClasses = button.className;
-                button.className = 'btn btn-sm btn-danger p-1 copy-discord';
+                button.className = 'btn btn-danger p-1 copy-discord';
                 setTimeout(() => {
                     button.className = originalClasses;
                 }, 2000);
@@ -1005,10 +1010,14 @@
             const filterToggle = document.getElementById('filter-toggle');
             const filterPanel = document.getElementById('filter-panel');
             const filterChipsBar = document.getElementById('active-filter-chips');
+            const filterChipsInner = filterChipsBar?.querySelector('[data-filter-chips-inner]');
             const filterCountBadge = document.getElementById('active-filter-count');
             const filterNoResults = document.getElementById('filter-no-results');
             const clearFiltersFromNoResults = document.getElementById('clear-filters-from-no-results');
             const tagFilters = {};
+            if (!filterChipsBar || !filterChipsInner) {
+                throw new Error('Missing filter chips bar');
+            }
 
             // Populate venue filter dropdown from session data
             const venueMap = new Map(); // slug -> name
@@ -1321,7 +1330,7 @@
                     filterCountBadge.classList.remove('is-visible');
                 }
 
-                filterChipsBar.innerHTML = '';
+                filterChipsInner.innerHTML = '';
                 if (chips.length > 0) {
                     filterChipsBar.classList.add('has-chips');
                     chips.forEach(chip => {
@@ -1333,13 +1342,13 @@
                         btn.textContent = '×';
                         btn.addEventListener('click', chip.clear);
                         el.appendChild(btn);
-                        filterChipsBar.appendChild(el);
+                        filterChipsInner.appendChild(el);
                     });
                     const clearBtn = document.createElement('button');
                     clearBtn.className = 'filter-chips-clear';
                     clearBtn.textContent = filterChipsBar.dataset.clearAllLabel;
                     clearBtn.addEventListener('click', clearAllFilters);
-                    filterChipsBar.appendChild(clearBtn);
+                    filterChipsInner.appendChild(clearBtn);
                 } else {
                     filterChipsBar.classList.remove('has-chips');
                 }

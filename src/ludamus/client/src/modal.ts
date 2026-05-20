@@ -1,8 +1,11 @@
 import {
-  clearAllBodyScrollLocks,
-  disableBodyScroll,
-  enableBodyScroll,
-} from "body-scroll-lock";
+  disablePageScroll,
+  enablePageScroll,
+  markScrollable,
+  pageScrollIsDisabled,
+  unmarkScrollable,
+} from "@fluejs/noscroll";
+import { initTouchHandler, resetTouchHandler } from "@fluejs/noscroll/touch";
 
 interface NavigateEvent {
   canIntercept: boolean;
@@ -22,49 +25,20 @@ interface Navigation {
 /** ~16% lack Navigation API (Firefox on Android, IE11, older Safari). Click interception only in old browsers. */
 const navigation = (globalThis as { navigation?: Navigation }).navigation;
 
-const scrollLockTargets = new Map<HTMLDialogElement, HTMLElement>();
+const scrollLockTargets = new Set<HTMLDialogElement>();
+const markedScrollables = new Map<HTMLDialogElement, HTMLElement[]>();
+let touchHandlerInitialized = false;
 
-const getScrollableAncestor = (
-  dialog: HTMLDialogElement,
-  element: Element,
-): HTMLElement | null => {
-  for (
-    let current: Element | null = element;
-    current && current !== dialog;
-    current = current.parentElement
-  ) {
-    if (!(current instanceof HTMLElement)) continue;
-
-    const overflowY = window.getComputedStyle(current).overflowY;
-    if (
+const getScrollableElements = (dialog: HTMLDialogElement): HTMLElement[] => {
+  const candidates = [dialog, ...dialog.querySelectorAll<HTMLElement>("*")];
+  return candidates.filter((element) => {
+    const overflowY = window.getComputedStyle(element).overflowY;
+    return (
       (overflowY === "auto" || overflowY === "scroll") &&
-      current.scrollHeight > current.clientHeight
-    ) {
-      return current;
-    }
-  }
-
-  return null;
+      element.scrollHeight > element.clientHeight
+    );
+  });
 };
-
-const isModalControl = (
-  dialog: HTMLDialogElement,
-  element: Element,
-): boolean => {
-  const control = element.closest(
-    "button, a, input, select, textarea, [role='button'], [tabindex]",
-  );
-
-  return control !== null && dialog.contains(control);
-};
-
-const canAllowModalTouchMove =
-  (dialog: HTMLDialogElement) =>
-  (element: HTMLElement | Element): boolean =>
-    element instanceof Element &&
-    dialog.contains(element) &&
-    (isModalControl(dialog, element) ||
-      getScrollableAncestor(dialog, element) !== null);
 
 const syncPageScrollLock = (): void => {
   const openDialogs = [
@@ -72,21 +46,44 @@ const syncPageScrollLock = (): void => {
   ];
   const openDialogSet = new Set(openDialogs);
 
+  if (openDialogs.length > 0 && !pageScrollIsDisabled()) {
+    disablePageScroll();
+  }
+  if (openDialogs.length > 0 && !touchHandlerInitialized) {
+    initTouchHandler();
+    touchHandlerInitialized = true;
+  }
+
   for (const dialog of openDialogs) {
     if (scrollLockTargets.has(dialog)) continue;
 
-    const target = dialog;
-    disableBodyScroll(target, {
-      allowTouchMove: canAllowModalTouchMove(dialog),
-    });
-    scrollLockTargets.set(dialog, target);
+    const scrollables = getScrollableElements(dialog);
+    if (scrollables.length > 0) {
+      markScrollable(scrollables);
+      markedScrollables.set(dialog, scrollables);
+    }
+    scrollLockTargets.add(dialog);
   }
 
-  for (const [dialog, target] of scrollLockTargets) {
+  for (const dialog of scrollLockTargets) {
     if (openDialogSet.has(dialog)) continue;
 
-    enableBodyScroll(target);
+    const scrollables = markedScrollables.get(dialog);
+    if (scrollables && scrollables.length > 0) {
+      unmarkScrollable(scrollables);
+    }
+    markedScrollables.delete(dialog);
     scrollLockTargets.delete(dialog);
+  }
+
+  if (openDialogs.length === 0) {
+    if (pageScrollIsDisabled()) {
+      enablePageScroll();
+    }
+    if (touchHandlerInitialized) {
+      resetTouchHandler();
+      touchHandlerInitialized = false;
+    }
   }
 };
 
@@ -230,8 +227,20 @@ document.addEventListener(
 document.addEventListener("close", syncPageScrollLock, true);
 
 window.addEventListener("pagehide", () => {
-  clearAllBodyScrollLocks();
+  for (const scrollables of markedScrollables.values()) {
+    if (scrollables.length > 0) {
+      unmarkScrollable(scrollables);
+    }
+  }
+  markedScrollables.clear();
   scrollLockTargets.clear();
+  if (pageScrollIsDisabled()) {
+    enablePageScroll();
+  }
+  if (touchHandlerInitialized) {
+    resetTouchHandler();
+    touchHandlerInitialized = false;
+  }
 });
 
 if (navigation) {
@@ -272,18 +281,38 @@ if (navigation) {
   });
 }
 
-document.addEventListener("click", (event) => {
+const stopModalCloseEvent = (event: Event): void => {
+  event.preventDefault();
+  event.stopPropagation();
+  if ("stopImmediatePropagation" in event) {
+    event.stopImmediatePropagation();
+  }
+};
+
+const closeFromTrigger = (event: Event): void => {
   const eventTarget = event.target;
   if (!(eventTarget instanceof Element)) return;
 
   const closeTrigger = eventTarget.closest("[data-modal-close]");
-  if (closeTrigger) {
-    const id = closeTrigger.getAttribute("data-modal-close");
-    if (id) {
-      closeModal(id);
-      return;
-    }
-  }
+  if (!closeTrigger) return;
+
+  const id = closeTrigger.getAttribute("data-modal-close");
+  if (!id) return;
+
+  stopModalCloseEvent(event);
+  closeModal(id);
+};
+
+const setupModalCloseTriggers = (): void => {
+  document.querySelectorAll("[data-modal-close]").forEach((trigger) => {
+    trigger.addEventListener("touchend", closeFromTrigger, { capture: true });
+    trigger.addEventListener("click", closeFromTrigger, { capture: true });
+  });
+};
+
+document.addEventListener("click", (event) => {
+  const eventTarget = event.target;
+  if (!(eventTarget instanceof Element)) return;
 
   // Fallback link interception handled by setupFallbackLinkHandlers below.
 
@@ -306,6 +335,7 @@ document.addEventListener("click", (event) => {
 window.addEventListener("popstate", syncModalsFromUrl);
 
 syncModalsFromUrl();
+setupModalCloseTriggers();
 
 // In browsers without Navigation API (WebKit, older Firefox), attach click
 // handlers directly to modal-trigger links so preventDefault fires before

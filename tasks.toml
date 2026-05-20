@@ -8,11 +8,11 @@ run = "django-admin"
 
 [start]
 description = "Start Django dev server with frontend watch"
-run = "honcho start -f Procfile.dev"
+run = "./scripts/dev -p 8000"
 
 [dev]
 description = "Start Django dev server with frontend watch"
-run = "honcho start -f Procfile.dev"
+run = "./scripts/dev"
 
 [build-frontend]
 description = "Build frontend assets (CSS + JS)"

@@ -1,5 +1,7 @@
 """Forms for the multiverse sphere panel."""
 
+from typing import Any
+
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
@@ -28,10 +30,18 @@ class ConnectionForm(forms.Form):
         help_text=_("Paste the service-account JSON or OAuth credentials."),
     )
 
+    def __init__(self, *args: Any, is_create: bool = False, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.is_create = is_create
+        if is_create:
+            # On create there's nothing to "replace" — credentials are mandatory.
+            self.fields["credentials"].required = True
+
     def clean(self) -> dict[str, object]:
         cleaned = super().clean() or {}
         if (
-            cleaned.get("replace_credentials")
+            not self.is_create
+            and cleaned.get("replace_credentials")
             and not (cleaned.get("credentials") or "").strip()
         ):
             self.add_error("credentials", _("Credentials are required when replacing."))

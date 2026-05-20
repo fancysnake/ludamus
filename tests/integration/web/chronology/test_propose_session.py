@@ -136,41 +136,44 @@ class TestProposeSessionPageView:
                 ],
                 "show_login_nudge": False,
                 "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
+                "wizard_part_template": "chronology/propose/parts/category.html",
             },
             template_name="chronology/propose/base.html",
         )
 
-    def test_get_preselects_single_category(
+    def test_get_skips_single_category(
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
 
         response = authenticated_client.get(self._get_url(event.slug))
+        form = response.context["form"]
 
         assert_response(
             response,
             HTTPStatus.OK,
             context_data={
                 "event": EventDTO.model_validate(event),
+                "category": ProposalCategoryDTO.model_validate(proposal_category),
                 "proposal_settings": EventProposalSettingsDTO.model_validate(
                     EventProposalSettings.objects.get(event=event)
                 ),
-                "categories": [ProposalCategoryDTO.model_validate(proposal_category)],
-                "selected_category_id": str(proposal_category.pk),
-                "step": "category",
-                "current_step": "category",
+                "form": form,
+                "field_descriptors": [],
+                "current_step": "personal",
                 "wizard_steps": [
-                    {"key": "category"},
                     {"key": "personal"},
-                    {"key": "timeslots"},
                     {"key": "details"},
                     {"key": "review"},
                 ],
+                "show_back_button": False,
                 "show_login_nudge": False,
                 "login_url": f"/crowd/login-required/?next={self._get_url(event.slug)}",
+                "wizard_part_template": "chronology/propose/parts/personal.html",
             },
             template_name="chronology/propose/base.html",
         )
+        assert form["contact_email"] is not None
 
     def test_get_stores_category_in_session_on_auto_advance(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -236,6 +239,7 @@ class TestProposeSessionPageView:
         self, authenticated_client, event, faker, time_zone
     ):
         self._activate_proposals(event, faker, time_zone)
+        ProposalCategoryFactory(event=event)
         ProposalCategoryFactory(event=event)
 
         response = authenticated_client.post(self._get_category_url(event.slug), {})
@@ -401,6 +405,36 @@ class TestProposeSessionPageView:
         PersonalDataFieldRequirement.objects.create(
             category=proposal_category, field=field, is_required=True
         )
+        slot1 = TimeSlotFactory(event=event)
+        slot2 = TimeSlotFactory(
+            event=event,
+            start_time=event.start_time + timedelta(hours=3),
+            end_time=event.start_time + timedelta(hours=5),
+        )
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot1)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot2)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_personal_url(event.slug),
+            {"personal_phone": "+48 123", "contact_email": "test@example.com"},
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert [
+            slot["id"] for slot in response.context["slot_descriptors"][0]["slots"]
+        ] == [slot1.pk, slot2.pk]
+
+    def test_post_personal_skips_single_timeslot(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        field = PersonalDataField.objects.create(
+            event=event, name="Phone", question="What is your phone?", slug="phone"
+        )
+        PersonalDataFieldRequirement.objects.create(
+            category=proposal_category, field=field, is_required=True
+        )
         slot = TimeSlotFactory(event=event)
         TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
         self._set_wizard_category(authenticated_client, event, proposal_category)
@@ -411,7 +445,56 @@ class TestProposeSessionPageView:
         )
 
         assert response.status_code == HTTPStatus.OK
-        assert len(response.context["slot_descriptors"]) == 1
+        assert response.template_name == "chronology/propose/parts/details.html"
+        assert [s["key"] for s in response.context["wizard_steps"]] == [
+            "personal",
+            "details",
+            "review",
+        ]
+        wizard = authenticated_client.session[f"propose_{event.slug}"]
+        assert wizard["time_slot_ids"] == [slot.pk]
+
+    def test_single_category_single_timeslot_defaults_are_submitted(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        slot = TimeSlotFactory(event=event)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
+
+        response = authenticated_client.get(self._get_url(event.slug))
+        assert response.status_code == HTTPStatus.OK
+        wizard = authenticated_client.session[f"propose_{event.slug}"]
+        assert wizard["category_id"] == proposal_category.pk
+
+        response = authenticated_client.post(
+            self._get_personal_url(event.slug), {"contact_email": "test@example.com"}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/details.html"
+        wizard = authenticated_client.session[f"propose_{event.slug}"]
+        assert wizard["category_id"] == proposal_category.pk
+        assert wizard["time_slot_ids"] == [slot.pk]
+
+        response = authenticated_client.post(
+            self._get_details_url(event.slug),
+            {
+                "display_name": "Presenter",
+                "title": "Skipped Defaults",
+                "description": "Single category and slot",
+                "participants_limit": proposal_category.min_participants_limit,
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/review.html"
+        assert response.context["review"]["category_name"] == proposal_category.name
+        assert response.context["review"]["time_slots"][0]["slots"][0]["id"] == slot.pk
+
+        response = authenticated_client.post(self._get_submit_url(event.slug))
+
+        assert response.status_code == HTTPStatus.FOUND
+        session = Session.objects.get(title="Skipped Defaults")
+        assert session.category_id == proposal_category.pk
+        assert list(session.time_slots.values_list("pk", flat=True)) == [slot.pk]
 
     def test_post_timeslots_stores_in_session(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -442,8 +525,14 @@ class TestProposeSessionPageView:
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
-        slot = TimeSlotFactory(event=event)
-        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
+        slot1 = TimeSlotFactory(event=event)
+        slot2 = TimeSlotFactory(
+            event=event,
+            start_time=event.start_time + timedelta(hours=3),
+            end_time=event.start_time + timedelta(hours=5),
+        )
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot1)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot2)
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(self._get_timeslots_url(event.slug), {})
@@ -455,18 +544,24 @@ class TestProposeSessionPageView:
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
-        slot = TimeSlotFactory(event=event)
-        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
+        slot1 = TimeSlotFactory(event=event)
+        slot2 = TimeSlotFactory(
+            event=event,
+            start_time=event.start_time + timedelta(hours=3),
+            end_time=event.start_time + timedelta(hours=5),
+        )
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot1)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot2)
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
             self._get_timeslots_url(event.slug),
-            {"time_slot_ids": [str(slot.pk), "99999"]},
+            {"time_slot_ids": [str(slot1.pk), "99999"]},
         )
 
         assert response.status_code == HTTPStatus.OK
         wizard = authenticated_client.session[f"propose_{event.slug}"]
-        assert wizard["time_slot_ids"] == [slot.pk]
+        assert wizard["time_slot_ids"] == [slot1.pk]
 
     def test_post_timeslots_skips_when_no_requirements(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -727,8 +822,14 @@ class TestProposeSessionPageView:
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
-        slot = TimeSlotFactory(event=event)
-        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
+        slot1 = TimeSlotFactory(event=event)
+        slot2 = TimeSlotFactory(
+            event=event,
+            start_time=event.start_time + timedelta(hours=3),
+            end_time=event.start_time + timedelta(hours=5),
+        )
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot1)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot2)
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
@@ -757,6 +858,21 @@ class TestProposeSessionPageView:
         assert response.status_code == HTTPStatus.OK
         assert response.template_name == "chronology/propose/parts/personal.html"
         assert response.context["field_descriptors"]
+
+    def test_post_back_from_details_skips_timeslots_when_one_required(
+        self, authenticated_client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        slot = TimeSlotFactory(event=event)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
+        self._set_wizard_category(authenticated_client, event, proposal_category)
+
+        response = authenticated_client.post(
+            self._get_timeslots_url(event.slug), {"back": "1"}
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.template_name == "chronology/propose/parts/personal.html"
 
     def test_post_back_to_session(
         self, authenticated_client, event, faker, time_zone, proposal_category
@@ -1474,7 +1590,11 @@ class TestProposeSessionPageView:
         response = authenticated_client.get(self._get_url(event.slug))
 
         assert response.status_code == HTTPStatus.OK
-        assert "<h2>Welcome</h2>" in response.content.decode()
+        content = response.content.decode()
+        assert "<h2>Welcome</h2>" in content
+        assert content.index("<h2>Welcome</h2>") < content.index(
+            'aria-label="Proposal progress"'
+        )
 
     # -- Coverage: proposal_description in category back (views.py) --
 
@@ -1552,7 +1672,6 @@ class TestProposeSessionPageView:
 
         assert response.context["current_step"] == "personal"
         assert [s["key"] for s in response.context["wizard_steps"]] == [
-            "category",
             "personal",
             "details",
             "review",
@@ -1562,8 +1681,14 @@ class TestProposeSessionPageView:
         self, authenticated_client, event, faker, time_zone, proposal_category
     ):
         self._activate_proposals(event, faker, time_zone)
-        slot = TimeSlotFactory(event=event)
-        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot)
+        slot1 = TimeSlotFactory(event=event)
+        slot2 = TimeSlotFactory(
+            event=event,
+            start_time=event.start_time + timedelta(hours=3),
+            end_time=event.start_time + timedelta(hours=5),
+        )
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot1)
+        TimeSlotRequirement.objects.create(category=proposal_category, time_slot=slot2)
         self._set_wizard_category(authenticated_client, event, proposal_category)
 
         response = authenticated_client.post(
@@ -1572,7 +1697,6 @@ class TestProposeSessionPageView:
 
         assert response.context["current_step"] == "timeslots"
         assert [s["key"] for s in response.context["wizard_steps"]] == [
-            "category",
             "personal",
             "timeslots",
             "details",
@@ -1591,7 +1715,6 @@ class TestProposeSessionPageView:
 
         assert response.context["current_step"] == "details"
         assert [s["key"] for s in response.context["wizard_steps"]] == [
-            "category",
             "personal",
             "details",
             "review",
@@ -1607,7 +1730,6 @@ class TestProposeSessionPageView:
 
         assert response.context["current_step"] == "review"
         assert [s["key"] for s in response.context["wizard_steps"]] == [
-            "category",
             "personal",
             "details",
             "review",
@@ -2067,6 +2189,41 @@ class TestAnonymousProposalSubmission:
         )
         assert hpd.value == "+48 555"
         assert hpd.user_id is None
+
+    def test_anonymous_single_category_shows_login_nudge(
+        self, client, event, faker, time_zone, proposal_category
+    ):
+        self._activate_proposals(event, faker, time_zone)
+        self._enable_anonymous(event)
+
+        response = client.get(self._url(event.slug))
+        form = response.context["form"]
+
+        assert_response(
+            response,
+            HTTPStatus.OK,
+            context_data={
+                "event": EventDTO.model_validate(event),
+                "category": ProposalCategoryDTO.model_validate(proposal_category),
+                "proposal_settings": EventProposalSettingsDTO.model_validate(
+                    EventProposalSettings.objects.get(event=event)
+                ),
+                "form": form,
+                "field_descriptors": [],
+                "current_step": "personal",
+                "wizard_steps": [
+                    {"key": "personal"},
+                    {"key": "details"},
+                    {"key": "review"},
+                ],
+                "show_back_button": False,
+                "show_login_nudge": True,
+                "login_url": f"/crowd/login-required/?next={self._url(event.slug)}",
+                "wizard_part_template": "chronology/propose/parts/personal.html",
+            },
+            template_name="chronology/propose/base.html",
+        )
+        assert b"Have an account?" in response.content
 
     def test_anonymous_submit_blocked_by_rate_limit(
         self, client, event, faker, time_zone, proposal_category

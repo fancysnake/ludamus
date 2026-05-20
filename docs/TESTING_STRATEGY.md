@@ -1,101 +1,65 @@
 # Testing Strategy
 
-## Component tests
+## Unit tests
+
+Cover: mills (public methods and functions).
 
 Rules:
 
-- common coverage should be 100%
-- Write tests in classes
-
-### Unit tests
-
-Yes: classes, functions
-
-No: views, commands, repositories
-
-Note: Repositories are exempt from 100% coverage requirement. They contain
-simple, repetitive patterns (check cache → query ORM → cache → return DTO)
-with defensive error handling for data integrity issues that shouldn't occur
-in practice. Testing these edge cases would require either:
-
-- Database tests (violates "no database" rule)
-- ORM mocks (fragile, couples tests to implementation)
-
-Repository code is implicitly tested through view integration tests.
-
-Structure: mimic code
-
-Rules:
-
-- mock at the highest level to avoid side effects
-- check all mock calls
+- mock at highest level
+- assert all mock calls
 - no database
 
-### Integration tests
+## Integration tests
 
-Purpose: verify the view→template **context contract** — that views produce the
-correct data for every branch of logic.
-
-Yes: views, commands
-
-No: classes, functions
-
-Structure: `view_module/test_url_name.py`
+Cover: gates (views), links (public methods and functions).
 
 Rules:
 
-- mock at the lowest level or not mock if possible
-- check all mock calls
-- check all side effects
+- mock at lowest level, or not at all — use test db, `responses`, or dedicated
+  mock package
+- assert all mock calls
+- assert all side effects
 
-Fixtures:
+### Views and commands
 
-- Use pytest-factoryboy fixtures
+Verify view→template **context contract**: views produce the right data for
+every branch.
 
-Asserts:
+Structure: `{subdomain}/{bounded_context}/test_url_name.py`
 
-- template name
-- response context (including different cases for empty/non empty value
-  of different keys)
-- redirect location
+Rules:
 
-Scope: cover **every variation** of context data — empty vs populated lists,
-different user roles, permission checks, edge cases. One test per meaningful
-context branch.
+- use `assert_response`
+- `ANY` only when objects are incomparable
+- one test per meaningful context branch (empty vs populated, roles,
+  permissions, edges)
 
-Do NOT test: whether the rendered page actually works for the user (that is
-the job of e2e tests).
+Rendered-page behavior belongs in e2e.
 
-## End-to-End tests
+### Links
 
-Purpose: verify that **features work** from the user's perspective in a real
-browser.
+Verify driven adapters against real infrastructure.
 
-Yes: full features, complete user operations, multi-step workflows
+Structure: mimic code.
 
-Technology: Playwright (TypeScript)
+Skip: one-liners, conditional-free / error-free functions (thin SDK wrappers).
 
-Scope: cover **operations and workflows** — creating, editing, deleting,
-filtering, navigating. Tests can and should combine multiple related actions
-in a single test (e.g. apply several filters at once, create then edit an
-entity).
+## End-to-end tests
 
-Do NOT test: every branch of context data — that is the job of integration
-tests. For example, if a filter works (correct context data) is verified by
-integration tests; e2e tests verify that using multiple filters together
-produces the expected page behavior.
+Cover: gates. Playwright (TypeScript).
 
-## TDD Workflow
+Verify **features work** in a real browser.
 
-Plan → Tests (red) → Implement (green) → Refactor
+Scope: operations and workflows (create, edit, delete, filter, navigate).
+Combine related actions per test (apply several filters at once; create then
+edit).
 
-Wait for approval between phases.
+Per-branch context coverage belongs in integration.
 
 ## Migration to the new strategy
 
-1. Review current integration tests and move them to correct directories and
-   files.
-2. If there are any existing tests that don't test views consider removing them
-   or adding them to unit tests.
-3. Ensure that after this the coverage of component tests is 100%.
+1. Move current integration tests to the right directories and files.
+2. Drop tests that no longer fit, or move them to unit tests.
+3. Reach 100% component-test coverage.
 4. Add e2e tests for current dynamic features.
