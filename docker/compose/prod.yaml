@@ -10,35 +10,16 @@ x-app-build: &app-build
 
 x-app-defaults: &app-defaults
   <<: *app-build
-  # Container env is provided by varlock (see [tasks.dc] in mise.toml).
-  # Listed below as implicit pass-throughs from the host process env.
+  # Container env comes from .env.local, materialized on the CI runner from
+  # GitHub Environment vars/secrets and scp'd to the host. The deploy
+  # validates it with varlock against .env.schema before upload, so the
+  # compose CLI here just reads the file — no varlock/node on the host.
+  # PYTHONPATH is intentionally absent: it is an image concern, set by
+  # ENV PYTHONPATH=src in docker/Dockerfile.
+  env_file:
+    - ../../.env.local
   environment:
     GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-1}
-    ENV:
-    DEBUG:
-    USE_POSTGRES:
-    DJANGO_SETTINGS_MODULE:
-    PYTHONPATH:
-    SECRET_KEY:
-    ALLOWED_HOSTS:
-    ROOT_DOMAIN:
-    SUPPORT_EMAIL:
-    SESSION_COOKIE_DOMAIN:
-    STATIC_ROOT:
-    MEDIA_ROOT:
-    DB_NAME:
-    DB_USER:
-    DB_PASSWORD:
-    DB_HOST:
-    DB_PORT:
-    AUTH0_DOMAIN:
-    AUTH0_CLIENT_ID:
-    AUTH0_CLIENT_SECRET:
-    CREDENTIALS_ENCRYPTION_KEY:
-    MEMBERSHIP_API_BASE_URL:
-    MEMBERSHIP_API_TOKEN:
-    MEMBERSHIP_API_TIMEOUT:
-    MEMBERSHIP_API_CHECK_INTERVAL:
   networks:
     - backend
   cap_drop:
