@@ -184,7 +184,6 @@ module = [
     "ludamus.edges.settings",
     "ludamus.gates.web.django.*",
     "ludamus.links.db.django.*",
-    "ludamus.links.docs_api.*",
     "ludamus.links.ticket_api",
 ]
 disallow_any_expr = false
