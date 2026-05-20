@@ -12,7 +12,9 @@ from ludamus.pacts.multiverse import ConnectionCheckStatus, ConnectionDTO
 from tests.integration.utils import assert_response
 
 PRIOR_CHECK_AT = datetime(2026, 5, 1, 12, 0, tzinfo=UTC)
-CREDENTIAL_JSON = '{"client": "abc", "token_uri": "https://oauth2.googleapis.com/token"}'
+CREDENTIAL_JSON = (
+    '{"client": "abc", "token_uri": "https://oauth2.googleapis.com/token"}'
+)
 
 
 def _patch_google_refresh(monkeypatch, side_effect=None):
@@ -64,7 +66,10 @@ class TestGoogleDocsApi:
         )
 
         assert result.status == ConnectionCheckStatus.AUTH_FAILED
-        assert result.detail == "Credential token_uri must be a Google OAuth token endpoint."
+        assert (
+            result.detail
+            == "Credential token_uri must be a Google OAuth token endpoint."
+        )
         factory.assert_not_called()
 
 
