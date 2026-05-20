@@ -75,28 +75,6 @@ jobs:
           # discarded so resolved values never reach the run log.
           npx -y varlock@1.1.0 load > /dev/null
 
-      - name: Stash legacy untracked .env on host (one-time)
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_DEPLOY_KEY }}
-          # Pre-PR-256 hosts had a hand-edited untracked .env. After merge
-          # .env is tracked and `git checkout` refuses to overwrite the
-          # untracked copy. Rename it to .env.staging.local so the
-          # working tree is clean for checkout while preserving the old
-          # values for inspection. The scp step then drops the
-          # GH-secrets-built .env.local on top.
-          # TODO: once each host's .env.staging.local has been
-          # reviewed against the GH Environment secrets and deleted by
-          # hand, drop this step.
-          script: |
-            set -e
-            cd ludamus/
-            if [ -f .env ] && ! git ls-files --error-unmatch .env >/dev/null 2>&1; then
-              mv .env .env.staging.local
-            fi
-
       - name: Upload .env.local to host
         uses: appleboy/scp-action@v0.1.7
         with:

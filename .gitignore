@@ -130,8 +130,9 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-# .env is now committed as a shared dev baseline; .env.local and
-# .env.{ENV}.local hold per-developer overrides.
+# .env.{ENV} files (e.g. .env.development) are committed as shared
+# per-environment baselines; .env.local and .env.{ENV}.local hold
+# per-developer overrides.
 .env*.local
 .venv
 env/
