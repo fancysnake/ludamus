@@ -45,6 +45,7 @@ env = environ.Env(
     ENV=str,
     SECRET_KEY=str,
     SUPPORT_EMAIL=(str, "support@example.com"),
+    IN_TESTS=(bool, False),
 )
 
 
@@ -153,7 +154,7 @@ TEMPLATES = [
             "libraries": {
                 "avatar_tags": "ludamus.gates.web.django.templatetags.avatar_tags"
             },
-            "debug": DEBUG,
+            "debug": DEBUG or env("IN_TESTS"),
             "string_if_invalid": "" if IS_PRODUCTION else "ERROR: Missing variable %s",
         },
     }

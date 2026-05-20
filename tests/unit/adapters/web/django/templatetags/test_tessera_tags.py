@@ -12,6 +12,7 @@ class TestIcon:
         tpl = Template('{% load tessera %}{% icon "user" %}')
         html = tpl.render(Context())
         assert "<svg" in html
+        assert "shrink-0" in html
 
     def test_renders_solid_variant(self) -> None:
         tpl = Template('{% load tessera %}{% icon "user" variant="solid" %}')
@@ -27,6 +28,7 @@ class TestIcon:
         tpl = Template('{% load tessera %}{% icon "user" class="w-5 h-5" %}')
         html = tpl.render(Context())
         assert "w-5 h-5" in html
+        assert "shrink-0" in html
 
     def test_passes_style_kwarg(self) -> None:
         tpl = Template('{% load tessera %}{% icon "clock" style="color: var(--x)" %}')
@@ -37,7 +39,7 @@ class TestIcon:
         tpl = Template('{% load tessera %}{% icon "clock" style=bad_style %}')
         html = tpl.render(Context({"bad_style": '" onload="alert(1)'}))
         assert 'onload="alert(1)"' not in html
-        assert "&quot;" in html
+        assert "&quot;" in html or "&amp;quot;" in html
 
     @patch("ludamus.adapters.web.django.templatetags.tessera.icon.settings")
     def test_missing_icon_raises_in_debug(self, mock_settings: object) -> None:

@@ -8,7 +8,7 @@ run = "django-admin"
 
 [start]
 description = "Start Django dev server with frontend watch"
-run = "./scripts/dev"
+run = "./scripts/dev -p 8000"
 alias = "dev"
 
 [fnpm]

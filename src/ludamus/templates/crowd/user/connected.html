@@ -18,8 +18,8 @@
         </div>
         <div class="card-body">
             {# Info banner #}
-            <div class="alert alert-info flex items-start gap-3 mb-4">
-                {% icon "information-circle" class="w-5 h-5 shrink-0 mt-0.5" %}
+            <div class="alert alert-info flex items-center gap-3 mb-4">
+                {% icon "information-circle" class="w-5 h-5 shrink-0" %}
                 <p>
                     {% translate "Connected people are family members or friends that you can enroll in events. They won't have their own login accounts - you'll handle all their event registrations for them" %}
                 </p>
@@ -38,8 +38,8 @@
                     </form>
                 </div>
             {% else %}
-                <div class="alert alert-warning flex items-start gap-3 mb-6">
-                    {% icon "exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" %}
+                <div class="alert alert-warning flex items-center gap-3 mb-6">
+                    {% icon "exclamation-triangle" class="w-5 h-5 shrink-0" %}
                     <p>
                         {% blocktranslate %}You have reached the maximum limit of {{ max_connected_users }} connected users.{% endblocktranslate %}
                     </p>

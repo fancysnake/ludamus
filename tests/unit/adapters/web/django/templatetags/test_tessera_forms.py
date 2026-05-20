@@ -108,6 +108,15 @@ class TestTesseraField:
         html = tessera_field(form["name"])
         assert "*" in html  # Required field marker
 
+    def test_renders_hidden_input_without_label_or_wrapper(self) -> None:
+        class HiddenForm(forms.Form):
+            user_type = forms.CharField(widget=forms.HiddenInput())
+
+        html = tessera_field(HiddenForm()["user_type"])
+        assert 'type="hidden"' in html
+        assert "<label" not in html
+        assert "User type" not in html
+
     def test_renders_help_text(self) -> None:
         form = SimpleForm()
         html = tessera_field(form["email"])
