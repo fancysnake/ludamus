@@ -20,7 +20,7 @@
                 <label class="block text-sm font-medium text-foreground"
                        for="{{ form.secret.id_for_label }}">{{ form.secret.label }}</label>
                 {# Never echo plaintext secret back into the DOM on re-render — user re-pastes on validation error. #}
-                {% include "components/textarea.html" with name=form.secret.html_name id=form.secret.id_for_label rows=8 required=True has_errors=form.secret.errors aria_describedby="id_secret_help id_secret_errors" autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" only %}
+                {% include "components/textarea.html" with name=form.secret.html_name id=form.secret.id_for_label rows=8 required=True monospace=True has_errors=form.secret.errors aria_describedby="id_secret_help id_secret_errors" autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" only %}
                 <p id="id_secret_help" class="mt-1 text-xs text-foreground-muted">{{ form.secret.help_text }}</p>
                 {% if form.secret.errors %}
                     <div id="id_secret_errors" role="alert" aria-live="polite">
