@@ -47,6 +47,29 @@ _make_credentials = cast(
 )
 
 
+def _check_token_uri(info: dict[object, object]) -> CheckResult | None:
+    token_uri = info.get("token_uri")
+    if not isinstance(token_uri, str):
+        return CheckResult(
+            status=ConnectionCheckStatus.AUTH_FAILED,
+            detail="Credential token_uri is missing or invalid.",
+        )
+    parsed_token_uri = urlparse(token_uri)
+    token_endpoint = (parsed_token_uri.hostname, parsed_token_uri.path)
+    if (
+        parsed_token_uri.scheme != "https"
+        or parsed_token_uri.params
+        or parsed_token_uri.query
+        or parsed_token_uri.fragment
+        or token_endpoint not in _GOOGLE_TOKEN_ENDPOINTS
+    ):
+        return CheckResult(
+            status=ConnectionCheckStatus.AUTH_FAILED,
+            detail="Credential token_uri must be a Google OAuth token endpoint.",
+        )
+    return None
+
+
 class GoogleDocsApi:
     @staticmethod
     def check_credentials(plaintext: bytes) -> CheckResult:
@@ -63,25 +86,8 @@ class GoogleDocsApi:
                 status=ConnectionCheckStatus.AUTH_FAILED,
                 detail="Credential JSON must be an object.",
             )
-        token_uri = info.get("token_uri")
-        if not isinstance(token_uri, str):
-            return CheckResult(
-                status=ConnectionCheckStatus.AUTH_FAILED,
-                detail="Credential token_uri is missing or invalid.",
-            )
-        parsed_token_uri = urlparse(token_uri)
-        token_endpoint = (parsed_token_uri.hostname, parsed_token_uri.path)
-        if (
-            parsed_token_uri.scheme != "https"
-            or parsed_token_uri.params
-            or parsed_token_uri.query
-            or parsed_token_uri.fragment
-            or token_endpoint not in _GOOGLE_TOKEN_ENDPOINTS
-        ):
-            return CheckResult(
-                status=ConnectionCheckStatus.AUTH_FAILED,
-                detail="Credential token_uri must be a Google OAuth token endpoint.",
-            )
+        if result := _check_token_uri(info):
+            return result
 
         try:
             credentials = _make_credentials(
