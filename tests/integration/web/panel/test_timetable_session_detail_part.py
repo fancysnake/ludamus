@@ -6,7 +6,13 @@ from django.urls import reverse
 
 from ludamus.pacts import EventDTO
 from ludamus.pacts.legacy import SessionDTO
-from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
+from tests.integration.conftest import (
+    AgendaItemFactory,
+    EventFactory,
+    ProposalCategoryFactory,
+    SessionFactory,
+    SpaceFactory,
+)
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -100,6 +106,24 @@ class TestTimetableSessionDetailPartView:
                     "panel:timetable-browse-pane-part", kwargs={"slug": event.slug}
                 ),
             },
+        )
+
+    def test_redirects_when_session_belongs_to_other_sphere(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        other_event = EventFactory()
+        other_category = ProposalCategoryFactory(event=other_event)
+        other_session = SessionFactory(
+            category=other_category,
+            sphere=other_event.sphere,
+            title="Secret session from another sphere",
+        )
+
+        response = authenticated_client.get(self.get_url(event, other_session.pk))
+
+        assert_response(
+            response, HTTPStatus.FOUND, url=f"/panel/event/{event.slug}/timetable/"
         )
 
     def test_back_url_preserves_filters(
