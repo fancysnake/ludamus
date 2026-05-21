@@ -7,6 +7,7 @@
     "build": "tsc --noEmit && vite build",
     "dev": "vite",
     "typecheck": "tsc --noEmit",
+    "fallow": "fallow",
     "format": "prettier --write src"
   },
   "keywords": [],
@@ -16,6 +17,7 @@
     "@hasparus/tailwind": "1.1.8",
     "@tailwindcss/typography": "0.5.19",
     "@tailwindcss/vite": "4.2.4",
+    "fallow": "2.73.0",
     "portless": "0.13.0",
     "postcss-nested": "7.0.2",
     "prettier": "3.8.1",

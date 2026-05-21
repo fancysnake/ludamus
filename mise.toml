@@ -261,6 +261,10 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; lsof -ti :5173 | xargs kill -
 description = "Type-check frontend TypeScript"
 run = "cd src/ludamus/client && npm run typecheck"
 
+[tasks.fallow]
+description = "Analyze frontend TypeScript: dead code, duplication, complexity"
+run = "cd src/ludamus/client && npm run fallow"
+
 
 [tasks.npm]
 description = "Run npm in the frontend client directory"
