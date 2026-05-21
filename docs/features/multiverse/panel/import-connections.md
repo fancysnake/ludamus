@@ -1,6 +1,6 @@
 ---
 status: in-progress
-updated: 2026-05-18
+updated: 2026-05-21
 ---
 
 # Import connections — sphere CRUD
@@ -29,6 +29,9 @@ events can reference.
 - Display name is unique within the sphere
 - No service type, no validity check at save time — the connection is
   opaque until a port references it
+- Disclosure-toggle ARIA state (`aria-expanded`, `aria-required`)
+  reflects the `replace_secret` checkbox on initial render — including
+  after a validation re-render where the box was already ticked
 
 ## API connection secrets encrypted at rest
 
