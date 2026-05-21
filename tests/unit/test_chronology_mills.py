@@ -2,9 +2,12 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic import BaseModel
 
 from ludamus.mills.chronology import (
     ConflictDetectionService,
+    EventIntegrationsService,
+    IntegrationImplementationNotFoundError,
     TimetableOverviewService,
     TimetableService,
 )
@@ -18,7 +21,15 @@ from ludamus.pacts import (
     TimeSlotDTO,
     VenueDTO,
 )
-from ludamus.pacts.chronology import ConflictType, SessionPlacement
+from ludamus.pacts.chronology import (
+    CheckOutcome,
+    CheckResult,
+    ConflictType,
+    EventIntegrationCreateData,
+    IntegrationCheckRequest,
+    IntegrationKind,
+    SessionPlacement,
+)
 
 
 def _make_item(**overrides):
@@ -337,3 +348,118 @@ class TestTimetableOverviewServiceDefaults:
         result = svc.all_conflicts_grouped(event_pk=1, conflicts=None)
 
         assert not result
+
+
+# --- EventIntegrationsService ---
+
+
+class _StrictConfig(BaseModel):
+    endpoint: str
+
+
+class _ImportStubImpl:
+    identifier = "stub"
+    kind = IntegrationKind.IMPORT
+    config_model = _StrictConfig
+
+    def check(self, secret, config):  # noqa: ARG002 - protocol shape
+        return CheckResult(outcome=CheckOutcome.OK, hint="")
+
+
+class _TicketingStubImpl:
+    identifier = "ticket-stub"
+    kind = IntegrationKind.TICKETING
+    config_model = BaseModel
+
+    def check(self, secret, config):  # noqa: ARG002 - protocol shape
+        return CheckResult(outcome=CheckOutcome.OK, hint="")
+
+
+def _make_check_service(registry):
+    return EventIntegrationsService(
+        transaction=MagicMock(),
+        integrations=MagicMock(),
+        connections=MagicMock(),
+        encryptor=MagicMock(),
+        registry=registry,
+    )
+
+
+def _make_crud_service(registry):
+    transaction = MagicMock()
+    transaction.atomic.return_value.__enter__ = MagicMock(return_value=None)
+    transaction.atomic.return_value.__exit__ = MagicMock(return_value=None)
+    return EventIntegrationsService(
+        transaction=transaction,
+        integrations=MagicMock(),
+        connections=MagicMock(),
+        encryptor=MagicMock(),
+        registry=registry,
+    )
+
+
+class TestEventIntegrationsServiceCheck:
+    def test_unknown_implementation_returns_not_found(self):
+        """Lines 815-818: unknown impl short-circuits with a hint."""
+        svc = _make_check_service(registry={})
+
+        result = svc.check(
+            IntegrationCheckRequest(
+                sphere_id=1, implementation="nope", connection_id=2, config_json={}
+            )
+        )
+
+        assert result.outcome == CheckOutcome.NOT_FOUND
+        assert "nope" in result.hint
+
+    def test_invalid_config_returns_not_found(self):
+        """Lines 821-824: pydantic ValidationError funnels into not_found."""
+        svc = _make_check_service(registry={"stub": _ImportStubImpl()})
+
+        result = svc.check(
+            IntegrationCheckRequest(
+                sphere_id=1,
+                implementation="stub",
+                connection_id=2,
+                config_json={"endpoint": 123},  # wrong type triggers ValidationError
+            )
+        )
+
+        assert result.outcome == CheckOutcome.NOT_FOUND
+        assert "Invalid config" in result.hint
+
+
+class TestEventIntegrationsServiceRequireImplementation:
+    def test_create_with_unknown_implementation_raises(self):
+        """Line 832: _require_implementation rejects unknown identifier."""
+        svc = _make_crud_service(registry={})
+
+        with pytest.raises(IntegrationImplementationNotFoundError):
+            svc.create(
+                sphere_id=1,
+                event_id=2,
+                data=EventIntegrationCreateData(
+                    kind=IntegrationKind.IMPORT,
+                    implementation="missing",
+                    connection_id=3,
+                    display_name="x",
+                    config_json={},
+                ),
+            )
+
+    def test_create_with_wrong_kind_raises(self):
+        """Line 832: kind mismatch also trips the guard."""
+        svc = _make_crud_service(registry={"ticket-stub": _TicketingStubImpl()})
+
+        with pytest.raises(IntegrationImplementationNotFoundError):
+            svc.create(
+                sphere_id=1,
+                event_id=2,
+                data=EventIntegrationCreateData(
+                    kind=IntegrationKind.IMPORT,
+                    implementation="ticket-stub",
+                    connection_id=3,
+                    display_name="x",
+                    config_json={},
+                ),
+            )

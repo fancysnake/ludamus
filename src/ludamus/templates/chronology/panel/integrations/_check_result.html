@@ -1,0 +1,12 @@
+{% load i18n %}
+{% if outcome == "ok" %}
+    <span class="text-success font-medium">{% translate "Check passed." %}</span>
+{% else %}
+    <span class="text-danger font-medium">{{ outcome }}</span>
+    {% if hint %}<span class="text-foreground-muted ml-2">{{ hint }}</span>{% endif %}
+{% endif %}
+<input hx-swap-oob="true"
+       type="hidden"
+       id="id_last_ok_signature"
+       name="last_ok_signature"
+       value="{{ signature }}">

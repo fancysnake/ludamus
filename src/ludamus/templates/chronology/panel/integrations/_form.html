@@ -1,0 +1,86 @@
+{% load i18n %}
+{% load tessera %}
+{% tessera_errors form %}
+<div class="space-y-6">
+    <div>
+        <label class="block text-sm font-medium text-foreground-secondary mb-2"
+               for="{{ form.display_name.id_for_label }}">{{ form.display_name.label }}</label>
+        <input type="text"
+               name="{{ form.display_name.html_name }}"
+               id="{{ form.display_name.id_for_label }}"
+               value="{{ form.display_name.value|default:'' }}"
+               maxlength="255"
+               required
+               class="w-full border {% if form.display_name.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+        {% if form.display_name.errors %}<p class="mt-1 text-sm text-danger">{{ form.display_name.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-foreground-secondary mb-2"
+               for="{{ form.implementation.id_for_label }}">{{ form.implementation.label }}</label>
+        <select name="{{ form.implementation.html_name }}"
+                id="{{ form.implementation.id_for_label }}"
+                {% if form.implementation.field.disabled %}disabled{% endif %}
+                class="w-full border {% if form.implementation.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+            {% for value, label in form.implementation.field.choices %}
+                <option value="{{ value }}"
+                        {% if form.implementation.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if form.implementation.field.disabled %}
+            <input type="hidden"
+                   name="{{ form.implementation.html_name }}"
+                   value="{{ form.implementation.value }}">
+            <p class="mt-1 text-xs text-foreground-muted">{% translate "Implementation cannot change after creation." %}</p>
+        {% endif %}
+        {% if form.implementation.errors %}
+            <p class="mt-1 text-sm text-danger">{{ form.implementation.errors.0 }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-foreground-secondary mb-2"
+               for="{{ form.connection.id_for_label }}">{{ form.connection.label }}</label>
+        <select name="{{ form.connection.html_name }}"
+                id="{{ form.connection.id_for_label }}"
+                class="w-full border {% if form.connection.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+            {% for value, label in form.connection.field.choices %}
+                <option value="{{ value }}"
+                        {% if form.connection.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if form.connection.errors %}<p class="mt-1 text-sm text-danger">{{ form.connection.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-foreground-secondary mb-2"
+               for="{{ form.config_json.id_for_label }}">{{ form.config_json.label }}</label>
+        <textarea name="{{ form.config_json.html_name }}"
+                  id="{{ form.config_json.id_for_label }}"
+                  rows="12"
+                  spellcheck="false"
+                  class="w-full border {% if form.config_json.errors %}border-danger{% else %}border-border{% endif %} rounded-lg px-4 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary">{{ form.config_json.value|default:'{}' }}</textarea>
+        {% if form.config_json.errors %}
+            <div class="mt-1 space-y-1">
+                {% for error in form.config_json.errors %}<p class="text-sm text-danger">{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <input type="hidden"
+           id="id_last_ok_signature"
+           name="last_ok_signature"
+           value="{{ form.last_ok_signature.value|default:'' }}">
+    <div class="flex items-center justify-between gap-3 pt-4 border-t border-border sticky bottom-0 bg-bg-secondary py-3">
+        <button type="button"
+                hx-post="{% url 'panel:integration-check' slug=current_event.slug %}"
+                hx-include="closest form"
+                hx-target="#check-result"
+                hx-swap="innerHTML"
+                class="btn btn-secondary flex items-center">
+            {% icon "play" class="w-4 h-4 mr-2" %}
+            {% translate "Check integration" %}
+        </button>
+        <div id="check-result" class="text-sm flex-1 mx-4" aria-live="polite"></div>
+    </div>
+</div>

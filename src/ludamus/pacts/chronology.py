@@ -10,7 +10,7 @@ from datetime import date, datetime
 from enum import StrEnum, auto
 from typing import Protocol
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ludamus.pacts.legacy import (
     AgendaItemDTO,
@@ -21,6 +21,104 @@ from ludamus.pacts.legacy import (
     ProposalCategoryDTO,
     SpaceDTO,
 )
+
+
+class IntegrationKind(StrEnum):
+    IMPORT = "import"
+    TICKETING = "ticketing"
+
+
+class CheckOutcome(StrEnum):
+    OK = "ok"
+    AUTH_FAILED = "auth_failed"
+    FORBIDDEN = "forbidden"
+    NOT_FOUND = "not_found"
+
+
+@dataclass
+class CheckResult:
+    outcome: CheckOutcome | str
+    hint: str = ""
+
+
+class IntegrationImplementation(Protocol):
+    identifier: str
+    kind: IntegrationKind
+    config_model: type[BaseModel]
+
+    def check(self, secret: bytes, config: BaseModel) -> CheckResult: ...
+
+
+class EventIntegrationDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pk: int
+    event_id: int
+    kind: IntegrationKind
+    implementation: str
+    connection_id: int
+    connection_display_name: str
+    display_name: str
+    config_json: dict[str, object]
+
+
+@dataclass
+class EventIntegrationCreateData:
+    kind: IntegrationKind
+    implementation: str
+    connection_id: int
+    display_name: str
+    config_json: dict[str, object]
+
+
+@dataclass
+class EventIntegrationUpdateData:
+    display_name: str
+    connection_id: int
+    config_json: dict[str, object]
+
+
+@dataclass
+class IntegrationCheckRequest:
+    sphere_id: int
+    implementation: str
+    connection_id: int
+    config_json: dict[str, object]
+
+
+class EventIntegrationsRepositoryProtocol(Protocol):
+    @staticmethod
+    def list_for_event(
+        event_id: int, kind: IntegrationKind | None = None
+    ) -> list[EventIntegrationDTO]: ...
+    @staticmethod
+    def get(event_id: int, pk: int) -> EventIntegrationDTO: ...
+    @staticmethod
+    def create(
+        event_id: int, data: EventIntegrationCreateData
+    ) -> EventIntegrationDTO: ...
+    @staticmethod
+    def update(
+        event_id: int, pk: int, data: EventIntegrationUpdateData
+    ) -> EventIntegrationDTO: ...
+    @staticmethod
+    def delete(event_id: int, pk: int) -> None: ...
+
+
+class EventIntegrationsServiceProtocol(Protocol):
+    def get(self, event_id: int, pk: int) -> EventIntegrationDTO: ...
+    def create(
+        self, sphere_id: int, event_id: int, data: EventIntegrationCreateData
+    ) -> EventIntegrationDTO: ...
+    def update(
+        self, sphere_id: int, event_id: int, pk: int, data: EventIntegrationUpdateData
+    ) -> EventIntegrationDTO: ...
+    def delete(self, event_id: int, pk: int) -> None: ...
+    def check(self, request: IntegrationCheckRequest) -> CheckResult: ...
+    def list_implementations(
+        self, kind: IntegrationKind
+    ) -> list[IntegrationImplementation]: ...
+
 
 TIMETABLE_ROOM_PAGE_SIZE = 5
 TIMETABLE_SLOT_MINUTES = 60
