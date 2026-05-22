@@ -10,7 +10,7 @@ A feature file. If ambiguous, ask.
 
 ## What you do
 
-1. Read the feature file. It may live under `docs/features/drafts/...`
+ead the feature file. It may live under `docs/features/drafts/...`
    (draft) or directly under `docs/features/...` (in-progress).
 2. If `.tbd/shape.md` exists, read it. It covers the same feature in
    non-code language. Refine it into file, class, and function names;
