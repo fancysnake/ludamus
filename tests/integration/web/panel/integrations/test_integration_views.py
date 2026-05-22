@@ -67,7 +67,7 @@ class TestIntegrationCreatePageView:
         patched_services,
     ):
         sphere.managers.add(active_user)
-        fake_impl = patched_services
+        impl_id = patched_services
         config_json = {"endpoint": "https://example.invalid"}
         signature = integration_signature(connection.pk, config_json)
 
@@ -75,7 +75,7 @@ class TestIntegrationCreatePageView:
             _create_url(event),
             data={
                 "display_name": "Main import",
-                "implementation": fake_impl.identifier,
+                "implementation": impl_id.value,
                 "connection": str(connection.pk),
                 "config_json": '{"endpoint": "https://example.invalid"}',
                 "last_ok_signature": signature,
@@ -97,13 +97,13 @@ class TestIntegrationCreatePageView:
         patched_services,
     ):
         sphere.managers.add(active_user)
-        fake_impl = patched_services
+        impl_id = patched_services
 
         response = authenticated_client.post(
             _create_url(event),
             data={
                 "display_name": "No check",
-                "implementation": fake_impl.identifier,
+                "implementation": impl_id.value,
                 "connection": str(connection.pk),
                 "config_json": '{"endpoint": "https://example.invalid"}',
                 "last_ok_signature": "",
@@ -128,11 +128,11 @@ class TestIntegrationEditPageView:
         patched_services,
     ):
         sphere.managers.add(active_user)
-        fake_impl = patched_services
+        impl_id = patched_services
         integration = EventIntegration.objects.create(
             event=event,
             kind="import",
-            implementation=fake_impl.identifier,
+            implementation=impl_id.value,
             connection=connection,
             display_name="Existing",
             config_json={"endpoint": "https://example.invalid"},
@@ -152,11 +152,11 @@ class TestIntegrationEditPageView:
         patched_services,
     ):
         sphere.managers.add(active_user)
-        fake_impl = patched_services
+        impl_id = patched_services
         integration = EventIntegration.objects.create(
             event=event,
             kind="import",
-            implementation=fake_impl.identifier,
+            implementation=impl_id.value,
             connection=connection,
             display_name="Old name",
             config_json={"endpoint": "https://example.invalid"},
@@ -165,7 +165,7 @@ class TestIntegrationEditPageView:
             _edit_url(event, integration),
             data={
                 "display_name": "New name",
-                "implementation": fake_impl.identifier,
+                "implementation": impl_id.value,
                 "connection": str(connection.pk),
                 "config_json": '{"endpoint": "https://example.invalid"}',
                 "last_ok_signature": "",
@@ -188,11 +188,11 @@ class TestIntegrationDeletePageView:
         patched_services,
     ):
         sphere.managers.add(active_user)
-        fake_impl = patched_services
+        impl_id = patched_services
         integration = EventIntegration.objects.create(
             event=event,
             kind="import",
-            implementation=fake_impl.identifier,
+            implementation=impl_id.value,
             connection=connection,
             display_name="Goodbye",
             config_json={"endpoint": "https://example.invalid"},
@@ -215,11 +215,11 @@ class TestIntegrationCheckActionView:
         patched_services,
     ):
         sphere.managers.add(active_user)
-        fake_impl = patched_services
+        impl_id = patched_services
         response = authenticated_client.post(
             _check_url(event),
             data={
-                "implementation": fake_impl.identifier,
+                "implementation": impl_id.value,
                 "connection": str(connection.pk),
                 "config_json": '{"endpoint": "https://example.invalid"}',
             },

@@ -12,7 +12,12 @@ from ludamus.adapters.db.django.models import Connection
 from ludamus.inits import services as services_mod
 from ludamus.links.encryption import FernetEncryptor
 from ludamus.mills.chronology import EventIntegrationsService
-from ludamus.pacts.chronology import CheckOutcome, CheckResult, IntegrationKind
+from ludamus.pacts.chronology import (
+    CheckOutcome,
+    CheckResult,
+    IntegrationImplementationId,
+    IntegrationKind,
+)
 
 if TYPE_CHECKING:
     from ludamus.pacts.chronology import IntegrationImplementation
@@ -23,7 +28,6 @@ class _FakeImplConfig(BaseModel):
 
 
 class _FakeImpl:
-    identifier = "fake-import"
     kind = IntegrationKind.IMPORT
     config_model = _FakeImplConfig
 
@@ -39,6 +43,9 @@ def fake_impl_fixture() -> IntegrationImplementation:
 @pytest.fixture(name="patched_services")
 def patched_services_fixture(monkeypatch, fake_impl):
     # Replace Services.event_integrations with one bound to a fake registry.
+    # The fixture returns the enum id tests use to address the registered fake.
+    impl_id = IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER
+
     def patched(self):
         key: str = settings.CREDENTIALS_ENCRYPTION_KEY
         return EventIntegrationsService(
@@ -46,11 +53,11 @@ def patched_services_fixture(monkeypatch, fake_impl):
             self._repos.event_integrations,
             self._repos.connections,
             FernetEncryptor(key),
-            {fake_impl.identifier: fake_impl},
+            {impl_id: fake_impl},
         )
 
     monkeypatch.setattr(services_mod.Services, "event_integrations", property(patched))
-    return fake_impl
+    return impl_id
 
 
 @pytest.fixture(name="connection")

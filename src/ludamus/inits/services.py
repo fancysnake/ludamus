@@ -15,7 +15,10 @@ from ludamus.mills.chronology import (
 from ludamus.mills.multiverse import ConnectionsService, SpherePanelService
 
 if TYPE_CHECKING:
-    from ludamus.pacts.chronology import IntegrationImplementation
+    from ludamus.pacts.chronology import (
+        IntegrationImplementation,
+        IntegrationImplementationId,
+    )
 
 
 class Services:
@@ -50,7 +53,7 @@ class Services:
     @cached_property
     def event_integrations(self) -> EventIntegrationsService:
         key: str = settings.CREDENTIALS_ENCRYPTION_KEY
-        registry: dict[str, IntegrationImplementation] = {}
+        registry: dict[IntegrationImplementationId, IntegrationImplementation] = {}
         return EventIntegrationsService(
             self._transaction,
             self._repos.event_integrations,

@@ -10,8 +10,10 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from pydantic import ValidationError
 
+from ludamus.pacts.chronology import IntegrationImplementationId
+
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
     from ludamus.pacts.chronology import IntegrationImplementation, IntegrationKind
     from ludamus.pacts.multiverse import ConnectionDTO
@@ -39,7 +41,9 @@ class EventIntegrationForm(forms.Form):
         self,
         *args: Any,
         kind: IntegrationKind,
-        implementations: Iterable[IntegrationImplementation],
+        implementations: Mapping[
+            IntegrationImplementationId, IntegrationImplementation
+        ],
         connections: Iterable[ConnectionDTO],
         initial_connection_id: int | None = None,
         initial_config_json: dict[str, object] | None = None,
@@ -47,16 +51,26 @@ class EventIntegrationForm(forms.Form):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.kind = kind
-        self._implementations = {impl.identifier: impl for impl in implementations}
+        self._implementations: dict[
+            IntegrationImplementationId, IntegrationImplementation
+        ] = dict(implementations)
         impl_field = cast("forms.ChoiceField", self.fields["implementation"])
         impl_field.choices = [
-            (impl.identifier, impl.identifier)
-            for impl in self._implementations.values()
+            (impl_id.value, impl_id.value) for impl_id in self._implementations
         ]
         conn_field = cast("forms.ChoiceField", self.fields["connection"])
         conn_field.choices = [(str(c.pk), c.display_name) for c in connections]
         self._initial_connection_id = initial_connection_id
         self._initial_config_json = initial_config_json
+
+    def clean_implementation(self) -> IntegrationImplementationId:
+        raw = self.cleaned_data.get("implementation") or ""
+        try:
+            return IntegrationImplementationId(raw)
+        except ValueError as exc:
+            raise forms.ValidationError(
+                _("Unknown implementation for this kind.")
+            ) from exc
 
     def clean_config_json(self) -> dict[str, object]:
         raw = self.cleaned_data.get("config_json") or "{}"
@@ -74,7 +88,9 @@ class EventIntegrationForm(forms.Form):
         cleaned = super().clean() or {}
         identifier = cleaned.get("implementation")
         config_json = cleaned.get("config_json")
-        if identifier and isinstance(config_json, dict):
+        if isinstance(identifier, IntegrationImplementationId) and isinstance(
+            config_json, dict
+        ):
             if (impl := self._implementations.get(identifier)) is None:
                 self.add_error(
                     "implementation", _("Unknown implementation for this kind.")

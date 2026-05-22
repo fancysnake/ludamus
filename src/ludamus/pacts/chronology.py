@@ -28,6 +28,10 @@ class IntegrationKind(StrEnum):
     TICKETING = "ticketing"
 
 
+class IntegrationImplementationId(StrEnum):
+    GOOGLE_PROPOSAL_PULLER = "google-proposal-puller"
+
+
 class CheckOutcome(StrEnum):
     OK = "ok"
     AUTH_FAILED = "auth_failed"
@@ -42,7 +46,6 @@ class CheckResult:
 
 
 class IntegrationImplementation(Protocol):
-    identifier: str
     kind: IntegrationKind
     config_model: type[BaseModel]
 
@@ -55,7 +58,7 @@ class EventIntegrationDTO(BaseModel):
     pk: int
     event_id: int
     kind: IntegrationKind
-    implementation: str
+    implementation: IntegrationImplementationId
     connection_id: int
     connection_display_name: str
     display_name: str
@@ -65,7 +68,7 @@ class EventIntegrationDTO(BaseModel):
 @dataclass
 class EventIntegrationCreateData:
     kind: IntegrationKind
-    implementation: str
+    implementation: IntegrationImplementationId
     connection_id: int
     display_name: str
     config_json: dict[str, object]
@@ -81,7 +84,7 @@ class EventIntegrationUpdateData:
 @dataclass
 class IntegrationCheckRequest:
     sphere_id: int
-    implementation: str
+    implementation: IntegrationImplementationId
     connection_id: int
     config_json: dict[str, object]
 
@@ -117,7 +120,7 @@ class EventIntegrationsServiceProtocol(Protocol):
     def check(self, request: IntegrationCheckRequest) -> CheckResult: ...
     def list_implementations(
         self, kind: IntegrationKind
-    ) -> list[IntegrationImplementation]: ...
+    ) -> dict[IntegrationImplementationId, IntegrationImplementation]: ...
 
 
 TIMETABLE_ROOM_PAGE_SIZE = 5

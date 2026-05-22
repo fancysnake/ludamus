@@ -39,6 +39,7 @@ from ludamus.pacts.chronology import (
     HeatmapRowDTO,
     IntegrationCheckRequest,
     IntegrationImplementation,
+    IntegrationImplementationId,
     IntegrationKind,
     PersonalDataFieldEditContextDTO,
     PersonalDataFieldFormContextDTO,
@@ -813,7 +814,7 @@ class EventIntegrationsService:
         integrations: EventIntegrationsRepositoryProtocol,
         connections: ConnectionsRepositoryProtocol,
         encryptor: EncryptorProtocol,
-        registry: dict[str, IntegrationImplementation],
+        registry: dict[IntegrationImplementationId, IntegrationImplementation],
     ) -> None:
         self._transaction = transaction
         self._integrations = integrations
@@ -823,8 +824,12 @@ class EventIntegrationsService:
 
     def list_implementations(
         self, kind: IntegrationKind
-    ) -> list[IntegrationImplementation]:
-        return [impl for impl in self._registry.values() if impl.kind == kind]
+    ) -> dict[IntegrationImplementationId, IntegrationImplementation]:
+        return {
+            impl_id: impl
+            for impl_id, impl in self._registry.items()
+            if impl.kind == kind
+        }
 
     def get(self, event_id: int, pk: int) -> EventIntegrationDTO:
         return self._integrations.get(event_id, pk)
@@ -865,7 +870,9 @@ class EventIntegrationsService:
         plaintext = self._encryptor.decrypt(blob) if blob else b""
         return impl.check(plaintext, config)
 
-    def _require_implementation(self, identifier: str, kind: IntegrationKind) -> None:
+    def _require_implementation(
+        self, identifier: IntegrationImplementationId, kind: IntegrationKind
+    ) -> None:
         impl = self._registry.get(identifier)
         if impl is None or impl.kind != kind:
             raise IntegrationImplementationNotFoundError(identifier)

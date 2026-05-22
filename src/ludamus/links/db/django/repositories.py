@@ -125,6 +125,7 @@ from ludamus.pacts.chronology import (
     EventIntegrationDTO,
     EventIntegrationsRepositoryProtocol,
     EventIntegrationUpdateData,
+    IntegrationImplementationId,
     IntegrationKind,
 )
 from ludamus.pacts.multiverse import ConnectionDTO, ConnectionsRepositoryProtocol
@@ -2687,7 +2688,7 @@ def _event_integration_dto(integration: EventIntegration) -> EventIntegrationDTO
         pk=integration.pk,
         event_id=integration.event_id,
         kind=IntegrationKind(integration.kind),
-        implementation=integration.implementation,
+        implementation=IntegrationImplementationId(integration.implementation),
         connection_id=integration.connection_id,
         connection_display_name=integration.connection.display_name,
         display_name=integration.display_name,
@@ -2722,7 +2723,7 @@ class EventIntegrationsRepository(EventIntegrationsRepositoryProtocol):
         integration = EventIntegration.objects.create(
             event_id=event_id,
             kind=data.kind.value,
-            implementation=data.implementation,
+            implementation=data.implementation.value,
             connection_id=data.connection_id,
             display_name=data.display_name,
             config_json=data.config_json,

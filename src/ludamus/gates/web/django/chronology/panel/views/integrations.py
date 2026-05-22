@@ -26,6 +26,7 @@ from ludamus.pacts.chronology import (
     EventIntegrationCreateData,
     EventIntegrationUpdateData,
     IntegrationCheckRequest,
+    IntegrationImplementationId,
     IntegrationKind,
 )
 
@@ -241,11 +242,11 @@ class IntegrationCheckActionView(PanelAccessMixin, EventContextMixin, View):
         if current_event is None:
             return HttpResponseBadRequest("Unknown event")
 
-        implementation = (self.request.POST.get("implementation") or "").strip()
+        implementation_raw = (self.request.POST.get("implementation") or "").strip()
         connection_raw = (self.request.POST.get("connection") or "").strip()
         config_raw = self.request.POST.get("config_json") or "{}"
 
-        if not implementation or not connection_raw:
+        if not implementation_raw or not connection_raw:
             return TemplateResponse(
                 self.request,
                 "chronology/panel/integrations/_check_result.html",
@@ -254,6 +255,21 @@ class IntegrationCheckActionView(PanelAccessMixin, EventContextMixin, View):
                     "hint": _(
                         "Pick an implementation and a connection before "
                         "running the check."
+                    ),
+                    "signature": "",
+                },
+            )
+
+        try:
+            implementation = IntegrationImplementationId(implementation_raw)
+        except ValueError:
+            return TemplateResponse(
+                self.request,
+                "chronology/panel/integrations/_check_result.html",
+                {
+                    "outcome": "not_found",
+                    "hint": (
+                        _("Unknown implementation: %(id)s") % {"id": implementation_raw}
                     ),
                     "signature": "",
                 },

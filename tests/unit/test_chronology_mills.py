@@ -27,6 +27,7 @@ from ludamus.pacts.chronology import (
     ConflictType,
     EventIntegrationCreateData,
     IntegrationCheckRequest,
+    IntegrationImplementationId,
     IntegrationKind,
     SessionPlacement,
 )
@@ -358,7 +359,6 @@ class _StrictConfig(BaseModel):
 
 
 class _ImportStubImpl:
-    identifier = "stub"
     kind = IntegrationKind.IMPORT
     config_model = _StrictConfig
 
@@ -367,7 +367,6 @@ class _ImportStubImpl:
 
 
 class _TicketingStubImpl:
-    identifier = "ticket-stub"
     kind = IntegrationKind.TICKETING
     config_model = BaseModel
 
@@ -405,21 +404,28 @@ class TestEventIntegrationsServiceCheck:
 
         result = svc.check(
             IntegrationCheckRequest(
-                sphere_id=1, implementation="nope", connection_id=2, config_json={}
+                sphere_id=1,
+                implementation=IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER,
+                connection_id=2,
+                config_json={},
             )
         )
 
         assert result.outcome == CheckOutcome.NOT_FOUND
-        assert "nope" in result.hint
+        assert IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER.value in result.hint
 
     def test_invalid_config_returns_not_found(self):
         """Lines 821-824: pydantic ValidationError funnels into not_found."""
-        svc = _make_check_service(registry={"stub": _ImportStubImpl()})
+        svc = _make_check_service(
+            registry={
+                IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER: _ImportStubImpl()
+            }
+        )
 
         result = svc.check(
             IntegrationCheckRequest(
                 sphere_id=1,
-                implementation="stub",
+                implementation=IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER,
                 connection_id=2,
                 config_json={"endpoint": 123},  # wrong type triggers ValidationError
             )
@@ -440,7 +446,7 @@ class TestEventIntegrationsServiceRequireImplementation:
                 event_id=2,
                 data=EventIntegrationCreateData(
                     kind=IntegrationKind.IMPORT,
-                    implementation="missing",
+                    implementation=IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER,
                     connection_id=3,
                     display_name="x",
                     config_json={},
@@ -449,7 +455,11 @@ class TestEventIntegrationsServiceRequireImplementation:
 
     def test_create_with_wrong_kind_raises(self):
         """Line 832: kind mismatch also trips the guard."""
-        svc = _make_crud_service(registry={"ticket-stub": _TicketingStubImpl()})
+        svc = _make_crud_service(
+            registry={
+                IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER: _TicketingStubImpl()
+            }
+        )
 
         with pytest.raises(IntegrationImplementationNotFoundError):
             svc.create(
@@ -457,7 +467,7 @@ class TestEventIntegrationsServiceRequireImplementation:
                 event_id=2,
                 data=EventIntegrationCreateData(
                     kind=IntegrationKind.IMPORT,
-                    implementation="ticket-stub",
+                    implementation=IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER,
                     connection_id=3,
                     display_name="x",
                     config_json={},
