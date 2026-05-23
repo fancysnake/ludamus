@@ -67,7 +67,7 @@ See `/tbd-story` for the full vocabulary and self-check.
 ## Status values
 
 - **draft** — written, not yet fired against. Lives in `drafts/`.
-in-progress** — fired; refinement still pending. Lives at the
+- **in-progress** — fired; refinement still pending. Lives at the
   top level.
 - **done** — fired and refined. Lives at the top level.
 
