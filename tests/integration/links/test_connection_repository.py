@@ -15,7 +15,9 @@ from ludamus.pacts.multiverse import ConnectionDTO
 
 class TestConnectionsRepositoryUpdate:
     def test_updates_metadata_without_overwriting_concurrent_secret_write(
-        self, sphere, monkeypatch
+        self,
+        sphere,
+        monkeypatch,
     ):
         connection = Connection.objects.create(
             sphere=sphere,
