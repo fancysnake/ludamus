@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -374,58 +375,65 @@ class _TicketingStubImpl:
         return CheckResult(outcome=CheckOutcome.OK, hint="")
 
 
-def _make_check_service(registry):
-    return EventIntegrationsService(
-        transaction=MagicMock(),
-        integrations=MagicMock(),
-        connections=MagicMock(),
-        encryptor=MagicMock(),
-        registry=registry,
-    )
+_IMPL = IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER
 
 
-def _make_crud_service(registry):
+def _make_service(registry):
     transaction = MagicMock()
     transaction.atomic.return_value.__enter__ = MagicMock(return_value=None)
     transaction.atomic.return_value.__exit__ = MagicMock(return_value=None)
-    return EventIntegrationsService(
+    integrations = MagicMock()
+    connections = MagicMock()
+    encryptor = MagicMock()
+    svc = EventIntegrationsService(
         transaction=transaction,
-        integrations=MagicMock(),
-        connections=MagicMock(),
-        encryptor=MagicMock(),
+        integrations=integrations,
+        connections=connections,
+        encryptor=encryptor,
         registry=registry,
+    )
+    return SimpleNamespace(
+        svc=svc,
+        transaction=transaction,
+        integrations=integrations,
+        connections=connections,
+        encryptor=encryptor,
+    )
+
+
+def _create_data():
+    return EventIntegrationCreateData(
+        kind=IntegrationKind.IMPORT,
+        implementation=_IMPL,
+        connection_id=3,
+        display_name="x",
+        config_json={},
     )
 
 
 class TestEventIntegrationsServiceCheck:
     def test_unknown_implementation_returns_not_found(self):
-        """Lines 815-818: unknown impl short-circuits with a hint."""
-        svc = _make_check_service(registry={})
+        env = _make_service(registry={})
 
-        result = svc.check(
+        result = env.svc.check(
             IntegrationCheckRequest(
-                sphere_id=1,
-                implementation=IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER,
-                connection_id=2,
-                config_json={},
+                sphere_id=1, implementation=_IMPL, connection_id=2, config_json={}
             )
         )
 
         assert result.outcome == CheckOutcome.NOT_FOUND
-        assert IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER.value in result.hint
+        assert _IMPL.value in result.hint
+        # Short-circuits before touching the connection secret or encryptor.
+        env.connections.read_secret.assert_not_called()
+        env.encryptor.decrypt.assert_not_called()
 
     def test_invalid_config_returns_not_found(self):
-        """Lines 821-824: pydantic ValidationError funnels into not_found."""
-        svc = _make_check_service(
-            registry={
-                IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER: _ImportStubImpl()
-            }
-        )
+        env = _make_service(registry={_IMPL: _ImportStubImpl()})
 
-        result = svc.check(
+        result = env.svc.check(
             IntegrationCheckRequest(
                 sphere_id=1,
-                implementation=IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER,
+                implementation=_IMPL,
                 connection_id=2,
                 config_json={"endpoint": 123},  # wrong type triggers ValidationError
             )
@@ -433,43 +441,29 @@ class TestEventIntegrationsServiceCheck:
 
         assert result.outcome == CheckOutcome.NOT_FOUND
         assert "Invalid config" in result.hint
+        # ValidationError funnels out before reading the secret.
+        env.connections.read_secret.assert_not_called()
+        env.encryptor.decrypt.assert_not_called()
 
 
 class TestEventIntegrationsServiceRequireImplementation:
     def test_create_with_unknown_implementation_raises(self):
-        """Line 832: _require_implementation rejects unknown identifier."""
-        svc = _make_crud_service(registry={})
+        env = _make_service(registry={})
 
         with pytest.raises(IntegrationImplementationNotFoundError):
-            svc.create(
-                sphere_id=1,
-                event_id=2,
-                data=EventIntegrationCreateData(
-                    kind=IntegrationKind.IMPORT,
-                    implementation=IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER,
-                    connection_id=3,
-                    display_name="x",
-                    config_json={},
-                ),
-            )
+            env.svc.create(sphere_id=1, event_id=2, data=_create_data())
+
+        # Guard raises before any IO or transaction.
+        env.connections.get.assert_not_called()
+        env.transaction.atomic.assert_not_called()
+        env.integrations.create.assert_not_called()
 
     def test_create_with_wrong_kind_raises(self):
-        """Line 832: kind mismatch also trips the guard."""
-        svc = _make_crud_service(
-            registry={
-                IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER: _TicketingStubImpl()
-            }
-        )
+        env = _make_service(registry={_IMPL: _TicketingStubImpl()})
 
         with pytest.raises(IntegrationImplementationNotFoundError):
-            svc.create(
-                sphere_id=1,
-                event_id=2,
-                data=EventIntegrationCreateData(
-                    kind=IntegrationKind.IMPORT,
-                    implementation=IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER,
-                    connection_id=3,
-                    display_name="x",
-                    config_json={},
-                ),
-            )
+            env.svc.create(sphere_id=1, event_id=2, data=_create_data())
+
+        env.connections.get.assert_not_called()
+        env.transaction.atomic.assert_not_called()
+        env.integrations.create.assert_not_called()

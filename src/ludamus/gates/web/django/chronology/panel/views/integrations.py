@@ -131,16 +131,20 @@ class IntegrationCreatePageView(PanelAccessMixin, EventContextMixin, View):
                 self.request, "chronology/panel/integrations/create.html", context
             )
 
-        if (resolved_kind := form.resolved_kind) is None:
-            return HttpResponseBadRequest("Unknown integration implementation")
-
         sphere_id = self.request.context.current_sphere_id
-        self.request.services.event_integrations.create(
+        implementation = form.cleaned_data["implementation"]
+        integrations_service = self.request.services.event_integrations
+        # A valid form guarantees the implementation is registered; derive its
+        # kind from the same registry the form validated against.
+        resolved_kind = integrations_service.list_all_implementations()[
+            implementation
+        ].kind
+        integrations_service.create(
             sphere_id=sphere_id,
             event_id=current_event.pk,
             data=EventIntegrationCreateData(
                 kind=resolved_kind,
-                implementation=form.cleaned_data["implementation"],
+                implementation=implementation,
                 connection_id=int(form.cleaned_data["connection"]),
                 display_name=form.cleaned_data["display_name"],
                 config_json=form.cleaned_data["config_json"],
