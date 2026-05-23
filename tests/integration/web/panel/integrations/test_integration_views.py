@@ -709,7 +709,7 @@ class TestIntegrationCheckActionView:
             HTTPStatus.OK,
             template_name="chronology/panel/integrations/_check_result.html",
             context_data={
-                "outcome": "ok",
+                "passed": True,
                 "hint": "",
                 "signature": integration_signature(connection_with_secret.pk, CONFIG),
             },
@@ -731,7 +731,7 @@ class TestIntegrationCheckActionView:
         )
         assert response.content == b"Unknown event"
 
-    def test_post_missing_implementation_renders_input_missing(
+    def test_post_missing_implementation_reports_failure(
         self, authenticated_client, active_user, sphere, event, connection
     ):
         sphere.managers.add(active_user)
@@ -750,7 +750,7 @@ class TestIntegrationCheckActionView:
             HTTPStatus.OK,
             template_name="chronology/panel/integrations/_check_result.html",
             context_data={
-                "outcome": "input_missing",
+                "passed": False,
                 "hint": (
                     "Pick an implementation and a connection before running the check."
                 ),
@@ -758,7 +758,7 @@ class TestIntegrationCheckActionView:
             },
         )
 
-    def test_post_missing_connection_renders_input_missing(
+    def test_post_missing_connection_reports_failure(
         self, authenticated_client, active_user, sphere, event
     ):
         sphere.managers.add(active_user)
@@ -773,7 +773,7 @@ class TestIntegrationCheckActionView:
             HTTPStatus.OK,
             template_name="chronology/panel/integrations/_check_result.html",
             context_data={
-                "outcome": "input_missing",
+                "passed": False,
                 "hint": (
                     "Pick an implementation and a connection before running the check."
                 ),
@@ -781,7 +781,7 @@ class TestIntegrationCheckActionView:
             },
         )
 
-    def test_post_unknown_implementation_returns_not_found(
+    def test_post_unknown_implementation_reports_failure(
         self, authenticated_client, active_user, sphere, event, connection
     ):
         sphere.managers.add(active_user)
@@ -800,7 +800,7 @@ class TestIntegrationCheckActionView:
             HTTPStatus.OK,
             template_name="chronology/panel/integrations/_check_result.html",
             context_data={
-                "outcome": "not_found",
+                "passed": False,
                 "hint": "Unknown implementation: not-a-real-impl",
                 "signature": "",
             },
@@ -823,7 +823,7 @@ class TestIntegrationCheckActionView:
         assert_response(response, HTTPStatus.BAD_REQUEST)
         assert response.content == b"Bad connection id"
 
-    def test_post_invalid_json_renders_invalid_json(
+    def test_post_invalid_json_reports_failure(
         self, authenticated_client, active_user, sphere, event, connection
     ):
         sphere.managers.add(active_user)
@@ -842,10 +842,10 @@ class TestIntegrationCheckActionView:
             HTTPStatus.OK,
             template_name="chronology/panel/integrations/_check_result.html",
             # hint is the raw json.JSONDecodeError text — opaque, version-dependent.
-            context_data={"outcome": "invalid_json", "hint": ANY, "signature": ""},
+            context_data={"passed": False, "hint": ANY, "signature": ""},
         )
 
-    def test_post_non_dict_json_renders_invalid_json(
+    def test_post_non_dict_json_reports_failure(
         self, authenticated_client, active_user, sphere, event, connection
     ):
         sphere.managers.add(active_user)
@@ -864,7 +864,7 @@ class TestIntegrationCheckActionView:
             HTTPStatus.OK,
             template_name="chronology/panel/integrations/_check_result.html",
             context_data={
-                "outcome": "invalid_json",
+                "passed": False,
                 "hint": "Configuration must be a JSON object.",
                 "signature": "",
             },

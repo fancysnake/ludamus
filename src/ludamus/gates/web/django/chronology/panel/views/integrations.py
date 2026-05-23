@@ -24,6 +24,7 @@ from ludamus.gates.web.django.chronology.panel.views.base import (
 )
 from ludamus.pacts import NotFoundError
 from ludamus.pacts.chronology import (
+    CheckOutcome,
     EventIntegrationCreateData,
     EventIntegrationUpdateData,
     IntegrationCheckRequest,
@@ -266,7 +267,7 @@ class IntegrationCheckActionView(PanelAccessMixin, EventContextMixin, View):
                 self.request,
                 "chronology/panel/integrations/_check_result.html",
                 {
-                    "outcome": "input_missing",
+                    "passed": False,
                     "hint": _(
                         "Pick an implementation and a connection before "
                         "running the check."
@@ -282,7 +283,7 @@ class IntegrationCheckActionView(PanelAccessMixin, EventContextMixin, View):
                 self.request,
                 "chronology/panel/integrations/_check_result.html",
                 {
-                    "outcome": "not_found",
+                    "passed": False,
                     "hint": (
                         _("Unknown implementation: %(id)s") % {"id": implementation_raw}
                     ),
@@ -301,14 +302,14 @@ class IntegrationCheckActionView(PanelAccessMixin, EventContextMixin, View):
             return TemplateResponse(
                 self.request,
                 "chronology/panel/integrations/_check_result.html",
-                {"outcome": "invalid_json", "hint": str(exc), "signature": ""},
+                {"passed": False, "hint": str(exc), "signature": ""},
             )
         if not isinstance(config_json, dict):
             return TemplateResponse(
                 self.request,
                 "chronology/panel/integrations/_check_result.html",
                 {
-                    "outcome": "invalid_json",
+                    "passed": False,
                     "hint": _("Configuration must be a JSON object."),
                     "signature": "",
                 },
@@ -323,17 +324,10 @@ class IntegrationCheckActionView(PanelAccessMixin, EventContextMixin, View):
                 config_json=config_json,
             )
         )
-        signature = (
-            integration_signature(connection_id, config_json)
-            if str(result.outcome) == "ok"
-            else ""
-        )
+        passed = result.outcome == CheckOutcome.OK
+        signature = integration_signature(connection_id, config_json) if passed else ""
         return TemplateResponse(
             self.request,
             "chronology/panel/integrations/_check_result.html",
-            {
-                "outcome": str(result.outcome),
-                "hint": result.hint,
-                "signature": signature,
-            },
+            {"passed": passed, "hint": result.hint, "signature": signature},
         )
