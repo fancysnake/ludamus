@@ -7,6 +7,7 @@ python = "3.14"
 node = "v25.6.1"
 poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 "ast-grep" = "0.42.1"
+markdownlint-cli2 = "latest"
 
 [env]
 # Mise creates and activates this virtualenv automatically
@@ -260,6 +261,10 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; lsof -ti :5173 | xargs kill -
 description = "Type-check frontend TypeScript"
 run = "cd src/ludamus/client && npm run typecheck"
 
+[tasks.fallow]
+description = "Analyze frontend TypeScript: dead code, duplication, complexity"
+run = "cd src/ludamus/client && npm run fallow"
+
 
 [tasks.npm]
 description = "Run npm in the frontend client directory"
@@ -270,7 +275,7 @@ dir = "src/ludamus/client"
 
 [tasks.shitcheck]
 description = "Flag suspicious additions vs main: noqa, type: ignore, Any, cast"
-run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\bobject\b|cast\\()'"
+run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\\bobject\\b|cast\\()'"
 
 [tasks.coverage]
 description = "Run all tests, collect coverage, enforce 95% threshold"
