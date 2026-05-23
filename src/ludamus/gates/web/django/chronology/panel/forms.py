@@ -48,6 +48,10 @@ class EventIntegrationForm(forms.Form):
     connection = forms.ChoiceField(label=_("Connection"))
     config_json = forms.CharField(
         label=_("Configuration (JSON)"),
+        help_text=_(
+            "A JSON object configuring the selected implementation. Run a "
+            "successful check before saving."
+        ),
         widget=forms.Textarea(attrs={"rows": 12, "spellcheck": "false"}),
         initial="{}",
     )
