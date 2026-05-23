@@ -62,7 +62,7 @@ class EventIntegrationDTO(BaseModel):
     connection_id: int
     connection_display_name: str
     display_name: str
-    config_json: dict[str, object]
+    config_json: str
 
 
 class EventIntegrationCreateData(TypedDict):
@@ -70,13 +70,13 @@ class EventIntegrationCreateData(TypedDict):
     implementation: IntegrationImplementationId
     connection_id: int
     display_name: str
-    config_json: dict[str, object]
+    config_json: str
 
 
 class EventIntegrationUpdateData(TypedDict):
     display_name: str
     connection_id: int
-    config_json: dict[str, object]
+    config_json: str
 
 
 @dataclass
@@ -84,7 +84,7 @@ class IntegrationCheckRequest:
     sphere_id: int
     implementation: IntegrationImplementationId
     connection_id: int
-    config_json: dict[str, object]
+    config_json: str
 
 
 class EventIntegrationsRepositoryProtocol(Protocol):

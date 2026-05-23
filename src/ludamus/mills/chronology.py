@@ -871,7 +871,7 @@ class EventIntegrationsService:
                 hint=f"Unknown implementation: {request.implementation}",
             )
         try:
-            config = impl.config_model.model_validate(request.config_json)
+            config = impl.config_model.model_validate_json(request.config_json)
         except ValidationError as exc:
             return CheckResult(
                 outcome=CheckOutcome.NOT_FOUND, hint=f"Invalid config: {exc}"

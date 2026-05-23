@@ -2692,7 +2692,7 @@ def _event_integration_dto(integration: EventIntegration) -> EventIntegrationDTO
         connection_id=integration.connection_id,
         connection_display_name=integration.connection.display_name,
         display_name=integration.display_name,
-        config_json=integration.config_json or {},
+        config_json=integration.config_json or "{}",
     )
 
 

@@ -407,7 +407,7 @@ def _create_data():
         implementation=_IMPL,
         connection_id=3,
         display_name="x",
-        config_json={},
+        config_json="{}",
     )
 
 
@@ -417,7 +417,7 @@ class TestEventIntegrationsServiceCheck:
 
         result = env.svc.check(
             IntegrationCheckRequest(
-                sphere_id=1, implementation=_IMPL, connection_id=2, config_json={}
+                sphere_id=1, implementation=_IMPL, connection_id=2, config_json="{}"
             )
         )
 
@@ -435,7 +435,8 @@ class TestEventIntegrationsServiceCheck:
                 sphere_id=1,
                 implementation=_IMPL,
                 connection_id=2,
-                config_json={"endpoint": 123},  # wrong type triggers ValidationError
+                # endpoint must be a string; a JSON number trips ValidationError.
+                config_json='{"endpoint": 123}',
             )
         )
 

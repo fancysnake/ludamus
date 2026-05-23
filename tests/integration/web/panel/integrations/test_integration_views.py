@@ -80,7 +80,7 @@ def _make_integration(event, connection, *, display_name: str) -> EventIntegrati
         implementation=IMPL.value,
         connection=connection,
         display_name=display_name,
-        config_json=CONFIG,
+        config_json=CONFIG_JSON,
     )
 
 
@@ -93,7 +93,7 @@ def _dto(integration: EventIntegration) -> EventIntegrationDTO:
         connection_id=integration.connection_id,
         connection_display_name=integration.connection.display_name,
         display_name=integration.display_name,
-        config_json=integration.config_json or {},
+        config_json=integration.config_json,
     )
 
 
@@ -244,7 +244,7 @@ class TestIntegrationCreatePageView:
         self, authenticated_client, active_user, sphere, event, connection
     ):
         sphere.managers.add(active_user)
-        signature = integration_signature(connection.pk, CONFIG)
+        signature = integration_signature(connection.pk, CONFIG_JSON)
 
         response = authenticated_client.post(
             _create_url(event),
@@ -454,7 +454,7 @@ class TestIntegrationCreatePageView:
     ):
         sphere.managers.add(active_user)
         _make_integration(event, connection, display_name="Taken")
-        signature = integration_signature(connection.pk, CONFIG)
+        signature = integration_signature(connection.pk, CONFIG_JSON)
 
         response = authenticated_client.post(
             _create_url(event),
@@ -711,7 +711,9 @@ class TestIntegrationCheckActionView:
             context_data={
                 "passed": True,
                 "hint": "",
-                "signature": integration_signature(connection_with_secret.pk, CONFIG),
+                "signature": integration_signature(
+                    connection_with_secret.pk, CONFIG_JSON
+                ),
             },
         )
 

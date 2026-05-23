@@ -57,7 +57,7 @@ def _form_kwargs(
         locked_kind: IntegrationKind | None = existing.kind
         exclude_pk: int | None = existing.pk
         initial_connection_id: int | None = existing.connection_id
-        initial_config_json: dict[str, object] | None = existing.config_json
+        initial_config_json: str | None = existing.config_json
     else:
         implementations = integrations_service.list_all_implementations()
         locked_kind = None
@@ -171,7 +171,7 @@ class IntegrationEditPageView(PanelAccessMixin, EventContextMixin, View):
                 "display_name": integration.display_name,
                 "implementation": integration.implementation,
                 "connection": str(integration.connection_id),
-                "config_json": json.dumps(integration.config_json, indent=2),
+                "config_json": integration.config_json,
             },
             **_form_kwargs(self.request, current_event.pk, existing=integration),
         )
@@ -297,14 +297,14 @@ class IntegrationCheckActionView(PanelAccessMixin, EventContextMixin, View):
             return HttpResponseBadRequest("Bad connection id")
 
         try:
-            config_json = json.loads(config_raw)
+            parsed_config = json.loads(config_raw)
         except json.JSONDecodeError as exc:
             return TemplateResponse(
                 self.request,
                 "chronology/panel/integrations/_check_result.html",
                 {"passed": False, "hint": str(exc), "signature": ""},
             )
-        if not isinstance(config_json, dict):
+        if not isinstance(parsed_config, dict):
             return TemplateResponse(
                 self.request,
                 "chronology/panel/integrations/_check_result.html",
@@ -321,11 +321,11 @@ class IntegrationCheckActionView(PanelAccessMixin, EventContextMixin, View):
                 sphere_id=sphere_id,
                 implementation=implementation,
                 connection_id=connection_id,
-                config_json=config_json,
+                config_json=config_raw,
             )
         )
         passed = result.outcome == CheckOutcome.OK
-        signature = integration_signature(connection_id, config_json) if passed else ""
+        signature = integration_signature(connection_id, config_raw) if passed else ""
         return TemplateResponse(
             self.request,
             "chronology/panel/integrations/_check_result.html",

@@ -1396,7 +1396,7 @@ class EventIntegration(models.Model):
         Connection, on_delete=models.PROTECT, related_name="event_integrations"
     )
     display_name = models.CharField(max_length=255)
-    config_json = models.JSONField(default=dict)
+    config_json = models.TextField(default="{}")
 
     class Meta:
         db_table = "event_integration"

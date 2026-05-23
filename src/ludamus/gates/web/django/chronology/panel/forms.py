@@ -20,8 +20,11 @@ if TYPE_CHECKING:
     from ludamus.pacts.multiverse import ConnectionDTO
 
 
-def integration_signature(connection_id: int, config_json: dict[str, object]) -> str:
-    canonical = json.dumps(config_json, sort_keys=True, separators=(",", ":"))
+def integration_signature(connection_id: int, config_json: str) -> str:
+    # Canonicalize so cosmetic whitespace changes don't force a re-check.
+    canonical = json.dumps(
+        json.loads(config_json), sort_keys=True, separators=(",", ":")
+    )
     return hashlib.sha256(f"{connection_id}:{canonical}".encode()).hexdigest()
 
 
@@ -34,7 +37,7 @@ class IntegrationFormContext:
     )
     locked_kind: IntegrationKind | None = None
     initial_connection_id: int | None = None
-    initial_config_json: dict[str, object] | None = None
+    initial_config_json: str | None = None
 
 
 class EventIntegrationForm(forms.Form):
@@ -101,7 +104,7 @@ class EventIntegrationForm(forms.Form):
                 _("Unknown implementation for this kind.")
             ) from exc
 
-    def clean_config_json(self) -> dict[str, object]:
+    def clean_config_json(self) -> str:
         raw = self.cleaned_data.get("config_json") or "{}"
         try:
             parsed = json.loads(raw)
@@ -111,14 +114,15 @@ class EventIntegrationForm(forms.Form):
             ) from exc
         if not isinstance(parsed, dict):
             raise forms.ValidationError(_("Configuration must be a JSON object."))
-        return parsed
+        # Keep the raw text; the implementation's pydantic model parses it.
+        return raw
 
     def clean(self) -> dict[str, object]:
         cleaned = super().clean() or {}
         identifier = cleaned.get("implementation")
         config_json = cleaned.get("config_json")
         if isinstance(identifier, IntegrationImplementationId) and isinstance(
-            config_json, dict
+            config_json, str
         ):
             if (impl := self._implementations.get(identifier)) is None:
                 self.add_error(
@@ -126,18 +130,18 @@ class EventIntegrationForm(forms.Form):
                 )
             else:
                 try:
-                    impl.config_model.model_validate(config_json)
+                    impl.config_model.model_validate_json(config_json)
                 except ValidationError as exc:
                     self._attach_pydantic_errors(exc)
 
-        self._enforce_unique_display_name(cleaned)
+        self._enforce_unique_display_name()
 
         if not self.errors:
-            self._enforce_check_signature(cleaned)
+            self._enforce_check_signature()
         return cleaned
 
-    def _enforce_unique_display_name(self, cleaned: dict[str, object]) -> None:
-        display_name = cleaned.get("display_name")
+    def _enforce_unique_display_name(self) -> None:
+        display_name = self.cleaned_data.get("display_name")
         if not isinstance(display_name, str):
             return
         if (kind := self.resolved_kind) is None:
@@ -154,10 +158,10 @@ class EventIntegrationForm(forms.Form):
             path = ".".join(str(p) for p in err.get("loc", ())) or "(root)"
             self.add_error("config_json", f"{path}: {err.get('msg', '')}")
 
-    def _enforce_check_signature(self, cleaned: dict[str, object]) -> None:
-        connection_id_raw = cleaned.get("connection")
-        config_json = cleaned.get("config_json")
-        if not isinstance(connection_id_raw, str) or not isinstance(config_json, dict):
+    def _enforce_check_signature(self) -> None:
+        connection_id_raw = self.cleaned_data.get("connection")
+        config_json = self.cleaned_data.get("config_json")
+        if not isinstance(connection_id_raw, str) or not isinstance(config_json, str):
             return
         connection_id = int(connection_id_raw)
 
@@ -168,7 +172,7 @@ class EventIntegrationForm(forms.Form):
             return
 
         expected = integration_signature(connection_id, config_json)
-        provided_raw = cleaned.get("last_ok_signature")
+        provided_raw = self.cleaned_data.get("last_ok_signature")
         provided = provided_raw.strip() if isinstance(provided_raw, str) else ""
         if provided != expected:
             self.add_error(
