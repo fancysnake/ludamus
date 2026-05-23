@@ -5,7 +5,7 @@ feature and propose feature file edits.
 
 ## Input
 
-icit: the most recently fired feature (in-progress, at the top
+Implicit: the most recently fired feature (in-progress, at the top
 level of `docs/features/`, since `/tbd-fire` has already moved it out
 of `drafts/`). If ambiguous, ask.
 
