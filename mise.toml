@@ -172,14 +172,14 @@ diff-cover coverage.xml --compare-branch=main
 """
 
 [tasks."test:int:cov:diff"]
-description = "Show test coverage of intergration tests for lines changed since main"
+description = "Show test coverage of integration tests for lines changed since main"
 run = [
   { task = "_pytest", args = [
     "tests/integration",
     "--cov=ludamus.gates",
     "--cov=ludamus.links",
     "--cov=ludamus.adapters.web",
-    "--cov=ludamus/templates",
+    "--cov=src/ludamus/templates/",
   ] },
   "coverage xml",
   "diff-cover coverage.xml --compare-branch=main",
