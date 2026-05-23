@@ -1,46 +1,28 @@
 ---
 status: in-progress
-updated: 2026-05-21
+updated: 2026-05-22
 ---
 
 # Import connections — sphere CRUD
 
-Sphere managers store named API connection secrets — opaque secret
-bytes with a human-readable label. One sphere can hold any number of
-connections; one connection can back multiple event-level imports (e.g.
-the same Google credential drives user sync and proposal-pull from a
-sheet). Per-event binding of a connection to a specific API
-implementation lives under
-`chronology/panel/import-service-configuration.md`.
-
-## Manage connections from the sphere panel
+## Managing connections
 
 As a sphere manager, I want to list, create, edit, and delete API
-connections on a sphere, so that the sphere has named secrets its
+connections on a sphere, so that the sphere has named credentials its
 events can reference.
 
-- Sphere panel exposes a `Połączenia importu` subpage scoped to the
-  current sphere
-- List shows display name and per-row Edit / Delete actions
-- Create form: display name + API connection secrets paste field
-- Edit form: display name editable inline; API connection secrets
-  replaceable through an explicit "replace secrets" toggle (existing
-  secrets never round-tripped to the UI)
-- Display name is unique within the sphere
-- No service type, no validity check at save time — the connection is
-  opaque until a port references it
-- Disclosure-toggle ARIA state (`aria-expanded`, `aria-required`)
-  reflects the `replace_secret` checkbox on initial render — including
-  after a validation re-render where the box was already ticked
+As a sphere manager, I want each connection on a sphere to have a
+distinct name, so that I can tell them apart in pickers.
 
-## API connection secrets encrypted at rest
+## Keeping secrets
 
-As a sphere manager, I want stored API connection secrets never to be
-visible to anyone reading the database directly, so that a leaked DB
-dump cannot authenticate as the sphere's identity to any provider.
+As a sphere manager, I want stored credentials to be unreadable to
+anyone with raw database access, so that a leaked dump cannot
+impersonate the sphere.
 
-- Secret bytes live in an encrypted column; plaintext is never
-  written
-- Edit form shows a "secrets configured" placeholder; only accepts
-  new secrets through the explicit replace flow
-- Plaintext secrets are never returned in any response body
+As a sphere manager, I want existing credentials never displayed back
+to me, so that shoulder-surfing or cached responses cannot expose them.
+
+As a sphere manager, I want replacing credentials to require an explicit
+confirmation, so that a casual edit cannot silently overwrite a working
+secret.

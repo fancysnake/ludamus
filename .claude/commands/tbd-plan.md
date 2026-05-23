@@ -1,24 +1,30 @@
 # /tbd-plan
 
-Produce `.tbd/plan.md` — a thin, condensed delta describing what this
-bullet changes. Overwrites any existing plan.
+Produce `.tbd/plan.md` — a thin, condensed delta describing what the
+feature's stories change in code. One plan per feature file, with a
+section per story. Overwrites any existing plan.
 
 ## Input
 
-A target user story (feature file + story title or index). If ambiguous, ask.
+A feature file. If ambiguous, ask.
 
 ## What you do
 
-1. Read the targeted feature file.
-2. Read the codebase enough to know what this change touches.
-3. Write `.tbd/plan.md` with three sections:
-   - **Change** — the delta, in the codebase's language. Names files,
-     models, fields, routes, components. Specific.
-   - **Touchpoints** — integration points with existing code, only when
-     there's real risk. Skip if self-contained.
-   - **Deferred** — what's punted from this bullet, named so `/tbd-refine`
-     can find it.
-4. If `.tbd/` doesn't exist, create it. If `.tbd/` is not in `.gitignore`,
+1. Read the feature file. It may live under `docs/features/drafts/...`
+   (draft) or directly under `docs/features/...` (in-progress).
+2. If `.tbd/shape.md` exists, read it. It covers the same feature in
+   non-code language. Refine it into file, class, and function names;
+   don't replace the shape.
+3. Read the codebase enough to know what this change touches.
+4. Write `.tbd/plan.md` with one `## <story title>` section per
+   story. Each section has:
+   - **Change** — the delta, in the codebase's language. Names
+     files, models, fields, routes, components. Specific.
+   - **Touchpoints** — integration points with existing code, only
+     when there's real risk. Skip if self-contained.
+   - **Deferred** — what's punted from this story, named so
+     `/tbd-refine` can find it.
+5. If `.tbd/` doesn't exist, create it. If `.tbd/` is not in `.gitignore`,
    add it.
 
 ## Tone
@@ -35,8 +41,9 @@ Good: "Add `avatar_url:string` to `User`. Edit form gets URL input +
 
 ## Length
 
-Typical: 5–15 lines. Tricky: up to 30. Hitting 60 means the bullet is too
-big — stop and tell the user to split the story before planning.
+Typical: 10–30 lines for a small feature; ~60 for a four-story
+feature. Hitting 100 means the feature is too big — stop and tell the
+user to split it before planning.
 
 ## Don'ts
 
