@@ -831,6 +831,16 @@ class EventIntegrationsService:
             if impl.kind == kind
         }
 
+    def list_all_implementations(
+        self,
+    ) -> dict[IntegrationImplementationId, IntegrationImplementation]:
+        return dict(self._registry)
+
+    def list_for_event(
+        self, event_id: int, kind: IntegrationKind | None = None
+    ) -> list[EventIntegrationDTO]:
+        return self._integrations.list_for_event(event_id, kind)
+
     def get(self, event_id: int, pk: int) -> EventIntegrationDTO:
         return self._integrations.get(event_id, pk)
 

@@ -109,6 +109,9 @@ class EventIntegrationsRepositoryProtocol(Protocol):
 
 
 class EventIntegrationsServiceProtocol(Protocol):
+    def list_for_event(
+        self, event_id: int, kind: IntegrationKind | None = None
+    ) -> list[EventIntegrationDTO]: ...
     def get(self, event_id: int, pk: int) -> EventIntegrationDTO: ...
     def create(
         self, sphere_id: int, event_id: int, data: EventIntegrationCreateData
@@ -120,6 +123,9 @@ class EventIntegrationsServiceProtocol(Protocol):
     def check(self, request: IntegrationCheckRequest) -> CheckResult: ...
     def list_implementations(
         self, kind: IntegrationKind
+    ) -> dict[IntegrationImplementationId, IntegrationImplementation]: ...
+    def list_all_implementations(
+        self,
     ) -> dict[IntegrationImplementationId, IntegrationImplementation]: ...
 
 

@@ -88,6 +88,11 @@ urlpatterns = [
         event_settings.EventDisplaySettingsPageView.as_view(),
         name="event-display-settings",
     ),
+    path(
+        "event/<slug:slug>/settings/integrations/",
+        event_settings.EventIntegrationSettingsPageView.as_view(),
+        name="event-integration-settings",
+    ),
     path("event/<slug:slug>/venues/", venues.VenuesPageView.as_view(), name="venues"),
     path(
         "event/<slug:slug>/venues/structure/",
@@ -335,7 +340,7 @@ urlpatterns = [
         name="integration-check",
     ),
     path(
-        "event/<slug:slug>/integrations/<str:kind>/add/",
+        "event/<slug:slug>/integrations/add/",
         integrations.IntegrationCreatePageView.as_view(),
         name="integration-create",
     ),

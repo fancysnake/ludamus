@@ -14,10 +14,8 @@ from ludamus.gates.web.django.chronology.panel.forms import integration_signatur
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
 
 
-def _create_url(event, kind: str = "import") -> str:
-    return reverse(
-        "panel:integration-create", kwargs={"slug": event.slug, "kind": kind}
-    )
+def _create_url(event) -> str:
+    return reverse("panel:integration-create", kwargs={"slug": event.slug})
 
 
 def _edit_url(event, integration) -> str:
@@ -49,13 +47,6 @@ class TestIntegrationCreatePageView:
         assert response.status_code == HTTPStatus.FOUND
         msgs = list(messages.get_messages(response.wsgi_request))
         assert msgs[0].message == PERMISSION_ERROR
-
-    def test_get_unknown_kind_returns_400(
-        self, authenticated_client, active_user, sphere, event
-    ):
-        sphere.managers.add(active_user)
-        response = authenticated_client.get(_create_url(event, kind="zzz"))
-        assert response.status_code == HTTPStatus.BAD_REQUEST
 
     def test_post_creates_integration_when_check_signature_matches(
         self,

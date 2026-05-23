@@ -4,24 +4,37 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, cast
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from pydantic import ValidationError
 
-from ludamus.pacts.chronology import IntegrationImplementationId
+from ludamus.pacts.chronology import IntegrationImplementationId, IntegrationKind
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
-    from ludamus.pacts.chronology import IntegrationImplementation, IntegrationKind
+    from ludamus.pacts.chronology import IntegrationImplementation
     from ludamus.pacts.multiverse import ConnectionDTO
 
 
 def integration_signature(connection_id: int, config_json: dict[str, object]) -> str:
     canonical = json.dumps(config_json, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(f"{connection_id}:{canonical}".encode()).hexdigest()
+
+
+@dataclass(frozen=True)
+class IntegrationFormContext:
+    """Per-event context used by `EventIntegrationForm` on create and edit."""
+
+    taken_display_names_by_kind: dict[IntegrationKind, set[str]] = field(
+        default_factory=dict
+    )
+    locked_kind: IntegrationKind | None = None
+    initial_connection_id: int | None = None
+    initial_config_json: dict[str, object] | None = None
 
 
 class EventIntegrationForm(forms.Form):
@@ -40,28 +53,44 @@ class EventIntegrationForm(forms.Form):
     def __init__(
         self,
         *args: Any,
-        kind: IntegrationKind,
         implementations: Mapping[
             IntegrationImplementationId, IntegrationImplementation
         ],
         connections: Iterable[ConnectionDTO],
-        initial_connection_id: int | None = None,
-        initial_config_json: dict[str, object] | None = None,
+        context: IntegrationFormContext | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.kind = kind
+        self._context = context or IntegrationFormContext()
         self._implementations: dict[
             IntegrationImplementationId, IntegrationImplementation
         ] = dict(implementations)
         impl_field = cast("forms.ChoiceField", self.fields["implementation"])
-        impl_field.choices = [
-            (impl_id.value, impl_id.value) for impl_id in self._implementations
-        ]
+        impl_field.choices = self._build_implementation_choices()
         conn_field = cast("forms.ChoiceField", self.fields["connection"])
         conn_field.choices = [(str(c.pk), c.display_name) for c in connections]
-        self._initial_connection_id = initial_connection_id
-        self._initial_config_json = initial_config_json
+
+    def _build_implementation_choices(self) -> list[tuple[str, str]]:
+        kind_order = {kind: index for index, kind in enumerate(IntegrationKind)}
+        items = sorted(
+            self._implementations.items(),
+            key=lambda item: (kind_order[item[1].kind], item[0].value),
+        )
+        return [
+            (impl_id.value, f"{impl.kind.value.capitalize()} — {impl_id.value}")
+            for impl_id, impl in items
+        ]
+
+    @property
+    def resolved_kind(self) -> IntegrationKind | None:
+        if self._context.locked_kind is not None:
+            return self._context.locked_kind
+        identifier = self.cleaned_data.get("implementation")
+        if isinstance(identifier, IntegrationImplementationId) and (
+            impl := self._implementations.get(identifier)
+        ):
+            return impl.kind
+        return None
 
     def clean_implementation(self) -> IntegrationImplementationId:
         raw = self.cleaned_data.get("implementation") or ""
@@ -101,9 +130,24 @@ class EventIntegrationForm(forms.Form):
                 except ValidationError as exc:
                     self._attach_pydantic_errors(exc)
 
+        self._enforce_unique_display_name(cleaned)
+
         if not self.errors:
             self._enforce_check_signature(cleaned)
         return cleaned
+
+    def _enforce_unique_display_name(self, cleaned: dict[str, object]) -> None:
+        display_name = cleaned.get("display_name")
+        if not isinstance(display_name, str):
+            return
+        if (kind := self.resolved_kind) is None:
+            return
+        taken = self._context.taken_display_names_by_kind.get(kind, set())
+        if display_name in taken:
+            self.add_error(
+                "display_name",
+                _("An integration with this name already exists for this kind."),
+            )
 
     def _attach_pydantic_errors(self, exc: ValidationError) -> None:
         for err in exc.errors():
@@ -118,8 +162,8 @@ class EventIntegrationForm(forms.Form):
         connection_id = int(connection_id_raw)
 
         if (
-            self._initial_connection_id == connection_id
-            and self._initial_config_json == config_json
+            self._context.initial_connection_id == connection_id
+            and self._context.initial_config_json == config_json
         ):
             return
 

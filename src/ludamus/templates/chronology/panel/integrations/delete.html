@@ -28,7 +28,7 @@
                   action="{% url 'panel:integration-delete' slug=current_event.slug pk=integration.pk %}">
                 {% csrf_token %}
                 <div class="flex justify-end gap-2">
-                    <a href="{% url 'panel:event-index' slug=current_event.slug %}"
+                    <a href="{% url 'panel:event-integration-settings' slug=current_event.slug %}"
                        class="btn btn-secondary">{% translate "Cancel" %}</a>
                     <button type="submit" class="btn btn-danger">{% translate "Delete" %}</button>
                 </div>

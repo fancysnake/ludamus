@@ -227,3 +227,24 @@ class EventProposalSettingsPageView(PanelAccessMixin, EventContextMixin, View):
 
         messages.success(self.request, _("Proposal settings saved successfully."))
         return redirect("panel:event-proposal-settings", slug=slug)
+
+
+class EventIntegrationSettingsPageView(PanelAccessMixin, EventContextMixin, View):
+    """Integrations tab — flat CRUD list across all kinds."""
+
+    request: PanelRequest
+
+    def get(self, _request: PanelRequest, slug: str) -> HttpResponse:
+        context, current_event = self.get_event_context(slug)
+        if current_event is None:
+            return redirect("panel:index")
+
+        context["active_nav"] = "settings"
+        context["active_tab"] = "integrations"
+        context["tab_urls"] = settings_tab_urls(slug)
+        context["integrations"] = (
+            self.request.services.event_integrations.list_for_event(current_event.pk)
+        )
+        return TemplateResponse(
+            self.request, "panel/integration-settings.html", context
+        )
