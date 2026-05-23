@@ -70,6 +70,10 @@ Strict rules:
 ## Rules
 
 - Views return DTOs to templates, never models
+- Avoid docstrings unless absolutely unavoidable. Code should be
+  self-explanatory; the Arrange-Act-Assert structure in tests should be obvious
+  from the code itself. Docstrings are stale the day they're committed. Keep
+  them to the bare minimum.
 - Test type follows the layer of the code under test: `mills` → unit tests;
   `gates` / `links` / `adapters.web` / templates → integration tests. This holds
   when raising coverage too — an uncovered line in `gates` / `links` means a
