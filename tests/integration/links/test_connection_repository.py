@@ -15,14 +15,10 @@ from ludamus.pacts.multiverse import ConnectionDTO
 
 class TestConnectionsRepositoryUpdate:
     def test_updates_metadata_without_overwriting_concurrent_secret_write(
-        self,
-        sphere,
-        monkeypatch,
+        self, sphere, monkeypatch
     ):
         connection = Connection.objects.create(
-            sphere=sphere,
-            display_name="Konto",
-            secret=b"old",
+            sphere=sphere, display_name="Konto", secret=b"old"
         )
         original_save = Connection.save
 
@@ -33,9 +29,7 @@ class TestConnectionsRepositoryUpdate:
         monkeypatch.setattr(Connection, "save", save_after_concurrent_secret_write)
 
         ConnectionsRepository.update(
-            sphere_id=sphere.pk,
-            pk=connection.pk,
-            display_name="New Account",
+            sphere_id=sphere.pk, pk=connection.pk, display_name="New Account"
         )
 
         connection.refresh_from_db()
