@@ -2722,11 +2722,11 @@ class EventIntegrationsRepository(EventIntegrationsRepositoryProtocol):
     def create(event_id: int, data: EventIntegrationCreateData) -> EventIntegrationDTO:
         integration = EventIntegration.objects.create(
             event_id=event_id,
-            kind=data.kind.value,
-            implementation=data.implementation.value,
-            connection_id=data.connection_id,
-            display_name=data.display_name,
-            config_json=data.config_json,
+            kind=data["kind"].value,
+            implementation=data["implementation"].value,
+            connection_id=data["connection_id"],
+            display_name=data["display_name"],
+            config_json=data["config_json"],
         )
         integration = EventIntegration.objects.select_related("connection").get(
             pk=integration.pk
@@ -2741,9 +2741,9 @@ class EventIntegrationsRepository(EventIntegrationsRepositoryProtocol):
             integration = EventIntegration.objects.get(pk=pk, event_id=event_id)
         except EventIntegration.DoesNotExist as exc:
             raise NotFoundError from exc
-        integration.display_name = data.display_name
-        integration.connection_id = data.connection_id
-        integration.config_json = data.config_json
+        integration.display_name = data["display_name"]
+        integration.connection_id = data["connection_id"]
+        integration.config_json = data["config_json"]
         integration.save(update_fields=("display_name", "connection_id", "config_json"))
         integration = EventIntegration.objects.select_related("connection").get(
             pk=integration.pk

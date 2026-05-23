@@ -8,7 +8,7 @@ the file grows past ~12 top-level members or 1000 lines.
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum, auto
-from typing import Protocol
+from typing import Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict
 
@@ -41,7 +41,7 @@ class CheckOutcome(StrEnum):
 
 @dataclass
 class CheckResult:
-    outcome: CheckOutcome | str
+    outcome: CheckOutcome
     hint: str = ""
 
 
@@ -65,8 +65,7 @@ class EventIntegrationDTO(BaseModel):
     config_json: dict[str, object]
 
 
-@dataclass
-class EventIntegrationCreateData:
+class EventIntegrationCreateData(TypedDict):
     kind: IntegrationKind
     implementation: IntegrationImplementationId
     connection_id: int
@@ -74,8 +73,7 @@ class EventIntegrationCreateData:
     config_json: dict[str, object]
 
 
-@dataclass
-class EventIntegrationUpdateData:
+class EventIntegrationUpdateData(TypedDict):
     display_name: str
     connection_id: int
     config_json: dict[str, object]

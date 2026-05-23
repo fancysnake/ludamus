@@ -847,16 +847,16 @@ class EventIntegrationsService:
     def create(
         self, sphere_id: int, event_id: int, data: EventIntegrationCreateData
     ) -> EventIntegrationDTO:
-        self._require_implementation(data.implementation, data.kind)
+        self._require_implementation(data["implementation"], data["kind"])
         # Raises NotFoundError if the connection isn't in this sphere.
-        self._connections.get(sphere_id, data.connection_id)
+        self._connections.get(sphere_id, data["connection_id"])
         with self._transaction.atomic():
             return self._integrations.create(event_id, data)
 
     def update(
         self, sphere_id: int, event_id: int, pk: int, data: EventIntegrationUpdateData
     ) -> EventIntegrationDTO:
-        self._connections.get(sphere_id, data.connection_id)
+        self._connections.get(sphere_id, data["connection_id"])
         with self._transaction.atomic():
             return self._integrations.update(event_id, pk, data)
 
