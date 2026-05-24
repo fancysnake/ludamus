@@ -18,7 +18,7 @@ from ludamus.pacts import (
     TimeSlotDTO,
     VenueDTO,
 )
-from ludamus.pacts.chronology import ConflictType
+from ludamus.pacts.chronology import ConflictType, SessionPlacement
 
 
 def _make_item(**overrides):
@@ -123,24 +123,41 @@ class TestRevertChange:
     def service(self, mock_uow):
         return TimetableService(mock_uow)
 
+    def test_revert_raises_not_found_for_log_from_another_event(
+        self, service, mock_uow
+    ):
+        """A log belonging to another event is rejected before reverting."""
+        log = MagicMock()
+        log.event_id = 2
+        log.action = ScheduleChangeAction.ASSIGN
+        log.session_id = 1
+        mock_uow.schedule_change_logs.read.return_value = log
+
+        with pytest.raises(NotFoundError):
+            service.revert_change(log_pk=1, event_pk=1)
+
+        mock_uow.agenda_items.read_by_session.assert_not_called()
+
     def test_revert_assign_raises_not_found_when_no_agenda_item(
         self, service, mock_uow
     ):
         """Line 210: agenda_item is None when reverting ASSIGN."""
         log = MagicMock()
+        log.event_id = 1
         log.action = ScheduleChangeAction.ASSIGN
         log.session_id = 1
         mock_uow.schedule_change_logs.read.return_value = log
         mock_uow.agenda_items.read_by_session.return_value = None
 
         with pytest.raises(NotFoundError):
-            service.revert_change(log_pk=1)
+            service.revert_change(log_pk=1, event_pk=1)
 
     def test_revert_unassign_raises_when_missing_placement_data(
         self, service, mock_uow
     ):
         """Lines 221-222: missing original placement data."""
         log = MagicMock()
+        log.event_id = 1
         log.action = ScheduleChangeAction.UNASSIGN
         log.session_id = 1
         log.old_space_id = None
@@ -149,11 +166,12 @@ class TestRevertChange:
         mock_uow.schedule_change_logs.read.return_value = log
 
         with pytest.raises(ValueError, match="missing original placement data"):
-            service.revert_change(log_pk=1)
+            service.revert_change(log_pk=1, event_pk=1)
 
     def test_revert_unassign_raises_when_session_not_pending(self, service, mock_uow):
         """Session must be in PENDING status to revert an unassign."""
         log = MagicMock()
+        log.event_id = 1
         log.action = ScheduleChangeAction.UNASSIGN
         log.session_id = 1
         log.old_space_id = 5
@@ -166,17 +184,75 @@ class TestRevertChange:
         mock_uow.sessions.read.return_value = session
 
         with pytest.raises(ValueError, match="is not in PENDING status"):
-            service.revert_change(log_pk=1)
+            service.revert_change(log_pk=1, event_pk=1)
 
     def test_revert_unknown_action_raises(self, service, mock_uow):
         """Lines 240-241: unknown action type."""
         log = MagicMock()
+        log.event_id = 1
         log.action = "UNKNOWN_ACTION"
         log.session_id = 1
         mock_uow.schedule_change_logs.read.return_value = log
 
         with pytest.raises(ValueError, match="Cannot revert action"):
-            service.revert_change(log_pk=1)
+            service.revert_change(log_pk=1, event_pk=1)
+
+
+class TestAssignUnassignScope:
+    """The service rejects sessions/spaces that belong to another event."""
+
+    @pytest.fixture
+    def mock_uow(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def service(self, mock_uow):
+        return TimetableService(mock_uow)
+
+    @staticmethod
+    def _event(pk):
+        event = MagicMock()
+        event.pk = pk
+        return event
+
+    @staticmethod
+    def _placement(space_pk=1):
+        return SessionPlacement(
+            space_pk=space_pk,
+            start_time=datetime(2026, 1, 1, 10, 0, tzinfo=UTC),
+            end_time=datetime(2026, 1, 1, 11, 0, tzinfo=UTC),
+        )
+
+    def test_assign_rejects_session_from_another_event(self, service, mock_uow):
+        mock_uow.sessions.read_event.return_value = self._event(2)
+
+        with pytest.raises(NotFoundError):
+            service.assign_session(
+                session_pk=1, placement=self._placement(), event_pk=1
+            )
+
+        mock_uow.agenda_items.create.assert_not_called()
+
+    def test_assign_rejects_space_from_another_event(self, service, mock_uow):
+        mock_uow.sessions.read_event.return_value = self._event(1)
+        foreign_space = MagicMock()
+        foreign_space.pk = 99
+        mock_uow.spaces.list_by_event.return_value = [foreign_space]
+
+        with pytest.raises(NotFoundError):
+            service.assign_session(
+                session_pk=1, placement=self._placement(), event_pk=1
+            )
+
+        mock_uow.agenda_items.create.assert_not_called()
+
+    def test_unassign_rejects_session_from_another_event(self, service, mock_uow):
+        mock_uow.sessions.read_event.return_value = self._event(2)
+
+        with pytest.raises(NotFoundError):
+            service.unassign_session(session_pk=1, event_pk=1)
+
+        mock_uow.agenda_items.delete.assert_not_called()
 
 
 class TestListAllForTrackAttribution:
