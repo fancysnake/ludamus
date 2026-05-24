@@ -100,7 +100,7 @@ another for one trivial read it could do via a repo).
 
 The reference implementation is `personal_data_fields`. The detailed,
 scannable how-to lives at
-[docs/agents/services-migration.md](../docs/agents/services-migration.md).
+[docs/agents/services-migration.md](../agents/services-migration.md).
 
 ### Migration: strangler fig
 
