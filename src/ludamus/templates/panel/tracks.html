@@ -27,6 +27,7 @@
     {% endif %}
 {% endblock header_actions %}
 {% block content %}
+    <div class="p-4">
     {% if current_event %}
         {% if tracks %}
             {% tessera_table %}
@@ -88,4 +89,5 @@
         <p class="text-foreground-muted">{% translate "No events available. Create an event to get started." %}</p>
     </div>
 {% endif %}
+    </div>
 {% endblock content %}

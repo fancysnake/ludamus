@@ -152,6 +152,7 @@ button {
 }
 
 :root {
+  color-scheme: light;
   --theme-bg-secondary: #fdfcfb;
   --theme-bg-tertiary: #f7f5f3;
   --theme-border: #e4ddd6;
@@ -189,6 +190,7 @@ button {
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
+    color-scheme: dark;
     --color-background: #0a0a0a;
     --theme-bg-secondary: #171717;
     --color-bg-secondary: #171717;
@@ -252,6 +254,7 @@ button {
 }
 
 .dark {
+  color-scheme: dark;
   --color-background: #0a0a0a;
   --theme-bg-secondary: #171717;
   --color-bg-secondary: #171717;
