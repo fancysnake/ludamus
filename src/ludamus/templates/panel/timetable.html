@@ -13,7 +13,7 @@
     {% csrf_token %}
     <!-- Assignment mode banner -->
     <div id="assign-mode-banner"
-         class="hidden -mx-3 sm:-mx-4 lg:-mx-8 -mt-3 sm:-mt-4 lg:-mt-8 bg-primary text-white text-sm text-center py-2 px-4 flex items-center justify-center gap-4">
+         class="hidden sticky top-28 z-30 -mx-3 sm:-mx-4 lg:-mx-8 -mt-3 sm:-mt-4 lg:-mt-8 bg-primary text-white text-sm text-center py-2 px-4 flex items-center justify-center gap-4">
         <span>{% translate "Click a position on the grid to place the session" %}</span>
         <button id="assign-mode-cancel"
                 type="button"
@@ -22,7 +22,7 @@
         </button>
     </div>
     <!-- Timetable sub-page tabs -->
-    <div class="-mt-3 sm:-mt-4 lg:-mt-8 -mx-3 sm:-mx-4 lg:-mx-8 px-3 sm:px-4 lg:px-8 pt-3 bg-bg-tertiary border-b border-border">
+    <div class="bg-bg-tertiary px-3 pt-2 border-b border-border">
         {% tabs %}
         {% tab "timetable" active=True href=tab_urls.timetable %}{% translate "Schedule" %}{% end_tab %}
         {% tab "log" href=tab_urls.log %}{% translate "Activity Log" %}{% end_tab %}
@@ -30,7 +30,7 @@
         {% tab "problems" href=tab_urls.problems %}{% translate "Problems" %}{% end_tab %}
     {% end_tabs %}
 </div>
-<div class="-mx-3 sm:-mx-4 lg:-mx-8 -mb-3 sm:-mb-4 lg:-mb-8 px-3 sm:px-4 lg:px-8 py-6 bg-bg-secondary">
+<div class="px-3 sm:px-4 py-6 bg-bg-secondary">
     <!-- Filter bar: track + date + category chips + duration chips -->
     <div id="filter-bar" class="mb-4 flex items-center gap-4 flex-wrap">
         {% if all_tracks or grid.available_dates %}

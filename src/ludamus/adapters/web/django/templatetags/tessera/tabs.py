@@ -44,11 +44,15 @@ class TabsNode(template.Node):
             k: v.resolve(context) for k, v in self.attrs.items()
         }
         extra_class = resolved.pop("class", "")
+        aria_label = resolved.pop("aria_label", None)
         classes = (
             f"{TAB_NAV_CLASS} {extra_class}".strip() if extra_class else TAB_NAV_CLASS
         )
+        aria_attr = f' aria-label="{escape(str(aria_label))}"' if aria_label else ""
         inner = self.nodelist.render(context)
-        return mark_safe(f'<nav class="{classes}">{inner}</nav>')  # noqa: S308
+        return mark_safe(  # noqa: S308
+            f'<nav class="{classes}" role="tablist"{aria_attr}>{inner}</nav>'
+        )
 
 
 @register.tag("tabs")
@@ -93,7 +97,8 @@ class TabNode(template.Node):
             icon_html = icon(str(tab_icon), **{"class": "w-4 h-4"})
 
         return mark_safe(  # noqa: S308
-            f'<a class="{classes}" aria-selected="{"true" if active else "false"}"'
+            f'<a class="{classes}" role="tab"'
+            f' aria-selected="{"true" if active else "false"}"'
             f' href="{escape(str(href))}">{icon_html}{label}</a>'
         )
 

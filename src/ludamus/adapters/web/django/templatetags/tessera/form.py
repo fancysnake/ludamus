@@ -120,15 +120,18 @@ def tessera_errors(form: BaseForm) -> str:
 
 
 @register.simple_tag
-def tessera_button(
+def tessera_button(  # noqa: PLR0913 — template-tag adapter; each param is a distinct visual axis
     text: str,
     *,
+    href: str | None = None,
     button_type: str = "submit",
     variant: str = "primary",
     size: str = "md",
     disabled: bool = False,
+    icon: str | None = None,
+    full_width_mobile: bool | None = None,
 ) -> str:
-    """Render a styled button.
+    """Render a styled button (``<button>``) or link button (``<a>``).
 
     Returns:
         HTML string of the rendered button.
@@ -136,7 +139,16 @@ def tessera_button(
     Usage:
         {% tessera_button "Submit" %}
         {% tessera_button "Cancel" button_type="button" variant="secondary" %}
+        {% tessera_button "New Venue" href=url icon="plus" %}
+        {% tessera_button "Save" full_width_mobile=False %}
     """
     return render_button(
-        text, button_type=button_type, variant=variant, size=size, disabled=disabled
+        text,
+        href=href,
+        button_type=button_type,
+        variant=variant,
+        size=size,
+        disabled=disabled,
+        icon=icon,
+        full_width_mobile=full_width_mobile,
     )

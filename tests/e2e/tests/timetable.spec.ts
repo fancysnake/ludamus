@@ -429,7 +429,7 @@ test.describe('Timetable', () => {
 
     // Tab navigation
     await expect(
-      page.getByRole('link', { name: 'Activity Log' }),
+      page.getByRole('tab', { name: 'Activity Log' }),
     ).toBeVisible();
   });
 
@@ -450,7 +450,7 @@ test.describe('Timetable', () => {
 
     // Tab navigation
     await expect(
-      page.getByRole('link', { name: 'Organizer Overview' }),
+      page.getByRole('tab', { name: 'Organizer Overview' }),
     ).toBeVisible();
 
     await page.screenshot({
@@ -467,21 +467,15 @@ test.describe('Timetable', () => {
     await page.goto('/panel/event/autumn-open/timetable/');
 
     // Click Activity Log tab
-    await page
-      .getByRole('link', { name: 'Activity Log' })
-      .click();
+    await page.getByRole('tab', { name: 'Activity Log' }).click();
     await expect(page).toHaveURL(/\/timetable\/log\//);
 
     // Click Organizer Overview tab
-    await page
-      .getByRole('link', { name: 'Organizer Overview' })
-      .click();
+    await page.getByRole('tab', { name: 'Organizer Overview' }).click();
     await expect(page).toHaveURL(/\/timetable\/overview\//);
 
     // Click Schedule tab to go back
-    await page
-      .getByRole('link', { name: 'Schedule', exact: true })
-      .click();
+    await page.getByRole('tab', { name: 'Schedule', exact: true }).click();
     await expect(page).toHaveURL(/\/timetable\/$/);
   });
 });
