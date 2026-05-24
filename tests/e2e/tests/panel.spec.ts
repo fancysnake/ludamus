@@ -247,12 +247,18 @@ test.describe('Backoffice Panel', () => {
     await expect(
       page.getByRole('heading', { name: 'Convention Center' }),
     ).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Main Hall' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Lounge' })).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Main Hall', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Lounge', exact: true }),
+    ).toBeVisible();
 
     await page.getByRole('link', { name: 'Spaces' }).first().click();
     await expect(page.getByRole('heading', { name: 'Lounge' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Fireside Alcove' })).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Fireside Alcove', exact: true }),
+    ).toBeVisible();
   });
 
   test('duplicates a venue', async ({ page }) => {
