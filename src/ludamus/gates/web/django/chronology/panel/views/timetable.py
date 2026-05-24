@@ -25,6 +25,7 @@ from ludamus.mills.chronology import (
     TimetableService,
 )
 from ludamus.pacts import UNSCHEDULED_LIST_LIMIT, NotFoundError
+from ludamus.pacts.chronology import SessionPlacement
 
 
 def _parse_iso_duration_minutes(iso: str) -> int:
@@ -308,40 +309,30 @@ class TimetableAssignView(PanelAccessMixin, EventContextMixin, View):
 
         try:
             session_pk = int(self.request.POST["session_pk"])
-            space_pk = int(self.request.POST["space_pk"])
-            start_time = datetime.fromisoformat(self.request.POST["start_time"])
-            end_time = datetime.fromisoformat(self.request.POST["end_time"])
+            placement = SessionPlacement(
+                space_pk=int(self.request.POST["space_pk"]),
+                start_time=datetime.fromisoformat(self.request.POST["start_time"]),
+                end_time=datetime.fromisoformat(self.request.POST["end_time"]),
+            )
         except KeyError, ValueError:
             return HttpResponse(status=422)
 
         uow = self.request.di.uow
-        timetable_service = TimetableService(uow)
-
-        if uow.agenda_items.read_by_session(session_pk) is not None:
-            try:
-                timetable_service.unassign_session(
-                    session_pk, user_pk=self.request.user.pk
-                )
-            except NotFoundError:
-                return HttpResponse(status=422)
-
-        conflicts = ConflictDetectionService(uow).detect_for_assignment(
-            session_pk=session_pk,
-            space_pk=space_pk,
-            start_time=start_time,
-            end_time=end_time,
-        )
-
         try:
-            timetable_service.assign_session(
+            TimetableService(uow).assign_session(
                 session_pk=session_pk,
-                space_pk=space_pk,
-                start_time=start_time,
-                end_time=end_time,
+                placement=placement,
+                event_pk=current_event.pk,
                 user_pk=self.request.user.pk,
             )
         except ValueError, NotFoundError:
             return HttpResponse(status=422)
+
+        # Conflicts are advisory: detection excludes the session itself, so it
+        # runs after assignment with the same result and only on valid input.
+        conflicts = ConflictDetectionService(uow).detect_for_assignment(
+            session_pk=session_pk, placement=placement
+        )
 
         trigger_data: dict[str, object] = {"timetableChanged": {}}
         if conflicts:
@@ -368,9 +359,10 @@ class TimetableUnassignView(PanelAccessMixin, EventContextMixin, View):
         except KeyError, ValueError:
             return HttpResponse(status=422)
 
+        uow = self.request.di.uow
         try:
-            TimetableService(self.request.di.uow).unassign_session(
-                session_pk, user_pk=self.request.user.pk
+            TimetableService(uow).unassign_session(
+                session_pk, event_pk=current_event.pk, user_pk=self.request.user.pk
             )
         except NotFoundError:
             return HttpResponse(status=422)
@@ -478,9 +470,10 @@ class TimetableRevertView(PanelAccessMixin, EventContextMixin, View):
         except KeyError, ValueError:
             return HttpResponse(status=422)
 
+        uow = self.request.di.uow
         try:
-            TimetableService(self.request.di.uow).revert_change(
-                log_pk, user_pk=self.request.user.pk
+            TimetableService(uow).revert_change(
+                log_pk, event_pk=current_event.pk, user_pk=self.request.user.pk
             )
         except ValueError, NotFoundError:
             return HttpResponse(status=422)

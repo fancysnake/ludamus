@@ -83,6 +83,15 @@ class ConflictSeverity(StrEnum):
     WARNING = auto()
 
 
+@dataclass(frozen=True)
+class SessionPlacement:
+    """A space and time window a session can be scheduled into."""
+
+    space_pk: int
+    start_time: datetime
+    end_time: datetime
+
+
 class ConflictDTO(BaseModel):
     type: ConflictType
     severity: ConflictSeverity

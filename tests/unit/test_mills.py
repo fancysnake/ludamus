@@ -142,6 +142,7 @@ class TestCFPPersonalDataFieldService:
     ):
         created = _personal_data_field(pk=99)
         fields.create.return_value = created
+        categories.list_by_event.return_value = [_category(pk=1), _category(pk=2)]
         data = {
             "name": "Email",
             "question": "Q",
@@ -164,6 +165,30 @@ class TestCFPPersonalDataFieldService:
         categories.add_field_to_categories.assert_called_once_with(
             99, {1: True, 2: False}
         )
+
+    def test_create_drops_categories_from_another_event(
+        self, service, fields, categories
+    ):
+        fields.create.return_value = _personal_data_field(pk=99)
+        categories.list_by_event.return_value = [_category(pk=1)]
+        data = {
+            "name": "Email",
+            "question": "Q",
+            "field_type": "text",
+            "options": None,
+            "is_multiple": False,
+            "allow_custom": False,
+            "max_length": 50,
+            "help_text": "",
+            "is_public": False,
+        }
+
+        service.create(
+            event_pk=7, data=data, category_requirements={1: True, 999: True}
+        )
+
+        # The foreign category pk (999) is dropped before persisting.
+        categories.add_field_to_categories.assert_called_once_with(99, {1: True})
 
     def test_create_skips_category_assignment_when_no_requirements(
         self, service, fields, categories
@@ -190,6 +215,7 @@ class TestCFPPersonalDataFieldService:
     ):
         field = _personal_data_field(pk=10)
         fields.read_by_slug.return_value = field
+        categories.list_by_event.return_value = [_category(pk=1)]
         update_data = {
             "name": "Email",
             "question": "Q",

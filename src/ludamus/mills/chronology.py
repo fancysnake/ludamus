@@ -33,6 +33,7 @@ from ludamus.pacts.chronology import (
     PersonalDataFieldFormContextDTO,
     PreferredSlotRangeDTO,
     PreferredSlotViolationDTO,
+    SessionPlacement,
     SessionPositionDTO,
     SpaceColumnDTO,
     TimeLabelDTO,
@@ -270,14 +271,34 @@ class TimetableService:
             current_venue.areas[-1].span += 1
         return venue_groups
 
+    def _require_session_in_event(self, session_pk: int, event_pk: int) -> None:
+        # Panel access only proves you manage `event_pk`; a session named in
+        # the request must belong to it, or it is cross-event tampering.
+        if self._uow.sessions.read_event(session_pk).pk != event_pk:
+            raise NotFoundError
+
+    def _require_space_in_event(self, space_pk: int, event_pk: int) -> None:
+        if space_pk not in {s.pk for s in self._uow.spaces.list_by_event(event_pk)}:
+            raise NotFoundError
+
+    def _clear_existing_assignment(
+        self, session_pk: int, event_pk: int, user_pk: int | None
+    ) -> None:
+        # Re-assigning an already-scheduled session: drop the old placement
+        # first so the new one becomes its only agenda item.
+        if self._uow.agenda_items.read_by_session(session_pk) is not None:
+            self.unassign_session(session_pk, event_pk=event_pk, user_pk=user_pk)
+
     def assign_session(
         self,
         session_pk: int,
-        space_pk: int,
-        start_time: datetime,
-        end_time: datetime,
+        placement: SessionPlacement,
+        event_pk: int,
         user_pk: int | None = None,
     ) -> None:
+        self._require_session_in_event(session_pk, event_pk)
+        self._require_space_in_event(placement.space_pk, event_pk)
+        self._clear_existing_assignment(session_pk, event_pk, user_pk)
         session = self._uow.sessions.read(session_pk)
         if session.status != SessionStatus.PENDING:
             msg = f"Session {session_pk} is not in PENDING status"
@@ -285,9 +306,9 @@ class TimetableService:
         self._uow.agenda_items.create(
             {
                 "session_id": session_pk,
-                "space_id": space_pk,
-                "start_time": start_time,
-                "end_time": end_time,
+                "space_id": placement.space_pk,
+                "start_time": placement.start_time,
+                "end_time": placement.end_time,
                 "session_confirmed": False,
             }
         )
@@ -298,13 +319,16 @@ class TimetableService:
             "session_id": session_pk,
             "user_id": user_pk,
             "action": ScheduleChangeAction.ASSIGN,
-            "new_space_id": space_pk,
-            "new_start_time": start_time,
-            "new_end_time": end_time,
+            "new_space_id": placement.space_pk,
+            "new_start_time": placement.start_time,
+            "new_end_time": placement.end_time,
         }
         self._uow.schedule_change_logs.create(log_data)
 
-    def unassign_session(self, session_pk: int, user_pk: int | None = None) -> None:
+    def unassign_session(
+        self, session_pk: int, event_pk: int, user_pk: int | None = None
+    ) -> None:
+        self._require_session_in_event(session_pk, event_pk)
         if (agenda_item := self._uow.agenda_items.read_by_session(session_pk)) is None:
             raise NotFoundError
         event = self._uow.sessions.read_event(session_pk)
@@ -321,8 +345,13 @@ class TimetableService:
         }
         self._uow.schedule_change_logs.create(log_data)
 
-    def revert_change(self, log_pk: int, user_pk: int | None = None) -> None:
+    def revert_change(
+        self, log_pk: int, event_pk: int, user_pk: int | None = None
+    ) -> None:
         log = self._uow.schedule_change_logs.read(log_pk)
+        if log.event_id != event_pk:
+            # The log belongs to another event — reject before reverting.
+            raise NotFoundError
         if log.action == ScheduleChangeAction.ASSIGN:
             agenda_item = self._uow.agenda_items.read_by_session(log.session_id)
             if agenda_item is None:
@@ -379,10 +408,13 @@ class ConflictDetectionService:
         self._uow = uow
 
     def detect_for_assignment(
-        self, session_pk: int, space_pk: int, start_time: datetime, end_time: datetime
+        self, session_pk: int, placement: SessionPlacement
     ) -> list[ConflictDTO]:
         conflicts: list[ConflictDTO] = []
         session = self._uow.sessions.read(session_pk)
+        space_pk = placement.space_pk
+        start_time = placement.start_time
+        end_time = placement.end_time
 
         # Space overlap
         overlapping_in_space = self._uow.agenda_items.list_overlapping_in_space(
@@ -451,9 +483,11 @@ class ConflictDetectionService:
         for item in scheduled:
             conflicts = self.detect_for_assignment(
                 session_pk=item.session_id,
-                space_pk=item.space_id,
-                start_time=item.start_time,
-                end_time=item.end_time,
+                placement=SessionPlacement(
+                    space_pk=item.space_id,
+                    start_time=item.start_time,
+                    end_time=item.end_time,
+                ),
             )
             for conflict in conflicts:
                 key = (item.session_id, conflict.session_pk)
@@ -704,6 +738,14 @@ class CFPPersonalDataFieldService:
             optional_category_pks={pk for pk, req in field_cats.items() if not req},
         )
 
+    def _scope_to_event(
+        self, event_pk: int, category_requirements: dict[int, bool]
+    ) -> dict[int, bool]:
+        # Drop category pks that belong to another event so a tampered
+        # request cannot link this field to a foreign event's categories.
+        valid_pks = {c.pk for c in self._categories.list_by_event(event_pk)}
+        return {pk: req for pk, req in category_requirements.items() if pk in valid_pks}
+
     def create(
         self,
         event_pk: int,
@@ -712,10 +754,8 @@ class CFPPersonalDataFieldService:
     ) -> PersonalDataFieldDTO:
         with self._transaction.atomic():
             field = self._fields.create(event_pk, data)
-            if category_requirements:
-                self._categories.add_field_to_categories(
-                    field.pk, category_requirements
-                )
+            if scoped := self._scope_to_event(event_pk, category_requirements):
+                self._categories.add_field_to_categories(field.pk, scoped)
         return field
 
     def update(
@@ -726,11 +766,10 @@ class CFPPersonalDataFieldService:
         category_requirements: dict[int, bool],
     ) -> None:
         field = self._fields.read_by_slug(event_pk, field_slug)
+        scoped = self._scope_to_event(event_pk, category_requirements)
         with self._transaction.atomic():
             self._fields.update(field.pk, data)
-            self._categories.set_personal_field_categories(
-                field.pk, category_requirements
-            )
+            self._categories.set_personal_field_categories(field.pk, scoped)
 
     def delete(self, event_pk: int, field_slug: str) -> bool:
         # Returns False when the field is in use by session types.
