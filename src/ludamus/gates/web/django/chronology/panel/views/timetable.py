@@ -218,6 +218,10 @@ class TimetableSessionDetailPartView(PanelAccessMixin, EventContextMixin, View):
         except NotFoundError:
             return redirect("panel:timetable", slug=slug)
 
+        session_event = uow.sessions.read_event(pk)
+        if session_event.pk != current_event.pk:
+            return redirect("panel:timetable", slug=slug)
+
         agenda_item = uow.agenda_items.read_by_session(pk)
         facilitators = uow.sessions.read_facilitators(pk)
         time_slots = uow.sessions.read_preferred_time_slots(pk)

@@ -84,6 +84,8 @@ target-version = ['py314']
 
 [tool.codespell]
 skip = 'node_modules,tests/e2e,*.po,*.lock,package-lock.json,vendor,src/ludamus/gates/web/django/theme/static_src/package-lock.json,CLAUDE.md'
+# 'fallow' is the frontend analysis tool, not a misspelling of 'follow'
+ignore-words-list = 'fallow'
 
 # COVERAGE
 
@@ -184,7 +186,6 @@ module = [
     "ludamus.edges.settings",
     "ludamus.gates.web.django.*",
     "ludamus.links.db.django.*",
-    "ludamus.links.docs_api.*",
     "ludamus.links.ticket_api",
 ]
 disallow_any_expr = false
