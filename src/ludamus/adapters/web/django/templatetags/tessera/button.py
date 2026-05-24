@@ -56,7 +56,7 @@ def render_button(  # noqa: PLR0913 — template-tag adapter; each param is a di
         classes.append("opacity-50 cursor-not-allowed")
     class_str = " ".join(classes)
 
-    icon_html = render_icon(icon, **{"class": _ICON_SIZE_CLASSES[size]}) if icon else ""
+    icon_html = render_icon(icon, **{"class": _ICON_SIZE_CLASSES.get(size, _ICON_SIZE_CLASSES["md"])}) if icon else ""
     body = format_html("{}{}", mark_safe(icon_html), text)  # noqa: S308
 
     if href is not None:
