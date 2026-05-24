@@ -217,3 +217,8 @@ tests/e2e/.auth-state.json
 src/ludamus/media/
 
 tests/e2e/.auth-state-empty.json
+
+# TBD
+.tbd
+
+.local
