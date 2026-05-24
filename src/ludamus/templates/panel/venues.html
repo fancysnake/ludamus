@@ -15,13 +15,13 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:venues-structure' slug=current_event.slug %}"
-           class="px-4 py-2 bg-bg-secondary text-foreground-secondary rounded-lg hover:bg-bg-tertiary transition flex items-center mr-2">
-            {% icon "rectangle-group" class="w-4 h-4 mr-2" %}
+           class="btn btn-secondary mr-2">
+            {% icon "rectangle-group" class="w-4 h-4" %}
             {% translate "Structure Overview" %}
         </a>
         <a href="{% url 'panel:venue-create' slug=current_event.slug %}"
-           class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition flex items-center">
-            {% icon "plus" class="w-4 h-4 mr-2" %}
+           class="btn btn-primary">
+            {% icon "plus" class="w-4 h-4" %}
             {% translate "New Venue" %}
         </a>
     {% endif %}

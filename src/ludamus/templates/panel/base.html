@@ -150,56 +150,56 @@
                             <a href="{% url 'panel:event-index' slug=current_event.slug %}"
                                title="{{ t_dashboard }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'index' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "home" class="w-5 h-5 mr-2" %}
+                                {% icon "home" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_dashboard }}</span>
                             </a>
                             {% translate "Call for Proposals" as t_cfp %}
                             <a href="{% url 'panel:cfp' slug=current_event.slug %}"
                                title="{{ t_cfp }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'cfp' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "rectangle-stack" class="w-5 h-5 mr-2" %}
+                                {% icon "rectangle-stack" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_cfp }}</span>
                             </a>
                             {% translate "Proposals" as t_proposals %}
                             <a href="{% url 'panel:proposals' slug=current_event.slug %}"
                                title="{{ t_proposals }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'proposals' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "document-text" class="w-5 h-5 mr-2" %}
+                                {% icon "document-text" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_proposals }}</span>
                             </a>
                             {% translate "Facilitators" as t_facilitators %}
                             <a href="{% url 'panel:facilitators' slug=current_event.slug %}"
                                title="{{ t_facilitators }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'facilitators' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "user-group" class="w-5 h-5 mr-2" %}
+                                {% icon "user-group" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_facilitators }}</span>
                             </a>
                             {% translate "Venues" as t_venues %}
                             <a href="{% url 'panel:venues' slug=current_event.slug %}"
                                title="{{ t_venues }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'venues' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "building-office-2" class="w-5 h-5 mr-2" %}
+                                {% icon "building-office-2" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_venues }}</span>
                             </a>
                             {% translate "Tracks" as t_tracks %}
                             <a href="{% url 'panel:tracks' slug=current_event.slug %}"
                                title="{{ t_tracks }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'tracks' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "tag" class="w-5 h-5 mr-2" %}
+                                {% icon "tag" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_tracks }}</span>
                             </a>
                             {% translate "Harmonogram" as t_timetable %}
                             <a href="{% url 'panel:timetable' slug=current_event.slug %}"
                                title="{{ t_timetable }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'timetable' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "calendar-days" class="w-5 h-5 mr-2" %}
+                                {% icon "calendar-days" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_timetable }}</span>
                             </a>
                             {% translate "Event Settings" as t_event_settings %}
                             <a href="{% url 'panel:event-settings' slug=current_event.slug %}"
                                title="{{ t_event_settings }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'settings' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "cog-6-tooth" class="w-5 h-5 mr-2" %}
+                                {% icon "cog-6-tooth" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_event_settings }}</span>
                             </a>
                         {% endif %}
@@ -211,7 +211,7 @@
                             <a href="{% url 'multiverse:panel:sphere-settings' %}"
                                title="{{ t_sphere_settings }}"
                                class="sidebar-link flex text-sm items-center px-2 py-3 {% if active_nav == 'sphere-settings' %}text-white bg-neutral-800{% else %}text-neutral-300 hover:bg-neutral-800{% endif %} rounded-lg transition hover:duration-0">
-                                {% icon "cog-6-tooth" class="w-5 h-5 mr-2" %}
+                                {% icon "cog-6-tooth" class="size-4.5 mr-2" %}
                                 <span class="sidebar-label">{{ t_sphere_settings }}</span>
                             </a>
                         </div>
@@ -278,7 +278,7 @@
                     {% endfor %}
                 </div>
             {% endif %}
-            <div class="relative z-0">
+            <div class="    relative z-0">
                 {% block content %}
                 {% endblock content %}
             </div>
