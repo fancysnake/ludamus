@@ -12,6 +12,7 @@ from ludamus.mills import (
     google_calendar_url,
     is_proposal_active,
     outlook_calendar_url,
+    render_markdown,
 )
 from ludamus.mills.chronology import CFPPersonalDataFieldService
 from ludamus.mills.multiverse import ConnectionsService
@@ -846,3 +847,39 @@ class TestConnectionsService:
 
         connections.delete.assert_called_once_with(1, 42)
         transaction.atomic.assert_called_once_with()
+
+
+class TestRenderMarkdown:
+    def test_renders_basic_formatting(self):
+        result = render_markdown("**bold** and *italic*")
+
+        assert "<strong>bold</strong>" in result
+        assert "<em>italic</em>" in result
+
+    def test_keeps_safe_link(self):
+        result = render_markdown("[label](https://example.com)")
+
+        assert '<a href="https://example.com"' in result
+        assert "label</a>" in result
+
+    def test_strips_script_tag(self):
+        result = render_markdown("hi<script>alert(1)</script>")
+
+        assert "<script>" not in result
+        assert "alert(1)" not in result
+
+    def test_strips_event_handler_attribute(self):
+        result = render_markdown('<p onclick="steal()">click</p>')
+
+        assert "onclick" not in result
+        assert "<p>click</p>" in result
+
+    def test_strips_javascript_url_scheme(self):
+        result = render_markdown("[x](javascript:alert(1))")
+
+        assert "javascript:" not in result
+
+    def test_strips_image_tag(self):
+        result = render_markdown("![alt](https://example.com/x.png)")
+
+        assert "<img" not in result
