@@ -7,7 +7,8 @@ rules" (GLIMPSE)
 ## Goal
 
 Break the catch-all `legacy.py` modules in `pacts/` and `mills/` into
-per-subdomain files (`chronology`, `multiverse`, `crowd`, `notice_board`),
+per-subdomain files (`submissions`, `chronology`, `multiverse`, `crowd`,
+`notice_board`),
 mirrored across the two layers, and fill in `specs/` with the business
 invariants those mills currently inline. Retire the wildcard facades.
 
@@ -72,8 +73,13 @@ Encounters is already fully migrated in `gates`/`links` and is self-contained:
 4. Run `mise run check` (importlinter) + `mise run test`.
 
 Encounters is the cleanest first cut because nothing else depends on its DTOs.
-Chronology is the fat one and should be split per bounded context (CFP /
-Enrollment / Panel / Public) only after the smaller subdomains are out.
+Submissions and Chronology are the fat ones. Submissions is now its own
+subdomain (it owns the `Session` lifecycle): carve `pacts/submissions.py ↔
+mills/submissions.py` for proposals, sessions, categories, fields, requirements
+and facilitators — its contracts currently live in `pacts/chronology.py` /
+`mills/chronology.py` and move out when carved. Split what remains of Chronology
+per bounded context (Enrollment / Panel / Public). Both only after the smaller
+subdomains are out.
 
 ## Definition of done
 

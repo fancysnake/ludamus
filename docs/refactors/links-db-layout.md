@@ -52,10 +52,11 @@ yet — it is the highest-friction file and the split is mechanical:
 1. Promote `repositories.py` → `repositories/` package; keep the facade one
    level up in `links/db/django/__init__.py` so external import paths
    (`from ludamus.links.db.django import SessionRepository`) don't change.
-2. Halve by aggregate group (don't shard): e.g. `chronology.py` (events,
-   proposals, sessions, agenda), `venues.py` (venue/area/space/track/timeslot),
-   `crowd.py` (users, connected users, spheres), `cfp.py` (categories, fields,
-   requirements). Arrange parts so they don't create circular imports.
+2. Halve by aggregate group (don't shard): e.g. `submissions.py` (sessions,
+   proposals, categories, fields, requirements, facilitators), `chronology.py`
+   (events, agenda, enrollment), `venues.py` (venue/area/space/track/timeslot),
+   `crowd.py` (users, connected users, spheres). Arrange parts so they don't
+   create circular imports.
 3. Run importlinter + tests after each halving.
 
 Defer the **model relocation** until after the repo split and after the
