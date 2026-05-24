@@ -24,5 +24,18 @@ project teaches you what you keep forgetting.
 - **"test" reserved for pytest** — no production symbol, column, or
   field uses `test` / `tested`; use `check` / `validation` /
   `verification` instead.
-- make sure the view permissions are correctly checked to not allow editing one
-  event or sphere from another.
+- **Object-scope authorization (no cross-event / cross-sphere tampering)** —
+  panel access only proves you manage the *current* sphere/event; it says
+  nothing about the objects you name in the request. For every view that acts
+  on an object identified by request-supplied data (URL `pk`/`slug`, or
+  pks/ids in the POST/GET body), confirm the object belongs to the resolved
+  `current_event`/sphere before reading or writing it. Check both:
+  - the primary object — read it scoped (`read_by_slug(event_pk, …)` /
+    `read_by_event(event_pk, pk)`) or read-then-compare
+    (`read_event(pk).pk == current_event.pk`);
+  - every related id taken from the body (space / manager / facilitator /
+    field / time-slot / category pks, `presenter_id`, log pks) — intersect it
+    against an event- or sphere-scoped set before persisting.
+  Bare-pk repo methods (`read(pk)`, `update(pk)`, `m2m.set(...)`) trust the
+  caller, so the scoping must happen at the view. Add a regression test that a
+  foreign id returns 404/422 and changes nothing.
