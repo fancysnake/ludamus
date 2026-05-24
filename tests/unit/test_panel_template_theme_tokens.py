@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 PANEL_TEMPLATE_ROOT = Path("src/ludamus/templates/panel")
 FORBIDDEN_TEXT_CLASSES = (
     "text-neutral-500",
@@ -16,8 +15,10 @@ def test_panel_templates_use_semantic_text_tokens() -> None:
 
     for path in sorted(PANEL_TEMPLATE_ROOT.rglob("*.html")):
         text = path.read_text()
-        for class_name in FORBIDDEN_TEXT_CLASSES:
-            if class_name in text:
-                matches.append(f"{path}:{class_name}")
+        matches.extend(
+            f"{path}:{class_name}"
+            for class_name in FORBIDDEN_TEXT_CLASSES
+            if class_name in text
+        )
 
     assert matches == []
