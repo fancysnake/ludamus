@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, cast
 
 from django import forms
+from django.utils.crypto import constant_time_compare, salted_hmac
 from django.utils.translation import gettext_lazy as _
 from pydantic import ValidationError
 
@@ -25,7 +25,13 @@ def integration_signature(connection_id: int, config_json: str) -> str:
     canonical = json.dumps(
         json.loads(config_json), sort_keys=True, separators=(",", ":")
     )
-    return hashlib.sha256(f"{connection_id}:{canonical}".encode()).hexdigest()
+    # Keyed with the server SECRET_KEY: only a server-run check can mint a valid
+    # token, so a client cannot forge "this passed" without actually checking.
+    return salted_hmac(
+        "ludamus.chronology.integration-check",
+        f"{connection_id}:{canonical}",
+        algorithm="sha256",
+    ).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -178,7 +184,7 @@ class EventIntegrationForm(forms.Form):
         expected = integration_signature(connection_id, config_json)
         provided_raw = self.cleaned_data.get("last_ok_signature")
         provided = provided_raw.strip() if isinstance(provided_raw, str) else ""
-        if provided != expected:
+        if not constant_time_compare(provided, expected):
             self.add_error(
                 None,
                 _(
