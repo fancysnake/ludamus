@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
 import markdown as _md
+import nh3
 
 from ludamus.pacts import (
     AgendaItemData,
@@ -62,11 +63,41 @@ def generate_share_code(length: int = 6) -> str:
     return "".join(_secret_choice(_BASE62_CHARS) for _ in range(length))
 
 
+# Restricted allowlist of HTML produced by render_markdown. Excludes images and
+# tables; nh3 strips everything else (scripts, event handlers, javascript: URLs).
+_MARKDOWN_ALLOWED_TAGS = {
+    "a",
+    "abbr",
+    "b",
+    "blockquote",
+    "br",
+    "code",
+    "em",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "hr",
+    "i",
+    "li",
+    "ol",
+    "p",
+    "pre",
+    "strong",
+    "ul",
+}
+_MARKDOWN_ALLOWED_ATTRIBUTES = {"a": {"href", "title"}, "abbr": {"title"}}
+
+
 def render_markdown(text: str) -> str:
     result: str = _md.markdown(  # type: ignore [misc]
         text, extensions=["nl2br", "fenced_code"]
     )
-    return result
+    return nh3.clean(
+        result, tags=_MARKDOWN_ALLOWED_TAGS, attributes=_MARKDOWN_ALLOWED_ATTRIBUTES
+    )
 
 
 def generate_ics_content(encounter: EncounterDTO, url: str) -> str:
