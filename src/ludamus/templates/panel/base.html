@@ -288,9 +288,7 @@
             </div>
         </main>
     </div>
-{% endblock main_region %}
-{% block extra_scripts %}
     {% include "components/confirm-dialog.html" %}
     {% vite_asset 'src/confirm.ts' %}
     {% vite_asset 'src/info-popover.ts' %}
-{% endblock extra_scripts %}
+{% endblock main_region %}
