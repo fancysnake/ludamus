@@ -232,11 +232,15 @@
                         {% icon "bars-3" class="w-6 h-6" %}
                     </button>
                     <div class="flex-1 min-w-0">
-                        <h2 class="text-xl font-bold text-foreground truncate">
-                            {% block page_title %}
-                                {% translate "Dashboard" %}
-                            {% endblock page_title %}
-                        </h2>
+                        <div class="flex items-center gap-2 min-w-0">
+                            <h2 class="text-xl font-bold text-foreground truncate">
+                                {% block page_title %}
+                                    {% translate "Dashboard" %}
+                                {% endblock page_title %}
+                            </h2>
+                            {% block page_title_adornment %}
+                            {% endblock page_title_adornment %}
+                        </div>
                         <p class="text-foreground-muted text-sm lg:text-base truncate">
                             {% block page_subtitle %}
                                 {% if current_event %}{{ current_event.name }}{% endif %}

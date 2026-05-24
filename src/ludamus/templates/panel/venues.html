@@ -7,6 +7,20 @@
 {% block page_title %}
     {% translate "Venues" %}
 {% endblock page_title %}
+{% block page_title_adornment %}
+    {% translate "What are venues?" as t_info_title %}
+    <details class="relative inline-block group">
+        <summary class="list-none cursor-pointer text-foreground-muted hover:text-foreground inline-flex p-1 -m-1 rounded-md focus-visible:outline-2 focus-visible:outline-primary"
+                 aria-label="{{ t_info_title }}"
+                 title="{{ t_info_title }}">{% icon "information-circle" class="w-5 h-5" %}</summary>
+        <div class="absolute left-0 top-full mt-2 w-80 z-30 card p-4 shadow-lg">
+            <p class="text-sm font-medium text-foreground">{{ t_info_title }}</p>
+            <p class="text-sm mt-1 text-foreground-secondary">
+                {% translate "Venues are physical locations like buildings, convention centers, or complexes. Each venue is typically identified by its address. Within venues, you can organize areas (floors, wings) and spaces (individual rooms)." %}
+            </p>
+        </div>
+    </details>
+{% endblock page_title_adornment %}
 {% block page_subtitle %}
     {% if current_event %}
         {{ current_event.name }} · {% translate "Physical Locations" %}
@@ -25,17 +39,6 @@
 {% block content %}
     <div class="p-4">
         {% if current_event %}
-            <div class="alert alert-info mb-6">
-                <div class="flex items-start gap-3">
-                    <span class="flex-shrink-0 mt-0.5">{% icon "information-circle" class="w-5 h-5" %}</span>
-                    <div>
-                        <p class="text-sm font-medium">{% translate "What are venues?" %}</p>
-                        <p class="text-sm mt-1">
-                            {% translate "Venues are physical locations like buildings, convention centers, or complexes. Each venue is typically identified by its address. Within venues, you can organize areas (floors, wings) and spaces (individual rooms)." %}
-                        </p>
-                    </div>
-                </div>
-            </div>
             {% if venues %}
                 {% tessera_table %}
                 <thead class="bg-bg-tertiary">

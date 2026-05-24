@@ -29,21 +29,28 @@ def render_button(  # noqa: PLR0913 — template-tag adapter; each param is a di
     size: str = "md",
     disabled: bool = False,
     icon: str | None = None,
+    full_width_mobile: bool | None = None,
 ) -> str:
     """Render a styled button (``<button>``) or link button (``<a>``).
 
-    When ``href`` is set, renders an ``<a>`` and skips ``max-md:w-full``
-    (which is a form-submit convention). When ``icon`` is set, the heroicon
-    is rendered before the text.
+    When ``href`` is set, renders an ``<a>``. When ``icon`` is set, the
+    heroicon is rendered before the text.
+
+    ``full_width_mobile`` controls the ``max-md:w-full`` utility — useful for
+    form-submit buttons that should stretch on mobile but rarely desired for
+    link buttons in toolbars. Defaults to ``href is None``: form-submit
+    buttons stretch, link buttons don't.
 
     Returns:
         HTML string of the rendered button.
     """
+    if full_width_mobile is None:
+        full_width_mobile = href is None
     classes = [
         _VARIANT_CLASSES.get(variant, _VARIANT_CLASSES["primary"]),
         _SIZE_CLASSES.get(size, _SIZE_CLASSES["md"]),
     ]
-    if href is None:
+    if full_width_mobile:
         classes.append("max-md:w-full")
     if disabled:
         classes.append("opacity-50 cursor-not-allowed")

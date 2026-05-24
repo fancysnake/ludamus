@@ -129,6 +129,7 @@ def tessera_button(  # noqa: PLR0913 — template-tag adapter; each param is a d
     size: str = "md",
     disabled: bool = False,
     icon: str | None = None,
+    full_width_mobile: bool | None = None,
 ) -> str:
     """Render a styled button (``<button>``) or link button (``<a>``).
 
@@ -139,6 +140,7 @@ def tessera_button(  # noqa: PLR0913 — template-tag adapter; each param is a d
         {% tessera_button "Submit" %}
         {% tessera_button "Cancel" button_type="button" variant="secondary" %}
         {% tessera_button "New Venue" href=url icon="plus" %}
+        {% tessera_button "Save" full_width_mobile=False %}
     """
     return render_button(
         text,
@@ -148,4 +150,5 @@ def tessera_button(  # noqa: PLR0913 — template-tag adapter; each param is a d
         size=size,
         disabled=disabled,
         icon=icon,
+        full_width_mobile=full_width_mobile,
     )
