@@ -384,12 +384,12 @@ def _make_service(registry):
     transaction.atomic.return_value.__exit__ = MagicMock(return_value=None)
     integrations = MagicMock()
     connections = MagicMock()
-    encryptor = MagicMock()
+    decryptor = MagicMock()
     svc = EventIntegrationsService(
         transaction=transaction,
         integrations=integrations,
         connections=connections,
-        encryptor=encryptor,
+        decryptor=decryptor,
         registry=registry,
     )
     return SimpleNamespace(
@@ -397,7 +397,7 @@ def _make_service(registry):
         transaction=transaction,
         integrations=integrations,
         connections=connections,
-        encryptor=encryptor,
+        decryptor=decryptor,
     )
 
 
@@ -423,9 +423,9 @@ class TestEventIntegrationsServiceCheck:
 
         assert result.outcome == CheckOutcome.NOT_FOUND
         assert _IMPL.value in result.hint
-        # Short-circuits before touching the connection secret or encryptor.
+        # Short-circuits before touching the connection secret or decryptor.
         env.connections.read_secret.assert_not_called()
-        env.encryptor.decrypt.assert_not_called()
+        env.decryptor.decrypt.assert_not_called()
 
     def test_invalid_config_returns_not_found(self):
         env = _make_service(registry={_IMPL: _ImportStubImpl()})
@@ -444,7 +444,25 @@ class TestEventIntegrationsServiceCheck:
         assert "Invalid config" in result.hint
         # ValidationError funnels out before reading the secret.
         env.connections.read_secret.assert_not_called()
-        env.encryptor.decrypt.assert_not_called()
+        env.decryptor.decrypt.assert_not_called()
+
+    def test_missing_connection_returns_not_found(self):
+        env = _make_service(registry={_IMPL: _ImportStubImpl()})
+        env.connections.read_secret.side_effect = NotFoundError
+
+        result = env.svc.check(
+            IntegrationCheckRequest(
+                sphere_id=1,
+                implementation=_IMPL,
+                connection_id=999,
+                config_json='{"endpoint": "x"}',
+            )
+        )
+
+        assert result.outcome == CheckOutcome.NOT_FOUND
+        assert result.hint == "Connection not found."
+        # A NotFoundError becomes a graceful result; nothing gets decrypted.
+        env.decryptor.decrypt.assert_not_called()
 
 
 class TestEventIntegrationsServiceRequireImplementation:

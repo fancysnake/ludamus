@@ -843,8 +843,14 @@ class TestIntegrationCheckActionView:
             response,
             HTTPStatus.OK,
             template_name="chronology/panel/integrations/_check_result.html",
-            # hint is the raw json.JSONDecodeError text — opaque, version-dependent.
-            context_data={"passed": False, "hint": ANY, "signature": ""},
+            context_data={
+                "passed": False,
+                "hint": (
+                    "Expecting property name enclosed in double quotes: "
+                    "line 1 column 2 (char 1)"
+                ),
+                "signature": "",
+            },
         )
 
     def test_post_non_dict_json_reports_failure(

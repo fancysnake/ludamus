@@ -41,6 +41,9 @@ class ConnectionsRepositoryProtocol(Protocol):
 
 class EncryptorProtocol(Protocol):
     def encrypt(self, plaintext: bytes) -> bytes: ...
+
+
+class DecryptorProtocol(Protocol):
     def decrypt(self, blob: bytes) -> bytes: ...
 
 

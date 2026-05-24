@@ -69,7 +69,7 @@ if TYPE_CHECKING:
     )
     from ludamus.pacts.multiverse import (
         ConnectionsRepositoryProtocol,
-        EncryptorProtocol,
+        DecryptorProtocol,
     )
     from ludamus.pacts.services import TransactionProtocol
 
@@ -813,13 +813,13 @@ class EventIntegrationsService:
         transaction: TransactionProtocol,
         integrations: EventIntegrationsRepositoryProtocol,
         connections: ConnectionsRepositoryProtocol,
-        encryptor: EncryptorProtocol,
+        decryptor: DecryptorProtocol,
         registry: dict[IntegrationImplementationId, IntegrationImplementation],
     ) -> None:
         self._transaction = transaction
         self._integrations = integrations
         self._connections = connections
-        self._encryptor = encryptor
+        self._decryptor = decryptor
         self._registry = registry
 
     def list_implementations(
@@ -876,8 +876,15 @@ class EventIntegrationsService:
             return CheckResult(
                 outcome=CheckOutcome.NOT_FOUND, hint=f"Invalid config: {exc}"
             )
-        blob = self._connections.read_secret(request.sphere_id, request.connection_id)
-        plaintext = self._encryptor.decrypt(blob) if blob else b""
+        try:
+            blob = self._connections.read_secret(
+                request.sphere_id, request.connection_id
+            )
+        except NotFoundError:
+            return CheckResult(
+                outcome=CheckOutcome.NOT_FOUND, hint="Connection not found."
+            )
+        plaintext = self._decryptor.decrypt(blob) if blob else b""
         return impl.check(plaintext, config)
 
     def _require_implementation(

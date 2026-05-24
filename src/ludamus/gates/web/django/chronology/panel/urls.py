@@ -335,22 +335,22 @@ urlpatterns = [
     ),
     path("event/<slug:slug>/timetable/", include(_timetable_urlpatterns)),
     path(
-        "event/<slug:slug>/integrations/check/",
+        "event/<slug:slug>/settings/integrations/check/",
         integrations.IntegrationCheckActionView.as_view(),
         name="integration-check",
     ),
     path(
-        "event/<slug:slug>/integrations/add/",
+        "event/<slug:slug>/settings/integrations/add/",
         integrations.IntegrationCreatePageView.as_view(),
         name="integration-create",
     ),
     path(
-        "event/<slug:slug>/integrations/<int:pk>/edit/",
+        "event/<slug:slug>/settings/integrations/<int:pk>/edit/",
         integrations.IntegrationEditPageView.as_view(),
         name="integration-edit",
     ),
     path(
-        "event/<slug:slug>/integrations/<int:pk>/delete/",
+        "event/<slug:slug>/settings/integrations/<int:pk>/delete/",
         integrations.IntegrationDeletePageView.as_view(),
         name="integration-delete",
     ),

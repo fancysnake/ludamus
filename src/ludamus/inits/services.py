@@ -7,7 +7,7 @@ from django.conf import settings
 
 from ludamus.inits.repositories import Repositories
 from ludamus.inits.transaction import DjangoTransaction
-from ludamus.links.encryption import FernetEncryptor
+from ludamus.links.encryption import FernetDecryptor, FernetEncryptor
 from ludamus.links.google_docs import GoogleDocsProposalImporter
 from ludamus.mills.chronology import (
     CFPPersonalDataFieldService,
@@ -61,6 +61,6 @@ class Services:
             self._transaction,
             self._repos.event_integrations,
             self._repos.connections,
-            FernetEncryptor(key),
+            FernetDecryptor(key),
             registry,
         )
