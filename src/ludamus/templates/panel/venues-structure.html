@@ -80,7 +80,9 @@
                                            class="text-lg font-semibold text-foreground hover:text-primary">
                                             {{ venue_item.venue.name }}
                                         </a>
-                                        {% if venue_item.venue.address %}<p class="text-sm text-foreground-muted">{{ venue_item.venue.address }}</p>{% endif %}
+                                        {% if venue_item.venue.address %}
+                                            <p class="text-sm text-foreground-muted">{{ venue_item.venue.address }}</p>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-2">

@@ -21,4 +21,4 @@ def test_panel_templates_use_semantic_text_tokens() -> None:
             if class_name in text
         )
 
-    assert matches == []
+    assert not matches

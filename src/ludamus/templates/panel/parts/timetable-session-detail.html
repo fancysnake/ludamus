@@ -80,7 +80,9 @@
     <!-- Preferred time slots -->
     {% if time_slots %}
         <div class="mb-3">
-            <div class="text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1">{% translate "Preferred slots" %}</div>
+            <div class="text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1">
+                {% translate "Preferred slots" %}
+            </div>
             <div class="space-y-1">
                 {% for slot in time_slots %}
                     <div class="text-xs text-foreground-secondary bg-bg-tertiary rounded px-2 py-1">
