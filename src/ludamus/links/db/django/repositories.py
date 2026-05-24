@@ -2645,7 +2645,7 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
         except Connection.DoesNotExist as exc:
             raise NotFoundError from exc
         connection.display_name = display_name
-        connection.save()
+        connection.save(update_fields=["display_name"])
         return ConnectionDTO.model_validate(connection)
 
     @staticmethod

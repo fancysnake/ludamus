@@ -13,6 +13,30 @@ from ludamus.pacts import NotFoundError
 from ludamus.pacts.multiverse import ConnectionDTO
 
 
+class TestConnectionsRepositoryUpdate:
+    def test_updates_metadata_without_overwriting_concurrent_secret_write(
+        self, sphere, monkeypatch
+    ):
+        connection = Connection.objects.create(
+            sphere=sphere, display_name="Konto", secret=b"old"
+        )
+        original_save = Connection.save
+
+        def save_after_concurrent_secret_write(instance, *args, **kwargs):
+            Connection.objects.filter(pk=instance.pk).update(secret=b"fresh")
+            return original_save(instance, *args, **kwargs)
+
+        monkeypatch.setattr(Connection, "save", save_after_concurrent_secret_write)
+
+        ConnectionsRepository.update(
+            sphere_id=sphere.pk, pk=connection.pk, display_name="New Account"
+        )
+
+        connection.refresh_from_db()
+        assert connection.display_name == "New Account"
+        assert bytes(connection.secret) == b"fresh"
+
+
 class TestConnectionsRepositoryUpdateSecret:
     def test_persists_blob(self, sphere):
         connection = Connection.objects.create(sphere=sphere, display_name="Konto")
