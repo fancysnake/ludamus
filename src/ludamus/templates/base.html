@@ -70,15 +70,15 @@
                         {% for message in messages %}
                             <div class="alert flex items-center {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'info' %}alert-info{% else %}alert-default{% endif %}">
                                 {% if message.tags == 'error' %}
-                                    {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                                    {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3" %}
                                 {% elif message.tags == 'warning' %}
-                                    {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                                    {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3" %}
                                 {% elif message.tags == 'success' %}
-                                    {% heroicon_outline "check-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                                    {% heroicon_outline "check-circle" class="w-5 h-5 mr-3" %}
                                 {% elif message.tags == 'info' %}
-                                    {% heroicon_outline "information-circle" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                                    {% heroicon_outline "information-circle" class="w-5 h-5 mr-3" %}
                                 {% else %}
-                                    {% heroicon_outline "chat-bubble-left-ellipsis" class="w-5 h-5 mr-3 flex-shrink-0" %}
+                                    {% heroicon_outline "chat-bubble-left-ellipsis" class="w-5 h-5 mr-3" %}
                                 {% endif %}
                                 <span class="text-sm">{{ message }}</span>
                             </div>

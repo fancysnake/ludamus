@@ -16,7 +16,7 @@
 {% block header_actions %}
     {% if current_event and category %}
         <a href="{% url 'panel:cfp' slug=current_event.slug %}"
-           class="btn btn-secondary mr-2">{% translate "Cancel" %}</a>
+           class="btn btn-secondary">{% translate "Cancel" %}</a>
         <button type="submit"
                 form="cfp-edit-form"
                 class="btn btn-primary flex items-center">
