@@ -7,6 +7,7 @@ from ludamus.gates.web.django.chronology.panel.views import (
     event_settings,
     facilitators,
     index,
+    integrations,
     personal_data_fields,
     proposals,
     session_fields,
@@ -86,6 +87,11 @@ urlpatterns = [
         "event/<slug:slug>/settings/display/",
         event_settings.EventDisplaySettingsPageView.as_view(),
         name="event-display-settings",
+    ),
+    path(
+        "event/<slug:slug>/settings/integrations/",
+        event_settings.EventIntegrationSettingsPageView.as_view(),
+        name="event-integration-settings",
     ),
     path("event/<slug:slug>/venues/", venues.VenuesPageView.as_view(), name="venues"),
     path(
@@ -328,4 +334,24 @@ urlpatterns = [
         name="facilitator-edit",
     ),
     path("event/<slug:slug>/timetable/", include(_timetable_urlpatterns)),
+    path(
+        "event/<slug:slug>/settings/integrations/check/",
+        integrations.IntegrationCheckActionView.as_view(),
+        name="integration-check",
+    ),
+    path(
+        "event/<slug:slug>/settings/integrations/add/",
+        integrations.IntegrationCreatePageView.as_view(),
+        name="integration-create",
+    ),
+    path(
+        "event/<slug:slug>/settings/integrations/<int:pk>/edit/",
+        integrations.IntegrationEditPageView.as_view(),
+        name="integration-edit",
+    ),
+    path(
+        "event/<slug:slug>/settings/integrations/<int:pk>/delete/",
+        integrations.IntegrationDeletePageView.as_view(),
+        name="integration-delete",
+    ),
 ]

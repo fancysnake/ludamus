@@ -34,11 +34,17 @@ class ConnectionsRepositoryProtocol(Protocol):
     @staticmethod
     def update_secret(sphere_id: int, pk: int, blob: bytes) -> None: ...
     @staticmethod
+    def read_secret(sphere_id: int, pk: int) -> bytes: ...
+    @staticmethod
     def delete(sphere_id: int, pk: int) -> None: ...
 
 
 class EncryptorProtocol(Protocol):
     def encrypt(self, plaintext: bytes) -> bytes: ...
+
+
+class DecryptorProtocol(Protocol):
+    def decrypt(self, blob: bytes) -> bytes: ...
 
 
 class ConnectionsServiceProtocol(Protocol):

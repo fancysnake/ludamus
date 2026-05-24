@@ -10,6 +10,8 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, tzinfo
 from typing import TYPE_CHECKING
 
+from pydantic import ValidationError
+
 from ludamus.pacts import (
     FieldUsageSummary,
     NotFoundError,
@@ -21,14 +23,24 @@ from ludamus.pacts.chronology import (
     TIMETABLE_ROOM_PAGE_SIZE,
     TIMETABLE_SLOT_MINUTES,
     AreaGroupDTO,
+    CheckOutcome,
+    CheckResult,
     ConflictDTO,
     ConflictSeverity,
     ConflictType,
+    EventIntegrationCreateData,
+    EventIntegrationDTO,
+    EventIntegrationsRepositoryProtocol,
+    EventIntegrationUpdateData,
     HeatmapCellDTO,
     HeatmapCellStatus,
     HeatmapDayDTO,
     HeatmapDTO,
     HeatmapRowDTO,
+    IntegrationCheckRequest,
+    IntegrationImplementation,
+    IntegrationImplementationId,
+    IntegrationKind,
     PersonalDataFieldEditContextDTO,
     PersonalDataFieldFormContextDTO,
     PreferredSlotRangeDTO,
@@ -54,6 +66,10 @@ if TYPE_CHECKING:
         SpaceDTO,
         TimeSlotDTO,
         UnitOfWorkProtocol,
+    )
+    from ludamus.pacts.multiverse import (
+        ConnectionsRepositoryProtocol,
+        DecryptorProtocol,
     )
     from ludamus.pacts.services import TransactionProtocol
 
@@ -779,3 +795,101 @@ class CFPPersonalDataFieldService:
             return False
         self._fields.delete(field.pk)
         return True
+
+
+class IntegrationImplementationNotFoundError(Exception):
+    """Raised when the registry has no implementation for an identifier."""
+
+
+class EventIntegrationsService:
+    """CRUD + check dispatch for per-event integrations.
+
+    The registry of `IntegrationImplementation`s is composition-time data
+    passed in from `inits/`; the mill never imports a concrete impl.
+    """
+
+    def __init__(
+        self,
+        transaction: TransactionProtocol,
+        integrations: EventIntegrationsRepositoryProtocol,
+        connections: ConnectionsRepositoryProtocol,
+        decryptor: DecryptorProtocol,
+        registry: dict[IntegrationImplementationId, IntegrationImplementation],
+    ) -> None:
+        self._transaction = transaction
+        self._integrations = integrations
+        self._connections = connections
+        self._decryptor = decryptor
+        self._registry = registry
+
+    def list_implementations(
+        self, kind: IntegrationKind
+    ) -> dict[IntegrationImplementationId, IntegrationImplementation]:
+        return {
+            impl_id: impl
+            for impl_id, impl in self._registry.items()
+            if impl.kind == kind
+        }
+
+    def list_all_implementations(
+        self,
+    ) -> dict[IntegrationImplementationId, IntegrationImplementation]:
+        return dict(self._registry)
+
+    def list_for_event(
+        self, event_id: int, kind: IntegrationKind | None = None
+    ) -> list[EventIntegrationDTO]:
+        return self._integrations.list_for_event(event_id, kind)
+
+    def get(self, event_id: int, pk: int) -> EventIntegrationDTO:
+        return self._integrations.get(event_id, pk)
+
+    def create(
+        self, sphere_id: int, event_id: int, data: EventIntegrationCreateData
+    ) -> EventIntegrationDTO:
+        self._require_implementation(data["implementation"], data["kind"])
+        # Raises NotFoundError if the connection isn't in this sphere.
+        self._connections.get(sphere_id, data["connection_id"])
+        with self._transaction.atomic():
+            return self._integrations.create(event_id, data)
+
+    def update(
+        self, sphere_id: int, event_id: int, pk: int, data: EventIntegrationUpdateData
+    ) -> EventIntegrationDTO:
+        self._connections.get(sphere_id, data["connection_id"])
+        with self._transaction.atomic():
+            return self._integrations.update(event_id, pk, data)
+
+    def delete(self, event_id: int, pk: int) -> None:
+        with self._transaction.atomic():
+            self._integrations.delete(event_id, pk)
+
+    def check(self, request: IntegrationCheckRequest) -> CheckResult:
+        if (impl := self._registry.get(request.implementation)) is None:
+            return CheckResult(
+                outcome=CheckOutcome.NOT_FOUND,
+                hint=f"Unknown implementation: {request.implementation}",
+            )
+        try:
+            config = impl.config_model.model_validate_json(request.config_json)
+        except ValidationError as exc:
+            return CheckResult(
+                outcome=CheckOutcome.NOT_FOUND, hint=f"Invalid config: {exc}"
+            )
+        try:
+            blob = self._connections.read_secret(
+                request.sphere_id, request.connection_id
+            )
+        except NotFoundError:
+            return CheckResult(
+                outcome=CheckOutcome.NOT_FOUND, hint="Connection not found."
+            )
+        plaintext = self._decryptor.decrypt(blob) if blob else b""
+        return impl.check(plaintext, config)
+
+    def _require_implementation(
+        self, identifier: IntegrationImplementationId, kind: IntegrationKind
+    ) -> None:
+        impl = self._registry.get(identifier)
+        if impl is None or impl.kind != kind:
+            raise IntegrationImplementationNotFoundError(identifier)

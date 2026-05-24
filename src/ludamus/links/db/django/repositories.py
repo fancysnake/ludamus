@@ -17,6 +17,7 @@ from ludamus.adapters.db.django.models import (
     EncounterRSVP,
     EnrollmentConfig,
     Event,
+    EventIntegration,
     EventProposalSettings,
     EventSettings,
     Facilitator,
@@ -118,6 +119,14 @@ from ludamus.pacts import (
     UserType,
     VenueDTO,
     VenueRepositoryProtocol,
+)
+from ludamus.pacts.chronology import (
+    EventIntegrationCreateData,
+    EventIntegrationDTO,
+    EventIntegrationsRepositoryProtocol,
+    EventIntegrationUpdateData,
+    IntegrationImplementationId,
+    IntegrationKind,
 )
 from ludamus.pacts.multiverse import ConnectionDTO, ConnectionsRepositoryProtocol
 
@@ -2650,9 +2659,6 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
 
     @staticmethod
     def update_secret(sphere_id: int, pk: int, blob: bytes) -> None:
-        # Write-only: overwrite the encrypted blob. The repo surface
-        # exposes no read for these bytes — decrypt is owned by the
-        # import-execution slice with separate key handling.
         updated = Connection.objects.filter(pk=pk, sphere_id=sphere_id).update(
             secret=blob
         )
@@ -2660,7 +2666,92 @@ class ConnectionsRepository(ConnectionsRepositoryProtocol):
             raise NotFoundError
 
     @staticmethod
+    def read_secret(sphere_id: int, pk: int) -> bytes:
+        # Returns the encrypted blob. Decryption is the encryptor's job.
+        try:
+            connection = Connection.objects.only("secret").get(
+                pk=pk, sphere_id=sphere_id
+            )
+        except Connection.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return bytes(connection.secret)
+
+    @staticmethod
     def delete(sphere_id: int, pk: int) -> None:
         deleted, _ = Connection.objects.filter(pk=pk, sphere_id=sphere_id).delete()
+        if not deleted:
+            raise NotFoundError
+
+
+def _event_integration_dto(integration: EventIntegration) -> EventIntegrationDTO:
+    return EventIntegrationDTO(
+        pk=integration.pk,
+        event_id=integration.event_id,
+        kind=IntegrationKind(integration.kind),
+        implementation=IntegrationImplementationId(integration.implementation),
+        connection_id=integration.connection_id,
+        connection_display_name=integration.connection.display_name,
+        display_name=integration.display_name,
+        config_json=integration.config_json or "{}",
+    )
+
+
+class EventIntegrationsRepository(EventIntegrationsRepositoryProtocol):
+    @staticmethod
+    def list_for_event(
+        event_id: int, kind: IntegrationKind | None = None
+    ) -> list[EventIntegrationDTO]:
+        qs = EventIntegration.objects.select_related("connection").filter(
+            event_id=event_id
+        )
+        if kind is not None:
+            qs = qs.filter(kind=kind.value)
+        return [_event_integration_dto(i) for i in qs.order_by("kind", "display_name")]
+
+    @staticmethod
+    def get(event_id: int, pk: int) -> EventIntegrationDTO:
+        try:
+            integration = EventIntegration.objects.select_related("connection").get(
+                pk=pk, event_id=event_id
+            )
+        except EventIntegration.DoesNotExist as exc:
+            raise NotFoundError from exc
+        return _event_integration_dto(integration)
+
+    @staticmethod
+    def create(event_id: int, data: EventIntegrationCreateData) -> EventIntegrationDTO:
+        integration = EventIntegration.objects.create(
+            event_id=event_id,
+            kind=data["kind"].value,
+            implementation=data["implementation"].value,
+            connection_id=data["connection_id"],
+            display_name=data["display_name"],
+            config_json=data["config_json"],
+        )
+        integration = EventIntegration.objects.select_related("connection").get(
+            pk=integration.pk
+        )
+        return _event_integration_dto(integration)
+
+    @staticmethod
+    def update(
+        event_id: int, pk: int, data: EventIntegrationUpdateData
+    ) -> EventIntegrationDTO:
+        try:
+            integration = EventIntegration.objects.get(pk=pk, event_id=event_id)
+        except EventIntegration.DoesNotExist as exc:
+            raise NotFoundError from exc
+        integration.display_name = data["display_name"]
+        integration.connection_id = data["connection_id"]
+        integration.config_json = data["config_json"]
+        integration.save(update_fields=("display_name", "connection_id", "config_json"))
+        integration = EventIntegration.objects.select_related("connection").get(
+            pk=integration.pk
+        )
+        return _event_integration_dto(integration)
+
+    @staticmethod
+    def delete(event_id: int, pk: int) -> None:
+        deleted, _ = EventIntegration.objects.filter(pk=pk, event_id=event_id).delete()
         if not deleted:
             raise NotFoundError

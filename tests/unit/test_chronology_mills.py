@@ -1,10 +1,14 @@
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic import BaseModel
 
 from ludamus.mills.chronology import (
     ConflictDetectionService,
+    EventIntegrationsService,
+    IntegrationImplementationNotFoundError,
     TimetableOverviewService,
     TimetableService,
 )
@@ -18,7 +22,16 @@ from ludamus.pacts import (
     TimeSlotDTO,
     VenueDTO,
 )
-from ludamus.pacts.chronology import ConflictType, SessionPlacement
+from ludamus.pacts.chronology import (
+    CheckOutcome,
+    CheckResult,
+    ConflictType,
+    EventIntegrationCreateData,
+    IntegrationCheckRequest,
+    IntegrationImplementationId,
+    IntegrationKind,
+    SessionPlacement,
+)
 
 
 def _make_item(**overrides):
@@ -337,3 +350,139 @@ class TestTimetableOverviewServiceDefaults:
         result = svc.all_conflicts_grouped(event_pk=1, conflicts=None)
 
         assert not result
+
+
+# --- EventIntegrationsService ---
+
+
+class _StrictConfig(BaseModel):
+    endpoint: str
+
+
+class _ImportStubImpl:
+    kind = IntegrationKind.IMPORT
+    config_model = _StrictConfig
+
+    def check(self, secret, config):  # noqa: ARG002 - protocol shape
+        return CheckResult(outcome=CheckOutcome.OK, hint="")
+
+
+class _TicketingStubImpl:
+    kind = IntegrationKind.TICKETING
+    config_model = BaseModel
+
+    def check(self, secret, config):  # noqa: ARG002 - protocol shape
+        return CheckResult(outcome=CheckOutcome.OK, hint="")
+
+
+_IMPL = IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER
+
+
+def _make_service(registry):
+    transaction = MagicMock()
+    transaction.atomic.return_value.__enter__ = MagicMock(return_value=None)
+    transaction.atomic.return_value.__exit__ = MagicMock(return_value=None)
+    integrations = MagicMock()
+    connections = MagicMock()
+    decryptor = MagicMock()
+    svc = EventIntegrationsService(
+        transaction=transaction,
+        integrations=integrations,
+        connections=connections,
+        decryptor=decryptor,
+        registry=registry,
+    )
+    return SimpleNamespace(
+        svc=svc,
+        transaction=transaction,
+        integrations=integrations,
+        connections=connections,
+        decryptor=decryptor,
+    )
+
+
+def _create_data():
+    return EventIntegrationCreateData(
+        kind=IntegrationKind.IMPORT,
+        implementation=_IMPL,
+        connection_id=3,
+        display_name="x",
+        config_json="{}",
+    )
+
+
+class TestEventIntegrationsServiceCheck:
+    def test_unknown_implementation_returns_not_found(self):
+        env = _make_service(registry={})
+
+        result = env.svc.check(
+            IntegrationCheckRequest(
+                sphere_id=1, implementation=_IMPL, connection_id=2, config_json="{}"
+            )
+        )
+
+        assert result.outcome == CheckOutcome.NOT_FOUND
+        assert _IMPL.value in result.hint
+        # Short-circuits before touching the connection secret or decryptor.
+        env.connections.read_secret.assert_not_called()
+        env.decryptor.decrypt.assert_not_called()
+
+    def test_invalid_config_returns_not_found(self):
+        env = _make_service(registry={_IMPL: _ImportStubImpl()})
+
+        result = env.svc.check(
+            IntegrationCheckRequest(
+                sphere_id=1,
+                implementation=_IMPL,
+                connection_id=2,
+                # endpoint must be a string; a JSON number trips ValidationError.
+                config_json='{"endpoint": 123}',
+            )
+        )
+
+        assert result.outcome == CheckOutcome.NOT_FOUND
+        assert "Invalid config" in result.hint
+        # ValidationError funnels out before reading the secret.
+        env.connections.read_secret.assert_not_called()
+        env.decryptor.decrypt.assert_not_called()
+
+    def test_missing_connection_returns_not_found(self):
+        env = _make_service(registry={_IMPL: _ImportStubImpl()})
+        env.connections.read_secret.side_effect = NotFoundError
+
+        result = env.svc.check(
+            IntegrationCheckRequest(
+                sphere_id=1,
+                implementation=_IMPL,
+                connection_id=999,
+                config_json='{"endpoint": "x"}',
+            )
+        )
+
+        assert result.outcome == CheckOutcome.NOT_FOUND
+        assert result.hint == "Connection not found."
+        # A NotFoundError becomes a graceful result; nothing gets decrypted.
+        env.decryptor.decrypt.assert_not_called()
+
+
+class TestEventIntegrationsServiceRequireImplementation:
+    def test_create_with_unknown_implementation_raises(self):
+        env = _make_service(registry={})
+
+        with pytest.raises(IntegrationImplementationNotFoundError):
+            env.svc.create(sphere_id=1, event_id=2, data=_create_data())
+
+        # Guard raises before any IO or transaction.
+        env.connections.get.assert_not_called()
+        env.transaction.atomic.assert_not_called()
+        env.integrations.create.assert_not_called()
+
+    def test_create_with_wrong_kind_raises(self):
+        env = _make_service(registry={_IMPL: _TicketingStubImpl()})
+
+        with pytest.raises(IntegrationImplementationNotFoundError):
+            env.svc.create(sphere_id=1, event_id=2, data=_create_data())
+
+        env.connections.get.assert_not_called()
+        env.transaction.atomic.assert_not_called()
+        env.integrations.create.assert_not_called()

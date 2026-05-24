@@ -189,6 +189,7 @@ module = [
     "ludamus.gates.web.django.*",
     "ludamus.links.db.django.*",
     "ludamus.links.ticket_api",
+    "ludamus.links.google_docs",
 ]
 disallow_any_expr = false
 

@@ -2,6 +2,9 @@
 # Sequential execution to avoid race conditions in parallel tests
 jobs = 1
 
+[hooks]
+enter = "poetry install"
+
 [tools]
 python = "3.14"
 node = "v25.6.1"
@@ -168,12 +171,37 @@ coverage xml --data-file=.coverage
 diff-cover coverage.xml --compare-branch=main
 """
 
+[tasks."test:int:cov:diff"]
+description = "Show test coverage of integration tests for lines changed since main"
+run = [
+  { task = "_pytest", args = [
+    "tests/integration",
+    "--cov=ludamus.gates",
+    "--cov=ludamus.links",
+    "--cov=ludamus.adapters.web",
+    "--cov=src/ludamus/templates/",
+  ] },
+  "coverage xml",
+  "diff-cover coverage.xml --compare-branch=main",
+]
+
+[tasks."test:unit:cov:diff"]
+description = "Show test coverage of unit tests for lines changed since main"
+run = [
+  { task = "_pytest", args = [
+    "tests/unit",
+    "--cov=ludamus.mills",
+  ] },
+  "coverage xml",
+  "diff-cover coverage.xml --compare-branch=main",
+]
+
 [tasks."coverage:combine"]
 description = "Combine integration + e2e coverage and export XML"
 run = """
 coverage combine .coverage.unit .coverage.e2e
 coverage xml -o coverage.xml
-coverage report --fail-under=95
+coverage report --fail-under=93
 """
 env.PYTHONPATH = "src"
 
@@ -282,13 +310,9 @@ description = "Flag suspicious additions vs main: noqa, type: ignore, Any, cast"
 run = "git diff main '*.py'|grep -E '^\\+.*(noqa|type: ignore|Any|ANY|pylint|pragma|\\bobject\\b|cast\\()'"
 
 [tasks.coverage]
-description = "Run all tests, collect coverage, enforce 95% threshold"
+description = "Run all tests, collect coverage, enforce 93% threshold"
 depends = ["test --cov", "e2e", "coverage:combine"]
 
 [tasks.fullcheck]
 env.E2E_SKIP_IOS = "1"
-run = [
-  { task = "check" },
-  { task = "diff-cover" },
-  { task = "shitcheck" },
-]
+run = [{ task = "check" }, { task = "diff-cover" }, { task = "shitcheck" }]

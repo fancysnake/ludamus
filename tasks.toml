@@ -6,6 +6,14 @@ run = "poetry"
 description = "Run any django-admin subcommand"
 run = "./scripts/varlock run -- django-admin"
 
+[messages]
+description = "Extract translatable strings into locale/pl (file-only locations, no line numbers)"
+run = "./scripts/varlock run -- django-admin makemessages -l pl --add-location=file"
+
+[messages-compile]
+description = "Compile locale/pl translations to .mo"
+run = "./scripts/varlock run -- django-admin compilemessages -l pl"
+
 [start]
 description = "Start Django dev server with frontend watch"
 run = "./scripts/varlock run -- ./scripts/dev"

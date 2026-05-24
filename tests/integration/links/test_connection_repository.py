@@ -77,22 +77,23 @@ class TestConnectionsRepositoryUpdateSecret:
             )
 
 
-class TestConnectionsRepositorySurfaceIsWriteOnly:
-    """Guard against accidental decrypt paths in this slice."""
+class TestConnectionsRepositorySecretSurface:
+    """Guard the shape of the repo's secret access surface."""
 
     def test_dto_does_not_carry_blob(self):
-        # ConnectionDTO must never gain a secret field — the blob is
-        # opaque and write-only at this layer.
+        # ConnectionDTO must never gain a secret field — listing a
+        # connection never returns its bytes.
         field_names = list(ConnectionDTO.model_fields)
         assert "secret" not in field_names
 
-    def test_repo_exposes_no_secret_read_method(self):
-        # No method that returns or yields the blob may exist on the
-        # repo surface. This is greppable: any future "get_secret" /
-        # "read_secret" / "secret" accessor will trip here.
+    def test_repo_exposes_only_known_secret_methods(self):
+        # The repo can expose `update_secret` (write) and `read_secret`
+        # (read the encrypted blob — caller owns decryption). Any other
+        # secret-named method needs explicit acknowledgement here.
+        allowed = {"update_secret", "read_secret"}
         for name in dir(ConnectionsRepository):
-            if name.startswith("_"):
+            if name.startswith("_") or "secret" not in name:
                 continue
             assert (
-                "secret" not in name or name == "update_secret"
+                name in allowed
             ), f"Unexpected secret accessor on repo surface: {name}"

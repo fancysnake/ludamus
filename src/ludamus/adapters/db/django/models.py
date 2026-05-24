@@ -1384,3 +1384,29 @@ class Connection(models.Model):
     @property
     def has_secret(self) -> bool:
         return bool(self.secret)
+
+
+class EventIntegration(models.Model):
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="integrations"
+    )
+    kind = models.CharField(max_length=32)
+    implementation = models.CharField(max_length=128)
+    connection = models.ForeignKey(
+        Connection, on_delete=models.PROTECT, related_name="event_integrations"
+    )
+    display_name = models.CharField(max_length=255)
+    config_json = models.TextField(default="{}")
+
+    class Meta:
+        db_table = "event_integration"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("event", "kind", "display_name"),
+                name="event_integration_unique_display_name",
+            ),
+        )
+        ordering = ("kind", "display_name")
+
+    def __str__(self) -> str:
+        return self.display_name

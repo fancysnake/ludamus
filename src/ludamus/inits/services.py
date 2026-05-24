@@ -1,12 +1,23 @@
+from __future__ import annotations
+
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 
 from ludamus.inits.repositories import Repositories
 from ludamus.inits.transaction import DjangoTransaction
-from ludamus.links.encryption import FernetEncryptor
-from ludamus.mills.chronology import CFPPersonalDataFieldService
+from ludamus.links.encryption import FernetDecryptor, FernetEncryptor
+from ludamus.links.google_docs import GoogleDocsProposalImporter
+from ludamus.mills.chronology import (
+    CFPPersonalDataFieldService,
+    EventIntegrationsService,
+)
 from ludamus.mills.multiverse import ConnectionsService, SpherePanelService
+from ludamus.pacts.chronology import IntegrationImplementationId
+
+if TYPE_CHECKING:
+    from ludamus.pacts.chronology import IntegrationImplementation
 
 
 class Services:
@@ -37,3 +48,19 @@ class Services:
     @cached_property
     def sphere_panel(self) -> SpherePanelService:
         return SpherePanelService(self._repos.spheres, self._repos.events)
+
+    @cached_property
+    def event_integrations(self) -> EventIntegrationsService:
+        key: str = settings.CREDENTIALS_ENCRYPTION_KEY
+        registry: dict[IntegrationImplementationId, IntegrationImplementation] = {
+            IntegrationImplementationId.GOOGLE_PROPOSAL_PULLER: (
+                GoogleDocsProposalImporter()
+            )
+        }
+        return EventIntegrationsService(
+            self._transaction,
+            self._repos.event_integrations,
+            self._repos.connections,
+            FernetDecryptor(key),
+            registry,
+        )

@@ -24,8 +24,6 @@ mise tasks          # list all tasks with descriptions
 - NEVER modify, create, or delete non-TypeScript configuration files without
   explicit per-case approval.
 
-<python>
-
 ## Architecture
 
 GLIMPSE system:
@@ -72,6 +70,17 @@ Strict rules:
 ## Rules
 
 - Views return DTOs to templates, never models
+- Avoid docstrings unless absolutely unavoidable. Code should be
+  self-explanatory; the Arrange-Act-Assert structure in tests should be obvious
+  from the code itself. Docstrings are stale the day they're committed. Keep
+  them to the bare minimum.
+- Test type follows the layer of the code under test: `mills` → unit tests;
+  `gates` / `links` / `adapters.web` / templates → integration tests. This holds
+  when raising coverage too — an uncovered line in `gates` / `links` means a
+  missing **integration** test, never a quick mock-everything unit test of
+  IO-bearing code (views, repos, importers). Exception: pure IO-free helper
+  functions (e.g. template-tag filters) may be unit-tested wherever they live.
+  See `docs/TESTING_STRATEGY.md`.
 - Use `assert_response` utility for view tests, never manual assertions
 - In tests, NEVER use ANY for simple values ([], {}, booleans, strings, ints).
   Use ANY only for forms/views. See docs/agents/testing-assertions.md.
@@ -90,8 +99,6 @@ Strict rules:
     the symptom appears, not a blanket allowance.
   - **Pre-existing legacy-module facade** — `<layer>/__init__.py` wildcarding
     `<layer>/legacy.py` (mills, pacts, inits) stays as is.
-
-</python>
 
 ## Translation conventions (Polish)
 
