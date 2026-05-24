@@ -13,7 +13,7 @@
     {% csrf_token %}
     <!-- Assignment mode banner -->
     <div id="assign-mode-banner"
-         class="hidden -mx-3 sm:-mx-4 lg:-mx-8 -mt-3 sm:-mt-4 lg:-mt-8 bg-primary text-white text-sm text-center py-2 px-4 flex items-center justify-center gap-4">
+         class="hidden sticky top-28 z-30 -mx-3 sm:-mx-4 lg:-mx-8 -mt-3 sm:-mt-4 lg:-mt-8 bg-primary text-white text-sm text-center py-2 px-4 flex items-center justify-center gap-4">
         <span>{% translate "Click a position on the grid to place the session" %}</span>
         <button id="assign-mode-cancel"
                 type="button"

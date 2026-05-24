@@ -98,10 +98,12 @@
 {% block main_region %}
     <div class="flex flex-1">
         <!-- Mobile Sidebar Overlay -->
-        <div id="sidebarOverlay"
-             class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden"
-             hx-on:click="document.getElementById('sidebar').classList.toggle('-translate-x-full'); this.classList.toggle('hidden')">
-        </div>
+        <button type="button"
+                id="sidebarOverlay"
+                class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden w-full h-full cursor-default"
+                aria-label="{% translate "Close navigation" %}"
+                hx-on:click="document.getElementById('sidebar').classList.toggle('-translate-x-full'); this.classList.toggle('hidden')">
+        </button>
         <!-- Sidebar -->
         <aside id="sidebar"
                class="sidebar-panel w-64 bg-neutral-900 text-white flex-shrink-0 fixed inset-y-0 left-0 z-50 -translate-x-full lg:translate-x-0 lg:sticky lg:inset-auto lg:top-0 lg:z-auto lg:h-screen flex flex-col">
@@ -123,7 +125,7 @@
                 <!-- Event Selector -->
                 {% if events %}
                     <div class="sidebar-fold-hide px-4 mb-6">
-                        <label class="text-xs text-foreground-muted uppercase tracking-wider">{% translate "Event" %}</label>
+                        <label for="eventSelector" class="text-xs text-foreground-muted uppercase tracking-wider">{% translate "Event" %}</label>
                         <div class="relative mt-1">
                             <select id="eventSelector"
                                     class="w-full appearance-none bg-neutral-800 border border-neutral-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -291,4 +293,14 @@
     {% include "components/confirm-dialog.html" %}
     {% vite_asset 'src/confirm.ts' %}
     {% vite_asset 'src/info-popover.ts' %}
+    <script type="module">
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            const overlay = document.getElementById('sidebarOverlay');
+            const sidebar = document.getElementById('sidebar');
+            if (!overlay || overlay.classList.contains('hidden')) return;
+            overlay.classList.add('hidden');
+            sidebar.classList.add('-translate-x-full');
+        });
+    </script>
 {% endblock main_region %}

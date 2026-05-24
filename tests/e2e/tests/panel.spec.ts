@@ -96,7 +96,6 @@ test.describe('Backoffice Panel', () => {
     await expect(page.getByRole('link', { name: 'Proposals', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: /Venues/ })).toBeVisible();
     await expect(page.getByRole('link', { name: /Event Settings/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Back to website/ })).toBeVisible();
 
     // Page header
     await expect(

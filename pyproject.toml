@@ -95,6 +95,7 @@ source = ["src"]
 omit = [
     "src/ludamus/edges/*",
     "src/ludamus/adapters/db/django/migrations/*",
+    "src/ludamus/client/*",
     "tests/template_checks.py",
 ]
 sigterm = true

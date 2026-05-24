@@ -76,7 +76,9 @@
                                 <div class="relative inline-block">
                                     <button type="button"
                                             class="action-dropdown-toggle p-2 rounded-lg bg-bg-tertiary hover:bg-border text-foreground-secondary inline-flex items-center"
-                                            aria-haspopup="true">
+                                            aria-haspopup="true"
+                                            aria-expanded="false"
+                                            aria-label="{% blocktranslate with name=venue.name %}More actions for {{ name }}{% endblocktranslate %}">
                                         {% icon "ellipsis-horizontal" class="w-4 h-4" %}
                                     </button>
                                     <div class="action-dropdown-menu hidden absolute right-0 mt-2 w-40 bg-bg-secondary rounded-lg shadow-lg border border-border z-10">
@@ -117,11 +119,16 @@
                             const menu = button.nextElementSibling;
                             const isOpen = !menu.classList.contains('hidden');
                             document.querySelectorAll('.action-dropdown-menu').forEach(m => m.classList.add('hidden'));
-                            if (!isOpen) menu.classList.remove('hidden');
+                            document.querySelectorAll('.action-dropdown-toggle').forEach(b => b.setAttribute('aria-expanded', 'false'));
+                            if (!isOpen) {
+                                menu.classList.remove('hidden');
+                                button.setAttribute('aria-expanded', 'true');
+                            }
                         });
                     });
                     document.addEventListener('click', () => {
                         document.querySelectorAll('.action-dropdown-menu').forEach(m => m.classList.add('hidden'));
+                        document.querySelectorAll('.action-dropdown-toggle').forEach(b => b.setAttribute('aria-expanded', 'false'));
                     });
                 })();
                 (function() {

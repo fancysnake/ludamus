@@ -7,9 +7,11 @@ from django.contrib import messages
 from django.urls import reverse
 
 from ludamus.adapters.db.django.models import (
+    Facilitator,
     ProposalCategory,
     Session,
     SessionField,
+    SessionFieldOption,
     SessionFieldValue,
 )
 from ludamus.pacts import EventDTO, SessionDTO
@@ -405,3 +407,119 @@ class TestProposalEditPageView:
 
         sfv = SessionFieldValue.objects.get(session=session, field=field)
         assert sfv.value == "Homebrew"
+
+    def test_get_renders_all_session_field_types(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        session = _make_session(event, sphere)
+
+        genres = SessionField.objects.create(
+            event=event,
+            name="Genres",
+            question="Which genres?",
+            slug="genres",
+            field_type="select",
+            is_multiple=True,
+            help_text="Pick all that apply",
+            order=0,
+        )
+        SessionFieldOption.objects.create(
+            field=genres, label="Horror", value="horror", order=0
+        )
+        SessionFieldOption.objects.create(
+            field=genres, label="Comedy", value="comedy", order=1
+        )
+
+        system = SessionField.objects.create(
+            event=event,
+            name="System",
+            question="Which RPG system?",
+            slug="system",
+            field_type="select",
+            allow_custom=True,
+            order=1,
+        )
+        SessionFieldOption.objects.create(
+            field=system, label="D&D", value="dnd", order=0
+        )
+
+        adult = SessionField.objects.create(
+            event=event,
+            name="18+",
+            question="Adult content?",
+            slug="adult",
+            field_type="checkbox",
+            order=2,
+        )
+
+        notes = SessionField.objects.create(
+            event=event,
+            name="Notes",
+            question="Anything else?",
+            slug="notes",
+            field_type="text",
+            allow_custom=True,
+            max_length=99,
+            help_text="Free text",
+            order=3,
+        )
+
+        SessionFieldValue.objects.create(
+            session=session, field=genres, value=["horror"]
+        )
+        SessionFieldValue.objects.create(session=session, field=system, value="dnd")
+        SessionFieldValue.objects.create(session=session, field=adult, value=True)
+        SessionFieldValue.objects.create(
+            session=session, field=notes, value="Bring dice"
+        )
+
+        response = authenticated_client.get(self.get_url(event, session.pk))
+
+        assert response.status_code == HTTPStatus.OK
+        html = response.content.decode()
+        assert 'name="session_field_genres"' in html
+        assert "Pick all that apply" in html
+        assert 'name="session_field_system"' in html
+        assert 'name="session_field_system_custom"' in html
+        assert 'name="session_field_adult"' in html
+        assert 'name="session_field_notes"' in html
+        assert 'maxlength="99"' in html
+        assert 'name="session_field_notes_custom"' in html
+        assert "Free text" in html
+
+    def test_get_renders_facilitator_picker_with_assigned_marked(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        session = _make_session(event, sphere)
+
+        assigned = Facilitator.objects.create(
+            event=event, display_name="Alice", slug="alice", user=None
+        )
+        unassigned = Facilitator.objects.create(
+            event=event, display_name="Bob", slug="bob", user=None
+        )
+        session.facilitators.add(assigned)
+
+        response = authenticated_client.get(self.get_url(event, session.pk))
+
+        assert response.status_code == HTTPStatus.OK
+        html = response.content.decode()
+        assert 'id="facilitator-search"' in html
+        assert f'value="{assigned.pk}"' in html
+        assert f'value="{unassigned.pk}"' in html
+        assert "Alice" in html
+        assert "Bob" in html
+        assigned_row = html[
+            html.index(f'value="{assigned.pk}"') : html.index(f'value="{assigned.pk}"')
+            + 200
+        ]
+        assert "checked" in assigned_row
+        unassigned_row = html[
+            html.index(f'value="{unassigned.pk}"') : html.index(
+                f'value="{unassigned.pk}"'
+            )
+            + 200
+        ]
+        assert "checked" not in unassigned_row
