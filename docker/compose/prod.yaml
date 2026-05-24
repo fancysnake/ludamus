@@ -10,8 +10,14 @@ x-app-build: &app-build
 
 x-app-defaults: &app-defaults
   <<: *app-build
+  # Container env comes from .env.local, materialized on the CI runner from
+  # GitHub Environment vars/secrets and scp'd to the host. The deploy
+  # validates it with varlock against .env.schema before upload, so the
+  # compose CLI here just reads the file — no varlock/node on the host.
+  # PYTHONPATH is intentionally absent: it is an image concern, set by
+  # ENV PYTHONPATH=src in docker/Dockerfile.
   env_file:
-    - ../../.env
+    - ../../.env.local
   environment:
     GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-1}
   networks:
