@@ -7,6 +7,11 @@
 {% block page_title %}
     {% translate "Tracks" %}
 {% endblock page_title %}
+{% block page_title_adornment %}
+    {% translate "What are tracks?" as t_info_title %}
+    {% translate "Tracks let you group proposals by thematic area. Public tracks are shown to proposers in the submission wizard; private tracks are for internal categorization only." as t_info_body %}
+    {% include "components/info_popover.html" with title=t_info_title body=t_info_body %}
+{% endblock page_title_adornment %}
 {% block page_subtitle %}
     {% if current_event %}
         {{ current_event.name }} · {% translate "Tracks" %}
@@ -23,11 +28,6 @@
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
-        <div class="alert-info mb-6">
-            <p class="text-sm">
-                {% blocktranslate %}Tracks let you group proposals by thematic area. Public tracks are shown to proposers in the submission wizard; private tracks are for internal categorization only.{% endblocktranslate %}
-            </p>
-        </div>
         {% if tracks %}
             {% tessera_table %}
             <thead class="bg-bg-tertiary">
