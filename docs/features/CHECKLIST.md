@@ -24,3 +24,5 @@ project teaches you what you keep forgetting.
 - **"test" reserved for pytest** — no production symbol, column, or
   field uses `test` / `tested`; use `check` / `validation` /
   `verification` instead.
+- make sure the view permissions are correctly checked to not allow editing one
+  event or sphere from another.
