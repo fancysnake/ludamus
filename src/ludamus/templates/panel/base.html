@@ -125,7 +125,10 @@
                 <!-- Event Selector -->
                 {% if events %}
                     <div class="sidebar-fold-hide px-4 mb-6">
-                        <label for="eventSelector" class="text-xs text-foreground-muted uppercase tracking-wider">{% translate "Event" %}</label>
+                        <label for="eventSelector"
+                               class="text-xs text-foreground-muted uppercase tracking-wider">
+                            {% translate "Event" %}
+                        </label>
                         <div class="relative mt-1">
                             <select id="eventSelector"
                                     class="w-full appearance-none bg-neutral-800 border border-neutral-700 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
