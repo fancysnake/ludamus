@@ -15,7 +15,7 @@
 {% block header_actions %}
     {% if current_event %}
         <a href="{% url 'panel:venues' slug=current_event.slug %}"
-           class="px-4 py-2 bg-neutral-100 text-foreground-secondary rounded-lg hover:bg-neutral-200 transition flex items-center mr-2">
+           class="px-4 py-2 bg-bg-secondary text-foreground-secondary rounded-lg hover:bg-bg-tertiary transition flex items-center mr-2">
             {% icon "list-bullet" class="w-4 h-4 mr-2" %}
             {% translate "List View" %}
         </a>

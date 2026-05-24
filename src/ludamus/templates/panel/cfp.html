@@ -24,7 +24,7 @@
 {% endblock header_actions %}
 {% block content %}
     {% if current_event %}
-        <div class="-mt-3 sm:-mt-4 lg:-mt-8 -mx-3 sm:-mx-4 lg:-mx-8 px-3 sm:px-4 lg:px-8 pt-3 bg-bg-tertiary border-b border-border">
+        <div class="bg-bg-tertiary px-3 pt-2 border-b border-border">
             {% tabs %}
             {% tab "types" active=True href=tab_urls.types %}{% translate "Session Types" %}{% end_tab %}
             {% tab "host" href=tab_urls.host %}{% translate "Host Data Fields" %}{% end_tab %}
@@ -32,7 +32,7 @@
             {% tab "time_slots" href=tab_urls.time_slots %}{% translate "Time Slots" %}{% end_tab %}
         {% end_tabs %}
     </div>
-    <div class="-mx-3 sm:-mx-4 lg:-mx-8 -mb-3 sm:-mb-4 lg:-mb-8 px-3 sm:px-4 lg:px-8 py-6 bg-bg-secondary">
+    <div class="px-3 sm:px-4 py-6 bg-bg-secondary">
         {% if categories %}
             <div class="bg-bg-secondary rounded-2xl shadow-[--theme-shadow] border border-border overflow-x-auto">
                 <table class="min-w-full divide-y divide-border">
