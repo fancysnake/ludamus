@@ -68,6 +68,14 @@ class TestGoogleDocsProposalImporterCheckGuards:
         assert result.outcome == CheckOutcome.AUTH_FAILED
         assert "not valid JSON" in result.hint
 
+    def test_secret_json_but_not_object(self):
+        result = GoogleDocsProposalImporter().check(b"123", CONFIG)
+
+        assert result.outcome == CheckOutcome.AUTH_FAILED
+        assert result.hint == (
+            "Connection secret must be a JSON object (service-account key)."
+        )
+
     def test_invalid_credentials(self, google):
         google.creds.side_effect = ValueError("bad key")
 

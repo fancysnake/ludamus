@@ -60,6 +60,11 @@ class GoogleDocsProposalImporter:
                 outcome=CheckOutcome.AUTH_FAILED,
                 hint=f"Connection secret is not valid JSON: {exc}",
             )
+        if not isinstance(info, dict):
+            return CheckResult(
+                outcome=CheckOutcome.AUTH_FAILED,
+                hint="Connection secret must be a JSON object (service-account key).",
+            )
 
         try:
             credentials: Credentials = (
