@@ -68,7 +68,9 @@
                 {% if messages %}
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-2">
                         {% for message in messages %}
-<div class="alert flex items-center {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'info' %}alert-info{% else %}alert-default{% endif %}" {% if message.tags == 'error' or message.tags == 'warning' %}role="alert"{% else %}role="status"{% endif %} aria-live="{% if message.tags == 'error' or message.tags == 'warning' %}assertive{% else %}polite{% endif %}">
+                            <div class="alert flex items-center {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'info' %}alert-info{% else %}alert-default{% endif %}"
+                                 {% if message.tags == 'error' or message.tags == 'warning' %}role="alert"{% else %}role="status"{% endif %}
+                                 aria-live="{% if message.tags == 'error' or message.tags == 'warning' %}assertive{% else %}polite{% endif %}">
                                 {% if message.tags == 'error' %}
                                     {% heroicon_outline "exclamation-triangle" class="w-5 h-5 mr-3" %}
                                 {% elif message.tags == 'warning' %}
