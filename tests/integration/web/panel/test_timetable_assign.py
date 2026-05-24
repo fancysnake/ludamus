@@ -4,8 +4,17 @@ from http import HTTPStatus
 from django.contrib import messages
 from django.urls import reverse
 
+from ludamus.adapters.db.django.models import AgendaItem
 from ludamus.pacts.chronology import TIMETABLE_SLOT_MINUTES, TimetableGridDTO
-from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
+from tests.integration.conftest import (
+    AgendaItemFactory,
+    AreaFactory,
+    EventFactory,
+    ProposalCategoryFactory,
+    SessionFactory,
+    SpaceFactory,
+    VenueFactory,
+)
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -239,6 +248,69 @@ class TestTimetableAssignView:
         assert agenda_item.start_time == new_start
         assert agenda_item.end_time == new_end
 
+    def test_returns_422_for_session_from_another_event(
+        self, authenticated_client, active_user, sphere, event, area
+    ):
+        sphere.managers.add(active_user)
+        space = SpaceFactory(area=area)
+        other_event = EventFactory(sphere=sphere)
+        other_session = SessionFactory(
+            category=ProposalCategoryFactory(event=other_event),
+            sphere=sphere,
+            status="pending",
+            participants_limit=10,
+            min_age=0,
+        )
+        start_time = event.start_time
+        end_time = start_time + timedelta(hours=1)
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            {
+                "session_pk": other_session.pk,
+                "space_pk": space.pk,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        other_session.refresh_from_db()
+        assert other_session.status == "pending"
+        assert not AgendaItem.objects.filter(session=other_session).exists()
+
+    def test_returns_422_for_space_from_another_event(
+        self, authenticated_client, active_user, sphere, event, proposal_category
+    ):
+        sphere.managers.add(active_user)
+        foreign_space = SpaceFactory(
+            area=AreaFactory(venue=VenueFactory(event=EventFactory(sphere=sphere)))
+        )
+        session = SessionFactory(
+            category=proposal_category,
+            sphere=sphere,
+            status="pending",
+            participants_limit=10,
+            min_age=0,
+        )
+        start_time = event.start_time
+        end_time = start_time + timedelta(hours=1)
+
+        response = authenticated_client.post(
+            self.get_url(event),
+            {
+                "session_pk": session.pk,
+                "space_pk": foreign_space.pk,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        session.refresh_from_db()
+        assert session.status == "pending"
+        assert not AgendaItem.objects.filter(session=session).exists()
+
 
 class TestTimetableUnassignView:
     """Tests for /panel/event/<slug>/timetable/do/unassign/ POST endpoint."""
@@ -324,3 +396,36 @@ class TestTimetableUnassignView:
         )
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def test_returns_422_for_session_from_another_event(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        other_event = EventFactory(sphere=sphere)
+        other_space = SpaceFactory(
+            area=AreaFactory(venue=VenueFactory(event=other_event))
+        )
+        other_session = SessionFactory(
+            category=ProposalCategoryFactory(event=other_event),
+            sphere=sphere,
+            status="scheduled",
+            participants_limit=10,
+            min_age=0,
+        )
+        start_time = other_event.start_time
+        end_time = start_time + timedelta(hours=1)
+        AgendaItemFactory(
+            session=other_session,
+            space=other_space,
+            start_time=start_time,
+            end_time=end_time,
+        )
+
+        response = authenticated_client.post(
+            self.get_url(event), {"session_pk": other_session.pk}
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        other_session.refresh_from_db()
+        assert other_session.status == "scheduled"
+        assert AgendaItem.objects.filter(session=other_session).exists()

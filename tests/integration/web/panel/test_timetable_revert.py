@@ -4,7 +4,15 @@ from http import HTTPStatus
 from django.contrib import messages
 from django.urls import reverse
 
-from tests.integration.conftest import AgendaItemFactory, SessionFactory, SpaceFactory
+from tests.integration.conftest import (
+    AgendaItemFactory,
+    AreaFactory,
+    EventFactory,
+    ProposalCategoryFactory,
+    SessionFactory,
+    SpaceFactory,
+    VenueFactory,
+)
 from tests.integration.utils import assert_response
 
 PERMISSION_ERROR = "You don't have permission to access the backoffice panel."
@@ -82,6 +90,46 @@ class TestTimetableRevertView:
         )
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def test_returns_422_for_log_from_another_event(
+        self, authenticated_client, active_user, sphere, event
+    ):
+        sphere.managers.add(active_user)
+        other_event = EventFactory(sphere=sphere)
+        other_space = SpaceFactory(
+            area=AreaFactory(venue=VenueFactory(event=other_event))
+        )
+        other_session = SessionFactory(
+            category=ProposalCategoryFactory(event=other_event),
+            sphere=sphere,
+            status="pending",
+            participants_limit=5,
+            min_age=0,
+        )
+        start = other_event.start_time
+        end = start + timedelta(hours=1)
+        # Assign within the other event to create a log entry there.
+        authenticated_client.post(
+            self.get_assign_url(other_event),
+            data={
+                "session_pk": other_session.pk,
+                "space_pk": other_space.pk,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+            },
+        )
+        log_response = authenticated_client.get(self.get_log_url(other_event))
+        assign_log = log_response.context["logs"][0]
+        assert assign_log.action == "assign"
+
+        # Attempt to revert the other event's log via the current event.
+        response = authenticated_client.post(
+            self.get_url(event), data={"log_pk": assign_log.pk}
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        other_session.refresh_from_db()
+        assert other_session.status == "scheduled"
 
     def test_revert_assign_unschedules_session(
         self, authenticated_client, active_user, sphere, event, proposal_category, area
