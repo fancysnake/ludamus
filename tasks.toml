@@ -4,23 +4,23 @@ run = "poetry"
 
 [dj]
 description = "Run any django-admin subcommand"
-run = "./scripts/varlock run -- django-admin"
+run = "varlock run --no-redact-stdout -- django-admin"
 
 [messages]
 description = "Extract translatable strings into locale/pl (file-only locations, no line numbers)"
-run = "./scripts/varlock run -- django-admin makemessages -l pl --add-location=file"
+run = "varlock run -- django-admin makemessages -l pl --add-location=file"
 
 [messages-compile]
 description = "Compile locale/pl translations to .mo"
-run = "./scripts/varlock run -- django-admin compilemessages -l pl"
+run = "varlock run -- django-admin compilemessages -l pl"
 
 [start]
 description = "Start Django dev server with frontend watch"
-run = "./scripts/varlock run -- ./scripts/dev"
+run = "varlock run -- ./scripts/dev -p 8000"
 
 [dev]
 description = "Start Django dev server with frontend watch"
-run = "./scripts/varlock run -- ./scripts/dev"
+run = "varlock run -- ./scripts/dev"
 
 [build-frontend]
 description = "Build frontend assets (CSS + JS)"
@@ -44,8 +44,8 @@ print(f'CREDENTIALS_ENCRYPTION_KEY={Fernet.generate_key().decode()}')
 " > .env.local
   echo "Generated .env.local with per-dev secrets."
 fi
-./scripts/varlock run -- django-admin migrate --noinput
-./scripts/varlock run -- django-admin createcachetable
-./scripts/varlock run -- django-admin downloadvendor
-./scripts/varlock run -- python scripts/bootstrap_dev.py
+varlock run -- django-admin migrate --noinput
+varlock run -- django-admin createcachetable
+varlock run -- django-admin downloadvendor
+varlock run -- python scripts/bootstrap_dev.py
 """

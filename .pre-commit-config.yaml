@@ -66,7 +66,7 @@ repos:
     hooks:
       - id: varlock-scan
         name: varlock scan (sensitive value leaks)
-        entry: ./scripts/varlock scan --staged
+        entry: varlock scan --staged
         language: system
         pass_filenames: false
         stages: [pre-commit]

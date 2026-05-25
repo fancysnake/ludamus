@@ -6,13 +6,14 @@ jobs = 1
 python = "3.14"
 node = "v25.6.1"
 poetry = { version = "2.3.2", pyproject = "/app/pyproject.toml" }
+"npm:varlock" = "latest"
 
 [env]
 # Mise creates and activates this virtualenv automatically
 _.python.venv = { path = ".venv", create = true }
 
 # Tasks are defined explicitly here, not included from /app/tasks.toml.
-# The host tasks wrap `dj` / `start` with `./scripts/varlock run --` to load
+# The host tasks wrap `dj` / `start` with `varlock run --` to load
 # .env layers; inside the container, env is already supplied by docker
 # compose's environment passthrough, and scripts/varlock is not present.
 

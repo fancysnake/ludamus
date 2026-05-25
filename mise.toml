@@ -11,6 +11,7 @@ node = "v25.6.1"
 poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 "ast-grep" = "0.42.1"
 markdownlint-cli2 = "latest"
+"npm:varlock" = "latest"
 
 [env]
 # Mise creates and activates this virtualenv automatically
@@ -278,7 +279,7 @@ arg "[dc_args]" var=#true double_dash="optional"
 '''
 run = '''
 GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}
-./scripts/varlock run -- \
+varlock run -- \
   docker compose --env-file /dev/null \
     -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_args")}}
 '''
