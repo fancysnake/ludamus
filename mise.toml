@@ -10,8 +10,8 @@ python = "3.14"
 node = "v25.6.1"
 poetry = { version = "2.3.2", pyproject = "{{ config_root }}/pyproject.toml" }
 "ast-grep" = "0.42.1"
-markdownlint-cli2 = "latest"
-"npm:varlock" = "latest"
+markdownlint-cli2 = "v0.22.1"
+"npm:varlock" = "1.2.0"
 
 [env]
 # Mise creates and activates this virtualenv automatically
