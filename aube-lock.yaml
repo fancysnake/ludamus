@@ -29,6 +29,9 @@ importers:
       fallow:
         specifier: 2.73.0
         version: 2.73.0
+      portless:
+        specifier: 0.13.0
+        version: 0.13.0
 
   src/ludamus/client:
     dependencies:
@@ -57,9 +60,6 @@ importers:
       '@tailwindcss/vite':
         specifier: 4.2.4
         version: 4.2.4(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
-      portless:
-        specifier: 0.13.0
-        version: 0.13.0
       postcss-nested:
         specifier: 7.0.2
         version: 7.0.2(postcss@8.5.15)
