@@ -2,8 +2,11 @@
   "name": "ludamus",
   "version": "0.0.0",
   "private": true,
-  "description": "System-wide Node dependencies (varlock, fallow). Frontend deps live in src/ludamus/client/package.json; e2e deps in tests/e2e/package.json.",
+  "description": "event planning for nerds",
   "license": "MIT",
+  "scripts": {
+    "varlock": "varlock run --"
+  },
   "dependencies": {
     "varlock": "1.1.0"
   },
