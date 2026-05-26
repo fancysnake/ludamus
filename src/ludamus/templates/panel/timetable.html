@@ -12,6 +12,7 @@
 {% block content %}
     {% csrf_token %}
     <!-- Assignment mode banner -->
+    {# ludamus-disable:no-negative-margin -- sticky banner bleeds edge-to-edge of panel base padding so bg-primary fills the viewport width #}
     <div id="assign-mode-banner"
          class="hidden sticky top-28 z-30 -mx-3 sm:-mx-4 lg:-mx-8 -mt-3 sm:-mt-4 lg:-mt-8 bg-primary text-white text-sm text-center py-2 px-4 flex items-center justify-center gap-4">
         <span>{% translate "Click a position on the grid to place the session" %}</span>
