@@ -32,8 +32,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
       - run: mise install
-      - run: npm ci --prefix src/ludamus/client
-      - run: ./scripts/varlock scan
+      - run: aube install
+      - run: aube exec varlock scan
 
   impeccable:
     runs-on: ubuntu-latest

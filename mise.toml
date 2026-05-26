@@ -279,7 +279,7 @@ arg "[dc_args]" var=#true double_dash="optional"
 '''
 run = '''
 GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-$(git rev-parse --short HEAD)}
-./scripts/varlock run -- \
+aube exec varlock run -- \
   docker compose --env-file /dev/null \
     -f docker/compose/{{ usage.environment }}.yaml {{arg(name="dc_args")}}
 '''
@@ -296,7 +296,7 @@ run = "cd src/ludamus/client && npm run typecheck"
 
 [tasks.fallow]
 description = "Analyze frontend TypeScript: dead code, duplication, complexity"
-run = "cd src/ludamus/client && npm run fallow"
+run = "aube exec -C src/ludamus/client fallow"
 
 
 [tasks.npm]

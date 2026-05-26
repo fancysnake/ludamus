@@ -1,0 +1,13 @@
+{
+  "name": "ludamus",
+  "version": "0.0.0",
+  "private": true,
+  "description": "System-wide Node dependencies (varlock, fallow). Frontend deps live in src/ludamus/client/package.json; e2e deps in tests/e2e/package.json.",
+  "license": "MIT",
+  "dependencies": {
+    "varlock": "1.1.0"
+  },
+  "devDependencies": {
+    "fallow": "2.73.0"
+  }
+}

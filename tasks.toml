@@ -4,23 +4,23 @@ run = "poetry"
 
 [dj]
 description = "Run any django-admin subcommand"
-run = "./scripts/varlock run -- django-admin"
+run = "aube exec varlock run -- django-admin"
 
 [messages]
 description = "Extract translatable strings into locale/pl (file-only locations, no line numbers)"
-run = "./scripts/varlock run -- django-admin makemessages -l pl --add-location=file"
+run = "aube exec varlock run -- django-admin makemessages -l pl --add-location=file"
 
 [messages-compile]
 description = "Compile locale/pl translations to .mo"
-run = "./scripts/varlock run -- django-admin compilemessages -l pl"
+run = "aube exec varlock run -- django-admin compilemessages -l pl"
 
 [start]
 description = "Start Django dev server with frontend watch"
-run = "./scripts/varlock run -- ./scripts/dev"
+run = "aube exec varlock run -- ./scripts/dev"
 
 [dev]
 description = "Start Django dev server with frontend watch"
-run = "./scripts/varlock run -- ./scripts/dev"
+run = "aube exec varlock run -- ./scripts/dev"
 
 [build-frontend]
 description = "Build frontend assets (CSS + JS)"
@@ -32,6 +32,7 @@ cd src/ludamus/client && npm install && npm run build
 description = "Set up the dev environment from scratch — idempotent"
 run = """
 poetry install
+aube install
 (cd src/ludamus/client && npm install)
 if [ ! -f .env.local ]; then
   python -c "
@@ -44,8 +45,8 @@ print(f'CREDENTIALS_ENCRYPTION_KEY={Fernet.generate_key().decode()}')
 " > .env.local
   echo "Generated .env.local with per-dev secrets."
 fi
-./scripts/varlock run -- django-admin migrate --noinput
-./scripts/varlock run -- django-admin createcachetable
-./scripts/varlock run -- django-admin downloadvendor
-./scripts/varlock run -- python scripts/bootstrap_dev.py
+aube exec varlock run -- django-admin migrate --noinput
+aube exec varlock run -- django-admin createcachetable
+aube exec varlock run -- django-admin downloadvendor
+aube exec varlock run -- python scripts/bootstrap_dev.py
 """
