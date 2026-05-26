@@ -260,13 +260,6 @@ aubr -C src/ludamus/client build
 description = "Run the e2e dev server (assumes `e2e:prep` has run)"
 run = "exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload"
 
-[tasks."e2e:boot"]
-description = "Prep e2e fixtures and start dev server"
-run = """
-mise run e2e:prep
-exec mise run e2e:serve
-"""
-
 # DEPLOYMENT
 
 [tasks.dc]
