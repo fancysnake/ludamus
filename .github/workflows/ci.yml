@@ -51,7 +51,7 @@ jobs:
           fetch-depth: 0
       - uses: jdx/mise-action@v2
       - run: mise install
-      - name: Install workspace dependencies (no playwright)
+      - name: install deps
         run: aube install --no-optional
       # Non-blocking: fallow surfaces dead code, duplication, and
       # complexity hotspots as a report without failing the build.
