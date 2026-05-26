@@ -243,9 +243,10 @@ mise run _e2e -- coverage report
 """
 dir = "tests/e2e"
 
-[tasks."boot-e2e-prep"]
-description = "Migrate, bootstrap fixtures and build client for e2e tests"
+[tasks."e2e:prep"]
+description = "Migrate, seed fixtures, and build client for e2e tests"
 run = """
+aube install
 mise run _e2e -- django-admin migrate --noinput
 mise run _e2e -- django-admin createcachetable
 mise run _e2e -- django-admin downloadvendor
@@ -255,15 +256,15 @@ mise run _e2e -- python tests/e2e/scripts/bootstrap_timetable.py
 aubr -C src/ludamus/client build
 """
 
-[tasks."boot-e2e-serve"]
-description = "Run the e2e dev server (assumes boot-e2e-prep has run)"
+[tasks."e2e:serve"]
+description = "Run the e2e dev server (assumes `e2e:prep` has run)"
 run = "exec mise run _e2e -- coverage run --source=src -m django runserver --insecure --noreload"
 
-[tasks."boot-e2e"]
-description = "Bootstrap and start dev server for e2e tests"
+[tasks."e2e:boot"]
+description = "Prep e2e fixtures and start dev server"
 run = """
-mise run boot-e2e-prep
-exec mise run boot-e2e-serve
+mise run e2e:prep
+exec mise run e2e:serve
 """
 
 # DEPLOYMENT
