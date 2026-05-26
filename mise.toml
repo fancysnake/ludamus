@@ -229,12 +229,11 @@ env.CREDENTIALS_ENCRYPTION_KEY = "gWc408f8j3ZQUm5Ly4EXQC2EwFRf50AhePkmZKL5N9E="
 env.IN_TESTS = 'True'
 
 [tasks."install:playwright"]
+description = "Install Playwright (node deps + browsers)"
 run = """
-npm install
-npx playwright install --with-deps
+aube install
+aube exec -C tests/e2e playwright install --with-deps
 """
-description = "Install Playwright"
-dir = "tests/e2e"
 
 [tasks.e2e]
 description = "Run end-to-end Playwright tests"
@@ -253,7 +252,7 @@ mise run _e2e -- django-admin downloadvendor
 mise run _e2e -- python tests/e2e/scripts/bootstrap_data.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_facilitators.py
 mise run _e2e -- python tests/e2e/scripts/bootstrap_timetable.py
-cd src/ludamus/client && npm install && npm run build
+aubr -C src/ludamus/client build
 """
 
 [tasks."boot-e2e-serve"]
@@ -292,7 +291,7 @@ run = "lsof -ti :8000 | xargs kill -9 2>/dev/null; lsof -ti :5173 | xargs kill -
 
 [tasks.ts-check]
 description = "Type-check frontend TypeScript"
-run = "cd src/ludamus/client && npm run typecheck"
+run = "aubr -C src/ludamus/client typecheck"
 
 [tasks.fallow]
 description = "Analyze frontend TypeScript: dead code, duplication, complexity"
