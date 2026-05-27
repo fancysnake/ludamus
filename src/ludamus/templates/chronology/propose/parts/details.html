@@ -17,7 +17,7 @@
             <div class="space-y-6">
                 <div>
                     <label for="id_title"
-                           class="block text-sm font-medium text-foreground-secondary mb-2">
+                           class="block text-sm font-medium text-foreground-secondary mb-1">
                         {% translate "Title" %}
                         <span class="text-danger" aria-hidden="true">*</span>
                     </label>
@@ -32,7 +32,7 @@
                 </div>
                 <div>
                     <label for="id_description"
-                           class="block text-sm font-medium text-foreground-secondary mb-2">
+                           class="block text-sm font-medium text-foreground-secondary mb-1">
                         {% translate "Description" %}
                         <span class="text-danger" aria-hidden="true">*</span>
                     </label>
@@ -45,7 +45,7 @@
                 </div>
                 <div>
                     <label for="id_participants_limit"
-                           class="block text-sm font-medium text-foreground-secondary mb-2">
+                           class="block text-sm font-medium text-foreground-secondary mb-1">
                         {% translate "Max participants" %}
                         {% if form.participants_limit.field.required %}<span class="text-danger" aria-hidden="true">*</span>{% endif %}
                     </label>
@@ -66,7 +66,7 @@
                 </div>
                 <div>
                     <label for="id_min_age"
-                           class="block text-sm font-medium text-foreground-secondary mb-2">
+                           class="block text-sm font-medium text-foreground-secondary mb-1">
                         {% translate "Minimum age" %}
                     </label>
                     <input type="number"
@@ -75,14 +75,14 @@
                            value="{{ form.min_age.value|default_if_none:'0' }}"
                            class="w-full px-4 py-2 text-sm rounded-lg border border-border bg-bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                            min="0"
-                           max="18">
+                           max="80">
                     <p class="text-sm text-foreground-muted mt-1">{{ form.min_age.field.help_text }}</p>
                     {% if form.min_age.errors %}<p class="text-sm text-danger mt-1">{{ form.min_age.errors.0 }}</p>{% endif %}
                 </div>
                 {% if durations %}
                     <div>
                         <label for="id_duration"
-                               class="block text-sm font-medium text-foreground-secondary mb-2">
+                               class="block text-sm font-medium text-foreground-secondary mb-1">
                             {% translate "Duration" %}
                             <span class="text-danger" aria-hidden="true">*</span>
                         </label>
@@ -101,7 +101,7 @@
                 {% endif %}
                 <div>
                     <label for="id_display_name"
-                           class="block text-sm font-medium text-foreground-secondary mb-2">
+                           class="block text-sm font-medium text-foreground-secondary mb-1">
                         {% translate "Presenter name" %}
                         <span class="text-danger" aria-hidden="true">*</span>
                     </label>
@@ -142,7 +142,7 @@
                     <div>
                         {% if desc.field_type != "checkbox" %}
                             <label for="id_{{ desc.key }}"
-                                   class="block text-sm font-medium text-foreground-secondary mb-2">
+                                   class="block text-sm font-medium text-foreground-secondary mb-1">
                                 {% if desc.icon %}
                                     {% icon desc.icon class="w-4 h-4 inline mr-1 text-foreground-muted" %}
                                 {% endif %}
