@@ -99,7 +99,7 @@ def build_session_details_form(
             label=_("Minimum age"),
             required=False,
             min_value=0,
-            max_value=18,
+            max_value=80,
             initial=0,
             help_text=_("0 = no age restriction"),
         ),
