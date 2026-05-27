@@ -44,9 +44,8 @@ def _build_field_from_requirement(
                 label=f"{field_def.name} (custom)", required=False, max_length=max_len
             )
     elif field_def.field_type == "checkbox":
-        fields[field_key] = forms.BooleanField(
-            label=field_def.name, required=req.is_required
-        )
+        # We can't make checkboxes required because it ENFORCES TRUE.
+        fields[field_key] = forms.BooleanField(label=field_def.name, required=False)
     else:
         max_len = field_def.max_length if field_def.max_length > 0 else None
         fields[field_key] = forms.CharField(
