@@ -18,9 +18,7 @@ def _anonymous_user_code(user: User) -> str:
     return user.slug.split("_")[1]
 
 
-def _activate_anonymous_client(
-    client, *, sphere, event, user_code: str
-) -> None:
+def _activate_anonymous_client(client, *, sphere, event, user_code: str) -> None:
     session = client.session
     session["anonymous_enrollment_active"] = True
     session["anonymous_site_id"] = sphere.site.id
@@ -29,7 +27,7 @@ def _activate_anonymous_client(
     session.save()
 
 
-def _prepare_anonymous_enrollable_session(agenda_item, enrollment_config) -> None:
+def _prepare_anonymous_enrollable_session(enrollment_config) -> None:
     enrollment_config.allow_anonymous_enrollment = True
     enrollment_config.save()
 
@@ -104,7 +102,7 @@ class TestSessionEnrollmentAnonymousPageView:
     def test_get_no_anonymous_user_id(
         self, agenda_item, client, method, sphere, enrollment_config
     ):
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
@@ -124,7 +122,7 @@ class TestSessionEnrollmentAnonymousPageView:
     def test_get_anonymous_user_doesnt_exist(
         self, agenda_item, client, method, sphere, enrollment_config
     ):
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         session = client.session
         session["anonymous_enrollment_active"] = True
         session["anonymous_site_id"] = sphere.site.id
@@ -145,7 +143,7 @@ class TestSessionEnrollmentAnonymousPageView:
         self, agenda_item, anonymous_user_factory, client, sphere, enrollment_config
     ):
         user = anonymous_user_factory()
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -174,7 +172,7 @@ class TestSessionEnrollmentAnonymousPageView:
         self, agenda_item, anonymous_user_factory, client, sphere, enrollment_config
     ):
         user = anonymous_user_factory()
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -201,7 +199,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session.min_age = 12
         session.save()
         user = anonymous_user_factory()
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -243,7 +241,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session.min_age = 12
         session.save()
         user = anonymous_user_factory()
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -276,7 +274,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session.min_age = 12
         session.save()
         user = anonymous_user_factory()
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -323,7 +321,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session.min_age = 12
         session.save()
         user = anonymous_user_factory()
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -380,7 +378,7 @@ class TestSessionEnrollmentAnonymousPageView:
             status=SessionParticipationStatus.CONFIRMED,
         )
         user = anonymous_user_factory()
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -420,7 +418,7 @@ class TestSessionEnrollmentAnonymousPageView:
         session.min_age = 12
         session.save()
         user = anonymous_user_factory()
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -472,7 +470,7 @@ class TestSessionEnrollmentAnonymousPageView:
     ):
         user = anonymous_user_factory()
         other_event = EventFactory(sphere=sphere)
-        _prepare_anonymous_enrollable_session(agenda_item, enrollment_config)
+        _prepare_anonymous_enrollable_session(enrollment_config)
         _activate_anonymous_client(
             client,
             sphere=sphere,
@@ -529,7 +527,6 @@ class TestSessionEnrollmentAnonymousPageView:
                 )
             ],
             url=reverse(
-                "web:chronology:event",
-                kwargs={"slug": enrollment_config.event.slug},
+                "web:chronology:event", kwargs={"slug": enrollment_config.event.slug}
             ),
         )

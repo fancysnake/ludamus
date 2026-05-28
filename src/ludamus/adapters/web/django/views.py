@@ -17,6 +17,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect
@@ -30,8 +31,6 @@ from django.views.generic.detail import DetailView, SingleObjectTemplateResponse
 from django.views.generic.edit import FormMixin, ProcessFormView
 from pydantic import BaseModel, ConfigDict
 from pydantic import ValidationError as PydanticValidationError
-
-from django.core.exceptions import ObjectDoesNotExist
 
 from ludamus.adapters.db.django.models import (
     MAX_CONNECTED_USERS,
@@ -1817,8 +1816,7 @@ class EventAnonymousActivateActionView(View):
 
 
 def _anonymous_event_redirect(request: RootRequest) -> HttpResponse:
-    event_id = request.session.get("anonymous_event_id")
-    if event_id is not None:
+    if (event_id := request.session.get("anonymous_event_id")) is not None:
         try:
             event = Event.objects.get(pk=event_id)
             return redirect("web:chronology:event", slug=event.slug)
@@ -1836,6 +1834,33 @@ def _session_allows_anonymous_enrollment(session: Session) -> bool:
         config.allow_anonymous_enrollment and config.is_session_eligible(session)
         for config in event.get_active_enrollment_configs()
     )
+
+
+def _validate_anonymous_session_event(
+    request: RootRequest, session: Session
+) -> Event | HttpResponse:
+    try:
+        event = session.agenda_item.space.area.venue.event
+    except ObjectDoesNotExist:
+        messages.error(
+            request, _("No enrollment configuration is available for this session.")
+        )
+        return _anonymous_event_redirect(request)
+
+    anonymous_event_id = request.session.get("anonymous_event_id")
+    if anonymous_event_id is None or event.id != anonymous_event_id:
+        messages.error(
+            request, _("Anonymous enrollment is not available for this session.")
+        )
+        return _anonymous_event_redirect(request)
+
+    if not _session_allows_anonymous_enrollment(session):
+        messages.error(
+            request, _("No enrollment configuration is available for this session.")
+        )
+        return redirect("web:chronology:event", slug=event.slug)
+
+    return event
 
 
 def _validate_anonymous_enrollment_request(
@@ -1859,28 +1884,9 @@ def _validate_anonymous_enrollment_request(
         messages.error(request, _("Session not found."))
         return redirect("web:index")
 
-    try:
-        event = session.agenda_item.space.area.venue.event
-    except ObjectDoesNotExist:
-        messages.error(
-            request,
-            _("No enrollment configuration is available for this session."),
-        )
-        return _anonymous_event_redirect(request)
-
-    anonymous_event_id = request.session.get("anonymous_event_id")
-    if anonymous_event_id is None or event.id != anonymous_event_id:
-        messages.error(
-            request, _("Anonymous enrollment is not available for this session.")
-        )
-        return _anonymous_event_redirect(request)
-
-    if not _session_allows_anonymous_enrollment(session):
-        messages.error(
-            request,
-            _("No enrollment configuration is available for this session."),
-        )
-        return redirect("web:chronology:event", slug=event.slug)
+    event_or_redirect = _validate_anonymous_session_event(request, session)
+    if isinstance(event_or_redirect, HttpResponse):
+        return event_or_redirect
 
     if not (anonymous_user_code := request.session.get("anonymous_user_code")):
         messages.error(request, _("Anonymous session expired."))
