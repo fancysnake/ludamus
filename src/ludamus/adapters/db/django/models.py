@@ -715,7 +715,7 @@ class Session(models.Model):
                 fields=["slug", "sphere"], name="session_unique_slug_in_sphere"
             ),
             models.CheckConstraint(
-                condition=Q(min_age__gte=0, min_age__lte=18),
+                condition=Q(min_age__gte=0, min_age__lte=80),
                 name="session_min_age_range",
             ),
         )
