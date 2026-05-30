@@ -1213,7 +1213,7 @@ test.describe('Backoffice Panel', () => {
           .locator('#id_field_type')
           .selectOption('checkbox');
         await sessionTypeRequirementSelect(page, proposalCategoryName)
-          .selectOption('optional');
+          .selectOption('required');
         await page
           .getByRole('button', { name: 'Create' })
           .click();
@@ -1459,6 +1459,100 @@ test.describe('Backoffice Panel', () => {
         await page.waitForURL(/\/autumn-open\//);
         await expect(
           page.getByText(proposalTitle),
+        ).toBeVisible();
+
+        await context.close();
+      });
+
+      test('regression: submits with min_age above 18 and unchecked required checkbox', async ({
+        browser,
+      }, testInfo) => {
+        const suffix = testInfo.project.name;
+        const regressionTitle = `Regression Run ${suffix} ${Date.now()}`;
+        const statePath = path.join(__dirname, '..', '.auth-state.json');
+        const storageState = JSON.parse(
+          fs.readFileSync(statePath, 'utf8'),
+        );
+        const context = await browser.newContext({ storageState });
+        const page = await context.newPage();
+
+        await page.goto(
+          '/chronology/event/autumn-open/session/propose/',
+        );
+        await proposalCategoryOption(page, proposalCategoryName).click();
+        await page
+          .getByRole('button', { name: /Continue/ })
+          .click();
+
+        await page
+          .locator('#id_contact_email')
+          .fill('regression@example.com');
+        await page
+          .locator(`input[name="personal_${slugify(cityName)}"]`)
+          .fill('Wroclaw');
+        await page
+          .locator(`select[name="personal_${slugify(experienceName)}"]`)
+          .selectOption('Advanced');
+        await page
+          .getByLabel('Subscribe to newsletter?')
+          .check();
+        await page
+          .getByRole('button', { name: /Continue/ })
+          .click();
+
+        const slotLabels = page.locator(
+          'label:has(input[name="time_slot_ids"])',
+        );
+        await slotLabels.nth(1).click();
+        await page
+          .getByRole('button', { name: /Continue/ })
+          .click();
+
+        await expect(
+          page.locator('#wizard-content').getByRole('heading', {
+            name: 'Session Details',
+          }),
+        ).toBeVisible();
+
+        await page.locator('#id_title').fill(regressionTitle);
+        await page
+          .locator('#id_description')
+          .fill('Regression coverage: min_age cap + unchecked required checkbox.');
+        await page.locator('#id_participants_limit').fill('4');
+        await page.locator('#id_min_age').fill('30');
+        await page.locator('#id_display_name').fill('Regression GM');
+        await page.locator('#id_duration').selectOption('PT2H');
+        await page
+          .locator(`input[name="session_${slugify(gameSystemName)}"]`)
+          .fill('Pathfinder');
+        await page
+          .locator(`select[name="session_${slugify(genreName)}"]`)
+          .selectOption('Fantasy');
+        await page
+          .locator('label', { hasText: 'English' })
+          .locator(`input[name="session_${slugify(languagesName)}"]`)
+          .check();
+
+        await page
+          .getByRole('button', { name: /Continue/ })
+          .click();
+
+        await expect(
+          page.locator('#wizard-content').getByRole('heading', {
+            name: 'Review & Submit',
+          }),
+        ).toBeVisible();
+        await expect(
+          page.getByText(regressionTitle),
+        ).toBeVisible();
+
+        await page
+          .getByRole('button', { name: 'Submit Proposal' })
+          .click();
+
+        await page.waitForURL(/\/autumn-open\//);
+        await expect(
+          page.getByText(regressionTitle),
         ).toBeVisible();
 
         await context.close();
