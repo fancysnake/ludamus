@@ -32,8 +32,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
       - run: mise install
-      - run: npm ci --prefix src/ludamus/client
-      - run: ./scripts/varlock scan
+      - run: aube install --no-optional
+      - run: aube exec varlock scan
 
   impeccable:
     runs-on: ubuntu-latest
@@ -51,9 +51,8 @@ jobs:
           fetch-depth: 0
       - uses: jdx/mise-action@v2
       - run: mise install
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: src/ludamus/client
+      - name: install deps
+        run: aube install --no-optional
       # Non-blocking: fallow surfaces dead code, duplication, and
       # complexity hotspots as a report without failing the build.
       - name: Analyze frontend TypeScript (fallow)
