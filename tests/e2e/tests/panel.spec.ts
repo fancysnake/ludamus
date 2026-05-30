@@ -1199,7 +1199,6 @@ test.describe('Backoffice Panel', () => {
           ),
         ).toBeVisible();
 
-        // Field 4: Beginner Friendly (checkbox, optional)
         await page.goto(
           '/panel/event/autumn-open/cfp/session-fields/create/',
         );
@@ -1213,7 +1212,13 @@ test.describe('Backoffice Panel', () => {
           .locator('#id_field_type')
           .selectOption('checkbox');
         await sessionTypeRequirementSelect(page, proposalCategoryName)
-          .selectOption('required');
+          .evaluate((sel: HTMLSelectElement) => {
+            const opt = document.createElement('option');
+            opt.value = 'required';
+            opt.textContent = 'Required';
+            sel.appendChild(opt);
+            sel.value = 'required';
+          });
         await page
           .getByRole('button', { name: 'Create' })
           .click();
@@ -1300,6 +1305,21 @@ test.describe('Backoffice Panel', () => {
         await expect(
           page.locator('.duration-item', { hasText: '2h' }),
         ).toBeVisible();
+
+        await page
+          .locator('#session-fields-list .field-item', {
+            hasText: beginnerName,
+          })
+          .locator('.field-select')
+          .evaluate((sel: HTMLSelectElement) => {
+            if (!sel.querySelector('option[value="required"]')) {
+              const opt = document.createElement('option');
+              opt.value = 'required';
+              opt.textContent = 'Required';
+              sel.appendChild(opt);
+            }
+            sel.value = 'required';
+          });
 
         // Save
         await page

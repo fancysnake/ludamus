@@ -306,6 +306,7 @@
                             {% for field in available_session_fields %}
                                 <div class="field-item flex items-center gap-3 py-2 px-3 bg-bg-tertiary rounded-lg"
                                      data-field-id="{{ field.pk }}"
+                                     data-field-type="{{ field.field_type }}"
                                      data-original-index="{{ forloop.counter0 }}">
                                     <span class="text-sm font-medium text-foreground-secondary flex-1">{{ field.name }}</span>
                                     <select name="session_field_{{ field.pk }}" class="field-select hidden">
@@ -313,12 +314,14 @@
                                                 {% if field.pk not in session_field_requirements %}selected{% endif %}>
                                             {% translate "Not included" %}
                                         </option>
-                                        <option value="required"
-                                                {% if session_field_requirements|get_item:field.pk is True %}selected{% endif %}>
-                                            {% translate "Required" %}
-                                        </option>
+                                        {% if field.field_type != "checkbox" %}
+                                            <option value="required"
+                                                    {% if session_field_requirements|get_item:field.pk is True %}selected{% endif %}>
+                                                {% translate "Required" %}
+                                            </option>
+                                        {% endif %}
                                         <option value="optional"
-                                                {% if session_field_requirements|get_item:field.pk is False %}selected{% endif %}>
+                                                {% if session_field_requirements|get_item:field.pk is False or field.field_type == "checkbox" and session_field_requirements|get_item:field.pk is True %}selected{% endif %}>
                                             {% translate "Optional" %}
                                         </option>
                                     </select>
@@ -433,9 +436,10 @@
                             controls.className = 'field-controls flex items-center gap-1';
                             const select = item.querySelector('.field-select');
                             const isChosen = select.value !== 'none';
+                            const itemHasReqOpt = hasReqOpt && item.dataset.fieldType !== 'checkbox';
 
                             if (isChosen) {
-                                if (hasReqOpt) {
+                                if (itemHasReqOpt) {
                                     const toggleBtn = document.createElement('button');
                                     toggleBtn.type = 'button';
                                     toggleBtn.className = 'toggle-req text-xs px-2 py-1 rounded border transition';
@@ -526,9 +530,10 @@
 
                             const controls = document.createElement('div');
                             controls.className = 'field-controls flex items-center gap-1';
+                            const itemHasReqOpt = hasReqOpt && item.dataset.fieldType !== 'checkbox';
 
                             if (isChosen) {
-                                if (hasReqOpt) {
+                                if (itemHasReqOpt) {
                                     const toggleBtn = document.createElement('button');
                                     toggleBtn.type = 'button';
                                     toggleBtn.className = 'toggle-req text-xs px-2 py-1 rounded border transition';
@@ -619,7 +624,8 @@
                             if (addBtn) {
                                 const item = addBtn.closest('.field-item');
                                 const select = item.querySelector('.field-select');
-                                select.value = 'required';
+                                const isCheckboxField = item.dataset.fieldType === 'checkbox';
+                                select.value = hasReqOpt && isCheckboxField ? 'optional' : 'required';
                                 rebuildControls(item, true);
                                 distributeItems();
                                 syncOrder();
