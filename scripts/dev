@@ -7,6 +7,8 @@ use_portless="1"
 use_lan="0"
 do_trust="0"
 
+printf '\033[34m[dev] auth0=%s root=%s\033[0m\n' "${AUTH0_DOMAIN:-?}" "${ROOT_DOMAIN:-?}" >&2
+
 ensure_simulacrum_certs() {
   local dest="$HOME/.simulacrum/certs"
   if [ -f "$dest/localhost.pem" ] && [ -f "$dest/localhost-key.pem" ]; then

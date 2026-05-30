@@ -48,7 +48,7 @@
                         <h3 class="text-lg font-semibold text-foreground mb-6">{% translate "Basic Information" %}</h3>
                         <div class="space-y-6">
                             <div>
-                                <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                <label class="block text-sm font-medium text-foreground-secondary mb-1"
                                        for="id_name">{% translate "Event Name" %}</label>
                                 <input type="text"
                                        name="name"
@@ -58,7 +58,7 @@
                                        required>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                <label class="block text-sm font-medium text-foreground-secondary mb-1"
                                        for="id_slug">{% translate "URL Slug" %}</label>
                                 <input type="text"
                                        name="slug"
@@ -69,7 +69,7 @@
                                 <p class="mt-1 text-sm text-foreground-muted">{% translate "URL identifier for this event. Must be unique." %}</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                <label class="block text-sm font-medium text-foreground-secondary mb-1"
                                        for="id_description">{% translate "Description" %}</label>
                                 <textarea name="description"
                                           id="id_description"
@@ -86,18 +86,18 @@
                         <div class="space-y-6">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                    <label class="block text-sm font-medium text-foreground-secondary mb-1"
                                            for="id_start_time">{% translate "Start Time" %}</label>
                                     {{ form.start_time }}
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                    <label class="block text-sm font-medium text-foreground-secondary mb-1"
                                            for="id_end_time">{% translate "End Time" %}</label>
                                     {{ form.end_time }}
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                <label class="block text-sm font-medium text-foreground-secondary mb-1"
                                        for="id_publication_time">{% translate "Publication Time" %}</label>
                                 {{ form.publication_time }}
                                 <p class="mt-1 text-sm text-foreground-muted">

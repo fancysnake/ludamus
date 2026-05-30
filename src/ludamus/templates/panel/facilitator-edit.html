@@ -33,7 +33,7 @@
                     <h3 class="text-lg font-semibold text-foreground mb-6">{% translate "Facilitator Details" %}</h3>
                     <div class="space-y-6">
                         <div>
-                            <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                            <label class="block text-sm font-medium text-foreground-secondary mb-1"
                                    for="id_display_name">{% translate "Display Name" %}</label>
                             <input type="text"
                                    name="display_name"
@@ -54,7 +54,7 @@
                             {% for field, current_value in personal_fields %}
                                 <div>
                                     {% if field.field_type != "checkbox" %}
-                                        <label class="block text-sm font-medium text-foreground-secondary mb-2"
+                                        <label class="block text-sm font-medium text-foreground-secondary mb-1"
                                                for="id_personal_{{ field.slug }}">{{ field.name }}</label>
                                     {% endif %}
                                     {% if field.field_type == "select" and field.is_multiple %}
