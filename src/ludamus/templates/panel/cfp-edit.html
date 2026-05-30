@@ -280,7 +280,7 @@
                                             </option>
                                         {% endif %}
                                         <option value="optional"
-                                                {% if field_requirements|get_item:field.pk is False or field.field_type == "checkbox" and field_requirements|get_item:field.pk is True %}selected{% endif %}>
+                                                {% if field.field_type == "checkbox" %}{% if field.pk in field_requirements %}selected{% endif %}{% else %}{% if field_requirements|get_item:field.pk is False %}selected{% endif %}{% endif %}>
                                             {% translate "Optional" %}
                                         </option>
                                     </select>
@@ -324,7 +324,7 @@
                                             </option>
                                         {% endif %}
                                         <option value="optional"
-                                                {% if session_field_requirements|get_item:field.pk is False or field.field_type == "checkbox" and session_field_requirements|get_item:field.pk is True %}selected{% endif %}>
+                                                {% if field.field_type == "checkbox" %}{% if field.pk in session_field_requirements %}selected{% endif %}{% else %}{% if session_field_requirements|get_item:field.pk is False %}selected{% endif %}{% endif %}>
                                             {% translate "Optional" %}
                                         </option>
                                     </select>
@@ -639,7 +639,7 @@
                                 const item = addBtn.closest('.field-item');
                                 const select = item.querySelector('.field-select');
                                 const isCheckboxField = item.dataset.fieldType === 'checkbox';
-                                select.value = hasReqOpt && isCheckboxField ? 'optional' : 'required';
+                                select.value = isCheckboxField ? 'optional' : 'required';
                                 rebuildControls(item, true);
                                 distributeItems();
                                 syncOrder();

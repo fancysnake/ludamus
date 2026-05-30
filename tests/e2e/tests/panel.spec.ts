@@ -1218,6 +1218,12 @@ test.describe('Backoffice Panel', () => {
           ),
         ).toBeVisible();
 
+        /* NOTE: the panel UI hides "Required" for checkbox fields because
+           the proposer-side form builder (chronology/forms.py — BooleanField
+           for checkbox) ignores `is_required` anyway. The regression test
+           below needs a checkbox stored as required to exercise that
+           defensive coercion, so we re-inject the option to craft a
+           tampered POST that the server-side parser still accepts. */
         await page.goto(
           '/panel/event/autumn-open/cfp/session-fields/create/',
         );
