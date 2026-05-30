@@ -265,6 +265,7 @@
                             {% for field in available_fields %}
                                 <div class="field-item flex items-center gap-3 py-2 px-3 bg-bg-tertiary rounded-lg"
                                      data-field-id="{{ field.pk }}"
+                                     data-field-type="{{ field.field_type }}"
                                      data-original-index="{{ forloop.counter0 }}">
                                     <span class="text-sm font-medium text-foreground-secondary flex-1">{{ field.name }}</span>
                                     <select name="field_{{ field.pk }}" class="field-select hidden">
@@ -272,12 +273,14 @@
                                                 {% if field.pk not in field_requirements %}selected{% endif %}>
                                             {% translate "Not included" %}
                                         </option>
-                                        <option value="required"
-                                                {% if field_requirements|get_item:field.pk is True %}selected{% endif %}>
-                                            {% translate "Required" %}
-                                        </option>
+                                        {% if field.field_type != "checkbox" %}
+                                            <option value="required"
+                                                    {% if field_requirements|get_item:field.pk is True %}selected{% endif %}>
+                                                {% translate "Required" %}
+                                            </option>
+                                        {% endif %}
                                         <option value="optional"
-                                                {% if field_requirements|get_item:field.pk is False %}selected{% endif %}>
+                                                {% if field_requirements|get_item:field.pk is False or field.field_type == "checkbox" and field_requirements|get_item:field.pk is True %}selected{% endif %}>
                                             {% translate "Optional" %}
                                         </option>
                                     </select>
@@ -589,6 +592,17 @@
                                     }
                                 });
                             }
+                            // Checkbox fields can't be required — show a static "Optional" badge
+                            // so the chosen row isn't visually empty next to its neighbours.
+                            chosenList.querySelectorAll('.field-item[data-field-type="checkbox"]').forEach(item => {
+                                if (!item.querySelector('.optional-label')) {
+                                    const label = document.createElement('span');
+                                    label.className = 'optional-label text-xs px-2 py-1 rounded border border-border bg-bg-tertiary text-foreground-muted';
+                                    label.textContent = i18n.optional;
+                                    const controls = item.querySelector('.field-controls');
+                                    if (controls) controls.insertBefore(label, controls.firstChild);
+                                }
+                            });
                         }
 
                         function updateDisabledStates() {

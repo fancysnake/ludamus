@@ -781,6 +781,25 @@ test.describe('Backoffice Panel', () => {
     ).toBeVisible();
   });
 
+  test('session field create form hides "Required" for checkbox fields', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/panel/event/autumn-open/cfp/session-fields/create/',
+    );
+    const requiredOption = page
+      .locator('select[name^="category_"]')
+      .first()
+      .locator('option[value="required"]');
+    const isHidden = () => requiredOption.evaluate((opt: HTMLOptionElement) => opt.hidden);
+
+    await page.locator('#id_field_type').selectOption('text');
+    expect(await isHidden()).toBe(false);
+
+    await page.locator('#id_field_type').selectOption('checkbox');
+    expect(await isHidden()).toBe(true);
+  });
+
   // --- Step 8: Time Slots ---
 
   test('shows time slots page', async ({ page }) => {

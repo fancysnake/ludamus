@@ -146,9 +146,19 @@
                             const optionsContainer = document.getElementById('options-container');
                             const maxLengthContainer = document.getElementById('max-length-container');
 
+                            const categorySelects = document.querySelectorAll('select[name^="category_"]');
+
                             function toggleOptions() {
+                                const isCheckbox = fieldType.value === 'checkbox';
                                 optionsContainer.classList.toggle('hidden', fieldType.value !== 'select');
-                                maxLengthContainer.classList.toggle('hidden', fieldType.value === 'checkbox');
+                                maxLengthContainer.classList.toggle('hidden', isCheckbox);
+                                categorySelects.forEach(sel => {
+                                    const required = sel.querySelector('option[value="required"]');
+                                    if (!required) return;
+                                    required.hidden = isCheckbox;
+                                    required.disabled = isCheckbox;
+                                    if (isCheckbox && sel.value === 'required') sel.value = 'optional';
+                                });
                             }
                             fieldType.addEventListener('change', toggleOptions);
                             toggleOptions();
