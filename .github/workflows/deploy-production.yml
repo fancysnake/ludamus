@@ -65,8 +65,9 @@ jobs:
                    WEB_PORT \
                    GS_BUCKET_NAME GS_CREDENTIALS_JSON GS_LOCATION; do
             v="$(printenv "$k" || true)"
-            [ -n "$v" ] && printf "%s='%s'\n" "$k" "$v" >> .env.local
-
+            if [ -n "$v" ]; then
+              printf "%s='%s'\n" "$k" "$v" >> .env.local
+            fi
           done
 
       - name: Validate .env.local with varlock
