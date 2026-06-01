@@ -46,13 +46,16 @@ async function expectRequiredOption(
   select: Locator,
   expected: { hidden: boolean; disabled: boolean },
 ) {
-  const state = await select
-    .locator('option[value="required"]')
-    .evaluate((opt: HTMLOptionElement) => ({
-      hidden: opt.hidden,
-      disabled: opt.disabled,
-    }));
-  expect(state).toEqual(expected);
+  await expect
+    .poll(() =>
+      select
+        .locator('option[value="required"]')
+        .evaluate((opt: HTMLOptionElement) => ({
+          hidden: opt.hidden,
+          disabled: opt.disabled,
+        })),
+    )
+    .toEqual(expected);
 }
 
 function proposalCategoryOption(page: Page, name: string) {
