@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /** Build an HH:MM string by adding minutes to a base hour:minute. */
 function timeHHMM(
@@ -36,6 +36,23 @@ function slugify(value: string): string {
 
 function sessionTypeRequirementSelect(page: Page, name: string) {
   return page.getByRole('combobox', { name, exact: true }).last();
+}
+
+function firstCategoryRequirementSelect(page: Page) {
+  return page.locator('select[name^="category_"]').first();
+}
+
+async function expectRequiredOption(
+  select: Locator,
+  expected: { hidden: boolean; disabled: boolean },
+) {
+  const state = await select
+    .locator('option[value="required"]')
+    .evaluate((opt: HTMLOptionElement) => ({
+      hidden: opt.hidden,
+      disabled: opt.disabled,
+    }));
+  expect(state).toEqual(expected);
 }
 
 function proposalCategoryOption(page: Page, name: string) {
@@ -781,23 +798,109 @@ test.describe('Backoffice Panel', () => {
     ).toBeVisible();
   });
 
-  test('session field create form hides "Required" for checkbox fields', async ({
+  test('field create forms hide "Required" for checkbox fields', async ({
     page,
   }) => {
+    for (const path of [
+      '/panel/event/autumn-open/cfp/personal-data/create/',
+      '/panel/event/autumn-open/cfp/session-fields/create/',
+    ]) {
+      await page.goto(path);
+
+      const requirementSelect = firstCategoryRequirementSelect(page);
+      await page.locator('#id_field_type').selectOption('text');
+      await requirementSelect.selectOption('required');
+      await expectRequiredOption(requirementSelect, {
+        hidden: false,
+        disabled: false,
+      });
+      await expect(requirementSelect).toHaveValue('required');
+
+      await page.locator('#id_field_type').selectOption('checkbox');
+      await expectRequiredOption(requirementSelect, {
+        hidden: true,
+        disabled: true,
+      });
+      await expect(requirementSelect).toHaveValue('optional');
+    }
+  });
+
+  test('cfp picker shows checkbox fields as optional only', async ({
+    page,
+  }, testInfo) => {
+    const retrySuffix = testInfo.retry === 0 ? '' : `-r${testInfo.retry}`;
+    const nameSuffix = `${testInfo.project.name}${retrySuffix}`;
+    const hostFieldName = `Host Consent ${nameSuffix}`;
+    const sessionFieldName = `Session Consent ${nameSuffix}`;
+
+    await page.goto(
+      '/panel/event/autumn-open/cfp/personal-data/create/',
+    );
+    await page.locator('#id_name').fill(hostFieldName);
+    await page
+      .locator('#id_question')
+      .fill('May we contact this host?');
+    await page.locator('#id_field_type').selectOption('checkbox');
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(
+      page.getByText(
+        'Personal data field created successfully.',
+      ),
+    ).toBeVisible();
+
     await page.goto(
       '/panel/event/autumn-open/cfp/session-fields/create/',
     );
-    const requiredOption = page
-      .locator('select[name^="category_"]')
-      .first()
-      .locator('option[value="required"]');
-    const isHidden = () => requiredOption.evaluate((opt: HTMLOptionElement) => opt.hidden);
-
-    await page.locator('#id_field_type').selectOption('text');
-    expect(await isHidden()).toBe(false);
-
+    await page.locator('#id_name').fill(sessionFieldName);
+    await page
+      .locator('#id_question')
+      .fill('Does this session need consent?');
     await page.locator('#id_field_type').selectOption('checkbox');
-    expect(await isHidden()).toBe(true);
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(
+      page.getByText('Session field created successfully.'),
+    ).toBeVisible();
+
+    await page.goto('/panel/event/autumn-open/cfp/rpg-proposals/');
+
+    const assertOptionalOnly = async (group: string, fieldName: string) => {
+      await page
+        .locator(`${group} .avail-list .field-item`, { hasText: fieldName })
+        .locator('.add-field')
+        .click();
+
+      const chosen = page.locator(`${group} .chosen-list .field-item`, {
+        hasText: fieldName,
+      });
+      await expect(chosen.locator('.field-select')).toHaveValue('optional');
+      await expect(chosen.locator('.toggle-req')).toHaveCount(0);
+      await expect(chosen.locator('.optional-label')).toHaveText('Optional');
+    };
+
+    await assertOptionalOnly('#host-fields-list', hostFieldName);
+    await assertOptionalOnly('#session-fields-list', sessionFieldName);
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.goto('/panel/event/autumn-open/cfp/personal-data/');
+    await page
+      .getByRole('row', { name: new RegExp(hostFieldName) })
+      .getByRole('button', { name: /Delete/i })
+      .click();
+    await expect(
+      page.getByText(
+        'Personal data field deleted successfully.',
+      ),
+    ).toBeVisible();
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.goto('/panel/event/autumn-open/cfp/session-fields/');
+    await page
+      .getByRole('row', { name: new RegExp(sessionFieldName) })
+      .getByRole('button', { name: /Delete/i })
+      .click();
+    await expect(
+      page.getByText('Session field deleted successfully.'),
+    ).toBeVisible();
   });
 
   // --- Step 8: Time Slots ---
